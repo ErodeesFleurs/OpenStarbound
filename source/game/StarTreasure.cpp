@@ -93,31 +93,31 @@ TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr i
   }
 }
 
-StringList TreasureDatabase::treasurePools() const {
+[[nodiscard]] StringList TreasureDatabase::treasurePools() const {
   return m_treasurePools.keys();
 }
 
-bool TreasureDatabase::isTreasurePool(String const& treasurePool) const {
+[[nodiscard]] bool TreasureDatabase::isTreasurePool(String const& treasurePool) const {
   return m_treasurePools.contains(treasurePool);
 }
 
-StringList TreasureDatabase::treasureChestSets() const {
+[[nodiscard]] StringList TreasureDatabase::treasureChestSets() const {
   return m_treasureChestSets.keys();
 }
 
-bool TreasureDatabase::isTreasureChestSet(String const& treasurePool) const {
+[[nodiscard]] bool TreasureDatabase::isTreasureChestSet(String const& treasurePool) const {
   return m_treasureChestSets.contains(treasurePool);
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
+[[nodiscard]] List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
   return createTreasure(treasurePool, level, Random::randu64());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed) const {
+[[nodiscard]] List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed) const {
   return createTreasure(treasurePool, level, seed, StringSet());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const {
+[[nodiscard]] List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const {
   if (!m_treasurePools.contains(treasurePool))
     throw TreasureException(strf("Unknown treasure pool '{}'", treasurePool));
 
@@ -168,12 +168,12 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
   return treasureItems;
 }
 
-List<ItemPtr> TreasureDatabase::fillWithTreasure(
+[[nodiscard]] List<ItemPtr> TreasureDatabase::fillWithTreasure(
     ItemBagPtr const& itemBag, String const& treasurePool, float level) const {
   return fillWithTreasure(itemBag, treasurePool, level, Random::randu64());
 }
 
-List<ItemPtr> TreasureDatabase::fillWithTreasure(
+[[nodiscard]] List<ItemPtr> TreasureDatabase::fillWithTreasure(
     ItemBagPtr const& itemBag, String const& treasurePool, float level, uint64_t seed) const {
   List<ItemPtr> overflowItems;
   for (auto const& treasureItem : createTreasure(treasurePool, level, seed)) {
@@ -184,11 +184,11 @@ List<ItemPtr> TreasureDatabase::fillWithTreasure(
   return overflowItems;
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
+[[nodiscard]] ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
   return createTreasureChest(world, treasureChestSet, position, direction, Random::randu64());
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
+[[nodiscard]] ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
   if (!m_treasureChestSets.contains(treasureChestSet))
     throw StarException(strf("Unknown treasure chest set '{}'", treasureChestSet));
 

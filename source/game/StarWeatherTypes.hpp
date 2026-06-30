@@ -29,7 +29,7 @@ struct WeatherType {
   WeatherType() = default;
   WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path = String());
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   String name;
 

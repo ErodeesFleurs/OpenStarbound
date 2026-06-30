@@ -30,9 +30,9 @@ class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
   LiquidWorld(WorldServer& world);
 
-  Vec2I uniqueLocation(Vec2I const& location) const override;
-  CellularLiquidCell<LiquidId> cell(Vec2I const& location) const override;
-  float drainLevel(Vec2I const& location) const override;
+  [[nodiscard]] Vec2I uniqueLocation(Vec2I const& location) const override;
+  [[nodiscard]] CellularLiquidCell<LiquidId> cell(Vec2I const& location) const override;
+  [[nodiscard]] float drainLevel(Vec2I const& location) const override;
   void setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId> const& flow) override;
   void liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) override;
   void liquidCollision(Vec2I const& pos, LiquidId liquid, Vec2I const& blockPos) override;
@@ -47,7 +47,7 @@ class FallingBlocksWorld : public FallingBlocksFacade {
 public:
   FallingBlocksWorld(WorldServer& world);
 
-  FallingBlockType blockType(Vec2I const& pos) override;
+  [[nodiscard]] FallingBlockType blockType(Vec2I const& pos) override;
   void moveBlock(Vec2I const& from, Vec2I const& to) override;
 
 private:
@@ -79,16 +79,16 @@ public:
   void setPlayerStart(Vec2F const& startPosition) override;
   void connectWireGroup(List<Vec2I> const& wireGroup) override;
   void setTileProtection(DungeonId dungeonId, bool isProtected) override;
-  bool checkSolid(Vec2I const& position, TileLayer layer) override;
-  bool checkOpen(Vec2I const& position, TileLayer open) override;
-  bool checkOceanLiquid(Vec2I const& position) override;
-  DungeonId getDungeonIdAt(Vec2I const& position) override;
+  [[nodiscard]] bool checkSolid(Vec2I const& position, TileLayer layer) override;
+  [[nodiscard]] bool checkOpen(Vec2I const& position, TileLayer open) override;
+  [[nodiscard]] bool checkOceanLiquid(Vec2I const& position) override;
+  [[nodiscard]] DungeonId getDungeonIdAt(Vec2I const& position) override;
   void setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) override;
   void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) override;
 
-  WorldGeometry getWorldGeometry() const override;
-  MaterialDatabaseConstPtr materialDatabase() const override;
-  LiquidsDatabaseConstPtr liquidsDatabase() const override;
+  [[nodiscard]] WorldGeometry getWorldGeometry() const override;
+  [[nodiscard]] MaterialDatabaseConstPtr materialDatabase() const override;
+  [[nodiscard]] LiquidsDatabaseConstPtr liquidsDatabase() const override;
 
 private:
   void placePlant(PlantPtr const& plant, Vec2I const& position);
@@ -111,21 +111,21 @@ class SpawnerWorld : public SpawnerFacade {
 public:
   SpawnerWorld(WorldServer& worldServer);
 
-  WorldGeometry geometry() const override;
-  List<RectF> clientWindows() const override;
-  bool signalRegion(RectF const& region) const override;
-  CollisionKind collision(Vec2I const& position) const override;
-  bool isFreeSpace(RectF const& area) const override;
-  bool isBackgroundEmpty(Vec2I const& position) const override;
-  LiquidLevel liquidLevel(Vec2I const& position) const override;
-  bool spawningProhibited(RectF const& area) const override;
-  uint64_t spawnSeed() const override;
-  SpawnProfile spawnProfile(Vec2F const& position) const override;
-  float dayLevel() const override;
-  float threatLevel() const override;
-  EntityId spawnEntity(EntityPtr entity) const override;
+  [[nodiscard]] WorldGeometry geometry() const override;
+  [[nodiscard]] List<RectF> clientWindows() const override;
+  [[nodiscard]] bool signalRegion(RectF const& region) const override;
+  [[nodiscard]] CollisionKind collision(Vec2I const& position) const override;
+  [[nodiscard]] bool isFreeSpace(RectF const& area) const override;
+  [[nodiscard]] bool isBackgroundEmpty(Vec2I const& position) const override;
+  [[nodiscard]] LiquidLevel liquidLevel(Vec2I const& position) const override;
+  [[nodiscard]] bool spawningProhibited(RectF const& area) const override;
+  [[nodiscard]] uint64_t spawnSeed() const override;
+  [[nodiscard]] SpawnProfile spawnProfile(Vec2F const& position) const override;
+  [[nodiscard]] float dayLevel() const override;
+  [[nodiscard]] float threatLevel() const override;
+  [[nodiscard]] EntityId spawnEntity(EntityPtr entity) const override;
   void despawnEntity(EntityId entityId) override;
-  EntityPtr getEntity(EntityId entityId) const override;
+  [[nodiscard]] EntityPtr getEntity(EntityId entityId) const override;
 
 private:
   WorldServer& m_worldServer;
@@ -140,9 +140,9 @@ public:
   void terraformSector(WorldStorage& worldStorage, Sector const& sector) override;
   void initEntity(WorldStorage& worldStorage, EntityId entityId, EntityPtr const& entity) override;
   void destructEntity(WorldStorage& worldStorage, EntityPtr const& entity) override;
-  bool entityKeepAlive(WorldStorage& worldStorage, EntityPtr const& entity) const override;
-  bool entityPersistent(WorldStorage& worldStorage, EntityPtr const& entity) const override;
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
+  [[nodiscard]] bool entityKeepAlive(WorldStorage& worldStorage, EntityPtr const& entity) const override;
+  [[nodiscard]] bool entityPersistent(WorldStorage& worldStorage, EntityPtr const& entity) const override;
+  [[nodiscard]] RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
 
   void replaceBiomeBlocks(ServerTile& tile);
 
@@ -164,13 +164,13 @@ private:
 
   void reapplyBiome(WorldStorage& worldStorage, Sector const& sector);
 
-  Set<Vec2I> caveLiquidSeeds(WorldStorage& worldStorage, Sector const& sector);
-  Map<Vec2I, float> determineLiquidLevel(Set<Vec2I> const& spots, Set<Vec2I> const& filled);
+  [[nodiscard]] Set<Vec2I> caveLiquidSeeds(WorldStorage& worldStorage, Sector const& sector);
+  [[nodiscard]] Map<Vec2I, float> determineLiquidLevel(Set<Vec2I> const& spots, Set<Vec2I> const& filled);
   void levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled, Map<Vec2I, float>& results);
 
   // Special plant placement routine that does slight terrain adjustments to
   // fit plants.
-  bool placePlant(WorldStorage& worldStorage, PlantPtr const& plant, Vec2I const& position);
+  [[nodiscard]] bool placePlant(WorldStorage& worldStorage, PlantPtr const& plant, Vec2I const& position);
 
   WorldServer& m_worldServer;
   ObjectDatabaseConstPtr m_objectDatabase;

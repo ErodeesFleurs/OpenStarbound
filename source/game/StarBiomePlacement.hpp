@@ -22,8 +22,8 @@ using TreasureBoxSet = StrongTypedef<String, struct TreasureBoxSetTag>;
 using MicroDungeonNames = StrongTypedef<StringSet, struct MicroDungeonNamesTag>;
 
 using BiomeItem = Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames>;
-BiomeItem variantToBiomeItem(Json const& store);
-Json variantFromBiomeItem(BiomeItem const& biomeItem);
+[[nodiscard]] BiomeItem variantToBiomeItem(Json const& store);
+[[nodiscard]] Json variantFromBiomeItem(BiomeItem const& biomeItem);
 
 enum class BiomePlacementArea { Surface, Underground };
 enum class BiomePlacementMode { Floor, Ceiling, Background, Ocean };
@@ -33,7 +33,7 @@ struct BiomeItemPlacement {
   BiomeItemPlacement(BiomeItem item, Vec2I position, float priority);
 
   // Orders by priority
-  bool operator<(BiomeItemPlacement const& rhs) const;
+  [[nodiscard]] bool operator<(BiomeItemPlacement const& rhs) const;
 
   BiomeItem item;
   Vec2I position;
@@ -47,20 +47,20 @@ public:
     PerlinF weight;
   };
 
-  static Maybe<BiomeItem> createItem(PlantDatabaseConstPtr plantDatabase, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  [[nodiscard]] static Maybe<BiomeItem> createItem(PlantDatabaseConstPtr plantDatabase, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution() = default;
   BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  BiomePlacementMode mode() const;
-  List<BiomeItem> allItems() const;
+  [[nodiscard]] BiomePlacementMode mode() const;
+  [[nodiscard]] List<BiomeItem> allItems() const;
 
   // Returns the best BiomeItem for this position out of the weighted item set,
   // if the density function specifies that an item should go in this position.
-  Maybe<BiomeItemPlacement> itemToPlace(int x, int y) const;
+  [[nodiscard]] Maybe<BiomeItemPlacement> itemToPlace(int x, int y) const;
 
 private:
   enum class DistributionType {

@@ -34,25 +34,25 @@ public:
     String token;
   };
 
-  List<Token> tokenize(String const& command);
-  StringList tokenizeToStringList(String const& command);
+  [[nodiscard]] List<Token> tokenize(String const& command);
+  [[nodiscard]] StringList tokenizeToStringList(String const& command);
 
 private:
   void init(String const& command);
 
-  String word();
-  Char parseBackslash();
-  Char parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint = {});
+  [[nodiscard]] String word();
+  [[nodiscard]] Char parseBackslash();
+  [[nodiscard]] Char parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint = {});
 
-  bool isSpace(Char letter) const;
-  bool isQuote(Char letter) const;
+  [[nodiscard]] bool isSpace(Char letter) const;
+  [[nodiscard]] bool isQuote(Char letter) const;
 
-  bool inQuotedString() const;
-  bool notDone() const;
+  [[nodiscard]] bool inQuotedString() const;
+  [[nodiscard]] bool notDone() const;
 
-  Maybe<Char> current() const;
-  Maybe<Char> next();
-  Maybe<Char> previous();
+  [[nodiscard]] Maybe<Char> current() const;
+  [[nodiscard]] Maybe<Char> next();
+  [[nodiscard]] Maybe<Char> previous();
 
   String::const_iterator m_begin;
   String::const_iterator m_current;

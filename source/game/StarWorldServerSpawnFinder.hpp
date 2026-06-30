@@ -13,12 +13,12 @@ public:
 
   explicit WorldServerSpawnFinder(WorldServer& worldServer);
 
-  Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
-  Vec2F findPlayerSpaceStart(float targetX);
+  [[nodiscard]] Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
+  [[nodiscard]] Vec2F findPlayerSpaceStart(float targetX);
   void setPlayerStart(Vec2F const& startPosition, bool respawnInWorld = false);
-  Vec2F playerStart() const;
-  bool adjustPlayerStart() const;
-  bool respawnInWorld() const;
+  [[nodiscard]] Vec2F playerStart() const;
+  [[nodiscard]] bool adjustPlayerStart() const;
+  [[nodiscard]] bool respawnInWorld() const;
 
 private:
   WorldServer& m_worldServer;

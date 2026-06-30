@@ -4,7 +4,7 @@
 
 namespace Star {
 
-PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {
+[[nodiscard]] PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {
   PhysicsMovingCollision pmc;
   pmc.position = json.opt("position").apply(jsonToVec2F).value();
   pmc.collision = jsonToPolyF(json.get("collision"));
@@ -13,7 +13,7 @@ PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {
   return pmc;
 }
 
-RectF PhysicsMovingCollision::boundBox() const {
+[[nodiscard]] RectF PhysicsMovingCollision::boundBox() const {
   return collision.boundBox().translated(position);
 }
 
@@ -21,7 +21,7 @@ void PhysicsMovingCollision::translate(Vec2F const& pos) {
   position += pos;
 }
 
-bool PhysicsMovingCollision::operator==(PhysicsMovingCollision const& rhs) const {
+[[nodiscard]] bool PhysicsMovingCollision::operator==(PhysicsMovingCollision const& rhs) const {
   return tie(position, collision, collisionKind, categoryFilter) == tie(rhs.position, rhs.collision, rhs.collisionKind, rhs.categoryFilter);
 }
 
@@ -44,15 +44,15 @@ DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
 MovingCollisionId::MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex)
   : physicsEntityId(physicsEntityId), collisionIndex(collisionIndex) {}
 
-bool MovingCollisionId::operator==(MovingCollisionId const& rhs) const {
+[[nodiscard]] bool MovingCollisionId::operator==(MovingCollisionId const& rhs) const {
   return tie(physicsEntityId, collisionIndex) == tie(rhs.physicsEntityId, rhs.collisionIndex);
 }
 
-bool MovingCollisionId::valid() const {
+[[nodiscard]] bool MovingCollisionId::valid() const {
   return physicsEntityId != NullEntityId;
 }
 
-MovingCollisionId::operator bool() const {
+[[nodiscard]] MovingCollisionId::operator bool() const {
   return valid();
 }
 
@@ -68,15 +68,15 @@ DataStream& operator<<(DataStream& ds, MovingCollisionId const& mci) {
   return ds;
 }
 
-List<PhysicsForceRegion> PhysicsEntity::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> PhysicsEntity::forceRegions() const {
   return {};
 }
 
-size_t PhysicsEntity::movingCollisionCount() const {
+[[nodiscard]] size_t PhysicsEntity::movingCollisionCount() const {
   return 0;
 }
 
-Maybe<PhysicsMovingCollision> PhysicsEntity::movingCollision(size_t) const {
+[[nodiscard]] Maybe<PhysicsMovingCollision> PhysicsEntity::movingCollision(size_t) const {
   return {};
 }
 

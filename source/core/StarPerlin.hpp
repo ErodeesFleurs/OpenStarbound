@@ -37,48 +37,48 @@ public:
   Perlin& operator=(Perlin const& perlin);
   Perlin& operator=(Perlin&& perlin);
 
-  Float get(Float x) const;
-  Float get(Float x, Float y) const;
-  Float get(Float x, Float y, Float z) const;
+  [[nodiscard]] Float get(Float x) const;
+  [[nodiscard]] Float get(Float x, Float y) const;
+  [[nodiscard]] Float get(Float x, Float y, Float z) const;
 
-  PerlinType type() const;
+  [[nodiscard]] PerlinType type() const;
 
-  unsigned octaves() const;
-  Float frequency() const;
-  Float amplitude() const;
-  Float bias() const;
-  Float alpha() const;
-  Float beta() const;
+  [[nodiscard]] unsigned octaves() const;
+  [[nodiscard]] Float frequency() const;
+  [[nodiscard]] Float amplitude() const;
+  [[nodiscard]] Float bias() const;
+  [[nodiscard]] Float alpha() const;
+  [[nodiscard]] Float beta() const;
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
 private:
-  static Float s_curve(Float t);
+  [[nodiscard]] static Float s_curve(Float t);
   static void setup(Float v, int& b0, int& b1, Float& r0, Float& r1);
 
-  static Float at2(Float* q, Float rx, Float ry);
-  static Float at3(Float* q, Float rx, Float ry, Float rz);
+  [[nodiscard]] static Float at2(Float* q, Float rx, Float ry);
+  [[nodiscard]] static Float at3(Float* q, Float rx, Float ry, Float rz);
 
-  Float noise1(Float arg) const;
-  Float noise2(Float vec[2]) const;
-  Float noise3(Float vec[3]) const;
+  [[nodiscard]] Float noise1(Float arg) const;
+  [[nodiscard]] Float noise2(Float vec[2]) const;
+  [[nodiscard]] Float noise3(Float vec[3]) const;
 
   void normalize2(Float v[2]) const;
   void normalize3(Float v[3]) const;
 
   void init(uint64_t seed);
 
-  Float perlin(Float x) const;
-  Float perlin(Float x, Float y) const;
-  Float perlin(Float x, Float y, Float z) const;
+  [[nodiscard]] Float perlin(Float x) const;
+  [[nodiscard]] Float perlin(Float x, Float y) const;
+  [[nodiscard]] Float perlin(Float x, Float y, Float z) const;
 
-  Float ridgedMulti(Float x) const;
-  Float ridgedMulti(Float x, Float y) const;
-  Float ridgedMulti(Float x, Float y, Float z) const;
+  [[nodiscard]] Float ridgedMulti(Float x) const;
+  [[nodiscard]] Float ridgedMulti(Float x, Float y) const;
+  [[nodiscard]] Float ridgedMulti(Float x, Float y, Float z) const;
 
-  Float billow(Float x) const;
-  Float billow(Float x, Float y) const;
-  Float billow(Float x, Float y, Float z) const;
+  [[nodiscard]] Float billow(Float x) const;
+  [[nodiscard]] Float billow(Float x, Float y) const;
+  [[nodiscard]] Float billow(Float x, Float y, Float z) const;
 
   PerlinType m_type = PerlinType::Uninitialized;
   uint64_t m_seed = 0;
@@ -470,7 +470,7 @@ void Perlin<Float>::normalize3(Float v[3]) const {
 
 template <typename Float>
 void Perlin<Float>::init(uint64_t seed) {
-  RandomSource randomSource(seed);
+  [[nodiscard]] RandomSource randomSource(seed);
 
   p = make_unique<int[]>(PerlinSampleSize + PerlinSampleSize + 2);
   g3 = make_unique<Float[][3]>(PerlinSampleSize + PerlinSampleSize + 2);

@@ -21,7 +21,7 @@ void DataStreamFunctions::writeData(char const* data, size_t len) {
 DataStreamIODevice::DataStreamIODevice(IODevicePtr device)
   : m_device(requireDependencyValueAs<DataStreamException>(std::move(device), "DataStreamIODevice", "device")) {}
 
-IODevicePtr const& DataStreamIODevice::device() const {
+[[nodiscard]] IODevicePtr const& DataStreamIODevice::device() const {
   return m_device;
 }
 
@@ -29,11 +29,11 @@ void DataStreamIODevice::seek(size_t pos, IOSeek mode) {
   m_device->seek(pos, mode);
 }
 
-bool DataStreamIODevice::atEnd() {
+[[nodiscard]] bool DataStreamIODevice::atEnd() {
   return m_device->atEnd();
 }
 
-StreamOffset DataStreamIODevice::pos() {
+[[nodiscard]] StreamOffset DataStreamIODevice::pos() {
   return m_device->pos();
 }
 
@@ -71,35 +71,35 @@ void DataStreamBuffer::clear() {
   m_buffer->clear();
 }
 
-BufferPtr const& DataStreamBuffer::device() const {
+[[nodiscard]] BufferPtr const& DataStreamBuffer::device() const {
   return m_buffer;
 }
 
-ByteArray& DataStreamBuffer::data() {
+[[nodiscard]] ByteArray& DataStreamBuffer::data() {
   return m_buffer->data();
 }
 
-ByteArray const& DataStreamBuffer::data() const {
+[[nodiscard]] ByteArray const& DataStreamBuffer::data() const {
   return m_buffer->data();
 }
 
-ByteArray DataStreamBuffer::takeData() {
+[[nodiscard]] ByteArray DataStreamBuffer::takeData() {
   return m_buffer->takeData();
 }
 
-char* DataStreamBuffer::ptr() {
+[[nodiscard]] char* DataStreamBuffer::ptr() {
   return m_buffer->ptr();
 }
 
-const char* DataStreamBuffer::ptr() const {
+[[nodiscard]] const char* DataStreamBuffer::ptr() const {
   return m_buffer->ptr();
 }
 
-size_t DataStreamBuffer::size() const {
+[[nodiscard]] size_t DataStreamBuffer::size() const {
   return m_buffer->dataSize();
 }
 
-bool DataStreamBuffer::empty() const {
+[[nodiscard]] bool DataStreamBuffer::empty() const {
   return m_buffer->empty();
 }
 
@@ -107,11 +107,11 @@ void DataStreamBuffer::seek(size_t pos, IOSeek mode) {
   m_buffer->seek(pos, mode);
 }
 
-bool DataStreamBuffer::atEnd() {
+[[nodiscard]] bool DataStreamBuffer::atEnd() {
   return m_buffer->atEnd();
 }
 
-size_t DataStreamBuffer::pos() {
+[[nodiscard]] size_t DataStreamBuffer::pos() {
   return static_cast<size_t>(m_buffer->pos());
 }
 
@@ -139,15 +139,15 @@ DataStreamExternalBuffer::DataStreamExternalBuffer(char const* externalData, siz
   reset(externalData, len);
 }
 
-char const* DataStreamExternalBuffer::ptr() const {
+[[nodiscard]] char const* DataStreamExternalBuffer::ptr() const {
   return m_buffer.ptr();
 }
 
-size_t DataStreamExternalBuffer::size() const {
+[[nodiscard]] size_t DataStreamExternalBuffer::size() const {
   return m_buffer.dataSize();
 }
 
-bool DataStreamExternalBuffer::empty() const {
+[[nodiscard]] bool DataStreamExternalBuffer::empty() const {
   return m_buffer.empty();
 }
 
@@ -155,15 +155,15 @@ void DataStreamExternalBuffer::seek(size_t pos, IOSeek mode) {
   m_buffer.seek(pos, mode);
 }
 
-bool DataStreamExternalBuffer::atEnd() {
+[[nodiscard]] bool DataStreamExternalBuffer::atEnd() {
   return m_buffer.atEnd();
 }
 
-size_t DataStreamExternalBuffer::pos() {
+[[nodiscard]] size_t DataStreamExternalBuffer::pos() {
   return m_buffer.pos();
 }
 
-size_t DataStreamExternalBuffer::remaining() {
+[[nodiscard]] size_t DataStreamExternalBuffer::remaining() {
   return m_buffer.dataSize() - m_buffer.pos();
 }
 

@@ -43,17 +43,17 @@ public:
 
   TechController(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  Json diskStore();
+  [[nodiscard]] Json diskStore();
   void diskLoad(Json const& store);
 
   void init(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController);
   void uninit();
 
   void setLoadedTech(StringList const& techModules, bool forceLoad = false);
-  StringList loadedTech() const;
+  [[nodiscard]] StringList loadedTech() const;
   void reloadTech();
 
-  bool techOverridden() const;
+  [[nodiscard]] bool techOverridden() const;
   void setOverrideTech(StringList const& techModules);
   void clearOverrideTech();
 
@@ -76,22 +76,22 @@ public:
   void tickMaster(float dt);
   void tickSlave(float dt);
 
-  Maybe<ParentState> parentState() const;
-  DirectivesGroup const& parentDirectives() const;
-  Vec2F parentOffset() const;
-  bool toolUsageSuppressed() const;
+  [[nodiscard]] Maybe<ParentState> parentState() const;
+  [[nodiscard]] DirectivesGroup const& parentDirectives() const;
+  [[nodiscard]] Vec2F parentOffset() const;
+  [[nodiscard]] bool toolUsageSuppressed() const;
 
-  bool parentHidden() const;
+  [[nodiscard]] bool parentHidden() const;
 
-  List<Drawable> backDrawables();
-  List<Drawable> frontDrawables();
+  [[nodiscard]] List<Drawable> backDrawables();
+  [[nodiscard]] List<Drawable> frontDrawables();
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] List<LightSource> lightSources() const;
 
-  List<AudioInstancePtr> pullNewAudios();
-  List<Particle> pullNewParticles();
+  [[nodiscard]] List<AudioInstancePtr> pullNewAudios();
+  [[nodiscard]] List<Particle> pullNewParticles();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
   struct TechAnimator : public NetElement {
@@ -106,13 +106,13 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
     // If setting invisible, stops all playing audio
     void setVisible(bool visible);
-    bool isVisible() const;
+    [[nodiscard]] bool isVisible() const;
 
     Maybe<String> animationConfig;
     AssetsConstPtr assets;
@@ -147,7 +147,7 @@ private:
   void resetMoves();
   void updateAnimators(float dt);
 
-  LuaCallbacks makeTechCallbacks(TechModule& techModule);
+  [[nodiscard]] LuaCallbacks makeTechCallbacks(TechModule& techModule);
 
   Maybe<StringList> m_overriddenTech;
   LinkedList<TechModule> m_techModules;

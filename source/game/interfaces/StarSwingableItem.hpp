@@ -14,12 +14,12 @@ public:
 
   // These can be different
   // Default implementation is the same though
-  virtual float getAngleDir(float aimAngle, Direction facingDirection);
-  virtual float getAngle(float aimAngle);
-  virtual float getItemAngle(float aimAngle);
-  virtual String getArmFrame();
+  [[nodiscard]] virtual float getAngleDir(float aimAngle, Direction facingDirection);
+  [[nodiscard]] virtual float getAngle(float aimAngle);
+  [[nodiscard]] virtual float getItemAngle(float aimAngle);
+  [[nodiscard]] virtual String getArmFrame();
 
-  virtual List<Drawable> drawables() const = 0;
+  [[nodiscard]] virtual List<Drawable> drawables() const = 0;
 
   void setParams(Json const& params);
 

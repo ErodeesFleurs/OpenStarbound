@@ -7,7 +7,7 @@ TickRateMonitor::TickRateMonitor(double window) : m_window(window) {
   reset();
 }
 
-double TickRateMonitor::window() const {
+[[nodiscard]] double TickRateMonitor::window() const {
   return m_window;
 }
 
@@ -34,14 +34,14 @@ double TickRateMonitor::tick(unsigned count) {
   return m_ticks / m_window;
 }
 
-double TickRateMonitor::rate() const {
+[[nodiscard]] double TickRateMonitor::rate() const {
   return TickRateMonitor(*this).tick(0);
 }
 
 TickRateApproacher::TickRateApproacher(double targetTickRate, double window)
   : m_tickRateMonitor(window), m_targetTickRate(targetTickRate) {}
 
-double TickRateApproacher::window() const {
+[[nodiscard]] double TickRateApproacher::window() const {
   return m_tickRateMonitor.window();
 }
 
@@ -52,7 +52,7 @@ void TickRateApproacher::setWindow(double window) {
   }
 }
 
-double TickRateApproacher::targetTickRate() const {
+[[nodiscard]] double TickRateApproacher::targetTickRate() const {
   return m_targetTickRate;
 }
 
@@ -68,19 +68,19 @@ double TickRateApproacher::tick(unsigned count) {
   return m_tickRateMonitor.tick(count);
 }
 
-double TickRateApproacher::rate() const {
+[[nodiscard]] double TickRateApproacher::rate() const {
   return m_tickRateMonitor.rate();
 }
 
-double TickRateApproacher::ticksBehind() {
+[[nodiscard]] double TickRateApproacher::ticksBehind() {
   return (m_targetTickRate - m_tickRateMonitor.rate()) * window();
 }
 
-double TickRateApproacher::ticksAhead() {
+[[nodiscard]] double TickRateApproacher::ticksAhead() {
   return -ticksBehind();
 }
 
-double TickRateApproacher::spareTime() {
+[[nodiscard]] double TickRateApproacher::spareTime() {
   return ticksAhead() / m_targetTickRate;
 }
 

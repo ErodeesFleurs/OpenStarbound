@@ -590,7 +590,7 @@ auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
   buffer.write<uint32_t>(index->pointers.size());
   buffer.write<BlockIndex>(*index->beginPointer);
   for (auto const& pointer : index->pointers) {
-    starAssert(pointer.key.size() == parent->m_keySize);
+    assert(pointer.key.size() == parent->m_keySize);
     buffer.writeBytes(pointer.key);
     buffer.write<BlockIndex>(pointer.pointer);
   }
@@ -786,7 +786,7 @@ auto BTreeDatabase::BTreeImpl::storeLeaf(Leaf leaf) -> Pointer {
   leafOutput.write<uint32_t>(leaf->elements.size());
 
   for (LeafNode::ElementList::iterator i = leaf->elements.begin(); i != leaf->elements.end(); ++i) {
-    starAssert(i->key.size() == parent->m_keySize);
+    assert(i->key.size() == parent->m_keySize);
     leafOutput.writeBytes(i->key);
     leafOutput.write(i->data);
   }
@@ -1139,8 +1139,8 @@ void BTreeDatabase::doCommit() {
     }
   }
 
-  
-  commitWrites(); 
+
+  commitWrites();
   writeRoot();
   m_uncommitted.clear();
 }
@@ -1156,7 +1156,7 @@ void BTreeDatabase::commitWrites() {
 bool BTreeDatabase::tryFlatten() {
   if (m_headFreeIndexBlock == InvalidBlockIndex || m_rootIsLeaf || !m_device->isWritable())
     return false;
-  
+
   BlockIndex freeBlockCount = 0;
   BlockIndex indexBlockIndex = m_headFreeIndexBlock;
   while (indexBlockIndex != InvalidBlockIndex) {

@@ -24,38 +24,38 @@ public:
   MaterialItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase);
   virtual ~MaterialItem() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
 
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
-  List<Drawable> dropDrawables() const override;
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  [[nodiscard]] List<Drawable> dropDrawables() const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void endFire(FireMode mode, bool shifting) override;
 
-  MaterialId materialId() const;
-  MaterialHue materialHueShift() const;
+  [[nodiscard]] MaterialId materialId() const;
+  [[nodiscard]] MaterialHue materialHueShift() const;
 
-  bool canPlace(bool shifting) const;
-  bool multiplaceEnabled() const;
+  [[nodiscard]] bool canPlace(bool shifting) const;
+  [[nodiscard]] bool multiplaceEnabled() const;
 
-  float& blockRadius();
-  float& altBlockRadius();
-  TileCollisionOverride& collisionOverride();
+  [[nodiscard]] float& blockRadius();
+  [[nodiscard]] float& altBlockRadius();
+  [[nodiscard]] TileCollisionOverride& collisionOverride();
 
-  List<PreviewTile> previewTiles(bool shifting) const override;
-  List<Drawable> const& generatedPreview(Vec2I position = {}) const;
+  [[nodiscard]] List<PreviewTile> previewTiles(bool shifting) const override;
+  [[nodiscard]] List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
-  size_t blockSwap(float radius, TileLayer layer);
+  [[nodiscard]] size_t blockSwap(float radius, TileLayer layer);
   void updatePropertiesFromPlayer(Player& player);
-  float calcRadius(bool shifting) const;
-  List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
-  MaterialHue placementHueShift(Vec2I const& position) const;
+  [[nodiscard]] float calcRadius(bool shifting) const;
+  [[nodiscard]] List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
+  [[nodiscard]] MaterialHue placementHueShift(Vec2I const& position) const;
 
   AssetsConstPtr m_assets;
   MaterialId m_material;

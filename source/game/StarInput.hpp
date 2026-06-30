@@ -26,13 +26,13 @@ using InputVariant = Variant<Key, MouseButton, ControllerButton>;
 
 template <>
 struct hash<InputVariant> {
-  size_t operator()(InputVariant const& v) const;
+  [[nodiscard]] size_t operator()(InputVariant const& v) const;
 };
 
 class Input {
 public:
 
-  static Json inputEventToJson(InputEvent const& event);
+  [[nodiscard]] static Json inputEventToJson(InputEvent const& event);
 
   struct KeyBind {
     Key key = Key::Zero;
@@ -61,8 +61,8 @@ public:
 
   using Bind = MVariant<KeyBind, MouseBind, ControllerBind>;
 
-  static Bind bindFromJson(Json const& json);
-  static Json bindToJson(Bind const& bind);
+  [[nodiscard]] static Bind bindFromJson(Json const& json);
+  [[nodiscard]] static Json bindToJson(Bind const& bind);
 
   struct BindCategory;
 
@@ -157,7 +157,7 @@ public:
   void update();
 
   // Handles an input event.
-  bool handleInput(InputEvent const& input, bool gameProcessed);
+  [[nodiscard]] bool handleInput(InputEvent const& input, bool gameProcessed);
 
   void rebuildMappings();
 
@@ -166,26 +166,26 @@ public:
 
   void setTextInputActive(bool active);
 
-  Maybe<unsigned> bindDown(String const& categoryId, String const& bindId);
-  bool            bindHeld(String const& categoryId, String const& bindId);
-  Maybe<unsigned> bindUp  (String const& categoryId, String const& bindId);
+  [[nodiscard]] Maybe<unsigned> bindDown(String const& categoryId, String const& bindId);
+  [[nodiscard]] bool            bindHeld(String const& categoryId, String const& bindId);
+  [[nodiscard]] Maybe<unsigned> bindUp  (String const& categoryId, String const& bindId);
 
-  Maybe<unsigned> keyDown(Key key, Maybe<KeyMod> keyMod);
-  bool            keyHeld(Key key);
-  Maybe<unsigned> keyUp  (Key key);
+  [[nodiscard]] Maybe<unsigned> keyDown(Key key, Maybe<KeyMod> keyMod);
+  [[nodiscard]] bool            keyHeld(Key key);
+  [[nodiscard]] Maybe<unsigned> keyUp  (Key key);
 
-  Maybe<List<Vec2F>> mouseDown(MouseButton button);
-  bool               mouseHeld(MouseButton button);
-  Maybe<List<Vec2F>> mouseUp  (MouseButton button);
+  [[nodiscard]] Maybe<List<Vec2F>> mouseDown(MouseButton button);
+  [[nodiscard]] bool               mouseHeld(MouseButton button);
+  [[nodiscard]] Maybe<List<Vec2F>> mouseUp  (MouseButton button);
 
-  Vec2F mousePosition() const;
+  [[nodiscard]] Vec2F mousePosition() const;
 
   void resetBinds(String const& categoryId, String const& bindId);
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
-  Json getDefaultBinds(String const& categoryId, String const& bindId); 
-  Json getBinds(String const& categoryId, String const& bindId);
+  [[nodiscard]] Json getDefaultBinds(String const& categoryId, String const& bindId); 
+  [[nodiscard]] Json getBinds(String const& categoryId, String const& bindId);
 
-  unsigned getTag(String const& tagName) const;
+  [[nodiscard]] unsigned getTag(String const& tagName) const;
 
   class ClipboardUnlock {
   public:
@@ -198,17 +198,17 @@ public:
     Input* m_input;
   };
 
-  ClipboardUnlock unlockClipboard();
-  bool clipboardAllowed() const;
+  [[nodiscard]] ClipboardUnlock unlockClipboard();
+  [[nodiscard]] bool clipboardAllowed() const;
 private:
-  List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
+  [[nodiscard]] List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
 
-  BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
-  BindEntry& bindEntry(String const& categoryId, String const& bindId);
+  [[nodiscard]] BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
+  [[nodiscard]] BindEntry& bindEntry(String const& categoryId, String const& bindId);
 
-  InputState* bindStatePtr(String const& categoryId, String const& bindId);
+  [[nodiscard]] InputState* bindStatePtr(String const& categoryId, String const& bindId);
 
-  InputState& addBindState(BindEntry const& bindEntry);
+  [[nodiscard]] InputState& addBindState(BindEntry const& bindEntry);
 
   // Regenerated on reload.
   StableHashMap<String, BindCategory> m_bindCategories;

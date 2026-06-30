@@ -10,7 +10,7 @@ struct RotateSelector : TerrainSelector {
 
   RotateSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   float rotation;
   Vec2F rotationCenter;

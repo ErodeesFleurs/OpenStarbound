@@ -40,7 +40,7 @@ public:
   void forwardPage();
   void backwardPage();
 
-  bool showNewCodex();
+  [[nodiscard]] bool showNewCodex();
 
 private:
   void updateSpecies();

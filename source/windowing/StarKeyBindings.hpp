@@ -87,13 +87,13 @@ struct KeyChord {
   Key key;
   KeyMod mods;
 
-  bool operator<(KeyChord const& rhs) const;
+  [[nodiscard]] bool operator<(KeyChord const& rhs) const;
 };
 
-KeyChord inputDescriptorFromJson(Json const& json);
-Json inputDescriptorToJson(KeyChord const& chord);
+[[nodiscard]] KeyChord inputDescriptorFromJson(Json const& json);
+[[nodiscard]] Json inputDescriptorToJson(KeyChord const& chord);
 
-String printInputDescriptor(KeyChord chord);
+[[nodiscard]] String printInputDescriptor(KeyChord chord);
 
 class KeyBindings;
 using KeyBindingsPtr = SharedPtr<KeyBindings>;
@@ -103,10 +103,10 @@ public:
   KeyBindings() = default;
   explicit KeyBindings(Json const& json);
 
-  Set<InterfaceAction> actions(Key key) const;
-  Set<InterfaceAction> actions(InputEvent const& event) const;
-  Set<InterfaceAction> actions(KeyChord chord) const;
-  Set<InterfaceAction> actionsForKey(Key key) const;
+  [[nodiscard]] Set<InterfaceAction> actions(Key key) const;
+  [[nodiscard]] Set<InterfaceAction> actions(InputEvent const& event) const;
+  [[nodiscard]] Set<InterfaceAction> actions(KeyChord chord) const;
+  [[nodiscard]] Set<InterfaceAction> actionsForKey(Key key) const;
 
 private:
   struct KeyBindingAction {

@@ -34,16 +34,16 @@ public:
   ArmorWearer(ItemDatabaseConstPtr itemDatabase);
 
   // returns true if movement parameters changed
-  bool setupHumanoid(Humanoid& humanoid, bool forceNude);
+  [[nodiscard]] bool setupHumanoid(Humanoid& humanoid, bool forceNude);
   void effects(EffectEmitter& effectEmitter);
-  List<PersistentStatusEffect> statusEffects(bool cosmeticOnly = false) const;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects(bool cosmeticOnly = false) const;
 
   void reset();
 
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
   void diskLoad(Json const& diskStore);
 
-  bool setItem(uint8_t slot, ArmorItemPtr item, bool visible = true);
+  [[nodiscard]] bool setItem(uint8_t slot, ArmorItemPtr item, bool visible = true);
   void setHeadItem(HeadArmorPtr headItem);
   void setChestItem(ChestArmorPtr chestItem);
   void setLegsItem(LegsArmorPtr legsItem);
@@ -53,30 +53,30 @@ public:
   void setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem);
   void setBackCosmeticItem(BackArmorPtr backCosmeticItem);
 
-  ArmorItemPtr item(uint8_t slot) const;
-  HeadArmorPtr headItem() const;
-  ChestArmorPtr chestItem() const;
-  LegsArmorPtr legsItem() const;
-  BackArmorPtr backItem() const;
-  HeadArmorPtr headCosmeticItem() const;
-  ChestArmorPtr chestCosmeticItem() const;
-  LegsArmorPtr legsCosmeticItem() const;
-  BackArmorPtr backCosmeticItem() const;
+  [[nodiscard]] ArmorItemPtr item(uint8_t slot) const;
+  [[nodiscard]] HeadArmorPtr headItem() const;
+  [[nodiscard]] ChestArmorPtr chestItem() const;
+  [[nodiscard]] LegsArmorPtr legsItem() const;
+  [[nodiscard]] BackArmorPtr backItem() const;
+  [[nodiscard]] HeadArmorPtr headCosmeticItem() const;
+  [[nodiscard]] ChestArmorPtr chestCosmeticItem() const;
+  [[nodiscard]] LegsArmorPtr legsCosmeticItem() const;
+  [[nodiscard]] BackArmorPtr backCosmeticItem() const;
 
-  ItemDescriptor itemDescriptor(uint8_t slot) const;
-  ItemDescriptor headItemDescriptor() const;
-  ItemDescriptor chestItemDescriptor() const;
-  ItemDescriptor legsItemDescriptor() const;
-  ItemDescriptor backItemDescriptor() const;
-  ItemDescriptor headCosmeticItemDescriptor() const;
-  ItemDescriptor chestCosmeticItemDescriptor() const;
-  ItemDescriptor legsCosmeticItemDescriptor() const;
-  ItemDescriptor backCosmeticItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor itemDescriptor(uint8_t slot) const;
+  [[nodiscard]] ItemDescriptor headItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor chestItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor legsItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor backItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor headCosmeticItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor chestCosmeticItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor legsCosmeticItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor backCosmeticItemDescriptor() const;
 
   // slot is automatically offset
-  bool setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem);
-  ArmorItemPtr cosmeticItem(uint8_t slot) const;
-  ItemDescriptor cosmeticItemDescriptor(uint8_t slot) const;
+  [[nodiscard]] bool setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem);
+  [[nodiscard]] ArmorItemPtr cosmeticItem(uint8_t slot) const;
+  [[nodiscard]] ItemDescriptor cosmeticItemDescriptor(uint8_t slot) const;
 private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;

@@ -42,7 +42,7 @@ void LiquidItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   m_shifting = shifting;
 }
 
-List<Drawable> LiquidItem::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> LiquidItem::nonRotatedDrawables() const {
   return beamDrawables(canPlace(m_shifting));
 }
 
@@ -78,15 +78,15 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 }
 
-LiquidId LiquidItem::liquidId() const {
+[[nodiscard]] LiquidId LiquidItem::liquidId() const {
   return m_liquidId;
 }
 
-float LiquidItem::liquidQuantity() const {
+[[nodiscard]] float LiquidItem::liquidQuantity() const {
   return m_quantity;
 }
 
-List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
+[[nodiscard]] List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
     auto liquid = liquidId();
@@ -113,7 +113,7 @@ List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
   return result;
 }
 
-bool LiquidItem::canPlace(bool shifting) const {
+[[nodiscard]] bool LiquidItem::canPlace(bool shifting) const {
   if (initialized()) {
     float radius;
     if (!shifting)
@@ -132,7 +132,7 @@ bool LiquidItem::canPlace(bool shifting) const {
   return false;
 }
 
-bool LiquidItem::canPlaceAtTile(Vec2I pos) const {
+[[nodiscard]] bool LiquidItem::canPlaceAtTile(Vec2I pos) const {
   auto bgTileMaterial = world()->material(pos, TileLayer::Background);
   if (bgTileMaterial != EmptyMaterialId) {
     auto fgTileMaterial = world()->material(pos, TileLayer::Foreground);
@@ -145,7 +145,7 @@ bool LiquidItem::canPlaceAtTile(Vec2I pos) const {
   return false;
 }
 
-bool LiquidItem::multiplaceEnabled() const {
+[[nodiscard]] bool LiquidItem::multiplaceEnabled() const {
   return (count() > 1);
 }
 

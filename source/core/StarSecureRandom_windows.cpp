@@ -4,7 +4,7 @@
 
 namespace Star {
 
-ByteArray secureRandomBytes(size_t size) {
+[[nodiscard]] ByteArray secureRandomBytes(size_t size) {
   HCRYPTPROV context = 0;
   auto res = ByteArray(size, '\0');
 

@@ -13,7 +13,7 @@ BiomePlaceables::BiomePlaceables(Json const& variant) {
   itemDistributions = variant.getArray("itemDistributions").transformed(construct<BiomeItemDistribution>());
 }
 
-Json BiomePlaceables::toJson() const {
+[[nodiscard]] Json BiomePlaceables::toJson() const {
   return JsonObject{
     {"grassMod", grassMod},
     {"grassModDensity", grassModDensity},
@@ -23,7 +23,7 @@ Json BiomePlaceables::toJson() const {
   };
 }
 
-Maybe<TreeVariant> BiomePlaceables::firstTreeType() const {
+[[nodiscard]] Maybe<TreeVariant> BiomePlaceables::firstTreeType() const {
   for (auto const& itemDistribution : itemDistributions) {
     for (auto const& biomeItem : itemDistribution.allItems()) {
       if (biomeItem.is<TreePair>())
@@ -59,7 +59,7 @@ Biome::Biome(Json const& store) : Biome() {
     musicTrack = make_shared<AmbientNoisesDescription>(*config);
 }
 
-Json Biome::toJson() const {
+[[nodiscard]] Json Biome::toJson() const {
   return JsonObject{{"baseName", baseName},
       {"description", description},
       {"mainBlock", mainBlock},

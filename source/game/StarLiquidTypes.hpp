@@ -11,7 +11,7 @@ struct LiquidLevel {
   LiquidLevel() = default;
   LiquidLevel(LiquidId liquid, float level);
 
-  LiquidLevel take(float amount);
+  [[nodiscard]] LiquidLevel take(float amount);
 
   LiquidId liquid = EmptyLiquidId;
   float level = 0.0f;
@@ -21,23 +21,23 @@ struct LiquidNetUpdate {
   LiquidId liquid;
   uint8_t level;
 
-  LiquidLevel liquidLevel() const;
+  [[nodiscard]] LiquidLevel liquidLevel() const;
 };
 
 struct LiquidStore : LiquidLevel {
   // Returns a LiquidStore of the given liquid
-  static LiquidStore filled(LiquidId liquid, float level, Maybe<float> pressure = {});
+  [[nodiscard]] static LiquidStore filled(LiquidId liquid, float level, Maybe<float> pressure = {});
   // Returns a LiquidStore source liquid block
-  static LiquidStore endless(LiquidId liquid, float pressure);
+  [[nodiscard]] static LiquidStore endless(LiquidId liquid, float pressure);
 
   LiquidStore() = default;
   LiquidStore(LiquidId liquid, float level, float pressure, bool source);
 
-  LiquidNetUpdate netUpdate() const;
+  [[nodiscard]] LiquidNetUpdate netUpdate() const;
 
-  Maybe<LiquidNetUpdate> update(LiquidId liquid, float level, float pressure);
+  [[nodiscard]] Maybe<LiquidNetUpdate> update(LiquidId liquid, float level, float pressure);
 
-  LiquidLevel take(float amount);
+  [[nodiscard]] LiquidLevel take(float amount);
 
   float pressure{};
   bool source{};

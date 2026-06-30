@@ -22,51 +22,51 @@ class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
-  static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
 
   ItemDrop(ItemPtr item, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
   ItemDrop(Json const& diskStore, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
   ItemDrop(ByteArray netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
-  EntityType entityType() const override;
+  [[nodiscard]] EntityType entityType() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] String name() const override;
+  [[nodiscard]] String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  bool ephemeral() const override;
+  [[nodiscard]] bool ephemeral() const override;
 
-  RectF collisionArea() const override;
+  [[nodiscard]] RectF collisionArea() const override;
 
   void update(float dt, uint64_t currentStep) override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
 
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
   // The item that this drop contains
-  ItemPtr item() const;
+  [[nodiscard]] ItemPtr item() const;
 
   void setEternal(bool eternal);
 
@@ -76,26 +76,26 @@ public:
 
   // Mark this drop as taken by the given entity.  The drop will animate
   // towards them for a while and then disappear.
-  ItemPtr takeBy(EntityId entityId, float timeOffset = 0.0f);
+  [[nodiscard]] ItemPtr takeBy(EntityId entityId, float timeOffset = 0.0f);
 
   // Mark this drop as taken, but do not animate it towards a player simply
   // disappear next step.
-  ItemPtr take();
+  [[nodiscard]] ItemPtr take();
 
   // Item is not taken and is not intangible
-  bool canTake() const;
+  [[nodiscard]] bool canTake() const;
 
   void setPosition(Vec2F const& position);
 
-  Vec2F velocity() const;
+  [[nodiscard]] Vec2F velocity() const;
   void setVelocity(Vec2F const& position);
   
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] Json configValue(String const& name, Json const& def = Json()) const;
   
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
   
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
 private:
   enum class Mode { Intangible, Available, Taken, Dead };
@@ -109,7 +109,7 @@ private:
 
   void updateTaken(bool master);
   
-  LuaCallbacks makeItemDropCallbacks();
+  [[nodiscard]] LuaCallbacks makeItemDropCallbacks();
 
   Json m_config;
   Json m_parameters;

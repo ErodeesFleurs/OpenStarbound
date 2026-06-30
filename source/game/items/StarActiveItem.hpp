@@ -27,47 +27,47 @@ public:
   ActiveItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void uninit() override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<DamageSource> damageSources() const override;
-  List<PolyF> shieldPolys() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<PolyF> shieldPolys() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
 
-  bool holdingItem() const;
-  Maybe<String> backArmFrame() const;
-  Maybe<String> frontArmFrame() const;
-  bool twoHandedGrip() const;
-  bool recoil() const;
-  bool outsideOfHand() const;
+  [[nodiscard]] bool holdingItem() const;
+  [[nodiscard]] Maybe<String> backArmFrame() const;
+  [[nodiscard]] Maybe<String> frontArmFrame() const;
+  [[nodiscard]] bool twoHandedGrip() const;
+  [[nodiscard]] bool recoil() const;
+  [[nodiscard]] bool outsideOfHand() const;
 
-  float armAngle() const;
-  Maybe<Direction> facingDirection() const;
+  [[nodiscard]] float armAngle() const;
+  [[nodiscard]] Maybe<Direction> facingDirection() const;
 
   // Hand drawables are in hand-space, everything else is in world space.
-  List<Drawable> handDrawables() const;
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
-  List<LightSource> lights() const;
-  List<AudioInstancePtr> pullNewAudios();
-  List<Particle> pullNewParticles();
+  [[nodiscard]] List<Drawable> handDrawables() const;
+  [[nodiscard]] List<pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
+  [[nodiscard]] List<LightSource> lights() const;
+  [[nodiscard]] List<AudioInstancePtr> pullNewAudios();
+  [[nodiscard]] List<Particle> pullNewParticles();
 
-  Maybe<String> cursor() const;
+  [[nodiscard]] Maybe<String> cursor() const;
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
-  float durabilityStatus() override;
+  [[nodiscard]] float durabilityStatus() override;
 
 private:
-  Vec2F armPosition(Vec2F const& offset) const;
-  Vec2F handPosition(Vec2F const& offset) const;
+  [[nodiscard]] Vec2F armPosition(Vec2F const& offset) const;
+  [[nodiscard]] Vec2F handPosition(Vec2F const& offset) const;
 
-  LuaCallbacks makeActiveItemCallbacks();
-  LuaCallbacks makeScriptedAnimationCallbacks();
+  [[nodiscard]] LuaCallbacks makeActiveItemCallbacks();
+  [[nodiscard]] LuaCallbacks makeScriptedAnimationCallbacks();
 
   AssetsConstPtr m_assets;
   ParticleDatabaseConstPtr m_particleDatabase;

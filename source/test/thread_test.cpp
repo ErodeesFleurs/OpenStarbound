@@ -32,7 +32,7 @@ TEST(Thread, InvokeReturn) {
   });
 
   EXPECT_EQ(functionRet.finish(), String("TestValue"));
-  EXPECT_THROW(functionRet.finish(), InvalidMaybeAccessException);
+  EXPECT_THROW((void)functionRet.finish(), InvalidMaybeAccessException);
 }
 
 TEST(Thread, MoveAssignFinishesExistingFunction) {

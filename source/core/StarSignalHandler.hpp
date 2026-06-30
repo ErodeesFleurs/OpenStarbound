@@ -16,14 +16,14 @@ public:
   // If enabled, will catch segfault, fpe, and illegal instructions and output
   // error information before dying.
   void setHandleFatal(bool handleFatal);
-  bool handlingFatal() const;
+  [[nodiscard]] bool handlingFatal() const;
 
   // If enabled, non-fatal interrupt signal will be caught and will not kill
   // the process and will instead set the interrupted flag.
   void setHandleInterrupt(bool handleInterrupt);
-  bool handlingInterrupt() const;
+  [[nodiscard]] bool handlingInterrupt() const;
 
-  bool interruptCaught() const;
+  [[nodiscard]] bool interruptCaught() const;
 
 private:
   friend SignalHandlerImpl;

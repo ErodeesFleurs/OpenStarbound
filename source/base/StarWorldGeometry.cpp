@@ -2,7 +2,7 @@
 
 namespace Star {
 
-function<float(float, float)> WorldGeometry::xDiffFunction() const {
+[[nodiscard]] function<float(float, float)> WorldGeometry::xDiffFunction() const {
   if (m_size[0] == 0) {
     return [](float x1, float x2) -> float { return x1 - x2; };
   } else {
@@ -11,7 +11,7 @@ function<float(float, float)> WorldGeometry::xDiffFunction() const {
   }
 }
 
-function<Vec2F(Vec2F, Vec2F)> WorldGeometry::diffFunction() const {
+[[nodiscard]] function<Vec2F(Vec2F, Vec2F)> WorldGeometry::diffFunction() const {
   if (m_size[0] == 0) {
     return [](Vec2F const& a, Vec2F const& b) -> Vec2F { return a - b; };
   } else {
@@ -22,7 +22,7 @@ function<Vec2F(Vec2F, Vec2F)> WorldGeometry::diffFunction() const {
   }
 }
 
-function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> discontinuityThreshold) const {
+[[nodiscard]] function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, float min, float) -> float { return min; };
   } else {
@@ -36,7 +36,7 @@ function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> d
   }
 }
 
-function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(Maybe<float> discontinuityThreshold) const {
+[[nodiscard]] function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(Maybe<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, Vec2F const& min, Vec2F const&) -> Vec2F { return min; };
   } else {
@@ -50,7 +50,7 @@ function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(Maybe<float> di
   }
 }
 
-StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
+[[nodiscard]] StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
   if (bbox.isNull() || m_size[0] == 0)
     return {bbox};
 
@@ -58,7 +58,7 @@ StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
   RectF bboxWrap = RectF(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= static_cast<float>(m_size[0]));
+  assert(bbox.xMax() - bbox.xMin() <= static_cast<float>(m_size[0]));
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
@@ -70,12 +70,12 @@ StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
   }
 }
 
-StaticList<RectF, 2> WorldGeometry::splitRect(RectF bbox, Vec2F const& position) const {
+[[nodiscard]] StaticList<RectF, 2> WorldGeometry::splitRect(RectF bbox, Vec2F const& position) const {
   bbox.translate(position);
   return splitRect(bbox);
 }
 
-StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
+[[nodiscard]] StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
   if (bbox.isNull() || m_size[0] == 0)
     return {bbox};
 
@@ -83,7 +83,7 @@ StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
   RectI bboxWrap = RectI(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= static_cast<int>(m_size[0]));
+  assert(bbox.xMax() - bbox.xMin() <= static_cast<int>(m_size[0]));
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
@@ -95,7 +95,7 @@ StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
   }
 }
 
-StaticList<Line2F, 2> WorldGeometry::splitLine(Line2F line, bool preserveDirection) const {
+[[nodiscard]] StaticList<Line2F, 2> WorldGeometry::splitLine(Line2F line, bool preserveDirection) const {
   if (m_size[0] == 0)
     return {line};
 
@@ -122,12 +122,12 @@ StaticList<Line2F, 2> WorldGeometry::splitLine(Line2F line, bool preserveDirecti
   }
 }
 
-StaticList<Line2F, 2> WorldGeometry::splitLine(Line2F line, Vec2F const& position, bool preserveDirection) const {
+[[nodiscard]] StaticList<Line2F, 2> WorldGeometry::splitLine(Line2F line, Vec2F const& position, bool preserveDirection) const {
   line.translate(position);
   return splitLine(line, preserveDirection);
 }
 
-StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
+[[nodiscard]] StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
   if (poly.isNull() || m_size[0] == 0)
     return {poly};
 
@@ -186,19 +186,19 @@ StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
     return {res[0], res[1]};
 }
 
-StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF poly, Vec2F const& position) const {
+[[nodiscard]] StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF poly, Vec2F const& position) const {
   poly.translate(position);
   return splitPoly(poly);
 }
 
-StaticList<Vec2I, 2> WorldGeometry::splitXRegion(Vec2I const& xRegion) const {
+[[nodiscard]] StaticList<Vec2I, 2> WorldGeometry::splitXRegion(Vec2I const& xRegion) const {
   if (m_size[0] == 0)
     return {xRegion};
 
-  starAssert(xRegion[1] >= xRegion[0]);
+  assert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= static_cast<int>(m_size[0]));
+  assert(xRegion[1] - xRegion[0] <= static_cast<int>(m_size[0]));
 
   int x1 = xwrap(xRegion[0]);
   int x2 = x1 + xRegion[1] - xRegion[0];
@@ -210,14 +210,14 @@ StaticList<Vec2I, 2> WorldGeometry::splitXRegion(Vec2I const& xRegion) const {
   }
 }
 
-StaticList<Vec2F, 2> WorldGeometry::splitXRegion(Vec2F const& xRegion) const {
+[[nodiscard]] StaticList<Vec2F, 2> WorldGeometry::splitXRegion(Vec2F const& xRegion) const {
   if (m_size[0] == 0)
     return {xRegion};
 
-  starAssert(xRegion[1] >= xRegion[0]);
+  assert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= static_cast<float>(m_size[0]));
+  assert(xRegion[1] - xRegion[0] <= static_cast<float>(m_size[0]));
 
   float x1 = xwrap(xRegion[0]);
   float x2 = x1 + xRegion[1] - xRegion[0];
@@ -229,7 +229,7 @@ StaticList<Vec2F, 2> WorldGeometry::splitXRegion(Vec2F const& xRegion) const {
   }
 }
 
-bool WorldGeometry::rectContains(RectF const& rect, Vec2F const& pos) const {
+[[nodiscard]] bool WorldGeometry::rectContains(RectF const& rect, Vec2F const& pos) const {
   auto wpos = xwrap(pos);
   for (auto const& r : splitRect(rect)) {
     if (r.contains(wpos))
@@ -238,7 +238,7 @@ bool WorldGeometry::rectContains(RectF const& rect, Vec2F const& pos) const {
   return false;
 }
 
-bool WorldGeometry::rectIntersectsRect(RectF const& rect1, RectF const& rect2) const {
+[[nodiscard]] bool WorldGeometry::rectIntersectsRect(RectF const& rect1, RectF const& rect2) const {
   for (auto const& r1 : splitRect(rect1)) {
     for (auto const& r2 : splitRect(rect2)) {
       if (r1.intersects(r2))
@@ -248,11 +248,11 @@ bool WorldGeometry::rectIntersectsRect(RectF const& rect1, RectF const& rect2) c
   return false;
 }
 
-RectF WorldGeometry::rectOverlap(RectF const& rect1, RectF const& rect2) const {
+[[nodiscard]] RectF WorldGeometry::rectOverlap(RectF const& rect1, RectF const& rect2) const {
   return rect1.overlap(RectF::withSize(nearestTo(rect1.min(), rect2.min()), rect2.size()));
 }
 
-bool WorldGeometry::polyContains(PolyF const& poly, Vec2F const& pos) const {
+[[nodiscard]] bool WorldGeometry::polyContains(PolyF const& poly, Vec2F const& pos) const {
   auto wpos = xwrap(pos);
   for (auto const& splitPolygon : splitPoly(poly)) {
     if (splitPolygon.contains(wpos))
@@ -261,7 +261,7 @@ bool WorldGeometry::polyContains(PolyF const& poly, Vec2F const& pos) const {
   return false;
 }
 
-float WorldGeometry::polyOverlapArea(PolyF const& poly1, PolyF const& poly2) const {
+[[nodiscard]] float WorldGeometry::polyOverlapArea(PolyF const& poly1, PolyF const& poly2) const {
   float area = 0.0f;
   for (auto const& p1 : splitPoly(poly1)) {
     for (auto const& p2 : splitPoly(poly2))
@@ -270,7 +270,7 @@ float WorldGeometry::polyOverlapArea(PolyF const& poly1, PolyF const& poly2) con
   return area;
 }
 
-bool WorldGeometry::lineIntersectsRect(Line2F const& line, RectF const& rect) const {
+[[nodiscard]] bool WorldGeometry::lineIntersectsRect(Line2F const& line, RectF const& rect) const {
   for (auto l : splitLine(line)) {
     for (auto box : splitRect(rect)) {
       if (box.intersects(l)) {
@@ -281,7 +281,7 @@ bool WorldGeometry::lineIntersectsRect(Line2F const& line, RectF const& rect) co
   return false;
 }
 
-bool WorldGeometry::lineIntersectsPoly(Line2F const& line, PolyF const& poly) const {
+[[nodiscard]] bool WorldGeometry::lineIntersectsPoly(Line2F const& line, PolyF const& poly) const {
   for (auto a : splitLine(line)) {
     for (auto b : splitPoly(poly)) {
       if (b.intersects(a)) {
@@ -293,7 +293,7 @@ bool WorldGeometry::lineIntersectsPoly(Line2F const& line, PolyF const& poly) co
   return false;
 }
 
-bool WorldGeometry::polyIntersectsPoly(PolyF const& polyA, PolyF const& polyB) const {
+[[nodiscard]] bool WorldGeometry::polyIntersectsPoly(PolyF const& polyA, PolyF const& polyB) const {
   for (auto a : splitPoly(polyA)) {
     for (auto b : splitPoly(polyB)) {
       if (b.intersects(a))
@@ -304,7 +304,7 @@ bool WorldGeometry::polyIntersectsPoly(PolyF const& polyA, PolyF const& polyB) c
   return false;
 }
 
-bool WorldGeometry::rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const {
+[[nodiscard]] bool WorldGeometry::rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const {
   if (rect.contains(center))
     return true;
   for (auto const& edge : rect.edges()) {
@@ -314,7 +314,7 @@ bool WorldGeometry::rectIntersectsCircle(RectF const& rect, Vec2F const& center,
   return false;
 }
 
-bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const {
+[[nodiscard]] bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const {
   for (auto const& sline : splitLine(line)) {
     if (sline.distanceTo(nearestTo(sline.center(), center)) <= radius)
       return true;
@@ -322,7 +322,7 @@ bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center
   return false;
 }
 
-Maybe<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
+[[nodiscard]] Maybe<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
   for (auto a : splitLine(line, true)) {
     for (auto b : splitPoly(poly)) {
       if (auto intersection = b.lineIntersection(a))
@@ -333,12 +333,12 @@ Maybe<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const
   return {};
 }
 
-float WorldGeometry::polyDistance(PolyF const& poly, Vec2F const& point) const {
+[[nodiscard]] float WorldGeometry::polyDistance(PolyF const& poly, Vec2F const& point) const {
   auto spoint = nearestTo(poly.center(), point);
   return poly.distance(spoint);
 }
 
-Vec2F WorldGeometry::nearestCoordInBox(RectF const& box, Vec2F const& pos) const {
+[[nodiscard]] Vec2F WorldGeometry::nearestCoordInBox(RectF const& box, Vec2F const& pos) const {
   RectF t(box);
   auto offset = t.center();
   auto r = diff(pos, offset);
@@ -346,7 +346,7 @@ Vec2F WorldGeometry::nearestCoordInBox(RectF const& box, Vec2F const& pos) const
   return t.nearestCoordTo(r) + offset;
 }
 
-Vec2F WorldGeometry::diffToNearestCoordInBox(RectF const& box, Vec2F const& pos) const {
+[[nodiscard]] Vec2F WorldGeometry::diffToNearestCoordInBox(RectF const& box, Vec2F const& pos) const {
   RectF t(box);
   auto offset = t.center();
   auto r = diff(pos, offset);

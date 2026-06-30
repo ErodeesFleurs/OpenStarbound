@@ -268,8 +268,8 @@ TEST(FormattedJsonTest, Queries) {
   EXPECT_TRUE(json3.contains("c"));
   EXPECT_TRUE(json3.contains("b"));
 
-  ASSERT_THROW(FormattedJson::parse("123").size(), JsonException);
-  ASSERT_THROW(json2.contains("1"), JsonException);
+  ASSERT_THROW((void)FormattedJson::parse("123").size(), JsonException);
+  ASSERT_THROW((void)json2.contains("1"), JsonException);
 }
 
 TEST(FormattedJsonTest, Types) {

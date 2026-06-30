@@ -43,14 +43,14 @@ struct Particle {
   // to the given asset path
   explicit Particle(Json const& config, String const& assetsPath = "/", AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   void translate(Vec2F const& pos);
 
   // Updates position, velocity, rotation, and timeToLive.
   void update(float dt, Vec2F const& wind = Vec2F());
 
-  bool dead() const;
+  [[nodiscard]] bool dead() const;
 
   // Apply random variance to this particle based on a "variance" particle that
   // contains the maximum amount of variance for each field.
@@ -124,6 +124,6 @@ DataStream& operator<<(DataStream& ds, Particle const& particle);
 DataStream& operator>>(DataStream& ds, Particle& particle);
 
 using ParticleVariantCreator = function<Particle()>;
-ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
+[[nodiscard]] ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
 
 }

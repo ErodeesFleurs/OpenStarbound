@@ -44,7 +44,7 @@ struct SpawnParameters {
   SpawnParameters(Json const& config = {});
   SpawnParameters(Set<Area> areas, Region region, Time time);
 
-  bool compatible(SpawnParameters const& parameters) const;
+  [[nodiscard]] bool compatible(SpawnParameters const& parameters) const;
 
   Set<Area> areas;
   Region region;
@@ -67,26 +67,26 @@ struct SpawnType {
   uint64_t seedMix;
 };
 
-SpawnType spawnTypeFromJson(Json const& config);
+[[nodiscard]] SpawnType spawnTypeFromJson(Json const& config);
 
 struct SpawnProfile {
   SpawnProfile() = default;
   SpawnProfile(Json const& config);
   SpawnProfile(StringSet spawnTypes, Json monsterParameters);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   StringSet spawnTypes;
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups, uint64_t seed);
+[[nodiscard]] SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups, uint64_t seed);
 
 class SpawnTypeDatabase {
 public:
   SpawnTypeDatabase(AssetsConstPtr assets);
 
-  SpawnType spawnType(String const& typeName) const;
+  [[nodiscard]] SpawnType spawnType(String const& typeName) const;
 
 private:
   StringMap<SpawnType> m_spawnTypes;

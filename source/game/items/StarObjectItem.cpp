@@ -35,11 +35,11 @@ void ObjectItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   m_shifting = shifting;
 }
 
-List<Drawable> ObjectItem::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> ObjectItem::nonRotatedDrawables() const {
   return beamDrawables(canPlace(m_shifting));
 }
 
-float ObjectItem::cooldownTime() const {
+[[nodiscard]] float ObjectItem::cooldownTime() const {
   // TODO: Hardcoded
   return 0.25f;
 }
@@ -52,11 +52,11 @@ void ObjectItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     FireableItem::fire(mode, shifting, edgeTriggered);
 }
 
-String ObjectItem::objectName() const {
+[[nodiscard]] String ObjectItem::objectName() const {
   return instanceValue("objectName", "<objectName missing>").toString();
 }
 
-Json ObjectItem::objectParameters() const {
+[[nodiscard]] Json ObjectItem::objectParameters() const {
   Json objectParameters = parameters().opt().value(JsonObject{});
   if (!initialized())
     return objectParameters;
@@ -92,7 +92,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
   return false;
 }
 
-bool ObjectItem::canPlace(bool) const {
+[[nodiscard]] bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
     if (owner()->isAdmin() || owner()->inToolRange()) {
       auto pos = Vec2I(owner()->aimPosition().floor());

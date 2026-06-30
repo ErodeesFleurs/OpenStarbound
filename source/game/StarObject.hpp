@@ -42,31 +42,31 @@ public:
 
   Object(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] EntityType entityType() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] String name() const override;
+  [[nodiscard]] String description() const override;
 
-  bool inspectable() const override;
-  Maybe<String> inspectionLogName() const override;
-  Maybe<String> inspectionDescription(String const& species) const override;
+  [[nodiscard]] bool inspectable() const override;
+  [[nodiscard]] Maybe<String> inspectionLogName() const override;
+  [[nodiscard]] Maybe<String> inspectionDescription(String const& species) const override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] List<LightSource> lightSources() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
   void update(float dt, uint64_t currentStep) override;
@@ -75,15 +75,15 @@ public:
 
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  bool checkBroken() override;
+  [[nodiscard]] bool checkBroken() override;
 
-  Vec2I tilePosition() const override;
+  [[nodiscard]] Vec2I tilePosition() const override;
 
-  List<Vec2I> spaces() const override;
-  List<MaterialSpace> materialSpaces() const override;
-  List<Vec2I> roots() const override;
+  [[nodiscard]] List<Vec2I> spaces() const override;
+  [[nodiscard]] List<MaterialSpace> materialSpaces() const override;
+  [[nodiscard]] List<Vec2I> roots() const override;
 
-  Direction direction() const;
+  [[nodiscard]] Direction direction() const;
   void setDirection(Direction direction);
 
   // Updates tile position and calls updateOrientation
@@ -91,72 +91,72 @@ public:
 
   // Find a new valid orientation for the object
   void updateOrientation();
-  List<Vec2I> anchorPositions() const;
+  [[nodiscard]] List<Vec2I> anchorPositions() const;
 
-  virtual List<Drawable> cursorHintDrawables() const;
+  [[nodiscard]] virtual List<Drawable> cursorHintDrawables() const;
 
-  String shortDescription() const;
-  String category() const;
+  [[nodiscard]] String shortDescription() const;
+  [[nodiscard]] String category() const;
 
-  virtual ObjectOrientationPtr currentOrientation() const;
+  [[nodiscard]] virtual ObjectOrientationPtr currentOrientation() const;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  PolyF statusEffectArea() const override;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] PolyF statusEffectArea() const override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& damage) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  bool canBeDamaged() const override;
+  [[nodiscard]] bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  [[nodiscard]] bool canBeDamaged() const override;
 
-  RectF interactiveBoundBox() const override;
+  [[nodiscard]] RectF interactiveBoundBox() const override;
 
-  bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
-  List<Vec2I> interactiveSpaces() const override;
+  [[nodiscard]] bool isInteractive() const override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] List<Vec2I> interactiveSpaces() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  List<ChatAction> pullPendingChatActions() override;
+  [[nodiscard]] Vec2F mouthPosition() const override;
+  [[nodiscard]] Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] List<ChatAction> pullPendingChatActions() override;
 
   void breakObject(bool smash = true);
 
-  size_t nodeCount(WireDirection direction) const override;
-  Vec2I nodePosition(WireNode wireNode) const override;
-  List<WireConnection> connectionsForNode(WireNode wireNode) const override;
-  bool nodeState(WireNode wireNode) const override;
+  [[nodiscard]] size_t nodeCount(WireDirection direction) const override;
+  [[nodiscard]] Vec2I nodePosition(WireNode wireNode) const override;
+  [[nodiscard]] List<WireConnection> connectionsForNode(WireNode wireNode) const override;
+  [[nodiscard]] bool nodeState(WireNode wireNode) const override;
 
-  String nodeIcon(WireNode wireNode) const override;
-  Color nodeColor(WireNode wireNode) const override;
+  [[nodiscard]] String nodeIcon(WireNode wireNode) const override;
+  [[nodiscard]] Color nodeColor(WireNode wireNode) const override;
 
   void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
   void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
 
   void evaluate(WireCoordinator* coordinator) override;
 
-  List<QuestArcDescriptor> offeredQuests() const override;
-  StringSet turnInQuests() const override;
-  Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] List<QuestArcDescriptor> offeredQuests() const override;
+  [[nodiscard]] StringSet turnInQuests() const override;
+  [[nodiscard]] Vec2F questIndicatorPosition() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   // Check, in order, the passed in object parameters, the config parameters,
   // and then the orientation parameters for the given key.  Returns 'def' if
   // no value is found.
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] Json configValue(String const& name, Json const& def = Json()) const;
 
-  ObjectConfigConstPtr config() const;
+  [[nodiscard]] ObjectConfigConstPtr config() const;
 
-  float liquidFillLevel() const;
+  [[nodiscard]] float liquidFillLevel() const;
 
-  bool biomePlaced() const;
+  [[nodiscard]] bool biomePlaced() const;
 
   using Entity::setUniqueId;
 
@@ -169,14 +169,14 @@ protected:
   virtual void setNetStates();
 
   virtual void readStoredData(Json const& diskStore);
-  virtual Json writeStoredData() const;
+  [[nodiscard]] virtual Json writeStoredData() const;
 
   void setImageKey(String const& name, String const& value);
 
-  size_t orientationIndex() const;
+  [[nodiscard]] size_t orientationIndex() const;
   virtual void setOrientationIndex(size_t orientationIndex);
 
-  PolyF volume() const;
+  [[nodiscard]] PolyF volume() const;
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -204,26 +204,26 @@ private:
     String icon;
   };
 
-  LuaCallbacks makeObjectCallbacks();
-  LuaCallbacks makeAnimatorObjectCallbacks();
+  [[nodiscard]] LuaCallbacks makeObjectCallbacks();
+  [[nodiscard]] LuaCallbacks makeAnimatorObjectCallbacks();
 
   void ensureNetSetup();
-  List<Drawable> orientationDrawables(size_t orientationIndex) const;
+  [[nodiscard]] List<Drawable> orientationDrawables(size_t orientationIndex) const;
 
   void addChatMessage(String const& message, Json const& config, String const& portrait = "");
 
   void writeOutboundNode(Vec2I outboundNode, bool state);
 
-  EntityRenderLayer renderLayer() const;
+  [[nodiscard]] EntityRenderLayer renderLayer() const;
 
   // Base class render() simply calls all of these in turn.
   void renderLights(RenderCallback* renderCallback) const;
   void renderParticles(RenderCallback* renderCallback);
   void renderSounds(RenderCallback* renderCallback);
 
-  List<ObjectOrientationPtr> const& getOrientations() const;
+  [[nodiscard]] List<ObjectOrientationPtr> const& getOrientations() const;
 
-  Vec2F damageShake() const;
+  [[nodiscard]] Vec2F damageShake() const;
 
   void checkLiquidBroken();
   GameTimer m_liquidCheckTimer;

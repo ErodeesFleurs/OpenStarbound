@@ -43,7 +43,7 @@ public:
   // only during display, once dismissed, the pane is forgotten completely.
   void displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss = {});
 
-  bool isDisplayed(PanePtr const& pane) const;
+  [[nodiscard]] bool isDisplayed(PanePtr const& pane) const;
 
   // Dismiss a given displayed pane.  Pane must already be displayed.
   void dismissPane(PanePtr const& pane);
@@ -52,8 +52,8 @@ public:
   void dismissAllPanes(Set<PaneLayer> const& paneLayers);
   void dismissAllPanes();
 
-  PanePtr topPane(Set<PaneLayer> const& paneLayers) const;
-  PanePtr topPane() const;
+  [[nodiscard]] PanePtr topPane(Set<PaneLayer> const& paneLayers) const;
+  [[nodiscard]] PanePtr topPane() const;
 
   // Brign an already displayed pane to the top of its layer.
   void bringToTop(PanePtr const& pane);
@@ -62,31 +62,31 @@ public:
   // it will fit on the screen
   void bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjacent, int gap);
 
-  PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
-  PanePtr getPaneAt(Vec2I const& position) const;
-  List<PanePtr> getAllPanes();
+  [[nodiscard]] PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
+  [[nodiscard]] PanePtr getPaneAt(Vec2I const& position) const;
+  [[nodiscard]] List<PanePtr> getAllPanes();
 
   void setBackgroundWidget(WidgetPtr bg);
 
   void dismissWhere(function<bool(PanePtr const&)> func);
 
   // Returns the pane/widget that has captured the keyboard, if any.
-  PanePtr keyboardCapturedPane() const;
-  WidgetPtr keyboardCapturedWidget() const;
+  [[nodiscard]] PanePtr keyboardCapturedPane() const;
+  [[nodiscard]] WidgetPtr keyboardCapturedWidget() const;
   // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
-  bool keyboardCapturedForTextInput() const;
+  [[nodiscard]] bool keyboardCapturedForTextInput() const;
 
-  bool sendInputEvent(InputEvent const& event);
+  [[nodiscard]] bool sendInputEvent(InputEvent const& event);
 
   void render();
   void update(float dt);
 
 private:
-  Vec2I windowSize() const;
-  Vec2I calculatePaneOffset(PanePtr const& pane) const;
-  Vec2I calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const;
-  bool dismiss(PanePtr const& pane);
+  [[nodiscard]] Vec2I windowSize() const;
+  [[nodiscard]] Vec2I calculatePaneOffset(PanePtr const& pane) const;
+  [[nodiscard]] Vec2I calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const;
+  [[nodiscard]] bool dismiss(PanePtr const& pane);
 
   GuiContext& m_context;
   float m_prevInterfaceScale;

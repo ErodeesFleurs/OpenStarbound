@@ -148,7 +148,7 @@ EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
 
 EntityPtr EntityMap::entity(EntityId entityId) const {
   auto entity = m_spatialMap.value(entityId);
-  starAssert(!entity || entity->entityId() == entityId);
+  assert(!entity || entity->entityId() == entityId);
   return entity;
 }
 

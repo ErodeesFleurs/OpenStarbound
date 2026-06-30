@@ -29,20 +29,20 @@ namespace Tiled {
     Properties() = default;
     Properties(Json const& json);
 
-    Json toJson() const;
+    [[nodiscard]] Json toJson() const;
 
     // Returns a new properties set where this properties object overrides
     // the properties parameter.
-    Properties inherit(Json const& properties) const;
-    Properties inherit(Properties const& properties) const;
+    [[nodiscard]] Properties inherit(Json const& properties) const;
+    [[nodiscard]] Properties inherit(Properties const& properties) const;
 
-    bool contains(String const& name) const;
-
-    template <typename T>
-    T get(String const& name) const;
+    [[nodiscard]] bool contains(String const& name) const;
 
     template <typename T>
-    Maybe<T> opt(String const& name) const;
+    [[nodiscard]] T get(String const& name) const;
+
+    template <typename T>
+    [[nodiscard]] Maybe<T> opt(String const& name) const;
 
     template <typename T>
     void set(String const& name, T const& value);
@@ -62,11 +62,11 @@ namespace Tiled {
   public:
     Tileset(Json const& json);
 
-    TileConstPtr const& getTile(size_t id, TileLayer layer) const;
-    size_t size() const;
+    [[nodiscard]] TileConstPtr const& getTile(size_t id, TileLayer layer) const;
+    [[nodiscard]] size_t size() const;
 
   private:
-    List<TileConstPtr> const& tiles(TileLayer layer) const;
+    [[nodiscard]] List<TileConstPtr> const& tiles(TileLayer layer) const;
 
     List<TileConstPtr> m_tilesBack, m_tilesFront;
   };
@@ -99,14 +99,14 @@ namespace Tiled {
 
   template <>
   struct PropertyConverter<Json> {
-    static Json to(String const& propertyValue);
-    static String from(Json const& propertyValue);
+    [[nodiscard]] static Json to(String const& propertyValue);
+    [[nodiscard]] static String from(Json const& propertyValue);
   };
 
   template <>
   struct PropertyConverter<String> {
-    static String to(String const& propertyValue);
-    static String from(String const& propertyValue);
+    [[nodiscard]] static String to(String const& propertyValue);
+    [[nodiscard]] static String from(String const& propertyValue);
   };
 
   template <typename T>

@@ -12,30 +12,30 @@ class Vector : public Array<T, N> {
 public:
   using Base = Array<T, N>;
 
-  static constexpr Vector filled(T const& t);
+  [[nodiscard]] static constexpr Vector filled(T const& t);
 
   template <typename T2>
-  static Vector floor(Vector<T2, N> const& v);
+  [[nodiscard]] static Vector floor(Vector<T2, N> const& v);
 
   template <typename T2>
-  static Vector ceil(Vector<T2, N> const& v);
+  [[nodiscard]] static Vector ceil(Vector<T2, N> const& v);
 
   template <typename T2>
-  static Vector round(Vector<T2, N> const& v);
+  [[nodiscard]] static Vector round(Vector<T2, N> const& v);
 
   template <typename Iterator>
-  static constexpr Vector copyFrom(Iterator p);
+  [[nodiscard]] static constexpr Vector copyFrom(Iterator p);
 
   // Is zero-initialized (from Array)
   constexpr Vector();
 
-  explicit constexpr Vector(T const& e1);
+  [[nodiscard]] explicit constexpr Vector(T const& e1);
 
   template <typename... TN>
   constexpr Vector(T const& e1, TN const&... rest);
 
   template <typename T2>
-  explicit constexpr Vector(Array<T2, N> const& v);
+  [[nodiscard]] explicit constexpr Vector(Array<T2, N> const& v);
 
   template <typename T2, typename T3>
   constexpr Vector(Array<T2, N - 1> const& u, T3 const& v);
@@ -63,18 +63,18 @@ public:
   constexpr Vector combine(Vector const& v, Function f) const;
 
   // Outputs angles in the range [0, pi]
-  T angleBetween(Vector const& v) const;
+  [[nodiscard]] T angleBetween(Vector const& v) const;
 
   // Angle between two normalized vectors.
-  T angleBetweenNormalized(Vector const& v) const;
+  [[nodiscard]] T angleBetweenNormalized(Vector const& v) const;
 
   constexpr T magnitudeSquared() const;
-  T magnitude() const;
+  [[nodiscard]] T magnitude() const;
 
   void normalize();
-  Vector normalized() const;
+  [[nodiscard]] Vector normalized() const;
 
-  Vector projectOnto(Vector const& v) const;
+  [[nodiscard]] Vector projectOnto(Vector const& v) const;
 
   constexpr Vector projectOntoNormalized(Vector const& v) const;
 
@@ -83,10 +83,10 @@ public:
   // Reverses order of components of vector
   constexpr void reverse();
 
-  Vector abs() const;
-  Vector floor() const;
-  Vector ceil() const;
-  Vector round() const;
+  [[nodiscard]] Vector abs() const;
+  [[nodiscard]] Vector floor() const;
+  [[nodiscard]] Vector ceil() const;
+  [[nodiscard]] Vector round() const;
 
   void fill(T const& v);
   constexpr void clamp(T const& min, T const& max);
@@ -114,21 +114,21 @@ public:
   // Return vector rotated to given angle
   template <size_t P = N>
     requires (P == 2 && N == P)
-  static Vector withAngle(T angle, T magnitude = 1);
+  [[nodiscard]] static Vector withAngle(T angle, T magnitude = 1);
 
   template <size_t P = N>
     requires (P == 2 && N == P)
-  static T angleBetween2(Vector const& u, Vector const& v);
+  [[nodiscard]] static T angleBetween2(Vector const& u, Vector const& v);
   template <size_t P = N>
     requires (P == 2 && N == P)
-  static T angleFormedBy2(Vector const& a, Vector const& b, Vector const& c);
+  [[nodiscard]] static T angleFormedBy2(Vector const& a, Vector const& b, Vector const& c);
   template <size_t P = N>
     requires (P == 2 && N == P)
-  static T angleFormedBy2(Vector const& a, Vector const& b, Vector const& c, std::function<Vector(Vector, Vector)> const& diff);
+  [[nodiscard]] static T angleFormedBy2(Vector const& a, Vector const& b, Vector const& c, std::function<Vector(Vector, Vector)> const& diff);
 
   template <size_t P = N>
     requires (P == 2 && N == P)
-  Vector rotate(T angle) const;
+  [[nodiscard]] Vector rotate(T angle) const;
 
   // Faster than rotate(Constants::pi/2).
   template <size_t P = N>
@@ -138,17 +138,17 @@ public:
   // Angle of vector on 2d plane, in the range [-pi, pi]
   template <size_t P = N>
     requires (P == 2 && N == P)
-  T angle() const;
+  [[nodiscard]] T angle() const;
 
   // Returns polar coordinates of this cartesian vector
   template <size_t P = N>
     requires (P == 2 && N == P)
-  Vector toPolar() const;
+  [[nodiscard]] Vector toPolar() const;
 
   // Returns cartesian coordinates of this polar vector
   template <size_t P = N>
     requires (P == 2 && N == P)
-  Vector toCartesian() const;
+  [[nodiscard]] Vector toCartesian() const;
 
   template <size_t P = N>
     requires (P >= 2 && N == P)
@@ -168,33 +168,33 @@ public:
 
   template <size_t P = N>
     requires (P == 3 && N == P)
-  static Vector fromAngles(T psi, T theta);
+  [[nodiscard]] static Vector fromAngles(T psi, T theta);
   template <size_t P = N>
     requires (P == 3 && N == P)
-  static Vector fromAnglesEnu(T psi, T theta);
+  [[nodiscard]] static Vector fromAnglesEnu(T psi, T theta);
   template <size_t P = N>
     requires (P == 3 && N == P)
-  static constexpr T tripleScalarProduct(Vector const& u, Vector const& v, Vector const& w);
+  [[nodiscard]] static constexpr T tripleScalarProduct(Vector const& u, Vector const& v, Vector const& w);
   template <size_t P = N>
     requires (P == 3 && N == P)
-  static T angle(Vector const& v1, Vector const& v2);
+  [[nodiscard]] static T angle(Vector const& v1, Vector const& v2);
 
   template <size_t P = N>
     requires (P == 3 && N == P)
-  T psi() const;
+  [[nodiscard]] T psi() const;
   template <size_t P = N>
     requires (P == 3 && N == P)
-  T theta() const;
+  [[nodiscard]] T theta() const;
   template <size_t P = N>
     requires (P == 3 && N == P)
-  Vector<T, 2> eulers() const;
+  [[nodiscard]] Vector<T, 2> eulers() const;
 
   template <size_t P = N>
     requires (P == 3 && N == P)
-  T psiEnu() const;
+  [[nodiscard]] T psiEnu() const;
   template <size_t P = N>
     requires (P == 3 && N == P)
-  T thetaEnu() const;
+  [[nodiscard]] T thetaEnu() const;
 
   template <size_t P = N>
     requires (P == 3 && N == P)
@@ -253,10 +253,10 @@ template <typename T, size_t N>
 constexpr Vector<T, N> operator*(T s, Vector<T, N> v);
 
 template <typename T, size_t N>
-Vector<T, N> vnorm(Vector<T, N> v);
+[[nodiscard]] Vector<T, N> vnorm(Vector<T, N> v);
 
 template <typename T, size_t N>
-T vmag(Vector<T, N> const& v);
+[[nodiscard]] T vmag(Vector<T, N> const& v);
 
 template <typename T, size_t N>
 constexpr T vmagSquared(Vector<T, N> const& v);

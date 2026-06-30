@@ -12,28 +12,28 @@ public:
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 
-  Json diskStore() const;
-  ByteArray netStore() const;
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore() const;
 
-  CelestialCoordinate coordinate() const;
-  String name() const;
-  uint64_t seed() const;
+  [[nodiscard]] CelestialCoordinate coordinate() const;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] uint64_t seed() const;
 
-  Json parameters() const;
-  Json getParameter(String const& name, Json def = Json()) const;
+  [[nodiscard]] Json parameters() const;
+  [[nodiscard]] Json getParameter(String const& name, Json def = Json()) const;
   // Predictably select from a json array, given by the named parameter.
   // Selects based on the name hash and the system seed.
-  Json randomizeParameterList(String const& name, int32_t mix = 0) const;
+  [[nodiscard]] Json randomizeParameterList(String const& name, int32_t mix = 0) const;
   // Predictably select from a range, given by the named parameter.  Works for
   // either floating or integral ranges.
-  Json randomizeParameterRange(String const& name, int32_t mix = 0) const;
+  [[nodiscard]] Json randomizeParameterRange(String const& name, int32_t mix = 0) const;
   // Same function, but if you want to specify the range from an external source
-  Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, Maybe<String> const& name = {}) const;
+  [[nodiscard]] Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, Maybe<String> const& name = {}) const;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.
-  bool isVisitable() const;
-  VisitableWorldParametersConstPtr visitableParameters() const;
+  [[nodiscard]] bool isVisitable() const;
+  [[nodiscard]] VisitableWorldParametersConstPtr visitableParameters() const;
   void setVisitableParameters(VisitableWorldParametersPtr const& newVisitableParameters);
 
 private:

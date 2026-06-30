@@ -13,26 +13,26 @@ public:
   ListWidget(GuiContext& context, Json const& schema);
   explicit ListWidget(GuiContext& context);
 
-  RectI relativeBoundRect() const override;
+  [[nodiscard]] RectI relativeBoundRect() const override;
 
   // Callback is called when the selection changes
   void setCallback(WidgetCallbackFunc callback);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void setSchema(Json const& schema);
-  WidgetPtr constructWidget();
-  WidgetPtr addItem();
-  WidgetPtr addItem(size_t at);
-  WidgetPtr addItem(WidgetPtr existingItem);
+  [[nodiscard]] WidgetPtr constructWidget();
+  [[nodiscard]] WidgetPtr addItem();
+  [[nodiscard]] WidgetPtr addItem(size_t at);
+  [[nodiscard]] WidgetPtr addItem(WidgetPtr existingItem);
   void removeItem(size_t at);
   void removeItem(WidgetPtr item);
   void clear();
-  size_t selectedItem() const;
-  size_t itemPosition(WidgetPtr item) const;
-  WidgetPtr itemAt(size_t n) const;
-  WidgetPtr selectedWidget() const;
-  List<WidgetPtr> const& list() const;
-  size_t listSize() const;
+  [[nodiscard]] size_t selectedItem() const;
+  [[nodiscard]] size_t itemPosition(WidgetPtr item) const;
+  [[nodiscard]] WidgetPtr itemAt(size_t n) const;
+  [[nodiscard]] WidgetPtr selectedWidget() const;
+  [[nodiscard]] List<WidgetPtr> const& list() const;
+  [[nodiscard]] size_t listSize() const;
   void setEnabled(size_t pos, bool enabled);
   void setHovered(size_t pos, bool hovered);
   void setSelected(size_t pos);

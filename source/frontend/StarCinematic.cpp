@@ -281,7 +281,7 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
         upperLeft,  Vec2F{0, size[1]},
         drawableColor, 0.0f);
   } else {
-    starAssert(drawable.part.empty());
+    assert(drawable.part.empty());
   }
 }
 

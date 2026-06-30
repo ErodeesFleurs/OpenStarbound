@@ -15,7 +15,7 @@ AmbientTrackGroup::AmbientTrackGroup(Json const& config, String const& directory
     tracks.append(AssetPath::relativeTo(directory, track));
 }
 
-Json AmbientTrackGroup::toJson() const {
+[[nodiscard]] Json AmbientTrackGroup::toJson() const {
   return JsonObject{{"tracks", jsonFromStringList(tracks)}};
 }
 
@@ -31,7 +31,7 @@ AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String co
     trackLoops = *loops;
 }
 
-Json AmbientNoisesDescription::toJson() const {
+[[nodiscard]] Json AmbientNoisesDescription::toJson() const {
   return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}};
 }
 
@@ -51,7 +51,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
   m_trackFadeInTime = fadeInTime;
 }
 
-AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
+[[nodiscard]] AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
   auto assets = requireServiceValueAs<StarException>(m_assets, "AmbientManager", "assets");
 
   if (m_currentTrack) {
@@ -113,7 +113,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   return {};
 }
 
-AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
+[[nodiscard]] AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
   auto assets = requireServiceValueAs<StarException>(m_assets, "AmbientManager", "assets");
 
   if (m_weatherTrack) {

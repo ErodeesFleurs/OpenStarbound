@@ -23,48 +23,48 @@ ProjectileDatabase::ProjectileDatabase(AssetsConstPtr assets)
   }
 }
 
-StringList ProjectileDatabase::allProjectileTypes() const {
+[[nodiscard]] StringList ProjectileDatabase::allProjectileTypes() const {
   return m_configs.keys();
 }
 
-bool ProjectileDatabase::isProjectile(String const& projectileName) const {
+[[nodiscard]] bool ProjectileDatabase::isProjectile(String const& projectileName) const {
   return m_configs.contains(projectileName);
 }
 
-Json ProjectileDatabase::projectileConfig(String const& type) const {
+[[nodiscard]] Json ProjectileDatabase::projectileConfig(String const& type) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   return m_configs.get(type)->config;
 }
 
-ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
+[[nodiscard]] ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   return make_shared<Projectile>(m_assets, m_configs.get(type), parameters);
 }
 
-String ProjectileDatabase::damageKindImage(String const& type) const {
+[[nodiscard]] String ProjectileDatabase::damageKindImage(String const& type) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   auto& config = m_configs.get(type);
   return config->damageKindImage;
 }
 
-float ProjectileDatabase::gravityMultiplier(String const& type) const {
+[[nodiscard]] float ProjectileDatabase::gravityMultiplier(String const& type) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
   auto& config = m_configs.get(type);
   return config->movementSettings.getFloat("gravityMultiplier", 1);
 }
 
-ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules) const {
+[[nodiscard]] ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules) const {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
   return make_shared<Projectile>(m_assets, m_configs.get(typeName), ds, rules);
 }
 
-ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
+[[nodiscard]] ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   Json config = m_assets->json(path);
 
   auto projectileConfig = make_shared<ProjectileConfig>();

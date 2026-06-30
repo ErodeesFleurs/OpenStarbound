@@ -29,11 +29,11 @@ public:
   void init(World& world);
   void uninit();
 
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
-  List<LightSource> const& lightSources();
+  [[nodiscard]] List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
+  [[nodiscard]] List<LightSource> const& lightSources();
 
-  List<Particle> pullNewParticles();
-  List<AudioInstancePtr> pullNewAudios();
+  [[nodiscard]] List<Particle> pullNewParticles();
+  [[nodiscard]] List<AudioInstancePtr> pullNewAudios();
 
 protected:
   // Clears looping audio on context shutdown
@@ -83,7 +83,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets)
   });
   animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
     Maybe<EntityRenderLayer> renderLayer;
-    Drawable drawable(drawableConfig);
+    [[nodiscard]] Drawable drawable(drawableConfig);
     if (renderLayerName)
       renderLayer = parseRenderLayer(*renderLayerName);
 

@@ -389,7 +389,7 @@ void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback re
   });
 }
 
-size_t DirectivesGroup::hash() const {
+[[nodiscard]] size_t DirectivesGroup::hash() const {
   XXHash3 hasher;
   for (auto& directives : m_directives) {
     size_t hash = directives.hash();
@@ -399,7 +399,7 @@ size_t DirectivesGroup::hash() const {
   return hasher.digest();
 }
 
-const List<Directives>& DirectivesGroup::list() const {
+[[nodiscard]] const List<Directives>& DirectivesGroup::list() const {
   return m_directives;
 }
 

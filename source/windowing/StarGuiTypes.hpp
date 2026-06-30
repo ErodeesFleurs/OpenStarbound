@@ -19,7 +19,7 @@ struct ImageStretchSet {
   String end;
   ImageStretchType type;
 
-  bool fullyPopulated() const;
+  [[nodiscard]] bool fullyPopulated() const;
 };
 
 enum class GuiDirection {
@@ -28,12 +28,12 @@ enum class GuiDirection {
 };
 extern EnumMap<GuiDirection> const GuiDirectionNames;
 
-GuiDirection otherDirection(GuiDirection direction);
+[[nodiscard]] GuiDirection otherDirection(GuiDirection direction);
 
 template <typename T>
-T directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec);
+[[nodiscard]] T directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec);
 
-String rarityBorder(Rarity rarity);
+[[nodiscard]] String rarityBorder(Rarity rarity);
 
 template <typename T>
 T& directionalValueFromVector(GuiDirection direction, Vector<T, 2> const& vec) {

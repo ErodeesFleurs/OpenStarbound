@@ -25,9 +25,9 @@ class ClientApplication : public Application {
 public:
   void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
   void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
-  bool postProcessGroupEnabled(String const& group);
-  Json postProcessGroups();
-  unsigned framesSkipped() const override;
+  [[nodiscard]] bool postProcessGroupEnabled(String const& group);
+  [[nodiscard]] Json postProcessGroups();
+  [[nodiscard]] unsigned framesSkipped() const override;
 
 protected:
   void startup(StringList const& cmdLineArgs) override;
@@ -91,8 +91,8 @@ private:
   void updateTitle(float dt);
   void updateRunning(float dt);
 
-  bool isActionTaken(InterfaceAction action) const;
-  bool isActionTakenEdge(InterfaceAction action) const;
+  [[nodiscard]] bool isActionTaken(InterfaceAction action) const;
+  [[nodiscard]] bool isActionTakenEdge(InterfaceAction action) const;
 
   void updateCamera(float dt);
 

@@ -178,7 +178,7 @@ Json::Json(JsonObject m) {
   m_data = make_shared<JsonObject const>(std::move(m));
 }
 
-double Json::toDouble() const {
+[[nodiscard]] double Json::toDouble() const {
   if (type() == Type::Float)
     return m_data.get<double>();
   if (type() == Type::Int)
@@ -187,17 +187,17 @@ double Json::toDouble() const {
   throw JsonException::format("Improper conversion to double from {}", typeName());
 }
 
-float Json::toFloat() const {
+[[nodiscard]] float Json::toFloat() const {
   return static_cast<float>(toDouble());
 }
 
-bool Json::toBool() const {
+[[nodiscard]] bool Json::toBool() const {
   if (type() != Type::Bool)
     throw JsonException::format("Improper conversion to bool from {}", typeName());
   return m_data.get<bool>();
 }
 
-int64_t Json::toInt() const {
+[[nodiscard]] int64_t Json::toInt() const {
   if (type() == Type::Float) {
     return static_cast<int64_t>(m_data.get<double>());
   } else if (type() == Type::Int) {
@@ -207,7 +207,7 @@ int64_t Json::toInt() const {
   }
 }
 
-uint64_t Json::toUInt() const {
+[[nodiscard]] uint64_t Json::toUInt() const {
   if (type() == Type::Float) {
     return static_cast<uint64_t>(m_data.get<double>());
   } else if (type() == Type::Int) {
@@ -217,37 +217,37 @@ uint64_t Json::toUInt() const {
   }
 }
 
-String Json::toString() const {
+[[nodiscard]] String Json::toString() const {
   if (type() != Type::String)
     throw JsonException(strf("Cannot convert from {} to string", typeName()));
   return *m_data.get<StringConstPtr>();
 }
 
-JsonArray Json::toArray() const {
+[[nodiscard]] JsonArray Json::toArray() const {
   if (type() != Type::Array)
     throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
   return *m_data.get<JsonArrayConstPtr>();
 }
 
-JsonObject Json::toObject() const {
+[[nodiscard]] JsonObject Json::toObject() const {
   if (type() != Type::Object)
     throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
   return *m_data.get<JsonObjectConstPtr>();
 }
 
-StringConstPtr Json::stringPtr() const {
+[[nodiscard]] StringConstPtr Json::stringPtr() const {
   if (type() != Type::String)
     throw JsonException(strf("Cannot convert from {} to string", typeName()));
   return m_data.get<StringConstPtr>();
 }
 
-JsonArrayConstPtr Json::arrayPtr() const {
+[[nodiscard]] JsonArrayConstPtr Json::arrayPtr() const {
   if (type() != Type::Array)
     throw JsonException::format("Improper conversion to JsonArray from {}", typeName());
   return m_data.get<JsonArrayConstPtr>();
 }
 
-JsonObjectConstPtr Json::objectPtr() const {
+[[nodiscard]] JsonObjectConstPtr Json::objectPtr() const {
   if (type() != Type::Object)
     throw JsonException::format("Improper conversion to JsonObject from {}", typeName());
   return m_data.get<JsonObjectConstPtr>();
@@ -331,192 +331,192 @@ bool Json::contains(String const& key) const {
     throw JsonException("contains() called on improper json type");
 }
 
-Json Json::get(size_t index) const {
+[[nodiscard]] Json Json::get(size_t index) const {
   if (auto value = ptr(index))
     return *value;
   throw JsonException(strf("Json::get({}) out of range", index));
 }
 
-double Json::getDouble(size_t index) const {
+[[nodiscard]] double Json::getDouble(size_t index) const {
   return get(index).toDouble();
 }
 
-float Json::getFloat(size_t index) const {
+[[nodiscard]] float Json::getFloat(size_t index) const {
   return get(index).toFloat();
 }
 
-bool Json::getBool(size_t index) const {
+[[nodiscard]] bool Json::getBool(size_t index) const {
   return get(index).toBool();
 }
 
-int64_t Json::getInt(size_t index) const {
+[[nodiscard]] int64_t Json::getInt(size_t index) const {
   return get(index).toInt();
 }
 
-uint64_t Json::getUInt(size_t index) const {
+[[nodiscard]] uint64_t Json::getUInt(size_t index) const {
   return get(index).toUInt();
 }
 
-String Json::getString(size_t index) const {
+[[nodiscard]] String Json::getString(size_t index) const {
   return get(index).toString();
 }
 
-JsonArray Json::getArray(size_t index) const {
+[[nodiscard]] JsonArray Json::getArray(size_t index) const {
   return get(index).toArray();
 }
 
-JsonObject Json::getObject(size_t index) const {
+[[nodiscard]] JsonObject Json::getObject(size_t index) const {
   return get(index).toObject();
 }
 
-Json Json::get(size_t index, Json def) const {
+[[nodiscard]] Json Json::get(size_t index, Json def) const {
   if (auto value = ptr(index))
     return *value;
   return def;
 }
 
-double Json::getDouble(size_t index, double def) const {
+[[nodiscard]] double Json::getDouble(size_t index, double def) const {
   if (auto value = ptr(index))
     return value->toDouble();
   return def;
 }
 
-float Json::getFloat(size_t index, float def) const {
+[[nodiscard]] float Json::getFloat(size_t index, float def) const {
   if (auto value = ptr(index))
     return value->toFloat();
   return def;
 }
 
-bool Json::getBool(size_t index, bool def) const {
+[[nodiscard]] bool Json::getBool(size_t index, bool def) const {
   if (auto value = ptr(index))
     return value->toBool();
   return def;
 }
 
-int64_t Json::getInt(size_t index, int64_t def) const {
+[[nodiscard]] int64_t Json::getInt(size_t index, int64_t def) const {
   if (auto value = ptr(index))
     return value->toInt();
   return def;
 }
 
-uint64_t Json::getUInt(size_t index, int64_t def) const {
+[[nodiscard]] uint64_t Json::getUInt(size_t index, int64_t def) const {
   if (auto value = ptr(index))
     return value->toUInt();
   return def;
 }
 
-String Json::getString(size_t index, String def) const {
+[[nodiscard]] String Json::getString(size_t index, String def) const {
   if (auto value = ptr(index))
     return value->toString();
   return def;
 }
 
-JsonArray Json::getArray(size_t index, JsonArray def) const {
+[[nodiscard]] JsonArray Json::getArray(size_t index, JsonArray def) const {
   if (auto value = ptr(index))
     return value->toArray();
   return def;
 }
 
-JsonObject Json::getObject(size_t index, JsonObject def) const {
+[[nodiscard]] JsonObject Json::getObject(size_t index, JsonObject def) const {
   if (auto value = ptr(index))
     return value->toObject();
   return def;
 }
 
-Json Json::get(String const& key) const {
+[[nodiscard]] Json Json::get(String const& key) const {
   if (auto value = ptr(key))
     return *value;
   throw JsonException(strf("No such key in Json::get(\"{}\")", key));
 }
 
-double Json::getDouble(String const& key) const {
+[[nodiscard]] double Json::getDouble(String const& key) const {
   return get(key).toDouble();
 }
 
-float Json::getFloat(String const& key) const {
+[[nodiscard]] float Json::getFloat(String const& key) const {
   return get(key).toFloat();
 }
 
-bool Json::getBool(String const& key) const {
+[[nodiscard]] bool Json::getBool(String const& key) const {
   return get(key).toBool();
 }
 
-int64_t Json::getInt(String const& key) const {
+[[nodiscard]] int64_t Json::getInt(String const& key) const {
   return get(key).toInt();
 }
 
-uint64_t Json::getUInt(String const& key) const {
+[[nodiscard]] uint64_t Json::getUInt(String const& key) const {
   return get(key).toUInt();
 }
 
-String Json::getString(String const& key) const {
+[[nodiscard]] String Json::getString(String const& key) const {
   return get(key).toString();
 }
 
-JsonArray Json::getArray(String const& key) const {
+[[nodiscard]] JsonArray Json::getArray(String const& key) const {
   return get(key).toArray();
 }
 
-JsonObject Json::getObject(String const& key) const {
+[[nodiscard]] JsonObject Json::getObject(String const& key) const {
   return get(key).toObject();
 }
 
-Json Json::get(String const& key, Json def) const {
+[[nodiscard]] Json Json::get(String const& key, Json def) const {
   if (auto value = ptr(key))
     return *value;
   return def;
 }
 
-double Json::getDouble(String const& key, double def) const {
+[[nodiscard]] double Json::getDouble(String const& key, double def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toDouble();
   return def;
 }
 
-float Json::getFloat(String const& key, float def) const {
+[[nodiscard]] float Json::getFloat(String const& key, float def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toFloat();
   return def;
 }
 
-bool Json::getBool(String const& key, bool def) const {
+[[nodiscard]] bool Json::getBool(String const& key, bool def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toBool();
   return def;
 }
 
-int64_t Json::getInt(String const& key, int64_t def) const {
+[[nodiscard]] int64_t Json::getInt(String const& key, int64_t def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toInt();
   return def;
 }
 
-uint64_t Json::getUInt(String const& key, int64_t def) const {
+[[nodiscard]] uint64_t Json::getUInt(String const& key, int64_t def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toUInt();
   return def;
 }
 
-String Json::getString(String const& key, String def) const {
+[[nodiscard]] String Json::getString(String const& key, String def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toString();
   return def;
 }
 
-JsonArray Json::getArray(String const& key, JsonArray def) const {
+[[nodiscard]] JsonArray Json::getArray(String const& key, JsonArray def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toArray();
   return def;
 }
 
-JsonObject Json::getObject(String const& key, JsonObject def) const {
+[[nodiscard]] JsonObject Json::getObject(String const& key, JsonObject def) const {
   auto value = ptr(key);
   if (value && *value)
     return value->toObject();
@@ -586,98 +586,98 @@ Maybe<JsonObject> Json::optObject(String const& key) const {
   return {};
 }
 
-Json Json::query(String const& q) const {
+[[nodiscard]] Json Json::query(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q);
 }
 
-double Json::queryDouble(String const& q) const {
+[[nodiscard]] double Json::queryDouble(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toDouble();
 }
 
-float Json::queryFloat(String const& q) const {
+[[nodiscard]] float Json::queryFloat(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toFloat();
 }
 
-bool Json::queryBool(String const& q) const {
+[[nodiscard]] bool Json::queryBool(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toBool();
 }
 
-int64_t Json::queryInt(String const& q) const {
+[[nodiscard]] int64_t Json::queryInt(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toInt();
 }
 
-uint64_t Json::queryUInt(String const& q) const {
+[[nodiscard]] uint64_t Json::queryUInt(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toUInt();
 }
 
-String Json::queryString(String const& q) const {
+[[nodiscard]] String Json::queryString(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toString();
 }
 
-JsonArray Json::queryArray(String const& q) const {
+[[nodiscard]] JsonArray Json::queryArray(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toArray();
 }
 
-JsonObject Json::queryObject(String const& q) const {
+[[nodiscard]] JsonObject Json::queryObject(String const& q) const {
   return JsonPath::pathGet(*this, JsonPath::parseQueryPath, q).toObject();
 }
 
-Json Json::query(String const& query, Json def) const {
+[[nodiscard]] Json Json::query(String const& query, Json def) const {
   if (auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query))
     return *json;
   return def;
 }
 
-double Json::queryDouble(String const& query, double def) const {
+[[nodiscard]] double Json::queryDouble(String const& query, double def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toDouble();
   return def;
 }
 
-float Json::queryFloat(String const& query, float def) const {
+[[nodiscard]] float Json::queryFloat(String const& query, float def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toFloat();
   return def;
 }
 
-bool Json::queryBool(String const& query, bool def) const {
+[[nodiscard]] bool Json::queryBool(String const& query, bool def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toBool();
   return def;
 }
 
-int64_t Json::queryInt(String const& query, int64_t def) const {
+[[nodiscard]] int64_t Json::queryInt(String const& query, int64_t def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toInt();
   return def;
 }
 
-uint64_t Json::queryUInt(String const& query, uint64_t def) const {
+[[nodiscard]] uint64_t Json::queryUInt(String const& query, uint64_t def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toUInt();
   return def;
 }
 
-String Json::queryString(String const& query, String const& def) const {
+[[nodiscard]] String Json::queryString(String const& query, String const& def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toString();
   return def;
 }
 
-JsonArray Json::queryArray(String const& query, JsonArray def) const {
+[[nodiscard]] JsonArray Json::queryArray(String const& query, JsonArray def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toArray();
   return def;
 }
 
-JsonObject Json::queryObject(String const& query, JsonObject def) const {
+[[nodiscard]] JsonObject Json::queryObject(String const& query, JsonObject def) const {
   auto json = JsonPath::pathFind(*this, JsonPath::parseQueryPath, query);
   if (json && *json)
     return json->toObject();
@@ -747,52 +747,52 @@ Maybe<JsonObject> Json::optQueryObject(String const& path) const {
   return {};
 }
 
-Json Json::set(String key, Json value) const {
+[[nodiscard]] Json Json::set(String key, Json value) const {
   auto map = toObject();
   map[std::move(key)] = std::move(value);
   return map;
 }
 
-Json Json::setPath(String path, Json value) const {
+[[nodiscard]] Json Json::setPath(String path, Json value) const {
   return JsonPath::pathSet(*this, JsonPath::parseQueryPath, path, value);
 }
 
-Json Json::erasePath(String path) const {
+[[nodiscard]] Json Json::erasePath(String path) const {
   return JsonPath::pathRemove(*this, JsonPath::parseQueryPath, path);
 }
 
-Json Json::setAll(JsonObject values) const {
+[[nodiscard]] Json Json::setAll(JsonObject values) const {
   auto map = toObject();
   for (auto& [key, value] : values)
     map[std::move(key)] = std::move(value);
   return map;
 }
 
-Json Json::eraseKey(String key) const {
+[[nodiscard]] Json Json::eraseKey(String key) const {
   auto map = toObject();
   map.erase(std::move(key));
   return map;
 }
 
-Json Json::set(size_t index, Json value) const {
+[[nodiscard]] Json Json::set(size_t index, Json value) const {
   auto array = toArray();
   array[index] = std::move(value);
   return array;
 }
 
-Json Json::insert(size_t index, Json value) const {
+[[nodiscard]] Json Json::insert(size_t index, Json value) const {
   auto array = toArray();
   array.insertAt(index, std::move(value));
   return array;
 }
 
-Json Json::append(Json value) const {
+[[nodiscard]] Json Json::append(Json value) const {
   auto array = toArray();
   array.append(std::move(value));
   return array;
 }
 
-Json Json::eraseIndex(size_t index) const {
+[[nodiscard]] Json Json::eraseIndex(size_t index) const {
   auto array = toArray();
   array.eraseAt(index);
   return array;
@@ -861,14 +861,14 @@ String Json::repr(int pretty, bool sort) const {
   return result;
 }
 
-String Json::printJson(int pretty, bool sort) const {
+[[nodiscard]] String Json::printJson(int pretty, bool sort) const {
   if (type() != Type::Object && type() != Type::Array)
     throw JsonException("printJson called on non-top-level JSON type");
 
   return repr(pretty, sort);
 }
 
-String Json::printString() const {
+[[nodiscard]] String Json::printString() const {
   if (type() == Type::String)
     return *m_data.get<StringConstPtr>();
   return repr();
@@ -1013,7 +1013,7 @@ size_t hash<Json>::operator()(Json const& v) const {
   return hasher.digest();
 }
 
-Json const* Json::ptr(size_t index) const {
+[[nodiscard]] Json const* Json::ptr(size_t index) const {
   if (type() != Type::Array)
     throw JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName());
 
@@ -1023,7 +1023,7 @@ Json const* Json::ptr(size_t index) const {
   return &list[index];
 }
 
-Json const* Json::ptr(String const& key) const {
+[[nodiscard]] Json const* Json::ptr(String const& key) const {
   if (type() != Type::Object)
     throw JsonException::format("Cannot call get with key on Json type {}, must be Object type", typeName());
   auto const& map = m_data.get<JsonObjectConstPtr>();

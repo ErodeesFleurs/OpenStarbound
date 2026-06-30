@@ -169,9 +169,9 @@ enum class KeyMod : uint16_t {
 };
 extern EnumMap<KeyMod> const KeyModNames;
 
-KeyMod operator|(KeyMod a, KeyMod b);
-KeyMod operator&(KeyMod a, KeyMod b);
-KeyMod operator~(KeyMod a);
+[[nodiscard]] KeyMod operator|(KeyMod a, KeyMod b);
+[[nodiscard]] KeyMod operator&(KeyMod a, KeyMod b);
+[[nodiscard]] KeyMod operator~(KeyMod a);
 KeyMod& operator|=(KeyMod& a, KeyMod b);
 KeyMod& operator&=(KeyMod& a, KeyMod b);
 

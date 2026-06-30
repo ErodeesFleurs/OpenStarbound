@@ -64,7 +64,7 @@ EntityType Projectile::entityType() const {
   return EntityType::Projectile;
 }
 
-Json Projectile::configValue(String const& name, Json const& def) const {
+[[nodiscard]] Json Projectile::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config->config.query(name, def));
 }
 
@@ -129,27 +129,27 @@ void Projectile::uninit() {
   Entity::uninit();
 }
 
-String Projectile::typeName() const {
+[[nodiscard]] String Projectile::typeName() const {
   return m_config->typeName;
 }
 
-String Projectile::name() const {
+[[nodiscard]] String Projectile::name() const {
   return m_config->typeName;
 }
 
-String Projectile::description() const {
+[[nodiscard]] String Projectile::description() const {
   return m_config->description;
 }
 
-Vec2F Projectile::position() const {
+[[nodiscard]] Vec2F Projectile::position() const {
   return m_movementController->position();
 }
 
-RectF Projectile::metaBoundBox() const {
+[[nodiscard]] RectF Projectile::metaBoundBox() const {
   return m_config->boundBox;
 }
 
-Vec2F Projectile::velocity() const {
+[[nodiscard]] Vec2F Projectile::velocity() const {
   return m_movementController->velocity();
 }
 
@@ -169,7 +169,7 @@ void Projectile::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-bool Projectile::shouldDestroy() const {
+[[nodiscard]] bool Projectile::shouldDestroy() const {
   if (auto res = m_scriptComponent.invoke<bool>("shouldDestroy"))
     return *res;
   return m_timeToLive <= 0.0f;
@@ -193,7 +193,7 @@ void Projectile::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("destroy");
 }
 
-List<DamageSource> Projectile::damageSources() const {
+[[nodiscard]] List<DamageSource> Projectile::damageSources() const {
   if (m_onlyHitTerrain)
     return {};
 
@@ -410,7 +410,7 @@ Maybe<LuaValue> Projectile::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-String Projectile::projectileType() const {
+[[nodiscard]] String Projectile::projectileType() const {
   return m_config->typeName;
 }
 
@@ -421,7 +421,7 @@ void Projectile::setReferenceVelocity(Maybe<Vec2F> const& velocity) {
   m_effectEmitter->setBaseVelocity(velocity.value());
 }
 
-float Projectile::initialSpeed() const {
+[[nodiscard]] float Projectile::initialSpeed() const {
   return m_initialSpeed;
 }
 
@@ -458,7 +458,7 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   }
 }
 
-float Projectile::powerMultiplier() const {
+[[nodiscard]] float Projectile::powerMultiplier() const {
   return m_powerMultiplier;
 }
 
@@ -466,19 +466,19 @@ void Projectile::setPowerMultiplier(float powerMultiplier) {
   m_powerMultiplier = powerMultiplier;
 }
 
-EntityId Projectile::sourceEntity() const {
+[[nodiscard]] EntityId Projectile::sourceEntity() const {
   return m_sourceEntity;
 }
 
-List<PersistentStatusEffect> Projectile::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> Projectile::statusEffects() const {
   return m_config->persistentStatusEffects;
 }
 
-PolyF Projectile::statusEffectArea() const {
+[[nodiscard]] PolyF Projectile::statusEffectArea() const {
   return m_config->statusEffectArea;
 }
 
-List<PhysicsForceRegion> Projectile::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> Projectile::forceRegions() const {
   List<PhysicsForceRegion> forces;
   for (auto const& [_, forceRegionConfig] : m_physicsForces) {
     if (forceRegionConfig.enabled.get()) {
@@ -490,11 +490,11 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   return forces;
 }
 
-size_t Projectile::movingCollisionCount() const {
+[[nodiscard]] size_t Projectile::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
+[[nodiscard]] Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
   auto const& mc = m_physicsCollisions.valueAt(positionIndex);
   if (!mc.enabled.get())
     return {};
@@ -534,7 +534,7 @@ List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World& world, Vec2I
   return result;
 }
 
-int Projectile::getFrame() const {
+[[nodiscard]] int Projectile::getFrame() const {
   float time_per_frame = m_animationCycle / m_config->frameNumber;
 
   if (m_config->animationLoops) {
@@ -561,7 +561,7 @@ String Projectile::drawableFrame() {
   return m_imageDirectives.addToString(str);
 }
 
-bool Projectile::ephemeral() const {
+[[nodiscard]] bool Projectile::ephemeral() const {
   return true;
 }
 
@@ -569,7 +569,7 @@ ClientEntityMode Projectile::clientEntityMode() const {
   return m_config->clientEntityMode;
 }
 
-bool Projectile::masterOnly() const {
+[[nodiscard]] bool Projectile::masterOnly() const {
   return m_config->masterOnly;
 }
 

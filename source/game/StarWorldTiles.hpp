@@ -18,14 +18,14 @@ struct WorldTile {
   WorldTile(WorldTile const& worldTile);
   WorldTile& operator=(WorldTile other) noexcept;
 
-  MaterialId material(TileLayer layer) const;
-  ModId mod(TileLayer layer) const;
-  tuple<MaterialId, ModId> materialAndMod(TileLayer layer) const;
-  MaterialColorVariant materialColor(TileLayer layer) const;
-  CollisionKind getCollision() const;
-  tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
-  bool isConnectable(TileLayer layer, bool materialOnly) const;
-  bool isColliding(CollisionSet const& collisionSet) const;
+  [[nodiscard]] MaterialId material(TileLayer layer) const;
+  [[nodiscard]] ModId mod(TileLayer layer) const;
+  [[nodiscard]] tuple<MaterialId, ModId> materialAndMod(TileLayer layer) const;
+  [[nodiscard]] MaterialColorVariant materialColor(TileLayer layer) const;
+  [[nodiscard]] CollisionKind getCollision() const;
+  [[nodiscard]] tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
+  [[nodiscard]] bool isConnectable(TileLayer layer, bool materialOnly) const;
+  [[nodiscard]] bool isColliding(CollisionSet const& collisionSet) const;
 
   MaterialId foreground = NullMaterialId;
   MaterialHue foregroundHueShift{};
@@ -68,19 +68,19 @@ struct ServerTile : public WorldTile {
   ServerTile(ServerTile const& serverTile);
   ServerTile& operator=(ServerTile const& serverTile);
 
-  bool isColliding(CollisionSet const& collisionSet) const;
+  [[nodiscard]] bool isColliding(CollisionSet const& collisionSet) const;
 
   void write(DataStream& ds) const;
   void read(DataStream& ds, VersionNumber serializationVersion);
 
   // Updates collision, clears cache, and if the collision kind does not
   // support liquid destroys it.
-  bool updateCollision(CollisionKind kind);
+  [[nodiscard]] bool updateCollision(CollisionKind kind);
   // Used for setting the second collision kind calculated by object material spaces.
-  bool updateObjectCollision(CollisionKind kind);
+  [[nodiscard]] bool updateObjectCollision(CollisionKind kind);
 
   // Calculates the actually-used collision kind based on the tile and object collision kinds.
-  CollisionKind getCollision() const;
+  [[nodiscard]] CollisionKind getCollision() const;
 
   LiquidStore liquid;
 
@@ -152,7 +152,7 @@ struct PredictedTile {
   Maybe<LiquidLevel> liquid;
   Maybe<CollisionKind> collision;
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
   template <typename Tile>
   void apply(Tile& tile) {
     if (foreground) tile.foreground = *foreground;

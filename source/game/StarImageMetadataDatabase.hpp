@@ -20,17 +20,17 @@ using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class ImageMetadataDatabase {
 public:
   ImageMetadataDatabase(AssetsConstPtr assets);
-  Vec2U imageSize(AssetPath const& path) const;
-  List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
-  RectU nonEmptyRegion(AssetPath const& path) const;
+  [[nodiscard]] Vec2U imageSize(AssetPath const& path) const;
+  [[nodiscard]] List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
+  [[nodiscard]] RectU nonEmptyRegion(AssetPath const& path) const;
   void cleanup() const;
 
 private:
   // Removes image processing directives that don't affect image spaces /
   // non-empty regions.
-  static AssetPath filterProcessing(AssetPath const& path);
+  [[nodiscard]] static AssetPath filterProcessing(AssetPath const& path);
 
-  Vec2U calculateImageSize(AssetPath const& path) const;
+  [[nodiscard]] Vec2U calculateImageSize(AssetPath const& path) const;
 
   // Path, position, fillLimit, and flip
   using SpacesEntry = tuple<AssetPath, Vec2I, float, bool>;

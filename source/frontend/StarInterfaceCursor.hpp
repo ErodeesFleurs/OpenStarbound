@@ -23,10 +23,10 @@ public:
   // the current one.  Expects a full asset path to the cursor config.
   void setCursor(String const& configFile);
 
-  Drawable drawable() const;
-  Vec2I size() const;
-  Vec2I offset() const;
-  float scale(float interfaceScale = 0) const;
+  [[nodiscard]] Drawable drawable() const;
+  [[nodiscard]] Vec2I size() const;
+  [[nodiscard]] Vec2I offset() const;
+  [[nodiscard]] float scale(float interfaceScale = 0) const;
 
   void update(float dt);
 

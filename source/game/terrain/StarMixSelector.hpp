@@ -9,7 +9,7 @@ struct MixSelector : TerrainSelector {
 
   MixSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   TerrainSelectorConstPtr m_mixSource;
   TerrainSelectorConstPtr m_aSource;

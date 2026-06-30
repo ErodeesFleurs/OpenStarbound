@@ -10,7 +10,7 @@
 
 namespace Star {
 
-static ImageMetadataDatabaseConstPtr resolveImageMetadata(ImageMetadataDatabaseConstPtr const& ptr) {
+[[nodiscard]] static ImageMetadataDatabaseConstPtr resolveImageMetadata(ImageMetadataDatabaseConstPtr const& ptr) {
   return requireServiceValueAs<StarException>(ptr, "Drawable operation", "image metadata database");
 }
 
@@ -73,7 +73,7 @@ Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterP
   return *this;
 }
 
-Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
+[[nodiscard]] Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
   Drawable drawable;
   drawable.part = LinePart{std::move(line), lineWidth, {}};
   drawable.color = color;
@@ -82,7 +82,7 @@ Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& co
   return drawable;
 }
 
-Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& position) {
+[[nodiscard]] Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& position) {
   Drawable drawable;
   drawable.part = PolyPart{std::move(poly)};
   drawable.color = color;
@@ -91,7 +91,7 @@ Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& positio
   return drawable;
 }
 
-Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color, ImageMetadataDatabaseConstPtr imageMetadata) {
+[[nodiscard]] Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color, ImageMetadataDatabaseConstPtr imageMetadata) {
   Drawable drawable;
   Mat3F transformation = Mat3F::identity();
   if (centered) {
@@ -110,7 +110,7 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
   return drawable;
 }
 
-Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, ImageMetadataDatabaseConstPtr imageMetadata) {
+[[nodiscard]] Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, ImageMetadataDatabaseConstPtr imageMetadata) {
   return makeImage(std::move(image), pixelSize, centered, position, Color::White, std::move(imageMetadata));
 }
 
@@ -148,7 +148,7 @@ Drawable::Drawable(Json const& json, ImageMetadataDatabaseConstPtr imageMetadata
   fullbright = json.getBool("fullbright", false);
 }
 
-Json Drawable::toJson() const {
+[[nodiscard]] Json Drawable::toJson() const {
   JsonObject json;
   if (auto line = part.ptr<LinePart>()) {
     json.set("line", jsonFromLine2F(line->line));
@@ -222,7 +222,7 @@ void Drawable::rebase(Vec2F const& newBase) {
   position = newBase;
 }
 
-RectF Drawable::boundBox(bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata) const {
+[[nodiscard]] RectF Drawable::boundBox(bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata) const {
   RectF boundBox = RectF::null();
   if (auto line = part.ptr<LinePart>()) {
     boundBox.combine(line->line.min());

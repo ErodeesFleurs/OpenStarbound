@@ -44,7 +44,7 @@ public:
   // given producer.  Producer shold take the key as an argument and return the
   // value.
   template <typename Producer>
-  Value& get(Key const& key, Producer producer);
+  [[nodiscard]] Value& get(Key const& key, Producer producer);
 
   // Clear all cached entries.
   void clear();

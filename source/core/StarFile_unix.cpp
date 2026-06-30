@@ -23,20 +23,20 @@
 namespace Star {
 
 namespace {
-int fdFromHandle(void* ptr) {
+[[nodiscard]] int fdFromHandle(void* ptr) {
   return static_cast<int>(reinterpret_cast<intptr_t>(ptr));
 }
 
-void* handleFromFd(int handle) {
+[[nodiscard]] void* handleFromFd(int handle) {
   return reinterpret_cast<void*>(static_cast<intptr_t>(handle));
 }
 }// namespace
 
-String File::convertDirSeparators(String const& path) {
+[[nodiscard]] String File::convertDirSeparators(String const& path) {
   return path.replace("\\", "/");
 }
 
-String File::currentDirectory() {
+[[nodiscard]] String File::currentDirectory() {
   char buffer[PATH_MAX];
   if (::getcwd(buffer, PATH_MAX) == nullptr)
     throw IOException("getcwd failed");
@@ -54,7 +54,7 @@ void File::makeDirectory(String const& dirName) {
     throw IOException(strf("could not create directory '{}', {}", dirName, strerror(errno)));
 }
 
-List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
+[[nodiscard]] List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   List<std::pair<String, bool>> fileList;
   DIR* directory = ::opendir(dirName.utf8Ptr());
   if (directory == nullptr)
@@ -81,7 +81,7 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   return fileList;
 }
 
-String File::baseName(const String& fileName) {
+[[nodiscard]] String File::baseName(const String& fileName) {
   String ret;
 
   std::string file = fileName.utf8();
@@ -93,7 +93,7 @@ String File::baseName(const String& fileName) {
   return ret;
 }
 
-String File::dirName(const String& fileName) {
+[[nodiscard]] String File::dirName(const String& fileName) {
   String ret;
 
   std::string file = fileName.utf8();
@@ -105,13 +105,13 @@ String File::dirName(const String& fileName) {
   return ret;
 }
 
-String File::relativeTo(String const& relativeTo, String const& path) {
+[[nodiscard]] String File::relativeTo(String const& relativeTo, String const& path) {
   if (path.beginsWith("/"))
     return path;
   return relativeTo.trimEnd("/") + '/' + path;
 }
 
-String File::fullPath(const String& fileName) {
+[[nodiscard]] String File::fullPath(const String& fileName) {
   char buffer[PATH_MAX];
 
   if (::realpath(fileName.utf8Ptr(), buffer) == nullptr)
@@ -120,15 +120,15 @@ String File::fullPath(const String& fileName) {
   return String(buffer);
 }
 
-String File::temporaryFileName() {
+[[nodiscard]] String File::temporaryFileName() {
   return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
-FilePtr File::temporaryFile() {
+[[nodiscard]] FilePtr File::temporaryFile() {
   return open(temporaryFileName(), IOMode::ReadWrite);
 }
 
-FilePtr File::ephemeralFile() {
+[[nodiscard]] FilePtr File::ephemeralFile() {
   auto file = make_shared<File>();
   ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
   auto res = mkstemp(path.ptr());
@@ -141,19 +141,19 @@ FilePtr File::ephemeralFile() {
   return file;
 }
 
-String File::temporaryDirectory() {
+[[nodiscard]] String File::temporaryDirectory() {
   String dirname = relativeTo(P_tmpdir, strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
   makeDirectory(dirname);
   return dirname;
 }
 
-bool File::exists(String const& path) {
+[[nodiscard]] bool File::exists(String const& path) {
   struct stat st_buf;
   int status = stat(path.utf8Ptr(), &st_buf);
   return status == 0;
 }
 
-bool File::isFile(String const& path) {
+[[nodiscard]] bool File::isFile(String const& path) {
   struct stat st_buf;
   int status = stat(path.utf8Ptr(), &st_buf);
   if (status != 0)
@@ -162,7 +162,7 @@ bool File::isFile(String const& path) {
   return S_ISREG(st_buf.st_mode);
 }
 
-bool File::isDirectory(String const& path) {
+[[nodiscard]] bool File::isDirectory(String const& path) {
   struct stat st_buf;
   int status = stat(path.utf8Ptr(), &st_buf);
   if (status != 0)
@@ -187,7 +187,7 @@ void File::overwriteFileWithRename(char const* data, size_t len, String const& f
   File::rename(newFile, filename);
 }
 
-void* File::fopen(char const* filename, IOMode mode) {
+[[nodiscard]] void* File::fopen(char const* filename, IOMode mode) {
   int oflag = 0;
 
   if (mode & IOMode::Read && mode & IOMode::Write)
@@ -226,11 +226,11 @@ void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
     throw IOException::format("Seek error: {}", strerror(errno));
 }
 
-StreamOffset File::ftell(void* f) {
+[[nodiscard]] StreamOffset File::ftell(void* f) {
   return lseek(fdFromHandle(f), 0, SEEK_CUR);
 }
 
-size_t File::fread(void* file, char* data, size_t len) {
+[[nodiscard]] size_t File::fread(void* file, char* data, size_t len) {
   if (len == 0)
     return 0;
 
@@ -245,7 +245,7 @@ size_t File::fread(void* file, char* data, size_t len) {
   }
 }
 
-size_t File::fwrite(void* file, char const* data, size_t len) {
+[[nodiscard]] size_t File::fwrite(void* file, char const* data, size_t len) {
   if (len == 0)
     return 0;
 
@@ -274,18 +274,18 @@ void File::fclose(void* file) {
     throw IOException::format("Close error: {}", strerror(errno));
 }
 
-StreamOffset File::fsize(void* file) {
+[[nodiscard]] StreamOffset File::fsize(void* file) {
   StreamOffset pos = ftell(file);
   StreamOffset size = lseek(fdFromHandle(file), 0, SEEK_END);
   lseek(fdFromHandle(file), pos, SEEK_SET);
   return size;
 }
 
-size_t File::pread(void* file, char* data, size_t len, StreamOffset position) {
+[[nodiscard]] size_t File::pread(void* file, char* data, size_t len, StreamOffset position) {
   return ::pread(fdFromHandle(file), data, len, position);
 }
 
-size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset position) {
+[[nodiscard]] size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset position) {
   return ::pwrite(fdFromHandle(file), data, len, position);
 }
 

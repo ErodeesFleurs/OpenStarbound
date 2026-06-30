@@ -12,95 +12,95 @@ namespace Star {
 // Extra methods to parse a variety of types out of pure JSON.  Throws
 // JsonException if json is not of correct type or size.
 
-size_t jsonToSize(Json const& v);
-Json jsonFromSize(size_t s);
+[[nodiscard]] size_t jsonToSize(Json const& v);
+[[nodiscard]] Json jsonFromSize(size_t s);
 
 // Must be array of appropriate size.
 
-Vec2D jsonToVec2D(Json const& v);
-Vec2F jsonToVec2F(Json const& v);
-Json jsonFromVec2F(Vec2F const& v);
-Vec2I jsonToVec2I(Json const& v);
-Json jsonFromVec2I(Vec2I const& v);
-Vec2U jsonToVec2U(Json const& v);
-Json jsonFromVec2U(Vec2U const& v);
-Vec2B jsonToVec2B(Json const& v);
-Json jsonFromVec2B(Vec2B const& v);
+[[nodiscard]] Vec2D jsonToVec2D(Json const& v);
+[[nodiscard]] Vec2F jsonToVec2F(Json const& v);
+[[nodiscard]] Json jsonFromVec2F(Vec2F const& v);
+[[nodiscard]] Vec2I jsonToVec2I(Json const& v);
+[[nodiscard]] Json jsonFromVec2I(Vec2I const& v);
+[[nodiscard]] Vec2U jsonToVec2U(Json const& v);
+[[nodiscard]] Json jsonFromVec2U(Vec2U const& v);
+[[nodiscard]] Vec2B jsonToVec2B(Json const& v);
+[[nodiscard]] Json jsonFromVec2B(Vec2B const& v);
 
-Vec3D jsonToVec3D(Json const& v);
-Vec3F jsonToVec3F(Json const& v);
-Json jsonFromVec3F(Vec3F const& v);
-Vec3I jsonToVec3I(Json const& v);
-Json jsonFromVec3I(Vec3I const& v);
-Vec3B jsonToVec3B(Json const& v);
+[[nodiscard]] Vec3D jsonToVec3D(Json const& v);
+[[nodiscard]] Vec3F jsonToVec3F(Json const& v);
+[[nodiscard]] Json jsonFromVec3F(Vec3F const& v);
+[[nodiscard]] Vec3I jsonToVec3I(Json const& v);
+[[nodiscard]] Json jsonFromVec3I(Vec3I const& v);
+[[nodiscard]] Vec3B jsonToVec3B(Json const& v);
 
-Vec4B jsonToVec4B(Json const& v);
-Vec4I jsonToVec4I(Json const& v);
-Vec4F jsonToVec4F(Json const& v);
+[[nodiscard]] Vec4B jsonToVec4B(Json const& v);
+[[nodiscard]] Vec4I jsonToVec4I(Json const& v);
+[[nodiscard]] Vec4F jsonToVec4F(Json const& v);
 
 // Must be array of size 4 or 2 arrays of size 2 in an array.
-RectD jsonToRectD(Json const& v);
-Json jsonFromRectD(RectD const& rect);
-RectF jsonToRectF(Json const& v);
-Json jsonFromRectF(RectF const& rect);
-RectI jsonToRectI(Json const& v);
-Json jsonFromRectI(RectI const& rect);
-RectU jsonToRectU(Json const& v);
-Json jsonFromRectU(RectU const& rect);
+[[nodiscard]] RectD jsonToRectD(Json const& v);
+[[nodiscard]] Json jsonFromRectD(RectD const& rect);
+[[nodiscard]] RectF jsonToRectF(Json const& v);
+[[nodiscard]] Json jsonFromRectF(RectF const& rect);
+[[nodiscard]] RectI jsonToRectI(Json const& v);
+[[nodiscard]] Json jsonFromRectI(RectI const& rect);
+[[nodiscard]] RectU jsonToRectU(Json const& v);
+[[nodiscard]] Json jsonFromRectU(RectU const& rect);
 
 // Can be a string, array of size 3 or 4 of doubles or ints.  If double, range
 // is 0.0 to 1.0, if int range is 0-255
-Color jsonToColor(Json const& v);
-Json jsonFromColor(Color const& color);
+[[nodiscard]] Color jsonToColor(Json const& v);
+[[nodiscard]] Json jsonFromColor(Color const& color);
 
 // HACK: Fix clockwise specified polygons in coming from JSON
 template <typename Float>
-Polygon<Float> fixInsideOutPoly(Polygon<Float> p);
+[[nodiscard]] Polygon<Float> fixInsideOutPoly(Polygon<Float> p);
 
 // Array of size 2 arrays
-PolyD jsonToPolyD(Json const& v);
-PolyF jsonToPolyF(Json const& v);
-PolyI jsonToPolyI(Json const& v);
-Json jsonFromPolyF(PolyF const& poly);
+[[nodiscard]] PolyD jsonToPolyD(Json const& v);
+[[nodiscard]] PolyF jsonToPolyF(Json const& v);
+[[nodiscard]] PolyI jsonToPolyI(Json const& v);
+[[nodiscard]] Json jsonFromPolyF(PolyF const& poly);
 
 // Expects a size 2 array of size 2 arrays
-Line2F jsonToLine2F(Json const& v);
-Json jsonFromLine2F(Line2F const& line);
+[[nodiscard]] Line2F jsonToLine2F(Json const& v);
+[[nodiscard]] Json jsonFromLine2F(Line2F const& line);
 
-Mat3F jsonToMat3F(Json const& v);
-Json jsonFromMat3F(Mat3F const& v);
+[[nodiscard]] Mat3F jsonToMat3F(Json const& v);
+[[nodiscard]] Json jsonFromMat3F(Mat3F const& v);
 
-StringList jsonToStringList(Json const& v);
-Json jsonFromStringList(List<String> const& v);
-StringSet jsonToStringSet(Json const& v);
-Json jsonFromStringSet(StringSet const& v);
-List<float> jsonToFloatList(Json const& v);
-List<int> jsonToIntList(Json const& v);
-List<Vec2I> jsonToVec2IList(Json const& v);
-List<Vec2U> jsonToVec2UList(Json const& v);
-List<Vec2F> jsonToVec2FList(Json const& v);
-List<Vec4B> jsonToVec4BList(Json const& v);
-List<Color> jsonToColorList(Json const& v);
-List<Directives> jsonToDirectivesList(Json const& v);
-Json jsonFromDirectivesList(List<Directives> const& v);
+[[nodiscard]] StringList jsonToStringList(Json const& v);
+[[nodiscard]] Json jsonFromStringList(List<String> const& v);
+[[nodiscard]] StringSet jsonToStringSet(Json const& v);
+[[nodiscard]] Json jsonFromStringSet(StringSet const& v);
+[[nodiscard]] List<float> jsonToFloatList(Json const& v);
+[[nodiscard]] List<int> jsonToIntList(Json const& v);
+[[nodiscard]] List<Vec2I> jsonToVec2IList(Json const& v);
+[[nodiscard]] List<Vec2U> jsonToVec2UList(Json const& v);
+[[nodiscard]] List<Vec2F> jsonToVec2FList(Json const& v);
+[[nodiscard]] List<Vec4B> jsonToVec4BList(Json const& v);
+[[nodiscard]] List<Color> jsonToColorList(Json const& v);
+[[nodiscard]] List<Directives> jsonToDirectivesList(Json const& v);
+[[nodiscard]] Json jsonFromDirectivesList(List<Directives> const& v);
 
-Json weightedChoiceFromJson(Json const& source, Json const& default_);
+[[nodiscard]] Json weightedChoiceFromJson(Json const& source, Json const& default_);
 
 // Assumes that the bins parameter is an array of pairs (arrays), where the
 // first element is a minimum value and the second element is the actual
 // important value.  Finds the pair with the highest value that is less than or
 // equal to the given target, and returns the second element.
-Json binnedChoiceFromJson(Json const& bins, float target, Json const& def = Json());
+[[nodiscard]] Json binnedChoiceFromJson(Json const& bins, float target, Json const& def = Json());
 
 template <typename T>
-WeightedPool<T> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<T> jsonToWeightedPool(Json const& source);
 template <typename T, typename Converter>
-WeightedPool<T> jsonToWeightedPool(Json const& source, Converter&& converter);
+[[nodiscard]] WeightedPool<T> jsonToWeightedPool(Json const& source, Converter&& converter);
 
 template <typename T>
-Json jsonFromWeightedPool(WeightedPool<T> const& pool);
+[[nodiscard]] Json jsonFromWeightedPool(WeightedPool<T> const& pool);
 template <typename T, typename Converter>
-Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter);
+[[nodiscard]] Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter);
 
 template <size_t Size>
 Array<unsigned, Size> jsonToArrayU(Json const& v) {
@@ -352,25 +352,25 @@ Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter) {
 }
 
 template <>
-WeightedPool<int> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<int> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<unsigned> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<unsigned> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<float> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<float> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<double> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<double> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<String> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<String> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<JsonArray> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<JsonArray> jsonToWeightedPool(Json const& source);
 
 template <>
-WeightedPool<JsonObject> jsonToWeightedPool(Json const& source);
+[[nodiscard]] WeightedPool<JsonObject> jsonToWeightedPool(Json const& source);
 
 template <typename Float>
 Polygon<Float> fixInsideOutPoly(Polygon<Float> p) {

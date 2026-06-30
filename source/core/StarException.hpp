@@ -34,7 +34,7 @@ struct OstreamFormatter {
 class StarException : public std::exception {
 public:
   template <typename... Args>
-  static StarException format(std::string_view fmt, Args const&... args);
+  [[nodiscard]] static StarException format(std::string_view fmt, Args const&... args);
 
   StarException() noexcept;
   virtual ~StarException() noexcept;
@@ -43,7 +43,7 @@ public:
   explicit StarException(std::exception const& cause) noexcept;
   StarException(std::string message, std::exception const& cause) noexcept;
 
-  char const* what() const noexcept override;
+  [[nodiscard]] char const* what() const noexcept override;
 
   // If the given exception is really StarException, then this will call
   // StarException::printException, otherwise just prints std::exception::what.
@@ -68,7 +68,7 @@ private:
 
 void printException(std::ostream& os, std::exception const& e, bool fullStacktrace);
 std::string printException(std::exception const& e, bool fullStacktrace);
-OutputProxy outputException(std::exception const& e, bool fullStacktrace);
+[[nodiscard]] OutputProxy outputException(std::exception const& e, bool fullStacktrace);
 
 void printStack(char const* message);
 
@@ -91,19 +91,6 @@ inline void assertionFailure(std::source_location location = std::source_locatio
   auto message = strf("assert failure in file {} line {}", location.file_name(), location.line());
   Star::fatalError(message.c_str(), true);
 }
-
-#ifndef NDEBUG
-#define starAssert(COND)                                                                                \
-  {                                                                                                     \
-    if (COND)                                                                                           \
-      ;                                                                                                 \
-    else                                                                                                \
-      Star::assertionFailure(std::source_location::current());                                           \
-  }
-#else
-#define starAssert(COND) \
-  {}
-#endif
 
 template <typename BaseName, typename Tag>
 class TypedException : public BaseName {

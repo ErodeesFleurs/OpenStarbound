@@ -318,7 +318,7 @@ void WorldPainter::drawDrawable(Drawable drawable) {
   if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(false, m_imageMetadataDatabase)))
     m_drawablePainter->drawDrawable(drawable);
   else if (drawable.isImage() && Random::randf() < m_preloadTextureChance)
-    m_assets->tryImage(drawable.imagePart().image);
+    (void)m_assets->tryImage(drawable.imagePart().image);
 }
 
 void WorldPainter::drawDrawableSet(List<Drawable>& drawables) {

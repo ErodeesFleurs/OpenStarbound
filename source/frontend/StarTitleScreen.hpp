@@ -89,17 +89,17 @@ public:
 
   void render();
 
-  bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] bool handleInputEvent(InputEvent const& event);
   void update(float dt);
 
-  bool textInputActive() const;
+  [[nodiscard]] bool textInputActive() const;
 
   using TitlePaneManager = RegisteredPaneManager<String>;
-  TitlePaneManager& paneManager();
+  [[nodiscard]] TitlePaneManager& paneManager();
 
-  TitleState currentState() const;
+  [[nodiscard]] TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
-  bool finishedState() const;
+  [[nodiscard]] bool finishedState() const;
   void resetState();
   // Switches to multi player select character screen immediately, skipping the
   // connection screen if 'skipConnection' is true.  If the player backs out of
@@ -108,21 +108,21 @@ public:
 
   void stopMusic();
 
-  PlayerPtr currentlySelectedPlayer() const;
+  [[nodiscard]] PlayerPtr currentlySelectedPlayer() const;
 
-  String multiPlayerAddress() const;
+  [[nodiscard]] String multiPlayerAddress() const;
   void setMultiPlayerAddress(String address);
 
-  String multiPlayerPort() const;
+  [[nodiscard]] String multiPlayerPort() const;
   void setMultiPlayerPort(String port);
 
-  String multiPlayerAccount() const;
+  [[nodiscard]] String multiPlayerAccount() const;
   void setMultiPlayerAccount(String account);
 
-  String multiPlayerPassword() const;
+  [[nodiscard]] String multiPlayerPassword() const;
   void setMultiPlayerPassword(String password);
 
-  bool multiPlayerForceLegacy() const;
+  [[nodiscard]] bool multiPlayerForceLegacy() const;
   void setMultiPlayerForceLegacy(bool const& forceLegacy);
 
 private:
@@ -140,9 +140,9 @@ private:
 
   void populateServerList(ListWidgetPtr list);
 
-  float interfaceScale() const;
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
+  [[nodiscard]] float interfaceScale() const;
+  [[nodiscard]] unsigned windowHeight() const;
+  [[nodiscard]] unsigned windowWidth() const;
 
   using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
   SharedPtr<ScriptComponent> m_scriptComponent;

@@ -32,9 +32,9 @@ struct TextPositioning {
                   Maybe<unsigned> charLimit = {});
 
   explicit TextPositioning(Json const& v);
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  TextPositioning translated(Vec2F translation) const;
+  [[nodiscard]] TextPositioning translated(Vec2F translation) const;
 
   Vec2F pos;
   HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor;
@@ -49,31 +49,31 @@ class TextPainter {
 public:
   TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener);
 
-  RectF renderText(StringView s, TextPositioning const& position);
-  RectF renderLine(StringView s, TextPositioning const& position);
-  RectF renderGlyph(String::Char c, TextPositioning const& position);
+  [[nodiscard]] RectF renderText(StringView s, TextPositioning const& position);
+  [[nodiscard]] RectF renderLine(StringView s, TextPositioning const& position);
+  [[nodiscard]] RectF renderGlyph(String::Char c, TextPositioning const& position);
 
-  RectF determineTextSize(StringView s, TextPositioning const& position);
-  RectF determineLineSize(StringView s, TextPositioning const& position);
-  RectF determineGlyphSize(String::Char c, TextPositioning const& position);
+  [[nodiscard]] RectF determineTextSize(StringView s, TextPositioning const& position);
+  [[nodiscard]] RectF determineLineSize(StringView s, TextPositioning const& position);
+  [[nodiscard]] RectF determineGlyphSize(String::Char c, TextPositioning const& position);
 
-  int glyphWidth(String::Char c);
-  int stringWidth(StringView s, unsigned charLimit = 0);
+  [[nodiscard]] int glyphWidth(String::Char c);
+  [[nodiscard]] int stringWidth(StringView s, unsigned charLimit = 0);
 
   using WrapTextCallback = function<bool(StringView, unsigned)>;
-  bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
+  [[nodiscard]] bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
-  List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
-  StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);
+  [[nodiscard]] List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
+  [[nodiscard]] StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);
 
-  unsigned fontSize() const;
+  [[nodiscard]] unsigned fontSize() const;
   void setFontSize(unsigned size);
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
   void setFontColor(Vec4B color);
   void setProcessingDirectives(StringView directives, bool back = false);
   void setFont(String const& font);
-  TextStyle& setTextStyle(TextStyle const& textStyle);
+  [[nodiscard]] TextStyle& setTextStyle(TextStyle const& textStyle);
   void clearTextStyle();
   void addFont(FontPtr const& font, String const& name);
   void reloadFonts();
@@ -83,13 +83,13 @@ public:
 
 private:
   void modifyDirectives(Directives& directives);
-  RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
+  [[nodiscard]] RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  [[nodiscard]] RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
+  [[nodiscard]] RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
+  [[nodiscard]] FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
 
   RendererPtr m_renderer;
   AssetsConstPtr m_assets;

@@ -28,16 +28,16 @@ public:
   // Must not call addNetElement / removeNetElement when being used as a slave,
   // id errors will result.
   void setElementFactory(function<ElementPtr()> elementFactory);
-  ElementId addNetElement(ElementPtr element);
+  [[nodiscard]] ElementId addNetElement(ElementPtr element);
   void removeNetElement(ElementId id);
 
   // Remove all elements
   void clearNetElements();
 
-  List<ElementId> netElementIds() const;
-  ElementPtr getNetElement(ElementId id) const;
+  [[nodiscard]] List<ElementId> netElementIds() const;
+  [[nodiscard]] ElementPtr getNetElement(ElementId id) const;
 
-  List<ElementPtr> netElements() const;
+  [[nodiscard]] List<ElementPtr> netElements() const;
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -50,7 +50,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
@@ -121,17 +121,17 @@ void NetElementDynamicGroup<Element>::clearNetElements() {
 }
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::netElementIds() const -> List<ElementId> {
+[[nodiscard]] auto NetElementDynamicGroup<Element>::netElementIds() const -> List<ElementId> {
   return m_idMap.keys();
 }
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::getNetElement(ElementId id) const -> ElementPtr {
+[[nodiscard]] auto NetElementDynamicGroup<Element>::getNetElement(ElementId id) const -> ElementPtr {
   return m_idMap.get(id);
 }
 
 template <typename Element>
-auto NetElementDynamicGroup<Element>::netElements() const -> List<ElementPtr> {
+[[nodiscard]] auto NetElementDynamicGroup<Element>::netElements() const -> List<ElementPtr> {
   return m_idMap.values();
 }
 
@@ -199,7 +199,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
 
   for (uint64_t i = 0; i < count; ++i) {
     ElementId id = ds.readVlqU();
-    DataStreamBuffer storeBuffer(ds.read<ByteArray>());
+    [[nodiscard]] DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
     ElementPtr element = m_elementFactory();
     element->netLoad(storeBuffer, rules);
@@ -287,7 +287,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
           auto& [elementId, elementData] = *addition;
           ElementPtr element = m_elementFactory();
-          DataStreamBuffer storeBuffer(std::move(elementData));
+          [[nodiscard]] DataStreamBuffer storeBuffer(std::move(elementData));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
           m_idMap.add(elementId, std::move(element));
@@ -325,7 +325,7 @@ void NetElementDynamicGroup<Element>::blankNetDelta(float interpolationTime) {
 template <typename Element>
 void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
+  assert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
 
   m_changeData.append(VersionedElementChange{currentVersion, std::move(change)});
 

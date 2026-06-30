@@ -22,7 +22,7 @@ struct TreeVariant {
   TreeVariant() = default;
   TreeVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   String stemName;
   String foliageName;
@@ -51,7 +51,7 @@ struct GrassVariant {
   GrassVariant() = default;
   GrassVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   String name;
 
@@ -77,7 +77,7 @@ struct BushVariant {
   BushVariant() = default;
   BushVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   String bushName;
   String modName;
@@ -100,37 +100,37 @@ class PlantDatabase {
 public:
   PlantDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  StringList treeStemNames(bool ceiling = false) const;
-  StringList treeFoliageNames() const;
+  [[nodiscard]] StringList treeStemNames(bool ceiling = false) const;
+  [[nodiscard]] StringList treeFoliageNames() const;
   // Each stem / foliage set has its own patterns of shapes that must match up
-  String treeStemShape(String const& stemName) const;
-  String treeFoliageShape(String const& foliageName) const;
-  Maybe<String> treeStemDirectory(String const& stemName) const;
-  Maybe<String> treeFoliageDirectory(String const& foliageName) const;
+  [[nodiscard]] String treeStemShape(String const& stemName) const;
+  [[nodiscard]] String treeFoliageShape(String const& foliageName) const;
+  [[nodiscard]] Maybe<String> treeStemDirectory(String const& stemName) const;
+  [[nodiscard]] Maybe<String> treeFoliageDirectory(String const& foliageName) const;
   // Throws an exception if stem shape and foliage shape do not match
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
+  [[nodiscard]] TreeVariant buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
   // Build a foliage-less tree
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift) const;
+  [[nodiscard]] TreeVariant buildTreeVariant(String const& stemName, float stemHueShift) const;
 
-  StringList grassNames(bool ceiling = false) const;
-  GrassVariant buildGrassVariant(String const& grassName, float hueShift) const;
+  [[nodiscard]] StringList grassNames(bool ceiling = false) const;
+  [[nodiscard]] GrassVariant buildGrassVariant(String const& grassName, float hueShift) const;
 
-  StringList bushNames(bool ceiling = false) const;
-  StringList bushMods(String const& bushName) const;
-  BushVariant buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
+  [[nodiscard]] StringList bushNames(bool ceiling = false) const;
+  [[nodiscard]] StringList bushMods(String const& bushName) const;
+  [[nodiscard]] BushVariant buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
 
-  PlantPtr createPlant(TreeVariant const& treeVariant, uint64_t seed) const;
-  PlantPtr createPlant(GrassVariant const& grassVariant, uint64_t seed) const;
-  PlantPtr createPlant(BushVariant const& bushVariant, uint64_t seed) const;
+  [[nodiscard]] PlantPtr createPlant(TreeVariant const& treeVariant, uint64_t seed) const;
+  [[nodiscard]] PlantPtr createPlant(GrassVariant const& grassVariant, uint64_t seed) const;
+  [[nodiscard]] PlantPtr createPlant(BushVariant const& bushVariant, uint64_t seed) const;
 
-  Json treeFoliageConfig(String const& foliageName) const;
-  Json treeStemConfig(String const& stemName) const;
+  [[nodiscard]] Json treeFoliageConfig(String const& foliageName) const;
+  [[nodiscard]] Json treeStemConfig(String const& stemName) const;
 
 private:
   struct Config {
     String directory;
     Json settings;
-    Json toJson() const;
+    [[nodiscard]] Json toJson() const;
   };
 
   StringMap<Config> m_treeStemConfigs;

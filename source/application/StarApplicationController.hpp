@@ -47,38 +47,38 @@ public:
   virtual void setCursorVisible(bool cursorVisible) = 0;
   virtual void setCursorPosition(Vec2I cursorPosition) = 0;
   virtual void setCursorHardware(bool cursorHardware) = 0;
-  virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
+  [[nodiscard]] virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
   virtual void setTextArea(Maybe<pair<RectI, int>> area = {}) = 0;
 
 
-  virtual AudioFormat enableAudio() = 0;
+  [[nodiscard]] virtual AudioFormat enableAudio() = 0;
   virtual void disableAudio() = 0;
 
   using AudioCallback = std::function<void(uint8_t*, int)>;
-  virtual bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
-  virtual bool closeAudioInputDevice() = 0;
+  [[nodiscard]] virtual bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
+  [[nodiscard]] virtual bool closeAudioInputDevice() = 0;
 
-  virtual bool hasClipboard() = 0;
-  virtual bool setClipboard(String text) = 0;
-  virtual bool setClipboardData(StringMap<ByteArray>) = 0;
-  virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
-  virtual bool setClipboardFile(String const& path) = 0;
-  virtual Maybe<String> getClipboard() = 0;
+  [[nodiscard]] virtual bool hasClipboard() = 0;
+  [[nodiscard]] virtual bool setClipboard(String text) = 0;
+  [[nodiscard]] virtual bool setClipboardData(StringMap<ByteArray>) = 0;
+  [[nodiscard]] virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
+  [[nodiscard]] virtual bool setClipboardFile(String const& path) = 0;
+  [[nodiscard]] virtual Maybe<String> getClipboard() = 0;
 
-  virtual bool isFocused() const = 0;
+  [[nodiscard]] virtual bool isFocused() const = 0;
 
   // Returns the latest actual measured update and render rate, which may be
   // different than the target update rate.
-  virtual float updateRate() const = 0;
-  virtual float renderFps() const = 0;
+  [[nodiscard]] virtual float updateRate() const = 0;
+  [[nodiscard]] virtual float renderFps() const = 0;
 
-  virtual float getDisplayScale() const = 0;
+  [[nodiscard]] virtual float getDisplayScale() const = 0;
 
-  virtual StatisticsServicePtr statisticsService() const = 0;
-  virtual P2PNetworkingServicePtr p2pNetworkingService() const = 0;
-  virtual UserGeneratedContentServicePtr userGeneratedContentService() const = 0;
-  virtual DesktopServicePtr desktopService() const = 0;
+  [[nodiscard]] virtual StatisticsServicePtr statisticsService() const = 0;
+  [[nodiscard]] virtual P2PNetworkingServicePtr p2pNetworkingService() const = 0;
+  [[nodiscard]] virtual UserGeneratedContentServicePtr userGeneratedContentService() const = 0;
+  [[nodiscard]] virtual DesktopServicePtr desktopService() const = 0;
 
   // Signals the application to quit
   virtual void quit() = 0;

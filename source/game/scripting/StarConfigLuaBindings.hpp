@@ -5,6 +5,6 @@
 namespace Star {
 
 namespace LuaBindings {
-  LuaCallbacks makeConfigCallbacks(function<Json(String const&, Json const&)> getParameter);
+  [[nodiscard]] LuaCallbacks makeConfigCallbacks(function<Json(String const&, Json const&)> getParameter);
 }
 }

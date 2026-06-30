@@ -15,16 +15,16 @@ public:
 
   explicit StarWorldClientLighting(WorldClient& worldClient);
 
-  bool fullBright() const;
+  [[nodiscard]] bool fullBright() const;
   void setFullBright(bool fullBright);
-  bool asyncLighting() const;
+  [[nodiscard]] bool asyncLighting() const;
   void setAsyncLighting(bool asyncLighting);
-  bool interactiveHighlightMode() const;
+  [[nodiscard]] bool interactiveHighlightMode() const;
   void setInteractiveHighlightMode(bool enabled);
 
-  float lightLevel(Vec2F const& pos) const;
+  [[nodiscard]] float lightLevel(Vec2F const& pos) const;
 
-  bool waitForLighting(WorldRenderData* renderData = nullptr);
+  [[nodiscard]] bool waitForLighting(WorldRenderData* renderData = nullptr);
 
   void lightingMain();
 

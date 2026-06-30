@@ -5,5 +5,5 @@
 #include "StarRenderer.hpp"
 
 namespace Star {
-  int runMainApplication(UniquePtr<Application> application, StringList cmdLineArgs);
+  [[nodiscard]] int runMainApplication(UniquePtr<Application> application, StringList cmdLineArgs);
 }

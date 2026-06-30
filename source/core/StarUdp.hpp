@@ -15,8 +15,8 @@ class UdpSocket : public Socket {
 public:
   UdpSocket(NetworkMode networkMode);
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  [[nodiscard]] size_t receive(HostAddressWithPort* address, char* data, size_t size);
+  [[nodiscard]] size_t send(HostAddressWithPort const& address, char const* data, size_t size);
 };
 
 class UdpServer {
@@ -25,10 +25,10 @@ public:
   ~UdpServer();
 
   void close();
-  bool isListening() const;
+  [[nodiscard]] bool isListening() const;
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size, unsigned timeout);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  [[nodiscard]] size_t receive(HostAddressWithPort* address, char* data, size_t size, unsigned timeout);
+  [[nodiscard]] size_t send(HostAddressWithPort const& address, char const* data, size_t size);
 
 private:
   HostAddressWithPort const m_hostAddress;

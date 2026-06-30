@@ -31,49 +31,49 @@ public:
 
   void init(Vec2U const& size, Tile defaultTile = Tile());
 
-  Vec2U size() const;
-  Tile defaultTile() const;
+  [[nodiscard]] Vec2U size() const;
+  [[nodiscard]] Tile defaultTile() const;
 
   // Returns true if this sector is within the size bounds, regardless of
   // loaded / unloaded status.
-  bool sectorValid(Sector const& sector) const;
+  [[nodiscard]] bool sectorValid(Sector const& sector) const;
 
-  Sector sectorFor(Vec2I const& pos) const;
+  [[nodiscard]] Sector sectorFor(Vec2I const& pos) const;
 
   // Return all valid sectors within a given range, regardless of loaded /
   // unloaded status.
-  List<Sector> validSectorsFor(RectI const& region) const;
+  [[nodiscard]] List<Sector> validSectorsFor(RectI const& region) const;
 
   // Returns the region for this sector, which is SectorSize x SectorSize
   // large.
-  RectI sectorRegion(Sector const& sector) const;
+  [[nodiscard]] RectI sectorRegion(Sector const& sector) const;
 
   // Returns adjacent sectors in any given integral movement, in sectors.
-  Sector adjacentSector(Sector const& sector, Vec2I const& sectorMovement);
+  [[nodiscard]] Sector adjacentSector(Sector const& sector, Vec2I const& sectorMovement);
 
   // Load a sector into the active sector array.
   void loadSector(Sector const& sector, ArrayPtr array);
   // Load with a sector full of the default tile.
   void loadDefaultSector(Sector const& sector);
   // Make a copy of a sector
-  ArrayPtr copySector(Sector const& sector);
+  [[nodiscard]] ArrayPtr copySector(Sector const& sector);
   // Take a sector out of the sector array.
-  ArrayPtr unloadSector(Sector const& sector);
+  [[nodiscard]] ArrayPtr unloadSector(Sector const& sector);
 
-  bool sectorLoaded(Sector sector) const;
-  List<Sector> loadedSectors() const;
-  size_t loadedSectorCount() const;
+  [[nodiscard]] bool sectorLoaded(Sector sector) const;
+  [[nodiscard]] List<Sector> loadedSectors() const;
+  [[nodiscard]] size_t loadedSectorCount() const;
 
   // Will return null if the sector is unloaded.
-  Array const* sectorArray(Sector sector) const;
-  Array* sectorArray(Sector sector);
+  [[nodiscard]] Array const* sectorArray(Sector sector) const;
+  [[nodiscard]] Array* sectorArray(Sector sector);
 
-  bool tileLoaded(Vec2I const& pos) const;
+  [[nodiscard]] bool tileLoaded(Vec2I const& pos) const;
 
-  Tile const& tile(Vec2I const& pos) const;
+  [[nodiscard]] Tile const& tile(Vec2I const& pos) const;
 
   // Will return nullptr if the position is invalid.
-  Tile* modifyTile(Vec2I const& pos);
+  [[nodiscard]] Tile* modifyTile(Vec2I const& pos);
 
   // Function signature here is (Vec2I const&, Tile const&).  Will be called
   // for the entire region, valid or not.  If tile positions are not valid,
@@ -113,12 +113,12 @@ public:
   // Returns true on the first instance found.  Passed in function must accept
   // (Vec2I const&, Tile const&).
   template <typename Function>
-  bool tileSatisfies(RectI const& region, Function&& function) const;
+  [[nodiscard]] bool tileSatisfies(RectI const& region, Function&& function) const;
   // Same, but uses a radius of 'distance', which is inclusive on all sides.
   // In other words, calling tileSatisfies({0, 0}, 1, <func>) should be
   // equivalent to calling tileSatisfies({-1, -1}, {3, 3}, <func>).
   template <typename Function>
-  bool tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const;
+  [[nodiscard]] bool tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const;
 
 private:
   struct SplitRect {
@@ -128,15 +128,15 @@ private:
 
   // function must return bool to continue iteration
   template <typename Function>
-  bool tileEachAbortable(RectI const& region, Function&& function) const;
+  [[nodiscard]] bool tileEachAbortable(RectI const& region, Function&& function) const;
 
   // Splits rects along the world wrap line and wraps the x coordinate for each
   // rect into world space.  Also returns the integral x offset to transform
   // back into the input rect range.
-  StaticList<SplitRect, 2> splitRect(RectI rect) const;
+  [[nodiscard]] StaticList<SplitRect, 2> splitRect(RectI rect) const;
 
   // Clamp the rect to entirely within valid tile spaces in y dimension
-  RectI yClampRect(RectI const& r) const;
+  [[nodiscard]] RectI yClampRect(RectI const& r) const;
 
   Vec2U m_worldSize;
   Tile m_default;
@@ -195,7 +195,7 @@ auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) con
 
 template <typename Tile, unsigned SectorSize>
 RectI TileSectorArray<Tile, SectorSize>::sectorRegion(Sector const& sector) const {
-  Vec2I sectorCorner(m_tileSectors.sectorCorner(sector));
+  [[nodiscard]] Vec2I sectorCorner(m_tileSectors.sectorCorner(sector));
   return RectI::withSize(sectorCorner, {min<int>(SectorSize, m_worldSize[0] - sectorCorner[0]), min<int>(SectorSize, m_worldSize[1] - sectorCorner[1])});
 }
 
@@ -204,7 +204,7 @@ auto TileSectorArray<Tile, SectorSize>::adjacentSector(Sector const& sector, Vec
   // This works because the only smaller than SectorSize sectors are on the
   // world wrap point, and there is only one vertical line of them, but it's
   // very not-obvious that it works.
-  Vec2I corner(m_tileSectors.sectorCorner(sector));
+  [[nodiscard]] Vec2I corner(m_tileSectors.sectorCorner(sector));
   corner += sectorMovement * SectorSize;
   return sectorFor(corner);
 }
@@ -471,7 +471,7 @@ bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, F
 template <typename Tile, unsigned SectorSize>
 auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticList<SplitRect, 2> {
   // TODO: Offset here does not support rects outside of -m_worldSize[0] to 2 * m_worldSize[0]!
-  starAssert(rect.xMin() >= -static_cast<int>(m_worldSize[0]) && rect.xMax() <= 2 * static_cast<int>(m_worldSize[0]));
+  assert(rect.xMin() >= -static_cast<int>(m_worldSize[0]) && rect.xMax() <= 2 * static_cast<int>(m_worldSize[0]));
 
   // any rect at least the width of the world is equivalent to a rect that spans the width of the world exactly
   if (rect.width() >= static_cast<int>(m_worldSize[0]))

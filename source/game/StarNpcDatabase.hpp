@@ -103,27 +103,27 @@ public:
               ImageMetadataDatabaseConstPtr imageMetadataDatabase,
               LuaRootServices luaRootServices);
 
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
+  [[nodiscard]] NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
+  [[nodiscard]] NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
 
-  ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
-  NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
-  Json writeNpcVariantToJson(NpcVariant const& variant) const;
-  NpcVariant readNpcVariantFromJson(Json const& data) const;
+  [[nodiscard]] Json writeNpcVariantToJson(NpcVariant const& variant) const;
+  [[nodiscard]] NpcVariant readNpcVariantFromJson(Json const& data) const;
 
-  NpcPtr createNpc(NpcVariant const& npcVariant) const;
-  NpcPtr diskLoadNpc(Json const& diskStore) const;
-  NpcPtr netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] NpcPtr createNpc(NpcVariant const& npcVariant) const;
+  [[nodiscard]] NpcPtr diskLoadNpc(Json const& diskStore) const;
+  [[nodiscard]] NpcPtr netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
+  [[nodiscard]] List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
 
-  Json buildConfig(String const& typeName, Json const& overrides = Json()) const;
+  [[nodiscard]] Json buildConfig(String const& typeName, Json const& overrides = Json()) const;
 
 private:
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
-  Json mergeConfigValues(Json const& base, Json const& merger) const;
+  [[nodiscard]] Json mergeConfigValues(Json const& base, Json const& merger) const;
 
   RebuilderPtr m_rebuilder;
   AssetsConstPtr m_assets;

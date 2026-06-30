@@ -34,8 +34,8 @@ public:
 
   // An exception occurred and the
   // ScriptableThread has stopped running.
-  bool errorOccurred();
-  bool shouldExpire();
+  [[nodiscard]] bool errorOccurred();
+  [[nodiscard]] bool shouldExpire();
 
   // 
   void passMessage(Message&& message);
@@ -45,7 +45,7 @@ protected:
 
 private:
   void update();
-  Maybe<Json> receiveMessage(String const& message, JsonArray const& args);
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, JsonArray const& args);
 
   mutable RecursiveMutex m_mutex;
   
@@ -65,8 +65,8 @@ private:
   mutable atomic<bool> m_errorOccurred;
   mutable atomic<bool> m_shouldExpire;
   
-  LuaCallbacks makeThreadCallbacks();
-  Json configValue(String const& name, Json def) const;
+  [[nodiscard]] LuaCallbacks makeThreadCallbacks();
+  [[nodiscard]] Json configValue(String const& name, Json def) const;
 };
 
 }

@@ -25,7 +25,7 @@ public:
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback,
       CharSelectionServices services);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void show() override;
   void updateCharacterPlates();
   void setReadOnly(bool readOnly);

@@ -23,11 +23,11 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void send(Signal signal);
-  List<Signal> receive();
+  [[nodiscard]] List<Signal> receive();
 
 private:
   struct SignalEntry {
@@ -136,7 +136,7 @@ void NetElementSignal<Signal>::send(Signal signal) {
 }
 
 template <typename Signal>
-List<Signal> NetElementSignal<Signal>::receive() {
+[[nodiscard]] List<Signal> NetElementSignal<Signal>::receive() {
   List<Signal> received;
   for (auto& signalEntry : m_signals) {
     if (!signalEntry.received) {

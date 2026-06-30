@@ -17,13 +17,13 @@ public:
 
   explicit WorldServerLiquid(WorldServer& worldServer);
 
-  LiquidLevel liquidLevel(Vec2I const& pos) const;
-  LiquidLevel liquidLevel(RectF const& region) const;
+  [[nodiscard]] LiquidLevel liquidLevel(Vec2I const& pos) const;
+  [[nodiscard]] LiquidLevel liquidLevel(RectF const& region) const;
   void modifyLiquid(Vec2I const& pos, LiquidId liquid, float quantity, bool additive = false);
   void setLiquid(Vec2I const& pos, LiquidId liquid, float level, float pressure);
   void activateLiquidRegion(RectI const& region);
-  ItemDescriptor collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
-  shared_ptr<LiquidCellEngine<LiquidId>> liquidEngine() const;
+  [[nodiscard]] ItemDescriptor collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
+  [[nodiscard]] shared_ptr<LiquidCellEngine<LiquidId>> liquidEngine() const;
 
 private:
   WorldServer& m_worldServer;

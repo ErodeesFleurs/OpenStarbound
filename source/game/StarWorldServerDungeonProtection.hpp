@@ -16,16 +16,16 @@ public:
 
   explicit WorldServerDungeonProtection(WorldServer& worldServer);
 
-  bool isTileProtected(Vec2I const& pos) const;
-  bool getTileProtection(DungeonId dungeonId) const;
+  [[nodiscard]] bool isTileProtected(Vec2I const& pos) const;
+  [[nodiscard]] bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
-  size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
+  [[nodiscard]] size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
   void setTileProtectionEnabled(bool enabled);
   void setDungeonId(RectI const& tileRegion, DungeonId dungeonId);
-  DungeonId dungeonId(Vec2I const& pos) const;
+  [[nodiscard]] DungeonId dungeonId(Vec2I const& pos) const;
   void setDungeonGravity(DungeonId dungeonId, Maybe<float> gravity);
   void setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathable);
-  bool isPlayerModified(RectI const& region) const;
+  [[nodiscard]] bool isPlayerModified(RectI const& region) const;
 
 private:
   WorldServer& m_worldServer;

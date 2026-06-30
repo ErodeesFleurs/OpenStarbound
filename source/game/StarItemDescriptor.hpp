@@ -14,7 +14,7 @@ using ItemConstPtr = SharedPtr<Item const>;
 class ItemDescriptor {
 public:
   // Loads ItemDescriptor from store format.
-  static ItemDescriptor loadStore(Json const& store, VersioningDatabaseConstPtr versioningDatabase);
+  [[nodiscard]] static ItemDescriptor loadStore(Json const& store, VersioningDatabaseConstPtr versioningDatabase);
 
   ItemDescriptor() = default;
   ItemDescriptor(String name, uint64_t count, Json parameters = Json());
@@ -24,35 +24,35 @@ public:
   // for keys 'name', 'parameters', and 'count'.
   explicit ItemDescriptor(Json const& spec);
 
-  String const& name() const;
-  uint64_t count() const;
-  Json const& parameters() const;
+  [[nodiscard]] String const& name() const;
+  [[nodiscard]] uint64_t count() const;
+  [[nodiscard]] Json const& parameters() const;
 
-  ItemDescriptor singular() const;
-  ItemDescriptor withCount(uint64_t count) const;
-  ItemDescriptor multiply(uint64_t count) const;
-  ItemDescriptor applyParameters(JsonObject const& parameters) const;
+  [[nodiscard]] ItemDescriptor singular() const;
+  [[nodiscard]] ItemDescriptor withCount(uint64_t count) const;
+  [[nodiscard]] ItemDescriptor multiply(uint64_t count) const;
+  [[nodiscard]] ItemDescriptor applyParameters(JsonObject const& parameters) const;
 
   // Descriptor is the default constructed ItemDescriptor()
-  bool isNull() const;
+  [[nodiscard]] bool isNull() const;
 
   // Descriptor is not null
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   // True if descriptor is null OR if descriptor is size 0
-  bool isEmpty() const;
+  [[nodiscard]] bool isEmpty() const;
 
-  bool operator==(ItemDescriptor const& rhs) const;
-  bool operator!=(ItemDescriptor const& rhs) const;
+  [[nodiscard]] bool operator==(ItemDescriptor const& rhs) const;
+  [[nodiscard]] bool operator!=(ItemDescriptor const& rhs) const;
 
-  bool matches(ItemDescriptor const& other, bool exactMatch = false) const;
-  bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
+  [[nodiscard]] bool matches(ItemDescriptor const& other, bool exactMatch = false) const;
+  [[nodiscard]] bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
-  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
+  [[nodiscard]] Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   // Converts ItemDescriptor to spec format
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   friend DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
   friend DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
@@ -64,7 +64,7 @@ public:
 private:
   ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash);
 
-  size_t parametersHash() const;
+  [[nodiscard]] size_t parametersHash() const;
 
   String m_name;
   uint64_t m_count = 0;
@@ -74,7 +74,7 @@ private:
 
 template <>
 struct hash<ItemDescriptor> {
-  size_t operator()(ItemDescriptor const& v) const;
+  [[nodiscard]] size_t operator()(ItemDescriptor const& v) const;
 };
 
 }// namespace Star

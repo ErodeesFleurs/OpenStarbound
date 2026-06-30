@@ -24,20 +24,20 @@ class InstrumentItem : public Item,
 public:
   InstrumentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  StringSet effectSources() const override;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] StringSet effectSources() const override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  bool active() const override;
+  [[nodiscard]] bool active() const override;
   void setActive(bool active) override;
-  bool usable() const override;
+  [[nodiscard]] bool usable() const override;
   void activate() override;
 
-  List<Drawable> drawables() const override;
-  float getAngle(float angle) override;
+  [[nodiscard]] List<Drawable> drawables() const override;
+  [[nodiscard]] float getAngle(float angle) override;
 
 private:
   List<PersistentStatusEffect> m_activeStatusEffects;

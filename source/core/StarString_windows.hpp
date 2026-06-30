@@ -6,7 +6,7 @@
 
 namespace Star {
 
-String utf16ToString(WCHAR const* s);
-unique_ptr<WCHAR[]> stringToUtf16(String const& s);
+[[nodiscard]] String utf16ToString(WCHAR const* s);
+[[nodiscard]] unique_ptr<WCHAR[]> stringToUtf16(String const& s);
 
 }

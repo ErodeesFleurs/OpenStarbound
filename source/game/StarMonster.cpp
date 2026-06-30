@@ -193,27 +193,27 @@ void Monster::uninit() {
   Entity::uninit();
 }
 
-Vec2F Monster::mouthOffset() const {
+[[nodiscard]] Vec2F Monster::mouthOffset() const {
   return getAbsolutePosition(m_monsterVariant.mouthOffset) - position();
 }
 
-Vec2F Monster::feetOffset() const {
+[[nodiscard]] Vec2F Monster::feetOffset() const {
   return getAbsolutePosition(m_monsterVariant.feetOffset) - position();
 }
 
-Vec2F Monster::position() const {
+[[nodiscard]] Vec2F Monster::position() const {
   return m_movementController->position();
 }
 
-RectF Monster::metaBoundBox() const {
+[[nodiscard]] RectF Monster::metaBoundBox() const {
   return m_monsterVariant.metaBoundBox;
 }
 
-RectF Monster::collisionArea() const {
+[[nodiscard]] RectF Monster::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
-Vec2F Monster::velocity() const {
+[[nodiscard]] Vec2F Monster::velocity() const {
   return m_movementController->velocity();
 }
 
@@ -233,15 +233,15 @@ void Monster::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-String Monster::name() const {
+[[nodiscard]] String Monster::name() const {
   return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
 }
 
-String Monster::description() const {
+[[nodiscard]] String Monster::description() const {
   return m_monsterVariant.description.value("Some indescribable horror");
 }
 
-Maybe<HitType> Monster::queryHit(DamageSource const& source) const {
+[[nodiscard]] Maybe<HitType> Monster::queryHit(DamageSource const& source) const {
   if (!inWorld() || m_knockedOut || m_statusController->statPositive("invulnerable"))
     return {};
 
@@ -251,7 +251,7 @@ Maybe<HitType> Monster::queryHit(DamageSource const& source) const {
   return {};
 }
 
-Maybe<PolyF> Monster::hitPoly() const {
+[[nodiscard]] Maybe<PolyF> Monster::hitPoly() const {
   PolyF hitBody = m_monsterVariant.selfDamagePoly;
   hitBody.rotate(m_movementController->rotation());
   hitBody.translate(position());
@@ -282,7 +282,7 @@ List<DamageNotification> Monster::selfDamageNotifications() {
   return m_statusController->pullSelfDamageNotifications();
 }
 
-List<DamageSource> Monster::damageSources() const {
+[[nodiscard]] List<DamageSource> Monster::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
 
   float levelPowerMultiplier = world()->functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
@@ -380,7 +380,7 @@ void Monster::knockout() {
     m_networkedAnimator.setState(stateName, state.toString());
 }
 
-bool Monster::shouldDestroy() const {
+[[nodiscard]] bool Monster::shouldDestroy() const {
   return m_knockedOut && m_knockoutTimer <= 0;
 }
 
@@ -431,7 +431,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
     setNetStates();
 }
 
-List<LightSource> Monster::lightSources() const {
+[[nodiscard]] List<LightSource> Monster::lightSources() const {
   auto lightSources = m_networkedAnimator.lightSources(position());
   lightSources.appendAll(m_statusController->lightSources());
   return lightSources;
@@ -531,19 +531,19 @@ Maybe<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const
   return result;
 }
 
-float Monster::maxHealth() const {
+[[nodiscard]] float Monster::maxHealth() const {
   return *m_statusController->resourceMax("health");
 }
 
-float Monster::health() const {
+[[nodiscard]] float Monster::health() const {
   return m_statusController->resource("health");
 }
 
-DamageBarType Monster::damageBar() const {
+[[nodiscard]] DamageBarType Monster::damageBar() const {
   return m_damageBar.get();
 }
 
-Vec2F Monster::getAbsolutePosition(Vec2F relativePosition) const {
+[[nodiscard]] Vec2F Monster::getAbsolutePosition(Vec2F relativePosition) const {
   if (m_movementController->facingDirection() == Direction::Left)
     relativePosition[0] *= -1;
   if (m_movementController->rotation() != 0)
@@ -767,11 +767,11 @@ void Monster::getNetStates(bool initial) {
   }
 }
 
-float Monster::monsterLevel() const {
+[[nodiscard]] float Monster::monsterLevel() const {
   return *m_monsterLevel;
 }
 
-Monster::SkillInfo Monster::activeSkillInfo() const {
+[[nodiscard]] Monster::SkillInfo Monster::activeSkillInfo() const {
   SkillInfo skillInfo;
 
   if (!m_activeSkillName.empty()) {
@@ -783,7 +783,7 @@ Monster::SkillInfo Monster::activeSkillInfo() const {
   return skillInfo;
 }
 
-List<Drawable> Monster::portrait(PortraitMode) const {
+[[nodiscard]] List<Drawable> Monster::portrait(PortraitMode) const {
   if (m_monsterVariant.portraitIcon) {
     return {Drawable::makeImage(*m_monsterVariant.portraitIcon, 1.0f, true, Vec2F(), m_imageMetadataDatabase)};
   } else {
@@ -795,35 +795,35 @@ List<Drawable> Monster::portrait(PortraitMode) const {
   }
 }
 
-String Monster::typeName() const {
+[[nodiscard]] String Monster::typeName() const {
   return m_monsterVariant.type;
 }
 
-MonsterVariant Monster::monsterVariant() const {
+[[nodiscard]] MonsterVariant Monster::monsterVariant() const {
   return m_monsterVariant;
 }
 
-Maybe<String> Monster::statusText() const {
+[[nodiscard]] Maybe<String> Monster::statusText() const {
   return {};
 }
 
-bool Monster::displayNametag() const {
+[[nodiscard]] bool Monster::displayNametag() const {
   return m_displayNametag.get();
 }
 
-Vec3B Monster::nametagColor() const {
+[[nodiscard]] Vec3B Monster::nametagColor() const {
   return m_monsterVariant.nametagColor;
 }
 
-Vec2F Monster::nametagOrigin() const {
+[[nodiscard]] Vec2F Monster::nametagOrigin() const {
   return mouthPosition(false);
 }
 
-String Monster::nametag() const {
+[[nodiscard]] String Monster::nametag() const {
   return name();
 }
 
-bool Monster::aggressive() const {
+[[nodiscard]] bool Monster::aggressive() const {
   return m_aggressive;
 }
 
@@ -835,11 +835,11 @@ Maybe<LuaValue> Monster::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-Vec2F Monster::mouthPosition() const {
+[[nodiscard]] Vec2F Monster::mouthPosition() const {
   return mouthOffset() + position();
 }
 
-Vec2F Monster::mouthPosition(bool) const {
+[[nodiscard]] Vec2F Monster::mouthPosition(bool) const {
   return mouthPosition();
 }
 
@@ -847,7 +847,7 @@ List<ChatAction> Monster::pullPendingChatActions() {
   return std::exchange(m_pendingChatActions, {});
 }
 
-List<PhysicsForceRegion> Monster::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> Monster::forceRegions() const {
   return m_physicsForces.get();
 }
 
@@ -863,11 +863,11 @@ InteractAction Monster::interact(InteractRequest const& request) {
   return InteractAction(result.getString(0), entityId(), result.get(1));
 }
 
-bool Monster::isInteractive() const {
+[[nodiscard]] bool Monster::isInteractive() const {
   return m_interactive.get();
 }
 
-Vec2F Monster::questIndicatorPosition() const {
+[[nodiscard]] Vec2F Monster::questIndicatorPosition() const {
   Vec2F pos = position() + m_questIndicatorOffset;
   pos[1] += collisionArea().yMax();
   return pos;

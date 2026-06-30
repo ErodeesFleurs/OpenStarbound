@@ -72,10 +72,10 @@ public:
   QuestTemplateDatabase(AssetsConstPtr assets);
 
   // Return a list of all known template id values
-  List<String> allQuestTemplateIds() const;
+  [[nodiscard]] List<String> allQuestTemplateIds() const;
 
   // Return the template for the given template id
-  QuestTemplatePtr questTemplate(String const& templateId) const;
+  [[nodiscard]] QuestTemplatePtr questTemplate(String const& templateId) const;
 
 private:
   StringMap<QuestTemplatePtr> m_templates;

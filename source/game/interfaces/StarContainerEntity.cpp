@@ -3,13 +3,12 @@
 
 namespace Star {
 
-size_t ContainerEntity::containerSize() const {
+[[nodiscard]] size_t ContainerEntity::containerSize() const {
   return itemBag()->size();
 }
 
-List<ItemPtr> ContainerEntity::containerItems() const {
+[[nodiscard]] List<ItemPtr> ContainerEntity::containerItems() const {
   return itemBag()->items();
 }
 
 }
-

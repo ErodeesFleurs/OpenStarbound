@@ -22,19 +22,19 @@ TileEntity::TileEntity() {
   setPersistent(true);
 }
 
-Vec2F TileEntity::position() const {
+[[nodiscard]] Vec2F TileEntity::position() const {
   return Vec2F(tilePosition());
 }
 
-List<Vec2I> TileEntity::spaces() const {
+[[nodiscard]] List<Vec2I> TileEntity::spaces() const {
   return {};
 }
 
-List<Vec2I> TileEntity::roots() const {
+[[nodiscard]] List<Vec2I> TileEntity::roots() const {
   return {};
 }
 
-List<MaterialSpace> TileEntity::materialSpaces() const {
+[[nodiscard]] List<MaterialSpace> TileEntity::materialSpaces() const {
   return {};
 }
 
@@ -42,15 +42,15 @@ bool TileEntity::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const&
   return false;
 }
 
-bool TileEntity::canBeDamaged() const {
+[[nodiscard]] bool TileEntity::canBeDamaged() const {
   return true;
 }
 
-bool TileEntity::isInteractive() const {
+[[nodiscard]] bool TileEntity::isInteractive() const {
   return false;
 }
 
-List<Vec2I> TileEntity::interactiveSpaces() const {
+[[nodiscard]] List<Vec2I> TileEntity::interactiveSpaces() const {
   return spaces();
 }
 
@@ -58,19 +58,19 @@ InteractAction TileEntity::interact([[maybe_unused]] InteractRequest const& requ
   return InteractAction();
 }
 
-List<QuestArcDescriptor> TileEntity::offeredQuests() const {
+[[nodiscard]] List<QuestArcDescriptor> TileEntity::offeredQuests() const {
   return {};
 }
 
-StringSet TileEntity::turnInQuests() const {
+[[nodiscard]] StringSet TileEntity::turnInQuests() const {
   return StringSet();
 }
 
-Vec2F TileEntity::questIndicatorPosition() const {
+[[nodiscard]] Vec2F TileEntity::questIndicatorPosition() const {
   return position();
 }
 
-bool TileEntity::anySpacesOccupied(List<Vec2I> const& spaces) const {
+[[nodiscard]] bool TileEntity::anySpacesOccupied(List<Vec2I> const& spaces) const {
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
@@ -81,7 +81,7 @@ bool TileEntity::anySpacesOccupied(List<Vec2I> const& spaces) const {
   return false;
 }
 
-bool TileEntity::allSpacesOccupied(List<Vec2I> const& spaces) const {
+[[nodiscard]] bool TileEntity::allSpacesOccupied(List<Vec2I> const& spaces) const {
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
@@ -92,7 +92,7 @@ bool TileEntity::allSpacesOccupied(List<Vec2I> const& spaces) const {
   return true;
 }
 
-float TileEntity::spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const {
+[[nodiscard]] float TileEntity::spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const {
   float total = 0.0f;
   for (auto pos : relativeSpaces) {
     pos += tilePosition();

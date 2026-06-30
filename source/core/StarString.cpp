@@ -273,7 +273,7 @@ StringList String::split(String const& pattern, size_t maxSplit) const {
     beg = end + pattern.m_string.size();
   }
 
-  starAssert(maxSplit == NPos || ret.size() <= maxSplit + 1);
+  assert(maxSplit == NPos || ret.size() <= maxSplit + 1);
   return ret;
 }
 
@@ -555,7 +555,7 @@ size_t String::findFirstNotOf(String const& pattern, size_t beg) const {
 }
 
 size_t String::findNextBoundary(size_t index, bool backwards) const {
-  starAssert(index <= size());
+  assert(index <= size());
   if (!backwards && (index == size()))
     return index;
   if (backwards) {

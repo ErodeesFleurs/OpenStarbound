@@ -15,8 +15,8 @@ enum class PixelFormat : uint8_t {
   RGBA_F
 };
 
-uint8_t bitsPerPixel(PixelFormat pf);
-uint8_t bytesPerPixel(PixelFormat pf);
+[[nodiscard]] uint8_t bitsPerPixel(PixelFormat pf);
+[[nodiscard]] uint8_t bytesPerPixel(PixelFormat pf);
 
 struct ImageExceptionTag { static constexpr char const* typeName = "ImageException"; };
 using ImageException = TypedException<StarException, ImageExceptionTag>;
@@ -257,8 +257,8 @@ inline void Image::set32(Vec2U const& pos, Vec4B const& c) {
 }
 
 inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 4);
+  assert(m_data && x < m_width && y < m_height);
+  assert(bytesPerPixel() == 4);
 
   size_t offset = y * m_width * 4 + x * 4;
   m_data[offset] = c[0];
@@ -268,8 +268,8 @@ inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
 }
 
 inline Vec4B Image::get32(unsigned x, unsigned y) const {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 4);
+  assert(m_data && x < m_width && y < m_height);
+  assert(bytesPerPixel() == 4);
 
   Vec4B c;
   size_t offset = y * m_width * 4 + x * 4;
@@ -285,8 +285,8 @@ inline void Image::set24(Vec2U const& pos, Vec3B const& c) {
 }
 
 inline void Image::set24(unsigned x, unsigned y, Vec3B const& c) {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 3);
+  assert(m_data && x < m_width && y < m_height);
+  assert(bytesPerPixel() == 3);
 
   size_t offset = y * m_width * 3 + x * 3;
   m_data[offset] = c[0];
@@ -295,8 +295,8 @@ inline void Image::set24(unsigned x, unsigned y, Vec3B const& c) {
 }
 
 inline Vec3B Image::get24(unsigned x, unsigned y) const {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 3);
+  assert(m_data && x < m_width && y < m_height);
+  assert(bytesPerPixel() == 3);
 
   Vec3B c;
   size_t offset = y * m_width * 3 + x * 3;

@@ -9,12 +9,12 @@ struct RecipeExceptionTag { static constexpr char const* typeName = "RecipeExcep
 using RecipeException = TypedException<StarException, RecipeExceptionTag>;
 
 struct ItemRecipe {
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  bool isNull() const;
+  [[nodiscard]] bool isNull() const;
 
-  bool operator==(ItemRecipe const& rhs) const;
-  bool operator!=(ItemRecipe const& rhs) const;
+  [[nodiscard]] bool operator==(ItemRecipe const& rhs) const;
+  [[nodiscard]] bool operator!=(ItemRecipe const& rhs) const;
 
   StringMap<uint64_t> currencyInputs;
   List<ItemDescriptor> inputs;
@@ -29,7 +29,7 @@ struct ItemRecipe {
 
 template <>
 struct hash<ItemRecipe> {
-  size_t operator()(ItemRecipe const& v) const;
+  [[nodiscard]] size_t operator()(ItemRecipe const& v) const;
 };
 
 std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);

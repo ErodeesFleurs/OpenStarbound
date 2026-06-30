@@ -110,31 +110,31 @@ public:
 
   void cleanup();
 
-  StringList monsterTypes() const;
+  [[nodiscard]] StringList monsterTypes() const;
 
-  MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
-  MonsterVariant monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
+  [[nodiscard]] MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
+  [[nodiscard]] MonsterVariant monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
 
-  ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
-  MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
 
-  Json writeMonsterVariantToJson(MonsterVariant const& mVar) const;
-  MonsterVariant readMonsterVariantFromJson(Json const& variant) const;
+  [[nodiscard]] Json writeMonsterVariantToJson(MonsterVariant const& mVar) const;
+  [[nodiscard]] MonsterVariant readMonsterVariantFromJson(Json const& variant) const;
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  MonsterPtr createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
-  MonsterPtr diskLoadMonster(Json const& diskStore) const;
-  MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] MonsterPtr createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
+  [[nodiscard]] MonsterPtr diskLoadMonster(Json const& diskStore) const;
+  [[nodiscard]] MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
+  [[nodiscard]] List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
 
-  pair<String, String> skillInfo(String const& skillName) const;
-  Json skillConfigParameter(String const& skillName, String const& configParameterName) const;
+  [[nodiscard]] pair<String, String> skillInfo(String const& skillName) const;
+  [[nodiscard]] Json skillConfigParameter(String const& skillName, String const& configParameterName) const;
 
-  ColorReplaceMap colorSwap(String const& setName, uint64_t seed) const;
+  [[nodiscard]] ColorReplaceMap colorSwap(String const& setName, uint64_t seed) const;
 
-  Json monsterConfig(String const& typeName) const;
+  [[nodiscard]] Json monsterConfig(String const& typeName) const;
 
 private:
   struct MonsterType {
@@ -161,7 +161,7 @@ private:
     // what defaults.
     Json partParameterDescription;
 
-    Json toJson() const;
+    [[nodiscard]] Json toJson() const;
   };
 
   struct MonsterPart {
@@ -186,12 +186,12 @@ private:
 
   // Merges part configuration by the method specified in the part parameter
   // config.
-  static Json mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters);
+  [[nodiscard]] static Json mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters);
 
   // Merges final monster variant parameters together according to the
   // hard-coded variant merge rules (handles things like scripts which are
   // combined rather than overwritten)
-  static Json mergeFinalParameters(JsonArray const& parameters);
+  [[nodiscard]] static Json mergeFinalParameters(JsonArray const& parameters);
 
   // Reads common parameters out of parameters map
   static void readCommonParameters(MonsterVariant& monsterVariant);
@@ -200,12 +200,12 @@ private:
   // MonsterPart needs to be be in a predictable order.
   using PartDirectory = StringMap<StringMap<Map<String, MonsterPart>>>;
 
-  MonsterVariant produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const;
+  [[nodiscard]] MonsterVariant produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const;
 
   // Given a variant including parameters for baseSkills and specialSkills,
   // returns a variant containing a final 'skills' list of chosen skills, also
   // merges animation configs from skills together.
-  pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
+  [[nodiscard]] pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
 
   StringMap<MonsterType> m_monsterTypes;
   PartDirectory m_partDirectory;

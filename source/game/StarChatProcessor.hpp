@@ -19,28 +19,28 @@ public:
   // excluding the '/' character, and the remaining command line in full.
   using CommandHandler = function<String(ConnectionId, String, String)>;
 
-  String connectClient(ConnectionId clientId, String nick = "");
+  [[nodiscard]] String connectClient(ConnectionId clientId, String nick = "");
   // Returns any pending messages.
-  List<ChatReceivedMessage> disconnectClient(ConnectionId clientId);
+  [[nodiscard]] List<ChatReceivedMessage> disconnectClient(ConnectionId clientId);
 
-  List<ConnectionId> clients() const;
-  bool hasClient(ConnectionId clientId) const;
+  [[nodiscard]] List<ConnectionId> clients() const;
+  [[nodiscard]] bool hasClient(ConnectionId clientId) const;
 
   // Clears all clients and channels
   void reset();
 
   // Will return nothing if nick is not found.
-  Maybe<ConnectionId> findNick(String const& nick) const;
-  String connectionNick(ConnectionId connectionId) const;
-  String renick(ConnectionId clientId, String const& nick);
+  [[nodiscard]] Maybe<ConnectionId> findNick(String const& nick) const;
+  [[nodiscard]] String connectionNick(ConnectionId connectionId) const;
+  [[nodiscard]] String renick(ConnectionId clientId, String const& nick);
 
   // join / leave return true in the even that the client channel state was
   // actually changed.
-  bool joinChannel(ConnectionId clientId, String const& channelName);
-  bool leaveChannel(ConnectionId clientId, String const& channelName);
+  [[nodiscard]] bool joinChannel(ConnectionId clientId, String const& channelName);
+  [[nodiscard]] bool leaveChannel(ConnectionId clientId, String const& channelName);
 
-  StringList clientChannels(ConnectionId clientId) const;
-  StringList activeChannels() const;
+  [[nodiscard]] StringList clientChannels(ConnectionId clientId) const;
+  [[nodiscard]] StringList activeChannels() const;
 
   void broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data = {});
   void message(ConnectionId sourceConnectionId, MessageContext::Mode context, String const& channelName, String const& text, JsonObject data = {});
@@ -52,7 +52,7 @@ public:
   void adminMessage(MessageContext::Mode context, String const& channelName, String const& text);
   void adminWhisper(ConnectionId targetClientId, String const& text);
 
-  List<ChatReceivedMessage> pullPendingMessages(ConnectionId clientId);
+  [[nodiscard]] List<ChatReceivedMessage> pullPendingMessages(ConnectionId clientId);
 
   void setCommandHandler(CommandHandler commandHandler);
   void clearCommandHandler();
@@ -66,11 +66,11 @@ private:
     List<ChatReceivedMessage> pendingMessages;
   };
 
-  String makeNickUnique(String nick);
+  [[nodiscard]] String makeNickUnique(String nick);
 
   // Returns true if message was handled completely and needs no further
   // processing.
-  bool handleCommand(ChatReceivedMessage& message);
+  [[nodiscard]] bool handleCommand(ChatReceivedMessage& message);
 
   mutable RecursiveMutex m_mutex;
 

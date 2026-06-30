@@ -39,24 +39,24 @@ public:
 
   BubbleSeparator(float tweenFactor = 0.5f, float movementThreshold = 2.0f);
 
-  float tweenFactor() const;
+  [[nodiscard]] float tweenFactor() const;
   void setTweenFactor(float tweenFactor);
 
-  float movementThreshold() const;
+  [[nodiscard]] float movementThreshold() const;
   void setMovementThreshold(float movementThreshold);
 
   void addBubble(Vec2F position, RectF boundBox, T contents, unsigned margin = 0);
 
   void filter(function<bool(Bubble const&, T&)> func);
-  List<Bubble> filtered(function<bool(Bubble const&, T const&)> func);
+  [[nodiscard]] List<Bubble> filtered(function<bool(Bubble const&, T const&)> func);
   void forEach(function<void(Bubble&, T&)> func);
 
   void update(float dt);
   void clear();
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
 private:
-  static bool compareBubbleY(Bubble const& a, Bubble const& b);
+  [[nodiscard]] static bool compareBubbleY(Bubble const& a, Bubble const& b);
 
   float m_tweenFactor;
   float m_movementThreshold;
@@ -65,10 +65,10 @@ private:
   List<RectF> m_sortedRightEdges;
 };
 
-bool compareLeft(RectF const& a, RectF const& b);
-bool compareRight(RectF const& a, RectF const& b);
-bool compareOverlapLeft(RectF const& newBox, RectF const& fixedBox);
-bool compareOverlapRight(RectF const& newBox, RectF const& fixedBox);
+[[nodiscard]] bool compareLeft(RectF const& a, RectF const& b);
+[[nodiscard]] bool compareRight(RectF const& a, RectF const& b);
+[[nodiscard]] bool compareOverlapLeft(RectF const& newBox, RectF const& fixedBox);
+[[nodiscard]] bool compareOverlapRight(RectF const& newBox, RectF const& fixedBox);
 
 // Shifts box upwards until it is not overlapping any of the boxes in
 // sortedLeftEdges
@@ -78,7 +78,7 @@ bool compareOverlapRight(RectF const& newBox, RectF const& fixedBox);
 // The two lists contain all the chat bubbles that have been separated, sorted
 // by
 // the X positions of their left and right edges respectively.
-RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sortedRightEdges, List<RectF>& outLeftEdges, List<RectF>& outRightEdges, RectF box);
+[[nodiscard]] RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sortedRightEdges, List<RectF>& outLeftEdges, List<RectF>& outRightEdges, RectF box);
 
 template <typename T>
 BubbleSeparator<T>::BubbleSeparator(float tweenFactor, float movementThreshold)

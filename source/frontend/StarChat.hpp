@@ -32,8 +32,8 @@ public:
 
   void startChat();
   void startCommand();
-  bool hasFocus() const override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool hasFocus() const override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void stopChat();
   void renderImpl() override;
   void hide() override;
@@ -45,16 +45,16 @@ public:
   void addHistory(String const& chat);
   void clear(size_t count = std::numeric_limits<size_t>::max());
 
-  String currentChat() const;
-  bool setCurrentChat(String const& chat, bool moveCursor = false);
+  [[nodiscard]] String currentChat() const;
+  [[nodiscard]] bool setCurrentChat(String const& chat, bool moveCursor = false);
   void clearCurrentChat();
 
-  ChatSendMode sendMode() const;
+  [[nodiscard]] ChatSendMode sendMode() const;
 
   void incrementIndex();
   void decrementIndex();
 
-  float visible() const;
+  [[nodiscard]] float visible() const;
 
   void scrollUp();
   void scrollDown();

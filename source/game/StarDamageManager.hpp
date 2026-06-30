@@ -12,7 +12,7 @@ class DamageManager;
 using DamageManagerPtr = SharedPtr<DamageManager>;
 
 struct RemoteHitRequest {
-  ConnectionId destinationConnection() const;
+  [[nodiscard]] ConnectionId destinationConnection() const;
 
   EntityId causingEntityId;
   EntityId targetEntityId;
@@ -23,7 +23,7 @@ DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
 DataStream& operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
 
 struct RemoteDamageRequest {
-  ConnectionId destinationConnection() const;
+  [[nodiscard]] ConnectionId destinationConnection() const;
 
   EntityId causingEntityId;
   EntityId targetEntityId;
@@ -58,13 +58,13 @@ public:
   void pushRemoteDamageRequest(RemoteDamageRequest const& remoteDamageRequest);
   void pushRemoteDamageNotification(RemoteDamageNotification remoteDamageNotification);
 
-  List<RemoteHitRequest> pullRemoteHitRequests();
-  List<RemoteDamageRequest> pullRemoteDamageRequests();
-  List<RemoteDamageNotification> pullRemoteDamageNotifications();
+  [[nodiscard]] List<RemoteHitRequest> pullRemoteHitRequests();
+  [[nodiscard]] List<RemoteDamageRequest> pullRemoteDamageRequests();
+  [[nodiscard]] List<RemoteDamageNotification> pullRemoteDamageNotifications();
 
   // Pending *local* notifications.  Sum of all notifications either generated
   // locally or received.
-  List<DamageNotification> pullPendingNotifications();
+  [[nodiscard]] List<DamageNotification> pullPendingNotifications();
 
 private:
   struct EntityDamageEvent {
@@ -74,9 +74,9 @@ private:
 
   // Searches for and queries for hit to any entity within range of the
   // damage source.  Skips over source.sourceEntityId, if set.
-  SmallList<pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
+  [[nodiscard]] SmallList<pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
 
-  bool isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity);
+  [[nodiscard]] bool isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity);
 
   void addHitRequest(RemoteHitRequest const& remoteHitRequest);
   void addDamageRequest(RemoteDamageRequest remoteDamageRequest);

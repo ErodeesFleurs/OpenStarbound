@@ -15,12 +15,12 @@ public:
   void teleportOut(String const& animationType = "default", bool deploy = false);
   void teleportIn();
   void teleportAbort();
-  bool isTeleporting() const;
-  bool isTeleportingOut() const;
-  bool canDeploy();
+  [[nodiscard]] bool isTeleporting() const;
+  [[nodiscard]] bool isTeleportingOut() const;
+  [[nodiscard]] bool canDeploy();
   void deployAbort(String const& animationType = "default");
-  bool isDeploying() const;
-  bool isDeployed() const;
+  [[nodiscard]] bool isDeploying() const;
+  [[nodiscard]] bool isDeployed() const;
   void setBusyState(PlayerBusyState busyState);
 
   void moveTo(Vec2F const& footPosition);

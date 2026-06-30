@@ -45,11 +45,11 @@ InteractAction LoungeableObject::interact(InteractRequest const& request) {
   }
 }
 
-size_t LoungeableObject::anchorCount() const {
+[[nodiscard]] size_t LoungeableObject::anchorCount() const {
   return m_sitPositions.size();
 }
 
-LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const {
+[[nodiscard]] LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const {
   if (positionIndex >= m_sitPositions.size())
     return {};
 

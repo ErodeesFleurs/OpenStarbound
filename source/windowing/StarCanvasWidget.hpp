@@ -32,21 +32,21 @@ public:
   void setCaptureMouseEvents(bool captureMouse);
   void setCaptureKeyboardEvents(bool captureKeyboard);
   void setIgnoreInterfaceScale(bool ignoreInterfaceScale);
-  bool ignoreInterfaceScale() const;
+  [[nodiscard]] bool ignoreInterfaceScale() const;
 
   // Returns mouse position relative to the lower left of the drawing region.
-  Vec2I mousePosition() const;
+  [[nodiscard]] Vec2I mousePosition() const;
 
   // Pulls recent click events relative to the lower left of the drawing
   // region, if configured to capture mouse events
-  List<ClickEvent> pullClickEvents();
+  [[nodiscard]] List<ClickEvent> pullClickEvents();
 
   // Pulls recent key events captured by this Canvas, if configured to capture
   // key events.
-  List<KeyEvent> pullKeyEvents();
+  [[nodiscard]] List<KeyEvent> pullKeyEvents();
 
-  bool sendEvent(InputEvent const& event) override;
-  KeyboardCaptureMode keyboardCaptureMode() const override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] KeyboardCaptureMode keyboardCaptureMode() const override;
 
   // Call before drawing to clear old draw data.
   void clear();

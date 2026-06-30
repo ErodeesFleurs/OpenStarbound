@@ -348,7 +348,7 @@ namespace PlatformerAStar {
       return newPosition;
     } else {
       collidedX = collidedY = true;
-      
+
       if (validPosition(Vec2F(newPosition[0], position[1]))) {
         collidedX = false;
         position[0] = newPosition[0];
@@ -366,7 +366,7 @@ namespace PlatformerAStar {
     Vec2F velocity = *node.velocity;
     bool jumping = velocity[1] > 0.0f;
     float maxLandingVelocity = m_searchParams.maxLandingVelocity.value(DefaultMaxLandingVelocity);
-    
+
     Vec2F acc = acceleration(position);
     if (acc[1] == 0.0f)
       return;
@@ -446,7 +446,7 @@ namespace PlatformerAStar {
       }
     }
 
-    starAssert(velocity[1] != 0.0f);
+    assert(velocity[1] != 0.0f);
     func(Node{position, velocity}, false);
     return;
   }

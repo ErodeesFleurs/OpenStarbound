@@ -162,15 +162,15 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   }
 }
 
-List<Drawable> MaterialItem::preview(PlayerPtr const&) const {
+[[nodiscard]] List<Drawable> MaterialItem::preview(PlayerPtr const&) const {
   return generatedPreview();
 }
 
-List<Drawable> MaterialItem::dropDrawables() const {
+[[nodiscard]] List<Drawable> MaterialItem::dropDrawables() const {
   return generatedPreview();
 }
 
-List<Drawable> MaterialItem::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> MaterialItem::nonRotatedDrawables() const {
   return beamDrawables(canPlace(m_shifting));
 }
 
@@ -336,11 +336,11 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   return success;
 }
 
-MaterialId MaterialItem::materialId() const {
+[[nodiscard]] MaterialId MaterialItem::materialId() const {
   return m_material;
 }
 
-List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
+[[nodiscard]] List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
   if (!m_generatedPreviewCache) {
     TileDrawer tileDrawer(m_assets, world()->materialDatabase());
     auto locker = tileDrawer.lockRenderData();
@@ -396,14 +396,14 @@ void MaterialItem::updatePropertiesFromPlayer(Player& player) {
     m_blockSwap = blockSwap.toBool();
 }
 
-float MaterialItem::calcRadius(bool shifting) const {
+[[nodiscard]] float MaterialItem::calcRadius(bool shifting) const {
   if (!multiplaceEnabled())
     return 1;
   else
     return !shifting ? m_blockRadius : m_altBlockRadius;
 }
 
-List<Vec2I>& MaterialItem::tileArea(float radius, Vec2F const& position) const {
+[[nodiscard]] List<Vec2I>& MaterialItem::tileArea(float radius, Vec2F const& position) const {
   if (m_lastTileAreaOriginCache != position || m_lastTileAreaRadiusCache != radius) {
     m_lastTileAreaOriginCache = position;
     m_lastTileAreaRadiusCache = radius;
@@ -412,11 +412,11 @@ List<Vec2I>& MaterialItem::tileArea(float radius, Vec2F const& position) const {
   return m_tileAreasCache;
 }
 
-MaterialHue MaterialItem::materialHueShift() const {
+[[nodiscard]] MaterialHue MaterialItem::materialHueShift() const {
   return m_materialHueShift;
 }
 
-bool MaterialItem::canPlace(bool shifting) const {
+[[nodiscard]] bool MaterialItem::canPlace(bool shifting) const {
   if (initialized()) {
     MaterialId material = materialId();
 
@@ -432,7 +432,7 @@ bool MaterialItem::canPlace(bool shifting) const {
   return false;
 }
 
-bool MaterialItem::multiplaceEnabled() const {
+[[nodiscard]] bool MaterialItem::multiplaceEnabled() const {
   return m_multiplace && count() > 1;
 }
 
@@ -448,7 +448,7 @@ TileCollisionOverride& MaterialItem::collisionOverride() {
   return m_collisionOverride;
 }
 
-List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
+[[nodiscard]] List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
     Color lightColor = owner()->favoriteColor();
@@ -477,7 +477,7 @@ List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
   return result;
 }
 
-MaterialHue MaterialItem::placementHueShift(Vec2I const& pos) const {
+[[nodiscard]] MaterialHue MaterialItem::placementHueShift(Vec2I const& pos) const {
   if (auto hue = instanceValue("materialHueShift")) {
     return materialHueFromDegrees(hue.toFloat());
   } else if (auto worldClient = as<WorldClient>(world())) {

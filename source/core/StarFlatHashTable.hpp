@@ -29,10 +29,10 @@ private:
     void setEmpty();
     void setEnd();
 
-    Value const* valuePtr() const;
-    Value* valuePtr();
-    bool isEmpty() const;
-    bool isEnd() const;
+    [[nodiscard]] Value const* valuePtr() const;
+    [[nodiscard]] Value* valuePtr();
+    [[nodiscard]] bool isEmpty() const;
+    [[nodiscard]] bool isEnd() const;
 
     union {
       Value value;
@@ -47,11 +47,11 @@ public:
     bool operator==(const_iterator const& rhs) const;
     bool operator!=(const_iterator const& rhs) const;
 
-    const_iterator& operator++();
-    const_iterator operator++(int);
+    [[nodiscard]] const_iterator& operator++();
+    [[nodiscard]] const_iterator operator++(int);
 
-    Value const& operator*() const;
-    Value const* operator->() const;
+    [[nodiscard]] Value const& operator*() const;
+    [[nodiscard]] Value const* operator->() const;
 
     Bucket const* current;
   };
@@ -60,40 +60,40 @@ public:
     bool operator==(iterator const& rhs) const;
     bool operator!=(iterator const& rhs) const;
 
-    iterator& operator++();
-    iterator operator++(int);
+    [[nodiscard]] iterator& operator++();
+    [[nodiscard]] iterator operator++(int);
 
-    Value& operator*() const;
-    Value* operator->() const;
+    [[nodiscard]] Value& operator*() const;
+    [[nodiscard]] Value* operator->() const;
 
-    operator const_iterator() const;
+    [[nodiscard]] operator const_iterator() const;
 
     Bucket* current;
   };
 
   FlatHashTable(size_t bucketCount, GetKey const& getKey, Hash const& hash, Equals const& equal, Allocator const& alloc);
 
-  iterator begin();
-  iterator end();
+  [[nodiscard]] iterator begin();
+  [[nodiscard]] iterator end();
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  bool empty() const;
-  size_t size() const;
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] size_t size() const;
   void clear();
 
-  pair<iterator, bool> insert(Value value);
+  [[nodiscard]] pair<iterator, bool> insert(Value value);
 
-  iterator erase(const_iterator pos);
-  iterator erase(const_iterator first, const_iterator last);
+  [[nodiscard]] iterator erase(const_iterator pos);
+  [[nodiscard]] iterator erase(const_iterator first, const_iterator last);
 
-  const_iterator find(Key const& key) const;
-  iterator find(Key const& key);
-  bool contains(Key const& key) const;
+  [[nodiscard]] const_iterator find(Key const& key) const;
+  [[nodiscard]] iterator find(Key const& key);
+  [[nodiscard]] bool contains(Key const& key) const;
 
   void reserve(size_t capacity);
-  Allocator getAllocator() const;
+  [[nodiscard]] Allocator getAllocator() const;
 
   bool operator==(FlatHashTable const& rhs) const;
   bool operator!=(FlatHashTable const& rhs) const;
@@ -103,11 +103,11 @@ private:
   static constexpr double MaxFillLevel = 0.7;
 
   // Scans for the next bucket value that is non-empty
-  static Bucket* scan(Bucket* p);
-  static Bucket const* scan(Bucket const* p);
+  [[nodiscard]] static Bucket* scan(Bucket* p);
+  [[nodiscard]] static Bucket const* scan(Bucket const* p);
 
-  size_t hashBucket(size_t hash) const;
-  size_t bucketError(size_t current, size_t target) const;
+  [[nodiscard]] size_t hashBucket(size_t hash) const;
+  [[nodiscard]] size_t bucketError(size_t current, size_t target) const;
   void checkCapacity(size_t additionalCapacity);
 
   Buckets m_buckets;
@@ -238,7 +238,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator:
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator++(int) -> const_iterator {
-  const_iterator copy(*this);
+  [[nodiscard]] const_iterator copy(*this);
   operator++();
   return copy;
 }
@@ -271,7 +271,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::opera
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator++(int) -> iterator {
-  iterator copy(*this);
+  [[nodiscard]] iterator copy(*this);
   operator++();
   return copy;
 }
@@ -323,12 +323,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::end() const -> 
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const {
+[[nodiscard]] bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const {
   return m_filledCount == 0;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::size() const {
+[[nodiscard]] size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::size() const {
   return m_filledCount;
 }
 
@@ -419,12 +419,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::erase(const_ite
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) const -> const_iterator {
+[[nodiscard]] auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) const -> const_iterator {
   return const_cast<FlatHashTable*>(this)->find(key);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) -> iterator {
+[[nodiscard]] auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const& key) -> iterator {
   if (m_buckets.empty())
     return end();
 
@@ -452,7 +452,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const&
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::contains(Key const& key) const {
+[[nodiscard]] bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::contains(Key const& key) const {
   return find(key) != end();
 }
 

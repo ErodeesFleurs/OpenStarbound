@@ -283,7 +283,7 @@ void Object::uninit() {
   Entity::uninit();
 }
 
-List<LightSource> Object::lightSources() const {
+[[nodiscard]] List<LightSource> Object::lightSources() const {
   List<LightSource> lights;
   lights.appendAll(m_networkedAnimator->lightSources(position() + m_animationPosition));
 
@@ -307,11 +307,11 @@ List<LightSource> Object::lightSources() const {
   return lights;
 }
 
-Vec2F Object::position() const {
+[[nodiscard]] Vec2F Object::position() const {
   return Vec2F(m_xTilePosition.get(), m_yTilePosition.get());
 }
 
-RectF Object::metaBoundBox() const {
+[[nodiscard]] RectF Object::metaBoundBox() const {
   if (auto orientation = currentOrientation()) {
     // default metaboundbox extends the bounding box of the orientation's
     // spaces by one block
@@ -329,7 +329,7 @@ void Object::readNetState(ByteArray data, float interpolationTime, NetCompatibil
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-Vec2I Object::tilePosition() const {
+[[nodiscard]] Vec2I Object::tilePosition() const {
   return Vec2I(m_xTilePosition.get(), m_yTilePosition.get());
 }
 
@@ -342,7 +342,7 @@ void Object::setTilePosition(Vec2I const& pos) {
   }
 }
 
-Direction Object::direction() const {
+[[nodiscard]] Direction Object::direction() const {
   return m_direction.get();
 }
 
@@ -360,7 +360,7 @@ void Object::updateOrientation() {
   resetEmissionTimers();
 }
 
-List<Vec2I> Object::anchorPositions() const {
+[[nodiscard]] List<Vec2I> Object::anchorPositions() const {
   if (auto orientation = currentOrientation()) {
     List<Vec2I> positions;
     for (auto anchor : orientation->anchors)
@@ -371,18 +371,18 @@ List<Vec2I> Object::anchorPositions() const {
   }
 }
 
-List<Vec2I> Object::spaces() const {
+[[nodiscard]] List<Vec2I> Object::spaces() const {
   if (auto orientation = currentOrientation())
     return orientation->spaces;
   else
     return {};
 }
 
-List<MaterialSpace> Object::materialSpaces() const {
+[[nodiscard]] List<MaterialSpace> Object::materialSpaces() const {
   return m_materialSpaces.get();
 }
 
-List<Vec2I> Object::roots() const {
+[[nodiscard]] List<Vec2I> Object::roots() const {
   if (m_config->rooting) {
     if (auto orientation = currentOrientation()) {
       List<Vec2I> res;
@@ -474,7 +474,7 @@ bool Object::damageTiles(List<Vec2I> const&, Vec2F const&, TileDamage const& til
   return m_broken;
 }
 
-bool Object::canBeDamaged() const {
+[[nodiscard]] bool Object::canBeDamaged() const {
   return !m_unbreakable;
 }
 
@@ -491,7 +491,7 @@ bool Object::checkBroken() {
   return m_broken;
 }
 
-bool Object::shouldDestroy() const {
+[[nodiscard]] bool Object::shouldDestroy() const {
   return m_broken || (m_health.get() <= 0);
 }
 
@@ -572,42 +572,42 @@ void Object::destroy(RenderCallback* renderCallback) {
     m_soundEffect->stop(1.0f);
 }
 
-String Object::name() const {
+[[nodiscard]] String Object::name() const {
   return m_config->name;
 }
 
-String Object::shortDescription() const {
+[[nodiscard]] String Object::shortDescription() const {
   return configValue("shortdescription", name()).toString();
 }
 
-String Object::description() const {
+[[nodiscard]] String Object::description() const {
   return configValue("description", shortDescription()).toString();
 }
 
-bool Object::inspectable() const {
+[[nodiscard]] bool Object::inspectable() const {
   return m_config->scannable;
 }
 
-Maybe<String> Object::inspectionLogName() const {
+[[nodiscard]] Maybe<String> Object::inspectionLogName() const {
   return configValue("inspectionLogName").optString().value(m_config->name);
 }
 
-Maybe<String> Object::inspectionDescription(String const& species) const {
+[[nodiscard]] Maybe<String> Object::inspectionDescription(String const& species) const {
   return configValue("inspectionDescription").optString().orMaybe(configValue(strf("{}Description", species)).optString()).value(description());
 }
 
-String Object::category() const {
+[[nodiscard]] String Object::category() const {
   return m_config->category;
 }
 
-ObjectOrientationPtr Object::currentOrientation() const {
+[[nodiscard]] ObjectOrientationPtr Object::currentOrientation() const {
   if (m_orientationIndex != NPos)
     return getOrientations().at(m_orientationIndex);
   else
     return {};
 }
 
-List<Drawable> Object::cursorHintDrawables() const {
+[[nodiscard]] List<Drawable> Object::cursorHintDrawables() const {
   if (configValue("placementImage")) {
     String placementImage = configValue("placementImage").toString();
     if (m_direction.get() == Direction::Left)
@@ -661,15 +661,15 @@ void Object::setNetStates() {
   m_orientationIndexNetState.set(m_orientationIndex);
 }
 
-List<QuestArcDescriptor> Object::offeredQuests() const {
+[[nodiscard]] List<QuestArcDescriptor> Object::offeredQuests() const {
   return m_offeredQuests.get();
 }
 
-StringSet Object::turnInQuests() const {
+[[nodiscard]] StringSet Object::turnInQuests() const {
   return m_turnInQuests.get();
 }
 
-Vec2F Object::questIndicatorPosition() const {
+[[nodiscard]] Vec2F Object::questIndicatorPosition() const {
   if (auto orientation = currentOrientation()) {
     auto pos = position() + Vec2F(orientation->boundBox.center()[0], orientation->boundBox.max()[1] + 2.5);
     if (!(orientation->boundBox.size()[0] % 2))
@@ -690,14 +690,14 @@ Maybe<Json> Object::receiveMessage(ConnectionId sendingConnection, String const&
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
-Json Object::configValue(String const& name, Json const& def) const {
+[[nodiscard]] Json Object::configValue(String const& name, Json const& def) const {
   if (auto orientation = currentOrientation())
     return jsonMergeQueryDef(name, def, m_config->config, orientation->config, m_parameters.baseMap());
   else
     return jsonMergeQueryDef(name, def, m_config->config, m_parameters.baseMap());
 }
 
-ObjectConfigConstPtr Object::config() const {
+[[nodiscard]] ObjectConfigConstPtr Object::config() const {
   return m_config;
 }
 
@@ -776,41 +776,41 @@ void Object::breakObject(bool smash) {
     m_health.set(0.0f);
 }
 
-size_t Object::nodeCount(WireDirection direction) const {
+[[nodiscard]] size_t Object::nodeCount(WireDirection direction) const {
   if (direction == WireDirection::Input)
     return m_inputNodes.size();
   else
     return m_outputNodes.size();
 }
 
-Vec2I Object::nodePosition(WireNode wireNode) const {
+[[nodiscard]] Vec2I Object::nodePosition(WireNode wireNode) const {
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).position;
   else
     return m_outputNodes.at(wireNode.nodeIndex).position;
 }
 
-List<WireConnection> Object::connectionsForNode(WireNode wireNode) const {
+[[nodiscard]] List<WireConnection> Object::connectionsForNode(WireNode wireNode) const {
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).connections.get();
   else
     return m_outputNodes.at(wireNode.nodeIndex).connections.get();
 }
 
-bool Object::nodeState(WireNode wireNode) const {
+[[nodiscard]] bool Object::nodeState(WireNode wireNode) const {
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).state.get();
   else
     return m_outputNodes.at(wireNode.nodeIndex).state.get();
 }
-String Object::nodeIcon(WireNode wireNode) const {
+[[nodiscard]] String Object::nodeIcon(WireNode wireNode) const {
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).icon;
   else
     return m_outputNodes.at(wireNode.nodeIndex).icon;
 }
 
-Color Object::nodeColor(WireNode wireNode) const {// only output nodes determine color
+[[nodiscard]] Color Object::nodeColor(WireNode wireNode) const {// only output nodes determine color
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).color;
   else
@@ -891,7 +891,7 @@ void Object::resetEmissionTimers() {
     m_emissionTimers.resize(orientation->particleEmitters.size());
 }
 
-size_t Object::orientationIndex() const {
+[[nodiscard]] size_t Object::orientationIndex() const {
   return m_orientationIndex;
 }
 
@@ -899,7 +899,7 @@ void Object::setOrientationIndex(size_t orientationIndex) {
   m_orientationIndex = orientationIndex;
 }
 
-PolyF Object::volume() const {
+[[nodiscard]] PolyF Object::volume() const {
   if (auto orientation = currentOrientation()) {
     RectF box = RectF(orientation->boundBox);
     box.max()[0]++;
@@ -910,14 +910,14 @@ PolyF Object::volume() const {
   }
 }
 
-float Object::liquidFillLevel() const {
+[[nodiscard]] float Object::liquidFillLevel() const {
   if (auto orientation = currentOrientation())
     return spacesLiquidFillLevel(orientation->spaces);
 
   return 0;
 }
 
-bool Object::biomePlaced() const {
+[[nodiscard]] bool Object::biomePlaced() const {
   return m_config->biomePlaced;
 }
 
@@ -1125,7 +1125,7 @@ LuaCallbacks Object::makeAnimatorObjectCallbacks() {
   return callbacks;
 }
 
-List<DamageSource> Object::damageSources() const {
+[[nodiscard]] List<DamageSource> Object::damageSources() const {
   auto damageSources = m_damageSources.get();
 
   if (auto orientation = currentOrientation()) {
@@ -1141,11 +1141,11 @@ List<DamageSource> Object::damageSources() const {
   return damageSources;
 }
 
-List<PersistentStatusEffect> Object::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> Object::statusEffects() const {
   return m_config->statusEffects;
 }
 
-PolyF Object::statusEffectArea() const {
+[[nodiscard]] PolyF Object::statusEffectArea() const {
   if (auto orientation = currentOrientation()) {
     if (orientation->statusEffectArea)
       return orientation->statusEffectArea.get();
@@ -1153,7 +1153,7 @@ PolyF Object::statusEffectArea() const {
   return volume();
 }
 
-Maybe<HitType> Object::queryHit(DamageSource const& source) const {
+[[nodiscard]] Maybe<HitType> Object::queryHit(DamageSource const& source) const {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f || m_unbreakable)
     return {};
 
@@ -1163,7 +1163,7 @@ Maybe<HitType> Object::queryHit(DamageSource const& source) const {
   return {};
 }
 
-Maybe<PolyF> Object::hitPoly() const {
+[[nodiscard]] Maybe<PolyF> Object::hitPoly() const {
   auto poly = volume();
   poly.translate(position());
   return poly;
@@ -1197,7 +1197,7 @@ List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
            m_config->damageMaterialKind}};
 }
 
-RectF Object::interactiveBoundBox() const {
+[[nodiscard]] RectF Object::interactiveBoundBox() const {
   if (auto orientation = currentOrientation()) {
     auto rect = RectF(orientation->boundBox);
     rect.setMax(Vec2F(orientation->boundBox.xMax() + 1, orientation->boundBox.yMax() + 1));
@@ -1207,7 +1207,7 @@ RectF Object::interactiveBoundBox() const {
   }
 }
 
-bool Object::isInteractive() const {
+[[nodiscard]] bool Object::isInteractive() const {
   return m_interactive.get();
 }
 
@@ -1230,7 +1230,7 @@ InteractAction Object::interact(InteractRequest const& request) {
   return {};
 }
 
-List<Vec2I> Object::interactiveSpaces() const {
+[[nodiscard]] List<Vec2I> Object::interactiveSpaces() const {
   if (auto orientation = currentOrientation()) {
     if (auto iSpaces = orientation->interactiveSpaces)
       return *iSpaces;
@@ -1246,7 +1246,7 @@ Maybe<LuaValue> Object::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-Vec2F Object::mouthPosition() const {
+[[nodiscard]] Vec2F Object::mouthPosition() const {
   if (auto orientation = currentOrientation()) {
     auto pos = position() + Vec2F(orientation->boundBox.center()[0], orientation->boundBox.max()[1]);
     if (!(orientation->boundBox.size()[0] % 2))
@@ -1263,7 +1263,7 @@ Vec2F Object::mouthPosition() const {
   }
 }
 
-Vec2F Object::mouthPosition(bool) const {
+[[nodiscard]] Vec2F Object::mouthPosition(bool) const {
   return mouthPosition();
 }
 
@@ -1283,7 +1283,7 @@ void Object::addChatMessage(String const& message, Json const& config, String co
     m_pendingChatActions.append(PortraitChatAction{entityId(), portrait, message, mouthPosition()});
 }
 
-List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
+[[nodiscard]] List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
   if (orientationIndex == NPos)
     return {};
 
@@ -1396,11 +1396,11 @@ void Object::renderSounds(RenderCallback* renderCallback) {
   }
 }
 
-List<ObjectOrientationPtr> const& Object::getOrientations() const {
+[[nodiscard]] List<ObjectOrientationPtr> const& Object::getOrientations() const {
   return m_orientations ? *m_orientations : m_config->orientations;
 }
 
-Vec2F Object::damageShake() const {
+[[nodiscard]] Vec2F Object::damageShake() const {
   if (m_tileDamageStatus->damaged() && !m_tileDamageStatus->damageProtected())
     return Vec2F(Random::randf(-1, 1), Random::randf(-1, 1)) * m_tileDamageStatus->damageEffectPercentage() * m_config->damageShakeMagnitude;
   return Vec2F();

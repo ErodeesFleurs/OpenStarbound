@@ -7,7 +7,7 @@ TeleporterObject::TeleporterObject(ObjectConfigConstPtr config, Json const& para
   setUniqueId(configValue("uniqueId", Uuid().hex()).optString());
 }
 
-Vec2F TeleporterObject::footPosition() const {
+[[nodiscard]] Vec2F TeleporterObject::footPosition() const {
   if (auto footPos = configValue("teleporterFootPosition"))
     return jsonToVec2F(footPos);
   return Vec2F();

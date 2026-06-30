@@ -2,7 +2,7 @@
 
 namespace Star {
 
-auto ShellParser::tokenize(String const& command) -> List<Token> {
+[[nodiscard]] auto ShellParser::tokenize(String const& command) -> List<Token> {
   List<Token> res;
 
   init(command);
@@ -14,7 +14,7 @@ auto ShellParser::tokenize(String const& command) -> List<Token> {
   return res;
 }
 
-StringList ShellParser::tokenizeToStringList(String const& command) {
+[[nodiscard]] StringList ShellParser::tokenizeToStringList(String const& command) {
   StringList res;
   for (auto token : tokenize(command)) {
     if (token.type == TokenType::Word) {
@@ -32,7 +32,7 @@ void ShellParser::init(String const& string) {
   m_quotedType = '\0';
 }
 
-String ShellParser::word() {
+[[nodiscard]] String ShellParser::word() {
   String res;
 
   while (notDone()) {
@@ -46,7 +46,7 @@ String ShellParser::word() {
 
     if (!escapedLetter) {
       if (isSpace(letter) && !inQuotedString()) {
-        next();
+        (void)next();
         if (res.size()) {
           return res;
         }
@@ -56,38 +56,38 @@ String ShellParser::word() {
       if (isQuote(letter)) {
         if (inQuotedString() && letter == m_quotedType) {
           m_quotedType = '\0';
-          next();
+          (void)next();
           continue;
         }
 
         if (!inQuotedString()) {
           m_quotedType = letter;
-          next();
+          (void)next();
           continue;
         }
       }
     }
 
     res.append(letter);
-    next();
+    (void)next();
   }
 
   return res;
 }
 
-bool ShellParser::isSpace(Char letter) const {
+[[nodiscard]] bool ShellParser::isSpace(Char letter) const {
   return String::isSpace(letter);
 }
 
-bool ShellParser::isQuote(Char letter) const {
+[[nodiscard]] bool ShellParser::isQuote(Char letter) const {
   return letter == '\'' || letter == '"';
 }
 
-bool ShellParser::inQuotedString() const {
+[[nodiscard]] bool ShellParser::inQuotedString() const {
   return m_quotedType != '\0';
 }
 
-auto ShellParser::current() const -> Maybe<Char> {
+[[nodiscard]] auto ShellParser::current() const -> Maybe<Char> {
   if (m_current == m_end) {
     return {};
   }
@@ -95,7 +95,7 @@ auto ShellParser::current() const -> Maybe<Char> {
   return *m_current;
 }
 
-auto ShellParser::next() -> Maybe<Char> {
+[[nodiscard]] auto ShellParser::next() -> Maybe<Char> {
   if (m_current != m_end) {
     ++m_current;
   }
@@ -103,7 +103,7 @@ auto ShellParser::next() -> Maybe<Char> {
   return current();
 }
 
-auto ShellParser::previous() -> Maybe<Char> {
+[[nodiscard]] auto ShellParser::previous() -> Maybe<Char> {
   if (m_current != m_begin) {
     --m_current;
   }
@@ -111,7 +111,7 @@ auto ShellParser::previous() -> Maybe<Char> {
   return current();
 }
 
-auto ShellParser::parseBackslash() -> Char {
+[[nodiscard]] auto ShellParser::parseBackslash() -> Char {
   auto letter = next();
 
   if (!letter) {
@@ -152,10 +152,10 @@ auto ShellParser::parseBackslash() -> Char {
           if (shouldBeU && shouldBeU == 'u') {
             return parseUnicodeEscapeSequence(letter);
           } else {
-            previous();
+            (void)previous();
           }
         }
-        previous();
+        (void)previous();
         return Utf32ReplacementChar;
       } else {
         return letter;
@@ -166,7 +166,7 @@ auto ShellParser::parseBackslash() -> Char {
   }
 }
 
-auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> Char {
+[[nodiscard]] auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> Char {
   String codepoint;
 
   auto letter = current();
@@ -198,7 +198,7 @@ auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> C
   }
 }
 
-bool ShellParser::notDone() const {
+[[nodiscard]] bool ShellParser::notDone() const {
   return m_current != m_end;
 }
 

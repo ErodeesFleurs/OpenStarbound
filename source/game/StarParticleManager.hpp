@@ -16,7 +16,7 @@ public:
   void add(Particle particle);
   void addParticles(List<Particle> particles);
 
-  size_t count() const;
+  [[nodiscard]] size_t count() const;
   void clear();
 
   void setUndergroundLevel(float undergroundLevel);
@@ -24,8 +24,8 @@ public:
   // Updates current particles and spawns new weather particles
   void update(float dt, RectF const& cullRegion, float wind);
 
-  List<Particle> const& particles() const;
-  List<pair<Vec2F, Vec3F>> lightSources() const;
+  [[nodiscard]] List<Particle> const& particles() const;
+  [[nodiscard]] List<pair<Vec2F, Vec3F>> lightSources() const;
 
 private:
   enum class TileType { Colliding, Water, Empty };

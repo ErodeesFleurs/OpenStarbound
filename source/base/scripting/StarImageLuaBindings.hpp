@@ -14,7 +14,7 @@ struct LuaConverter<Image> : LuaUserDataConverter<Image> {};
 
 template <>
 struct LuaUserDataMethods<Image> {
-  static LuaMethods<Image> make();
+  [[nodiscard]] static LuaMethods<Image> make();
 };
 
 namespace LuaBindings {

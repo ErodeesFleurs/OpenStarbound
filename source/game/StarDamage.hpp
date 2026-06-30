@@ -25,12 +25,12 @@ struct DamageSource {
       Knockback knockback,
       bool rayCheck);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  DamageSource& translate(Vec2F const& position);
+  [[nodiscard]] DamageSource& translate(Vec2F const& position);
 
-  bool intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const;
-  Vec2F knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const;
+  [[nodiscard]] bool intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const;
+  [[nodiscard]] Vec2F knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const;
 
   bool operator==(DamageSource const& rhs) const;
 
@@ -76,7 +76,7 @@ struct DamageRequest {
       String const& damageSourceKind,
       List<EphemeralStatusEffect> const& statusEffects);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   HitType hitType;
   DamageType damageType;
@@ -104,7 +104,7 @@ struct DamageNotification {
       String damageSourceKind,
       String targetMaterialKind);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   EntityId sourceEntityId{};
   EntityId targetEntityId{};

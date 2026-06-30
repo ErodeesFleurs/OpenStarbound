@@ -14,7 +14,7 @@ public:
   void showPage(size_t page);
   void showPage(String const& name);
 
-  Either<size_t, String> currentPage() const;
+  [[nodiscard]] Either<size_t, String> currentPage() const;
 
   void addChild(String const& name, WidgetPtr member) override;
 

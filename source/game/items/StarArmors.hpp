@@ -35,32 +35,32 @@ public:
   ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ArmorItem() = default;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  bool statusEffectsInCosmeticSlot() const;
-  List<PersistentStatusEffect> cosmeticStatusEffects() const;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] bool statusEffectsInCosmeticSlot() const;
+  [[nodiscard]] List<PersistentStatusEffect> cosmeticStatusEffects() const;
 
-  StringSet effectSources() const override;
+  [[nodiscard]] StringSet effectSources() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
-  float getAngle(float aimAngle) override;
+  [[nodiscard]] float getAngle(float aimAngle) override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void fireTriggered() override;
 
-  virtual ArmorType armorType() const = 0;
+  [[nodiscard]] virtual ArmorType armorType() const = 0;
 
-  List<String> const& colorOptions();
+  [[nodiscard]] List<String> const& colorOptions();
 
-  Directives const& directives(bool flip = false) const;
-  bool fullbright() const;
-  bool flipping() const;
-  bool visible(bool extraCosmetics = false) const;
-  HashSet<ArmorType> const& armorTypesToHide();
-  bool hideBody() const;
-  bool bypassNude() const;
+  [[nodiscard]] Directives const& directives(bool flip = false) const;
+  [[nodiscard]] bool fullbright() const;
+  [[nodiscard]] bool flipping() const;
+  [[nodiscard]] bool visible(bool extraCosmetics = false) const;
+  [[nodiscard]] HashSet<ArmorType> const& armorTypesToHide();
+  [[nodiscard]] bool hideBody() const;
+  [[nodiscard]] bool bypassNude() const;
 
-  Maybe<String> const& techModule() const;
+  [[nodiscard]] Maybe<String> const& techModule() const;
 
 protected:
   AssetsConstPtr m_assets;
@@ -90,14 +90,14 @@ public:
   HeadArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~HeadArmor() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  ArmorType armorType() const override;
+  [[nodiscard]] ArmorType armorType() const override;
 
-  String const& frameset(Gender gender) const;
-  Directives const& maskDirectives() const;
+  [[nodiscard]] String const& frameset(Gender gender) const;
+  [[nodiscard]] Directives const& maskDirectives() const;
 
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  [[nodiscard]] List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -110,19 +110,19 @@ public:
   ChestArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ChestArmor() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  ArmorType armorType() const override;
+  [[nodiscard]] ArmorType armorType() const override;
 
   // Will have :run, :normal, :duck, and :portrait
-  String const& bodyFrameset(Gender gender) const;
+  [[nodiscard]] String const& bodyFrameset(Gender gender) const;
   // Will have :idle[1-5], :duck, :rotation, :walk[1-5], :run[1-5], :jump[1-4],
   // :fall[1-4]
-  String const& frontSleeveFrameset(Gender gender) const;
+  [[nodiscard]] String const& frontSleeveFrameset(Gender gender) const;
   // Same as FSleeve
-  String const& backSleeveFrameset(Gender gender) const;
+  [[nodiscard]] String const& backSleeveFrameset(Gender gender) const;
 
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  [[nodiscard]] List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleBodyImage;
@@ -139,14 +139,14 @@ public:
   LegsArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~LegsArmor() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  ArmorType armorType() const override;
+  [[nodiscard]] ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
-  String const& frameset(Gender gender) const;
+  [[nodiscard]] String const& frameset(Gender gender) const;
 
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  [[nodiscard]] List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -158,14 +158,14 @@ public:
   BackArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~BackArmor() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  ArmorType armorType() const override;
+  [[nodiscard]] ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
-  String const& frameset(Gender gender) const;
+  [[nodiscard]] String const& frameset(Gender gender) const;
 
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  [[nodiscard]] List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;

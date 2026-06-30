@@ -51,15 +51,15 @@ void IODevice::close() {
 
 void IODevice::sync() {}
 
-String IODevice::deviceName() const {
+[[nodiscard]] String IODevice::deviceName() const {
   return strf("IODevice <{}>", static_cast<void const*>(this));
 }
 
-bool IODevice::atEnd() {
+[[nodiscard]] bool IODevice::atEnd() {
   return pos() >= size();
 }
 
-StreamOffset IODevice::size() {
+[[nodiscard]] StreamOffset IODevice::size() {
   try {
     StreamOffset storedPos = pos();
     seek(0, IOSeek::End);
@@ -109,7 +109,7 @@ void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, s
   }
 }
 
-ByteArray IODevice::readBytes(size_t size) {
+[[nodiscard]] ByteArray IODevice::readBytes(size_t size) {
   if (!size)
     return {};
 
@@ -123,7 +123,7 @@ void IODevice::writeBytes(ByteArray const& p) {
   writeFull(p.ptr(), p.size());
 }
 
-ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, size_t size) {
+[[nodiscard]] ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, size_t size) {
   if (!size)
     return {};
 

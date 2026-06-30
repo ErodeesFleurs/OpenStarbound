@@ -14,21 +14,21 @@ public:
 
   void update(float dt) override;
 
-  String const& getText() const;
-  bool setText(String const& text, bool callback = true, bool moveCursor = true);
+  [[nodiscard]] String const& getText() const;
+  [[nodiscard]] bool setText(String const& text, bool callback = true, bool moveCursor = true);
 
-  String const& getHint() const;
+  [[nodiscard]] String const& getHint() const;
   void setHint(String const& hint);
 
-  int const& getCursorPosition() const;
+  [[nodiscard]] int const& getCursorPosition() const;
   void setCursorPosition(int cursorPosition);
 
 
-  bool getHidden() const;
+  [[nodiscard]] bool getHidden() const;
   void setHidden(bool hidden);
 
   // Set the regex that the text-box must match.  Defaults to .*
-  String getRegex();
+  [[nodiscard]] String getRegex();
   void setRegex(String const& regex);
 
   void setColor(Color const& color);
@@ -46,11 +46,11 @@ public:
 
   void setFont(String const& font);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   void setDrawBorder(bool drawBorder);
   void setTextAlign(HorizontalAnchor hAnchor);
-  int getCursorDrawOffset() const;
+  [[nodiscard]] int getCursorDrawOffset() const;
 
   void mouseOver() override;
   void mouseOut() override;
@@ -58,16 +58,16 @@ public:
 
   void blur() override;
 
-  KeyboardCaptureMode keyboardCaptureMode() const override;
-  Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
+  [[nodiscard]] KeyboardCaptureMode keyboardCaptureMode() const override;
+  [[nodiscard]] Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
 
 protected:
   void renderImpl() override;
 
 private:
-  bool innerSendEvent(InputEvent const& event);
-  bool modText(String const& text);
-  bool newTextValid(String const& text) const;
+  [[nodiscard]] bool innerSendEvent(InputEvent const& event);
+  [[nodiscard]] bool modText(String const& text);
+  [[nodiscard]] bool newTextValid(String const& text) const;
 
   bool m_textHidden = false;
   String m_text;

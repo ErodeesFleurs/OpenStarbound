@@ -214,162 +214,162 @@ MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstP
   m_defaultFootstepSound = assets->json("/client.config:defaultFootstepSound").toString();
 }
 
-StringList MaterialDatabase::materialNames() const {
+[[nodiscard]] StringList MaterialDatabase::materialNames() const {
   StringList names = m_materialIndex.keys();
   names.appendAll(m_metaMaterialIndex.keys());
   return names;
 }
 
-bool MaterialDatabase::isMetaMaterialName(String const& name) const {
+[[nodiscard]] bool MaterialDatabase::isMetaMaterialName(String const& name) const {
   return m_metaMaterialIndex.contains(name);
 }
 
-bool MaterialDatabase::isMaterialName(String const& name) const {
+[[nodiscard]] bool MaterialDatabase::isMaterialName(String const& name) const {
   return m_materialIndex.contains(name) || m_metaMaterialIndex.contains(name);
 }
 
-bool MaterialDatabase::isValidMaterialId(MaterialId material) const {
+[[nodiscard]] bool MaterialDatabase::isValidMaterialId(MaterialId material) const {
   if (isRealMaterial(material))
     return containsMaterial(material);
   else
     return containsMetaMaterial(material);
 }
 
-MaterialId MaterialDatabase::materialId(String const& matName) const {
+[[nodiscard]] MaterialId MaterialDatabase::materialId(String const& matName) const {
   if (auto m = m_metaMaterialIndex.maybe(matName))
     return *m;
   else
     return m_materialIndex.get(matName);
 }
 
-String MaterialDatabase::materialName(MaterialId materialId) const {
+[[nodiscard]] String MaterialDatabase::materialName(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->name;
   else
     return getMetaMaterialInfo(materialId)->name;
 }
 
-Maybe<String> MaterialDatabase::materialPath(MaterialId materialId) const {
+[[nodiscard]] Maybe<String> MaterialDatabase::materialPath(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->path;
   else
     return {};
 }
 
-Maybe<Json> MaterialDatabase::materialConfig(MaterialId materialId) const {
+[[nodiscard]] Maybe<Json> MaterialDatabase::materialConfig(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->config;
   else
     return {};
 }
 
-String MaterialDatabase::materialDescription(MaterialId materialNumber, String const& species) const {
+[[nodiscard]] String MaterialDatabase::materialDescription(MaterialId materialNumber, String const& species) const {
   auto material = m_materials[materialNumber];
   return material->descriptions.getString(
       strf("{}Description", species), material->descriptions.getString("description"));
 }
 
-String MaterialDatabase::materialDescription(MaterialId materialNumber) const {
+[[nodiscard]] String MaterialDatabase::materialDescription(MaterialId materialNumber) const {
   auto material = m_materials[materialNumber];
   return material->descriptions.getString("description");
 }
 
-String MaterialDatabase::materialShortDescription(MaterialId materialNumber) const {
+[[nodiscard]] String MaterialDatabase::materialShortDescription(MaterialId materialNumber) const {
   auto material = m_materials[materialNumber];
   return material->descriptions.getString("shortdescription");
 }
 
-String MaterialDatabase::materialCategory(MaterialId materialNumber) const {
+[[nodiscard]] String MaterialDatabase::materialCategory(MaterialId materialNumber) const {
   auto material = m_materials[materialNumber];
   return material->category;
 }
 
-StringList MaterialDatabase::modNames() const {
+[[nodiscard]] StringList MaterialDatabase::modNames() const {
   StringList modNames = m_modIndex.keys();
   modNames.appendAll(m_metaModIndex.leftValues());
   return modNames;
 }
 
-bool MaterialDatabase::isModName(String const& name) const {
+[[nodiscard]] bool MaterialDatabase::isModName(String const& name) const {
   return m_modIndex.contains(name);
 }
 
-bool MaterialDatabase::isValidModId(ModId mod) const {
+[[nodiscard]] bool MaterialDatabase::isValidModId(ModId mod) const {
   if (isRealMod(mod))
     return mod < m_mods.size() && static_cast<bool>(m_mods[mod]);
   else
     return m_metaModIndex.hasRightValue(mod);
 }
 
-ModId MaterialDatabase::modId(String const& modName) const {
+[[nodiscard]] ModId MaterialDatabase::modId(String const& modName) const {
   if (auto m = m_metaModIndex.maybeRight(modName))
     return *m;
   else
     return m_modIndex.get(modName);
 }
 
-String const& MaterialDatabase::modName(ModId mod) const {
+[[nodiscard]] String const& MaterialDatabase::modName(ModId mod) const {
   if (isRealMod(mod))
     return getModInfo(mod)->name;
   else
     return m_metaModIndex.getLeft(mod);
 }
 
-Maybe<String> MaterialDatabase::modPath(ModId mod) const {
+[[nodiscard]] Maybe<String> MaterialDatabase::modPath(ModId mod) const {
   if (isRealMod(mod))
     return getModInfo(mod)->path;
   else
     return {};
 }
 
-Maybe<Json> MaterialDatabase::modConfig(ModId mod) const {
+[[nodiscard]] Maybe<Json> MaterialDatabase::modConfig(ModId mod) const {
   if (isRealMod(mod))
     return getModInfo(mod)->config;
   else
     return {};
 }
 
-String MaterialDatabase::modDescription(ModId modId, String const& species) const {
+[[nodiscard]] String MaterialDatabase::modDescription(ModId modId, String const& species) const {
   auto mod = m_mods[modId];
   return mod->descriptions.getString(strf("{}Description", species), mod->descriptions.getString("description"));
 }
 
-String MaterialDatabase::modDescription(ModId modId) const {
+[[nodiscard]] String MaterialDatabase::modDescription(ModId modId) const {
   auto mod = m_mods[modId];
   return mod->descriptions.getString("description");
 }
 
-String MaterialDatabase::modShortDescription(ModId modId) const {
+[[nodiscard]] String MaterialDatabase::modShortDescription(ModId modId) const {
   auto mod = m_mods[modId];
   return mod->descriptions.getString("shortdescription");
 }
 
-String MaterialDatabase::defaultFootstepSound() const {
+[[nodiscard]] String MaterialDatabase::defaultFootstepSound() const {
   return m_defaultFootstepSound;
 }
 
-TileDamageParameters MaterialDatabase::materialDamageParameters(MaterialId materialId) const {
+[[nodiscard]] TileDamageParameters MaterialDatabase::materialDamageParameters(MaterialId materialId) const {
   if (!isRealMaterial(materialId))
     return {};
   else
     return getMaterialInfo(materialId)->damageParameters;
 }
 
-TileDamageParameters MaterialDatabase::modDamageParameters(ModId modId) const {
+[[nodiscard]] TileDamageParameters MaterialDatabase::modDamageParameters(ModId modId) const {
   if (!isRealMod(modId))
     return {};
   else
     return getModInfo(modId)->damageParameters;
 }
 
-bool MaterialDatabase::modBreaksWithTile(ModId modId) const {
+[[nodiscard]] bool MaterialDatabase::modBreaksWithTile(ModId modId) const {
   if (!isRealMod(modId))
     return {};
   else
     return getModInfo(modId)->breaksWithTile;
 }
 
-CollisionKind MaterialDatabase::materialCollisionKind(MaterialId materialId) const {
+[[nodiscard]] CollisionKind MaterialDatabase::materialCollisionKind(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->collisionKind;
   else if (containsMetaMaterial(materialId))
@@ -378,11 +378,11 @@ CollisionKind MaterialDatabase::materialCollisionKind(MaterialId materialId) con
     return CollisionKind::Block;
 }
 
-bool MaterialDatabase::canPlaceInLayer(MaterialId materialId, TileLayer layer) const {
+[[nodiscard]] bool MaterialDatabase::canPlaceInLayer(MaterialId materialId, TileLayer layer) const {
   return layer != TileLayer::Background || !getMaterialInfo(materialId)->foregroundOnly;
 }
 
-ItemDescriptor MaterialDatabase::materialItemDrop(MaterialId materialId) const {
+[[nodiscard]] ItemDescriptor MaterialDatabase::materialItemDrop(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto matInfo = getMaterialInfo(materialId);
     if (!matInfo->itemDrop.empty())
@@ -392,7 +392,7 @@ ItemDescriptor MaterialDatabase::materialItemDrop(MaterialId materialId) const {
   return {};
 }
 
-ItemDescriptor MaterialDatabase::modItemDrop(ModId modId) const {
+[[nodiscard]] ItemDescriptor MaterialDatabase::modItemDrop(ModId modId) const {
   if (isRealMod(modId)) {
     auto modInfo = getModInfo(modId);
     if (!modInfo->itemDrop.empty())
@@ -402,7 +402,7 @@ ItemDescriptor MaterialDatabase::modItemDrop(ModId modId) const {
   return {};
 }
 
-MaterialColorVariant MaterialDatabase::materialColorVariants(MaterialId materialId) const {
+[[nodiscard]] MaterialColorVariant MaterialDatabase::materialColorVariants(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -412,7 +412,7 @@ MaterialColorVariant MaterialDatabase::materialColorVariants(MaterialId material
   return 0;
 }
 
-MaterialColorVariant MaterialDatabase::modColorVariants(ModId modId) const {
+[[nodiscard]] MaterialColorVariant MaterialDatabase::modColorVariants(ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (modInfo->modRenderProfile)
@@ -422,7 +422,7 @@ MaterialColorVariant MaterialDatabase::modColorVariants(ModId modId) const {
   return 0;
 }
 
-bool MaterialDatabase::isMultiColor(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::isMultiColor(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -432,7 +432,7 @@ bool MaterialDatabase::isMultiColor(MaterialId materialId) const {
   return false;
 }
 
-ParticleConfigPtr MaterialDatabase::miningParticle(MaterialId materialId, ModId modId) const {
+[[nodiscard]] ParticleConfigPtr MaterialDatabase::miningParticle(MaterialId materialId, ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (modInfo->miningParticle)
@@ -448,7 +448,7 @@ ParticleConfigPtr MaterialDatabase::miningParticle(MaterialId materialId, ModId 
   return ParticleConfigPtr();
 }
 
-String MaterialDatabase::miningSound(MaterialId materialId, ModId modId) const {
+[[nodiscard]] String MaterialDatabase::miningSound(MaterialId materialId, ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (!modInfo->miningSounds.empty())
@@ -464,7 +464,7 @@ String MaterialDatabase::miningSound(MaterialId materialId, ModId modId) const {
   return String();
 }
 
-String MaterialDatabase::footstepSound(MaterialId materialId, ModId modId) const {
+[[nodiscard]] String MaterialDatabase::footstepSound(MaterialId materialId, ModId modId) const {
   if (isRealMod(modId)) {
     auto const& modInfo = getModInfo(modId);
     if (!modInfo->footstepSound.empty())
@@ -480,43 +480,43 @@ String MaterialDatabase::footstepSound(MaterialId materialId, ModId modId) const
   return m_defaultFootstepSound;
 }
 
-Color MaterialDatabase::materialParticleColor(MaterialId materialId, MaterialHue hueShift) const {
+[[nodiscard]] Color MaterialDatabase::materialParticleColor(MaterialId materialId, MaterialHue hueShift) const {
   auto color = getMaterialInfo(materialId)->particleColor;
   color.setHue(pfmod(color.hue() + materialHueToDegrees(hueShift) / 360.0f, 1.0f));
   return color;
 }
 
-bool MaterialDatabase::isTilledMod(ModId modId) const {
+[[nodiscard]] bool MaterialDatabase::isTilledMod(ModId modId) const {
   if (!isRealMod(modId))
     return false;
   return getModInfo(modId)->tilled;
 }
 
-bool MaterialDatabase::isSoil(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::isSoil(MaterialId materialId) const {
   if (!isRealMaterial(materialId))
     return false;
   return getMaterialInfo(materialId)->soil;
 }
 
-ModId MaterialDatabase::tilledModFor(MaterialId materialId) const {
+[[nodiscard]] ModId MaterialDatabase::tilledModFor(MaterialId materialId) const {
   if (!isRealMaterial(materialId))
     return NoModId;
   return getMaterialInfo(materialId)->tillableMod;
 }
 
-bool MaterialDatabase::isFallingMaterial(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::isFallingMaterial(MaterialId materialId) const {
   if (!isRealMaterial(materialId))
     return false;
   return getMaterialInfo(materialId)->falling;
 }
 
-bool MaterialDatabase::isCascadingFallingMaterial(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::isCascadingFallingMaterial(MaterialId materialId) const {
   if (!isRealMaterial(materialId))
     return false;
   return getMaterialInfo(materialId)->cascading;
 }
 
-bool MaterialDatabase::supportsMod(MaterialId materialId, ModId modId) const {
+[[nodiscard]] bool MaterialDatabase::supportsMod(MaterialId materialId, ModId modId) const {
   if (modId == NoModId)
     return true;
   if (!isRealMaterial(materialId))
@@ -530,11 +530,11 @@ bool MaterialDatabase::supportsMod(MaterialId materialId, ModId modId) const {
 MaterialDatabase::MetaMaterialInfo::MetaMaterialInfo(String name, MaterialId id, CollisionKind collisionKind, bool blocksLiquidFlow)
   : name(name), id(id), collisionKind(collisionKind), blocksLiquidFlow(blocksLiquidFlow) {}
 
-size_t MaterialDatabase::metaMaterialIndex(MaterialId materialId) const {
+[[nodiscard]] size_t MaterialDatabase::metaMaterialIndex(MaterialId materialId) const {
   return materialId - FirstMetaMaterialId;
 }
 
-bool MaterialDatabase::containsMetaMaterial(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::containsMetaMaterial(MaterialId materialId) const {
   auto i = metaMaterialIndex(materialId);
   return m_metaMaterials.size() > i && m_metaMaterials[i];
 }
@@ -547,7 +547,7 @@ void MaterialDatabase::setMetaMaterial(MaterialId materialId, MetaMaterialInfo i
   m_metaMaterialIndex[info.name] = materialId;
 }
 
-bool MaterialDatabase::containsMaterial(MaterialId materialId) const {
+[[nodiscard]] bool MaterialDatabase::containsMaterial(MaterialId materialId) const {
   return m_materials.size() > materialId && m_materials[materialId];
 }
 
@@ -558,7 +558,7 @@ void MaterialDatabase::setMaterial(MaterialId materialId, MaterialInfo info) {
   m_materialIndex[info.name] = materialId;
 }
 
-bool MaterialDatabase::containsMod(ModId modId) const {
+[[nodiscard]] bool MaterialDatabase::containsMod(ModId modId) const {
   return m_mods.size() > modId && m_mods[modId];
 }
 
@@ -568,21 +568,21 @@ void MaterialDatabase::setMod(ModId modId, ModInfo info) {
   m_mods[modId] = make_shared<ModInfo>(info);
 }
 
-shared_ptr<MaterialDatabase::MetaMaterialInfo const> const& MaterialDatabase::getMetaMaterialInfo(MaterialId materialId) const {
+[[nodiscard]] shared_ptr<MaterialDatabase::MetaMaterialInfo const> const& MaterialDatabase::getMetaMaterialInfo(MaterialId materialId) const {
   if (!containsMetaMaterial(materialId))
     throw MaterialException(strf("No such metamaterial id: {}\n", materialId));
   else
     return m_metaMaterials[metaMaterialIndex(materialId)];
 }
 
-shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMaterialInfo(MaterialId materialId) const {
+[[nodiscard]] shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMaterialInfo(MaterialId materialId) const {
   if (materialId >= m_materials.size() || !m_materials[materialId])
     throw MaterialException(strf("No such material id: {}\n", materialId));
   else
     return m_materials[materialId];
 }
 
-shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
+[[nodiscard]] shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
   if (modId >= m_mods.size() || !m_mods[modId])
     throw MaterialException(strf("No such mod id: {}\n", modId));
   else

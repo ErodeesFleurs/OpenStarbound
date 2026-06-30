@@ -8,7 +8,7 @@ AiState::AiState(Json const& v) {
   completedMissions.addAll(jsonToStringList(v.get("completedMissions", JsonArray())));
 }
 
-Json AiState::toJson() const {
+[[nodiscard]] Json AiState::toJson() const {
   return JsonObject{{"availableMissions", jsonFromStringList(availableMissions.values())},
       {"completedMissions", jsonFromStringList(completedMissions.values())}};
 }

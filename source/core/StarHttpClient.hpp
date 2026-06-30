@@ -28,16 +28,16 @@ public:
   HttpClient() = default;
   ~HttpClient() = default;
 
-  static WorkerPoolPromise<HttpResponse> requestAsync(HttpRequest const& request);
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> requestAsync(HttpRequest const& request);
 
-  static WorkerPoolPromise<HttpResponse> getAsync(String const& url, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> postAsync(String const& url, String const& body, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> putAsync(String const& url, String const& body, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> deleteAsync(String const& url, StringMap<String> const& headers = {});
-  static WorkerPoolPromise<HttpResponse> patchAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> getAsync(String const& url, StringMap<String> const& headers = {});
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> postAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> putAsync(String const& url, String const& body, StringMap<String> const& headers = {});
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> deleteAsync(String const& url, StringMap<String> const& headers = {});
+  [[nodiscard]] static WorkerPoolPromise<HttpResponse> patchAsync(String const& url, String const& body, StringMap<String> const& headers = {});
 
 private:
-  static WorkerPool& workerPool();
+  [[nodiscard]] static WorkerPool& workerPool();
 };
 
 }

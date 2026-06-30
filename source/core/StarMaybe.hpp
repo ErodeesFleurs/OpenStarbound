@@ -46,38 +46,38 @@ public:
 
   [[nodiscard]] bool isValid() const;
   [[nodiscard]] bool isNothing() const;
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   [[nodiscard]] PointerConstType ptr() const;
   [[nodiscard]] PointerType ptr();
 
-  PointerConstType operator->() const;
-  PointerType operator->();
+  [[nodiscard]] PointerConstType operator->() const;
+  [[nodiscard]] PointerType operator->();
 
-  RefConstType operator*() const;
-  RefType operator*();
+  [[nodiscard]] RefConstType operator*() const;
+  [[nodiscard]] RefType operator*();
 
   bool operator==(Maybe const& rhs) const;
   bool operator!=(Maybe const& rhs) const;
-  bool operator<(Maybe const& rhs) const;
+  [[nodiscard]] bool operator<(Maybe const& rhs) const;
 
-  RefConstType get() const;
-  RefType get();
+  [[nodiscard]] RefConstType get() const;
+  [[nodiscard]] RefType get();
 
   [[nodiscard]] std::optional<T> optional() const&;
   [[nodiscard]] std::optional<T> optional() &&;
 
   // Get either the contents of this Maybe or the given default.
-  T value(T def = T()) const;
+  [[nodiscard]] T value(T def = T()) const;
 
   // Get either this value, or if this value is none the given value.
-  Maybe orMaybe(Maybe const& other) const;
+  [[nodiscard]] Maybe orMaybe(Maybe const& other) const;
 
   // Takes the value out of this Maybe, leaving it Nothing.
-  T take();
+  [[nodiscard]] T take();
 
   // If this Maybe is set, assigns it to t and leaves this Maybe as Nothing.
-  bool put(T& t);
+  [[nodiscard]] bool put(T& t);
 
   void set(T const& t);
   void set(T&& t);
@@ -95,11 +95,11 @@ public:
   // given function to it and returns the result, otherwise returns Nothing (of
   // the type the function would normally return).
   template <typename Function>
-  auto apply(Function&& function) const -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>>;
+  [[nodiscard]] auto apply(Function&& function) const -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>>;
 
   // Monadic bind operator.  Given function should return another Maybe.
   template <typename Function>
-  auto sequence(Function function) const -> decltype(function(std::declval<T>()));
+  [[nodiscard]] auto sequence(Function function) const -> decltype(function(std::declval<T>()));
 
 private:
   std::optional<T> m_data;
@@ -110,7 +110,7 @@ std::ostream& operator<<(std::ostream& os, Maybe<T> const& v);
 
 template <typename T>
 struct hash<Maybe<T>> {
-  size_t operator()(Maybe<T> const& m) const;
+  [[nodiscard]] size_t operator()(Maybe<T> const& m) const;
   hash<T> hasher;
 };
 
@@ -324,7 +324,7 @@ template <typename T>
   if (!m_data)
     throw InvalidMaybeAccessException();
 
-  T val(std::move(*m_data));
+  [[nodiscard]] T val(std::move(*m_data));
 
   reset();
 

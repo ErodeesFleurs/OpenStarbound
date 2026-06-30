@@ -21,10 +21,10 @@ public:
   void setScale(float scale);
   void setIconMode();
   void setRenderHumanoid(bool);
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
 protected:
-  RectI getScissorRect() const override;
+  [[nodiscard]] RectI getScissorRect() const override;
   void renderImpl() override;
 
 private:

@@ -4,7 +4,7 @@
 
 namespace Star {
 
-Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
+[[nodiscard]] Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
   if (query.empty())
     return {};
 
@@ -181,21 +181,21 @@ void Socket::setNonBlocking(bool nonBlocking) {
 #endif
 }
 
-NetworkMode Socket::networkMode() const {
+[[nodiscard]] NetworkMode Socket::networkMode() const {
   ReadLocker locker(m_mutex);
   return m_networkMode;
 }
 
-SocketMode Socket::socketMode() const {
+[[nodiscard]] SocketMode Socket::socketMode() const {
   ReadLocker locker(m_mutex);
   return m_socketMode;
 }
 
-bool Socket::isActive() const {
+[[nodiscard]] bool Socket::isActive() const {
   return m_socketMode > SocketMode::Shutdown;
 }
 
-bool Socket::isOpen() const {
+[[nodiscard]] bool Socket::isOpen() const {
   return m_socketMode != SocketMode::Closed;
 }
 

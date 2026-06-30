@@ -15,7 +15,7 @@ struct SimpleTooltipServices {
 };
 
 namespace SimpleTooltipBuilder {
-  PanePtr buildTooltip(String const& text, SimpleTooltipServices services);
+  [[nodiscard]] PanePtr buildTooltip(String const& text, SimpleTooltipServices services);
 };
 
 }

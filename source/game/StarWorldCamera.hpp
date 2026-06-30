@@ -9,39 +9,39 @@ namespace Star {
 class WorldCamera {
 public:
   void setScreenSize(Vec2U screenSize);
-  Vec2U screenSize() const;
+  [[nodiscard]] Vec2U screenSize() const;
 
   void setTargetPixelRatio(float targetPixelRatio);
   void setPixelRatio(float pixelRatio);
-  float pixelRatio() const;
+  [[nodiscard]] float pixelRatio() const;
 
   void setWorldGeometry(WorldGeometry geometry);
-  WorldGeometry worldGeometry() const;
+  [[nodiscard]] WorldGeometry worldGeometry() const;
 
   // Set the camera center position (in world space) to as close to the given
   // location as possible while keeping the screen within world bounds.
   void setCenterWorldPosition(Vec2F position, bool force = false);
   // Returns the actual camera position.
-  Vec2F centerWorldPosition() const;
+  [[nodiscard]] Vec2F centerWorldPosition() const;
 
   // Transforms world coordinates into one set of screen coordinates.  Since
   // the world is non-euclidean, one world coordinate can transform to
   // potentially an infinite number of screen coordinates.  This will retrun
   // the closest to the center of the screen.
-  Vec2F worldToScreen(Vec2F worldCoord) const;
+  [[nodiscard]] Vec2F worldToScreen(Vec2F worldCoord) const;
 
   // Assumes top left corner of screen is (0, 0) in screen coordinates.
-  Vec2F screenToWorld(Vec2F screen) const;
+  [[nodiscard]] Vec2F screenToWorld(Vec2F screen) const;
 
   // Returns screen dimensions in world space.
-  RectF worldScreenRect() const;
+  [[nodiscard]] RectF worldScreenRect() const;
 
   // Returns tile dimensions of the tiles that overlap with the screen
-  RectI worldTileRect() const;
+  [[nodiscard]] RectI worldTileRect() const;
 
   // Returns the position of the lower left corner of the lower left tile of
   // worldTileRect, in screen coordinates.
-  Vec2F tileMinScreen() const;
+  [[nodiscard]] Vec2F tileMinScreen() const;
 
   void update(float dt);
 

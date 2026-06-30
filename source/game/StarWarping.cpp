@@ -23,7 +23,7 @@ bool InstanceWorldId::operator<(InstanceWorldId const& other) const {
   return tie(instance, uuid, level) < tie(other.instance, other.uuid, other.level);
 }
 
-size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {
+[[nodiscard]] size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {
   return hashOf(id.instance, id.uuid, id.level);
 }
 
@@ -41,7 +41,7 @@ DataStream& operator<<(DataStream& ds, InstanceWorldId const& instanceWorldId) {
   return ds;
 }
 
-String printWorldId(WorldId const& worldId) {
+[[nodiscard]] String printWorldId(WorldId const& worldId) {
   if (auto instanceWorldId = worldId.ptr<InstanceWorldId>()) {
     if (instanceWorldId->level && *instanceWorldId->level < 0.0f)
       throw StarException::format("InstanceWorldId level component cannot be negative");
@@ -58,7 +58,7 @@ String printWorldId(WorldId const& worldId) {
   }
 }
 
-WorldId parseWorldId(String const& printedId) {
+[[nodiscard]] WorldId parseWorldId(String const& printedId) {
   if (printedId.empty())
     return WorldId();
 
@@ -121,7 +121,7 @@ std::ostream& operator<<(std::ostream& os, WorldId const& worldId) {
   return os;
 }
 
-Json spawnTargetToJson(SpawnTarget spawnTarget) {
+[[nodiscard]] Json spawnTargetToJson(SpawnTarget spawnTarget) {
   if (spawnTarget.is<SpawnTargetUniqueEntity>())
     return spawnTarget.get<SpawnTargetUniqueEntity>();
   else if (spawnTarget.is<SpawnTargetPosition>())
@@ -132,7 +132,7 @@ Json spawnTargetToJson(SpawnTarget spawnTarget) {
     return Json();
 }
 
-SpawnTarget spawnTargetFromJson(Json v) {
+[[nodiscard]] SpawnTarget spawnTargetFromJson(Json v) {
   if (v.isNull())
     return {};
   else if (v.isType(Json::Type::String))
@@ -143,7 +143,7 @@ SpawnTarget spawnTargetFromJson(Json v) {
     return SpawnTargetPosition(jsonToVec2F(v));
 }
 
-String printSpawnTarget(SpawnTarget spawnTarget) {
+[[nodiscard]] String printSpawnTarget(SpawnTarget spawnTarget) {
   if (auto str = spawnTarget.ptr<SpawnTargetUniqueEntity>())
     return *str;
   else if (auto pos = spawnTarget.ptr<SpawnTargetPosition>())
@@ -163,19 +163,19 @@ WarpToWorld::WarpToWorld(Json v) {
   }
 }
 
-bool WarpToWorld::operator==(WarpToWorld const& rhs) const {
+[[nodiscard]] bool WarpToWorld::operator==(WarpToWorld const& rhs) const {
   return tie(world, target) == tie(rhs.world, rhs.target);
 }
 
-WarpToWorld::operator bool() const {
+[[nodiscard]] WarpToWorld::operator bool() const {
   return static_cast<bool>(world);
 }
 
-Json WarpToWorld::toJson() const {
+[[nodiscard]] Json WarpToWorld::toJson() const {
   return JsonObject{{"world", printWorldId(world)}, {"target", spawnTargetToJson(target)}};
 }
 
-WarpAction parseWarpAction(String const& warpString) {
+[[nodiscard]] WarpAction parseWarpAction(String const& warpString) {
   if (warpString.equalsIgnoreCase("Return")) {
     return WarpAlias::Return;
   } else if (warpString.equalsIgnoreCase("OrbitedWorld")) {
@@ -204,7 +204,7 @@ WarpAction parseWarpAction(String const& warpString) {
   }
 }
 
-String printWarpAction(WarpAction const& warpAction) {
+[[nodiscard]] String printWarpAction(WarpAction const& warpAction) {
   if (auto warpAlias = warpAction.ptr<WarpAlias>()) {
     if (*warpAlias == WarpAlias::Return)
       return "Return";
@@ -224,7 +224,7 @@ String printWarpAction(WarpAction const& warpAction) {
   return "UnknownWarpAction";
 }
 
-JsonObject warpActionToJson(WarpAction const& warpAction) {
+[[nodiscard]] JsonObject warpActionToJson(WarpAction const& warpAction) {
   if (auto warpAlias = warpAction.ptr<WarpAlias>()) {
     auto out = JsonObject{
       {"actionKind", "Alias"}

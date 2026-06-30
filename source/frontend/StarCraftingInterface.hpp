@@ -50,32 +50,32 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
-  EntityId sourceEntityId() const;
+  [[nodiscard]] EntityId sourceEntityId() const;
 
 private:
   void upgradeTable();
 
-  List<ItemRecipe> determineRecipes();
+  [[nodiscard]] List<ItemRecipe> determineRecipes();
 
   void update(float dt) override;
   void updateCraftButtons();
   void updateAvailableRecipes();
-  bool consumeIngredients(ItemRecipe& recipe, int count);
+  [[nodiscard]] bool consumeIngredients(ItemRecipe& recipe, int count);
   void stopCrafting();
   void toggleCraft();
   void craft(int count);
   void countChanged();
   void countTextChanged();
-  int maxCraft();
+  [[nodiscard]] int maxCraft();
   void setupList(WidgetPtr widget, ItemRecipe const& recipe);
-  ItemRecipe recipeFromSelectedWidget() const;
+  [[nodiscard]] ItemRecipe recipeFromSelectedWidget() const;
   void setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
 
-  PanePtr setupTooltip(ItemRecipe const& recipe);
+  [[nodiscard]] PanePtr setupTooltip(ItemRecipe const& recipe);
 
-  size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
+  [[nodiscard]] size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
 
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;

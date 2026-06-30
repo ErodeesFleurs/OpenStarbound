@@ -447,7 +447,7 @@ void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& de
 
 void DungeonGeneratorWorld::setLiquid(Vec2I const& pos, LiquidStore const& liquid) {
   ServerTile* tile = m_worldServer.modifyServerTile(pos);
-  starAssert(tile);
+  assert(tile);
   if (tile)
     tile->liquid = liquid;
 }
@@ -790,7 +790,7 @@ void WorldGenerator::prepareTiles(WorldStorage& worldStorage, ServerTileSectorAr
     for (int y = sectorRegion.yMin(); y < sectorRegion.yMax(); ++y) {
       Vec2I pos(x, y);
       ServerTile* tile = tileArray->modifyTile(pos);
-      starAssert(tile);
+      assert(tile);
       if (!tile)
         continue;
 
@@ -867,7 +867,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage& worldStorage, ServerTil
       auto seed = m_worldServer.worldTemplate()->seedFor(placement.position[0], placement.position[1]);
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
       Maybe<DungeonId> dungeonId;
-      starAssert(!dungeonName.empty());
+      assert(!dungeonName.empty());
       if (auto generateResult = m_microDungeonFactory->generate(bounds, m_worldServer.dungeonDefinitions(), dungeonName, placement.position, seed, m_worldServer.threatLevel(), facade)) {
         if (queued) {
           dungeonId = queued->dungeonId;
@@ -936,7 +936,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSe
     if (badNodes.contains(position))
       return;
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    assert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId) {
       // Not sure why this doesn't poison solid materials, but it does (occasionally) encounter that case
       if (!BlockCollisionSet.contains(materialDatabase->materialCollisionKind(tile.foreground)))
@@ -970,7 +970,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSe
       return;
     visitedNodes.add(position);
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    assert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId)
       return;
     badNodes.add(position);
@@ -989,7 +989,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSe
 
   auto solids = [&](Vec2I position) {
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    assert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId)
       solidSurroundings.add(position);
   };
@@ -1005,7 +1005,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSe
   Map<Vec2I, float> drops = determineLiquidLevel(candidateNodes, solidSurroundings);
   for (auto const& [position, pressure] : drops) {
     auto tile = tileArray->modifyTile(wrapCoords(position));
-    starAssert(tile);
+    assert(tile);
     if (!tile)
       continue;
     if (pressure)
@@ -1025,10 +1025,10 @@ void WorldGenerator::prepareSector(WorldStorage& worldStorage, ServerTileSectorA
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = tileArray->modifyTile(position);
-      starAssert(tile);
+      assert(tile);
       if (!tile)
         continue;
-      starAssert(tile->foreground != NullMaterialId);
+      assert(tile->foreground != NullMaterialId);
 
       if (tile->liquid.source) {
         auto blockInfo = planet->blockInfo(position[0], position[1]);
@@ -1201,7 +1201,7 @@ void WorldGenerator::reapplyBiome(WorldStorage& worldStorage, ServerTileSectorAr
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = m_worldServer.modifyServerTile(position);
-      starAssert(tile);
+      assert(tile);
       if (!tile)
         continue;
 

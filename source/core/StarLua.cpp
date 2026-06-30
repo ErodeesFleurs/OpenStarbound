@@ -396,7 +396,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
 
 LuaEngine::~LuaEngine() {
   // If we've had a stack space leak, this will not be zero
-  starAssert(lua_gettop(m_state) == 0);
+  assert(lua_gettop(m_state) == 0);
   lua_close(m_state);
 }
 
@@ -611,7 +611,7 @@ LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {
 }
 
 void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
-  starAssert(ar->event == LUA_HOOKCOUNT);
+  assert(ar->event == LUA_HOOKCOUNT);
   lua_checkstack(state, 4);
 
   auto self = luaEnginePtr(state);
@@ -1230,7 +1230,7 @@ LuaValue LuaEngine::popLuaValue(lua_State* state) {
   lua_checkstack(state, 1);
 
   LuaValue result;
-  starAssert(!lua_isnone(state, -1));
+  assert(!lua_isnone(state, -1));
   switch (lua_type(state, -1)) {
   case LUA_TNIL: {
     lua_pop(state, 1);
@@ -1299,7 +1299,7 @@ void LuaEngine::incrementRecursionLevel() {
 }
 
 void LuaEngine::decrementRecursionLevel() {
-  starAssert(m_recursionLevel != 0);
+  assert(m_recursionLevel != 0);
   --m_recursionLevel;
 }
 

@@ -256,11 +256,11 @@ public:
     } while (read == OV_HOLE);
     if (read < 0)
       throw AudioException::format("Error in Audio::read ({})", read);
-    
+
     // read in bytes, returning number of int16_t samples.
     return read / 2;
   }
-  
+
 private:
   ByteArrayConstPtr m_audioData;
   ExternalBuffer m_memoryFile;
@@ -388,7 +388,7 @@ Audio& Audio::operator=(Audio const& audio) {
           throw AudioException("Failed to open uncompressed audio stream during copy");
     } else {
         m_compressed = make_shared<CompressedAudioImpl>(*audio.m_compressed);
-        if (!m_compressed->open()) 
+        if (!m_compressed->open())
             throw AudioException("Failed to open compressed audio stream during copy");
     }
 
@@ -570,7 +570,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
           unsigned sourceSample = static_cast<unsigned>((destinationSample * SuperSampleFactor + superSample) * sourceSamples / destinationSamples) / SuperSampleFactor;
           if (sourceSample < readSamples) {
             unsigned sourceBufferIndex = sourceSample * sourceChannels;
-            starAssert(sourceBufferIndex + sourceChannel < sourceBufferSize);
+            assert(sourceBufferIndex + sourceChannel < sourceBufferSize);
             sample += sourceBuffer[sourceBufferIndex + sourceChannel];
             ++sampleCount;
           }

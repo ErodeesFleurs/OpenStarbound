@@ -34,11 +34,11 @@ EntityDamageTeam::EntityDamageTeam(Json const& json) {
   team = json.getUInt("team", 0);
 }
 
-Json EntityDamageTeam::toJson() const {
+[[nodiscard]] Json EntityDamageTeam::toJson() const {
   return JsonObject{{"type", TeamTypeNames.getRight(type)}, {"team", team}};
 }
 
-bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const {
+[[nodiscard]] bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const {
   if (victimIsSelf) {
     if (type == TeamType::Indiscriminate)
       return true;
@@ -76,7 +76,7 @@ bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) con
   return false;
 }
 
-bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
+[[nodiscard]] bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
   return tie(type, team) == tie(rhs.type, rhs.team);
 }
 
@@ -92,7 +92,7 @@ DataStream& operator>>(DataStream& ds, EntityDamageTeam& team) {
   return ds;
 }
 
-TeamNumber soloPvpTeam(ConnectionId clientId) {
+[[nodiscard]] TeamNumber soloPvpTeam(ConnectionId clientId) {
   return static_cast<TeamNumber>(clientId);
 }
 

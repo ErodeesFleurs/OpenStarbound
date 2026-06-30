@@ -26,18 +26,18 @@ public:
   virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
 
   // Default implementations return empty list
-  virtual List<DamageSource> damageSources() const;
-  virtual List<PolyF> shieldPolys() const;
-  virtual List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]] virtual List<DamageSource> damageSources() const;
+  [[nodiscard]] virtual List<PolyF> shieldPolys() const;
+  [[nodiscard]] virtual List<PhysicsForceRegion> forceRegions() const;
 
-  bool initialized() const;
+  [[nodiscard]] bool initialized() const;
 
   // owner, entityMode, hand, and world throw ToolUserException if
   // initialized() is false
-  ToolUserEntity* owner() const;
-  EntityMode entityMode() const;
-  ToolHand hand() const;
-  World* world() const;
+  [[nodiscard]] ToolUserEntity* owner() const;
+  [[nodiscard]] EntityMode entityMode() const;
+  [[nodiscard]] ToolHand hand() const;
+  [[nodiscard]] World* world() const;
 
 private:
   ToolUserEntity* m_owner = nullptr;

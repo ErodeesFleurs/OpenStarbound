@@ -32,17 +32,17 @@ public:
 
   [[nodiscard]] List<Key> keys() const;
   [[nodiscard]] List<Value> values() const;
-  EntryMap const& entries() const;
+  [[nodiscard]] EntryMap const& entries() const;
 
   [[nodiscard]] size_t size() const;
 
   [[nodiscard]] bool contains(Key const& key) const;
 
-  Value const& get(Key const& key) const;
-  Value& get(Key const& key);
+  [[nodiscard]] Value const& get(Key const& key) const;
+  [[nodiscard]] Value& get(Key const& key);
 
   // Returns default constructed value if key not found
-  Value value(Key const& key) const;
+  [[nodiscard]] Value value(Key const& key) const;
 
   // Query values from several bounding boxes at once with no duplicates.
   [[nodiscard]] List<Value> queryValues(Rect const& rect) const;
@@ -80,7 +80,7 @@ private:
   using SectorEntrySet = HashSet<Entry const*, hash<Entry const*>, std::equal_to<Entry const*>>;
   using SectorMap = HashMap<Sector, SectorEntrySet>;
 
-  SectorRange getSectors(Rect const& r) const;
+  [[nodiscard]] SectorRange getSectors(Rect const& r) const;
 
   void addSpatial(Entry const* entry);
   void removeSpatial(Entry const* entry);
@@ -288,7 +288,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(
     auto sectorResult = getSectors(rect);
     for (IntT x = sectorResult.xMin(); x < sectorResult.xMax(); ++x) {
       for (IntT y = sectorResult.yMin(); y < sectorResult.yMax(); ++y) {
-        Sector sector(x, y);
+        [[nodiscard]] Sector sector(x, y);
         SectorEntrySet* p = m_sectorMap.ptr(sector);
         if (!p)
           p = &m_sectorMap.add(sector, SectorEntrySet());

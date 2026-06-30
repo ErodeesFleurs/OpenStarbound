@@ -15,45 +15,45 @@ public:
   ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
   ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
 
-  ItemBagConstPtr bag() const;
+  [[nodiscard]] ItemBagConstPtr bag() const;
 
-  ItemPtr itemAt(Vec2I const& position) const;
-  ItemPtr itemAt(size_t index) const;
-  ItemPtr selectedItem() const;
+  [[nodiscard]] ItemPtr itemAt(Vec2I const& position) const;
+  [[nodiscard]] ItemPtr itemAt(size_t index) const;
+  [[nodiscard]] ItemPtr selectedItem() const;
 
-  ItemSlotWidgetPtr itemWidgetAt(Vec2I const& position) const;
-  ItemSlotWidgetPtr itemWidgetAt(size_t index) const;
+  [[nodiscard]] ItemSlotWidgetPtr itemWidgetAt(Vec2I const& position) const;
+  [[nodiscard]] ItemSlotWidgetPtr itemWidgetAt(size_t index) const;
 
   // Returns the dimensions of the item grid
-  Vec2I dimensions() const;
+  [[nodiscard]] Vec2I dimensions() const;
 
   // Returns the number of item slots in the grid (dimensions.x() * dimensions.y())
-  size_t itemSlots() const;
+  [[nodiscard]] size_t itemSlots() const;
 
   // Returns the size of the underlying bag.
-  size_t bagSize() const;
+  [[nodiscard]] size_t bagSize() const;
 
   // Returns the min of bagSize() and itemSlots()
-  size_t effectiveSize() const;
+  [[nodiscard]] size_t effectiveSize() const;
 
-  size_t bagLocationAt(Vec2I const& position) const;
-  Vec2I positionOfSlot(size_t slotNumber);
+  [[nodiscard]] size_t bagLocationAt(Vec2I const& position) const;
+  [[nodiscard]] Vec2I positionOfSlot(size_t slotNumber);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
   void setItemBag(ItemBagConstPtr bag);
   void setProgress(float progress);
 
-  size_t selectedIndex() const;
+  [[nodiscard]] size_t selectedIndex() const;
 
   void updateAllItemSlots();
 
   // Item states, keeping track of new items
   void updateItemState();
   void clearChangedSlots();
-  bool slotsChanged();
+  [[nodiscard]] bool slotsChanged();
   void indicateChangedSlots();
 
   void setHighlightEmpty(bool highlight);
@@ -61,15 +61,15 @@ public:
   void setBackingImageAffinity(bool full, bool empty);
   void showDurability(bool show);
 
-  RectI getScissorRect() const override;
+  [[nodiscard]] RectI getScissorRect() const override;
 
 protected:
   void renderImpl() override;
-  HashSet<ItemDescriptor> uniqueItemState();
-  List<String> slotItemNames();
+  [[nodiscard]] HashSet<ItemDescriptor> uniqueItemState();
+  [[nodiscard]] List<String> slotItemNames();
 
 private:
-  Vec2I locOfItemSlot(unsigned slot) const;
+  [[nodiscard]] Vec2I locOfItemSlot(unsigned slot) const;
 
   ItemBagConstPtr m_bag;
   List<ItemSlotWidgetPtr> m_slots;

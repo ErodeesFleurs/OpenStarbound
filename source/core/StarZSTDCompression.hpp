@@ -33,8 +33,8 @@ public:
 
   void compress(const char* in, size_t inLen, ByteArray& out);
   void compress(ByteArray const& in, ByteArray& out);
-  ByteArray compress(const char* in, size_t inLen);
-  ByteArray compress(ByteArray const& in);
+  [[nodiscard]] ByteArray compress(const char* in, size_t inLen);
+  [[nodiscard]] ByteArray compress(ByteArray const& in);
 
 private:
   std::unique_ptr<ZSTD_CStream, ZstdCompressionStreamDeleter> m_cStream;
@@ -52,8 +52,8 @@ public:
 
   void decompress(const char* in, size_t inLen, ByteArray& out);
   void decompress(ByteArray const& in, ByteArray& out);
-  ByteArray decompress(const char* in, size_t inLen);
-  ByteArray decompress(ByteArray const& in);
+  [[nodiscard]] ByteArray decompress(const char* in, size_t inLen);
+  [[nodiscard]] ByteArray decompress(ByteArray const& in);
 
 private:
   std::unique_ptr<ZSTD_DStream, ZstdDecompressionStreamDeleter> m_dStream;

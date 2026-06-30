@@ -26,21 +26,21 @@ namespace WorldImpl {
     Vec2I const& pos);
 
   template <typename TileSectorArray>
-  bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
+  [[nodiscard]] bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
 
   template <typename TileSectorArray>
-  bool lineTileCollision(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  [[nodiscard]] bool lineTileCollision(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  [[nodiscard]] Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges);
 
-  inline TileDamageParameters tileDamageParameters(WorldTile& tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] inline TileDamageParameters tileDamageParameters(WorldTile& tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
   template <typename TileSectorArray>
-  bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
   
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
@@ -52,26 +52,26 @@ namespace WorldImpl {
   bool perhapsCanPlaceMaterial(EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
   template <typename GetTileFunction>
-  bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] bool canPlaceMaterialColorVariant(Vec2I const& pos, TileLayer layer, MaterialColorVariant color, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
   template <typename GetTileFunction>
-  bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
   template <typename GetTileFunction>
-  pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
-  bool validateTileReplacement(TileModification const& modification, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase);
+  [[nodiscard]] bool validateTileReplacement(TileModification const& modification, MaterialDatabaseConstPtr const& materialDatabase);
   // Split modification list into good and bad
   template <typename GetTileFunction>
   pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
+    [[nodiscard]] bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
-  float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
+  [[nodiscard]] float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
 
   template <typename TileSectorArray>
   float temperature(shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate,
       SkyConstPtr const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(World const& world, shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
+  [[nodiscard]] bool breathable(World const& world, shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
   float lightLevel(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,

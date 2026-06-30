@@ -28,7 +28,7 @@ public:
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
-  WorldCamera& camera();
+  [[nodiscard]] WorldCamera& camera();
 
   void update(float dt);
   void render(WorldRenderData& renderData, function<bool()> lightWaiter);

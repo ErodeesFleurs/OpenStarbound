@@ -17,7 +17,7 @@ void throwInvalidUtf32CodePoint(Utf32Type val) {
   throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", static_cast<int32_t>(val));
 }
 
-size_t utf8Length(const Utf8Type* utf8, size_t remain) {
+[[nodiscard]] size_t utf8Length(const Utf8Type* utf8, size_t remain) {
   bool stopOnNull = remain == NPos;
   size_t length = 0;
 
@@ -83,7 +83,7 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
   return length;
 }
 
-size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
+[[nodiscard]] size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
   const Utf8Type* start = utf8;
   bool stopOnNull = remain == NPos;
 
@@ -139,7 +139,7 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
   return utf8 - start;
 }
 
-size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) {
+[[nodiscard]] size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) {
   if (utf32 > 0x10FFFFu)
     throwInvalidUtf32CodePoint(utf32);
 
@@ -187,7 +187,7 @@ static const char32_t SURR_MASK = 0x3ff;
 static const char32_t MIN_PAIR = 0x10000;
 static const char32_t MAX_CODEPOINT = 0x10ffff;
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint) {
+[[nodiscard]] Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint) {
   bool continuation = false;
   if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
     continuation = true;
@@ -214,7 +214,7 @@ Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previo
   return res;
 }
 
-std::string hexStringFromUtf32(Utf32Type character) {
+[[nodiscard]] std::string hexStringFromUtf32(Utf32Type character) {
   if (character > MAX_CODEPOINT)
     throw UnicodeException("Codepoint too big in hexStringFromUtf32");
   auto [lead, trail] = utf32ToUtf16SurrogatePair(character);
@@ -222,7 +222,7 @@ std::string hexStringFromUtf32(Utf32Type character) {
   char16_t leadOut = toBigEndian(static_cast<char16_t>(lead));
   auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
 
-  starAssert(leadHex.size() == 4);
+  assert(leadHex.size() == 4);
 
   if (!trail)
     return leadHex;
@@ -230,20 +230,20 @@ std::string hexStringFromUtf32(Utf32Type character) {
   char16_t trailOut = toBigEndian(static_cast<char16_t>(*trail));
   auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
 
-  starAssert(trailHex.size() == 4);
+  assert(trailHex.size() == 4);
 
   return (leadHex + trailHex).takeUtf8();
 }
 
-bool isUtf16LeadSurrogate(Utf32Type codepoint) {
+[[nodiscard]] bool isUtf16LeadSurrogate(Utf32Type codepoint) {
   return codepoint >= MIN_LEAD && codepoint <= MAX_LEAD;
 }
 
-bool isUtf16TrailSurrogate(Utf32Type codepoint) {
+[[nodiscard]] bool isUtf16TrailSurrogate(Utf32Type codepoint) {
   return codepoint >= MIN_TRAIL && codepoint <= MAX_TRAIL;
 }
 
-Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
+[[nodiscard]] Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
   if (!isUtf16LeadSurrogate(lead))
     throw UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair");
   if (!isUtf16TrailSurrogate(trail))
@@ -257,7 +257,7 @@ Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
   return codepoint;
 }
 
-pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
+[[nodiscard]] pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
   if (codepoint >= MIN_PAIR) {
     codepoint -= MIN_PAIR;
     Utf32Type lead = (codepoint >> 10) + MIN_LEAD;

@@ -19,7 +19,7 @@ public:
   // means that no values will be forgotten.  The step value increases by one
   // with each entry added, or can be increased artificially by a call to
   // tickStep.
-  uint64_t historyLimit() const;
+  [[nodiscard]] uint64_t historyLimit() const;
   void setHistoryLimit(uint64_t historyLimit = 0);
 
   // Add a value to the end of the stream and increment the step value by 1.
@@ -32,7 +32,7 @@ public:
   // Query values in the stream since the given step value.  Will return the
   // values in the stream, and a new since value to pass to query on the next
   // call.
-  pair<List<T>, uint64_t> query(uint64_t since = 0) const;
+  [[nodiscard]] pair<List<T>, uint64_t> query(uint64_t since = 0) const;
 
   // Resets the step value to 0 and clears all values.
   void reset();
@@ -53,7 +53,7 @@ ObserverStream<T>::ObserverStream(uint64_t historyLimit)
   : m_historyLimit(historyLimit) {}
 
 template <typename T>
-uint64_t ObserverStream<T>::historyLimit() const {
+[[nodiscard]] uint64_t ObserverStream<T>::historyLimit() const {
   return m_historyLimit;
 }
 
@@ -78,7 +78,7 @@ void ObserverStream<T>::tick(uint64_t delta) {
 }
 
 template <typename T>
-pair<List<T>, uint64_t> ObserverStream<T>::query(uint64_t since) const {
+[[nodiscard]] pair<List<T>, uint64_t> ObserverStream<T>::query(uint64_t since) const {
   List<T> res;
   auto i = std::lower_bound(m_values.begin(),
       m_values.end(),

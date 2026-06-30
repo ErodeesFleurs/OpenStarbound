@@ -20,7 +20,7 @@ struct AiState {
   AiState() = default;
   AiState(Json const& v);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   OrderedHashSet<String> availableMissions;
   OrderedHashSet<String> completedMissions;

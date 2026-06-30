@@ -25,7 +25,7 @@ public:
   // if the callback uses the RandomSource in a predictable way, will generate
   // the same field for every call.
   template <typename PointCallback>
-  PointSet generate(Poly const& area, PointCallback callback);
+  [[nodiscard]] PointSet generate(Poly const& area, PointCallback callback);
 
 private:
   HashTtlCache<Point, PointSet> m_cache;

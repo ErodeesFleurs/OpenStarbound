@@ -13,33 +13,33 @@ public:
   PlayerLog() = default;
   PlayerLog(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  int deathCount() const;
+  [[nodiscard]] int deathCount() const;
   void addDeathCount(int deaths);
 
-  double playTime() const;
+  [[nodiscard]] double playTime() const;
   void addPlayTime(double elapsedTime);
 
-  bool introComplete() const;
+  [[nodiscard]] bool introComplete() const;
   void setIntroComplete(bool complete);
 
-  StringSet scannedObjects() const;
-  bool addScannedObject(String const& objectName);
+  [[nodiscard]] StringSet scannedObjects() const;
+  [[nodiscard]] bool addScannedObject(String const& objectName);
   void removeScannedObject(String const& objectName);
   void clearScannedObjects();
 
-  StringSet radioMessages() const;
-  bool addRadioMessage(String const& messageName);
+  [[nodiscard]] StringSet radioMessages() const;
+  [[nodiscard]] bool addRadioMessage(String const& messageName);
   void clearRadioMessages();
 
-  StringSet cinematics() const;
-  bool addCinematic(String const& cinematic);
+  [[nodiscard]] StringSet cinematics() const;
+  [[nodiscard]] bool addCinematic(String const& cinematic);
   void clearCinematics();
 
-  StringList collections() const;
-  StringSet collectables(String const& collection) const;
-  bool addCollectable(String const& collection, String const& collectable);
+  [[nodiscard]] StringList collections() const;
+  [[nodiscard]] StringSet collectables(String const& collection) const;
+  [[nodiscard]] bool addCollectable(String const& collection, String const& collectable);
   void clearCollectables(String const& collection);
 
 private:

@@ -35,12 +35,12 @@ class ActionBar : public Pane {
 public:
   ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, ActionBarServices services);
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   void update(float dt) override;
 
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
+  [[nodiscard]] Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
 
 private:
   struct CustomBarEntry {

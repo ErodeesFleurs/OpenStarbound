@@ -11,11 +11,11 @@ ParticleConfig::ParticleConfig(Json const& config, AssetsConstPtr assets, ImageM
   m_variance = Particle(config.queryObject("definition.variance", {}), "/", std::move(assets), std::move(imageMetadataDatabase));
 }
 
-String const& ParticleConfig::kind() {
+[[nodiscard]] String const& ParticleConfig::kind() const {
   return m_kind;
 }
 
-Particle ParticleConfig::instance() {
+[[nodiscard]] Particle ParticleConfig::instance() const {
   auto particle = m_particle;
   particle.applyVariance(m_variance);
   return particle;
@@ -34,14 +34,14 @@ ParticleDatabase::ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseC
   }
 }
 
-ParticleConfigPtr ParticleDatabase::config(String const& kind) const {
+[[nodiscard]] ParticleConfigPtr ParticleDatabase::config(String const& kind) const {
   auto k = kind.toLower();
   if (!m_configs.contains(k))
     throw StarException(strf("Unknown particle definition with kind {}.", kind));
   return m_configs.get(k);
 }
 
-ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfig, String const& relativePath) const {
+[[nodiscard]] ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfig, String const& relativePath) const {
   if (kindOrConfig.isType(Json::Type::String)) {
     auto pconfig = config(kindOrConfig.toString());
     return [pconfig]() { return pconfig->instance(); };
@@ -52,7 +52,7 @@ ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfi
   }
 }
 
-Particle ParticleDatabase::particle(Json const& kindOrConfig, String const& relativePath) const {
+[[nodiscard]] Particle ParticleDatabase::particle(Json const& kindOrConfig, String const& relativePath) const {
   return particleCreator(kindOrConfig, relativePath)();
 }
 

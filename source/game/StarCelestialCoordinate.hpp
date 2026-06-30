@@ -28,52 +28,52 @@ public:
   explicit CelestialCoordinate(Json const& json);
 
   // Is this coordanate the null coordinate?
-  bool isNull() const;
+  [[nodiscard]] bool isNull() const;
 
   // Does this coordinate point to an entire planetary system?
-  bool isSystem() const;
+  [[nodiscard]] bool isSystem() const;
   // Is this world a body whose "designated gravity buddy" is the center of a
   // planetary system?
-  bool isPlanetaryBody() const;
+  [[nodiscard]] bool isPlanetaryBody() const;
   // Is this world a body which orbits around a planetary body?
-  bool isSatelliteBody() const;
+  [[nodiscard]] bool isSatelliteBody() const;
 
-  Vec3I location() const;
+  [[nodiscard]] Vec3I location() const;
 
   // Returns just the system coordinate portion of this celestial coordinate.
-  CelestialCoordinate system() const;
+  [[nodiscard]] CelestialCoordinate system() const;
 
   // Returns just the planet portion of this celestial coordinate, throws
   // exception if this is a system coordinate.
-  CelestialCoordinate planet() const;
+  [[nodiscard]] CelestialCoordinate planet() const;
 
   // Returns the orbit number for this body.  Returns 0 for system coordinates.
-  int orbitNumber() const;
+  [[nodiscard]] int orbitNumber() const;
 
   // Returns the system for a planet or the planet for a satellite.  If this is
   // a system coordinate, throws an exception.
-  CelestialCoordinate parent() const;
+  [[nodiscard]] CelestialCoordinate parent() const;
 
   // Returns a coordinate to a child object at the given orbit number.  If the
   // orbit number is 0, returns *this, otherwise if this is a satellite throws
   // an exception.
-  CelestialCoordinate child(int orbitNumber) const;
+  [[nodiscard]] CelestialCoordinate child(int orbitNumber) const;
 
   // Stores coordinate in json form that can be used to reconstruct it.
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   // Returns coordinate in a parseable String format.
-  String id() const;
+  [[nodiscard]] String id() const;
 
   // Returns a fakey fake distance
-  double distance(CelestialCoordinate const& rhs) const;
+  [[nodiscard]] double distance(CelestialCoordinate const& rhs) const;
 
   // Returns a slightly different string format than id(), which is still in an
   // accepted format, but more appropriate for filenames.
-  String filename() const;
+  [[nodiscard]] String filename() const;
 
   // Returns true if not null
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   auto operator<=>(CelestialCoordinate const&) const = default;
 

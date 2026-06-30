@@ -109,83 +109,83 @@ public:
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
-  PlayerPtr mainPlayer() const;
-  AssetsConstPtr assets() const;
-  BiomeDatabaseConstPtr biomeDatabase() const;
+  [[nodiscard]] PlayerPtr mainPlayer() const;
+  [[nodiscard]] AssetsConstPtr assets() const;
+  [[nodiscard]] BiomeDatabaseConstPtr biomeDatabase() const;
 
   // Returns error if connection failed
-  Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
-  bool isConnected() const;
+  [[nodiscard]] Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
+  [[nodiscard]] bool isConnected() const;
   void disconnect();
-  Maybe<String> disconnectReason() const;
+  [[nodiscard]] Maybe<String> disconnectReason() const;
 
   // WorldClient may be null if the UniverseClient is not connected.
-  WorldClientPtr worldClient() const;
-  SystemWorldClientPtr systemWorldClient() const;
-  LiquidsDatabaseConstPtr liquidsDatabase() const;
+  [[nodiscard]] WorldClientPtr worldClient() const;
+  [[nodiscard]] SystemWorldClientPtr systemWorldClient() const;
+  [[nodiscard]] LiquidsDatabaseConstPtr liquidsDatabase() const;
 
   // Updates internal world client in addition to handling universe level
   // commands.
   void update(float dt);
 
-  Maybe<BeamUpRule> beamUpRule() const;
-  bool canBeamUp() const;
-  bool canBeamDown(bool deploy = false) const;
-  bool canBeamToTeamShip() const;
-  bool canTeleport() const;
+  [[nodiscard]] Maybe<BeamUpRule> beamUpRule() const;
+  [[nodiscard]] bool canBeamUp() const;
+  [[nodiscard]] bool canBeamDown(bool deploy = false) const;
+  [[nodiscard]] bool canBeamToTeamShip() const;
+  [[nodiscard]] bool canTeleport() const;
 
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
   void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
-  CelestialDatabasePtr celestialDatabase() const;
+  [[nodiscard]] CelestialDatabasePtr celestialDatabase() const;
 
-  CelestialCoordinate shipCoordinate() const;
+  [[nodiscard]] CelestialCoordinate shipCoordinate() const;
 
-  bool playerOnOwnShip() const;
-  bool playerIsOriginal() const;
+  [[nodiscard]] bool playerOnOwnShip() const;
+  [[nodiscard]] bool playerIsOriginal() const;
 
-  WorldId playerWorld() const;
-  bool isAdmin() const;
+  [[nodiscard]] WorldId playerWorld() const;
+  [[nodiscard]] bool isAdmin() const;
   // If the player is in a multi person team returns the team uuid, or if the
   // player is by themselves returns the player uuid.
-  Uuid teamUuid() const;
+  [[nodiscard]] Uuid teamUuid() const;
 
-  WorldTemplateConstPtr currentTemplate() const;
-  SkyConstPtr currentSky() const;
-  bool flying() const;
+  [[nodiscard]] WorldTemplateConstPtr currentTemplate() const;
+  [[nodiscard]] SkyConstPtr currentSky() const;
+  [[nodiscard]] bool flying() const;
 
   void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {}, Maybe<JsonObject> data = {});
-  List<ChatReceivedMessage> pullChatMessages();
+  [[nodiscard]] List<ChatReceivedMessage> pullChatMessages();
 
-  uint16_t players();
-  uint16_t maxPlayers();
+  [[nodiscard]] uint16_t players();
+  [[nodiscard]] uint16_t maxPlayers();
 
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
   void restartLua();
   void startLuaScripts();
   void stopLua();
-  LuaRootPtr luaRoot();
+  [[nodiscard]] LuaRootPtr luaRoot();
 
-  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
-  bool switchPlayer(Uuid const& uuid);
-  bool switchPlayer(size_t index);
-  bool switchPlayer(String const& name);
+  [[nodiscard]] bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
+  [[nodiscard]] bool switchPlayer(Uuid const& uuid);
+  [[nodiscard]] bool switchPlayer(size_t index);
+  [[nodiscard]] bool switchPlayer(String const& name);
 
   using Callback = std::function<void()>;
   using ReloadPlayerCallback = std::function<void(bool)>;
-  ReloadPlayerCallback& playerReloadPreCallback();
-  ReloadPlayerCallback& playerReloadCallback();
+  [[nodiscard]] ReloadPlayerCallback& playerReloadPreCallback();
+  [[nodiscard]] ReloadPlayerCallback& playerReloadCallback();
 
-  ClockConstPtr universeClock() const;
-  CelestialLogConstPtr celestialLog() const;
-  JsonRpcInterfacePtr rpcInterface() const;
-  ClientContextPtr clientContext() const;
-  TeamClientPtr teamClient() const;
-  QuestManagerPtr questManager() const;
-  PlayerStoragePtr playerStorage() const;
-  StatisticsPtr statistics() const;
+  [[nodiscard]] ClockConstPtr universeClock() const;
+  [[nodiscard]] CelestialLogConstPtr celestialLog() const;
+  [[nodiscard]] JsonRpcInterfacePtr rpcInterface() const;
+  [[nodiscard]] ClientContextPtr clientContext() const;
+  [[nodiscard]] TeamClientPtr teamClient() const;
+  [[nodiscard]] QuestManagerPtr questManager() const;
+  [[nodiscard]] PlayerStoragePtr playerStorage() const;
+  [[nodiscard]] StatisticsPtr statistics() const;
 
-  bool paused() const;
+  [[nodiscard]] bool paused() const;
 
 private:
   struct ServerInfo {

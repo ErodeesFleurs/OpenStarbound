@@ -109,15 +109,15 @@ void UniverseClient::setMainPlayer(PlayerPtr player) {
   }
 }
 
-PlayerPtr UniverseClient::mainPlayer() const {
+[[nodiscard]] PlayerPtr UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
-AssetsConstPtr UniverseClient::assets() const {
+[[nodiscard]] AssetsConstPtr UniverseClient::assets() const {
   return m_assets;
 }
 
-BiomeDatabaseConstPtr UniverseClient::biomeDatabase() const {
+[[nodiscard]] BiomeDatabaseConstPtr UniverseClient::biomeDatabase() const {
   return m_biomeDatabase;
 }
 
@@ -232,7 +232,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
   return {};
 }
 
-bool UniverseClient::isConnected() const {
+[[nodiscard]] bool UniverseClient::isConnected() const {
   return m_connection && m_connection->isOpen();
 }
 
@@ -259,19 +259,19 @@ void UniverseClient::disconnect() {
   m_mainPlayer = {};
 }
 
-Maybe<String> UniverseClient::disconnectReason() const {
+[[nodiscard]] Maybe<String> UniverseClient::disconnectReason() const {
   return m_disconnectReason;
 }
 
-WorldClientPtr UniverseClient::worldClient() const {
+[[nodiscard]] WorldClientPtr UniverseClient::worldClient() const {
   return m_worldClient;
 }
 
-SystemWorldClientPtr UniverseClient::systemWorldClient() const {
+[[nodiscard]] SystemWorldClientPtr UniverseClient::systemWorldClient() const {
   return m_systemWorldClient;
 }
 
-LiquidsDatabaseConstPtr UniverseClient::liquidsDatabase() const {
+[[nodiscard]] LiquidsDatabaseConstPtr UniverseClient::liquidsDatabase() const {
   return m_liquidsDatabase;
 }
 
@@ -423,7 +423,7 @@ void UniverseClient::update(float dt) {
   }
 }
 
-Maybe<BeamUpRule> UniverseClient::beamUpRule() const {
+[[nodiscard]] Maybe<BeamUpRule> UniverseClient::beamUpRule() const {
   if (auto worldTemplate = currentTemplate())
     if (auto parameters = worldTemplate->worldParameters())
       return parameters->beamUpRule;
@@ -431,7 +431,7 @@ Maybe<BeamUpRule> UniverseClient::beamUpRule() const {
   return {};
 }
 
-bool UniverseClient::canBeamUp() const {
+[[nodiscard]] bool UniverseClient::canBeamUp() const {
   auto playerWorldId = m_clientContext->playerWorldId();
 
   if (playerWorldId.empty() || playerWorldId.is<ClientShipWorldId>())
@@ -450,7 +450,7 @@ bool UniverseClient::canBeamUp() const {
   return false;
 }
 
-bool UniverseClient::canBeamDown(bool deploy) const {
+[[nodiscard]] bool UniverseClient::canBeamDown(bool deploy) const {
   if (!m_clientContext->orbitWarpAction() || flying())
     return false;
   if (auto warpAction = m_clientContext->orbitWarpAction()) {
@@ -466,7 +466,7 @@ bool UniverseClient::canBeamDown(bool deploy) const {
   return true;
 }
 
-bool UniverseClient::canBeamToTeamShip() const {
+[[nodiscard]] bool UniverseClient::canBeamToTeamShip() const {
   auto playerWorldId = m_clientContext->playerWorldId();
   if (playerWorldId.empty())
     return false;
@@ -483,7 +483,7 @@ bool UniverseClient::canBeamToTeamShip() const {
   return false;
 }
 
-bool UniverseClient::canTeleport() const {
+[[nodiscard]] bool UniverseClient::canTeleport() const {
   if (m_mainPlayer->isAdmin())
     return true;
 
@@ -523,45 +523,45 @@ void UniverseClient::flyShip(Vec3I const& system, SystemLocation const& destinat
   m_connection->pushSingle(make_shared<FlyShipPacket>(system, destination, settings));
 }
 
-CelestialDatabasePtr UniverseClient::celestialDatabase() const {
+[[nodiscard]] CelestialDatabasePtr UniverseClient::celestialDatabase() const {
   return m_celestialDatabase;
 }
 
-CelestialCoordinate UniverseClient::shipCoordinate() const {
+[[nodiscard]] CelestialCoordinate UniverseClient::shipCoordinate() const {
   return m_clientContext->shipCoordinate();
 }
 
-bool UniverseClient::playerOnOwnShip() const {
+[[nodiscard]] bool UniverseClient::playerOnOwnShip() const {
   return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->playerUuid();
 }
 
-bool UniverseClient::playerIsOriginal() const {
+[[nodiscard]] bool UniverseClient::playerIsOriginal() const {
   return m_clientContext->playerUuid() == mainPlayer()->uuid();
 }
 
-WorldId UniverseClient::playerWorld() const {
+[[nodiscard]] WorldId UniverseClient::playerWorld() const {
   return m_clientContext->playerWorldId();
 }
 
-bool UniverseClient::isAdmin() const {
+[[nodiscard]] bool UniverseClient::isAdmin() const {
   return m_mainPlayer->isAdmin();
 }
 
-Uuid UniverseClient::teamUuid() const {
+[[nodiscard]] Uuid UniverseClient::teamUuid() const {
   if (auto team = m_teamClient->currentTeam())
     return *team;
   return m_clientContext->playerUuid();
 }
 
-WorldTemplateConstPtr UniverseClient::currentTemplate() const {
+[[nodiscard]] WorldTemplateConstPtr UniverseClient::currentTemplate() const {
   return m_worldClient->currentTemplate();
 }
 
-SkyConstPtr UniverseClient::currentSky() const {
+[[nodiscard]] SkyConstPtr UniverseClient::currentSky() const {
   return m_worldClient->currentSky();
 }
 
-bool UniverseClient::flying() const {
+[[nodiscard]] bool UniverseClient::flying() const {
   if (auto sky = currentSky())
     return sky->flying();
   return false;
@@ -722,35 +722,35 @@ UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadCallback() {
   return m_playerReloadCallback;
 }
 
-ClockConstPtr UniverseClient::universeClock() const {
+[[nodiscard]] ClockConstPtr UniverseClient::universeClock() const {
   return m_universeClock;
 }
 
-JsonRpcInterfacePtr UniverseClient::rpcInterface() const {
+[[nodiscard]] JsonRpcInterfacePtr UniverseClient::rpcInterface() const {
   return m_clientContext->rpcInterface();
 }
 
-ClientContextPtr UniverseClient::clientContext() const {
+[[nodiscard]] ClientContextPtr UniverseClient::clientContext() const {
   return m_clientContext;
 }
 
-TeamClientPtr UniverseClient::teamClient() const {
+[[nodiscard]] TeamClientPtr UniverseClient::teamClient() const {
   return m_teamClient;
 }
 
-QuestManagerPtr UniverseClient::questManager() const {
+[[nodiscard]] QuestManagerPtr UniverseClient::questManager() const {
   return m_mainPlayer->questManager();
 }
 
-PlayerStoragePtr UniverseClient::playerStorage() const {
+[[nodiscard]] PlayerStoragePtr UniverseClient::playerStorage() const {
   return m_playerStorage;
 }
 
-StatisticsPtr UniverseClient::statistics() const {
+[[nodiscard]] StatisticsPtr UniverseClient::statistics() const {
   return m_statistics;
 }
 
-bool UniverseClient::paused() const {
+[[nodiscard]] bool UniverseClient::paused() const {
   return m_pause;
 }
 

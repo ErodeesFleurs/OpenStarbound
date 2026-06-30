@@ -53,7 +53,7 @@ public:
   BlockAllocator& operator=(BlockAllocator&& rhs) noexcept = default;
 
   // If n is != 1, will fall back on std::allocator<T>
-  T* allocate(size_t n);
+  [[nodiscard]] T* allocate(size_t n);
   void deallocate(T* p, size_t n);
 
   template <typename... Args>
@@ -91,17 +91,17 @@ private:
   };
 
   struct Block {
-    T* allocate();
+    [[nodiscard]] T* allocate();
     void deallocate(T* ptr);
 
-    bool full() const;
-    bool empty() const;
+    [[nodiscard]] bool full() const;
+    [[nodiscard]] bool empty() const;
 
     void const* chunkStorage(ChunkIndex chunkIndex) const;
-    void* chunkStorage(ChunkIndex chunkIndex);
-    T* valuePointer(ChunkIndex chunkIndex);
-    Unallocated* unallocatedPointer(ChunkIndex chunkIndex);
-    ChunkIndex chunkIndexFor(T* ptr) const;
+    [[nodiscard]] void* chunkStorage(ChunkIndex chunkIndex);
+    [[nodiscard]] T* valuePointer(ChunkIndex chunkIndex);
+    [[nodiscard]] Unallocated* unallocatedPointer(ChunkIndex chunkIndex);
+    [[nodiscard]] ChunkIndex chunkIndexFor(T* ptr) const;
 
     std::array<Chunk, BlockSize> chunks;
     ChunkIndex firstUnallocated = NullChunkIndex;
@@ -116,7 +116,7 @@ private:
 
   using BlockAllocatorFamily = std::unordered_map<std::type_index, shared_ptr<void>>;
 
-  static Data* getAllocatorData(BlockAllocatorFamily& family);
+  [[nodiscard]] static Data* getAllocatorData(BlockAllocatorFamily& family);
 
   shared_ptr<BlockAllocatorFamily> m_family;
   Data* m_data;
@@ -170,13 +170,13 @@ T* BlockAllocator<T, BlockSize>::allocate(size_t n) {
 template <typename T, size_t BlockSize>
 void BlockAllocator<T, BlockSize>::deallocate(T* p, size_t n) {
   if (n == 1) {
-    starAssert(p);
+    assert(p);
 
     auto i = std::upper_bound(m_data->blocks.begin(), m_data->blocks.end(), p, [](T* a, std::unique_ptr<Block> const& b) {
         return std::less<void const*>()(a, b->chunkStorage(0));
       });
 
-    starAssert(i != m_data->blocks.begin());
+    assert(i != m_data->blocks.begin());
     --i;
 
     (*i)->deallocate(p);
@@ -217,14 +217,14 @@ bool BlockAllocator<T, BlockSize>::operator!=(BlockAllocator<U, BlockSize> const
 
 template <typename T, size_t BlockSize>
 T* BlockAllocator<T, BlockSize>::Block::allocate() {
-  starAssert(allocationCount < BlockSize);
+  assert(allocationCount < BlockSize);
 
   T* allocated;
   if (firstUnallocated == NullChunkIndex) {
     allocated = valuePointer(allocationCount);
   } else {
     auto unallocated = unallocatedPointer(firstUnallocated);
-    starAssert(unallocated->prev == NullChunkIndex);
+    assert(unallocated->prev == NullChunkIndex);
     allocated = valuePointer(firstUnallocated);
     firstUnallocated = unallocated->next;
     if (firstUnallocated != NullChunkIndex)
@@ -237,10 +237,10 @@ T* BlockAllocator<T, BlockSize>::Block::allocate() {
 
 template <typename T, size_t BlockSize>
 void BlockAllocator<T, BlockSize>::Block::deallocate(T* ptr) {
-  starAssert(allocationCount > 0);
+  assert(allocationCount > 0);
 
   ChunkIndex chunkIndex = chunkIndexFor(ptr);
-  starAssert(valuePointer(chunkIndex) == ptr);
+  assert(valuePointer(chunkIndex) == ptr);
 
   auto c = unallocatedPointer(chunkIndex);
   c->prev = NullChunkIndex;
@@ -263,13 +263,13 @@ bool BlockAllocator<T, BlockSize>::Block::empty() const {
 
 template <typename T, size_t BlockSize>
 void const* BlockAllocator<T, BlockSize>::Block::chunkStorage(ChunkIndex chunkIndex) const {
-  starAssert(chunkIndex < BlockSize);
+  assert(chunkIndex < BlockSize);
   return chunks[chunkIndex].storage;
 }
 
 template <typename T, size_t BlockSize>
 void* BlockAllocator<T, BlockSize>::Block::chunkStorage(ChunkIndex chunkIndex) {
-  starAssert(chunkIndex < BlockSize);
+  assert(chunkIndex < BlockSize);
   return chunks[chunkIndex].storage;
 }
 
@@ -288,10 +288,10 @@ auto BlockAllocator<T, BlockSize>::Block::chunkIndexFor(T* ptr) const -> ChunkIn
   auto first = static_cast<unsigned char const*>(chunkStorage(0));
   auto current = reinterpret_cast<unsigned char const*>(ptr);
   auto offset = current - first;
-  starAssert(offset >= 0);
-  starAssert(offset % sizeof(Chunk) == 0);
+  assert(offset >= 0);
+  assert(offset % sizeof(Chunk) == 0);
   auto index = offset / sizeof(Chunk);
-  starAssert(index < BlockSize);
+  assert(index < BlockSize);
   return static_cast<ChunkIndex>(index);
 }
 

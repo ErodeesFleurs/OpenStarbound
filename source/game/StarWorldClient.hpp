@@ -103,138 +103,138 @@ public:
               DungeonDefinitionsConstPtr dungeonDefinitions);
   ~WorldClient();
 
-  ConnectionId connection() const override;
-  WorldGeometry geometry() const override;
-  uint64_t currentStep() const override;
-  AssetsConstPtr assets() const override;
-  ItemDatabaseConstPtr itemDatabase() const override;
-  ObjectDatabaseConstPtr objectDatabase() const override;
-  MaterialDatabaseConstPtr materialDatabase() const override;
-  LiquidsDatabaseConstPtr liquidsDatabase() const override;
-  ParticleDatabaseConstPtr particleDatabase() const override;
-  ProjectileDatabaseConstPtr projectileDatabase() const override;
-  EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
-  TechDatabaseConstPtr techDatabase() const override;
-  StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
-  PlantDatabaseConstPtr plantDatabase() const override;
-  TreasureDatabaseConstPtr treasureDatabase() const override;
-  ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
-  FunctionDatabaseConstPtr functionDatabase() const override;
-  BehaviorDatabaseConstPtr behaviorDatabase() const override;
-  MaterialId material(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] ConnectionId connection() const override;
+  [[nodiscard]] WorldGeometry geometry() const override;
+  [[nodiscard]] uint64_t currentStep() const override;
+  [[nodiscard]] AssetsConstPtr assets() const override;
+  [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const override;
+  [[nodiscard]] ObjectDatabaseConstPtr objectDatabase() const override;
+  [[nodiscard]] MaterialDatabaseConstPtr materialDatabase() const override;
+  [[nodiscard]] LiquidsDatabaseConstPtr liquidsDatabase() const override;
+  [[nodiscard]] ParticleDatabaseConstPtr particleDatabase() const override;
+  [[nodiscard]] ProjectileDatabaseConstPtr projectileDatabase() const override;
+  [[nodiscard]] EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
+  [[nodiscard]] TechDatabaseConstPtr techDatabase() const override;
+  [[nodiscard]] StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
+  [[nodiscard]] PlantDatabaseConstPtr plantDatabase() const override;
+  [[nodiscard]] TreasureDatabaseConstPtr treasureDatabase() const override;
+  [[nodiscard]] ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
+  [[nodiscard]] FunctionDatabaseConstPtr functionDatabase() const override;
+  [[nodiscard]] BehaviorDatabaseConstPtr behaviorDatabase() const override;
+  [[nodiscard]] MaterialId material(Vec2I const& position, TileLayer layer) const override;
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
-  MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
-  ModId mod(Vec2I const& position, TileLayer layer) const override;
-  MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
-  MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const override;
-  LiquidLevel liquidLevel(Vec2I const& pos) const override;
-  LiquidLevel liquidLevel(RectF const& region) const override;
-  TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
-  TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
-  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
-  bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
-  EntityPtr entity(EntityId entityId) const override;
+  [[nodiscard]] MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] ModId mod(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] LiquidLevel liquidLevel(Vec2I const& pos) const override;
+  [[nodiscard]] LiquidLevel liquidLevel(RectF const& region) const override;
+  [[nodiscard]] TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
+  [[nodiscard]] TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
+  [[nodiscard]] TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
+  [[nodiscard]] bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
+  [[nodiscard]] EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
-  EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
+  [[nodiscard]] EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
   void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback callback) const override;
   void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const override;
-  EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
-  EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
-  EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
-  bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
-  CollisionKind tileCollisionKind(Vec2I const& pos) const override;
+  [[nodiscard]] EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
+  [[nodiscard]] EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
+  [[nodiscard]] EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
+  [[nodiscard]] bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
+  [[nodiscard]] CollisionKind tileCollisionKind(Vec2I const& pos) const override;
   void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const override;
-  bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
-  bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
-  bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
-  InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
-  bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
-  RpcPromise<InteractAction> interact(InteractRequest const& request) override;
-  float gravity(Vec2F const& pos) const override;
-  float windLevel(Vec2F const& pos) const override;
-  float lightLevel(Vec2F const& pos) const override;
-  bool breathable(Vec2F const& pos) const override;
-  float threatLevel() const override;
-  StringList environmentStatusEffects(Vec2F const& pos) const override;
-  StringList weatherStatusEffects(Vec2F const& pos) const override;
-  bool exposedToWeather(Vec2F const& pos) const override;
-  bool isUnderground(Vec2F const& pos) const override;
-  bool disableDeathDrops() const override;
-  List<PhysicsForceRegion> forceRegions() const override;
-  Json getProperty(String const& propertyName, Json const& def = Json()) const override;
+  [[nodiscard]] bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
+  [[nodiscard]] bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
+  [[nodiscard]] bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
+  [[nodiscard]] InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
+  [[nodiscard]] bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
+  [[nodiscard]] RpcPromise<InteractAction> interact(InteractRequest const& request) override;
+  [[nodiscard]] float gravity(Vec2F const& pos) const override;
+  [[nodiscard]] float windLevel(Vec2F const& pos) const override;
+  [[nodiscard]] float lightLevel(Vec2F const& pos) const override;
+  [[nodiscard]] bool breathable(Vec2F const& pos) const override;
+  [[nodiscard]] float threatLevel() const override;
+  [[nodiscard]] StringList environmentStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] StringList weatherStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] bool exposedToWeather(Vec2F const& pos) const override;
+  [[nodiscard]] bool isUnderground(Vec2F const& pos) const override;
+  [[nodiscard]] bool disableDeathDrops() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] Json getProperty(String const& propertyName, Json const& def = Json()) const override;
   void setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
-  double epochTime() const override;
-  uint32_t day() const override;
-  float dayLength() const override;
-  float timeOfDay() const override;
-  LuaRootPtr luaRoot() override;
-  RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
-  RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
-  bool isTileProtected(Vec2I const& pos) const override;
+  [[nodiscard]] double epochTime() const override;
+  [[nodiscard]] uint32_t day() const override;
+  [[nodiscard]] float dayLength() const override;
+  [[nodiscard]] float timeOfDay() const override;
+  [[nodiscard]] LuaRootPtr luaRoot() override;
+  [[nodiscard]] RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
+  [[nodiscard]] RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] bool isTileProtected(Vec2I const& pos) const override;
 
   // Is this WorldClient properly initialized in a world
-  bool inWorld() const;
+  [[nodiscard]] bool inWorld() const;
 
-  bool inSpace() const;
-  bool flying() const;
+  [[nodiscard]] bool inSpace() const;
+  [[nodiscard]] bool flying() const;
 
-  bool mainPlayerDead() const;
+  [[nodiscard]] bool mainPlayerDead() const;
   void reviveMainPlayer();
-  bool respawnInWorld() const;
+  [[nodiscard]] bool respawnInWorld() const;
   void setRespawnInWorld(bool respawnInWorld);
 
-  int64_t latency() const;
+  [[nodiscard]] int64_t latency() const;
 
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
 
-  WorldTemplateConstPtr currentTemplate() const;
+  [[nodiscard]] WorldTemplateConstPtr currentTemplate() const;
   void setTemplate(Json newTemplate);
-  SkyConstPtr currentSky() const;
+  [[nodiscard]] SkyConstPtr currentSky() const;
 
   void dimWorld();
-  bool interactiveHighlightMode() const;
+  [[nodiscard]] bool interactiveHighlightMode() const;
   void setInteractiveHighlightMode(bool enabled);
   void setParallax(ParallaxPtr newParallax);
   void overrideGravity(float gravity);
   void resetGravity();
 
   // Disable normal client-side lighting algorithm, everything full brightness.
-  bool fullBright() const;
+  [[nodiscard]] bool fullBright() const;
   void setFullBright(bool fullBright);
   // Disable asynchronous client-side lighting algorithm, run on main thread.
-  bool asyncLighting() const;
+  [[nodiscard]] bool asyncLighting() const;
   void setAsyncLighting(bool asyncLighting);
   // Spatial log generated collision geometry.
-  bool collisionDebug() const;
+  [[nodiscard]] bool collisionDebug() const;
   void setCollisionDebug(bool collisionDebug);
 
   void handleIncomingPackets(List<PacketPtr> const& packets);
-  List<PacketPtr> getOutgoingPackets();
+  [[nodiscard]] List<PacketPtr> getOutgoingPackets();
 
   // Set the rendering window for this client.
   void setClientWindow(RectI window);
   // Sets the client window around the position of the main player.
   void centerClientWindowOnPlayer(Vec2U const& windowSize);
   void centerClientWindowOnPlayer();
-  RectI clientWindow() const;
-  WorldClientState& clientState();
+  [[nodiscard]] RectI clientWindow() const;
+  [[nodiscard]] WorldClientState& clientState();
 
   void update(float dt);
   // borderTiles here should extend the client window for border tile
   // calculations.  It is not necessary on the light array.
   void render(WorldRenderData& renderData, unsigned borderTiles);
-  List<AudioInstancePtr> pullPendingAudio();
-  List<AudioInstancePtr> pullPendingMusic();
+  [[nodiscard]] List<AudioInstancePtr> pullPendingAudio();
+  [[nodiscard]] List<AudioInstancePtr> pullPendingMusic();
 
-  bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
+  [[nodiscard]] bool playerCanReachEntity(EntityId entityId, bool preferInteractive = true) const;
 
   void disconnectAllWires(Vec2I wireEntityPosition, WireNode const& node);
   void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
@@ -243,21 +243,21 @@ public:
   // Functions for sending broadcast messages to other players that can receive them,
   // on completely vanilla servers by smuggling it through a DamageNotification.
   // It's cursed as fuck, but it works.
-  bool sendSecretBroadcast(StringView broadcast, bool raw = false, bool compress = true);
-  bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
+  [[nodiscard]] bool sendSecretBroadcast(StringView broadcast, bool raw = false, bool compress = true);
+  [[nodiscard]] bool handleSecretBroadcast(PlayerPtr player, StringView broadcast);
 
-  List<ChatAction> pullPendingChatActions();
+  [[nodiscard]] List<ChatAction> pullPendingChatActions();
 
-  WorldStructure const& centralStructure() const;
+  [[nodiscard]] WorldStructure const& centralStructure() const;
 
-  DungeonId dungeonId(Vec2I const& pos) const;
+  [[nodiscard]] DungeonId dungeonId(Vec2I const& pos) const;
 
   void collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  bool waitForLighting(WorldRenderData* renderData = nullptr);
+  [[nodiscard]] bool waitForLighting(WorldRenderData* renderData = nullptr);
 
   using BroadcastCallback = std::function<bool(PlayerPtr, StringView)>;
-  BroadcastCallback& broadcastCallback();
+  [[nodiscard]] BroadcastCallback& broadcastCallback();
 
 private:
   static const float DropDist;
@@ -289,9 +289,9 @@ private:
   // Queues pending (step based) updates to server,
   void queueUpdatePackets(bool sendEntityUpdates);
 
-  WeatherNoisesDescriptionPtr currentWeatherNoises() const;
+  [[nodiscard]] WeatherNoisesDescriptionPtr currentWeatherNoises() const;
 
-  BiomeConstPtr mainEnvironmentBiome() const;
+  [[nodiscard]] BiomeConstPtr mainEnvironmentBiome() const;
 
   void dirtyCollision(RectI const& region);
   void freshenCollision(RectI const& region);

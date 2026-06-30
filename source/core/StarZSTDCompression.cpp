@@ -60,13 +60,13 @@ void CompressionStream::compress(ByteArray const& in, ByteArray& out) {
   return compress(in.ptr(), in.size(), out);
 }
 
-ByteArray CompressionStream::compress(const char* in, size_t inLen) {
+[[nodiscard]] ByteArray CompressionStream::compress(const char* in, size_t inLen) {
   ByteArray out;
   compress(in, inLen, out);
   return out;
 }
 
-ByteArray CompressionStream::compress(ByteArray const& in) {
+[[nodiscard]] ByteArray CompressionStream::compress(ByteArray const& in) {
   ByteArray out;
   compress(in.ptr(), in.size(), out);
   return out;
@@ -110,13 +110,13 @@ void DecompressionStream::decompress(ByteArray const& in, ByteArray& out) {
   return decompress(in.ptr(), in.size(), out);
 }
 
-ByteArray DecompressionStream::decompress(const char* in, size_t inLen) {
+[[nodiscard]] ByteArray DecompressionStream::decompress(const char* in, size_t inLen) {
   ByteArray out;
   decompress(in, inLen, out);
   return out;
 }
 
-ByteArray DecompressionStream::decompress(ByteArray const& in) {
+[[nodiscard]] ByteArray DecompressionStream::decompress(ByteArray const& in) {
   ByteArray out;
   decompress(in.ptr(), in.size(), out);
   return out;

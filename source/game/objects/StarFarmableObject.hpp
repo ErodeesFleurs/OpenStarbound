@@ -10,15 +10,15 @@ public:
 
   void update(float dt, uint64_t currentStep) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
 
-  bool harvest();
-  int stage() const;
+  [[nodiscard]] bool harvest();
+  [[nodiscard]] int stage() const;
 
 protected:
   void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  [[nodiscard]] Json writeStoredData() const override;
 
 private:
   void enterStage(int newStage);

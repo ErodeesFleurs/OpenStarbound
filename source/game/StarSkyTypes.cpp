@@ -41,7 +41,7 @@ SkyColoring::SkyColoring(Json const& variant) {
   nightLightColor = jsonToColor(variant.get("nightLightColor"));
 }
 
-Json SkyColoring::toJson() const {
+[[nodiscard]] Json SkyColoring::toJson() const {
   auto makeColorPair = [](pair<Color, Color> const& colors) {
     auto const& [topColor, bottomColor] = colors;
     return JsonArray{jsonFromColor(topColor), jsonFromColor(bottomColor)};
@@ -92,7 +92,7 @@ SkyOrbiter::SkyOrbiter(SkyOrbiterType type, float scale, float angle, String con
 SkyWorldHorizon::SkyWorldHorizon(Vec2F center, float scale, float rotation)
   : center(center), scale(scale), rotation(rotation) {}
 
-bool SkyWorldHorizon::empty() const {
+[[nodiscard]] bool SkyWorldHorizon::empty() const {
   return scale <= 0 || layers.empty();
 }
 

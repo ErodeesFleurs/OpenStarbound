@@ -7,6 +7,6 @@ namespace Star {
 class TeamClient;
 
 namespace LuaBindings {
-  LuaCallbacks makeTeamClientCallbacks(TeamClient& teamClient);
+  [[nodiscard]] LuaCallbacks makeTeamClientCallbacks(TeamClient& teamClient);
 }
 }

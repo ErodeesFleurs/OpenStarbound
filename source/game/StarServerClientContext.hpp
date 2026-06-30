@@ -26,71 +26,71 @@ public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, ItemDatabaseConstPtr itemDatabase);
 
-  ConnectionId clientId() const;
-  Maybe<HostAddress> const& remoteAddress() const;
-  Uuid const& playerUuid() const;
-  String const& playerName() const;
-  String const& shipSpecies() const;
-  bool canBecomeAdmin() const;
-  NetCompatibilityRules netRules() const;
-  String descriptiveName() const;
+  [[nodiscard]] ConnectionId clientId() const;
+  [[nodiscard]] Maybe<HostAddress> const& remoteAddress() const;
+  [[nodiscard]] Uuid const& playerUuid() const;
+  [[nodiscard]] String const& playerName() const;
+  [[nodiscard]] String const& shipSpecies() const;
+  [[nodiscard]] bool canBecomeAdmin() const;
+  [[nodiscard]] NetCompatibilityRules netRules() const;
+  [[nodiscard]] String descriptiveName() const;
 
   // Register additional rpc methods from other server side services.
   void registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
 
   // The coordinate for the world which the *player's* ship is currently
   // orbiting, if it is currently orbiting a world.
-  CelestialCoordinate shipCoordinate() const;
+  [[nodiscard]] CelestialCoordinate shipCoordinate() const;
   void setShipCoordinate(CelestialCoordinate shipCoordinate);
 
-  SystemLocation shipLocation() const;
+  [[nodiscard]] SystemLocation shipLocation() const;
   void setShipLocation(SystemLocation location);
 
   // Warp action and warp mode to the planet the player is currently orbiting
   // valid when the player is on any ship world orbiting a location
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  [[nodiscard]] Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
   void setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> warpAction);
 
-  bool isAdmin() const;
+  [[nodiscard]] bool isAdmin() const;
   void setAdmin(bool admin);
 
-  EntityDamageTeam team() const;
+  [[nodiscard]] EntityDamageTeam team() const;
   void setTeam(EntityDamageTeam team);
 
-  ShipUpgrades shipUpgrades() const;
+  [[nodiscard]] ShipUpgrades shipUpgrades() const;
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void setShipSpecies(String shipSpecies);
 
-  WorldChunks shipChunks() const;
+  [[nodiscard]] WorldChunks shipChunks() const;
   void updateShipChunks(WorldChunks newShipChunks);
 
-  ByteArray writeInitialState() const;
+  [[nodiscard]] ByteArray writeInitialState() const;
 
   void readUpdate(ByteArray data);
-  ByteArray writeUpdate();
+  [[nodiscard]] ByteArray writeUpdate();
 
   void setPlayerWorld(WorldServerThreadPtr worldThread);
-  WorldServerThreadPtr playerWorld() const;
-  WorldId playerWorldId() const;
+  [[nodiscard]] WorldServerThreadPtr playerWorld() const;
+  [[nodiscard]] WorldId playerWorldId() const;
   void clearPlayerWorld();
 
   void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
-  SystemWorldServerThreadPtr systemWorld() const;
+  [[nodiscard]] SystemWorldServerThreadPtr systemWorld() const;
   void clearSystemWorld();
 
-  WarpToWorld playerReturnWarp() const;
+  [[nodiscard]] WarpToWorld playerReturnWarp() const;
   void setPlayerReturnWarp(WarpToWorld warp);
 
-  WarpToWorld playerReviveWarp() const;
+  [[nodiscard]] WarpToWorld playerReviveWarp() const;
   void setPlayerReviveWarp(WarpToWorld warp);
 
   // Store and load the data for this client that should be persisted on the
   // server, such as celestial log data, admin state, team, and current ship
   // location, and warp history.  Does not store ship data or ship upgrades.
   void loadServerData(Json const& store);
-  Json storeServerData();
+  [[nodiscard]] Json storeServerData();
 
-  int64_t creationTime() const;
+  [[nodiscard]] int64_t creationTime() const;
 
 private:
   ConnectionId const m_clientId;

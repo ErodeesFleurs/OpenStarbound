@@ -46,33 +46,33 @@ CelestialCoordinate::CelestialCoordinate(Json const& variant) : CelestialCoordin
   }
 }
 
-bool CelestialCoordinate::isNull() const {
+[[nodiscard]] bool CelestialCoordinate::isNull() const {
   return m_location == Vec3I() && m_planetaryOrbitNumber == 0 && m_satelliteOrbitNumber == 0;
 }
 
-bool CelestialCoordinate::isSystem() const {
+[[nodiscard]] bool CelestialCoordinate::isSystem() const {
   return !isNull() && m_planetaryOrbitNumber == 0;
 }
 
-bool CelestialCoordinate::isPlanetaryBody() const {
+[[nodiscard]] bool CelestialCoordinate::isPlanetaryBody() const {
   return !isNull() && m_planetaryOrbitNumber != 0 && m_satelliteOrbitNumber == 0;
 }
 
-bool CelestialCoordinate::isSatelliteBody() const {
+[[nodiscard]] bool CelestialCoordinate::isSatelliteBody() const {
   return !isNull() && m_planetaryOrbitNumber != 0 && m_satelliteOrbitNumber != 0;
 }
 
-Vec3I CelestialCoordinate::location() const {
+[[nodiscard]] Vec3I CelestialCoordinate::location() const {
   return m_location;
 }
 
-CelestialCoordinate CelestialCoordinate::system() const {
+[[nodiscard]] CelestialCoordinate CelestialCoordinate::system() const {
   if (isNull())
     throw CelestialException("CelestialCoordinate::system() called on null coordinate");
   return CelestialCoordinate(m_location);
 }
 
-CelestialCoordinate CelestialCoordinate::planet() const {
+[[nodiscard]] CelestialCoordinate CelestialCoordinate::planet() const {
   if (isPlanetaryBody())
     return *this;
   if (isSatelliteBody())
@@ -80,7 +80,7 @@ CelestialCoordinate CelestialCoordinate::planet() const {
   throw CelestialException("CelestialCoordinate::planet() called on null or system coordinate type");
 }
 
-int CelestialCoordinate::orbitNumber() const {
+[[nodiscard]] int CelestialCoordinate::orbitNumber() const {
   if (isSatelliteBody())
     return m_satelliteOrbitNumber;
   if (isPlanetaryBody())
@@ -90,7 +90,7 @@ int CelestialCoordinate::orbitNumber() const {
   throw CelestialException("CelestialCoordinate::orbitNumber() called on null coordinate");
 }
 
-CelestialCoordinate CelestialCoordinate::parent() const {
+[[nodiscard]] CelestialCoordinate CelestialCoordinate::parent() const {
   if (isSatelliteBody())
     return CelestialCoordinate(m_location, m_planetaryOrbitNumber);
   if (isPlanetaryBody())
@@ -98,7 +98,7 @@ CelestialCoordinate CelestialCoordinate::parent() const {
   throw CelestialException("CelestialCoordinate::parent() called on null or system coordinate");
 }
 
-CelestialCoordinate CelestialCoordinate::child(int orbitNumber) const {
+[[nodiscard]] CelestialCoordinate CelestialCoordinate::child(int orbitNumber) const {
   if (isSystem())
     return CelestialCoordinate(m_location, orbitNumber);
   if (isPlanetaryBody())
@@ -106,7 +106,7 @@ CelestialCoordinate CelestialCoordinate::child(int orbitNumber) const {
   throw CelestialException("CelestialCoordinate::child called on null or satellite coordinate");
 }
 
-Json CelestialCoordinate::toJson() const {
+[[nodiscard]] Json CelestialCoordinate::toJson() const {
   if (isNull()) {
     return Json();
   } else {
@@ -116,19 +116,19 @@ Json CelestialCoordinate::toJson() const {
   }
 }
 
-String CelestialCoordinate::id() const {
+[[nodiscard]] String CelestialCoordinate::id() const {
   return toString(*this);
 }
 
-double CelestialCoordinate::distance(CelestialCoordinate const& rhs) const {
+[[nodiscard]] double CelestialCoordinate::distance(CelestialCoordinate const& rhs) const {
   return Vec2D(m_location[0] - rhs.m_location[0], m_location[1] - rhs.m_location[1]).magnitude();
 }
 
-String CelestialCoordinate::filename() const {
+[[nodiscard]] String CelestialCoordinate::filename() const {
   return id().replace(":", "_");
 }
 
-CelestialCoordinate::operator bool() const {
+[[nodiscard]] CelestialCoordinate::operator bool() const {
   return !isNull();
 }
 

@@ -47,7 +47,7 @@ public:
   [[nodiscard]] bool autoCommit() const;
   void setAutoCommit(bool autoCommit);
 
-  IODevicePtr ioDevice() const;
+  [[nodiscard]] IODevicePtr ioDevice() const;
   void setIODevice(IODevicePtr device);
 
   // If an existing database is opened, this will update the key size, block
@@ -74,7 +74,7 @@ public:
   [[nodiscard]] bool remove(ByteArray const& k);
 
   // Remove all elements in the given range, returns keys removed.
-  List<ByteArray> remove(ByteArray const& lower, ByteArray const& upper);
+  [[nodiscard]] List<ByteArray> remove(ByteArray const& lower, ByteArray const& upper);
 
   [[nodiscard]] uint64_t recordCount();
 
@@ -114,17 +114,17 @@ private:
   };
 
   struct IndexNode {
-    size_t pointerCount() const;
-    BlockIndex pointer(size_t i) const;
+    [[nodiscard]] size_t pointerCount() const;
+    [[nodiscard]] BlockIndex pointer(size_t i) const;
     void updatePointer(size_t i, BlockIndex p);
 
-    ByteArray const& keyBefore(size_t i) const;
+    [[nodiscard]] ByteArray const& keyBefore(size_t i) const;
     void updateKeyBefore(size_t i, ByteArray k);
 
     void removeBefore(size_t i);
     void insertAfter(size_t i, ByteArray k, BlockIndex p);
 
-    uint8_t indexLevel() const;
+    [[nodiscard]] uint8_t indexLevel() const;
     void setIndexLevel(uint8_t indexLevel);
 
     // count is number of elements to shift left *including* right's beginPointer
@@ -135,7 +135,7 @@ private:
 
     // i should be index of pointer that will be the new beginPointer of right
     // node (cannot be 0).
-    ByteArray split(IndexNode& right, size_t i);
+    [[nodiscard]] ByteArray split(IndexNode& right, size_t i);
 
     struct Element {
       ByteArray key;
@@ -150,9 +150,9 @@ private:
   };
 
   struct LeafNode {
-    size_t count() const;
-    ByteArray const& key(size_t i) const;
-    ByteArray const& data(size_t i) const;
+    [[nodiscard]] size_t count() const;
+    [[nodiscard]] ByteArray const& key(size_t i) const;
+    [[nodiscard]] ByteArray const& data(size_t i) const;
 
     void insert(size_t i, ByteArray k, ByteArray d);
     void remove(size_t i);
@@ -185,49 +185,49 @@ private:
     using Index = shared_ptr<IndexNode>;
     using Leaf = shared_ptr<LeafNode>;
 
-    Pointer rootPointer();
-    bool rootIsLeaf();
+    [[nodiscard]] Pointer rootPointer();
+    [[nodiscard]] bool rootIsLeaf();
     void setNewRoot(Pointer pointer, bool isLeaf);
 
-    Index createIndex(Pointer beginPointer);
-    Index loadIndex(Pointer pointer);
-    bool indexNeedsShift(Index const& index);
-    bool indexShift(Index const& left, Key const& mid, Index const& right);
-    Maybe<pair<Key, Index>> indexSplit(Index const& index);
-    Pointer storeIndex(Index index);
+    [[nodiscard]] Index createIndex(Pointer beginPointer);
+    [[nodiscard]] Index loadIndex(Pointer pointer);
+    [[nodiscard]] bool indexNeedsShift(Index const& index);
+    [[nodiscard]] bool indexShift(Index const& left, Key const& mid, Index const& right);
+    [[nodiscard]] Maybe<pair<Key, Index>> indexSplit(Index const& index);
+    [[nodiscard]] Pointer storeIndex(Index index);
     void deleteIndex(Index index);
 
-    Leaf createLeaf();
-    Leaf loadLeaf(Pointer pointer);
-    bool leafNeedsShift(Leaf const& l);
-    bool leafShift(Leaf& left, Leaf& right);
-    Maybe<Leaf> leafSplit(Leaf& leaf);
-    Pointer storeLeaf(Leaf leaf);
+    [[nodiscard]] Leaf createLeaf();
+    [[nodiscard]] Leaf loadLeaf(Pointer pointer);
+    [[nodiscard]] bool leafNeedsShift(Leaf const& l);
+    [[nodiscard]] bool leafShift(Leaf& left, Leaf& right);
+    [[nodiscard]] Maybe<Leaf> leafSplit(Leaf& leaf);
+    [[nodiscard]] Pointer storeLeaf(Leaf leaf);
     void deleteLeaf(Leaf leaf);
 
-    size_t indexPointerCount(Index const& index);
-    Pointer indexPointer(Index const& index, size_t i);
+    [[nodiscard]] size_t indexPointerCount(Index const& index);
+    [[nodiscard]] Pointer indexPointer(Index const& index, size_t i);
     void indexUpdatePointer(Index& index, size_t i, Pointer p);
-    Key indexKeyBefore(Index const& index, size_t i);
+    [[nodiscard]] Key indexKeyBefore(Index const& index, size_t i);
     void indexUpdateKeyBefore(Index& index, size_t i, Key k);
     void indexRemoveBefore(Index& index, size_t i);
     void indexInsertAfter(Index& index, size_t i, Key k, Pointer p);
-    size_t indexLevel(Index const& index);
+    [[nodiscard]] size_t indexLevel(Index const& index);
     void setIndexLevel(Index& index, size_t indexLevel);
 
-    size_t leafElementCount(Leaf const& leaf);
-    Key leafKey(Leaf const& leaf, size_t i);
-    Data leafData(Leaf const& leaf, size_t i);
+    [[nodiscard]] size_t leafElementCount(Leaf const& leaf);
+    [[nodiscard]] Key leafKey(Leaf const& leaf, size_t i);
+    [[nodiscard]] Data leafData(Leaf const& leaf, size_t i);
     void leafInsert(Leaf& leaf, size_t i, Key k, Data d);
     void leafRemove(Leaf& leaf, size_t i);
-    Maybe<Pointer> nextLeaf(Leaf const& leaf);
+    [[nodiscard]] Maybe<Pointer> nextLeaf(Leaf const& leaf);
     void setNextLeaf(Leaf& leaf, Maybe<Pointer> n);
 
     BTreeDatabase* parent;
   };
 
   void readBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const;
-  ByteArray readBlock(BlockIndex blockIndex) const;
+  [[nodiscard]] ByteArray readBlock(BlockIndex blockIndex) const;
   void updateBlock(BlockIndex blockIndex, ByteArray const& block);
 
   void rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const;
@@ -235,18 +235,18 @@ private:
 
   void updateHeadFreeIndexBlock(BlockIndex newHead);
 
-  FreeIndexBlock readFreeIndexBlock(BlockIndex blockIndex);
+  [[nodiscard]] FreeIndexBlock readFreeIndexBlock(BlockIndex blockIndex);
   void writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock indexBlock);
 
-  uint32_t leafSize(shared_ptr<LeafNode> const& leaf) const;
-  uint32_t maxIndexPointers() const;
+  [[nodiscard]] uint32_t leafSize(shared_ptr<LeafNode> const& leaf) const;
+  [[nodiscard]] uint32_t maxIndexPointers() const;
 
-  uint32_t dataSize(ByteArray const& d) const;
-  List<BlockIndex> leafTailBlocks(BlockIndex leafPointer);
+  [[nodiscard]] uint32_t dataSize(ByteArray const& d) const;
+  [[nodiscard]] List<BlockIndex> leafTailBlocks(BlockIndex leafPointer);
 
   void freeBlock(BlockIndex b);
-  BlockIndex reserveBlock();
-  BlockIndex makeEndBlock();
+  [[nodiscard]] BlockIndex reserveBlock();
+  [[nodiscard]] BlockIndex makeEndBlock();
 
   void dirty();
   void writeRoot();
@@ -254,13 +254,13 @@ private:
   void validateRoot();
   void doCommit();
   void commitWrites();
-  bool tryFlatten();
-  bool flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
+  [[nodiscard]] bool tryFlatten();
+  [[nodiscard]] bool flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
 
   void checkIfOpen(char const* methodName, bool shouldBeOpen) const;
   void checkBlockIndex(size_t blockIndex) const;
   void checkKeySize(ByteArray const& k) const;
-  uint32_t maxFreeIndexLength() const;
+  [[nodiscard]] uint32_t maxFreeIndexLength() const;
 
   mutable ReadersWriterMutex m_lock;
 

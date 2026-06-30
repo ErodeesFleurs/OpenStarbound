@@ -27,7 +27,7 @@ private:
   using TableValue = pair<key_type, mapped_type>;
 
   struct GetKey {
-    key_type const& operator()(TableValue const& value) const;
+    [[nodiscard]] key_type const& operator()(TableValue const& value) const;
   };
 
   using Table = FlatHashTable<TableValue, key_type, GetKey, Hash, Equals, typename std::allocator_traits<Allocator>::template rebind_alloc<TableValue>>;
@@ -43,11 +43,11 @@ public:
     bool operator==(const_iterator const& rhs) const;
     bool operator!=(const_iterator const& rhs) const;
 
-    const_iterator& operator++();
-    const_iterator operator++(int);
+    [[nodiscard]] const_iterator& operator++();
+    [[nodiscard]] const_iterator operator++(int);
 
-    value_type& operator*() const;
-    value_type* operator->() const;
+    [[nodiscard]] value_type& operator*() const;
+    [[nodiscard]] value_type* operator->() const;
 
     typename Table::const_iterator inner;
   };
@@ -62,13 +62,13 @@ public:
     bool operator==(iterator const& rhs) const;
     bool operator!=(iterator const& rhs) const;
 
-    iterator& operator++();
-    iterator operator++(int);
+    [[nodiscard]] iterator& operator++();
+    [[nodiscard]] iterator operator++(int);
 
-    value_type& operator*() const;
-    value_type* operator->() const;
+    [[nodiscard]] value_type& operator*() const;
+    [[nodiscard]] value_type* operator->() const;
 
-    operator const_iterator() const;
+    [[nodiscard]] operator const_iterator() const;
 
     typename Table::iterator inner;
   };
@@ -106,52 +106,52 @@ public:
   FlatHashMap& operator=(FlatHashMap&& other);
   FlatHashMap& operator=(initializer_list<value_type> init);
 
-  iterator begin();
-  iterator end();
+  [[nodiscard]] iterator begin();
+  [[nodiscard]] iterator end();
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  const_iterator cbegin() const;
-  const_iterator cend() const;
+  [[nodiscard]] const_iterator cbegin() const;
+  [[nodiscard]] const_iterator cend() const;
 
-  bool empty() const;
-  size_t size() const;
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] size_t size() const;
   void clear();
 
-  pair<iterator, bool> insert(value_type const& value);
+  [[nodiscard]] pair<iterator, bool> insert(value_type const& value);
   template <typename T>
     requires std::is_constructible_v<TableValue, T&&>
-  pair<iterator, bool> insert(T&& value);
-  iterator insert(const_iterator hint, value_type const& value);
+  [[nodiscard]] pair<iterator, bool> insert(T&& value);
+  [[nodiscard]] iterator insert(const_iterator hint, value_type const& value);
   template <typename T>
     requires std::is_constructible_v<TableValue, T&&>
-  iterator insert(const_iterator hint, T&& value);
+  [[nodiscard]] iterator insert(const_iterator hint, T&& value);
   template <typename InputIt>
   void insert(InputIt first, InputIt last);
   void insert(initializer_list<value_type> init);
 
   template <typename... Args>
-  pair<iterator, bool> emplace(Args&&... args);
+  [[nodiscard]] pair<iterator, bool> emplace(Args&&... args);
   template <typename... Args>
-  iterator emplace_hint(const_iterator hint, Args&&... args);
+  [[nodiscard]] iterator emplace_hint(const_iterator hint, Args&&... args);
 
-  iterator erase(const_iterator pos);
-  iterator erase(const_iterator first, const_iterator last);
-  size_t erase(key_type const& key);
+  [[nodiscard]] iterator erase(const_iterator pos);
+  [[nodiscard]] iterator erase(const_iterator first, const_iterator last);
+  [[nodiscard]] size_t erase(key_type const& key);
 
-  mapped_type& at(key_type const& key);
-  mapped_type const& at(key_type const& key) const;
+  [[nodiscard]] mapped_type& at(key_type const& key);
+  [[nodiscard]] mapped_type const& at(key_type const& key) const;
 
-  mapped_type& operator[](key_type const& key);
-  mapped_type& operator[](key_type&& key);
+  [[nodiscard]] mapped_type& operator[](key_type const& key);
+  [[nodiscard]] mapped_type& operator[](key_type&& key);
 
-  bool contains(key_type const& key) const;
-  size_t count(key_type const& key) const;
-  const_iterator find(key_type const& key) const;
-  iterator find(key_type const& key);
-  pair<iterator, iterator> equal_range(key_type const& key);
-  pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
+  [[nodiscard]] bool contains(key_type const& key) const;
+  [[nodiscard]] size_t count(key_type const& key) const;
+  [[nodiscard]] const_iterator find(key_type const& key) const;
+  [[nodiscard]] iterator find(key_type const& key);
+  [[nodiscard]] pair<iterator, iterator> equal_range(key_type const& key);
+  [[nodiscard]] pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
 
   void reserve(size_t capacity);
 
@@ -185,7 +185,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::const_iterator::operator
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::const_iterator::operator++(int) -> const_iterator {
-  const_iterator copy(*this);
+  [[nodiscard]] const_iterator copy(*this);
   ++*this;
   return copy;
 }
@@ -218,7 +218,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::iterator::operator++() -
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::iterator::operator++(int) -> iterator {
-  iterator copy(*this);
+  [[nodiscard]] iterator copy(*this);
   operator++();
   return copy;
 }
@@ -370,12 +370,12 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::cend() const -> const_it
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
+[[nodiscard]] bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
   return m_table.empty();
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::size() const {
+[[nodiscard]] size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::size() const {
   return m_table.size();
 }
 
@@ -488,27 +488,27 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type&& ke
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::contains(key_type const& key) const {
+[[nodiscard]] bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::contains(key_type const& key) const {
   return m_table.contains(key);
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::count(key_type const& key) const {
+[[nodiscard]] size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::count(key_type const& key) const {
   return contains(key) ? 1 : 0;
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::find(key_type const& key) const -> const_iterator {
+[[nodiscard]] auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::find(key_type const& key) const -> const_iterator {
   return const_iterator{m_table.find(key)};
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::find(key_type const& key) -> iterator {
+[[nodiscard]] auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::find(key_type const& key) -> iterator {
   return iterator{m_table.find(key)};
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) -> pair<iterator, iterator> {
+[[nodiscard]] auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) -> pair<iterator, iterator> {
   auto i = find(key);
   if (i != end()) {
     auto j = i;
@@ -520,7 +520,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type con
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) const -> pair<const_iterator, const_iterator> {
+[[nodiscard]] auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) const -> pair<const_iterator, const_iterator> {
   auto i = find(key);
   if (i != end()) {
     auto j = i;

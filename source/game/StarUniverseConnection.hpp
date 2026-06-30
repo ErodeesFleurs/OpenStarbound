@@ -20,7 +20,7 @@ public:
 
   UniverseConnection& operator=(UniverseConnection&& rhs);
 
-  bool isOpen() const;
+  [[nodiscard]] bool isOpen() const;
   void close();
 
   // Push packets onto the send queue.
@@ -28,35 +28,35 @@ public:
   void pushSingle(PacketPtr packet);
 
   // Pull packets from the receive queue.
-  List<PacketPtr> pull();
-  PacketPtr pullSingle();
+  [[nodiscard]] List<PacketPtr> pull();
+  [[nodiscard]] PacketPtr pullSingle();
 
   // Send all data that we can without blocking, returns true if any data was
   // sent.
-  bool send();
+  [[nodiscard]] bool send();
 
   // Block, trying to send the entire send queue before the given timeout.
   // Returns true if the entire send queue was sent before the timeout, false
   // otherwise.
-  bool sendAll(unsigned timeout);
+  [[nodiscard]] bool sendAll(unsigned timeout);
 
   // Receive all the data that we can without blocking, returns true if any
   // data was received.
-  bool receive();
+  [[nodiscard]] bool receive();
 
   // Block, trying to read at least one packet into the receive queue before
   // the timeout.  Returns true once any packets are on the receive queue,
   // false if the timeout was reached with no packets receivable.
-  bool receiveAny(unsigned timeout);
+  [[nodiscard]] bool receiveAny(unsigned timeout);
 
   // Returns a reference to the packet socket.
-  PacketSocket& packetSocket();
+  [[nodiscard]] PacketSocket& packetSocket();
 
   // Packet stats for the most recent one second window of activity incoming
   // and outgoing.  Will only return valid stats if the underlying PacketSocket
   // implements stat collection.
-  Maybe<PacketStats> incomingStats() const;
-  Maybe<PacketStats> outgoingStats() const;
+  [[nodiscard]] Maybe<PacketStats> incomingStats() const;
+  [[nodiscard]] Maybe<PacketStats> outgoingStats() const;
 
 private:
   friend class UniverseConnectionServer;
@@ -83,21 +83,21 @@ public:
   UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
 
-  bool hasConnection(ConnectionId clientId) const;
-  List<ConnectionId> allConnections() const;
-  bool connectionIsOpen(ConnectionId clientId) const;
-  int64_t lastActivityTime(ConnectionId clientId) const;
+  [[nodiscard]] bool hasConnection(ConnectionId clientId) const;
+  [[nodiscard]] List<ConnectionId> allConnections() const;
+  [[nodiscard]] bool connectionIsOpen(ConnectionId clientId) const;
+  [[nodiscard]] int64_t lastActivityTime(ConnectionId clientId) const;
 
   void addConnection(ConnectionId clientId, UniverseConnection connection);
-  UniverseConnection removeConnection(ConnectionId clientId);
-  List<UniverseConnection> removeAllConnections();
+  [[nodiscard]] UniverseConnection removeConnection(ConnectionId clientId);
+  [[nodiscard]] List<UniverseConnection> removeAllConnections();
 
   void sendPackets(ConnectionId clientId, List<PacketPtr> packets);
 
   // Get total packets processed across all worker threads
-  uint64_t totalPacketsProcessed() const;
+  [[nodiscard]] uint64_t totalPacketsProcessed() const;
   // Get number of worker threads
-  size_t numWorkerThreads() const;
+  [[nodiscard]] size_t numWorkerThreads() const;
 
 private:
   struct Connection {

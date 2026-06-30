@@ -2,7 +2,7 @@
 
 namespace Star {
 
-bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
+[[nodiscard]] bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
   return tie(entityId, positionIndex) == tie(eas.entityId, eas.positionIndex);
 }
 

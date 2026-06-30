@@ -38,8 +38,8 @@ class RadioMessageDatabase {
 public:
   RadioMessageDatabase(AssetsConstPtr assets);
 
-  RadioMessage radioMessage(String const& messageName) const;
-  RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
+  [[nodiscard]] RadioMessage radioMessage(String const& messageName) const;
+  [[nodiscard]] RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
 
 private:
   Json m_messageDefaults;

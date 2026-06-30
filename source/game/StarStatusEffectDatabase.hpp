@@ -27,19 +27,19 @@ struct UniqueStatusEffectConfig {
   String description;
   Maybe<String> icon;
 
-  JsonObject toJson();
+  [[nodiscard]] JsonObject toJson();
 };
 
 class StatusEffectDatabase {
 public:
   StatusEffectDatabase(AssetsConstPtr assets);
 
-  bool isUniqueEffect(UniqueStatusEffect const& effect) const;
+  [[nodiscard]] bool isUniqueEffect(UniqueStatusEffect const& effect) const;
 
-  UniqueStatusEffectConfig uniqueEffectConfig(UniqueStatusEffect const& effect) const;
+  [[nodiscard]] UniqueStatusEffectConfig uniqueEffectConfig(UniqueStatusEffect const& effect) const;
 
 private:
-  UniqueStatusEffectConfig parseUniqueEffect(Json const& config, String const& path) const;
+  [[nodiscard]] UniqueStatusEffectConfig parseUniqueEffect(Json const& config, String const& path) const;
 
   HashMap<UniqueStatusEffect, UniqueStatusEffectConfig> m_uniqueEffects;
 };

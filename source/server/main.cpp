@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
         rootRef.fullyLoad();
       });
       server->setListeningTcp(true);
-      server->start();
+      (void)server->start();
 
       UniquePtr<ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
@@ -92,16 +92,16 @@ int main(int argc, char** argv) {
         Thread::sleep(100);
       }
 
-      server->join();
+      (void)server->join();
 
       if (queryServer) {
         queryServer->stop();
-        queryServer->join();
+        (void)queryServer->join();
       }
 
       if (rconServer) {
         rconServer->stop();
-        rconServer->join();
+        (void)rconServer->join();
       }
     }
 

@@ -77,7 +77,7 @@ TenantPtr TenantDatabase::readTenant(String const& path) const {
       if (spawn == "monster") {
         return TenantMonsterSpawnable{json.getString("type"), json.optFloat("level"), json.opt("overrides")};
       } else {
-        starAssert(json.getString("spawn") == "npc");
+        assert(json.getString("spawn") == "npc");
 
         Json speciesJson = json.get("species");
         List<String> species;

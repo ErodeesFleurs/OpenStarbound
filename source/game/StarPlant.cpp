@@ -595,23 +595,23 @@ void Plant::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-String Plant::description() const {
+[[nodiscard]] String Plant::description() const {
   return m_descriptions.getString("description");
 }
 
-Vec2F Plant::position() const {
+[[nodiscard]] Vec2F Plant::position() const {
   return Vec2F(m_tilePosition);
 }
 
-RectF Plant::metaBoundBox() const {
+[[nodiscard]] RectF Plant::metaBoundBox() const {
   return m_metaBoundBox;
 }
 
-bool Plant::ephemeral() const {
+[[nodiscard]] bool Plant::ephemeral() const {
   return m_ephemeral;
 }
 
-Vec2I Plant::tilePosition() const {
+[[nodiscard]] Vec2I Plant::tilePosition() const {
   return m_tilePosition;
 }
 
@@ -619,23 +619,23 @@ void Plant::setTilePosition(Vec2I const& tilePosition) {
   m_tilePosition = tilePosition;
 }
 
-List<Vec2I> Plant::spaces() const {
+[[nodiscard]] List<Vec2I> Plant::spaces() const {
   return m_spaces;
 }
 
-List<Vec2I> Plant::roots() const {
+[[nodiscard]] List<Vec2I> Plant::roots() const {
   return m_roots;
 }
 
-Vec2I Plant::primaryRoot() const {
+[[nodiscard]] Vec2I Plant::primaryRoot() const {
   return m_ceiling ? Vec2I(0, 1) : Vec2I(0, -1);
 }
 
-bool Plant::ceiling() const {
+[[nodiscard]] bool Plant::ceiling() const {
   return m_ceiling;
 }
 
-bool Plant::shouldDestroy() const {
+[[nodiscard]] bool Plant::shouldDestroy() const {
   return m_broken || m_pieces.empty();
 }
 
@@ -654,11 +654,11 @@ bool Plant::checkBroken() {
   return m_broken;
 }
 
-List<Plant::PlantPiece> Plant::pieces() const {
+[[nodiscard]] List<Plant::PlantPiece> Plant::pieces() const {
   return m_pieces;
 }
 
-RectF Plant::interactiveBoundBox() const {
+[[nodiscard]] RectF Plant::interactiveBoundBox() const {
   return RectF(m_boundBox);
 }
 
@@ -698,7 +698,7 @@ void Plant::calcBoundBox() {
   m_metaBoundBox = RectF(boundBox.min() - Vec2F(1, 1), boundBox.max() + Vec2F(2, 2));
 }
 
-float Plant::branchRotation(float xPos, float rotoffset) const {
+[[nodiscard]] float Plant::branchRotation(float xPos, float rotoffset) const {
   if (!inWorld() || m_windLevel == 0.0f)
     return 0.0f;
 
@@ -1032,8 +1032,8 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   validatePieces();
 }
 
-Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
-  starAssert(positions.size());
+[[nodiscard]] Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
+  assert(positions.size());
   auto res = positions.at(0);
 
   for (auto const& piece : m_pieces) {
@@ -1054,7 +1054,7 @@ Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
   return res;
 }
 
-bool Plant::damagable() const {
+[[nodiscard]] bool Plant::damagable() const {
   if (m_stemDropConfig.type() != Json::Type::Object)
     return true;
   if (!m_stemDropConfig.getBool("destructable", true))

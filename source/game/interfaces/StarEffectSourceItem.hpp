@@ -9,7 +9,7 @@ class EffectSourceItem;
 class EffectSourceItem {
 public:
   virtual ~EffectSourceItem() = default;
-  virtual StringSet effectSources() const = 0;
+  [[nodiscard]] virtual StringSet effectSources() const = 0;
 };
 
 }

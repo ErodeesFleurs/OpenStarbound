@@ -22,7 +22,7 @@ ImageMetadataDatabase::ImageMetadataDatabase(AssetsConstPtr assets)
   m_regionCache.setTimeToLive(timeToLive);
 }
 
-Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
+[[nodiscard]] Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
   if (auto cached = m_sizeCache.ptr(path))
     return *cached;
@@ -35,7 +35,7 @@ Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   return size;
 }
 
-List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
+[[nodiscard]] List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
   SpacesEntry key{path, Vec2I::round(position), fillLimit, flip};
 
   MutexLocker locker(m_mutex);
@@ -97,7 +97,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   return spaces;
 }
 
-RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
+[[nodiscard]] RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   MutexLocker locker(m_mutex);
   
   if (auto cached = m_regionCache.ptr(path)) {
@@ -133,7 +133,7 @@ void ImageMetadataDatabase::cleanup() const {
   m_regionCache.cleanup();
 }
 
-AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
+[[nodiscard]] AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
   AssetPath newPath = { path.basePath, path.subPath, {} };
 
   String filtered;
@@ -156,7 +156,7 @@ AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
   return newPath;
 }
 
-Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
+[[nodiscard]] Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   // Carefully calculate an image's size while trying not to actually load it.
   // In error cases, this will fall back to calling Assets::image, so that image
   // can possibly produce a missing image asset or properly report the error.

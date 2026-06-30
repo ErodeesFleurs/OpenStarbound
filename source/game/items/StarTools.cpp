@@ -35,7 +35,7 @@ ItemPtr MiningTool::clone() const {
   return make_shared<MiningTool>(*this);
 }
 
-List<Drawable> MiningTool::drawables() const {
+[[nodiscard]] List<Drawable> MiningTool::drawables() const {
   if (m_frameTiming == 0) {
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   } else {
@@ -44,7 +44,7 @@ List<Drawable> MiningTool::drawables() const {
   }
 }
 
-Vec2F MiningTool::handPosition() const {
+[[nodiscard]] Vec2F MiningTool::handPosition() const {
   return m_handPosition;
 }
 
@@ -162,7 +162,7 @@ ItemPtr HarvestingTool::clone() const {
   return make_shared<HarvestingTool>(*this);
 }
 
-List<Drawable> HarvestingTool::drawables() const {
+[[nodiscard]] List<Drawable> HarvestingTool::drawables() const {
   if (m_frameTiming == 0)
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   else {
@@ -171,7 +171,7 @@ List<Drawable> HarvestingTool::drawables() const {
   }
 }
 
-Vec2F HarvestingTool::handPosition() const {
+[[nodiscard]] Vec2F HarvestingTool::handPosition() const {
   return m_handPosition;
 }
 
@@ -223,11 +223,11 @@ ItemPtr Flashlight::clone() const {
   return make_shared<Flashlight>(*this);
 }
 
-List<Drawable> Flashlight::drawables() const {
+[[nodiscard]] List<Drawable> Flashlight::drawables() const {
   return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels, Color::White, m_imageMetadataDatabase)};
 }
 
-List<LightSource> Flashlight::lightSources() const {
+[[nodiscard]] List<LightSource> Flashlight::lightSources() const {
   if (!initialized())
     return {};
 
@@ -266,11 +266,11 @@ void WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveCo
   BeamItem::update(dt, fireMode, shifting, moves);
 }
 
-List<Drawable> WireTool::drawables() const {
+[[nodiscard]] List<Drawable> WireTool::drawables() const {
   return BeamItem::drawables();
 }
 
-List<Drawable> WireTool::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> WireTool::nonRotatedDrawables() const {
   if (m_wireConnector && m_wireConnector->connecting())
     return BeamItem::nonRotatedDrawables();
   return {};
@@ -280,7 +280,7 @@ void WireTool::setEnd(EndType) {
   m_endType = EndType::Wire;
 }
 
-Vec2F WireTool::handPosition() const {
+[[nodiscard]] Vec2F WireTool::handPosition() const {
   return m_handPosition;
 }
 
@@ -342,7 +342,7 @@ ItemPtr BeamMiningTool::clone() const {
   return make_shared<BeamMiningTool>(*this);
 }
 
-List<Drawable> BeamMiningTool::drawables() const {
+[[nodiscard]] List<Drawable> BeamMiningTool::drawables() const {
   return BeamItem::drawables();
 }
 
@@ -350,7 +350,7 @@ void BeamMiningTool::setEnd(EndType) {
   m_endType = EndType::Object;
 }
 
-List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
+[[nodiscard]] List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   auto ownerp = owner();
   auto worldp = world();
@@ -384,11 +384,11 @@ void BeamMiningTool::update(float dt, FireMode fireMode, bool shifting, HashSet<
   BeamItem::update(dt, fireMode, shifting, moves);
 }
 
-List<PersistentStatusEffect> BeamMiningTool::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> BeamMiningTool::statusEffects() const {
   return m_inhandStatusEffects;
 }
 
-List<Drawable> BeamMiningTool::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> BeamMiningTool::nonRotatedDrawables() const {
   if (!ready() && !coolingDown())
     return BeamItem::nonRotatedDrawables();
   return {};
@@ -506,7 +506,7 @@ ItemPtr TillingTool::clone() const {
   return make_shared<TillingTool>(*this);
 }
 
-List<Drawable> TillingTool::drawables() const {
+[[nodiscard]] List<Drawable> TillingTool::drawables() const {
   if (m_frameTiming == 0)
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   else {
@@ -515,7 +515,7 @@ List<Drawable> TillingTool::drawables() const {
   }
 }
 
-Vec2F TillingTool::handPosition() const {
+[[nodiscard]] Vec2F TillingTool::handPosition() const {
   return m_handPosition;
 }
 
@@ -605,7 +605,7 @@ ItemPtr PaintingBeamTool::clone() const {
   return make_shared<PaintingBeamTool>(*this);
 }
 
-List<Drawable> PaintingBeamTool::drawables() const {
+[[nodiscard]] List<Drawable> PaintingBeamTool::drawables() const {
   auto result = BeamItem::drawables();
   for (auto& entry : result) {
     if (entry.isImage()) {
@@ -634,7 +634,7 @@ void PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSe
   FireableItem::update(dt, fireMode, shifting, moves);
 }
 
-List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
+[[nodiscard]] List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   auto ownerp = owner();
   auto worldp = world();
@@ -667,7 +667,7 @@ void PaintingBeamTool::init(ToolUserEntity& owner, ToolHand hand) {
   m_color = m_colors[m_colorIndex];
 }
 
-List<Drawable> PaintingBeamTool::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> PaintingBeamTool::nonRotatedDrawables() const {
   if (!coolingDown())
     return BeamItem::nonRotatedDrawables();
   return {};

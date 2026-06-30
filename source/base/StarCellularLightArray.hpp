@@ -9,14 +9,14 @@ namespace Star {
 struct ScalarLightTraits {
   using Value = float;
 
-  static float spread(float source, float dest, float drop);
-  static float subtract(float value, float drop);
-  static float multiply(float v1, float v2);
+  [[nodiscard]] static float spread(float source, float dest, float drop);
+  [[nodiscard]] static float subtract(float value, float drop);
+  [[nodiscard]] static float multiply(float v1, float v2);
 
-  static float maxIntensity(float value);
-  static float minIntensity(float value);
+  [[nodiscard]] static float maxIntensity(float value);
+  [[nodiscard]] static float minIntensity(float value);
 
-  static float max(float v1, float v2);
+  [[nodiscard]] static float max(float v1, float v2);
 };
 
 // Operations for 3 component (colored) lighting.  Spread and subtract are
@@ -25,14 +25,14 @@ struct ScalarLightTraits {
 struct ColoredLightTraits {
   using Value = Vec3F;
 
-  static Vec3F spread(Vec3F const& source, Vec3F const& dest, float drop);
-  static Vec3F subtract(Vec3F value, float drop);
-  static Vec3F multiply(Vec3F value, float drop);
+  [[nodiscard]] static Vec3F spread(Vec3F const& source, Vec3F const& dest, float drop);
+  [[nodiscard]] static Vec3F subtract(Vec3F value, float drop);
+  [[nodiscard]] static Vec3F multiply(Vec3F value, float drop);
 
-  static float maxIntensity(Vec3F const& value);
-  static float minIntensity(Vec3F const& value);
+  [[nodiscard]] static float maxIntensity(Vec3F const& value);
+  [[nodiscard]] static float minIntensity(Vec3F const& value);
 
-  static Vec3F max(Vec3F const& v1, Vec3F const& v2);
+  [[nodiscard]] static Vec3F max(Vec3F const& v1, Vec3F const& v2);
 };
 
 template <typename LightTraits>
@@ -64,7 +64,7 @@ public:
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
-  size_t borderCells() const;
+  [[nodiscard]] size_t borderCells() const;
 
   // Begin a new calculation, setting internal storage to new width and height
   // (if these are the same as last time this is cheap).  Always clears all
@@ -82,17 +82,17 @@ public:
 
   // Get current light value.  Call after calling calculate() to pull final
   // data out.
-  LightValue getLight(size_t x, size_t y) const;
+  [[nodiscard]] LightValue getLight(size_t x, size_t y) const;
 
   // Set obstacle values for this position
   void setObstacle(size_t x, size_t y, bool obstacle);
-  bool getObstacle(size_t x, size_t y) const;
+  [[nodiscard]] bool getObstacle(size_t x, size_t y) const;
 
-  Cell const& cell(size_t x, size_t y) const;
-  Cell& cell(size_t x, size_t y);
+  [[nodiscard]] Cell const& cell(size_t x, size_t y) const;
+  [[nodiscard]] Cell& cell(size_t x, size_t y);
 
-  Cell const& cellAtIndex(size_t index) const;
-  Cell& cellAtIndex(size_t index);
+  [[nodiscard]] Cell const& cellAtIndex(size_t index) const;
+  [[nodiscard]] Cell& cellAtIndex(size_t index);
 
   // Calculate lighting in the given sub-rect, in order to properly do spread
   // lighting, and initial lighting must be given for the ambient border this
@@ -115,7 +115,7 @@ private:
   // Run Xiaolin Wu's anti-aliased line drawing algorithm from start to end,
   // summing each block that would be drawn to to produce an attenuation.  Not
   // circularized.
-  float lineAttenuation(Vec2F const& start, Vec2F const& end, float perObstacleAttenuation, float maxAttenuation);
+  [[nodiscard]] float lineAttenuation(Vec2F const& start, Vec2F const& end, float perObstacleAttenuation, float maxAttenuation);
 
   size_t m_width;
   size_t m_height;
@@ -135,31 +135,31 @@ private:
 using ColoredCellularLightArray = CellularLightArray<ColoredLightTraits>;
 using ScalarCellularLightArray = CellularLightArray<ScalarLightTraits>;
 
-inline float ScalarLightTraits::spread(float source, float dest, float drop) {
+[[nodiscard]] inline float ScalarLightTraits::spread(float source, float dest, float drop) {
   return std::max(source - drop, dest);
 }
 
-inline float ScalarLightTraits::subtract(float c, float drop) {
+[[nodiscard]] inline float ScalarLightTraits::subtract(float c, float drop) {
   return std::max(c - drop, 0.0f);
 }
 
-inline float ScalarLightTraits::multiply(float v1, float v2) {
+[[nodiscard]] inline float ScalarLightTraits::multiply(float v1, float v2) {
   return v1 * v2;
 }
 
-inline float ScalarLightTraits::maxIntensity(float value) {
+[[nodiscard]] inline float ScalarLightTraits::maxIntensity(float value) {
   return value;
 }
 
-inline float ScalarLightTraits::minIntensity(float value) {
+[[nodiscard]] inline float ScalarLightTraits::minIntensity(float value) {
   return value;
 }
 
-inline float ScalarLightTraits::max(float v1, float v2) {
+[[nodiscard]] inline float ScalarLightTraits::max(float v1, float v2) {
   return std::max(v1, v2);
 }
 
-inline Vec3F ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, float drop) {
+[[nodiscard]] inline Vec3F ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, float drop) {
   float maxChannel = std::max(source[0], std::max(source[1], source[2]));
   if (maxChannel <= 0.0f)
     return dest;
@@ -171,7 +171,7 @@ inline Vec3F ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, 
     std::max(source[2] - source[2] * drop, dest[2]));
 }
 
-inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
+[[nodiscard]] inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
   float max = std::max(std::max(c[0], c[1]), c[2]);
   if (max <= 0.0f)
     return c;
@@ -186,19 +186,19 @@ inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
   return c;
 }
 
-inline Vec3F ColoredLightTraits::multiply(Vec3F c, float drop) {
+[[nodiscard]] inline Vec3F ColoredLightTraits::multiply(Vec3F c, float drop) {
   return c * drop;
 }
 
-inline float ColoredLightTraits::maxIntensity(Vec3F const& value) {
+[[nodiscard]] inline float ColoredLightTraits::maxIntensity(Vec3F const& value) {
   return value.max();
 }
 
-inline float ColoredLightTraits::minIntensity(Vec3F const& value) {
+[[nodiscard]] inline float ColoredLightTraits::minIntensity(Vec3F const& value) {
   return value.min();
 }
 
-inline Vec3F ColoredLightTraits::max(Vec3F const& v1, Vec3F const& v2) {
+[[nodiscard]] inline Vec3F ColoredLightTraits::max(Vec3F const& v1, Vec3F const& v2) {
   return vmax(v1, v2);
 }
 
@@ -215,7 +215,7 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
 }
 
 template <typename LightTraits>
-size_t CellularLightArray<LightTraits>::borderCells() const {
+[[nodiscard]] size_t CellularLightArray<LightTraits>::borderCells() const {
   return static_cast<size_t>(ceil(max(0.0f, max(m_spreadMaxAir, m_pointMaxAir))));
 }
 
@@ -223,7 +223,7 @@ template <typename LightTraits>
 void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
   m_spreadLights.clear();
   m_pointLights.clear();
-  starAssert(newWidth > 0 && newHeight > 0);
+  assert(newWidth > 0 && newHeight > 0);
 
   if (!m_cells || newWidth != m_width || newHeight != m_height) {
     m_width = newWidth;
@@ -257,36 +257,36 @@ void CellularLightArray<LightTraits>::setObstacle(size_t x, size_t y, bool obsta
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::getLight(size_t x, size_t y) const -> LightValue {
+[[nodiscard]] auto CellularLightArray<LightTraits>::getLight(size_t x, size_t y) const -> LightValue {
   return cell(x, y).light;
 }
 
 template <typename LightTraits>
-bool CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const {
+[[nodiscard]] bool CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const {
   return cell(x, y).obstacle;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const& {
-  starAssert(x < m_width && y < m_height);
+[[nodiscard]] auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const& {
+  assert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell& {
-  starAssert(x < m_width && y < m_height);
+  assert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const& {
-  starAssert(index < m_width * m_height);
+[[nodiscard]] auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const& {
+  assert(index < m_width * m_height);
   return m_cells[index];
 }
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell& {
-  starAssert(index < m_width * m_height);
+  assert(index < m_width * m_height);
   return m_cells[index];
 }
 
@@ -311,7 +311,7 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 
     // Pick falloff here based on closest block obstacle value (probably not
     // best)
-    Vec2I pos(light.position.floor());
+    [[nodiscard]] Vec2I pos(light.position.floor());
     float oneBlockAtt;
     if (pos[0] >= 0 && pos[0] < static_cast<int>(m_width) && pos[1] >= 0 && pos[1] < static_cast<int>(m_height) && getObstacle(pos[0], pos[1]))
       oneBlockAtt = 1.0f / m_spreadMaxObstacle;
@@ -337,7 +337,7 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
-  starAssert(m_width > 0 && m_height > 0);
+  assert(m_width > 0 && m_height > 0);
 
   float dropoffAir = 1.0f / m_spreadMaxAir;
   float dropoffObstacle = 1.0f / m_spreadMaxObstacle;
@@ -400,7 +400,7 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
 }
 
 template <typename LightTraits>
-float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F const& end,
+[[nodiscard]] float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F const& end,
                                                        float perObstacleAttenuation, float maxAttenuation) {
   // Run Xiaolin Wu's line algorithm from start to end, summing over colliding
   // blocks using perObstacleAttenuation.

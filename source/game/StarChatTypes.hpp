@@ -46,7 +46,7 @@ struct ChatReceivedMessage {
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait);
   ChatReceivedMessage(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   MessageContext context;
 

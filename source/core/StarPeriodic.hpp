@@ -26,11 +26,11 @@ public:
   }
 
   // Will the next tick() return true?
-  bool ready() const {
+  [[nodiscard]] bool ready() const {
     return m_everyXSteps != 0 && m_counter == 0;
   }
 
-  bool tick() {
+  [[nodiscard]] bool tick() {
     if (m_everyXSteps == 0)
       return false;
 

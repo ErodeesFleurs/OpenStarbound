@@ -90,7 +90,7 @@ void BeamItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&)
     m_beamCurve[1] = m_beamCurve[1] + (desiredNearControlPoint - m_beamCurve[1]) * m_nearControlPointElasticity;
 }
 
-List<Drawable> BeamItem::nonRotatedDrawables() const {
+[[nodiscard]] List<Drawable> BeamItem::nonRotatedDrawables() const {
   return beamDrawables();
 }
 
@@ -102,15 +102,15 @@ float BeamItem::getAngle(float angle) {
   return beamAngle;
 }
 
-List<Drawable> BeamItem::drawables() const {
+[[nodiscard]] List<Drawable> BeamItem::drawables() const {
   return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_beamImageMetadataDatabase)};
 }
 
-Vec2F BeamItem::handPosition() const {
+[[nodiscard]] Vec2F BeamItem::handPosition() const {
   return m_handPosition;
 }
 
-Vec2F BeamItem::firePosition() const {
+[[nodiscard]] Vec2F BeamItem::firePosition() const {
   return m_firePosition;
 }
 
@@ -118,7 +118,7 @@ void BeamItem::setRange(float range) {
   m_range = range;
 }
 
-float BeamItem::getAppropriateOpacity() const {
+[[nodiscard]] float BeamItem::getAppropriateOpacity() const {
   float curveLen = m_beamCurve.length();
   const float rangeEffect = (m_range - curveLen) / m_range;
 
@@ -140,7 +140,7 @@ void BeamItem::setEnd(EndType type) {
   m_endType = type;
 }
 
-List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
+[[nodiscard]] List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
   List<Drawable> res;
 
   float curveLen = m_beamCurve.length();

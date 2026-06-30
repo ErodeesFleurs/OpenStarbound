@@ -15,10 +15,10 @@ template <typename AtlasTextureHandle>
 class TextureAtlasSet {
 public:
   struct Texture {
-    virtual Vec2U imageSize() const = 0;
+    [[nodiscard]] virtual Vec2U imageSize() const = 0;
 
-    virtual AtlasTextureHandle const& atlasTexture() const = 0;
-    virtual RectU atlasTextureCoordinates() const = 0;
+    [[nodiscard]] virtual AtlasTextureHandle const& atlasTexture() const = 0;
+    [[nodiscard]] virtual RectU atlasTextureCoordinates() const = 0;
 
     // A locked texture will never be moved during compression, so its
     // atlasTexture and textureCoordinates will not change.
@@ -26,7 +26,7 @@ public:
 
     // Returns true if this texture has been freed or the parent
     // TextureAtlasSet has been destructed.
-    virtual bool expired() const = 0;
+    [[nodiscard]] virtual bool expired() const = 0;
   };
 
   using TextureHandle = shared_ptr<Texture>;
@@ -36,7 +36,7 @@ public:
   virtual ~TextureAtlasSet() = default;
 
   // The constant square size of all atlas textures
-  Vec2U atlasTextureSize() const;
+  [[nodiscard]] Vec2U atlasTextureSize() const;
 
   // Removes all existing textures and destroys all texture atlases.
   void reset();
@@ -46,15 +46,15 @@ public:
   // texture.  If borderPixels is true, then fills a 1px border around the
   // given image in the atlas with the nearest color value, to prevent
   // bleeding.
-  TextureHandle addTexture(Image const& image, bool borderPixels = true);
+  [[nodiscard]] TextureHandle addTexture(Image const& image, bool borderPixels = true);
 
   // Removes the given texture from the TextureAtlasSet and invalidates the
   // pointer.
   void freeTexture(TextureHandle const& texture);
 
-  unsigned totalAtlases() const;
-  unsigned totalTextures() const;
-  float averageFillLevel() const;
+  [[nodiscard]] unsigned totalAtlases() const;
+  [[nodiscard]] unsigned totalTextures() const;
+  [[nodiscard]] float averageFillLevel() const;
 
   // Takes images from sparsely filled atlases and moves them to less sparsely
   // filled atlases in an effort to free up room.  This method tages the atlas
@@ -67,11 +67,11 @@ public:
   // The number of atlases that the AtlasSet will attempt to fit a texture in
   // before giving up and creating a new atlas.  Tries in order of least full
   // to most full.  Defaults to 3.
-  unsigned textureFitTries() const;
+  [[nodiscard]] unsigned textureFitTries() const;
   void setTextureFitTries(unsigned textureFitTries);
 
 protected:
-  virtual AtlasTextureHandle createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) = 0;
+  [[nodiscard]] virtual AtlasTextureHandle createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) = 0;
   virtual void destroyAtlasTexture(AtlasTextureHandle const& atlasTexture) = 0;
   virtual void copyAtlasPixels(AtlasTextureHandle const& atlasTexture, Vec2U const& bottomLeft, Image const& image) = 0;
 
@@ -92,16 +92,16 @@ private:
   struct TextureEntry : Texture {
     virtual ~TextureEntry() = default;
 
-    Vec2U imageSize() const override;
+    [[nodiscard]] Vec2U imageSize() const override;
 
-    AtlasTextureHandle const& atlasTexture() const override;
-    RectU atlasTextureCoordinates() const override;
+    [[nodiscard]] AtlasTextureHandle const& atlasTexture() const override;
+    [[nodiscard]] RectU atlasTextureCoordinates() const override;
 
     // A locked texture will never be moved during compression, so its
     // atlasTexture and textureCoordinates will not change.
     void setLocked(bool locked) override;
 
-    bool expired() const override;
+    [[nodiscard]] bool expired() const override;
 
     Image textureImage;
     AtlasPlacement atlasPlacement;
@@ -111,7 +111,7 @@ private:
 
   void setAtlasRegionUsed(TextureAtlas* extureAtlas, RectU const& region, bool used) const;
 
-  Maybe<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
+  [[nodiscard]] Maybe<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
   void sortAtlases();
 
   unsigned m_atlasCellSize;
@@ -335,11 +335,11 @@ void TextureAtlasSet<AtlasTextureHandle>::setAtlasRegionUsed(TextureAtlas* textu
       bool oldVal = val;
       val = used;
       if (oldVal && !val) {
-        starAssert(textureAtlas->usedCellCount != 0);
+        assert(textureAtlas->usedCellCount != 0);
         textureAtlas->usedCellCount -= 1;
       } else if (!oldVal && used) {
         textureAtlas->usedCellCount += 1;
-        starAssert(textureAtlas->usedCellCount <= square(m_atlasNumCells));
+        assert(textureAtlas->usedCellCount <= square(m_atlasNumCells));
       }
     }
   }

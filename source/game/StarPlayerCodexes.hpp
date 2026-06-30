@@ -22,20 +22,20 @@ public:
 
   PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& json = {});
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  List<CodexEntry> codexes() const;
+  [[nodiscard]] List<CodexEntry> codexes() const;
 
-  bool codexKnown(String const& codexId) const;
-  CodexConstPtr learnCodex(String const& codexId, bool markRead = false);
+  [[nodiscard]] bool codexKnown(String const& codexId) const;
+  [[nodiscard]] CodexConstPtr learnCodex(String const& codexId, bool markRead = false);
 
-  bool codexRead(String const& codexId) const;
-  bool markCodexRead(String const& codexId);
-  bool markCodexUnread(String const& codexId);
+  [[nodiscard]] bool codexRead(String const& codexId) const;
+  [[nodiscard]] bool markCodexRead(String const& codexId);
+  [[nodiscard]] bool markCodexUnread(String const& codexId);
 
   void learnInitialCodexes(String const& playerSpecies);
 
-  CodexConstPtr firstNewCodex() const;
+  [[nodiscard]] CodexConstPtr firstNewCodex() const;
 
 private:
   AssetsConstPtr m_assets;

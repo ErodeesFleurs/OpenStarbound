@@ -23,13 +23,13 @@ class VehicleDatabase {
 public:
   VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices);
 
-  VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
+  [[nodiscard]] VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
 
-  ByteArray netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const;
-  VehiclePtr netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
+  [[nodiscard]] ByteArray netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const;
+  [[nodiscard]] VehiclePtr netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
 
-  Json diskStore(VehiclePtr const& vehicle) const;
-  VehiclePtr diskLoad(Json const& diskStore) const;
+  [[nodiscard]] Json diskStore(VehiclePtr const& vehicle) const;
+  [[nodiscard]] VehiclePtr diskLoad(Json const& diskStore) const;
 
 private:
   AssetsConstPtr m_assets;

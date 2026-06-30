@@ -48,7 +48,7 @@ public:
   // ready for I/O or have had error events occur on them within the timeout,
   // nothing otherwise.  If socket hangup occurs during this call, this will
   // automatically shut down the socket.
-  static Maybe<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
+  [[nodiscard]] static Maybe<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
 
   ~Socket();
 
@@ -60,14 +60,14 @@ public:
   // Sockets default to 60 second timeout
   void setTimeout(unsigned millis);
 
-  NetworkMode networkMode() const;
-  SocketMode socketMode() const;
+  [[nodiscard]] NetworkMode networkMode() const;
+  [[nodiscard]] SocketMode socketMode() const;
 
   // Is the socketMode either Bound or Connected?
-  bool isActive() const;
+  [[nodiscard]] bool isActive() const;
 
   // Is the socketMode not closed?
-  bool isOpen() const;
+  [[nodiscard]] bool isOpen() const;
 
   // Shuts down the underlying socket only.
   void shutdown();

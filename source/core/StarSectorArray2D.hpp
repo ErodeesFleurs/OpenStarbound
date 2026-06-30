@@ -29,8 +29,8 @@ public:
     Array();
     Array(Element const& def);
 
-    Element const& operator()(size_t x, size_t y) const;
-    Element& operator()(size_t x, size_t y);
+    [[nodiscard]] Element const& operator()(size_t x, size_t y) const;
+    [[nodiscard]] Element& operator()(size_t x, size_t y);
 
     Element elements[SectorSize * SectorSize];
   };
@@ -44,36 +44,36 @@ public:
   void init(size_t numSectorsWide, size_t numSectorsHigh);
 
   // Total size of array elements
-  size_t width() const;
-  size_t height() const;
+  [[nodiscard]] size_t width() const;
+  [[nodiscard]] size_t height() const;
 
   // Is sector within width() and heigh()
-  bool sectorValid(Sector const& sector) const;
+  [[nodiscard]] bool sectorValid(Sector const& sector) const;
 
   // Returns the sector that contains the given point
-  Sector sectorFor(size_t x, size_t y) const;
+  [[nodiscard]] Sector sectorFor(size_t x, size_t y) const;
   // Returns the sector range that contains the given rectangle
-  SectorRange sectorRange(size_t minX, size_t minY, size_t width, size_t height) const;
+  [[nodiscard]] SectorRange sectorRange(size_t minX, size_t minY, size_t width, size_t height) const;
 
-  Vec2S sectorCorner(Sector const& id) const;
-  bool hasSector(Sector const& id) const;
+  [[nodiscard]] Vec2S sectorCorner(Sector const& id) const;
+  [[nodiscard]] bool hasSector(Sector const& id) const;
 
-  List<Sector> loadedSectors() const;
-  size_t loadedSectorCount() const;
-  bool sectorLoaded(Sector const& id) const;
+  [[nodiscard]] List<Sector> loadedSectors() const;
+  [[nodiscard]] size_t loadedSectorCount() const;
+  [[nodiscard]] bool sectorLoaded(Sector const& id) const;
 
   // Will return nullptr if sector is not loaded.
-  Array* sector(Sector const& id);
-  Array const* sector(Sector const& id) const;
+  [[nodiscard]] Array* sector(Sector const& id);
+  [[nodiscard]] Array const* sector(Sector const& id) const;
 
   void loadSector(Sector const& id, ArrayPtr array);
-  ArrayPtr copySector(Sector const& id);
-  ArrayPtr takeSector(Sector const& id);
+  [[nodiscard]] ArrayPtr copySector(Sector const& id);
+  [[nodiscard]] ArrayPtr takeSector(Sector const& id);
   void discardSector(Sector const& id);
 
   // Will return nullptr if sector is not loaded.
-  Element const* get(size_t x, size_t y) const;
-  Element* get(size_t x, size_t y);
+  [[nodiscard]] Element const* get(size_t x, size_t y) const;
+  [[nodiscard]] Element* get(size_t x, size_t y);
 
   // Fast evaluate of elements in the given range.  If evalEmpty is true, then
   // function will be called even for unloaded sectors (with null pointer).
@@ -81,9 +81,9 @@ public:
   // Given function should return true to continue, false to stop.  Returns
   // false if any evaled functions return false.
   template <typename Function>
-  bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
+  [[nodiscard]] bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
 
   // Individual sectors are stored column-major, so for speed, use this method
   // to get whole columns at a time.  If eval empty is true, function will be
@@ -97,23 +97,23 @@ public:
   bool evalColumns(
       size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool evalColumns(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] bool evalColumns(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
   template <typename Function>
-  bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
+  [[nodiscard]] bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
   template <typename Function>
-  bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  [[nodiscard]] bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
 
 private:
   using SectorArray = MultiArray<ArrayPtr, 2>;
 
   template <typename Function>
-  bool evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] bool evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
-  bool evalColumnsPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] bool evalColumnsPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
   template <typename Function>
-  bool evalColumnsPrivPar(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  [[nodiscard]] bool evalColumnsPrivPar(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
 
-  WorkerPool& getWorkerPool() const;
+  [[nodiscard]] WorkerPool& getWorkerPool() const;
 
   SectorArray m_sectors;
   HashSet<Sector> m_loadedSectors;
@@ -131,13 +131,13 @@ SectorArray2D<ElementT, SectorSize>::Array::Array(Element const& def) {
 
 template <typename ElementT, size_t SectorSize>
 ElementT const& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) const {
-  starAssert(x < SectorSize && y < SectorSize);
+  assert(x < SectorSize && y < SectorSize);
   return elements[x * SectorSize + y];
 }
 
 template <typename ElementT, size_t SectorSize>
 ElementT& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) {
-  starAssert(x < SectorSize && y < SectorSize);
+  assert(x < SectorSize && y < SectorSize);
   return elements[x * SectorSize + y];
 }
 
@@ -154,27 +154,27 @@ void SectorArray2D<ElementT, SectorSize>::init(size_t numSectorsWide, size_t num
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::width() const {
+[[nodiscard]] size_t SectorArray2D<ElementT, SectorSize>::width() const {
   return m_sectors.size(0) * SectorSize;
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::height() const {
+[[nodiscard]] size_t SectorArray2D<ElementT, SectorSize>::height() const {
   return m_sectors.size(1) * SectorSize;
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::sectorValid(Sector const& sector) const {
+[[nodiscard]] bool SectorArray2D<ElementT, SectorSize>::sectorValid(Sector const& sector) const {
   return sector[0] < m_sectors.size(0) && sector[1] < m_sectors.size(1);
 }
 
 template <typename ElementT, size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sectorFor(size_t x, size_t y) const -> Sector {
+[[nodiscard]] auto SectorArray2D<ElementT, SectorSize>::sectorFor(size_t x, size_t y) const -> Sector {
   return {x / SectorSize, y / SectorSize};
 }
 
 template <typename ElementT, size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sectorRange(size_t minX, size_t minY, size_t width, size_t height) const -> SectorRange {
+[[nodiscard]] auto SectorArray2D<ElementT, SectorSize>::sectorRange(size_t minX, size_t minY, size_t width, size_t height) const -> SectorRange {
   return {
     {minX / SectorSize, minY / SectorSize},
     {(minX + width + SectorSize - 1) / SectorSize, (minY + height + SectorSize - 1) / SectorSize}
@@ -182,28 +182,28 @@ auto SectorArray2D<ElementT, SectorSize>::sectorRange(size_t minX, size_t minY, 
 }
 
 template <typename ElementT, size_t SectorSize>
-Vec2S SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const {
+[[nodiscard]] Vec2S SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const {
   return Vec2S(id[0] * SectorSize, id[1] * SectorSize);
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const {
-  starAssert(id[0] < m_sectors.size(0) && id[1] < m_sectors.size(1));
+[[nodiscard]] bool SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const {
+  assert(id[0] < m_sectors.size(0) && id[1] < m_sectors.size(1));
   return m_sectors(id[0], id[1]) != nullptr;
 }
 
 template <typename ElementT, size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::loadedSectors() const -> List<Sector> {
+[[nodiscard]] auto SectorArray2D<ElementT, SectorSize>::loadedSectors() const -> List<Sector> {
   return m_loadedSectors.values();
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::loadedSectorCount() const {
+[[nodiscard]] size_t SectorArray2D<ElementT, SectorSize>::loadedSectorCount() const {
   return m_loadedSectors.size();
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::sectorLoaded(Sector const& id) const {
+[[nodiscard]] bool SectorArray2D<ElementT, SectorSize>::sectorLoaded(Sector const& id) const {
   return m_loadedSectors.contains(id);
 }
 
@@ -473,7 +473,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
 template <typename ElementT, size_t SectorSize>
 WorkerPool& SectorArray2D<ElementT, SectorSize>::getWorkerPool() const {
-  static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
+  [[nodiscard]] static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
   return pool;
 }
 

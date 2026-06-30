@@ -39,8 +39,8 @@ using TrashSlot = StrongTypedef<Empty, struct TrashSlotTag>;
 // InventorySlot
 using InventorySlot = Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot>;
 
-InventorySlot jsonToInventorySlot(Json const& json);
-Json jsonFromInventorySlot(InventorySlot const& slot);
+[[nodiscard]] InventorySlot jsonToInventorySlot(Json const& json);
+[[nodiscard]] Json jsonFromInventorySlot(InventorySlot const& slot);
 
 std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot);
 
@@ -60,8 +60,8 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 using CustomBarIndex = uint8_t;
 using SelectedActionBarLocation = MVariant<CustomBarIndex, EssentialItem>;
 
-SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
-Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
+[[nodiscard]] SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
+[[nodiscard]] Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
 
 static constexpr uint8_t EquipmentSize = 8;
 static constexpr uint8_t EssentialItemCount = 4;

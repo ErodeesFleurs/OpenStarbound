@@ -7,6 +7,6 @@ namespace Star {
 class MovementController;
 
 namespace LuaBindings {
-  LuaCallbacks makeMovementControllerCallbacks(MovementController& movementController);
+  [[nodiscard]] LuaCallbacks makeMovementControllerCallbacks(MovementController& movementController);
 }
 }

@@ -12,38 +12,38 @@ class StatCollection : public NetElementSyncGroup {
 public:
   explicit StatCollection(Json const& config);
 
-  StringList statNames() const;
-  float stat(String const& statName) const;
+  [[nodiscard]] StringList statNames() const;
+  [[nodiscard]] float stat(String const& statName) const;
   // Returns true if the stat is strictly greater than zero
-  bool statPositive(String const& statName) const;
+  [[nodiscard]] bool statPositive(String const& statName) const;
 
-  StringList resourceNames() const;
-  bool isResource(String const& resourceName) const;
-  float resource(String const& resourceName) const;
+  [[nodiscard]] StringList resourceNames() const;
+  [[nodiscard]] bool isResource(String const& resourceName) const;
+  [[nodiscard]] float resource(String const& resourceName) const;
   // Returns true if the resource is strictly greater than zero
-  bool resourcePositive(String const& resourceName) const;
+  [[nodiscard]] bool resourcePositive(String const& resourceName) const;
 
   void setResource(String const& resourceName, float value);
   void modifyResource(String const& resourceName, float amount);
 
-  float giveResource(String const& resourceName, float amount);
+  [[nodiscard]] float giveResource(String const& resourceName, float amount);
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  [[nodiscard]] bool consumeResource(String const& resourceName, float amount);
+  [[nodiscard]] bool overConsumeResource(String const& resourceName, float amount);
 
-  bool resourceLocked(String const& resourceName) const;
+  [[nodiscard]] bool resourceLocked(String const& resourceName) const;
   void setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  Maybe<float> resourceMax(String const& resourceName) const;
-  Maybe<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] Maybe<float> resourceMax(String const& resourceName) const;
+  [[nodiscard]] Maybe<float> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] float setResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
-  StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
+  [[nodiscard]] StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
   void setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers);
   void removeStatModifierGroup(StatModifierGroupId modifierGroupId);
   void clearStatModifiers();

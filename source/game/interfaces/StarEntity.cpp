@@ -132,10 +132,10 @@ EntityDamageTeam Entity::getTeam() const {
 
 bool Entity::inWorld() const {
   if (m_world) {
-    starAssert(m_world && m_entityId != NullEntityId && m_entityMode);
+    assert(m_world && m_entityId != NullEntityId && m_entityMode);
     return true;
   } else {
-    starAssert(!m_world && m_entityId == NullEntityId && !m_entityMode);
+    assert(!m_world && m_entityId == NullEntityId && !m_entityMode);
     return false;
   }
 }

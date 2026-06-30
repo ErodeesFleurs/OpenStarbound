@@ -12,7 +12,7 @@ TEST(ServerTest, Run) {
     root.reload();
     root.fullyLoad();
   });
-  server.start();
+  (void)server.start();
   server.stop();
-  server.join();
+  (void)server.join();
 }

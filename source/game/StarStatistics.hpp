@@ -17,19 +17,19 @@ public:
 
   void writeStatistics();
 
-  Json stat(String const& name, Json def = {}) const;
-  Maybe<String> statType(String const& name) const;
-  bool achievementUnlocked(String const& name) const;
+  [[nodiscard]] Json stat(String const& name, Json def = {}) const;
+  [[nodiscard]] Maybe<String> statType(String const& name) const;
+  [[nodiscard]] bool achievementUnlocked(String const& name) const;
 
   void recordEvent(String const& name, Json const& fields);
-  bool reset();
+  [[nodiscard]] bool reset();
 
   void update();
 
 private:
   struct Stat {
-    static Stat fromJson(Json const& json);
-    Json toJson() const;
+    [[nodiscard]] static Stat fromJson(Json const& json);
+    [[nodiscard]] Json toJson() const;
 
     String type;
     Json value;
@@ -41,15 +41,15 @@ private:
   // services don't implement the API calls these correspond to.
   void setStat(String const& name, String const& type, Json const& value);
   void unlockAchievement(String const& name);
-  bool checkAchievement(String const& achievementName);
+  [[nodiscard]] bool checkAchievement(String const& achievementName);
 
   void readStatistics();
   void mergeServiceStatistics();
 
-  LuaCallbacks makeStatisticsCallbacks();
+  [[nodiscard]] LuaCallbacks makeStatisticsCallbacks();
 
   template <typename Result = LuaValue, typename... V>
-  Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
+  [[nodiscard]] Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
 
   StatisticsServicePtr m_service;
   VersioningDatabaseConstPtr m_versioningDatabase;

@@ -27,7 +27,7 @@ public:
   virtual ~CelestialDatabase();
 
   // The x/y region of usable worlds.
-  RectI xyRange() const;
+  [[nodiscard]] RectI xyRange() const;
 
   // The maximum number of bodies that can orbit a single system center /
   // planetary body.  Orbital numbers are up to this number of levels
@@ -35,42 +35,42 @@ public:
   // "0", in this system, would refer to the center of the planetary system
   // itself, e.g. a star.  In the same way, satellites around a planetary
   // object are numbered 1-N, and 0 refers to the planetary object itself.
-  int planetOrbitalLevels() const;
-  int satelliteOrbitalLevels() const;
+  [[nodiscard]] int planetOrbitalLevels() const;
+  [[nodiscard]] int satelliteOrbitalLevels() const;
 
   // The following methods are allowed to return no information even in the
   // case of valid coordinates, due to delayed loading.
 
-  virtual Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
-  virtual Maybe<String> name(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual Maybe<String> name(CelestialCoordinate const& coordinate) = 0;
 
-  virtual Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
-  virtual List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) = 0;
-  virtual List<int> childOrbits(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) = 0;
+  [[nodiscard]] virtual List<int> childOrbits(CelestialCoordinate const& coordinate) = 0;
 
   // Return all valid system coordinates in the given x/y range.  All systems
   // are guaranteed to have unique x/y coordinates, and are meant to be viewed
   // from the top in 2d.  The z-coordinate is there simpy as a validation
   // parameter.
-  virtual List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) = 0;
-  virtual List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
+  [[nodiscard]] virtual List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) = 0;
+  [[nodiscard]] virtual List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
 
   // Returns false if part or all of the specified region is not loaded.  This
   // is only relevant for calls to scanSystems and scanConstellationLines, and
   // does not imply that each individual system in the given region is fully
   // loaded with all planets moons etc, only that scanSystem and
   // scanConstellationLines are not waiting on missing data.
-  virtual bool scanRegionFullyLoaded(RectI const& region) = 0;
+  [[nodiscard]] virtual bool scanRegionFullyLoaded(RectI const& region) = 0;
 
 protected:
-  Vec2I chunkIndexFor(CelestialCoordinate const& coordinate) const;
-  Vec2I chunkIndexFor(Vec2I const& systemXY) const;
+  [[nodiscard]] Vec2I chunkIndexFor(CelestialCoordinate const& coordinate) const;
+  [[nodiscard]] Vec2I chunkIndexFor(Vec2I const& systemXY) const;
 
   // Returns the chunk indexes for the given region.
-  List<Vec2I> chunkIndexesFor(RectI const& region) const;
+  [[nodiscard]] List<Vec2I> chunkIndexesFor(RectI const& region) const;
 
   // Returns the region of the given chunk.
-  RectI chunkRegion(Vec2I const& chunkIndex) const;
+  [[nodiscard]] RectI chunkRegion(Vec2I const& chunkIndex) const;
 
   // m_baseInformation should only be modified in the constructor, as it is not
   // thread protected.
@@ -81,36 +81,36 @@ class CelestialMasterDatabase : public CelestialDatabase {
 public:
   CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase = {}, Maybe<String> databaseFile = {});
 
-  CelestialBaseInformation baseInformation() const;
-  CelestialResponse respondToRequest(CelestialRequest const& requests);
+  [[nodiscard]] CelestialBaseInformation baseInformation() const;
+  [[nodiscard]] CelestialResponse respondToRequest(CelestialRequest const& requests);
 
   // Unload data that has not been used in the configured TTL time, and
   // periodically commit to the underlying database if it is in use.
   void cleanupAndCommit();
 
   // Does this coordinate point to a valid existing object?
-  bool coordinateValid(CelestialCoordinate const& coordinate);
+  [[nodiscard]] bool coordinateValid(CelestialCoordinate const& coordinate);
 
   // Find a planetary or satellite object randomly throughout the entire
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
-  Maybe<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
+  [[nodiscard]] Maybe<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
                                              function<bool(CelestialCoordinate)> filter = {}, Maybe<uint64_t> seed = {});
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
 
-  Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  Maybe<String> name(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<String> name(CelestialCoordinate const& coordinate) override;
 
-  Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  [[nodiscard]] List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
+  [[nodiscard]] List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  [[nodiscard]] bool scanRegionFullyLoaded(RectI const& region) override;
 
   // overwrite the celestial parameters for the world at the given celestial coordinate
   void updateParameters(CelestialCoordinate const& coordinate, CelestialParameters const& parameters);
@@ -170,9 +170,9 @@ protected:
     List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
   using UnlockDuringFunction = std::function<void(std::function<void()>&&)>&&;
-  CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
+  [[nodiscard]] CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
-  CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
+  [[nodiscard]] CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
   Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
     RandomSource& random, Vec3I const& location) const;
   List<CelestialConstellation> produceConstellations(
@@ -206,23 +206,23 @@ public:
 
   // There is an internal activity time for chunk requests to live to prevent
   // repeatedly requesting the same set of chunks.
-  List<CelestialRequest> pullRequests();
+  [[nodiscard]] List<CelestialRequest> pullRequests();
   void pushResponses(List<CelestialResponse> responses);
 
   // Unload data that has not been used in the configured TTL time.
   void cleanup();
 
-  Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  Maybe<String> name(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<String> name(CelestialCoordinate const& coordinate) override;
 
-  Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
+  [[nodiscard]] List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  [[nodiscard]] List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
+  [[nodiscard]] List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  [[nodiscard]] bool scanRegionFullyLoaded(RectI const& region) override;
 
   void invalidateCacheFor(CelestialCoordinate const& coordinate);
 

@@ -31,44 +31,44 @@ public:
 
   StatusController(Entity& parentEntity, ActorMovementController& movementController, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
   void diskLoad(Json const& store);
 
-  Json statusProperty(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] Json statusProperty(String const& name, Json const& def = Json()) const;
   void setStatusProperty(String const& name, Json value);
 
-  StringList statNames() const;
-  float stat(String const& statName) const;
+  [[nodiscard]] StringList statNames() const;
+  [[nodiscard]] float stat(String const& statName) const;
   // Returns true if the stat is strictly greater than zero
-  bool statPositive(String const& statName) const;
+  [[nodiscard]] bool statPositive(String const& statName) const;
 
-  StringList resourceNames() const;
-  bool isResource(String const& resourceName) const;
-  float resource(String const& resourceName) const;
+  [[nodiscard]] StringList resourceNames() const;
+  [[nodiscard]] bool isResource(String const& resourceName) const;
+  [[nodiscard]] float resource(String const& resourceName) const;
   // Returns true if the resource is strictly greater than zero
-  bool resourcePositive(String const& resourceName) const;
+  [[nodiscard]] bool resourcePositive(String const& resourceName) const;
 
   void setResource(String const& resourceName, float value);
   void modifyResource(String const& resourceName, float amount);
 
-  float giveResource(String const& resourceName, float amount);
+  [[nodiscard]] float giveResource(String const& resourceName, float amount);
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  [[nodiscard]] bool consumeResource(String const& resourceName, float amount);
+  [[nodiscard]] bool overConsumeResource(String const& resourceName, float amount);
 
-  bool resourceLocked(String const& resourceName) const;
+  [[nodiscard]] bool resourceLocked(String const& resourceName) const;
   void setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  Maybe<float> resourceMax(String const& resourceName) const;
-  Maybe<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] Maybe<float> resourceMax(String const& resourceName) const;
+  [[nodiscard]] Maybe<float> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] float setResourcePercentage(String const& resourceName, float resourcePercentage);
+  [[nodiscard]] float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
-  List<PersistentStatusEffect> getPersistentEffects(String const& statEffectCategory) const;
+  [[nodiscard]] List<PersistentStatusEffect> getPersistentEffects(String const& statEffectCategory) const;
   void addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect);
   void addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
   void setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
@@ -78,26 +78,26 @@ public:
   void addEphemeralEffect(EphemeralStatusEffect const& effect, Maybe<EntityId> sourceEntityId = {});
   void addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId = {});
   // Will have no effect if the unique effect is not applied ephemerally
-  bool removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
+  [[nodiscard]] bool removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
   void clearEphemeralEffects();
 
-  bool appliesEnvironmentStatusEffects() const;
+  [[nodiscard]] bool appliesEnvironmentStatusEffects() const;
   void setAppliesEnvironmentStatusEffects(bool appliesEnvironmentStatusEffects);
 
   // All unique stat effects, whether applied ephemerally or persistently, and
   // their remaining durations.
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const;
+  [[nodiscard]] ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const;
 
-  bool uniqueStatusEffectActive(String const& effectName) const;
+  [[nodiscard]] bool uniqueStatusEffectActive(String const& effectName) const;
 
-  const Directives& primaryDirectives() const;
+  [[nodiscard]] const Directives& primaryDirectives() const;
   void setPrimaryDirectives(Directives const& directives);
 
   // damage request and notification methods should only be called on the master controller.
-  List<DamageNotification> applyDamageRequest(DamageRequest const& damageRequest);
+  [[nodiscard]] List<DamageNotification> applyDamageRequest(DamageRequest const& damageRequest);
   void hitOther(EntityId targetEntityId, DamageRequest damageRequest);
   void damagedOther(DamageNotification damageNotification);
-  List<DamageNotification> pullSelfDamageNotifications();
+  [[nodiscard]] List<DamageNotification> pullSelfDamageNotifications();
   void applySelfDamageRequest(DamageRequest dr);
 
   // Pulls recent incoming and outgoing damage notifications.  In order for
@@ -107,9 +107,9 @@ public:
   // another step value to pass into the function on the next call to get
   // damage notifications SINCE the first call.  If since is 0, returns all
   // recent notifications available.
-  pair<List<DamageNotification>, uint64_t> damageTakenSince(uint64_t since = 0) const;
-  pair<List<pair<EntityId, DamageRequest>>, uint64_t> inflictedHitsSince(uint64_t since = 0) const;
-  pair<List<DamageNotification>, uint64_t> inflictedDamageSince(uint64_t since = 0) const;
+  [[nodiscard]] pair<List<DamageNotification>, uint64_t> damageTakenSince(uint64_t since = 0) const;
+  [[nodiscard]] pair<List<pair<EntityId, DamageRequest>>, uint64_t> inflictedHitsSince(uint64_t since = 0) const;
+  [[nodiscard]] pair<List<DamageNotification>, uint64_t> inflictedDamageSince(uint64_t since = 0) const;
 
   void init(Entity& parentEntity, ActorMovementController& movementController);
   void uninit();
@@ -123,24 +123,24 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
   void tickMaster(float dt);
   void tickSlave(float dt);
 
-  const DirectivesGroup& parentDirectives() const;
-  List<Drawable> drawables() const;
-  List<LightSource> lightSources() const;
-  List<OverheadBar> overheadBars();
-  bool toolUsageSuppressed() const;
+  [[nodiscard]] const DirectivesGroup& parentDirectives() const;
+  [[nodiscard]] List<Drawable> drawables() const;
+  [[nodiscard]] List<LightSource> lightSources() const;
+  [[nodiscard]] List<OverheadBar> overheadBars();
+  [[nodiscard]] bool toolUsageSuppressed() const;
 
   // new audios and particles will only be generated on the client
-  List<AudioInstancePtr> pullNewAudios();
-  List<Particle> pullNewParticles();
+  [[nodiscard]] List<AudioInstancePtr> pullNewAudios();
+  [[nodiscard]] List<Particle> pullNewParticles();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
   using StatScript = LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>;
@@ -157,7 +157,7 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
@@ -207,8 +207,8 @@ private:
   void updateAnimators(float dt);
   void updatePersistentUniqueEffects();
 
-  float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
-  bool addUniqueEffect(UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId);
+  [[nodiscard]] float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
+  [[nodiscard]] bool addUniqueEffect(UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId);
   void removeUniqueEffect(UniqueStatusEffect const& name);
 
   void initPrimaryScript();
@@ -217,7 +217,7 @@ private:
   void initUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
   void uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
 
-  LuaCallbacks makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect);
+  [[nodiscard]] LuaCallbacks makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect);
 
   NetElementGroup m_netGroup;
   StatCollection m_statCollection;

@@ -36,7 +36,7 @@ private:
   void sendCmdResponse(uint32_t requestId, String response);
   void closeSocket();
   void processRequest();
-  String handleCommand(String commandLine);
+  [[nodiscard]] String handleCommand(String commandLine);
 
   UniverseServer& m_universe;
   TcpSocketPtr m_socket;

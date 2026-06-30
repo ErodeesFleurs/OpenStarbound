@@ -29,7 +29,7 @@ public:
   using mapped_const_ptr = std::decay_t<mapped_type> const*;
 
   template <typename Collection>
-  static OrderedMapWrapper from(Collection const& c);
+  [[nodiscard]] static OrderedMapWrapper from(Collection const& c);
 
   OrderedMapWrapper() = default;
 
@@ -40,25 +40,25 @@ public:
 
   OrderedMapWrapper(initializer_list<value_type> list);
 
-  List<key_type> keys() const;
-  List<mapped_type> values() const;
-  List<pair<key_type, mapped_type>> pairs() const;
+  [[nodiscard]] List<key_type> keys() const;
+  [[nodiscard]] List<mapped_type> values() const;
+  [[nodiscard]] List<pair<key_type, mapped_type>> pairs() const;
 
   [[nodiscard]] bool contains(key_type const& k) const;
 
   // Throws MapException if key not found
-  mapped_type& get(key_type const& k);
-  mapped_type const& get(key_type const& k) const;
+  [[nodiscard]] mapped_type& get(key_type const& k);
+  [[nodiscard]] mapped_type const& get(key_type const& k) const;
 
   // Return def if key not found
-  mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
+  [[nodiscard]] mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
 
   [[nodiscard]] Maybe<mapped_type> maybe(key_type const& k) const;
 
-  mapped_const_ptr ptr(key_type const& k) const;
-  mapped_ptr ptr(key_type const& k);
+  [[nodiscard]] mapped_const_ptr ptr(key_type const& k) const;
+  [[nodiscard]] mapped_ptr ptr(key_type const& k);
 
-  mapped_type& operator[](key_type const& k);
+  [[nodiscard]] mapped_type& operator[](key_type const& k);
 
   OrderedMapWrapper& operator=(OrderedMapWrapper const& map);
 
@@ -66,82 +66,82 @@ public:
 
   // Finds first value matching the given value and returns its key, throws
   // MapException if no such value is found.
-  key_type keyOf(mapped_type const& v) const;
+  [[nodiscard]] key_type keyOf(mapped_type const& v) const;
 
   // Finds all of the values matching the given value and returns their keys.
-  List<key_type> keysOf(mapped_type const& v) const;
+  [[nodiscard]] List<key_type> keysOf(mapped_type const& v) const;
 
-  pair<iterator, bool> insert(value_type const& v);
-  pair<iterator, bool> insert(key_type k, mapped_type v);
+  [[nodiscard]] pair<iterator, bool> insert(value_type const& v);
+  [[nodiscard]] pair<iterator, bool> insert(key_type k, mapped_type v);
 
-  pair<iterator, bool> insertFront(value_type const& v);
-  pair<iterator, bool> insertFront(key_type k, mapped_type v);
+  [[nodiscard]] pair<iterator, bool> insertFront(value_type const& v);
+  [[nodiscard]] pair<iterator, bool> insertFront(key_type k, mapped_type v);
 
   // Add a key / value pair, throw if the key already exists
-  mapped_type& add(key_type k, mapped_type v);
+  [[nodiscard]] mapped_type& add(key_type k, mapped_type v);
 
   // Set a key to a value, always override if it already exists
-  mapped_type& set(key_type k, mapped_type v);
+  [[nodiscard]] mapped_type& set(key_type k, mapped_type v);
 
   // Appends all values of given map into this map.  If overwite is false, then
   // skips values that already exist in this map.  Returns false if any keys
   // previously existed.
-  bool merge(OrderedMapWrapper const& m, bool overwrite = false);
+  [[nodiscard]] bool merge(OrderedMapWrapper const& m, bool overwrite = false);
 
   // Removes the item with key k and returns true if found, false otherwise.
-  bool remove(key_type const& k);
+  [[nodiscard]] bool remove(key_type const& k);
 
   // Remove and return the value with the key k, throws MapException if not
   // found.
-  mapped_type take(key_type const& k);
+  [[nodiscard]] mapped_type take(key_type const& k);
 
   [[nodiscard]] Maybe<value_type> maybeTake(key_type const& k);
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  iterator begin();
-  iterator end();
+  [[nodiscard]] iterator begin();
+  [[nodiscard]] iterator end();
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  [[nodiscard]] const_reverse_iterator rbegin() const;
+  [[nodiscard]] const_reverse_iterator rend() const;
 
-  reverse_iterator rbegin();
-  reverse_iterator rend();
+  [[nodiscard]] reverse_iterator rbegin();
+  [[nodiscard]] reverse_iterator rend();
 
   [[nodiscard]] size_t size() const;
 
-  iterator erase(iterator i);
-  size_t erase(key_type const& k);
+  [[nodiscard]] iterator erase(iterator i);
+  [[nodiscard]] size_t erase(key_type const& k);
 
-  iterator find(key_type const& k);
-  const_iterator find(key_type const& k) const;
+  [[nodiscard]] iterator find(key_type const& k);
+  [[nodiscard]] const_iterator find(key_type const& k) const;
 
   [[nodiscard]] Maybe<size_t> indexOf(key_type const& k) const;
 
-  key_type const& keyAt(size_t i) const;
-  mapped_type const& valueAt(size_t i) const;
-  mapped_type& valueAt(size_t i);
+  [[nodiscard]] key_type const& keyAt(size_t i) const;
+  [[nodiscard]] mapped_type const& valueAt(size_t i) const;
+  [[nodiscard]] mapped_type& valueAt(size_t i);
 
-  value_type takeFirst();
+  [[nodiscard]] value_type takeFirst();
   void removeFirst();
 
-  value_type const& first() const;
+  [[nodiscard]] value_type const& first() const;
 
-  key_type const& firstKey() const;
-  mapped_type& firstValue();
-  mapped_type const& firstValue() const;
+  [[nodiscard]] key_type const& firstKey() const;
+  [[nodiscard]] mapped_type& firstValue();
+  [[nodiscard]] mapped_type const& firstValue() const;
 
-  iterator insert(iterator pos, value_type v);
+  [[nodiscard]] iterator insert(iterator pos, value_type v);
 
   void clear();
 
   [[nodiscard]] bool empty() const;
 
-  iterator toBack(iterator i);
+  [[nodiscard]] iterator toBack(iterator i);
   void toBack(key_type const& k);
 
-  iterator toFront(iterator i);
+  [[nodiscard]] iterator toFront(iterator i);
   void toFront(key_type const& k);
 
   template <typename Compare>

@@ -15,13 +15,13 @@ public:
   // padded
   static constexpr bool ContiguousStorage = sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3);
 
-  static constexpr Matrix3 identity();
+  [[nodiscard]] static constexpr Matrix3 identity();
 
   // Construct an affine 2d transform
-  static Matrix3 rotation(T angle, Vec2 const& point = Vec2());
-  static constexpr Matrix3 translation(Vec2 const& point);
-  static constexpr Matrix3 scaling(T scale, Vec2 const& point = Vec2());
-  static constexpr Matrix3 scaling(Vec2 const& scale, Vec2 const& point = Vec2());
+  [[nodiscard]] static Matrix3 rotation(T angle, Vec2 const& point = Vec2());
+  [[nodiscard]] static constexpr Matrix3 translation(Vec2 const& point);
+  [[nodiscard]] static constexpr Matrix3 scaling(T scale, Vec2 const& point = Vec2());
+  [[nodiscard]] static constexpr Matrix3 scaling(Vec2 const& scale, Vec2 const& point = Vec2());
 
   constexpr Matrix3();
 
@@ -37,30 +37,30 @@ public:
   Matrix3& operator=(Matrix3<T2> const& m);
 
   // Row-major indexing
-  constexpr Vec3& operator[](size_t const i);
-  constexpr Vec3 const& operator[](size_t const i) const;
+  [[nodiscard]] constexpr Vec3& operator[](size_t const i);
+  [[nodiscard]] constexpr Vec3 const& operator[](size_t const i) const;
 
   // Gives pointer to row major storage
-  constexpr T* ptr()
+  [[nodiscard]] constexpr T* ptr()
     requires ContiguousStorage;
-  constexpr T const* ptr() const
+  [[nodiscard]] constexpr T const* ptr() const
     requires ContiguousStorage;
 
   // Copy to an existing array
   constexpr void copy(T* loc) const;
 
-  constexpr Vec3 row(size_t i) const;
+  [[nodiscard]] constexpr Vec3 row(size_t i) const;
   template <typename T2>
   constexpr void setRow(size_t i, Vector<T2, 3> const& v);
 
-  constexpr Vec3 col(size_t i);
+  [[nodiscard]] constexpr Vec3 col(size_t i);
   template <typename T2>
   constexpr void setCol(size_t i, Vector<T2, 3> const& v);
 
-  constexpr T determinant() const;
-  constexpr Vec3 trace() const;
-  constexpr Matrix3 inverse() const;
-  bool isOrthogonal(T tolerance) const;
+  [[nodiscard]] constexpr T determinant() const;
+  [[nodiscard]] constexpr Vec3 trace() const;
+  [[nodiscard]] constexpr Matrix3 inverse() const;
+  [[nodiscard]] bool isOrthogonal(T tolerance) const;
 
   constexpr void transpose();
   void orthogonalize();
@@ -75,19 +75,19 @@ public:
 
   // Do an affine transformation of the given 2d vector.
   template <typename T2>
-  constexpr Vector<T2, 2> transformVec2(Vector<T2, 2> const& v2) const;
+  [[nodiscard]] constexpr Vector<T2, 2> transformVec2(Vector<T2, 2> const& v2) const;
 
   // The resulting angle of a transformation on any ray with this angle.
-  float transformAngle(float angle) const;
+  [[nodiscard]] float transformAngle(float angle) const;
 
-  bool operator==(Matrix3 const& m2) const;
-  bool operator!=(Matrix3 const& m2) const;
+  [[nodiscard]] bool operator==(Matrix3 const& m2) const;
+  [[nodiscard]] bool operator!=(Matrix3 const& m2) const;
 
   constexpr Matrix3& operator*=(T const& s);
   constexpr Matrix3& operator/=(T const& s);
-  constexpr Matrix3 operator*(T const& s) const;
-  constexpr Matrix3 operator/(T const& s) const;
-  constexpr Matrix3 operator-() const;
+  [[nodiscard]] constexpr Matrix3 operator*(T const& s) const;
+  [[nodiscard]] constexpr Matrix3 operator/(T const& s) const;
+  [[nodiscard]] constexpr Matrix3 operator-() const;
 
   template <typename T2>
   constexpr Matrix3& operator+=(Matrix3<T2> const& m2);
@@ -99,19 +99,19 @@ public:
   constexpr Matrix3& operator*=(Matrix3<T2> const& m2);
 
   template <typename T2>
-  constexpr Matrix3 operator+(Matrix3<T2> const& m2) const;
+  [[nodiscard]] constexpr Matrix3 operator+(Matrix3<T2> const& m2) const;
 
   template <typename T2>
-  constexpr Matrix3 operator-(Matrix3<T2> const& m2) const;
+  [[nodiscard]] constexpr Matrix3 operator-(Matrix3<T2> const& m2) const;
 
   template <typename T2>
-  constexpr Matrix3 operator*(Matrix3<T2> const& m2) const;
+  [[nodiscard]] constexpr Matrix3 operator*(Matrix3<T2> const& m2) const;
 
   template <typename T2>
-  constexpr Vec3 operator*(Vector<T2, 3> const& v) const;
+  [[nodiscard]] constexpr Vec3 operator*(Vector<T2, 3> const& v) const;
 
   template <typename T2>
-  constexpr Vec2 operator*(Vector<T2, 2> const& v) const;
+  [[nodiscard]] constexpr Vec2 operator*(Vector<T2, 2> const& v) const;
 private:
   Rows m_rows;
 };
@@ -120,29 +120,29 @@ using Mat3F = Matrix3<float>;
 using Mat3D = Matrix3<double>;
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::identity() {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::identity() {
   return Matrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 }
 
 template <typename T>
-Matrix3<T> Matrix3<T>::rotation(T angle, Vec2 const& point) {
+[[nodiscard]] Matrix3<T> Matrix3<T>::rotation(T angle, Vec2 const& point) {
   T s = sin(angle);
   T c = cos(angle);
   return Matrix3(c, -s, point[0] - c * point[0] + s * point[1], s, c, point[1] - s * point[0] - c * point[1], 0, 0, 1);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::translation(Vec2 const& point) {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::translation(Vec2 const& point) {
   return Matrix3(1, 0, point[0], 0, 1, point[1], 0, 0, 1);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::scaling(T scale, Vec2 const& point) {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::scaling(T scale, Vec2 const& point) {
   return scaling(Vec2::filled(scale), point);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::scaling(Vec2 const& scale, Vec2 const& point) {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::scaling(Vec2 const& scale, Vec2 const& point) {
   return Matrix3(scale[0], 0, point[0] - point[0] * scale[0], 0, scale[1], point[1] - point[1] * scale[1], 0, 0, 1);
 }
 
@@ -175,24 +175,24 @@ Matrix3<T>& Matrix3<T>::operator=(const Matrix3<T2>& m) {
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::operator[](const size_t i) -> Vec3 & {
+[[nodiscard]] constexpr auto Matrix3<T>::operator[](const size_t i) -> Vec3 & {
   return m_rows[i];
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::operator[](const size_t i) const -> Vec3 const & {
+[[nodiscard]] constexpr auto Matrix3<T>::operator[](const size_t i) const -> Vec3 const & {
   return m_rows[i];
 }
 
 template <typename T>
-constexpr T* Matrix3<T>::ptr()
+[[nodiscard]] constexpr T* Matrix3<T>::ptr()
   requires Matrix3<T>::ContiguousStorage
 {
   return m_rows[0].ptr();
 }
 
 template <typename T>
-constexpr T const* Matrix3<T>::ptr() const
+[[nodiscard]] constexpr T const* Matrix3<T>::ptr() const
   requires Matrix3<T>::ContiguousStorage
 {
   return m_rows[0].ptr();
@@ -206,7 +206,7 @@ constexpr void Matrix3<T>::copy(T* loc) const {
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::row(size_t i) const -> Vec3 {
+[[nodiscard]] constexpr auto Matrix3<T>::row(size_t i) const -> Vec3 {
   return operator[](i);
 }
 
@@ -217,7 +217,7 @@ constexpr void Matrix3<T>::setRow(size_t i, const Vector<T2, 3>& v) {
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::col(size_t i) -> Vec3 {
+[[nodiscard]] constexpr auto Matrix3<T>::col(size_t i) -> Vec3 {
   return Vec3(m_rows[0][i], m_rows[1][i], m_rows[2][i]);
 }
 
@@ -230,7 +230,7 @@ constexpr void Matrix3<T>::setCol(size_t i, const Vector<T2, 3>& v) {
 }
 
 template <typename T>
-constexpr T Matrix3<T>::determinant() const {
+[[nodiscard]] constexpr T Matrix3<T>::determinant() const {
   return m_rows[0][0] * m_rows[1][1] * m_rows[2][2] - m_rows[0][0] * m_rows[2][1] * m_rows[1][2]
       + m_rows[1][0] * m_rows[2][1] * m_rows[0][2] - m_rows[1][0] * m_rows[0][1] * m_rows[2][2]
       + m_rows[2][0] * m_rows[0][1] * m_rows[1][2] - m_rows[2][0] * m_rows[1][1] * m_rows[0][2];
@@ -259,7 +259,7 @@ constexpr void Matrix3<T>::invert() {
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::inverse() const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::inverse() const {
   auto m = *this;
   m.invert();
   return m;
@@ -282,7 +282,7 @@ void Matrix3<T>::orthogonalize() {
 }
 
 template <typename T>
-bool Matrix3<T>::isOrthogonal(T tolerance) const {
+[[nodiscard]] bool Matrix3<T>::isOrthogonal(T tolerance) const {
   T det = determinant();
   return std::fabs(det - 1) < tolerance || std::fabs(det + 1) < tolerance;
 }
@@ -309,12 +309,12 @@ void Matrix3<T>::scale(T scale, Vec2 const& point) {
 
 template <typename T>
 template <typename T2>
-constexpr Vector<T2, 2> Matrix3<T>::transformVec2(Vector<T2, 2> const& point) const {
+[[nodiscard]] constexpr Vector<T2, 2> Matrix3<T>::transformVec2(Vector<T2, 2> const& point) const {
   return (*this) * point;
 }
 
 template <typename T>
-float Matrix3<T>::transformAngle(float angle) const {
+[[nodiscard]] float Matrix3<T>::transformAngle(float angle) const {
   Vec2 a = Vec2::withAngle(angle, 1.0f);
   Matrix3 m = *this;
   m[0][2] = 0;
@@ -323,12 +323,12 @@ float Matrix3<T>::transformAngle(float angle) const {
 }
 
 template <typename T>
-bool Matrix3<T>::operator==(Matrix3 const& m2) const {
+[[nodiscard]] bool Matrix3<T>::operator==(Matrix3 const& m2) const {
   return tie(m_rows[0], m_rows[1], m_rows[2]) == tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
 }
 
 template <typename T>
-bool Matrix3<T>::operator!=(Matrix3 const& m2) const {
+[[nodiscard]] bool Matrix3<T>::operator!=(Matrix3 const& m2) const {
   return tie(m_rows[0], m_rows[1], m_rows[2]) != tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
 }
 
@@ -349,12 +349,12 @@ constexpr Matrix3<T>& Matrix3<T>::operator/=(const T& s) {
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::trace() const -> Vec3 {
+[[nodiscard]] constexpr auto Matrix3<T>::trace() const -> Vec3 {
   return Vec3(m_rows[0][0], m_rows[1][1], m_rows[2][2]);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::operator-() const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator-() const {
   return Matrix3(-m_rows[0], -m_rows[1], -m_rows[2]);
 }
 
@@ -385,19 +385,19 @@ constexpr Matrix3<T>& Matrix3<T>::operator*=(Matrix3<T2> const& m2) {
 
 template <typename T>
 template <typename T2>
-constexpr Matrix3<T> Matrix3<T>::operator+(const Matrix3<T2>& m2) const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator+(const Matrix3<T2>& m2) const {
   return Matrix3<T>(m_rows[0] + m2[0], m_rows[1] + m2[1], m_rows[2] + m2[2]);
 }
 
 template <typename T>
 template <typename T2>
-constexpr Matrix3<T> Matrix3<T>::operator-(const Matrix3<T2>& m2) const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator-(const Matrix3<T2>& m2) const {
   return Matrix3<T>(m_rows[0] - m2[0], m_rows[1] - m2[1], m_rows[2] - m2[2]);
 }
 
 template <typename T>
 template <typename T2>
-constexpr Matrix3<T> Matrix3<T>::operator*(const Matrix3<T2>& m2) const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator*(const Matrix3<T2>& m2) const {
   return Matrix3<T>(m_rows[0][0] * m2[0][0] + m_rows[0][1] * m2[1][0] + m_rows[0][2] * m2[2][0],
       m_rows[0][0] * m2[0][1] + m_rows[0][1] * m2[1][1] + m_rows[0][2] * m2[2][1],
       m_rows[0][0] * m2[0][2] + m_rows[0][1] * m2[1][2] + m_rows[0][2] * m2[2][2],
@@ -411,7 +411,7 @@ constexpr Matrix3<T> Matrix3<T>::operator*(const Matrix3<T2>& m2) const {
 
 template <typename T>
 template <typename T2>
-constexpr auto Matrix3<T>::operator*(const Vector<T2, 3>& u) const -> Vec3 {
+[[nodiscard]] constexpr auto Matrix3<T>::operator*(const Vector<T2, 3>& u) const -> Vec3 {
   return Vec3(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2] * u[2],
       m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2] * u[2],
       m_rows[2][0] * u[0] + m_rows[2][1] * u[1] + m_rows[2][2] * u[2]);
@@ -419,38 +419,38 @@ constexpr auto Matrix3<T>::operator*(const Vector<T2, 3>& u) const -> Vec3 {
 
 template <typename T>
 template <typename T2>
-constexpr auto Matrix3<T>::operator*(const Vector<T2, 2>& u) const -> Vec2 {
+[[nodiscard]] constexpr auto Matrix3<T>::operator*(const Vector<T2, 2>& u) const -> Vec2 {
   return Vec2(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2],
     m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2]);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::operator/(const T& s) const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator/(const T& s) const {
   return Matrix3<T>(m_rows[0] / s, m_rows[1] / s, m_rows[2] / s);
 }
 
 template <typename T>
-constexpr Matrix3<T> Matrix3<T>::operator*(const T& s) const {
+[[nodiscard]] constexpr Matrix3<T> Matrix3<T>::operator*(const T& s) const {
   return Matrix3<T>(m_rows[0] * s, m_rows[1] * s, m_rows[2] * s);
 }
 
 template <typename T>
-constexpr T determinant(const Matrix3<T>& m) {
+[[nodiscard]] constexpr T determinant(const Matrix3<T>& m) {
   return m.determinant();
 }
 
 template <typename T>
-constexpr Matrix3<T> transpose(Matrix3<T> m) {
+[[nodiscard]] constexpr Matrix3<T> transpose(Matrix3<T> m) {
   return m.transpose();
 }
 
 template <typename T>
-Matrix3<T> ortho(Matrix3<T> mat) {
+[[nodiscard]] Matrix3<T> ortho(Matrix3<T> mat) {
   return mat.orthogonalize();
 }
 
 template <typename T>
-constexpr Matrix3<T> operator*(T s, const Matrix3<T>& m) {
+[[nodiscard]] constexpr Matrix3<T> operator*(T s, const Matrix3<T>& m) {
   return m * s;
 }
 

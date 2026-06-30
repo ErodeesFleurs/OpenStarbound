@@ -19,20 +19,20 @@ using ParsingException = TypedException<JsonException, ParsingExceptionTag>;
 using TraversalException = TypedException<JsonException, TraversalExceptionTag>;
 
   // Parses RFC 6901 JSON Pointers, e.g. /foo/bar/4/baz
-  TypeHint parsePointer(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
+  [[nodiscard]] TypeHint parsePointer(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
 
   // Parses JavaScript-like paths, e.g. foo.bar[4].baz
-  TypeHint parseQueryPath(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
+  [[nodiscard]] TypeHint parseQueryPath(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
 
   // Retrieves the portion of the Json document referred to by the given path.
   template <typename Jsonlike>
-  Jsonlike pathGet(Jsonlike base, PathParser parser, String const& path);
+  [[nodiscard]] Jsonlike pathGet(Jsonlike base, PathParser parser, String const& path);
 
   // Find a given portion of the JSON document, if it exists.  Instead of
   // throwing a TraversalException if a portion of the path is invalid, simply
   // returns nothing.
   template <typename Jsonlike>
-  Maybe<Jsonlike> pathFind(Jsonlike base, PathParser parser, String const& path);
+  [[nodiscard]] Maybe<Jsonlike> pathFind(Jsonlike base, PathParser parser, String const& path);
 
   template <typename Jsonlike>
   using JsonOp = function<Jsonlike(Jsonlike const&, Maybe<String> const&)>;
@@ -44,22 +44,22 @@ using TraversalException = TypedException<JsonException, TraversalExceptionTag>;
   // returns None, it is erased.  This is not as well-optimized as pathGet, but
   // also not on the critical path for anything.
   template <typename Jsonlike>
-  Jsonlike pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op);
+  [[nodiscard]] Jsonlike pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op);
 
   // Sets a value on a Json document at the location referred to by path,
   // returning the resulting new document.
   template <typename Jsonlike>
-  Jsonlike pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
+  [[nodiscard]] Jsonlike pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
 
   // Erases the location referred to by the path from the document
   template <typename Jsonlike>
-  Jsonlike pathRemove(Jsonlike const& base, PathParser parser, String const& path);
+  [[nodiscard]] Jsonlike pathRemove(Jsonlike const& base, PathParser parser, String const& path);
 
   // Performs RFC6902 (JSON Patching) add operation. Inserts into arrays, or
   // appends if the last path segment is "-". On objects, does the same as
   // pathSet.
   template <typename Jsonlike>
-  Jsonlike pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
+  [[nodiscard]] Jsonlike pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
 
   template <typename Jsonlike>
   using EmptyPathOp = function<Jsonlike(Jsonlike const&)>;
@@ -69,7 +69,7 @@ using TraversalException = TypedException<JsonException, TraversalExceptionTag>;
   using ArrayOp = function<Jsonlike(Jsonlike const&, Maybe<size_t>)>;
 
   template <typename Jsonlike>
-  JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
+  [[nodiscard]] JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
 
   class Path;
   using PathPtr = SharedPtr<Path>;

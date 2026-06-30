@@ -31,7 +31,7 @@ public:
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
 
   void update(double dt);
 
@@ -43,18 +43,18 @@ public:
   // cleared.  Behavior of |force| is the same as above.
   void setWeather(String const& weatherName, bool force = false);
 
-  StringList weatherList() const;
+  [[nodiscard]] StringList weatherList() const;
 
   // Set or clear forcing without changing the current weather
   void forceWeather(bool force);
 
 
-  float wind() const;
-  float weatherIntensity() const;
+  [[nodiscard]] float wind() const;
+  [[nodiscard]] float weatherIntensity() const;
 
-  StringList statusEffects() const;
+  [[nodiscard]] StringList statusEffects() const;
 
-  List<ProjectilePtr> pullNewProjectiles();
+  [[nodiscard]] List<ProjectilePtr> pullNewProjectiles();
 
 private:
   void setNetStates();
@@ -107,13 +107,13 @@ public:
 
   void update(double dt);
 
-  float wind() const;
-  float weatherIntensity() const;
+  [[nodiscard]] float wind() const;
+  [[nodiscard]] float weatherIntensity() const;
 
-  StringList statusEffects() const;
+  [[nodiscard]] StringList statusEffects() const;
 
-  List<Particle> pullNewParticles();
-  StringList weatherTrackOptions() const;
+  [[nodiscard]] List<Particle> pullNewParticles();
+  [[nodiscard]] StringList weatherTrackOptions() const;
 
 private:
   void getNetStates();

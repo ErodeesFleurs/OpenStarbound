@@ -18,7 +18,7 @@ public:
   void setRange(int low, int high, int delta);
   void setRange(Vec2I const& range, int delta);
   void setVal(int val, bool callbackIfChanged = true);
-  int val() const;
+  [[nodiscard]] int val() const;
 
   void setEnabled(bool enabled);
 
@@ -26,7 +26,7 @@ public:
 
   void update(float dt) override;
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
 private:
   void leftCallback();

@@ -22,8 +22,8 @@ public:
     size_t begin;
     size_t length;
 
-    ImageOperation const& loadOperation(Shared const& parent) const;
-    StringView string(Shared const& parent) const;
+    [[nodiscard]] ImageOperation const& loadOperation(Shared const& parent) const;
+    [[nodiscard]] StringView string(Shared const& parent) const;
     Entry(ImageOperation&& newOperation, size_t begin, size_t end);
     Entry(ImageOperation const& newOperation, size_t begin, size_t end);
     Entry(Entry const& other);
@@ -35,7 +35,7 @@ public:
     size_t hash = 0;
     mutable Mutex mutex;
 
-    bool empty() const;
+    [[nodiscard]] bool empty() const;
     Shared() = default;
     Shared(List<Entry>&& givenEntries, String&& givenString);
   };
@@ -56,21 +56,21 @@ public:
 
   void loadOperations() const;
   void parse(String&& directives);
-  StringView prefix() const;
-  String string() const;
-  String const* stringPtr() const;
-  String buildString() const;
-  String& addToString(String& out) const;
-  size_t hash() const;
-  size_t size() const;
-  bool empty() const;
-  explicit operator bool() const;
+  [[nodiscard]] StringView prefix() const;
+  [[nodiscard]] String string() const;
+  [[nodiscard]] String const* stringPtr() const;
+  [[nodiscard]] String buildString() const;
+  [[nodiscard]] String& addToString(String& out) const;
+  [[nodiscard]] size_t hash() const;
+  [[nodiscard]] size_t size() const;
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] explicit operator bool() const;
 
-  Shared const& operator*() const;
-  Shared const* operator->() const;
+  [[nodiscard]] Shared const& operator*() const;
+  [[nodiscard]] Shared const* operator->() const;
 
-  bool equals(Directives const& other) const;
-  bool equals(String const& string) const;
+  [[nodiscard]] bool equals(Directives const& other) const;
+  [[nodiscard]] bool equals(String const& string) const;
 
   bool operator==(Directives const& other) const;
   bool operator==(String const& string) const;
@@ -93,28 +93,28 @@ public:
   DirectivesGroup(String const& directives);
   DirectivesGroup(String&& directives);
 
-  bool empty() const;
-  explicit operator bool() const;
-  bool compare(DirectivesGroup const& other) const;
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] explicit operator bool() const;
+  [[nodiscard]] bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
   void clear();
 
   DirectivesGroup& operator+=(Directives const& other);
 
-  String toString() const;
+  [[nodiscard]] String toString() const;
   void addToString(String& string) const;
 
   using DirectivesCallback = function<void(Directives::Entry const&, Directives const&)>;
   using AbortableDirectivesCallback = function<bool(Directives::Entry const&, Directives const&)>;
 
   void forEach(DirectivesCallback callback) const;
-  bool forEachAbortable(AbortableDirectivesCallback callback) const;
+  [[nodiscard]] bool forEachAbortable(AbortableDirectivesCallback callback) const;
 
-  Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
+  [[nodiscard]] Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
   
-  size_t hash() const;
-  const List<Directives>& list() const;
+  [[nodiscard]] size_t hash() const;
+  [[nodiscard]] const List<Directives>& list() const;
 
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
   friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
@@ -130,7 +130,7 @@ private:
 
 template <>
 struct hash<DirectivesGroup> {
-  size_t operator()(DirectivesGroup const& s) const;
+  [[nodiscard]] size_t operator()(DirectivesGroup const& s) const;
 };
 
 using ImageDirectives = DirectivesGroup;

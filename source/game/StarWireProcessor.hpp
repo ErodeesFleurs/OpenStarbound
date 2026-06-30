@@ -19,7 +19,7 @@ public:
 
   void process();
 
-  bool readInputConnection(WireConnection const& connection) override;
+  [[nodiscard]] bool readInputConnection(WireConnection const& connection) override;
 
 private:
   struct WireEntityState {

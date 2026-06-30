@@ -16,14 +16,14 @@ EnumMap<NodeParameterType> const NodeParameterTypeNames {
   {NodeParameterType::String, "string"}
 };
 
-NodeParameterValue nodeParameterValueFromJson(Json const& json) {
+[[nodiscard]] NodeParameterValue nodeParameterValueFromJson(Json const& json) {
   if (auto key = json.optString("key"))
     return *key;
   else
     return json.get("value");
 }
 
-Json jsonFromNodeParameter(NodeParameter const& parameter) {
+[[nodiscard]] Json jsonFromNodeParameter(NodeParameter const& parameter) {
   auto const& [parameterType, parameterValue] = parameter;
   JsonObject json {
     {"type", NodeParameterTypeNames.getRight(parameterType)}
@@ -35,7 +35,7 @@ Json jsonFromNodeParameter(NodeParameter const& parameter) {
   return json;
 }
 
-NodeParameter jsonToNodeParameter(Json const& json) {
+[[nodiscard]] NodeParameter jsonToNodeParameter(Json const& json) {
   NodeParameterType type = NodeParameterTypeNames.getLeft(json.getString("type"));
   if (auto key = json.optString("key"))
     return {type, *key};
@@ -43,7 +43,7 @@ NodeParameter jsonToNodeParameter(Json const& json) {
     return {type, json.opt("value").value(Json())};
 }
 
-Json nodeOutputToJson(NodeOutput const& output) {
+[[nodiscard]] Json jsonFromNodeOutput(NodeOutput const& output) {
   auto const& [parameterType, outputTarget] = output;
   auto const& [outputKey, ephemeral] = outputTarget;
   return JsonObject {
@@ -53,7 +53,7 @@ Json nodeOutputToJson(NodeOutput const& output) {
   };
 }
 
-NodeOutput jsonToNodeOutput(Json const& json) {
+[[nodiscard]] NodeOutput jsonToNodeOutput(Json const& json) {
   return {
     NodeParameterTypeNames.getLeft(json.getString("type")),
     {jsonToMaybe<String>(json.get("key"), [](Json const& j) { return j.toString(); }), json.optBool("ephemeral").value(false)}
@@ -82,7 +82,7 @@ void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<Nod
   }
 }
 
-NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
+[[nodiscard]] NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
   Maybe<String> strVal = parameter.maybe<String>();
   if (!strVal && parameter.get<Json>().isType(Json::Type::String))
     strVal = parameter.get<Json>().toString();
@@ -101,7 +101,7 @@ NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, Strin
   return parameter;
 }
 
-Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters) {
+[[nodiscard]] Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters) {
   if (auto out = output) {
     if (out->beginsWith('<') && out->endsWith('>')) {
       if (auto replace = treeParameters.maybe(out->substr(1, out->size() - 2))) {
@@ -200,14 +200,14 @@ BehaviorDatabase::BehaviorDatabase(AssetsConstPtr assets) {
   }
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::behaviorTree(String const& name) const {
+[[nodiscard]] BehaviorTreeConstPtr BehaviorDatabase::behaviorTree(String const& name) const {
   if (!m_behaviors.contains(name))
     throw StarException(strf("No such behavior tree \'{}\'", name));
 
   return m_behaviors.get(name);
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const {
+[[nodiscard]] BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const {
   StringSet scripts = jsonToStringSet(config.get("scripts", JsonArray()));
   auto tree = BehaviorTree(config.getString("name"), scripts, config.getObject("parameters", {}));
 
@@ -221,7 +221,7 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
   return std::make_shared<BehaviorTree>(std::move(tree));
 }
 
-Json BehaviorDatabase::behaviorConfig(String const& name) const {
+[[nodiscard]] Json BehaviorDatabase::behaviorConfig(String const& name) const {
   if (!m_configs.contains(name))
     throw StarException(strf("No such behavior tree \'{}\'", name));
 
@@ -232,7 +232,7 @@ void BehaviorDatabase::loadTree(String const& name) {
   m_behaviors.set(name, buildTree(m_configs.get(name)));
 }
 
-CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
+[[nodiscard]] CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
   List<BehaviorNodeConstPtr> children = config.getArray("children", {}).transformed([this,treeParameters,&tree](Json const& child) {
       return behaviorNode(child, treeParameters, tree);
     });
@@ -253,7 +253,7 @@ CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<Node
   throw StarException(strf("Composite node type '{}' could not be created from JSON", CompositeTypeNames.getRight(type)));
 }
 
-BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
+[[nodiscard]] BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
   BehaviorNodeType type = BehaviorNodeTypeNames.getLeft(json.getString("type"));
 
   auto name = json.getString("name");

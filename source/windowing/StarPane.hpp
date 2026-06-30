@@ -42,15 +42,15 @@ public:
   virtual void dismissed();
 
   void dismiss();
-  bool isDismissed() const;
-  bool isDisplayed() const;
+  [[nodiscard]] bool isDismissed() const;
+  [[nodiscard]] bool isDisplayed() const;
 
-  Vec2I centerOffset() const;
+  [[nodiscard]] Vec2I centerOffset() const;
 
   // members are drawn strictly in the order they are added,
   // so add them in the correct order.
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   virtual void setFocus(Widget const* focus);
   virtual void removeFocus(Widget const* focus);
   virtual void removeFocus();
@@ -58,18 +58,18 @@ public:
   void update(float dt) override;
   virtual void tick(float dt);
 
-  bool dragActive() const;
-  Vec2I dragMouseOrigin() const;
+  [[nodiscard]] bool dragActive() const;
+  [[nodiscard]] Vec2I dragMouseOrigin() const;
   void setDragActive(bool dragActive, Vec2I dragMouseOrigin);
   void drag(Vec2I mousePosition);
 
-  bool inWindow(Vec2I const& position) const;
-  bool inDragArea(Vec2I const& position) const;
-  Vec2I cursorRelativeToPane(Vec2I const& position) const;
+  [[nodiscard]] bool inWindow(Vec2I const& position) const;
+  [[nodiscard]] bool inDragArea(Vec2I const& position) const;
+  [[nodiscard]] Vec2I cursorRelativeToPane(Vec2I const& position) const;
 
   void setBG(BGResult const& res);
   void setBG(String const& header, String const& body = "", String const& footer = "");
-  BGResult getBG() const;
+  [[nodiscard]] BGResult getBG() const;
 
   void lockPosition();
   void unlockPosition();
@@ -77,28 +77,28 @@ public:
   void setTitle(WidgetPtr icon, String const& title, String const& subTitle);
   void setTitleString(String const& title, String const& subTitle);
   void setTitleIcon(WidgetPtr icon);
-  String title() const;
-  String subTitle() const;
-  WidgetPtr titleIcon() const;
+  [[nodiscard]] String title() const;
+  [[nodiscard]] String subTitle() const;
+  [[nodiscard]] WidgetPtr titleIcon() const;
 
-  Pane* window() override;
-  Pane const* window() const override;
+  [[nodiscard]] Pane* window() override;
+  [[nodiscard]] Pane const* window() const override;
 
-  PaneAnchor anchor();
+  [[nodiscard]] PaneAnchor anchor();
   void setAnchor(PaneAnchor anchor);
-  Vec2I anchorOffset() const;
+  [[nodiscard]] Vec2I anchorOffset() const;
   void setAnchorOffset(Vec2I anchorOffset);
-  bool hasDisplayed() const;
+  [[nodiscard]] bool hasDisplayed() const;
 
   // If a tooltip popup should be created at the given mouse position, return a
   // new pane to be used as the tooltip.
-  virtual PanePtr createTooltip(Vec2I const& screenPosition);
-  virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
-  virtual Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input);
+  [[nodiscard]] virtual PanePtr createTooltip(Vec2I const& screenPosition);
+  [[nodiscard]] virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
+  [[nodiscard]] virtual Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input);
 
-  virtual LuaCallbacks makePaneCallbacks();
+  [[nodiscard]] virtual LuaCallbacks makePaneCallbacks();
 protected:
-  virtual GuiReaderPtr reader();
+  [[nodiscard]] virtual GuiReaderPtr reader();
   void renderImpl() override;
 
   String m_bgHeader;

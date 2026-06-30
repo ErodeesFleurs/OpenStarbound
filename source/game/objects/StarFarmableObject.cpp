@@ -78,7 +78,7 @@ bool FarmableObject::harvest() {
   return false;
 }
 
-int FarmableObject::stage() const {
+[[nodiscard]] int FarmableObject::stage() const {
   return m_stage;
 }
 

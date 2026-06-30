@@ -16,9 +16,9 @@ struct IslandSurfaceSelector : TerrainSelector {
 
   IslandSurfaceSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
-  IslandColumn generateColumn(int x) const;
+  [[nodiscard]] IslandColumn generateColumn(int x) const;
 
   mutable HashLruCache<int, IslandColumn> columnCache;
 

@@ -22,18 +22,18 @@ constexpr DWORD StarMaxPath = 1024;
 
 namespace Star {
 
-OVERLAPPED makeOverlapped(StreamOffset offset) {
+[[nodiscard]] OVERLAPPED makeOverlapped(StreamOffset offset) {
   OVERLAPPED overlapped = {};
   overlapped.Offset = offset;
   overlapped.OffsetHigh = offset >> 32;
   return overlapped;
 }
 
-String File::convertDirSeparators(String const& path) {
+[[nodiscard]] String File::convertDirSeparators(String const& path) {
   return path.replace("/", "\\");
 }
 
-String File::currentDirectory() {
+[[nodiscard]] String File::currentDirectory() {
   WCHAR buffer[StarMaxPath];
   size_t len = GetCurrentDirectoryW(StarMaxPath, buffer);
   if (len == 0)
@@ -54,7 +54,7 @@ void File::makeDirectory(String const& dirName) {
   }
 }
 
-bool File::exists(String const& path) {
+[[nodiscard]] bool File::exists(String const& path) {
   WIN32_FIND_DATAW findFileData;
   const HANDLE handle = FindFirstFileW(stringToUtf16(path).get(), &findFileData);
   if (handle == INVALID_HANDLE_VALUE)
@@ -63,7 +63,7 @@ bool File::exists(String const& path) {
   return true;
 }
 
-bool File::isFile(String const& path) {
+[[nodiscard]] bool File::isFile(String const& path) {
   WIN32_FIND_DATAW findFileData;
   const HANDLE handle = FindFirstFileW(stringToUtf16(path).get(), &findFileData);
   if (handle == INVALID_HANDLE_VALUE)
@@ -72,14 +72,14 @@ bool File::isFile(String const& path) {
   return (FILE_ATTRIBUTE_DIRECTORY & findFileData.dwFileAttributes) == 0;
 }
 
-bool File::isDirectory(String const& path) {
+[[nodiscard]] bool File::isDirectory(String const& path) {
   DWORD attribs = GetFileAttributesW(stringToUtf16(path.trimEnd("\\/")).get());
   if (attribs == INVALID_FILE_ATTRIBUTES)
     return false;
   return attribs & FILE_ATTRIBUTE_DIRECTORY;
 }
 
-String File::fullPath(const String& path) {
+[[nodiscard]] String File::fullPath(const String& path) {
   WCHAR buffer[StarMaxPath];
 
   size_t fullpath_size;
@@ -94,7 +94,7 @@ String File::fullPath(const String& path) {
   return utf16ToString(buffer);
 }
 
-List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
+[[nodiscard]] List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   List<std::pair<String, bool>> fileList;
   WIN32_FIND_DATAW findFileData;
   HANDLE hFind;
@@ -120,11 +120,11 @@ List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots
   return fileList;
 }
 
-String File::baseName(const String& fileName) {
+[[nodiscard]] String File::baseName(const String& fileName) {
   return String(fileName).rextract("\\/");
 }
 
-String File::dirName(const String& fileName) {
+[[nodiscard]] String File::dirName(const String& fileName) {
   if (fileName == "\\" || fileName == "/")
     return "\\";
 
@@ -136,7 +136,7 @@ String File::dirName(const String& fileName) {
     return directory;
 }
 
-String File::relativeTo(String const& relativeTo, String const& path) {
+[[nodiscard]] String File::relativeTo(String const& relativeTo, String const& path) {
   if (path.beginsWith('/') || path.beginsWith('\\') || path.regexMatch("^[a-z]:", false, false))
     return path;
 
@@ -156,7 +156,7 @@ String File::relativeTo(String const& relativeTo, String const& path) {
   return finalPath;
 }
 
-String File::temporaryFileName() {
+[[nodiscard]] String File::temporaryFileName() {
   WCHAR tempPath[StarMaxPath];
   if (!GetTempPathW(StarMaxPath, tempPath)) {
     auto error = GetLastError();
@@ -166,18 +166,18 @@ String File::temporaryFileName() {
   return relativeTo(utf16ToString(tempPath), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
-FilePtr File::temporaryFile() {
+[[nodiscard]] FilePtr File::temporaryFile() {
   return open(temporaryFileName(), IOMode::ReadWrite);
 }
 
-FilePtr File::ephemeralFile() {
+[[nodiscard]] FilePtr File::ephemeralFile() {
   auto file = temporaryFile();
   DeleteFileW(stringToUtf16(file->fileName()).get());
   file->m_filename = "";
   return file;
 }
 
-String File::temporaryDirectory() {
+[[nodiscard]] String File::temporaryDirectory() {
   WCHAR tempPath[StarMaxPath];
   if (!GetTempPathW(StarMaxPath, tempPath)) {
     auto error = GetLastError();
@@ -250,7 +250,7 @@ void File::overwriteFileWithRename(char const* data, size_t len, String const& f
   }
 }
 
-void* File::fopen(char const* filename, IOMode mode) {
+[[nodiscard]] void* File::fopen(char const* filename, IOMode mode) {
   DWORD desiredAccess = 0;
   if (mode & IOMode::Read)
     desiredAccess |= GENERIC_READ;
@@ -313,7 +313,7 @@ void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
     SetFilePointerEx(file, loffset, nullptr, FILE_END);
 }
 
-StreamOffset File::ftell(void* f) {
+[[nodiscard]] StreamOffset File::ftell(void* f) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER pos;
   LARGE_INTEGER szero;
@@ -322,7 +322,7 @@ StreamOffset File::ftell(void* f) {
   return pos.QuadPart;
 }
 
-size_t File::fread(void* f, char* data, size_t len) {
+[[nodiscard]] size_t File::fread(void* f, char* data, size_t len) {
   if (len == 0)
     return 0;
 
@@ -339,7 +339,7 @@ size_t File::fread(void* f, char* data, size_t len) {
   return numRead;
 }
 
-size_t File::fwrite(void* f, char const* data, size_t len) {
+[[nodiscard]] size_t File::fwrite(void* f, char const* data, size_t len) {
   if (len == 0)
     return 0;
 
@@ -367,7 +367,7 @@ void File::fclose(void* f) {
   CloseHandle(file);
 }
 
-StreamOffset File::fsize(void* f) {
+[[nodiscard]] StreamOffset File::fsize(void* f) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER size;
   if (GetFileSizeEx(file, &size) == 0)
@@ -375,7 +375,7 @@ StreamOffset File::fsize(void* f) {
   return size.QuadPart;
 }
 
-size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
+[[nodiscard]] size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   HANDLE file = (HANDLE)f;
   DWORD numRead = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
@@ -390,7 +390,7 @@ size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   return numRead;
 }
 
-size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position) {
+[[nodiscard]] size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position) {
   HANDLE file = (HANDLE)f;
   DWORD numWritten = 0;
   OVERLAPPED overlapped = makeOverlapped(position);

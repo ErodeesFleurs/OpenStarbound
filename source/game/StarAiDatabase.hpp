@@ -10,19 +10,19 @@ class AiDatabase {
 public:
   AiDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  AiMission mission(String const& missionName) const;
+  [[nodiscard]] AiMission mission(String const& missionName) const;
 
-  AiSpeech shipStatus(unsigned shipLevel) const;
-  AiSpeech noMissionsSpeech() const;
-  AiSpeech noCrewSpeech() const;
+  [[nodiscard]] AiSpeech shipStatus(unsigned shipLevel) const;
+  [[nodiscard]] AiSpeech noMissionsSpeech() const;
+  [[nodiscard]] AiSpeech noCrewSpeech() const;
 
-  String portraitImage(String const& species, String const& frame = "idle.0") const;
-  Animation animation(String const& species, String const& animationName) const;
-  Animation staticAnimation(String const& species) const;
-  Animation scanlineAnimation() const;
+  [[nodiscard]] String portraitImage(String const& species, String const& frame = "idle.0") const;
+  [[nodiscard]] Animation animation(String const& species, String const& animationName) const;
+  [[nodiscard]] Animation staticAnimation(String const& species) const;
+  [[nodiscard]] Animation scanlineAnimation() const;
 
-  float charactersPerSecond() const;
-  String defaultAnimation() const;
+  [[nodiscard]] float charactersPerSecond() const;
+  [[nodiscard]] String defaultAnimation() const;
 
 private:
   struct AiAnimationConfig {
@@ -43,11 +43,11 @@ private:
     String staticFrames;
   };
 
-  static AiSpeech parseSpeech(Json const& v);
-  static AiSpeciesParameters parseSpeciesParameters(Json const& vm);
+  [[nodiscard]] static AiSpeech parseSpeech(Json const& v);
+  [[nodiscard]] static AiSpeciesParameters parseSpeciesParameters(Json const& vm);
 
-  static AiSpeciesMissionText parseSpeciesMissionText(Json const& vm);
-  static AiMission parseMission(Json const& vm);
+  [[nodiscard]] static AiSpeciesMissionText parseSpeciesMissionText(Json const& vm);
+  [[nodiscard]] static AiMission parseMission(Json const& vm);
 
   StringMap<AiMission> m_missions;
   StringMap<AiSpeciesParameters> m_speciesParameters;

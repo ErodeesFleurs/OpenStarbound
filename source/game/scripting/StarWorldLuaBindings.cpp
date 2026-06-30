@@ -1508,7 +1508,7 @@ Maybe<Json> WorldEntityCallbacks::entityNametag(World& world, EntityId entityId)
       {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
     };
     if (auto status = nametagEntity->statusText())
-      result.set("status", *status);
+      result = result.set("status", *status);
   }
 
   return result;

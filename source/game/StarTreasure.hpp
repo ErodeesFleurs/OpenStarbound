@@ -31,28 +31,28 @@ class TreasureDatabase {
 public:
   TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
-  StringList treasurePools() const;
-  bool isTreasurePool(String const& treasurePool) const;
+  [[nodiscard]] StringList treasurePools() const;
+  [[nodiscard]] bool isTreasurePool(String const& treasurePool) const;
 
-  StringList treasureChestSets() const;
-  bool isTreasureChestSet(String const& treasurePool) const;
+  [[nodiscard]] StringList treasureChestSets() const;
+  [[nodiscard]] bool isTreasureChestSet(String const& treasurePool) const;
 
-  List<ItemPtr> createTreasure(String const& treasurePool, float level) const;
-  List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed) const;
+  [[nodiscard]] List<ItemPtr> createTreasure(String const& treasurePool, float level) const;
+  [[nodiscard]] List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed) const;
 
   // Adds created treasure to the given ItemBags, does not clear the ItemBag
   // first.  Returns overflow items.
-  List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level) const;
-  List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level, uint64_t seed) const;
+  [[nodiscard]] List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level) const;
+  [[nodiscard]] List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level, uint64_t seed) const;
 
   // If the given container does not fit at this position, or if the treasure
   // box set does not have an entry with a minimum level less than the given
   // world threat level, this method will return null.
-  ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
-  ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const;
+  [[nodiscard]] ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
+  [[nodiscard]] ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const;
 
 private:
-  List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const;
+  [[nodiscard]] List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const;
 
   // Specifies either an item descriptor or the name of a valid treasurepool to
   // be

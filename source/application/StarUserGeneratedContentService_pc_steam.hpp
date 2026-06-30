@@ -8,8 +8,8 @@ class SteamUserGeneratedContentService final : public UserGeneratedContentServic
 public:
   SteamUserGeneratedContentService(PcPlatformServicesStatePtr state);
 
-  StringList subscribedContentIds() const override;
-  Maybe<String> contentDownloadDirectory(String const& contentId) const override;
+  [[nodiscard]] StringList subscribedContentIds() const override;
+  [[nodiscard]] Maybe<String> contentDownloadDirectory(String const& contentId) const override;
   UserGeneratedContentService::UGCState triggerContentDownload() override;
 
 private:

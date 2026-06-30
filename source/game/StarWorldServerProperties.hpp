@@ -14,10 +14,10 @@ public:
   WorldServerProperties() = default;
   explicit WorldServerProperties(function<void(JsonObject const&)> broadcastCallback);
 
-  Json getProperty(String const& propertyName, Json const& def = Json()) const;
+  [[nodiscard]] Json getProperty(String const& propertyName, Json const& def = Json()) const;
   void setProperty(String const& propertyName, Json const& property);
   void setPropertyListener(String const& propertyName, function<void(Json const&)> listener);
-  JsonObject& properties();
+  [[nodiscard]] JsonObject& properties();
 
 private:
   function<void(JsonObject const&)> m_broadcastCallback;

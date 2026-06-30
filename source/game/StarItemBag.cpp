@@ -13,29 +13,29 @@ ItemBag::ItemBag(size_t size, ItemDatabaseConstPtr itemDatabase)
   m_items.resize(size);
 }
 
-ItemBag ItemBag::fromJson(Json const& store, ItemDatabaseConstPtr itemDatabase) {
+[[nodiscard]] ItemBag ItemBag::fromJson(Json const& store, ItemDatabaseConstPtr itemDatabase) {
   ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
 
   return res;
 }
 
-ItemBag ItemBag::loadStore(Json const& store, ItemDatabaseConstPtr itemDatabase) {
+[[nodiscard]] ItemBag ItemBag::loadStore(Json const& store, ItemDatabaseConstPtr itemDatabase) {
   ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
 
   return res;
 }
 
-Json ItemBag::toJson() const {
+[[nodiscard]] Json ItemBag::toJson() const {
   return m_items.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->toJson(item); });
 }
 
-Json ItemBag::diskStore() const {
+[[nodiscard]] Json ItemBag::diskStore() const {
   return m_items.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->diskStore(item); });
 }
 
-size_t ItemBag::size() const {
+[[nodiscard]] size_t ItemBag::size() const {
   return m_items.size();
 }
 
@@ -201,13 +201,13 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
 
   for (auto [slot, count] : consumeLocations) {
     [[maybe_unused]] bool res = consumeItems(slot, count);
-    starAssert(res);
+    assert(res);
   }
 
   return true;
 }
 
-uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const {
   uint64_t count = 0;
   for (auto const& items : m_items) {
     if (items && items->matches(descriptor, exactMatch))
@@ -217,12 +217,12 @@ uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) c
   return count / descriptor.count();
 }
 
-uint64_t ItemBag::itemsCanFit(ItemConstPtr const& items) const {
+[[nodiscard]] uint64_t ItemBag::itemsCanFit(ItemConstPtr const& items) const {
   auto itemsFit = itemsFitWhere(items);
   return items->count() - itemsFit.leftover;
 }
 
-uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
+[[nodiscard]] uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
   auto itemsFit = itemsFitWhere(items);
   uint64_t stackable = 0;
   for (auto slot : itemsFit.slots)
@@ -231,7 +231,7 @@ uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
   return stackable;
 }
 
-auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> ItemsFitWhereResult {
+[[nodiscard]] auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> ItemsFitWhereResult {
   if (!items || items->empty())
     return ItemsFitWhereResult();
 
@@ -344,7 +344,7 @@ void ItemBag::write(DataStream& ds) const {
     ds.write(itemSafeDescriptor(at(i)));
 }
 
-uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from) {
+[[nodiscard]] uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from) {
   if (!from)
     return 0;
   else if (!to)
@@ -355,7 +355,7 @@ uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from
     return std::min(to->maxStack() - to->count(), from->count());
 }
 
-size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
+[[nodiscard]] size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
   for (auto const& [storedItem, slot] : enumerateIterator(m_items)) {
     if (!test(slot))
@@ -375,7 +375,7 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std
   return NPos;
 }
 
-size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
+[[nodiscard]] size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
   return bestSlotAvailable(item, stacksOnly, [](size_t) { return true; });
 }
 

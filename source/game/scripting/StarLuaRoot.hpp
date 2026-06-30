@@ -20,7 +20,7 @@ struct LuaRootServices {
   String storageDirectory;
 };
 
-LuaRootServices requireLuaRootServices(LuaRootServices services, char const* context);
+[[nodiscard]] LuaRootServices requireLuaRootServices(LuaRootServices services, char const* context);
 
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
@@ -31,7 +31,7 @@ public:
   ~LuaRoot();
 
   void loadScript(String const& assetPath);
-  bool scriptLoaded(String const& assetPath) const;
+  [[nodiscard]] bool scriptLoaded(String const& assetPath) const;
   void unloadScript(String const& assetPath);
 
   void restart();
@@ -44,33 +44,33 @@ public:
   // The LuaContext that is returned will have its 'require' function
   // overloaded to take absolute asset paths and load that asset path as a lua
   // module, with protection from duplicate loading.
-  LuaContext createContext(String const& script);
-  LuaContext createContext(StringList const& scriptPaths = {});
+  [[nodiscard]] LuaContext createContext(String const& script);
+  [[nodiscard]] LuaContext createContext(StringList const& scriptPaths = {});
 
   void collectGarbage(Maybe<unsigned> steps = {});
   void setAutoGarbageCollection(bool autoGarbageColleciton);
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
-  size_t luaMemoryUsage() const;
+  [[nodiscard]] size_t luaMemoryUsage() const;
 
-  size_t scriptCacheMemoryUsage() const;
+  [[nodiscard]] size_t scriptCacheMemoryUsage() const;
   void clearScriptCache() const;
 
   void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
   void registerReloadListener(ListenerWeakPtr reloadListener);
-  LuaRootServices const& services() const;
+  [[nodiscard]] LuaRootServices const& services() const;
 
-  LuaEngine& luaEngine() const;
+  [[nodiscard]] LuaEngine& luaEngine() const;
 private:
   class ScriptCache {
   public:
     explicit ScriptCache(AssetsConstPtr assets);
 
     void loadScript(LuaEngine& engine, String const& assetPath);
-    bool scriptLoaded(String const& assetPath) const;
+    [[nodiscard]] bool scriptLoaded(String const& assetPath) const;
     void unloadScript(String const& assetPath);
     void clear();
     void loadContextScript(LuaContext& context, String const& assetPath);
-    size_t memoryUsage() const;
+    [[nodiscard]] size_t memoryUsage() const;
 
   private:
     AssetsConstPtr m_assets;

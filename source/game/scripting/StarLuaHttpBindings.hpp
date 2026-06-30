@@ -9,7 +9,7 @@ namespace Star::LuaBindings {
 // so scripts can wait on asynchronous-style results even though the requests
 // are currently resolved synchronously. The callbacks are only usable when
 // safe.luaHttp.eabled is truq
-LuaCallbacks makeHttpCallbacks(bool enabled, ConfigurationPtr configuration);
+[[nodiscard]] LuaCallbacks makeHttpCallbacks(bool enabled, ConfigurationPtr configuration);
 
 using HttpTrustRequestCallback = std::function<void(String const& domain)>;
 

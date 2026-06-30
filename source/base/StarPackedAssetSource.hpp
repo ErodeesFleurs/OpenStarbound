@@ -25,11 +25,11 @@ public:
 
   PackedAssetSource(String const& packedFileName);
 
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] JsonObject metadata() const override;
+  [[nodiscard]] StringList assetPaths() const override;
 
-  IODevicePtr open(String const& path) override;
-  ByteArray read(String const& path) override;
+  [[nodiscard]] IODevicePtr open(String const& path) override;
+  [[nodiscard]] ByteArray read(String const& path) override;
 
 private:
   FilePtr m_packedFile;

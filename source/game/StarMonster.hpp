@@ -54,51 +54,51 @@ public:
   Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& variant, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Maybe<float> level = {});
   Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] EntityType entityType() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  Vec2F velocity() const;
+  [[nodiscard]] Vec2F velocity() const;
 
-  Vec2F mouthOffset() const;
-  Vec2F feetOffset() const;
+  [[nodiscard]] Vec2F mouthOffset() const;
+  [[nodiscard]] Vec2F feetOffset() const;
 
-  RectF collisionArea() const override;
+  [[nodiscard]] RectF collisionArea() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] String name() const override;
+  [[nodiscard]] String description() const override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] List<LightSource> lightSources() const override;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const override;
 
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
   void damagedOther(DamageNotification const& damage) override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] List<DamageNotification> selfDamageNotifications() override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
 
-  bool shouldDie();
+  [[nodiscard]] bool shouldDie();
   void knockout();
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
   void update(float dt, uint64_t currentStep) override;
@@ -109,52 +109,52 @@ public:
 
   void setPosition(Vec2F const& pos);
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  float maxHealth() const override;
-  float health() const override;
-  DamageBarType damageBar() const override;
+  [[nodiscard]] float maxHealth() const override;
+  [[nodiscard]] float health() const override;
+  [[nodiscard]] DamageBarType damageBar() const override;
 
-  float monsterLevel() const;
-  SkillInfo activeSkillInfo() const;
+  [[nodiscard]] float monsterLevel() const;
+  [[nodiscard]] SkillInfo activeSkillInfo() const;
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  String typeName() const;
-  MonsterVariant monsterVariant() const;
+  [[nodiscard]] List<Drawable> portrait(PortraitMode mode) const override;
+  [[nodiscard]] String typeName() const;
+  [[nodiscard]] MonsterVariant monsterVariant() const;
 
-  Maybe<String> statusText() const override;
-  bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  [[nodiscard]] Maybe<String> statusText() const override;
+  [[nodiscard]] bool displayNametag() const override;
+  [[nodiscard]] Vec3B nametagColor() const override;
+  [[nodiscard]] Vec2F nametagOrigin() const override;
+  [[nodiscard]] String nametag() const override;
 
-  bool aggressive() const override;
+  [[nodiscard]] bool aggressive() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  List<ChatAction> pullPendingChatActions() override;
+  [[nodiscard]] Vec2F mouthPosition() const override;
+  [[nodiscard]] Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] List<ChatAction> pullPendingChatActions() override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
 
-  InteractAction interact(InteractRequest const& request) override;
-  bool isInteractive() const override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] bool isInteractive() const override;
 
-  Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] Vec2F questIndicatorPosition() const override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  [[nodiscard]] ActorMovementController* movementController() override;
+  [[nodiscard]] StatusController* statusController() override;
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;
 
 private:
-  Vec2F getAbsolutePosition(Vec2F relativePosition) const;
+  [[nodiscard]] Vec2F getAbsolutePosition(Vec2F relativePosition) const;
 
   void updateStatus(float dt);
-  LuaCallbacks makeMonsterCallbacks();
+  [[nodiscard]] LuaCallbacks makeMonsterCallbacks();
 
   void addChatMessage(String const& message, String const& portrait = "");
 

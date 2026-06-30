@@ -18,13 +18,13 @@ public:
   void setJoinRemote(HostAddressWithPort location) override;
   void setActivityData(const char* title, const char* details, int64_t startTime, Maybe<pair<uint16_t, uint16_t>>) override;
 
-  MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
-  Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
+  [[nodiscard]] MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
+  [[nodiscard]] Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
-  List<UniquePtr<P2PSocket>> acceptP2PConnections() override;
+  [[nodiscard]] List<UniquePtr<P2PSocket>> acceptP2PConnections() override;
   void update() override;
-  Either<String, UniquePtr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) override;
+  [[nodiscard]] Either<String, UniquePtr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) override;
 
   void addPendingJoin(String connectionString);
 
@@ -43,9 +43,9 @@ private:
     SteamP2PSocket() = default;
     ~SteamP2PSocket();
 
-    bool isOpen() override;
-    bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    [[nodiscard]] bool isOpen() override;
+    [[nodiscard]] bool sendMessage(ByteArray const& message) override;
+    [[nodiscard]] Maybe<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     PcP2PNetworkingService* parent = nullptr;
@@ -54,7 +54,7 @@ private:
     bool connected = false;
   };
 
-  UniquePtr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
+  [[nodiscard]] UniquePtr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
   STEAM_CALLBACK(PcP2PNetworkingService, steamOnConnectionFailure, P2PSessionConnectFail_t, m_callbackConnectionFailure);
   STEAM_CALLBACK(PcP2PNetworkingService, steamOnJoinRequested, GameRichPresenceJoinRequested_t, m_callbackJoinRequested);
@@ -77,9 +77,9 @@ private:
     DiscordP2PSocket() = default;
     ~DiscordP2PSocket();
 
-    bool isOpen() override;
-    bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    [[nodiscard]] bool isOpen() override;
+    [[nodiscard]] bool sendMessage(ByteArray const& message) override;
+    [[nodiscard]] Maybe<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     PcP2PNetworkingService* parent = nullptr;
@@ -89,7 +89,7 @@ private:
     Deque<ByteArray> incoming;
   };
 
-  UniquePtr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
+  [[nodiscard]] UniquePtr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
 
   void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, uint8_t* data, uint32_t size);

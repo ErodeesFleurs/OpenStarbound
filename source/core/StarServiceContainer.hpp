@@ -18,7 +18,7 @@ public:
   // Takes ownership via shared_ptr.
   template <typename Interface>
   void registerService(shared_ptr<Interface> service) {
-    MutexLocker locker(m_mutex);
+    [[nodiscard]] MutexLocker locker(m_mutex);
     m_services[typeid(Interface)] = service;
   }
 
@@ -27,7 +27,7 @@ public:
   shared_ptr<Interface> get(Factory&& factory) {
     std::type_index idx = typeid(Interface);
     {
-      MutexLocker locker(m_mutex);
+      [[nodiscard]] MutexLocker locker(m_mutex);
       auto it = m_services.find(idx);
       if (it != m_services.end()) {
         auto ptr = std::static_pointer_cast<Interface>(it->second);
@@ -36,7 +36,7 @@ public:
       }
     }
     auto service = std::static_pointer_cast<void>(std::shared_ptr<Interface>(factory()));
-    MutexLocker locker(m_mutex);
+    [[nodiscard]] MutexLocker locker(m_mutex);
     auto& entry = m_services[idx];
     if (!entry)
       entry = service;
@@ -47,7 +47,7 @@ public:
   template <typename Interface>
   shared_ptr<Interface> get() {
     std::type_index idx = typeid(Interface);
-    MutexLocker locker(m_mutex);
+    [[nodiscard]] MutexLocker locker(m_mutex);
     auto it = m_services.find(idx);
     if (it != m_services.end())
       return std::static_pointer_cast<Interface>(it->second);
@@ -57,7 +57,7 @@ public:
   // Release all services, calling destructors in reverse registration order
   // (approximation of dependency ordering).
   void reset() {
-    MutexLocker locker(m_mutex);
+    [[nodiscard]] MutexLocker locker(m_mutex);
     m_services.clear();
   }
 

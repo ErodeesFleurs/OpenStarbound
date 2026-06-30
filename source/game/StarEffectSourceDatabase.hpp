@@ -22,15 +22,15 @@ using EffectSourceDatabaseConstPtr = SharedPtr<EffectSourceDatabase const>;
 class EffectSource {
 public:
   EffectSource(AssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition);
-  String const& kind() const;
+  [[nodiscard]] String const& kind() const;
   void tick(float dt);
-  bool expired() const;
+  [[nodiscard]] bool expired() const;
   void stop();
-  List<String> particles();
-  List<AudioInstancePtr> sounds(Vec2F offset);
+  [[nodiscard]] List<String> particles();
+  [[nodiscard]] List<AudioInstancePtr> sounds(Vec2F offset);
   void postRender();
-  String effectSpawnLocation() const;
-  String suggestedSpawnLocation() const;
+  [[nodiscard]] String effectSpawnLocation() const;
+  [[nodiscard]] String suggestedSpawnLocation() const;
 
 private:
   AssetsConstPtr m_assets;
@@ -55,8 +55,8 @@ private:
 class EffectSourceConfig {
 public:
   EffectSourceConfig(AssetsConstPtr assets, Json const& config);
-  String const& kind();
-  EffectSourcePtr instance(String const& suggestedSpawnLocation);
+  [[nodiscard]] String const& kind();
+  [[nodiscard]] EffectSourcePtr instance(String const& suggestedSpawnLocation);
 
 private:
   AssetsConstPtr m_assets;
@@ -68,13 +68,13 @@ class EffectSourceDatabase {
 public:
   EffectSourceDatabase(AssetsConstPtr assets);
 
-  EffectSourceConfigPtr effectSourceConfig(String const& kind) const;
+  [[nodiscard]] EffectSourceConfigPtr effectSourceConfig(String const& kind) const;
 
 private:
   StringMap<EffectSourceConfigPtr> m_sourceConfigs;
 };
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase);
-List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position = Vec2F());
+[[nodiscard]] List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase);
+[[nodiscard]] List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position = Vec2F());
 
 }

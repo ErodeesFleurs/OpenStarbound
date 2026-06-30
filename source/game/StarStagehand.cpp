@@ -68,11 +68,11 @@ void Stagehand::setPosition(Vec2F const& position) {
   m_yPosition.set(position[1]);
 }
 
-Vec2F Stagehand::position() const {
+[[nodiscard]] Vec2F Stagehand::position() const {
   return {m_xPosition.get(), m_yPosition.get()};
 }
 
-RectF Stagehand::metaBoundBox() const {
+[[nodiscard]] RectF Stagehand::metaBoundBox() const {
   return m_boundBox;
 }
 
@@ -84,7 +84,7 @@ void Stagehand::readNetState(ByteArray data, float interpolationTime, NetCompati
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-String Stagehand::name() const {
+[[nodiscard]] String Stagehand::name() const {
   return typeName();
 }
 
@@ -103,7 +103,7 @@ void Stagehand::update(float dt, uint64_t) {
   }
 }
 
-bool Stagehand::shouldDestroy() const {
+[[nodiscard]] bool Stagehand::shouldDestroy() const {
   return m_dead;
 }
 
@@ -115,7 +115,7 @@ Maybe<LuaValue> Stagehand::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-Json Stagehand::configValue(String const& name, Json const& def) const {
+[[nodiscard]] Json Stagehand::configValue(String const& name, Json const& def) const {
   return m_config.query(name, def);
 }
 
@@ -197,7 +197,7 @@ ClientEntityMode Stagehand::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-String Stagehand::typeName() const {
+[[nodiscard]] String Stagehand::typeName() const {
   return m_config.getString("type");
 }
 

@@ -19,7 +19,7 @@ ServerRconClient::ServerRconClient(UniverseServer& universe, TcpSocketPtr socket
 
 ServerRconClient::~ServerRconClient() {
   stop();
-  join();
+  (void)join();
 }
 
 String ServerRconClient::handleCommand(String commandLine) {
@@ -73,7 +73,7 @@ void ServerRconClient::sendCmdResponse(uint32_t requestId, String response) {
 
 void ServerRconClient::start() {
   m_stop = false;
-  Thread::start();
+  (void)Thread::start();
 }
 
 void ServerRconClient::stop() {

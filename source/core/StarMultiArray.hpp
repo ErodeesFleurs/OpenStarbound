@@ -35,8 +35,8 @@ public:
   explicit MultiArray(SizeArray const& shape);
   explicit MultiArray(SizeArray const& shape, Element const& c);
 
-  SizeArray const& size() const;
-  size_t size(size_t dimension) const;
+  [[nodiscard]] SizeArray const& size() const;
+  [[nodiscard]] size_t size(size_t dimension) const;
 
   void clear();
 
@@ -56,28 +56,28 @@ public:
   template <typename... T>
   void setSize(size_t i, T... rest);
 
-  Element& operator()(IndexArray const& index);
-  Element const& operator()(IndexArray const& index) const;
+  [[nodiscard]] Element& operator()(IndexArray const& index);
+  [[nodiscard]] Element const& operator()(IndexArray const& index) const;
 
   template <typename... T>
-  Element& operator()(size_t i1, T... rest);
+  [[nodiscard]] Element& operator()(size_t i1, T... rest);
   template <typename... T>
-  Element const& operator()(size_t i1, T... rest) const;
+  [[nodiscard]] Element const& operator()(size_t i1, T... rest) const;
 
   // Throws exception if out of bounds
-  Element& at(IndexArray const& index);
-  Element const& at(IndexArray const& index) const;
+  [[nodiscard]] Element& at(IndexArray const& index);
+  [[nodiscard]] Element const& at(IndexArray const& index) const;
 
   template <typename... T>
-  Element& at(size_t i1, T... rest);
+  [[nodiscard]] Element& at(size_t i1, T... rest);
   template <typename... T>
-  Element const& at(size_t i1, T... rest) const;
+  [[nodiscard]] Element const& at(size_t i1, T... rest) const;
 
   // Throws an exception of out of bounds
   void set(IndexArray const& index, Element element);
 
   // Returns default element if out of bounds.
-  Element get(IndexArray const& index, Element def = Element());
+  [[nodiscard]] Element get(IndexArray const& index, Element def = Element());
 
   // Auto-resizes array if out of bounds
   void setResize(IndexArray const& index, Element element);
@@ -105,16 +105,16 @@ public:
 
   // Api for more direct access to elements.
 
-  size_t count() const;
+  [[nodiscard]] size_t count() const;
 
-  Element const& atIndex(size_t index) const;
-  Element& atIndex(size_t index);
+  [[nodiscard]] Element const& atIndex(size_t index) const;
+  [[nodiscard]] Element& atIndex(size_t index);
 
-  Element const* data() const;
-  Element* data();
+  [[nodiscard]] Element const* data() const;
+  [[nodiscard]] Element* data();
 
 private:
-  size_t storageIndex(IndexArray const& index) const;
+  [[nodiscard]] size_t storageIndex(IndexArray const& index) const;
 
   template <typename OStream>
   void subPrint(OStream& os, IndexArray index, size_t dim) const;
@@ -203,7 +203,7 @@ void MultiArray<Element, Rank>::resize(SizeArray const& shape) {
   if (equal)
     return;
 
-  MultiArray newArray(shape);
+  [[nodiscard]] MultiArray newArray(shape);
   newArray.copy(*this);
   std::swap(*this, newArray);
 }
@@ -222,7 +222,7 @@ void MultiArray<Element, Rank>::resize(SizeArray const& shape, Element const& c)
   if (equal)
     return;
 
-  MultiArray newArray(shape, c);
+  [[nodiscard]] MultiArray newArray(shape, c);
   newArray.copy(*this);
   *this = std::move(newArray);
 }
@@ -425,10 +425,10 @@ Element* MultiArray<Element, Rank>::data() {
 template <typename Element, size_t Rank>
 size_t MultiArray<Element, Rank>::storageIndex(IndexArray const& index) const {
   size_t loc = index[0];
-  starAssert(index[0] < m_shape[0]);
+  assert(index[0] < m_shape[0]);
   for (size_t i = 1; i < Rank; ++i) {
     loc = loc * m_shape[i] + index[i];
-    starAssert(index[i] < m_shape[i]);
+    assert(index[i] < m_shape[i]);
   }
   return loc;
 }

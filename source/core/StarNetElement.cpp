@@ -3,7 +3,7 @@
 
 namespace Star {
 
-uint64_t NetElementVersion::current() const {
+[[nodiscard]] uint64_t NetElementVersion::current() const {
   return m_version;
 }
 

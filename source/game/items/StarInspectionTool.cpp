@@ -54,11 +54,11 @@ void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlT
   m_lastFireMode = fireMode;
 }
 
-List<Drawable> InspectionTool::drawables() const {
+[[nodiscard]] List<Drawable> InspectionTool::drawables() const {
   return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition, Color::White, m_imageMetadataDatabase)};
 }
 
-List<LightSource> InspectionTool::lightSources() const {
+[[nodiscard]] List<LightSource> InspectionTool::lightSources() const {
   if (!initialized())
     return {};
 
@@ -73,7 +73,7 @@ List<LightSource> InspectionTool::lightSources() const {
   return {std::move(lightSource)};
 }
 
-float InspectionTool::inspectionHighlightLevel(InspectableEntityPtr const& inspectable) const {
+[[nodiscard]] float InspectionTool::inspectionHighlightLevel(InspectableEntityPtr const& inspectable) const {
   if (m_showHighlights)
     return inspectionLevel(inspectable);
   return 0;
@@ -83,7 +83,7 @@ List<InspectionTool::InspectionResult> InspectionTool::pullInspectionResults() {
   return Star::take(m_inspectionResults);
 }
 
-float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) const {
+[[nodiscard]] float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) const {
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
@@ -109,7 +109,7 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
     return pointInspectionLevel(inspectable->position());
 }
 
-float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
+[[nodiscard]] float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
   Vec2F gdiff = world()->geometry().diff(position, m_currentPosition);
   float gdist = gdiff.magnitude();
   float angleFactor = (abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
@@ -118,7 +118,7 @@ float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
   return 1 - clamp(max(distFactor, min(ambientFactor, angleFactor)), 0.0f, 1.0f);
 }
 
-bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
+[[nodiscard]] bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
   if (!m_requireLineOfSight)
     return true;
   auto collisions = world()->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
@@ -129,7 +129,7 @@ bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& tar
   return true;
 }
 
-InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
+[[nodiscard]] InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
   auto species = owner()->species();
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
@@ -202,7 +202,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
   return {inspectionFailureText("nothingThereText", species), {}};
 }
 
-String InspectionTool::inspectionFailureText(String const& failureType, String const& species) const {
+[[nodiscard]] String InspectionTool::inspectionFailureText(String const& failureType, String const& species) const {
   JsonArray textOptions;
   Json nothingThere = instanceValue(failureType);
   if (nothingThere.contains(species))

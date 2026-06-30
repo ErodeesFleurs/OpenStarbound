@@ -19,44 +19,44 @@ public:
   Buffer(Buffer const& buffer);
   Buffer(Buffer&& buffer);
 
-  StreamOffset pos() override;
+  [[nodiscard]] StreamOffset pos() override;
   void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
   void resize(StreamOffset size) override;
-  bool atEnd() override;
+  [[nodiscard]] bool atEnd() override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  [[nodiscard]] size_t read(char* data, size_t len) override;
+  [[nodiscard]] size_t write(char const* data, size_t len) override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  [[nodiscard]] size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
+  [[nodiscard]] size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
 
   void open(IOMode mode) override;
 
-  String deviceName() const override;
+  [[nodiscard]] String deviceName() const override;
 
-  StreamOffset size() override;
+  [[nodiscard]] StreamOffset size() override;
   
-  IODevicePtr clone() override;
+  [[nodiscard]] IODevicePtr clone() override;
 
-  ByteArray& data();
-  ByteArray const& data() const;
+  [[nodiscard]] ByteArray& data();
+  [[nodiscard]] ByteArray const& data() const;
 
   // If this class holds the underlying data, then this method is cheap, and
   // will move the data out of this class into the returned array, otherwise,
   // this will incur a copy.  Afterwards, this Buffer will be left empty.
-  ByteArray takeData();
+  [[nodiscard]] ByteArray takeData();
 
   // Returns a pointer to the beginning of the Buffer.
-  char* ptr();
-  char const* ptr() const;
+  [[nodiscard]] char* ptr();
+  [[nodiscard]] char const* ptr() const;
 
   // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
+  [[nodiscard]] size_t dataSize() const;
   void reserve(size_t size);
 
   // Clears buffer, moves position to 0.
   void clear();
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
   // Reset buffer with new contents, moves position to 0.
   void reset(size_t newSize);
@@ -66,8 +66,8 @@ public:
   Buffer& operator=(Buffer&& buffer);
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
-  size_t doWrite(size_t pos, char const* data, size_t len);
+  [[nodiscard]] size_t doRead(size_t pos, char* data, size_t len);
+  [[nodiscard]] size_t doWrite(size_t pos, char const* data, size_t len);
 
   size_t m_pos = 0;
   ByteArray m_bytes;
@@ -85,38 +85,38 @@ public:
   ExternalBuffer(ExternalBuffer const& buffer) noexcept = default;
   ExternalBuffer& operator=(ExternalBuffer const& buffer) noexcept = default;
 
-  StreamOffset pos() override;
+  [[nodiscard]] StreamOffset pos() override;
   void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
-  bool atEnd() override;
+  [[nodiscard]] bool atEnd() override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  [[nodiscard]] size_t read(char* data, size_t len) override;
+  [[nodiscard]] size_t write(char const* data, size_t len) override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  [[nodiscard]] size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
+  [[nodiscard]] size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
 
-  String deviceName() const override;
+  [[nodiscard]] String deviceName() const override;
 
-  StreamOffset size() override;
+  [[nodiscard]] StreamOffset size() override;
   
-  IODevicePtr clone() override;
+  [[nodiscard]] IODevicePtr clone() override;
 
   // Returns a pointer to the beginning of the Buffer.
-  char const* ptr() const;
+  [[nodiscard]] char const* ptr() const;
 
   // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
+  [[nodiscard]] size_t dataSize() const;
 
   // Clears buffer, moves position to 0.
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   // Reset buffer with new contents, moves position to 0.
   void reset(char const* externalData, size_t len);
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
+  [[nodiscard]] size_t doRead(size_t pos, char* data, size_t len);
 
   size_t m_pos = 0;
   char const* m_bytes = nullptr;

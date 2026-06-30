@@ -34,7 +34,7 @@ public:
 
   void jumpTo(SkyParameters SkyParameters);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
 
   // handles flying and warp state transitions
@@ -42,67 +42,67 @@ public:
   void update(double dt);
 
   void setType(SkyType type);
-  SkyType type() const;
+  [[nodiscard]] SkyType type() const;
 
-  bool inSpace() const;
+  [[nodiscard]] bool inSpace() const;
 
-  uint64_t seed() const;
+  [[nodiscard]] uint64_t seed() const;
 
-  float dayLength() const;
-  uint32_t day() const;
-  float timeOfDay() const;
+  [[nodiscard]] float dayLength() const;
+  [[nodiscard]] uint32_t day() const;
+  [[nodiscard]] float timeOfDay() const;
 
   // Total time since the 0th day for this world.
-  double epochTime() const;
+  [[nodiscard]] double epochTime() const;
   void setEpochTime(double epochTime);
 
   // Altitude is used to determine, in Atmospheric skies, the percentage of the
   // atmosphere to draw and how much like space it should appear.
-  float altitude() const;
+  [[nodiscard]] float altitude() const;
   void setAltitude(float altitude);
 
   // If a reference clock is set, then the epoch time is driven by the
   // reference clock rather than an internal timer
   void setReferenceClock(ClockConstPtr const& referenceClock);
-  ClockConstPtr referenceClock() const;
+  [[nodiscard]] ClockConstPtr referenceClock() const;
 
-  String ambientNoise() const;
-  List<AudioInstancePtr> pullSounds();
+  [[nodiscard]] String ambientNoise() const;
+  [[nodiscard]] List<AudioInstancePtr> pullSounds();
 
   // How close is the atmosphere to space?
-  float spaceLevel() const;
+  [[nodiscard]] float spaceLevel() const;
 
-  float orbitAngle() const;
-  bool isDayTime() const;
+  [[nodiscard]] float orbitAngle() const;
+  [[nodiscard]] bool isDayTime() const;
 
   // Ranges from 0.0 to 1.0  Blended periodic curve with a period of
   // clock.dayLength, and the blend region size is determined by
   // the variant asset "dayTransitionTime"
-  float dayLevel() const;
+  [[nodiscard]] float dayLevel() const;
 
   // Returns a value that cycles through the range [0.0, 4.0).  0.0 / 4.0 is
   // mid-morning, 1.0 is mid-day, 2.0 is mid-evening, and 3.0 is mid-night.
   // Does not cycle through evenly, the value will "stick" to mid-day and
   // mid-night based on the value of the variant asset "dayTransitionTime"
-  float dayCycle() const;
+  [[nodiscard]] float dayCycle() const;
 
-  float skyAlpha() const;
+  [[nodiscard]] float skyAlpha() const;
 
-  Color environmentLight() const;
-  Color mainSkyColor() const;
+  [[nodiscard]] Color environmentLight() const;
+  [[nodiscard]] Color mainSkyColor() const;
 
   // Base sky rect colors, top and bottom, includes calculation based on day /
   // night alpha
-  pair<Color, Color> skyRectColors() const;
-  Color skyFlashColor() const;
+  [[nodiscard]] pair<Color, Color> skyRectColors() const;
+  [[nodiscard]] Color skyFlashColor() const;
 
-  bool flying() const;
-  FlyingType flyingType() const;
-  float warpProgress() const;
-  WarpPhase warpPhase() const;
-  bool inHyperspace() const;
+  [[nodiscard]] bool flying() const;
+  [[nodiscard]] FlyingType flyingType() const;
+  [[nodiscard]] float warpProgress() const;
+  [[nodiscard]] WarpPhase warpPhase() const;
+  [[nodiscard]] bool inHyperspace() const;
 
-  SkyRenderData renderData() const;
+  [[nodiscard]] SkyRenderData renderData() const;
 
 private:
   // TODO: This needs to be more explicit/handled better
@@ -113,13 +113,13 @@ private:
 
   void enterHyperspace();
   void exitHyperspace();
-  bool controlledMovement(JsonArray const& path, Json const& origin, float timeOffset);
-  Vec2F getStarOffset() const;
-  float getStarRotation() const;
-  Vec2F getWorldOffset() const;
-  float getWorldRotation() const;
-  float speedupTime() const;
-  float slowdownTime() const;
+  [[nodiscard]] bool controlledMovement(JsonArray const& path, Json const& origin, float timeOffset);
+  [[nodiscard]] Vec2F getStarOffset() const;
+  [[nodiscard]] float getStarRotation() const;
+  [[nodiscard]] Vec2F getWorldOffset() const;
+  [[nodiscard]] float getWorldRotation() const;
+  [[nodiscard]] float speedupTime() const;
+  [[nodiscard]] float slowdownTime() const;
 
   void skyParametersUpdated();
 

@@ -27,9 +27,9 @@ class P2PSocket {
 public:
   virtual ~P2PSocket() = default;
 
-  virtual bool isOpen() = 0;
-  virtual bool sendMessage(ByteArray const& message) = 0;
-  virtual Maybe<ByteArray> receiveMessage() = 0;
+  [[nodiscard]] virtual bool isOpen() = 0;
+  [[nodiscard]] virtual bool sendMessage(ByteArray const& message) = 0;
+  [[nodiscard]] virtual Maybe<ByteArray> receiveMessage() = 0;
 };
 
 using P2PNetworkingPeerId = StrongTypedef<String, struct P2PNetworkingPeerIdTag>;

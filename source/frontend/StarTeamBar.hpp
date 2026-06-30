@@ -81,7 +81,7 @@ public:
 
   TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Services services);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);

@@ -20,12 +20,12 @@ public:
   IODeviceCallbacks& operator=(IODeviceCallbacks&&) noexcept = default;
 
   // Get the underlying device
-  IODevicePtr const& device() const;
+  [[nodiscard]] IODevicePtr const& device() const;
   
   // Callback functions for Ogg Vorbis
-  static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource);
-  static int seekFunc(void* datasource, ogg_int64_t offset, int whence);
-  static long int tellFunc(void* datasource);
+  [[nodiscard]] static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource);
+  [[nodiscard]] static int seekFunc(void* datasource, ogg_int64_t offset, int whence);
+  [[nodiscard]] static long int tellFunc(void* datasource);
   
   // Sets up callbacks for Ogg Vorbis
   void setupOggCallbacks(ov_callbacks& callbacks);

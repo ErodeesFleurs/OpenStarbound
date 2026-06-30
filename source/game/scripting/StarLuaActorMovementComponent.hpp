@@ -19,7 +19,7 @@ public:
 
   // If true, then the controls are automatically cleared on script update.
   // Defaults to true
-  bool autoClearControls() const;
+  [[nodiscard]] bool autoClearControls() const;
   void setAutoClearControls(bool autoClearControls);
 
   // Updates the lua script component and applies held controls.  If no script
@@ -27,7 +27,7 @@ public:
   // be held and not cleared.  If a script update is scheduled this tick, then
   // the controls will be cleared only if autoClearControls is set to true.
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> update(V&&... args);
+  [[nodiscard]] Maybe<Ret> update(V&&... args);
 
 private:
   void performControls();

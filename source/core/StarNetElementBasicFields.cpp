@@ -29,15 +29,15 @@ void NetElementEvent::trigger() {
   set(get() + 1);
 }
 
-uint64_t NetElementEvent::pullOccurrences() {
+[[nodiscard]] uint64_t NetElementEvent::pullOccurrences() {
   uint64_t occurrences = get();
-  starAssert(occurrences >= m_pulledOccurrences);
+  assert(occurrences >= m_pulledOccurrences);
   uint64_t unchecked = occurrences - m_pulledOccurrences;
   m_pulledOccurrences = occurrences;
   return unchecked;
 }
 
-bool NetElementEvent::pullOccurred() {
+[[nodiscard]] bool NetElementEvent::pullOccurred() {
   return pullOccurrences() != 0;
 }
 

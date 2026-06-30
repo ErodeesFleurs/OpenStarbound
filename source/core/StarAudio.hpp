@@ -7,10 +7,10 @@ namespace Star {
 extern float const DefaultPerceptualRangeDb;
 extern float const DefaultPerceptualBoostRangeDb;
 
-float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
+[[nodiscard]] float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
   float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
 
-float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
+[[nodiscard]] float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
   float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
 
 class CompressedAudioImpl;
@@ -38,21 +38,21 @@ public:
 
   // This function returns the number of channels that this file has.  Channels
   // are static throughout file.
-  unsigned channels() const;
+  [[nodiscard]] unsigned channels() const;
 
   // This function returns the sample rate that this file has.  Sample rates
   // are static throughout file.
-  unsigned sampleRate() const;
+  [[nodiscard]] unsigned sampleRate() const;
 
   // This function returns the playtime duration of the file.
-  double totalTime() const;
+  [[nodiscard]] double totalTime() const;
 
   // This function returns total number of samples in this file.
-  uint64_t totalSamples() const;
+  [[nodiscard]] uint64_t totalSamples() const;
 
   // This function returns true when the datastream or file being read from is
   // a vorbis compressed file.  False otherwise.
-  bool compressed() const;
+  [[nodiscard]] bool compressed() const;
 
   // If compressed, permanently uncompresses audio for faster reading.  The
   // uncompressed buffer is shared with all further copies of Audio, and this
@@ -67,20 +67,20 @@ public:
 
   // This function converts the current offset of the file to the time value of
   // that offset in seconds.
-  double currentTime() const;
+  [[nodiscard]] double currentTime() const;
 
   // This function converts the current offset of the file to the current
   // sample number.
-  uint64_t currentSample() const;
+  [[nodiscard]] uint64_t currentSample() const;
 
   // Reads into 16 bit signed buffer with channels interleaved.  Returns total
   // number of samples read (counting each channel individually).  0 indicates
   // end of stream.
-  size_t readPartial(int16_t* buffer, size_t bufferSize);
+  [[nodiscard]] size_t readPartial(int16_t* buffer, size_t bufferSize);
 
   // Same as readPartial, but repeats read attempting to fill buffer as much as
   // possible
-  size_t read(int16_t* buffer, size_t bufferSize);
+  [[nodiscard]] size_t read(int16_t* buffer, size_t bufferSize);
 
   // Read into a given buffer, while also converting into the given number of
   // channels at the given sample rate and playback velocity.  If the number of
@@ -93,7 +93,7 @@ public:
       int16_t* destinationBuffer, size_t destinationBufferSize,
       double velocity = 1.0);
 
-  String const& name() const;
+  [[nodiscard]] String const& name() const;
   void setName(String name);
 
 private:

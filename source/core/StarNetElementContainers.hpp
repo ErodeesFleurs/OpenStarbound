@@ -29,15 +29,15 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules = {}) const;
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  mapped_type const& get(key_type const& key) const;
-  mapped_type const* ptr(key_type const& key) const;
+  [[nodiscard]] mapped_type const& get(key_type const& key) const;
+  [[nodiscard]] mapped_type const* ptr(key_type const& key) const;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
   using BaseMap::keys;
   using BaseMap::values;
@@ -48,8 +48,8 @@ public:
   using BaseMap::maybe;
   using BaseMap::value;
 
-  pair<const_iterator, bool> insert(value_type v);
-  pair<const_iterator, bool> insert(key_type k, mapped_type v);
+  [[nodiscard]] pair<const_iterator, bool> insert(value_type v);
+  [[nodiscard]] pair<const_iterator, bool> insert(key_type k, mapped_type v);
 
   void add(key_type k, mapped_type v);
   // Calling set with a matching key and value does not cause a delta to be
@@ -59,18 +59,18 @@ public:
   // a delta and does not require mapped_type operator==
   void push(key_type k, mapped_type v);
 
-  bool remove(key_type const& k);
+  [[nodiscard]] bool remove(key_type const& k);
 
-  const_iterator erase(const_iterator i);
+  [[nodiscard]] const_iterator erase(const_iterator i);
 
-  mapped_type take(key_type const& k);
-  Maybe<mapped_type> maybeTake(key_type const& k);
+  [[nodiscard]] mapped_type take(key_type const& k);
+  [[nodiscard]] Maybe<mapped_type> maybeTake(key_type const& k);
 
   void clear();
 
-  BaseMap const& baseMap() const;
+  [[nodiscard]] BaseMap const& baseMap() const;
   void reset(BaseMap values);
-  bool pullUpdated();
+  [[nodiscard]] bool pullUpdated();
 
   // Sets this map to contain the same keys / values as the given map.  All
   // values in this map not found in the given map are removed.  (Same as
@@ -78,7 +78,7 @@ public:
   template <typename MapType>
   void setContents(MapType const& values);
 
-  uint64_t changeDataLastVersion() const;
+  [[nodiscard]] uint64_t changeDataLastVersion() const;
 
 private:
   // If a delta is written from further back than this many steps, the delta
@@ -97,7 +97,7 @@ private:
   using ElementChange = Variant<SetChange, RemoveChange, ClearChange>;
 
   static void writeChange(DataStream& ds, ElementChange const& change);
-  static ElementChange readChange(DataStream& ds);
+  [[nodiscard]] static ElementChange readChange(DataStream& ds);
 
   void addChangeData(ElementChange change);
 
@@ -197,7 +197,7 @@ void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds, NetCompatibilityRule
 }
 
 template <typename BaseMap>
-bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules) const {
+[[nodiscard]] bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (fromVersion < m_changeDataLastVersion)
     return true;
@@ -259,22 +259,22 @@ void NetElementMapWrapper<BaseMap>::readNetDelta(DataStream& ds, float interpola
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::get(key_type const& key) const -> mapped_type const & {
+[[nodiscard]] auto NetElementMapWrapper<BaseMap>::get(key_type const& key) const -> mapped_type const & {
   return BaseMap::get(key);
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::ptr(key_type const& key) const -> mapped_type const * {
+[[nodiscard]] auto NetElementMapWrapper<BaseMap>::ptr(key_type const& key) const -> mapped_type const * {
   return BaseMap::ptr(key);
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::begin() const -> const_iterator {
+[[nodiscard]] auto NetElementMapWrapper<BaseMap>::begin() const -> const_iterator {
   return BaseMap::begin();
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::end() const -> const_iterator {
+[[nodiscard]] auto NetElementMapWrapper<BaseMap>::end() const -> const_iterator {
   return BaseMap::end();
 }
 
@@ -377,7 +377,7 @@ void NetElementMapWrapper<BaseMap>::clear() {
 }
 
 template <typename BaseMap>
-BaseMap const& NetElementMapWrapper<BaseMap>::baseMap() const {
+[[nodiscard]] BaseMap const& NetElementMapWrapper<BaseMap>::baseMap() const {
   return *this;
 }
 
@@ -402,7 +402,7 @@ void NetElementMapWrapper<BaseMap>::reset(BaseMap values) {
 }
 
 template <typename BaseMap>
-bool NetElementMapWrapper<BaseMap>::pullUpdated() {
+[[nodiscard]] bool NetElementMapWrapper<BaseMap>::pullUpdated() {
   return Star::take(m_updated);
 }
 
@@ -413,7 +413,7 @@ void NetElementMapWrapper<BaseMap>::setContents(MapType const& values) {
 }
 
 template <typename BaseMap>
-uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
+[[nodiscard]] uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
   return m_changeDataLastVersion;
 }
 
@@ -453,7 +453,7 @@ auto NetElementMapWrapper<BaseMap>::readChange(DataStream& ds) -> ElementChange 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
+  assert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
 
   m_changeData.append(VersionedElementChange{currentVersion, std::move(change)});
 

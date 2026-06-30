@@ -94,31 +94,35 @@ ImageOperation imageOperationFromString(StringView string) {
             char* c = which ? a : b;
 
             if (hexLen == 3) {
-              nibbleDecode(hexPtr, 3, c, 4);
+              [[maybe_unused]] size_t decoded = nibbleDecode(hexPtr, 3, c, 4);
+              assert(decoded == 3);
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] = static_cast<char>(255);
             }
             else if (hexLen == 4) {
-              nibbleDecode(hexPtr, 4, c, 4);
+              [[maybe_unused]] size_t decoded = nibbleDecode(hexPtr, 4, c, 4);
+              assert(decoded == 4);
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] |= (c[3] << 4);
             }
             else if (hexLen == 6) {
-              hexDecode(hexPtr, 6, c, 4);
+              [[maybe_unused]] size_t decoded = hexDecode(hexPtr, 6, c, 4);
+              assert(decoded == 3);
               c[3] = static_cast<char>(255);
             }
             else if (hexLen == 8) {
-              hexDecode(hexPtr, 8, c, 4);
+              [[maybe_unused]] size_t decoded = hexDecode(hexPtr, 8, c, 4);
+              assert(decoded == 4);
             }
             else if (!which || (ptr != end && ++ptr != end))
                 return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
                 return operation;
-              
+
             if ((which = !which))
               operation.colorReplaceMap[colorBytes(a)] = colorBytes(b);
 

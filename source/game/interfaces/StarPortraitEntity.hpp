@@ -10,7 +10,7 @@ using PortraitEntityPtr = SharedPtr<PortraitEntity>;
 
 class PortraitEntity : public virtual Entity {
 public:
-  virtual List<Drawable> portrait(PortraitMode mode) const = 0;
+  [[nodiscard]] virtual List<Drawable> portrait(PortraitMode mode) const = 0;
 };
 
 }

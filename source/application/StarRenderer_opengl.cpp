@@ -410,7 +410,7 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
     return;
 
   Effect& effect = find->second;
-  
+
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr || (ptr->parameterValue && *ptr->parameterValue == value))
     return;
@@ -431,7 +431,7 @@ Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr)
     return {};
-  
+
   return ptr->parameterValue;
 }
 Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
@@ -444,7 +444,7 @@ Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String 
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr)
     return {};
-  
+
   return ptr->parameterType;
 }
 
@@ -503,7 +503,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
         auto textureUniform = fbt.getString("texture");
         auto ptr = m_currentEffect->textures.ptr(textureUniform);
         if (ptr) {
-          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
+          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {
             auto texture = getGlFrameBuffer(*frameBufferId)->texture;
             ptr->textureValue = texture;
             if (ptr->textureSizeUniform != -1) {
@@ -627,7 +627,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
 void OpenGlRenderer::startFrame() {
   if (m_scissorRect)
     glDisable(GL_SCISSOR_TEST);
-  
+
   for (auto& [_, frameBuffer] : m_frameBuffers) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->id);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -779,7 +779,7 @@ void OpenGlRenderer::GlGroupedTexture::incrementBufferUseCount() {
 }
 
 void OpenGlRenderer::GlGroupedTexture::decrementBufferUseCount() {
-  starAssert(bufferUseCount != 0);
+  assert(bufferUseCount != 0);
   if (bufferUseCount == 1)
     parentAtlasTexture->setLocked(false);
   --bufferUseCount;
@@ -1133,7 +1133,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   }
 
   glUniform2f(m_screenSizeUniform, screenSize[0], screenSize[1]);
-  
+
   for (auto& [_, parameter] : effect.scriptables) {
     auto ptr = &parameter;
     auto mvalue = ptr->parameterValue;

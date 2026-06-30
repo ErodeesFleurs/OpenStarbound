@@ -30,44 +30,44 @@ public:
 
   virtual void construct(Json const& config, Widget* widget);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
-  WidgetPtr makeSingle(String const& name, Json const& config);
+  [[nodiscard]] WidgetPtr makeSingle(String const& name, Json const& config);
 
 protected:
   void constructImpl(Json const& config, Widget* widget);
-  List<WidgetConstructResult> constructor(Json const& config);
+  [[nodiscard]] List<WidgetConstructResult> constructor(Json const& config);
 
   // Parents
-  WidgetConstructResult stackHandler(String const& name, Json const& config);
-  WidgetConstructResult scrollAreaHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult stackHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult scrollAreaHandler(String const& name, Json const& config);
 
   // Interactive
-  WidgetConstructResult radioGroupHandler(String const& name, Json const& config);
-  WidgetConstructResult buttonHandler(String const& name, Json const& config);
-  WidgetConstructResult spinnerHandler(String const& name, Json const& config);
-  WidgetConstructResult textboxHandler(String const& name, Json const& config);
-  WidgetConstructResult itemSlotHandler(String const& name, Json const& config);
-  WidgetConstructResult itemGridHandler(String const& name, Json const& config);
-  WidgetConstructResult listHandler(String const& name, Json const& config);
-  WidgetConstructResult sliderHandler(String const& name, Json const& config);
-  WidgetConstructResult largeCharPlateHandler(String const& name, Json const& config);
-  WidgetConstructResult tabSetHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult radioGroupHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult buttonHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult spinnerHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult textboxHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult itemSlotHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult itemGridHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult listHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult sliderHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult largeCharPlateHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult tabSetHandler(String const& name, Json const& config);
 
   // Non-interactive
-  WidgetConstructResult widgetHandler(String const& name, Json const& config);
-  WidgetConstructResult imageHandler(String const& name, Json const& config);
-  WidgetConstructResult imageStretchHandler(String const& name, Json const& config);
-  WidgetConstructResult portraitHandler(String const& name, Json const& config);
-  WidgetConstructResult labelHandler(String const& name, Json const& config);
-  WidgetConstructResult canvasHandler(String const& name, Json const& config);
-  WidgetConstructResult fuelGaugeHandler(String const& name, Json const& config);
-  WidgetConstructResult progressHandler(String const& name, Json const& config);
-  WidgetConstructResult containerHandler(String const& name, Json const& config);
-  WidgetConstructResult layoutHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult widgetHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult imageHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult imageStretchHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult portraitHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult labelHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult canvasHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult fuelGaugeHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult progressHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult containerHandler(String const& name, Json const& config);
+  [[nodiscard]] WidgetConstructResult layoutHandler(String const& name, Json const& config);
 
   // Utilities
   void common(WidgetPtr widget, Json const& config, bool getChildren = true);
-  ImageStretchSet parseImageStretchSet(Json const& config);
-  GuiContext& guiContext() const;
+  [[nodiscard]] ImageStretchSet parseImageStretchSet(Json const& config);
+  [[nodiscard]] GuiContext& guiContext() const;
 
   GuiContext& m_context;
   Pane* m_pane = nullptr;

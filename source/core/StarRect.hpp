@@ -23,27 +23,27 @@ public:
     bool glances;
   };
 
-  static constexpr Box null();
-  static constexpr Box inf();
+  [[nodiscard]] static constexpr Box null();
+  [[nodiscard]] static constexpr Box inf();
 
   // Returns an integral aligned box that at least contains the given floating
   // point box.
   template <typename Box2>
-  static Box integral(Box2 const& box);
+  [[nodiscard]] static Box integral(Box2 const& box);
 
   // Returns an integral aligned box that is equal to the given box rounded to
   // the nearest whole number (does not necessarily contain the given box).
   template <typename Box2>
-  static Box round(Box2 const& box);
+  [[nodiscard]] static Box round(Box2 const& box);
 
   template <typename... TN>
-  static constexpr Box boundBoxOf(TN const&... list);
+  [[nodiscard]] static constexpr Box boundBoxOf(TN const&... list);
 
   template <typename Collection>
-  static constexpr Box boundBoxOfPoints(Collection const& collection);
+  [[nodiscard]] static constexpr Box boundBoxOfPoints(Collection const& collection);
 
-  static constexpr Box withSize(Coord const& min, Coord const& size);
-  static constexpr Box withCenter(Coord const& center, Coord const& size);
+  [[nodiscard]] static constexpr Box withSize(Coord const& min, Coord const& size);
+  [[nodiscard]] static constexpr Box withCenter(Coord const& center, Coord const& size);
 
   constexpr Box();
   constexpr Box(Coord const& min, Coord const& max);
@@ -54,29 +54,29 @@ public:
   constexpr explicit Box(Box<T2, N> const& b);
 
   // Is equal to null()
-  constexpr bool isNull() const;
+  [[nodiscard]] constexpr bool isNull() const;
 
   // One or more dimensions are of negative magnitude
-  constexpr bool isNegative() const;
+  [[nodiscard]] constexpr bool isNegative() const;
 
   // One or more dimensions are of zero or negative magnitude
-  constexpr bool isEmpty() const;
+  [[nodiscard]] constexpr bool isEmpty() const;
 
   // Sets the bounding box equal to one containing the given bounding box and
   // the current one.
   constexpr void combine(Box const& box);
-  constexpr Box combined(Box const& box) const;
+  [[nodiscard]] constexpr Box combined(Box const& box) const;
 
   // Sets the bounding box equal to one containing the current bounding box and
   // the given point.
   constexpr void combine(Coord const& point);
-  constexpr Box combined(Coord const& point) const;
+  [[nodiscard]] constexpr Box combined(Coord const& point) const;
 
   // Sets the bounding box equal to the intersection of this one and the given
   // one.  If there is no intersection than the box becomes negative in that
   // dimension.
   constexpr void limit(Box const& box);
-  constexpr Box limited(Box const& box);
+  [[nodiscard]] constexpr Box limited(Box const& box);
 
   // If any range has a min < max, swap them to make it non-null.
   constexpr void makePositive();
@@ -86,8 +86,8 @@ public:
   // empty in any dimension, then this has no effect.
   void rangeSetIfEmpty(Box const& b);
 
-  constexpr Coord size() const;
-  constexpr T size(size_t dim) const;
+  [[nodiscard]] constexpr Coord size() const;
+  [[nodiscard]] constexpr T size(size_t dim) const;
 
   // Sets bound box to the minimum bound box necessary to both have the given
   // aspect ratio and contain the current bounding box.
@@ -95,94 +95,94 @@ public:
 
   void makeCube();
 
-  constexpr Coord center() const;
+  [[nodiscard]] constexpr Coord center() const;
   constexpr void setCenter(Coord const& c);
 
   constexpr void translate(Coord const& c);
-  constexpr Box translated(Coord const& c) const;
+  [[nodiscard]] constexpr Box translated(Coord const& c) const;
 
   // Translate the Box the minimum distance so that it includes the given point
   constexpr void translateToInclude(Coord const& coord, Coord const& padding = Coord());
 
-  constexpr Vector<T, 2> range(size_t dim) const;
+  [[nodiscard]] constexpr Vector<T, 2> range(size_t dim) const;
   constexpr void setRange(size_t dim, Vector<T, 2> v);
   constexpr void combineRange(size_t dim, Vector<T, 2> v);
   constexpr void limitRange(size_t dim, Vector<T, 2> v);
 
   // Expand from center.
   constexpr void expand(T factor);
-  constexpr Box expanded(T factor) const;
+  [[nodiscard]] constexpr Box expanded(T factor) const;
 
   // Expand from center.
   constexpr void expand(Coord const& factor);
-  constexpr Box expanded(Vector<T, N> const& factor) const;
+  [[nodiscard]] constexpr Box expanded(Vector<T, N> const& factor) const;
 
   // Scale around origin.
   constexpr void scale(T factor);
-  constexpr Box scaled(T factor) const;
+  [[nodiscard]] constexpr Box scaled(T factor) const;
 
   // Scale around origin.
   constexpr void scale(Coord const& factor);
-  constexpr Box scaled(Vector<T, N> const& factor) const;
+  [[nodiscard]] constexpr Box scaled(Vector<T, N> const& factor) const;
 
   // Increase all dimensions by a constant amount on all sides
   constexpr void pad(T amount);
-  constexpr Box padded(T amount) const;
+  [[nodiscard]] constexpr Box padded(T amount) const;
 
   // Increase all dimensions by a constant amount
   constexpr void pad(Coord const& amount);
-  constexpr Box padded(Vector<T, N> const& amount) const;
+  [[nodiscard]] constexpr Box padded(Vector<T, N> const& amount) const;
 
   // Opposite of pad
   constexpr void trim(T amount);
-  constexpr Box trimmed(T amount) const;
+  [[nodiscard]] constexpr Box trimmed(T amount) const;
 
   // Opposite of pad
   constexpr void trim(Coord const& amount);
-  constexpr Box trimmed(Vector<T, N> const& amount) const;
+  [[nodiscard]] constexpr Box trimmed(Vector<T, N> const& amount) const;
 
   // Flip around some dimension (may make box have negative volume)
   constexpr void flip(size_t dimension);
-  constexpr Box flipped(size_t dimension) const;
+  [[nodiscard]] constexpr Box flipped(size_t dimension) const;
 
-  constexpr Coord const& min() const;
-  constexpr Coord const& max() const;
+  [[nodiscard]] constexpr Coord const& min() const;
+  [[nodiscard]] constexpr Coord const& max() const;
 
-  constexpr Coord& min();
-  constexpr Coord& max();
+  [[nodiscard]] constexpr Coord& min();
+  [[nodiscard]] constexpr Coord& max();
 
   constexpr void setMin(Coord const& c);
   constexpr void setMax(Coord const& c);
 
-  constexpr T volume() const;
-  constexpr Box overlap(Box const& b) const;
+  [[nodiscard]] constexpr T volume() const;
+  [[nodiscard]] constexpr Box overlap(Box const& b) const;
 
-  constexpr IntersectResult intersection(Box const& b) const;
-  constexpr bool intersects(Box const& b, bool includeEdges = true) const;
+  [[nodiscard]] constexpr IntersectResult intersection(Box const& b) const;
+  [[nodiscard]] constexpr bool intersects(Box const& b, bool includeEdges = true) const;
 
-  constexpr bool contains(Coord const& p, bool includeEdges = true) const;
-  constexpr bool contains(Box const& b, bool includeEdges = true) const;
+  [[nodiscard]] constexpr bool contains(Coord const& p, bool includeEdges = true) const;
+  [[nodiscard]] constexpr bool contains(Box const& b, bool includeEdges = true) const;
 
   // A version of contains that includes the min edges but not the max edges,
   // useful to select based on adjoining boxes without overlap.
-  constexpr bool belongs(Coord const& p) const;
+  [[nodiscard]] constexpr bool belongs(Coord const& p) const;
 
-  bool containsEpsilon(Coord const& p, unsigned epsilons = 2) const;
-  bool containsEpsilon(Box const& b, unsigned epsilons = 2) const;
+  [[nodiscard]] bool containsEpsilon(Coord const& p, unsigned epsilons = 2) const;
+  [[nodiscard]] bool containsEpsilon(Box const& b, unsigned epsilons = 2) const;
 
-  constexpr bool operator==(Box const& ref) const;
-  constexpr bool operator!=(Box const& ref) const;
+  [[nodiscard]] constexpr bool operator==(Box const& ref) const;
+  [[nodiscard]] constexpr bool operator!=(Box const& ref) const;
 
   // Find Coord inside box nearest to
-  constexpr Coord nearestCoordTo(Coord const& c) const;
+  [[nodiscard]] constexpr Coord nearestCoordTo(Coord const& c) const;
 
   // Find the coord in normalized space for this rect, so that 0 is the minimum
   // and 1 is the maximum.
-  constexpr Coord normal(Coord const& coord) const;
+  [[nodiscard]] constexpr Coord normal(Coord const& coord) const;
 
   // The invers of normal, find the real space position of this normalized
   // coordinate.
-  constexpr Coord eval(Coord const& normalizedCoord) const;
+  [[nodiscard]] constexpr Coord eval(Coord const& normalizedCoord) const;
 
   // 2D Only
 
@@ -193,16 +193,16 @@ public:
 
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T xMin() const;
+  [[nodiscard]] constexpr T xMin() const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T xMax() const;
+  [[nodiscard]] constexpr T xMax() const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T yMin() const;
+  [[nodiscard]] constexpr T yMin() const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T yMax() const;
+  [[nodiscard]] constexpr T yMax() const;
 
   template <size_t P = N>
     requires (P == 2 && N == P)
@@ -219,10 +219,10 @@ public:
 
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T width() const;
+  [[nodiscard]] constexpr T width() const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr T height() const;
+  [[nodiscard]] constexpr T height() const;
 
   template <size_t P = N>
     requires (P == 2 && N == P)
@@ -245,22 +245,22 @@ public:
 
   template <size_t P = N>
     requires (P == 2 && N == P)
-  constexpr Array<Line, 4> edges() const;
+  [[nodiscard]] constexpr Array<Line, 4> edges() const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  bool intersects(Line const& l) const;
+  [[nodiscard]] bool intersects(Line const& l) const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  bool intersectsCircle(Coord const& position, T radius) const;
+  [[nodiscard]] bool intersectsCircle(Coord const& position, T radius) const;
   template <size_t P = N>
     requires (P == 2 && N == P)
-  LineIntersectResult edgeIntersection(Line const& l) const;
+  [[nodiscard]] LineIntersectResult edgeIntersection(Line const& l) const;
 
   // Returns a list of areas that are in this rect but not in the given rect.
   // Extra Credit: Implement this method for arbitrary dimensions.
   template <size_t P = N>
     requires (P == 2 && N == P)
-  List<Box> subtract(Box const& rect) const;
+  [[nodiscard]] List<Box> subtract(Box const& rect) const;
 
 protected:
   template <typename... TN>
@@ -288,30 +288,30 @@ using RectF = Rect<float>;
 using RectD = Rect<double>;
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::null() {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::null() {
   return Box(Coord::filled(std::numeric_limits<T>::max()), Coord::filled(std::numeric_limits<T>::lowest()));
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::inf() {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::inf() {
   return Box(Coord::filled(std::numeric_limits<T>::lowest()), Coord::filled(std::numeric_limits<T>::max()));
 }
 
 template <typename T, size_t N>
 template <typename Box2>
-Box<T, N> Box<T, N>::integral(Box2 const& box) {
+[[nodiscard]] Box<T, N> Box<T, N>::integral(Box2 const& box) {
   return Box(Coord::floor(box.min()), Coord::ceil(box.max()));
 }
 
 template <typename T, size_t N>
 template <typename Box2>
-Box<T, N> Box<T, N>::round(Box2 const& box) {
+[[nodiscard]] Box<T, N> Box<T, N>::round(Box2 const& box) {
   return Box(Coord::round(box.min()), Coord::round(box.max()));
 }
 
 template <typename T, size_t N>
 template <typename... TN>
-constexpr Box<T, N> Box<T, N>::boundBoxOf(TN const&... list) {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::boundBoxOf(TN const&... list) {
   Box b = null();
   combineThings(b, list...);
   return b;
@@ -319,7 +319,7 @@ constexpr Box<T, N> Box<T, N>::boundBoxOf(TN const&... list) {
 
 template <typename T, size_t N>
 template <typename Collection>
-constexpr Box<T, N> Box<T, N>::boundBoxOfPoints(Collection const& collection) {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::boundBoxOfPoints(Collection const& collection) {
   Box b = null();
   for (auto const& point : collection)
     b.combine(Coord(point));
@@ -327,12 +327,12 @@ constexpr Box<T, N> Box<T, N>::boundBoxOfPoints(Collection const& collection) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::withSize(Coord const& min, Coord const& size) {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::withSize(Coord const& min, Coord const& size) {
   return Box(min, min + size);
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::withCenter(Coord const& center, Coord const& size) {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::withCenter(Coord const& center, Coord const& size) {
   return Box(center - size / 2, center + size / 2);
 }
 
@@ -360,13 +360,13 @@ constexpr Box<T, N>::Box(Box<T2, N> const& b)
   : m_min(b.min()), m_max(b.max()) {}
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::isNull() const {
+[[nodiscard]] constexpr bool Box<T, N>::isNull() const {
   return m_min == Coord::filled(std::numeric_limits<T>::max())
       && m_max == Coord::filled(std::numeric_limits<T>::lowest());
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::isNegative() const {
+[[nodiscard]] constexpr bool Box<T, N>::isNegative() const {
   for (size_t i = 0; i < N; ++i) {
     if (m_max[i] < m_min[i])
       return true;
@@ -375,7 +375,7 @@ constexpr bool Box<T, N>::isNegative() const {
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::isEmpty() const {
+[[nodiscard]] constexpr bool Box<T, N>::isEmpty() const {
   for (size_t i = 0; i < N; ++i) {
     if (m_max[i] <= m_min[i])
       return true;
@@ -390,7 +390,7 @@ constexpr void Box<T, N>::combine(Box const& box) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::combined(Box const& box) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::combined(Box const& box) const {
   auto b = *this;
   b.combine(box);
   return b;
@@ -403,7 +403,7 @@ constexpr void Box<T, N>::combine(Coord const& point) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::combined(Coord const& point) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::combined(Coord const& point) const {
   auto b = *this;
   b.combine(point);
   return b;
@@ -416,7 +416,7 @@ constexpr void Box<T, N>::limit(Box const& box) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::limited(Box const& box) {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::limited(Box const& box) {
   auto b = *this;
   b.limit(box);
   return b;
@@ -444,12 +444,12 @@ void Box<T, N>::makeCube() {
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::size() const -> Coord {
+[[nodiscard]] constexpr auto Box<T, N>::size() const -> Coord {
   return m_max - m_min;
 }
 
 template <typename T, size_t N>
-constexpr T Box<T, N>::size(size_t dim) const {
+[[nodiscard]] constexpr T Box<T, N>::size(size_t dim) const {
   return m_max[dim] - m_min[dim];
 }
 
@@ -468,7 +468,7 @@ void Box<T, N>::setAspect(Coord as, bool shrink) {
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::center() const -> Coord {
+[[nodiscard]] constexpr auto Box<T, N>::center() const -> Coord {
   return (m_min + m_max) / 2;
 }
 
@@ -484,7 +484,7 @@ constexpr void Box<T, N>::translate(Coord const& c) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::translated(Coord const& c) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::translated(Coord const& c) const {
   auto b = *this;
   b.translate(c);
   return b;
@@ -503,7 +503,7 @@ constexpr void Box<T, N>::translateToInclude(Coord const& coord, Coord const& pa
 }
 
 template <typename T, size_t N>
-constexpr Vector<T, 2> Box<T, N>::range(size_t dim) const {
+[[nodiscard]] constexpr Vector<T, 2> Box<T, N>::range(size_t dim) const {
   return Coord(m_min[dim], m_max[dim]);
 }
 
@@ -536,7 +536,7 @@ constexpr void Box<T, N>::expand(T factor) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::expanded(T factor) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::expanded(T factor) const {
   auto b = *this;
   b.expand(factor);
   return b;
@@ -553,7 +553,7 @@ constexpr void Box<T, N>::expand(Coord const& factor) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::expanded(Coord const& factor) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::expanded(Coord const& factor) const {
   auto b = *this;
   b.expand(factor);
   return b;
@@ -566,7 +566,7 @@ constexpr void Box<T, N>::scale(T factor) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::scaled(T factor) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::scaled(T factor) const {
   auto b = *this;
   b.scale(factor);
   return b;
@@ -579,7 +579,7 @@ constexpr void Box<T, N>::scale(Coord const& factor) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::scaled(Coord const& factor) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::scaled(Coord const& factor) const {
   auto b = *this;
   b.scale(factor);
   return b;
@@ -594,7 +594,7 @@ constexpr void Box<T, N>::pad(T amount) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::padded(T amount) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::padded(T amount) const {
   auto b = *this;
   b.pad(amount);
   return b;
@@ -609,7 +609,7 @@ constexpr void Box<T, N>::pad(Coord const& amount) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::padded(Coord const& amount) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::padded(Coord const& amount) const {
   auto b = *this;
   b.pad(amount);
   return b;
@@ -621,7 +621,7 @@ constexpr void Box<T, N>::trim(T amount) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::trimmed(T amount) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::trimmed(T amount) const {
   auto b = *this;
   b.trim(amount);
   return b;
@@ -633,7 +633,7 @@ constexpr void Box<T, N>::trim(Coord const& amount) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::trimmed(Coord const& amount) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::trimmed(Coord const& amount) const {
   auto b = *this;
   b.trim(amount);
   return b;
@@ -645,39 +645,39 @@ constexpr void Box<T, N>::flip(size_t dimension) {
 }
 
 template <typename T, size_t N>
-constexpr Box<T, N> Box<T, N>::flipped(size_t dimension) const {
+[[nodiscard]] constexpr Box<T, N> Box<T, N>::flipped(size_t dimension) const {
   auto b = *this;
   b.flip(dimension);
   return b;
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::normal(Coord const& coord) const -> Coord {
+[[nodiscard]] constexpr auto Box<T, N>::normal(Coord const& coord) const -> Coord {
   return (coord - m_min).piecewiseDivide(m_max - m_min);
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::eval(Coord const& normalizedCoord) const -> Coord {
+[[nodiscard]] constexpr auto Box<T, N>::eval(Coord const& normalizedCoord) const -> Coord {
   return normalizedCoord.piecewiseMultiply(m_max - m_min) + m_min;
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::min() const -> Coord const & {
+[[nodiscard]] constexpr auto Box<T, N>::min() const -> Coord const & {
   return m_min;
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::max() const -> Coord const & {
+[[nodiscard]] constexpr auto Box<T, N>::max() const -> Coord const & {
   return m_max;
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::min() -> Coord & {
+[[nodiscard]] constexpr auto Box<T, N>::min() -> Coord & {
   return m_min;
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::max() -> Coord & {
+[[nodiscard]] constexpr auto Box<T, N>::max() -> Coord & {
   return m_max;
 }
 
@@ -692,12 +692,12 @@ constexpr void Box<T, N>::setMax(Coord const& c) {
 }
 
 template <typename T, size_t N>
-constexpr T Box<T, N>::volume() const {
+[[nodiscard]] constexpr T Box<T, N>::volume() const {
   return size().product();
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::overlap(Box const& b) const -> Box {
+[[nodiscard]] constexpr auto Box<T, N>::overlap(Box const& b) const -> Box {
   Box result = *this;
   for (size_t i = 0; i < N; ++i) {
     result.m_min[i] = std::max(result.m_min[i], b.m_min[i]);
@@ -707,7 +707,7 @@ constexpr auto Box<T, N>::overlap(Box const& b) const -> Box {
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::intersection(Box const& b) const -> IntersectResult {
+[[nodiscard]] constexpr auto Box<T, N>::intersection(Box const& b) const -> IntersectResult {
   IntersectResult res;
 
   T overlap = std::numeric_limits<T>::max();
@@ -748,7 +748,7 @@ constexpr auto Box<T, N>::intersection(Box const& b) const -> IntersectResult {
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::intersects(Box const& b, bool includeEdges) const {
+[[nodiscard]] constexpr bool Box<T, N>::intersects(Box const& b, bool includeEdges) const {
   for (size_t i = 0; i < N; ++i) {
     if (includeEdges) {
       if (m_max[i] < b.m_min[i] || b.m_max[i] < m_min[i])
@@ -762,7 +762,7 @@ constexpr bool Box<T, N>::intersects(Box const& b, bool includeEdges) const {
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::contains(Coord const& p, bool includeEdges) const {
+[[nodiscard]] constexpr bool Box<T, N>::contains(Coord const& p, bool includeEdges) const {
   for (size_t i = 0; i < N; ++i) {
     if (includeEdges) {
       if (p[i] < m_min[i] || p[i] > m_max[i])
@@ -776,12 +776,12 @@ constexpr bool Box<T, N>::contains(Coord const& p, bool includeEdges) const {
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::contains(Box const& b, bool includeEdges) const {
+[[nodiscard]] constexpr bool Box<T, N>::contains(Box const& b, bool includeEdges) const {
   return contains(b.min(), includeEdges) && contains(b.max(), includeEdges);
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::belongs(Coord const& p) const {
+[[nodiscard]] constexpr bool Box<T, N>::belongs(Coord const& p) const {
   for (size_t i = 0; i < N; ++i) {
     if (p[i] < m_min[i] || p[i] >= m_max[i])
       return false;
@@ -791,7 +791,7 @@ constexpr bool Box<T, N>::belongs(Coord const& p) const {
 }
 
 template <typename T, size_t N>
-bool Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const {
+[[nodiscard]] bool Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const {
   for (size_t i = 0; i < N; ++i) {
     if (p[i] < m_min[i] || p[i] > m_max[i])
       return false;
@@ -802,17 +802,17 @@ bool Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const {
 }
 
 template <typename T, size_t N>
-bool Box<T, N>::containsEpsilon(Box const& b, unsigned epsilons) const {
+[[nodiscard]] bool Box<T, N>::containsEpsilon(Box const& b, unsigned epsilons) const {
   return containsEpsilon(b.min(), epsilons) && containsEpsilon(b.max(), epsilons);
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::operator==(Box const& ref) const {
+[[nodiscard]] constexpr bool Box<T, N>::operator==(Box const& ref) const {
   return m_min == ref.m_min && m_max == ref.m_max;
 }
 
 template <typename T, size_t N>
-constexpr bool Box<T, N>::operator!=(Box const& ref) const {
+[[nodiscard]] constexpr bool Box<T, N>::operator!=(Box const& ref) const {
   return m_min != ref.m_min || m_max != ref.m_max;
 }
 
@@ -849,28 +849,28 @@ constexpr Box<T, N>::Box(T minx, T miny, T maxx, T maxy)
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::xMin() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::xMin() const -> T {
   return min()[0];
 }
 
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::xMax() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::xMax() const -> T {
   return max()[0];
 }
 
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::yMin() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::yMin() const -> T {
   return min()[1];
 }
 
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::yMax() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::yMax() const -> T {
   return max()[1];
 }
 
@@ -905,14 +905,14 @@ constexpr void Box<T, N>::setYMax(T yMax) {
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::width() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::width() const -> T {
   return size(0);
 }
 
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::height() const -> T {
+[[nodiscard]] constexpr auto Box<T, N>::height() const -> T {
   return size(1);
 }
 
@@ -961,7 +961,7 @@ constexpr void Box<T, N>::flipVertical() {
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-constexpr auto Box<T, N>::edges() const -> Array<Line, 4> {
+[[nodiscard]] constexpr auto Box<T, N>::edges() const -> Array<Line, 4> {
   Array<Line, 4> res;
   res[0] = {min(), {min()[0], max()[1]}};
   res[1] = {min(), {max()[0], min()[1]}};
@@ -973,7 +973,7 @@ constexpr auto Box<T, N>::edges() const -> Array<Line, 4> {
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-auto Box<T, N>::intersects(Line const& l) const -> bool {
+[[nodiscard]] auto Box<T, N>::intersects(Line const& l) const -> bool {
   if (contains(l.min()) || contains(l.max()))
     return true;
 
@@ -987,7 +987,7 @@ auto Box<T, N>::intersects(Line const& l) const -> bool {
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> bool {
+[[nodiscard]] auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> bool {
   if (contains(position))
     return true;
   for (auto const& e : edges()) {
@@ -1005,7 +1005,7 @@ auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> bool 
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-auto Box<T, N>::edgeIntersection(Line const& l) const -> LineIntersectResult {
+[[nodiscard]] auto Box<T, N>::edgeIntersection(Line const& l) const -> LineIntersectResult {
   Array<LineIntersectResult, 4> candidates;
   size_t numCandidates = 0;
 
@@ -1079,7 +1079,7 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> LineIntersectResult {
 template <typename T, size_t N>
 template <size_t P>
   requires (P == 2 && N == P)
-auto Box<T, N>::subtract(Box const& rect) const -> List<Box> {
+[[nodiscard]] auto Box<T, N>::subtract(Box const& rect) const -> List<Box> {
   List<Box> regions;
 
   auto overlap = Box::overlap(rect);
@@ -1111,7 +1111,7 @@ auto Box<T, N>::subtract(Box const& rect) const -> List<Box> {
 }
 
 template <typename T, size_t N>
-constexpr auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
+[[nodiscard]] constexpr auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
   Coord result = c;
   for (size_t i = 0; i < N; ++i)
     result[i] = clamp(result[i], m_min[i], m_max[i]);

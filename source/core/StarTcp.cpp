@@ -183,7 +183,7 @@ bool TcpServer::isListening() const {
 
 TcpSocketPtr TcpServer::accept(unsigned timeout) {
   MutexLocker locker(m_mutex);
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
+  (void)Socket::poll({{m_listenSocket, {true, false}}}, timeout);
   try {
     return m_listenSocket->accept();
   } catch (SocketClosedException const&) {

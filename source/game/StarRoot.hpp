@@ -241,65 +241,65 @@ public:
 
   // Translates the given path to be relative to the configured storage
   // location.
-  String toStoragePath(String const& path) const;
+  [[nodiscard]] String toStoragePath(String const& path) const;
 
   // All of the Root member accessors are safe to call at any time after Root
   // initialization, if they are not loaded they will load before returning.
 
-  AssetsConstPtr assets() override;
-  ConfigurationPtr configuration() override;
+  [[nodiscard]] AssetsConstPtr assets() override;
+  [[nodiscard]] ConfigurationPtr configuration() override;
 
-  ObjectDatabaseConstPtr objectDatabase();
-  PlantDatabaseConstPtr plantDatabase();
-  ProjectileDatabaseConstPtr projectileDatabase();
-  MonsterDatabaseConstPtr monsterDatabase();
-  NpcDatabaseConstPtr npcDatabase();
-  StagehandDatabaseConstPtr stagehandDatabase();
-  VehicleDatabaseConstPtr vehicleDatabase();
-  PlayerFactoryConstPtr playerFactory();
+  [[nodiscard]] ObjectDatabaseConstPtr objectDatabase();
+  [[nodiscard]] PlantDatabaseConstPtr plantDatabase();
+  [[nodiscard]] ProjectileDatabaseConstPtr projectileDatabase();
+  [[nodiscard]] MonsterDatabaseConstPtr monsterDatabase();
+  [[nodiscard]] NpcDatabaseConstPtr npcDatabase();
+  [[nodiscard]] StagehandDatabaseConstPtr stagehandDatabase();
+  [[nodiscard]] VehicleDatabaseConstPtr vehicleDatabase();
+  [[nodiscard]] PlayerFactoryConstPtr playerFactory();
 
-  EntityFactoryConstPtr entityFactory();
+  [[nodiscard]] EntityFactoryConstPtr entityFactory();
 
-  PatternedNameGeneratorConstPtr nameGenerator();
+  [[nodiscard]] PatternedNameGeneratorConstPtr nameGenerator();
 
-  ItemDatabaseConstPtr itemDatabase();
-  MaterialDatabaseConstPtr materialDatabase();
-  TerrainDatabaseConstPtr terrainDatabase();
-  BiomeDatabaseConstPtr biomeDatabase();
-  LiquidsDatabaseConstPtr liquidsDatabase();
-  StatusEffectDatabaseConstPtr statusEffectDatabase();
-  DamageDatabaseConstPtr damageDatabase();
-  ParticleDatabaseConstPtr particleDatabase();
-  EffectSourceDatabaseConstPtr effectSourceDatabase();
-  FunctionDatabaseConstPtr functionDatabase();
-  TreasureDatabaseConstPtr treasureDatabase();
-  DungeonDefinitionsConstPtr dungeonDefinitions();
-  TilesetDatabaseConstPtr tilesetDatabase();
-  StatisticsDatabaseConstPtr statisticsDatabase();
-  EmoteProcessorConstPtr emoteProcessor();
-  SpeciesDatabaseConstPtr speciesDatabase();
-  ImageMetadataDatabaseConstPtr imageMetadataDatabase();
-  VersioningDatabaseConstPtr versioningDatabase();
-  QuestTemplateDatabaseConstPtr questTemplateDatabase();
-  AiDatabaseConstPtr aiDatabase();
-  TechDatabaseConstPtr techDatabase();
-  CodexDatabaseConstPtr codexDatabase();
-  BehaviorDatabaseConstPtr behaviorDatabase();
-  TenantDatabaseConstPtr tenantDatabase();
-  DanceDatabaseConstPtr danceDatabase();
-  SpawnTypeDatabaseConstPtr spawnTypeDatabase();
-  RadioMessageDatabaseConstPtr radioMessageDatabase();
-  CollectionDatabaseConstPtr collectionDatabase();
-  LuaRootServices luaRootServices();
+  [[nodiscard]] ItemDatabaseConstPtr itemDatabase();
+  [[nodiscard]] MaterialDatabaseConstPtr materialDatabase();
+  [[nodiscard]] TerrainDatabaseConstPtr terrainDatabase();
+  [[nodiscard]] BiomeDatabaseConstPtr biomeDatabase();
+  [[nodiscard]] LiquidsDatabaseConstPtr liquidsDatabase();
+  [[nodiscard]] StatusEffectDatabaseConstPtr statusEffectDatabase();
+  [[nodiscard]] DamageDatabaseConstPtr damageDatabase();
+  [[nodiscard]] ParticleDatabaseConstPtr particleDatabase();
+  [[nodiscard]] EffectSourceDatabaseConstPtr effectSourceDatabase();
+  [[nodiscard]] FunctionDatabaseConstPtr functionDatabase();
+  [[nodiscard]] TreasureDatabaseConstPtr treasureDatabase();
+  [[nodiscard]] DungeonDefinitionsConstPtr dungeonDefinitions();
+  [[nodiscard]] TilesetDatabaseConstPtr tilesetDatabase();
+  [[nodiscard]] StatisticsDatabaseConstPtr statisticsDatabase();
+  [[nodiscard]] EmoteProcessorConstPtr emoteProcessor();
+  [[nodiscard]] SpeciesDatabaseConstPtr speciesDatabase();
+  [[nodiscard]] ImageMetadataDatabaseConstPtr imageMetadataDatabase();
+  [[nodiscard]] VersioningDatabaseConstPtr versioningDatabase();
+  [[nodiscard]] QuestTemplateDatabaseConstPtr questTemplateDatabase();
+  [[nodiscard]] AiDatabaseConstPtr aiDatabase();
+  [[nodiscard]] TechDatabaseConstPtr techDatabase();
+  [[nodiscard]] CodexDatabaseConstPtr codexDatabase();
+  [[nodiscard]] BehaviorDatabaseConstPtr behaviorDatabase();
+  [[nodiscard]] TenantDatabaseConstPtr tenantDatabase();
+  [[nodiscard]] DanceDatabaseConstPtr danceDatabase();
+  [[nodiscard]] SpawnTypeDatabaseConstPtr spawnTypeDatabase();
+  [[nodiscard]] RadioMessageDatabaseConstPtr radioMessageDatabase();
+  [[nodiscard]] CollectionDatabaseConstPtr collectionDatabase();
+  [[nodiscard]] LuaRootServices luaRootServices();
 
-  Settings& settings();
+  [[nodiscard]] Settings& settings();
 
 private:
-  static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
+  [[nodiscard]] static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  static shared_ptr<T> loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
+  [[nodiscard]] static shared_ptr<T> loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
   template <typename T>
-  static shared_ptr<T> loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction);
+  [[nodiscard]] static shared_ptr<T> loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction);
 
   // m_configurationMutex must be held when calling
   void writeConfig();

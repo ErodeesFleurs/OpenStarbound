@@ -28,7 +28,7 @@ TEST(JsonTest, Defaults) {
   EXPECT_EQ(obj.getInt("null", 5), 5);
   EXPECT_EQ(arr.getInt(2, 5), 5);
   EXPECT_EQ(arr.getInt(3, 5), 5);
-  EXPECT_THROW(arr.getInt(2), JsonException);
+  EXPECT_THROW((void)arr.getInt(2), JsonException);
 }
 
 TEST(JsonTest, Merging) {
@@ -160,13 +160,13 @@ TEST(JsonTest, Query) {
   EXPECT_EQ(v.query("baz.bal.a", Json("default")), Json("default"));
   EXPECT_EQ(v.query("baz[0]", Json("default")), Json("default"));
   EXPECT_EQ(v.query("baz.baf.a", Json("default")), Json("default"));
-  EXPECT_THROW(v.query("blargh"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.funk"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.baf[3]"), JsonPath::TraversalException);
-  EXPECT_THROW(v.query("baz.baf[whee]", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baz.baf[[]", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baz..baf", Json()), JsonPath::ParsingException);
-  EXPECT_THROW(v.query("baf.nothing"), JsonException);
+  EXPECT_THROW((void)v.query("blargh"), JsonPath::TraversalException);
+  EXPECT_THROW((void)v.query("baz.funk"), JsonPath::TraversalException);
+  EXPECT_THROW((void)v.query("baz.baf[3]"), JsonPath::TraversalException);
+  EXPECT_THROW((void)v.query("baz.baf[whee]", Json()), JsonPath::ParsingException);
+  EXPECT_THROW((void)v.query("baz.baf[[]", Json()), JsonPath::ParsingException);
+  EXPECT_THROW((void)v.query("baz..baf", Json()), JsonPath::ParsingException);
+  EXPECT_THROW((void)v.query("baf.nothing"), JsonException);
 }
 
 TEST(JsonTest, PatchingAdd) {

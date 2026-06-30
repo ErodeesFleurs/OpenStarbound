@@ -35,10 +35,10 @@ class DanceDatabase {
 public:
   DanceDatabase(AssetsConstPtr assets);
 
-  DancePtr getDance(String const& name) const;
+  [[nodiscard]] DancePtr getDance(String const& name) const;
 
 private:
-  static DancePtr readDance(AssetsConstPtr assets, String const& path);
+  [[nodiscard]] static DancePtr readDance(AssetsConstPtr assets, String const& path);
 
   StringMap<DancePtr> m_dances;
 };

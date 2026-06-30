@@ -21,9 +21,9 @@ public:
   TileDatabase(String const& name);
 
   void defineTile(TilePtr const& tile);
-  TilePtr getTile(String const& tileName) const;
-  String name() const;
-  StringSet tileNames() const;
+  [[nodiscard]] TilePtr getTile(String const& tileName) const;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] StringSet tileNames() const;
 
 private:
   Map<String, TilePtr> m_tiles;
@@ -37,14 +37,14 @@ public:
   void defineTile(TilePtr const& tile);
   void exportTileset() const;
 
-  String name() const;
-  TileDatabasePtr database() const;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] TileDatabasePtr database() const;
 
 private:
-  String imageDirName(String const& baseExportDir) const;
-  String relativePathBase() const;
-  Json imageFileReference(String const& fileName) const;
-  Json tileImageReference(String const& tileName, String const& database) const;
+  [[nodiscard]] String imageDirName(String const& baseExportDir) const;
+  [[nodiscard]] String relativePathBase() const;
+  [[nodiscard]] Json imageFileReference(String const& fileName) const;
+  [[nodiscard]] Json tileImageReference(String const& tileName, String const& database) const;
 
   // Exports an image for each tile into its own file. Tiles can represent
   // objects with all different sizes, so we use Tiled's "collection of images"
@@ -53,12 +53,12 @@ private:
 
   // Read the tileset from the given path, or create a new tileset root
   // structure if it doesn't already exist.
-  Json getTilesetJson(String const& tilesetPath) const;
+  [[nodiscard]] Json getTilesetJson(String const& tilesetPath) const;
 
   // Determine which tiles already exist in the tileset, returning a map
   // which contains the id of each named tile, and the next available Id after
   // the highest Id seen in the tileset.
-  pair<StringMap<size_t>, size_t> indexExistingTiles(Json tileset) const;
+  [[nodiscard]] pair<StringMap<size_t>, size_t> indexExistingTiles(Json tileset) const;
 
   // Update existing and insert new tile definitions in the tileProperties and
   // tileImages objects.
@@ -89,8 +89,8 @@ public:
   void exportTilesets();
 
 private:
-  TileDatabasePtr const& getDatabase(TilePtr const& tile);
-  TilesetPtr const& getTileset(TilePtr const& tile);
+  [[nodiscard]] TileDatabasePtr const& getDatabase(TilePtr const& tile);
+  [[nodiscard]] TilesetPtr const& getTileset(TilePtr const& tile);
 
   // Asset Source -> Tileset Name -> Tileset
   StringMap<StringMap<TilesetPtr>> m_tilesets;

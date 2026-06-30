@@ -16,36 +16,36 @@ public:
 
   TtlCacheBase(int64_t timeToLive = 10000, int timeSmear = 1000, size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 
-  int64_t timeToLive() const;
+  [[nodiscard]] int64_t timeToLive() const;
   void setTimeToLive(int64_t timeToLive);
 
-  int timeSmear() const;
+  [[nodiscard]] int timeSmear() const;
   void setTimeSmear(int timeSmear);
 
   // If a max size is set, this cache also acts as an LRU cache with the given
   // maximum size.
-  size_t maxSize() const;
+  [[nodiscard]] size_t maxSize() const;
   void setMaxSize(size_t maxSize = NPos);
 
-  size_t currentSize() const;
+  [[nodiscard]] size_t currentSize() const;
 
-  List<Key> keys() const;
-  List<Value> values() const;
+  [[nodiscard]] List<Key> keys() const;
+  [[nodiscard]] List<Value> values() const;
 
   // If ttlUpdateEnabled is false, then the time to live for entries will not
   // be updated on access.
-  bool ttlUpdateEnabled() const;
+  [[nodiscard]] bool ttlUpdateEnabled() const;
   void setTtlUpdateEnabled(bool enabled);
 
   // If the value is in the cache, returns it and updates the access time,
   // otherwise returns nullptr.
-  Value* ptr(Key const& key);
+  [[nodiscard]] Value* ptr(Key const& key);
 
   // Put the given value into the cache.
   void set(Key const& key, Value value);
   // Removes the given value from the cache.  If found and removed, returns
   // true.
-  bool remove(Key const& key);
+  [[nodiscard]] bool remove(Key const& key);
 
   // Remove all key / value pairs matching a filter.
   void removeWhere(function<bool(Key const&, Value&)> filter);
@@ -54,7 +54,7 @@ public:
   // given producer.  Producer should take the key as an argument and return
   // the Value.
   template <typename Producer>
-  Value& get(Key const& key, Producer producer);
+  [[nodiscard]] Value& get(Key const& key, Producer producer);
 
   void clear();
 
@@ -85,7 +85,7 @@ TtlCacheBase<LruCacheType>::TtlCacheBase(int64_t timeToLive, int timeSmear, size
 }
 
 template <typename LruCacheType>
-int64_t TtlCacheBase<LruCacheType>::timeToLive() const {
+[[nodiscard]] int64_t TtlCacheBase<LruCacheType>::timeToLive() const {
   return m_timeToLive;
 }
 
@@ -95,7 +95,7 @@ void TtlCacheBase<LruCacheType>::setTimeToLive(int64_t timeToLive) {
 }
 
 template <typename LruCacheType>
-int TtlCacheBase<LruCacheType>::timeSmear() const {
+[[nodiscard]] int TtlCacheBase<LruCacheType>::timeSmear() const {
   return m_timeSmear;
 }
 
@@ -105,12 +105,12 @@ void TtlCacheBase<LruCacheType>::setTimeSmear(int timeSmear) {
 }
 
 template <typename LruCacheType>
-bool TtlCacheBase<LruCacheType>::ttlUpdateEnabled() const {
+[[nodiscard]] bool TtlCacheBase<LruCacheType>::ttlUpdateEnabled() const {
   return m_ttlUpdateEnabled;
 }
 
 template <typename LruCacheType>
-size_t TtlCacheBase<LruCacheType>::maxSize() const {
+[[nodiscard]] size_t TtlCacheBase<LruCacheType>::maxSize() const {
   return m_cache.maxSize();
 }
 
@@ -120,17 +120,17 @@ void TtlCacheBase<LruCacheType>::setMaxSize(size_t maxSize) {
 }
 
 template <typename LruCacheType>
-size_t TtlCacheBase<LruCacheType>::currentSize() const {
+[[nodiscard]] size_t TtlCacheBase<LruCacheType>::currentSize() const {
   return m_cache.currentSize();
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::keys() const -> List<Key> {
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::keys() const -> List<Key> {
   return m_cache.keys();
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::values() const -> List<Value> {
+[[nodiscard]] auto TtlCacheBase<LruCacheType>::values() const -> List<Value> {
   List<Value> values;
   for (auto& [expirationTime, value] : m_cache.values())
     values.append(std::move(value));

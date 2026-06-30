@@ -11,9 +11,9 @@ class PointableItem {
 public:
   virtual ~PointableItem() = default;
 
-  virtual float getAngleDir(float aimAngle, Direction facingDirection);
-  virtual float getAngle(float angle);
-  virtual List<Drawable> drawables() const = 0;
+  [[nodiscard]] virtual float getAngleDir(float aimAngle, Direction facingDirection);
+  [[nodiscard]] virtual float getAngle(float angle);
+  [[nodiscard]] virtual List<Drawable> drawables() const = 0;
 };
 
 }

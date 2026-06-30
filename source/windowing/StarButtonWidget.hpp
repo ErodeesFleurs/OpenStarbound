@@ -18,7 +18,7 @@ public:
       String const& disabledImage = "");
   virtual ~ButtonWidget();
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void mouseOver() override;
   void mouseOut() override;
   void mouseReturnStillDown() override;
@@ -27,31 +27,31 @@ public:
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
 
-  ButtonGroupPtr buttonGroup() const;
+  [[nodiscard]] ButtonGroupPtr buttonGroup() const;
   // Sets the button group for this widget, and adds it to the button group if
   // it is not already added.  Additionally, sets the button as checkable.
   void setButtonGroup(ButtonGroupPtr buttonGroup, int id = ButtonGroup::NoButton);
   // If a button group is set, returns this button's id in the button group.
-  int buttonGroupId();
+  [[nodiscard]] int buttonGroupId();
 
-  bool isHovered() const;
+  [[nodiscard]] bool isHovered() const;
 
-  bool isPressed() const;
+  [[nodiscard]] bool isPressed() const;
   void setPressed(bool pressed);
 
-  bool isCheckable() const;
+  [[nodiscard]] bool isCheckable() const;
   void setCheckable(bool checkable);
 
-  bool isHighlighted() const;
+  [[nodiscard]] bool isHighlighted() const;
   void setHighlighted(bool highlighted);
 
-  bool isChecked() const;
+  [[nodiscard]] bool isChecked() const;
   void setChecked(bool checked);
   // Either checks a button, or toggles the state, depending on whether the
   // button is part of an exclusive group or not.
   void check();
 
-  bool sustainCallbackOnDownHold();
+  [[nodiscard]] bool sustainCallbackOnDownHold();
   void setSustainCallbackOnDownHold(bool sustain);
 
   void setImages(String const& baseImage,
@@ -65,10 +65,10 @@ public:
   void setOverlayImage(String const& overlayImage = "");
 
   // Used to offset drawing when the button is being pressed / checked
-  Vec2I const& pressedOffset() const;
+  [[nodiscard]] Vec2I const& pressedOffset() const;
   void setPressedOffset(Vec2I const& offset);
 
-  virtual String const& getText() const;
+  [[nodiscard]] virtual String const& getText() const;
   virtual void setText(String const& text);
   virtual void setFontSize(int size);
   virtual void setFontDirectives(String directives);
@@ -79,7 +79,7 @@ public:
   void setFontColorDisabled(Color color);
   void setFontColorChecked(Color color);
 
-  WidgetPtr getChildAt(Vec2I const& pos) override;
+  [[nodiscard]] WidgetPtr getChildAt(Vec2I const& pos) override;
 
   void disable();
   void enable();
@@ -88,7 +88,7 @@ public:
   void setInvisible(bool invisible);
 
 protected:
-  RectI getScissorRect() const override;
+  [[nodiscard]] RectI getScissorRect() const override;
   void renderImpl() override;
 
   void drawButtonPart(String const& image, Vec2F const& position);

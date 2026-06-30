@@ -50,9 +50,9 @@ struct VisitableWorldParameters {
 
   virtual ~VisitableWorldParameters() = default;
 
-  virtual WorldParametersType type() const = 0;
+  [[nodiscard]] virtual WorldParametersType type() const = 0;
 
-  virtual Json store() const;
+  [[nodiscard]] virtual Json store() const;
 
   virtual void read(DataStream& ds);
   virtual void write(DataStream& ds) const;
@@ -116,9 +116,9 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
 
   TerrestrialWorldParameters& operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
 
-  WorldParametersType type() const override;
+  [[nodiscard]] WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] Json store() const override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -147,9 +147,9 @@ struct AsteroidsWorldParameters : VisitableWorldParameters {
   AsteroidsWorldParameters();
   explicit AsteroidsWorldParameters(Json const& store);
 
-  WorldParametersType type() const override;
+  [[nodiscard]] WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] Json store() const override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -165,9 +165,9 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   FloatingDungeonWorldParameters() = default;
   explicit FloatingDungeonWorldParameters(Json const& store);
 
-  WorldParametersType type() const override;
+  [[nodiscard]] WorldParametersType type() const override;
 
-  Json store() const override;
+  [[nodiscard]] Json store() const override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -184,14 +184,14 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   Maybe<String> nightAmbientNoises;
 };
 
-Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
-VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store);
+[[nodiscard]] Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
+[[nodiscard]] VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store);
 
-ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
-VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
+[[nodiscard]] ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
+[[nodiscard]] VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed);
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed);
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName);
+[[nodiscard]] TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed);
+[[nodiscard]] AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed);
+[[nodiscard]] FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName);
 
 }// namespace Star

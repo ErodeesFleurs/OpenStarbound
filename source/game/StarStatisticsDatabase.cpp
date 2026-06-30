@@ -42,7 +42,7 @@ StatisticsDatabase::StatisticsDatabase(AssetsConstPtr assets)
   }
 }
 
-StatEventPtr StatisticsDatabase::event(String const& name) const {
+[[nodiscard]] StatEventPtr StatisticsDatabase::event(String const& name) const {
   MutexLocker locker(m_cacheMutex);
   return m_eventCache.get(name, [this](String const& name) -> StatEventPtr {
       if (auto path = m_eventPaths.maybe(name))
@@ -51,7 +51,7 @@ StatEventPtr StatisticsDatabase::event(String const& name) const {
     });
 }
 
-AchievementPtr StatisticsDatabase::achievement(String const& name) const {
+[[nodiscard]] AchievementPtr StatisticsDatabase::achievement(String const& name) const {
   MutexLocker locker(m_cacheMutex);
   return m_achievementCache.get(name, [this](String const& name) -> AchievementPtr {
       if (auto path = m_achievementPaths.maybe(name))
@@ -60,15 +60,15 @@ AchievementPtr StatisticsDatabase::achievement(String const& name) const {
     });
 }
 
-StringList StatisticsDatabase::allAchievements() const {
+[[nodiscard]] StringList StatisticsDatabase::allAchievements() const {
   return m_achievementPaths.keys();
 }
 
-StringList StatisticsDatabase::achievementsForStat(String const& statName) const {
+[[nodiscard]] StringList StatisticsDatabase::achievementsForStat(String const& statName) const {
   return m_statAchievements.value(statName);
 }
 
-StatEventPtr StatisticsDatabase::readEvent(String const& path) const {
+[[nodiscard]] StatEventPtr StatisticsDatabase::readEvent(String const& path) const {
   Json config = m_assets->json(path);
 
   return make_shared<StatEvent>(StatEvent {
@@ -78,7 +78,7 @@ StatEventPtr StatisticsDatabase::readEvent(String const& path) const {
     });
 }
 
-AchievementPtr StatisticsDatabase::readAchievement(String const& path) const {
+[[nodiscard]] AchievementPtr StatisticsDatabase::readAchievement(String const& path) const {
   Json config = m_assets->json(path);
 
   return make_shared<Achievement>(Achievement {

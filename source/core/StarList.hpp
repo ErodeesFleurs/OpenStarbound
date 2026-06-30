@@ -40,19 +40,19 @@ public:
   void appendAll(Container&& list);
 
   template <class... Args>
-  reference emplaceAppend(Args&&... args);
+  [[nodiscard]] reference emplaceAppend(Args&&... args);
 
-  reference first();
-  const_reference first() const;
+  [[nodiscard]] reference first();
+  [[nodiscard]] const_reference first() const;
 
-  reference last();
-  const_reference last() const;
+  [[nodiscard]] reference last();
+  [[nodiscard]] const_reference last() const;
 
   [[nodiscard]] Maybe<value_type> maybeFirst();
   [[nodiscard]] Maybe<value_type> maybeLast();
 
   void removeLast();
-  value_type takeLast();
+  [[nodiscard]] value_type takeLast();
 
   [[nodiscard]] Maybe<value_type> maybeTakeLast();
 
@@ -99,7 +99,7 @@ public:
 template <typename List>
 class ListHasher {
 public:
-  size_t operator()(List const& l) const;
+  [[nodiscard]] size_t operator()(List const& l) const;
 
 private:
   hash<typename List::value_type> elemHasher;
@@ -129,16 +129,16 @@ public:
   // Returns last index of given element, NPos if not found.
   [[nodiscard]] size_t lastIndexOf(const_reference e, size_t til = NPos) const;
 
-  const_reference at(size_t n) const;
-  reference at(size_t n);
+  [[nodiscard]] const_reference at(size_t n) const;
+  [[nodiscard]] reference at(size_t n);
 
-  const_reference operator[](size_t n) const;
-  reference operator[](size_t n);
+  [[nodiscard]] const_reference operator[](size_t n) const;
+  [[nodiscard]] reference operator[](size_t n);
 
   // Does not throw if n is beyond end of list, instead returns def
   [[nodiscard]] value_type get(size_t n, value_type def = value_type()) const;
 
-  value_type takeAt(size_t i);
+  [[nodiscard]] value_type takeAt(size_t i);
 
   // Same as at, but wraps around back to the beginning
   // (throws if list is empty)
@@ -146,7 +146,7 @@ public:
   [[nodiscard]] reference wrap(size_t n);
 
   // Does not throw if list is empty
-  value_type wrap(size_t n, value_type def) const;
+  [[nodiscard]] value_type wrap(size_t n, value_type def) const;
 
   void eraseAt(size_t index);
   // Erases region from begin to end, not including end.
@@ -184,10 +184,10 @@ public:
   void prependAll(Container&& list);
 
   template <class... Args>
-  reference emplacePrepend(Args&&... args);
+  [[nodiscard]] reference emplacePrepend(Args&&... args);
 
   void removeFirst();
-  value_type takeFirst();
+  [[nodiscard]] value_type takeFirst();
 
   // Limit the size of the list by removing elements from the front until the
   // size is the maximumSize or less.
@@ -206,28 +206,28 @@ public:
   using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static List from(Container const& c);
+  [[nodiscard]] static List from(Container const& c);
 
   using Base::Base;
 
   // Pointer to contiguous storage, returns nullptr if empty
-  value_type* ptr();
-  value_type const* ptr() const;
+  [[nodiscard]] value_type* ptr();
+  [[nodiscard]] value_type const* ptr() const;
 
-  List slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] List slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  List filtered(Filter&& filter) const;
+  [[nodiscard]] List filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  List sorted(Comparator&& comparator) const;
-  List sorted() const;
+  [[nodiscard]] List sorted(Comparator&& comparator) const;
+  [[nodiscard]] List sorted() const;
 
   template <typename Function>
-  auto transformed(Function&& function);
+  [[nodiscard]] auto transformed(Function&& function);
 
   template <typename Function>
-  auto transformed(Function&& function) const;
+  [[nodiscard]] auto transformed(Function&& function) const;
 };
 
 template <typename Element, typename Allocator>
@@ -245,24 +245,24 @@ public:
   using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static StaticList from(Container const& c);
+  [[nodiscard]] static StaticList from(Container const& c);
 
   using Base::Base;
 
-  StaticList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] StaticList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  StaticList filtered(Filter&& filter) const;
+  [[nodiscard]] StaticList filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  StaticList sorted(Comparator&& comparator) const;
-  StaticList sorted() const;
+  [[nodiscard]] StaticList sorted(Comparator&& comparator) const;
+  [[nodiscard]] StaticList sorted() const;
 
   template <typename Function>
-  auto transformed(Function&& function);
+  [[nodiscard]] auto transformed(Function&& function);
 
   template <typename Function>
-  auto transformed(Function&& function) const;
+  [[nodiscard]] auto transformed(Function&& function) const;
 };
 
 template <typename Element, size_t MaxStackSize>
@@ -280,24 +280,24 @@ public:
   using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static SmallList from(Container const& c);
+  [[nodiscard]] static SmallList from(Container const& c);
 
   using Base::Base;
 
-  SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  SmallList filtered(Filter&& filter) const;
+  [[nodiscard]] SmallList filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  SmallList sorted(Comparator&& comparator) const;
-  SmallList sorted() const;
+  [[nodiscard]] SmallList sorted(Comparator&& comparator) const;
+  [[nodiscard]] SmallList sorted() const;
 
   template <typename Function>
-  auto transformed(Function&& function);
+  [[nodiscard]] auto transformed(Function&& function);
 
   template <typename Function>
-  auto transformed(Function&& function) const;
+  [[nodiscard]] auto transformed(Function&& function) const;
 };
 
 template <typename Element, size_t MaxStackSize>
@@ -315,24 +315,24 @@ public:
   using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static Deque from(Container const& c);
+  [[nodiscard]] static Deque from(Container const& c);
 
   using Base::Base;
 
-  Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  Deque filtered(Filter&& filter) const;
+  [[nodiscard]] Deque filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  Deque sorted(Comparator&& comparator) const;
-  Deque sorted() const;
+  [[nodiscard]] Deque sorted(Comparator&& comparator) const;
+  [[nodiscard]] Deque sorted() const;
 
   template <typename Function>
-  auto transformed(Function&& function);
+  [[nodiscard]] auto transformed(Function&& function);
 
   template <typename Function>
-  auto transformed(Function&& function) const;
+  [[nodiscard]] auto transformed(Function&& function) const;
 };
 
 template <typename Element, typename Allocator>
@@ -350,7 +350,7 @@ public:
   using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static LinkedList from(Container const& c);
+  [[nodiscard]] static LinkedList from(Container const& c);
 
   using Base::Base;
 
@@ -363,17 +363,17 @@ public:
   void prependAll(Container&& list);
 
   template <typename Filter>
-  LinkedList filtered(Filter&& filter) const;
+  [[nodiscard]] LinkedList filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  LinkedList sorted(Comparator&& comparator) const;
-  LinkedList sorted() const;
+  [[nodiscard]] LinkedList sorted(Comparator&& comparator) const;
+  [[nodiscard]] LinkedList sorted() const;
 
   template <typename Function>
-  auto transformed(Function&& function);
+  [[nodiscard]] auto transformed(Function&& function);
 
   template <typename Function>
-  auto transformed(Function&& function) const;
+  [[nodiscard]] auto transformed(Function&& function) const;
 };
 
 template <typename Element, typename Allocator>
@@ -677,13 +677,13 @@ auto RandomAccessListMixin<BaseList>::at(size_t n) -> reference {
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::operator[](size_t n) const -> const_reference {
-  starAssert(n < Base::size());
+  assert(n < Base::size());
   return Base::operator[](n);
 }
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::operator[](size_t n) -> reference {
-  starAssert(n < Base::size());
+  assert(n < Base::size());
   return Base::operator[](n);
 }
 
@@ -727,26 +727,26 @@ auto RandomAccessListMixin<BaseList>::wrap(size_t n, value_type def) const -> va
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::eraseAt(size_t i) {
-  starAssert(i < Base::size());
+  assert(i < Base::size());
   Base::erase(Base::begin() + i);
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::eraseAt(size_t b, size_t e) {
-  starAssert(b < Base::size() && e <= Base::size());
+  assert(b < Base::size() && e <= Base::size());
   Base::erase(Base::begin() + b, Base::begin() + e);
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::insertAt(size_t pos, value_type e) {
-  starAssert(pos <= Base::size());
+  assert(pos <= Base::size());
   Base::insert(Base::begin() + pos, std::move(e));
 }
 
 template <typename BaseList>
 template <typename Container>
 void RandomAccessListMixin<BaseList>::insertAllAt(size_t pos, Container const& l) {
-  starAssert(pos <= Base::size());
+  assert(pos <= Base::size());
   Base::insert(Base::begin() + pos, l.begin(), l.end());
 }
 
@@ -834,7 +834,7 @@ auto List<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const ->
 template <typename Element, typename Allocator>
 template <typename Filter>
 auto List<Element, Allocator>::filtered(Filter&& filter) const -> List {
-  List list(*this);
+  [[nodiscard]] List list(*this);
   list.filter(std::forward<Filter>(filter));
   return list;
 }
@@ -842,14 +842,14 @@ auto List<Element, Allocator>::filtered(Filter&& filter) const -> List {
 template <typename Element, typename Allocator>
 template <typename Comparator>
 auto List<Element, Allocator>::sorted(Comparator&& comparator) const -> List {
-  List list(*this);
+  [[nodiscard]] List list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
 template <typename Element, typename Allocator>
 List<Element, Allocator> List<Element, Allocator>::sorted() const {
-  List list(*this);
+  [[nodiscard]] List list(*this);
   list.sort();
   return list;
 }
@@ -886,7 +886,7 @@ auto StaticList<Element, MaxSize>::slice(SliceIndex a, SliceIndex b, int i) cons
 template <typename Element, size_t MaxSize>
 template <typename Filter>
 auto StaticList<Element, MaxSize>::filtered(Filter&& filter) const -> StaticList {
-  StaticList list(*this);
+  [[nodiscard]] StaticList list(*this);
   list.filter(forward<Filter>(filter));
   return list;
 }
@@ -894,14 +894,14 @@ auto StaticList<Element, MaxSize>::filtered(Filter&& filter) const -> StaticList
 template <typename Element, size_t MaxSize>
 template <typename Comparator>
 auto StaticList<Element, MaxSize>::sorted(Comparator&& comparator) const -> StaticList {
-  StaticList list(*this);
+  [[nodiscard]] StaticList list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
 template <typename Element, size_t MaxSize>
 StaticList<Element, MaxSize> StaticList<Element, MaxSize>::sorted() const {
-  StaticList list(*this);
+  [[nodiscard]] StaticList list(*this);
   list.sort();
   return list;
 }
@@ -936,7 +936,7 @@ auto SmallList<Element, MaxStackSize>::slice(SliceIndex a, SliceIndex b, int i) 
 template <typename Element, size_t MaxStackSize>
 template <typename Filter>
 auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const -> SmallList {
-  SmallList list(*this);
+  [[nodiscard]] SmallList list(*this);
   list.filter(std::forward<Filter>(filter));
   return list;
 }
@@ -944,14 +944,14 @@ auto SmallList<Element, MaxStackSize>::filtered(Filter&& filter) const -> SmallL
 template <typename Element, size_t MaxStackSize>
 template <typename Comparator>
 auto SmallList<Element, MaxStackSize>::sorted(Comparator&& comparator) const -> SmallList {
-  SmallList list(*this);
+  [[nodiscard]] SmallList list(*this);
   list.sort(std::forward<Comparator>(comparator));
   return list;
 }
 
 template <typename Element, size_t MaxStackSize>
 SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::sorted() const {
-  SmallList list(*this);
+  [[nodiscard]] SmallList list(*this);
   list.sort();
   return list;
 }
@@ -986,7 +986,7 @@ Deque<Element, Allocator> Deque<Element, Allocator>::slice(SliceIndex a, SliceIn
 template <typename Element, typename Allocator>
 template <typename Filter>
 Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) const {
-  Deque l(*this);
+  [[nodiscard]] Deque l(*this);
   l.filter(std::forward<Filter>(filter));
   return l;
 }
@@ -994,14 +994,14 @@ Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) c
 template <typename Element, typename Allocator>
 template <typename Comparator>
 Deque<Element, Allocator> Deque<Element, Allocator>::sorted(Comparator&& comparator) const {
-  Deque l(*this);
+  [[nodiscard]] Deque l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
 template <typename Element, typename Allocator>
 Deque<Element, Allocator> Deque<Element, Allocator>::sorted() const {
-  Deque l(*this);
+  [[nodiscard]] Deque l(*this);
   l.sort();
   return l;
 }
@@ -1059,7 +1059,7 @@ void LinkedList<Element, Allocator>::prependAll(Container&& list) {
 template <typename Element, typename Allocator>
 template <typename Filter>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
-  LinkedList list(*this);
+  [[nodiscard]] LinkedList list(*this);
   list.filter(std::forward<Filter>(filter));
   return list;
 }
@@ -1067,14 +1067,14 @@ LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&&
 template <typename Element, typename Allocator>
 template <typename Comparator>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted(Comparator&& comparator) const {
-  LinkedList l(*this);
+  [[nodiscard]] LinkedList l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
 template <typename Element, typename Allocator>
 LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted() const {
-  LinkedList l(*this);
+  [[nodiscard]] LinkedList l(*this);
   l.sort();
   return l;
 }

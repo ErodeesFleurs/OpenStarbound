@@ -16,7 +16,7 @@ public:
   ~Rebuilder() = default;
 
   using AttemptCallback = function<String(Json const&)>;
-  bool rebuild(Json store, String last_error, AttemptCallback attempt) const;
+  [[nodiscard]] bool rebuild(Json store, String last_error, AttemptCallback attempt) const;
 
 private:
   LuaRootPtr m_luaRoot;

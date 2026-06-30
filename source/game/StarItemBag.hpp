@@ -30,16 +30,16 @@ public:
   ItemBag(ItemDatabaseConstPtr itemDatabase);
   explicit ItemBag(size_t size, ItemDatabaseConstPtr itemDatabase);
 
-  static ItemBag fromJson(Json const& spec, ItemDatabaseConstPtr itemDatabase);
-  static ItemBag loadStore(Json const& store, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemBag fromJson(Json const& spec, ItemDatabaseConstPtr itemDatabase);
+  [[nodiscard]] static ItemBag loadStore(Json const& store, ItemDatabaseConstPtr itemDatabase);
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]] Json toJson() const;
+  [[nodiscard]] Json diskStore() const;
 
-  size_t size() const;
+  [[nodiscard]] size_t size() const;
   // May reshape the container, but will try not to lose any container
   // contents.  Returns overflow.
-  List<ItemPtr> resize(size_t size);
+  [[nodiscard]] List<ItemPtr> resize(size_t size);
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
@@ -47,58 +47,58 @@ public:
   // methods should ever return a null item, it can be usefull to force cleanup
   // to remove empty items from memory.  If any action was done, will return
   // true.
-  bool cleanup() const;
+  [[nodiscard]] bool cleanup() const;
 
   // Direct access to item list
-  List<ItemPtr>& items();
-  List<ItemPtr> const& items() const;
+  [[nodiscard]] List<ItemPtr>& items();
+  [[nodiscard]] List<ItemPtr> const& items() const;
 
-  ItemPtr const& at(size_t i) const;
-  ItemPtr& at(size_t i);
+  [[nodiscard]] ItemPtr const& at(size_t i) const;
+  [[nodiscard]] ItemPtr& at(size_t i);
 
   // Returns all non-empty items and clears container contents
-  List<ItemPtr> takeAll();
+  [[nodiscard]] List<ItemPtr> takeAll();
 
   // Directly set the value of an item at a given slot
   void setItem(size_t pos, ItemPtr item);
 
   // Put items into the given slot.  Returns number of items left over
-  ItemPtr putItems(size_t pos, ItemPtr items);
+  [[nodiscard]] ItemPtr putItems(size_t pos, ItemPtr items);
   // Take a maximum number of items from the given position, defaults to all.
-  ItemPtr takeItems(size_t pos, uint64_t count = highest<uint64_t>());
+  [[nodiscard]] ItemPtr takeItems(size_t pos, uint64_t count = highest<uint64_t>());
   // Put items in the slot by combining, or swap the current items with the
   // given items.
-  ItemPtr swapItems(size_t pos, ItemPtr items, bool tryCombine = true);
+  [[nodiscard]] ItemPtr swapItems(size_t pos, ItemPtr items, bool tryCombine = true);
 
   // Destroys the given number of items, only if the entirety of count is
   // available, returns success.
-  bool consumeItems(size_t pos, uint64_t count);
+  [[nodiscard]] bool consumeItems(size_t pos, uint64_t count);
 
   // Consume any items from any stack that matches the given item descriptor,
   // only if the entirety of the count is available.  Returns success.
-  bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
+  [[nodiscard]] bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
 
   // Returns the number of times this ItemDescriptor could be consumed using
   // the items in this container.
-  uint64_t available(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  [[nodiscard]] uint64_t available(ItemDescriptor const& descriptor, bool exactMatch = false) const;
 
   // Returns the number of items that can fit anywhere in the bag, including
   // being split up.
-  uint64_t itemsCanFit(ItemConstPtr const& items) const;
+  [[nodiscard]] uint64_t itemsCanFit(ItemConstPtr const& items) const;
   // Returns the number of items that can be stacked with existing items
   // anywhere in the bag.
-  uint64_t itemsCanStack(ItemConstPtr const& items) const;
+  [[nodiscard]] uint64_t itemsCanStack(ItemConstPtr const& items) const;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, uint64_t max = highest<uint64_t>()) const;
+  [[nodiscard]] ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, uint64_t max = highest<uint64_t>()) const;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
-  ItemPtr addItems(ItemPtr items);
+  [[nodiscard]] ItemPtr addItems(ItemPtr items);
 
   // Add items to the bag, but only if they stack with existing items in the
   // bag.
-  ItemPtr stackItems(ItemPtr items);
+  [[nodiscard]] ItemPtr stackItems(ItemPtr items);
 
   // Attempt to condense all stacks in the given bag
   void condenseStacks();
@@ -110,12 +110,12 @@ public:
 private:
   // If the from item can stack into the given to item, returns the amount that
   // would be transferred.
-  static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
+  [[nodiscard]] static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
 
   // Returns the slot that contains the item already and has the *highest*
   // stack count but not full, or an empty slot, or NPos for no room.
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
+  [[nodiscard]] size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
+  [[nodiscard]] size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
 
   mutable List<ItemPtr> m_items;
   ItemDatabaseConstPtr m_itemDatabase;

@@ -22,13 +22,13 @@ public:
   using value_type = pair<Left, Right>;
 
   struct BiMapIterator {
-    BiMapIterator& operator++();
-    BiMapIterator operator++(int);
+    [[nodiscard]] BiMapIterator& operator++();
+    [[nodiscard]] BiMapIterator operator++(int);
 
     bool operator==(BiMapIterator const& rhs) const;
     bool operator!=(BiMapIterator const& rhs) const;
 
-    pair<Left const&, Right const&> operator*() const;
+    [[nodiscard]] pair<Left const&, Right const&> operator*() const;
 
     typename LeftMap::const_iterator iterator;
   };
@@ -37,7 +37,7 @@ public:
   using const_iterator = iterator;
 
   template <typename Collection>
-  static BiMap from(Collection const& c);
+  [[nodiscard]] static BiMap from(Collection const& c);
 
   BiMap() = default;
   BiMap(BiMap const& map);
@@ -47,39 +47,39 @@ public:
 
   BiMap(std::initializer_list<value_type> list);
 
-  List<Left> leftValues() const;
-  List<Right> rightValues() const;
-  List<value_type> pairs() const;
+  [[nodiscard]] List<Left> leftValues() const;
+  [[nodiscard]] List<Right> rightValues() const;
+  [[nodiscard]] List<value_type> pairs() const;
 
-  bool hasLeftValue(Left const& left) const;
-  bool hasRightValue(Right const& right) const;
+  [[nodiscard]] bool hasLeftValue(Left const& left) const;
+  [[nodiscard]] bool hasRightValue(Right const& right) const;
 
-  Right const& getRight(Left const& left) const;
-  Left const& getLeft(Right const& right) const;
+  [[nodiscard]] Right const& getRight(Left const& left) const;
+  [[nodiscard]] Left const& getLeft(Right const& right) const;
 
-  Right valueRight(Left const& left, Right const& def = Right()) const;
-  Left valueLeft(Right const& right, Left const& def = Left()) const;
+  [[nodiscard]] Right valueRight(Left const& left, Right const& def = Right()) const;
+  [[nodiscard]] Left valueLeft(Right const& right, Left const& def = Left()) const;
 
-  Maybe<Right> maybeRight(Left const& left) const;
+  [[nodiscard]] Maybe<Right> maybeRight(Left const& left) const;
 
-  Maybe<Left> maybeLeft(Right const& right) const;
+  [[nodiscard]] Maybe<Left> maybeLeft(Right const& right) const;
 
-  Right takeRight(Left const& left);
-  Left takeLeft(Right const& right);
+  [[nodiscard]] Right takeRight(Left const& left);
+  [[nodiscard]] Left takeLeft(Right const& right);
 
-  Maybe<Right> maybeTakeRight(Left const& left);
-  Maybe<Left> maybeTakeLeft(Right const& right);
+  [[nodiscard]] Maybe<Right> maybeTakeRight(Left const& left);
+  [[nodiscard]] Maybe<Left> maybeTakeLeft(Right const& right);
 
-  Right const* rightPtr(Left const& left) const;
-  Left const* leftPtr(Right const& right) const;
+  [[nodiscard]] Right const* rightPtr(Left const& left) const;
+  [[nodiscard]] Left const* leftPtr(Right const& right) const;
 
   BiMap& operator=(BiMap const& map);
 
-  pair<iterator, bool> insert(value_type const& val);
+  [[nodiscard]] pair<iterator, bool> insert(value_type const& val);
 
   // Returns true if value was inserted, false if either the left or right side
   // already existed.
-  bool insert(Left const& left, Right const& right);
+  [[nodiscard]] bool insert(Left const& left, Right const& right);
 
   // Throws an exception if the pair cannot be inserted
   void add(Left const& left, Right const& right);
@@ -92,20 +92,20 @@ public:
 
   // Removes the pair with the given left side, returns true if this pair was
   // found, false otherwise.
-  bool removeLeft(Left const& left);
+  [[nodiscard]] bool removeLeft(Left const& left);
 
   // Removes the pair with the given right side, returns true if this pair was
   // found, false otherwise.
-  bool removeRight(Right const& right);
+  [[nodiscard]] bool removeRight(Right const& right);
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  size_t size() const;
+  [[nodiscard]] size_t size() const;
 
   void clear();
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
   bool operator==(BiMap const& m) const;
 
@@ -180,17 +180,17 @@ BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap(std::initializer_list<value_typ
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-List<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::leftValues() const {
+[[nodiscard]] List<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::leftValues() const {
   return m_leftMap.keys();
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-List<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightValues() const {
+[[nodiscard]] List<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightValues() const {
   return m_rightMap.keys();
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::pairs() const -> List<value_type> {
+[[nodiscard]] auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::pairs() const -> List<value_type> {
   List<value_type> values;
   for (auto const& value : *this)
     values.append(value);
@@ -198,37 +198,37 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::pairs() const -> List<value_type
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::hasLeftValue(Left const& left) const {
+[[nodiscard]] bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::hasLeftValue(Left const& left) const {
   return m_leftMap.contains(left);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::hasRightValue(Right const& right) const {
+[[nodiscard]] bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::hasRightValue(Right const& right) const {
   return m_rightMap.contains(right);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-RightT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getRight(Left const& left) const {
+[[nodiscard]] RightT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getRight(Left const& left) const {
   return *m_leftMap.get(left);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-LeftT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& right) const {
+[[nodiscard]] LeftT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& right) const {
   return *m_rightMap.get(right);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueRight(Left const& left, Right const& def) const {
+[[nodiscard]] RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueRight(Left const& left, Right const& def) const {
   return maybeRight(left).value(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueLeft(Right const& right, Left const& def) const {
+[[nodiscard]] LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueLeft(Right const& right, Left const& def) const {
   return maybeLeft(right).value(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
+[[nodiscard]] Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
   auto i = m_leftMap.find(left);
   if (i != m_leftMap.end())
     return *i->second;
@@ -236,7 +236,7 @@ Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& 
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
+[[nodiscard]] Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
   auto i = m_rightMap.find(right);
   if (i != m_rightMap.end())
     return *i->second;
@@ -280,12 +280,12 @@ Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Right cons
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-RightT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightPtr(Left const& left) const {
+[[nodiscard]] RightT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightPtr(Left const& left) const {
   return m_leftMap.value(left);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-LeftT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::leftPtr(Right const& right) const {
+[[nodiscard]] LeftT const* BiMap<LeftT, RightT, LeftMapT, RightMapT>::leftPtr(Right const& right) const {
   return m_rightMap.value(right);
 }
 
@@ -306,7 +306,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) ->
     return {BiMapIterator{leftRes.first}, false};
 
   auto rightRes = m_rightMap.insert(typename RightMap::value_type{val.second, nullptr});
-  starAssert(rightRes.second == true);
+  assert(rightRes.second == true);
   leftRes.first->second = &rightRes.first->first;
   rightRes.first->second = &leftRes.first->first;
   return {BiMapIterator{leftRes.first}, true};
@@ -378,7 +378,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::end() const -> const_iterator {
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-size_t BiMap<LeftT, RightT, LeftMapT, RightMapT>::size() const {
+[[nodiscard]] size_t BiMap<LeftT, RightT, LeftMapT, RightMapT>::size() const {
   return m_leftMap.size();
 }
 
@@ -389,7 +389,7 @@ void BiMap<LeftT, RightT, LeftMapT, RightMapT>::clear() {
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::empty() const {
+[[nodiscard]] bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::empty() const {
   return m_leftMap.empty();
 }
 

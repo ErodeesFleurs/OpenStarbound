@@ -21,25 +21,25 @@ public:
 
   explicit FontTextureGroup(TextureGroupPtr textureGroup);
 
-  const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize);
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  [[nodiscard]] TexturePtr glyphTexturePtr(String::Char, unsigned fontSize);
+  [[nodiscard]] TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
-  unsigned glyphWidth(String::Char c, unsigned fontSize);
+  [[nodiscard]] unsigned glyphWidth(String::Char c, unsigned fontSize);
 
   // Removes glyphs that haven't been used in more than the given time in
   // milliseconds
   void cleanup(int64_t timeout);
   // Switches the current font
   void switchFont(String const& font);
-  String const& activeFont();
+  [[nodiscard]] String const& activeFont();
   void addFont(FontPtr const& font, String const& name);
   void clearFonts();
   void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
 
 private:
-  Font* getFontForCharacter(String::Char);
+  [[nodiscard]] Font* getFontForCharacter(String::Char);
 
   CaseInsensitiveStringMap<FontPtr> m_fonts;
   String m_fontName;

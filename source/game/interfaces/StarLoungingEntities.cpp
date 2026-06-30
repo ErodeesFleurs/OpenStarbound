@@ -21,7 +21,7 @@ EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Left"},
     {LoungeControl::Walk, "Walk"},
 };
 
-EntityAnchorConstPtr LoungeableEntity::anchor(size_t anchorPositionIndex) const {
+[[nodiscard]] EntityAnchorConstPtr LoungeableEntity::anchor(size_t anchorPositionIndex) const {
   return loungeAnchor(anchorPositionIndex);
 }
 
@@ -29,7 +29,7 @@ void LoungeableEntity::loungeControl(size_t, LoungeControl) {}
 
 void LoungeableEntity::loungeAim(size_t, Vec2F const&) {}
 
-Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
+[[nodiscard]] Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
   Set<EntityId> loungingInEntities;
   for (auto const& [entityId, loungePositionIndex] : entitiesLounging()) {
     if (loungePositionIndex == positionIndex)
@@ -38,7 +38,7 @@ Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
   return loungingInEntities;
 }
 
-Set<pair<EntityId, size_t>> LoungeableEntity::entitiesLounging() const {
+[[nodiscard]] Set<pair<EntityId, size_t>> LoungeableEntity::entitiesLounging() const {
   Set<pair<EntityId, size_t>> loungingInEntities;
   world()->forEachEntity(metaBoundBox().translated(position()),
       [&](EntityPtr const& entity) {
@@ -52,7 +52,7 @@ Set<pair<EntityId, size_t>> LoungeableEntity::entitiesLounging() const {
   return loungingInEntities;
 }
 
-bool LoungingEntity::inConflictingLoungeAnchor() const {
+[[nodiscard]] bool LoungingEntity::inConflictingLoungeAnchor() const {
   if (auto loungeAnchorState = loungingIn()) {
     if (auto loungeableEntity = world()->get<LoungeableEntity>(loungeAnchorState->entityId)) {
       auto entitiesLoungingIn = loungeableEntity->entitiesLoungingIn(loungeAnchorState->positionIndex);

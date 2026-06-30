@@ -25,23 +25,23 @@ public:
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
   void setDance(Maybe<String> const& danceName);
-  pair<HumanoidEmote, float> currentEmote() const;
-  List<ChatAction> pullPendingChatActions();
+  [[nodiscard]] pair<HumanoidEmote, float> currentEmote() const;
+  [[nodiscard]] List<ChatAction> pullPendingChatActions();
   void playEmote(HumanoidEmote emote);
   void requestEmote(String const& emote);
   void tickChatAndEmotes(float dt);
   void tickBlink(float dt);
 
-  HumanoidEmote emoteState() const;
+  [[nodiscard]] HumanoidEmote emoteState() const;
   void setEmoteState(HumanoidEmote emote);
-  Maybe<String> const& dance() const;
-  String const& chatMessage() const;
+  [[nodiscard]] Maybe<String> const& dance() const;
+  [[nodiscard]] String const& chatMessage() const;
   void setChatMessage(String const& message);
-  bool chatMessageChanged() const;
+  [[nodiscard]] bool chatMessageChanged() const;
   void clearChatMessageChanged();
 
 private:
-  HumanoidEmote detectEmotes(String const& chatter);
+  [[nodiscard]] HumanoidEmote detectEmotes(String const& chatter);
 
   Player& m_player;
   DanceDatabaseConstPtr m_danceDatabase;

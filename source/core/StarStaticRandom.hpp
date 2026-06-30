@@ -18,7 +18,7 @@ void staticRandomHash32Iter(XXHash32& hash, T const& v, TL const&... rest) {
 
 template <typename T, typename... TL>
 uint32_t staticRandomHash32(T const& v, TL const&... rest) {
-  XXHash32 hash(2938728349u);
+  [[nodiscard]] XXHash32 hash(2938728349u);
   staticRandomHash32Iter(hash, v, rest...);
   return hash.digest();
 }
@@ -33,7 +33,7 @@ void staticRandomHash64Iter(XXHash64& hash, T const& v, TL const&... rest) {
 
 template <typename T, typename... TL>
 uint64_t staticRandomHash64(T const& v, TL const&... rest) {
-  XXHash64 hash(1997293021376312589);
+  [[nodiscard]] XXHash64 hash(1997293021376312589);
   staticRandomHash64Iter(hash, v, rest...);
   return hash.digest();
 }
@@ -125,9 +125,9 @@ public:
   URBG(Function func) : m_func(func) {};
 
   using result_type = T;
-  static constexpr T min() { return std::numeric_limits<T>::min(); };
-  static constexpr T max() { return std::numeric_limits<T>::max(); };
-  T operator()() { return m_func(); };
+  [[nodiscard]] static constexpr T min() { return std::numeric_limits<T>::min(); };
+  [[nodiscard]] static constexpr T max() { return std::numeric_limits<T>::max(); };
+  [[nodiscard]] T operator()() { return m_func(); };
 private:
   Function m_func;
 };

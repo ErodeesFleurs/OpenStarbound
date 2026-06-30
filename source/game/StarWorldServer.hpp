@@ -146,33 +146,33 @@ public:
   ~WorldServer();
 
   void setWorldId(String worldId);
-  String const& worldId() const;
+  [[nodiscard]] String const& worldId() const;
 
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
-  UniverseSettingsPtr universeSettings() const;
-  AssetsConstPtr assets() const override;
-  MaterialDatabaseConstPtr materialDatabase() const override;
-  ItemDatabaseConstPtr itemDatabase() const override;
-  ObjectDatabaseConstPtr objectDatabase() const override;
-  PlantDatabaseConstPtr plantDatabase() const override;
-  TreasureDatabaseConstPtr treasureDatabase() const override;
-  ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
-  FunctionDatabaseConstPtr functionDatabase() const override;
-  BehaviorDatabaseConstPtr behaviorDatabase() const override;
-  NpcDatabaseConstPtr npcDatabase() const;
-  MonsterDatabaseConstPtr monsterDatabase() const;
-  ProjectileDatabaseConstPtr projectileDatabase() const override;
-  SpawnTypeDatabaseConstPtr spawnTypeDatabase() const;
-  StagehandDatabaseConstPtr stagehandDatabase() const;
-  VehicleDatabaseConstPtr vehicleDatabase() const;
-  TerrainDatabaseConstPtr terrainDatabase() const;
-  BiomeDatabaseConstPtr biomeDatabase() const;
-  DungeonDefinitionsConstPtr dungeonDefinitions() const;
-  LiquidsDatabaseConstPtr liquidsDatabase() const override;
-  EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
-  ParticleDatabaseConstPtr particleDatabase() const override;
-  TechDatabaseConstPtr techDatabase() const override;
-  StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
+  [[nodiscard]] UniverseSettingsPtr universeSettings() const;
+  [[nodiscard]] AssetsConstPtr assets() const override;
+  [[nodiscard]] MaterialDatabaseConstPtr materialDatabase() const override;
+  [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const override;
+  [[nodiscard]] ObjectDatabaseConstPtr objectDatabase() const override;
+  [[nodiscard]] PlantDatabaseConstPtr plantDatabase() const override;
+  [[nodiscard]] TreasureDatabaseConstPtr treasureDatabase() const override;
+  [[nodiscard]] ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
+  [[nodiscard]] FunctionDatabaseConstPtr functionDatabase() const override;
+  [[nodiscard]] BehaviorDatabaseConstPtr behaviorDatabase() const override;
+  [[nodiscard]] NpcDatabaseConstPtr npcDatabase() const;
+  [[nodiscard]] MonsterDatabaseConstPtr monsterDatabase() const;
+  [[nodiscard]] ProjectileDatabaseConstPtr projectileDatabase() const override;
+  [[nodiscard]] SpawnTypeDatabaseConstPtr spawnTypeDatabase() const;
+  [[nodiscard]] StagehandDatabaseConstPtr stagehandDatabase() const;
+  [[nodiscard]] VehicleDatabaseConstPtr vehicleDatabase() const;
+  [[nodiscard]] TerrainDatabaseConstPtr terrainDatabase() const;
+  [[nodiscard]] BiomeDatabaseConstPtr biomeDatabase() const;
+  [[nodiscard]] DungeonDefinitionsConstPtr dungeonDefinitions() const;
+  [[nodiscard]] LiquidsDatabaseConstPtr liquidsDatabase() const override;
+  [[nodiscard]] EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
+  [[nodiscard]] ParticleDatabaseConstPtr particleDatabase() const override;
+  [[nodiscard]] TechDatabaseConstPtr techDatabase() const override;
+  [[nodiscard]] StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
 
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
@@ -182,121 +182,121 @@ public:
   // Give this world a central structure.  If there is a previous central
   // structure it is removed first.  Returns the structure with transformed
   // coordinates.
-  WorldStructure setCentralStructure(WorldStructure centralStructure);
-  WorldStructure const& centralStructure() const;
+  [[nodiscard]] WorldStructure setCentralStructure(WorldStructure centralStructure);
+  [[nodiscard]] WorldStructure const& centralStructure() const;
   // If there is an active central structure, it is removed and all unmodified
   // objects and blocks associated with the structure are removed.
   void removeCentralStructure();
 
   void setPlayerStart(Vec2F const& startPosition, bool respawnInWorld = false);
 
-  bool spawnTargetValid(SpawnTarget const& spawnTarget) const;
+  [[nodiscard]] bool spawnTargetValid(SpawnTarget const& spawnTarget) const;
 
   // Returns false if the client id already exists, or the spawn target is
   // invalid.
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
+  [[nodiscard]] bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
 
   // Removes client, sends the WorldStopPacket, and returns any pending packets
   // for that client
-  List<PacketPtr> removeClient(ConnectionId clientId);
+  [[nodiscard]] List<PacketPtr> removeClient(ConnectionId clientId);
 
-  List<ConnectionId> clientIds() const;
-  bool hasClient(ConnectionId clientId) const;
-  RectF clientWindow(ConnectionId clientId) const;
+  [[nodiscard]] List<ConnectionId> clientIds() const;
+  [[nodiscard]] bool hasClient(ConnectionId clientId) const;
+  [[nodiscard]] RectF clientWindow(ConnectionId clientId) const;
   // May return null if a Player is not available or if the client id is not
   // valid.
-  PlayerPtr clientPlayer(ConnectionId clientId) const;
+  [[nodiscard]] PlayerPtr clientPlayer(ConnectionId clientId) const;
 
-  List<EntityId> players() const;
+  [[nodiscard]] List<EntityId> players() const;
 
   void handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets);
-  List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
-  bool sendPacket(ConnectionId clientId, PacketPtr const& packet);
+  [[nodiscard]] List<PacketPtr> getOutgoingPackets(ConnectionId clientId);
+  [[nodiscard]] bool sendPacket(ConnectionId clientId, PacketPtr const& packet);
 
-  Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args);
 
   void startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings = {});
   void stopFlyingSkyAt(SkyParameters const& destination);
   void setOrbitalSky(SkyParameters const& destination);
 
   // Defaults to Medium
-  WorldServerFidelity fidelity() const;
+  [[nodiscard]] WorldServerFidelity fidelity() const;
   void setFidelity(WorldServerFidelity fidelity);
 
-  bool shouldExpire();
+  [[nodiscard]] bool shouldExpire();
   void setExpiryTime(float expiryTime);
-  float expiryTime();
+  [[nodiscard]] float expiryTime();
 
   void update(float dt);
 
-  ConnectionId connection() const override;
-  WorldGeometry geometry() const override;
-  uint64_t currentStep() const override;
-  MaterialId material(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] ConnectionId connection() const override;
+  [[nodiscard]] WorldGeometry geometry() const override;
+  [[nodiscard]] uint64_t currentStep() const override;
+  [[nodiscard]] MaterialId material(Vec2I const& position, TileLayer layer) const override;
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
-  MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
-  ModId mod(Vec2I const& position, TileLayer layer) const override;
-  MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
-  MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const override;
-  LiquidLevel liquidLevel(Vec2I const& pos) const override;
-  LiquidLevel liquidLevel(RectF const& region) const override;
+  [[nodiscard]] MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] ModId mod(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const override;
+  [[nodiscard]] LiquidLevel liquidLevel(Vec2I const& pos) const override;
+  [[nodiscard]] LiquidLevel liquidLevel(RectF const& region) const override;
 
-  TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
-  TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
-  bool replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage);
-  TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
-  bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
-  EntityPtr entity(EntityId entityId) const override;
+  [[nodiscard]] TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const override;
+  [[nodiscard]] TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) override;
+  [[nodiscard]] bool replaceTile(Vec2I const& pos, TileModification const& modification, TileDamage const& tileDamage);
+  [[nodiscard]] TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) override;
+  [[nodiscard]] bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const override;
+  [[nodiscard]] EntityPtr entity(EntityId entityId) const override;
   void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) override;
-  EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
+  [[nodiscard]] EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = EntityFilter()) const override;
   void forAllEntities(EntityCallback entityCallback) const override;
   void forEachEntity(RectF const& boundBox, EntityCallback callback) const override;
   void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback callback) const override;
   void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const override;
-  EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
-  EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
-  EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
-  bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
-  CollisionKind tileCollisionKind(Vec2I const& pos) const override;
+  [[nodiscard]] EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const override;
+  [[nodiscard]] EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const override;
+  [[nodiscard]] EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
+  [[nodiscard]] bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
+  [[nodiscard]] CollisionKind tileCollisionKind(Vec2I const& pos) const override;
   void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const override;
-  bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
-  bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
-  bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
-  InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
-  bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
-  RpcPromise<InteractAction> interact(InteractRequest const& request) override;
-  float gravity(Vec2F const& pos) const override;
-  float windLevel(Vec2F const& pos) const override;
-  float lightLevel(Vec2F const& pos) const override;
-  bool breathable(Vec2F const& pos) const override;
-  float threatLevel() const override;
-  StringList environmentStatusEffects(Vec2F const& pos) const override;
-  StringList weatherStatusEffects(Vec2F const& pos) const override;
-  bool exposedToWeather(Vec2F const& pos) const override;
-  bool isUnderground(Vec2F const& pos) const override;
-  bool disableDeathDrops() const override;
-  List<PhysicsForceRegion> forceRegions() const override;
-  Json getProperty(String const& propertyName, Json const& def = Json()) const override;
+  [[nodiscard]] bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
+  [[nodiscard]] bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
+  [[nodiscard]] bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  [[nodiscard]] TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
+  [[nodiscard]] InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
+  [[nodiscard]] bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
+  [[nodiscard]] RpcPromise<InteractAction> interact(InteractRequest const& request) override;
+  [[nodiscard]] float gravity(Vec2F const& pos) const override;
+  [[nodiscard]] float windLevel(Vec2F const& pos) const override;
+  [[nodiscard]] float lightLevel(Vec2F const& pos) const override;
+  [[nodiscard]] bool breathable(Vec2F const& pos) const override;
+  [[nodiscard]] float threatLevel() const override;
+  [[nodiscard]] StringList environmentStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] StringList weatherStatusEffects(Vec2F const& pos) const override;
+  [[nodiscard]] bool exposedToWeather(Vec2F const& pos) const override;
+  [[nodiscard]] bool isUnderground(Vec2F const& pos) const override;
+  [[nodiscard]] bool disableDeathDrops() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] Json getProperty(String const& propertyName, Json const& def = Json()) const override;
   void setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
-  double epochTime() const override;
-  uint32_t day() const override;
-  float dayLength() const override;
-  float timeOfDay() const override;
-  LuaRootPtr luaRoot() override;
-  RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
-  RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
-  bool isTileProtected(Vec2I const& pos) const override;
+  [[nodiscard]] double epochTime() const override;
+  [[nodiscard]] uint32_t day() const override;
+  [[nodiscard]] float dayLength() const override;
+  [[nodiscard]] float timeOfDay() const override;
+  [[nodiscard]] LuaRootPtr luaRoot() override;
+  [[nodiscard]] RpcPromise<Vec2F> findUniqueEntity(String const& uniqueId) override;
+  [[nodiscard]] RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] bool isTileProtected(Vec2I const& pos) const override;
   void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
 
-  bool getTileProtection(DungeonId dungeonId) const;
+  [[nodiscard]] bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
   // sets a provided list of DungeonIds all at once and returns how many were changed
-  size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
+  [[nodiscard]] size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
   // used to globally, temporarily disable protection for certain operations
   void setTileProtectionEnabled(bool enabled);
 
@@ -307,35 +307,35 @@ public:
 
   // Signal a region to load / generate, returns true if it is now fully loaded
   // and generated
-  bool signalRegion(RectI const& region);
+  [[nodiscard]] bool signalRegion(RectI const& region);
   // Immediately generate a given region
   void generateRegion(RectI const& region);
   // Returns true if a region is fully active without signaling it.
-  bool regionActive(RectI const& region);
+  [[nodiscard]] bool regionActive(RectI const& region);
 
-  ScriptComponentPtr scriptContext(String const& contextName);
+  [[nodiscard]] ScriptComponentPtr scriptContext(String const& contextName);
 
   // Queues a microdungeon for placement
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id);
+  [[nodiscard]] RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id);
 
-  ServerTile const& getServerTile(Vec2I const& position, bool withSignal = false);
+  [[nodiscard]] ServerTile const& getServerTile(Vec2I const& position, bool withSignal = false);
   // Gets mutable pointer to server tile and marks it as needing updates to all
   // clients.
-  ServerTile* modifyServerTile(Vec2I const& position, bool withSignal = false);
+  [[nodiscard]] ServerTile* modifyServerTile(Vec2I const& position, bool withSignal = false);
 
-  EntityId loadUniqueEntity(String const& uniqueId);
+  [[nodiscard]] EntityId loadUniqueEntity(String const& uniqueId);
 
-  WorldTemplatePtr worldTemplate() const;
+  [[nodiscard]] WorldTemplatePtr worldTemplate() const;
   void setTemplate(WorldTemplatePtr newTemplate);
-  SkyPtr sky() const;
+  [[nodiscard]] SkyPtr sky() const;
   void modifyLiquid(Vec2I const& pos, LiquidId liquid, float quantity, bool additive = false);
   void setLiquid(Vec2I const& pos, LiquidId liquid, float level, float pressure);
-  List<ItemDescriptor> destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst, bool updateNeighbors = true);
+  [[nodiscard]] List<ItemDescriptor> destroyBlock(TileLayer layer, Vec2I const& pos, bool genItems, bool destroyModFirst, bool updateNeighbors = true);
   void removeEntity(EntityId entityId, bool andDie);
 
   void updateTileEntityTiles(TileEntityPtr const& object, bool removing = false, bool checkBreaks = true);
 
-  bool isVisibleToPlayer(RectF const& region) const;
+  [[nodiscard]] bool isVisibleToPlayer(RectF const& region) const;
   void activateLiquidRegion(RectI const& region);
   void activateLiquidLocation(Vec2I const& location);
 
@@ -352,26 +352,26 @@ public:
   // Unload all sectors
   void unloadAll(bool force = false);
   // Copy full world to in memory representation
-  WorldChunks readChunks();
+  [[nodiscard]] WorldChunks readChunks();
 
-  bool forceModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap);
-  TileModificationList forceApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap);
+  [[nodiscard]] bool forceModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap);
+  [[nodiscard]] TileModificationList forceApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap);
 
-  DungeonId dungeonId(Vec2I const& pos) const;
+  [[nodiscard]] DungeonId dungeonId(Vec2I const& pos) const;
 
-  bool isPlayerModified(RectI const& region) const;
+  [[nodiscard]] bool isPlayerModified(RectI const& region) const;
 
-  ItemDescriptor collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
+  [[nodiscard]] ItemDescriptor collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId);
 
-  bool placeDungeon(String const& dungeonName, Vec2I const& position, Maybe<DungeonId> dungeonId = {}, bool forcePlacement = true);
+  [[nodiscard]] bool placeDungeon(String const& dungeonName, Vec2I const& position, Maybe<DungeonId> dungeonId = {}, bool forcePlacement = true);
 
   void addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // queue generation of the sectors that will be needed to insert or
   // expand a biome region in order to spread processing over time
-  bool pregenerateAddBiome(Vec2I const& position, int width);
-  bool pregenerateExpandBiome(Vec2I const& position, int newWidth);
+  [[nodiscard]] bool pregenerateAddBiome(Vec2I const& position, int width);
+  [[nodiscard]] bool pregenerateExpandBiome(Vec2I const& position, int newWidth);
 
   // set the biome at the given position to be the environment biome for the layer
   void setLayerEnvironmentBiome(Vec2I const& position);
@@ -386,18 +386,18 @@ public:
   void setWeather(String const& weatherName, bool force = false);
 
   // Returns the list of weather names available in this world
-  StringList weatherList() const;
+  [[nodiscard]] StringList weatherList() const;
 
   // used to notify the universe server that the celestial planet type has changed
-  Maybe<pair<String, String>> pullNewPlanetType();
+  [[nodiscard]] Maybe<pair<String, String>> pullNewPlanetType();
 
 private:
   struct ClientInfo {
     ClientInfo(AssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit);
 
-    List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
+    [[nodiscard]] List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
 
-    bool needsDamageNotification(RemoteDamageNotification const& rdn) const;
+    [[nodiscard]] bool needsDamageNotification(RemoteDamageNotification const& rdn) const;
 
     ConnectionId clientId;
     uint64_t skyNetVersion;
@@ -435,9 +435,9 @@ private:
   // Returns nothing if the processing defined by the given configuration entry
   // should not run this tick, if it should run this tick, returns the number
   // of ticks since the last run.
-  Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
+  [[nodiscard]] Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
 
-  TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
+  [[nodiscard]] TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
   // Queues pending (step based) updates to the given player
   void queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates);
@@ -455,13 +455,13 @@ private:
   void dirtyCollision(RectI const& region);
   void freshenCollision(RectI const& region);
 
-  Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
-  Vec2F findPlayerSpaceStart(float targetX);
+  [[nodiscard]] Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
+  [[nodiscard]] Vec2F findPlayerSpaceStart(float targetX);
   void readMetadata();
   void writeMetadata();
-  float gravityFromTile(ServerTile const& tile) const;
+  [[nodiscard]] float gravityFromTile(ServerTile const& tile) const;
 
-  bool isFloatingDungeonWorld() const;
+  [[nodiscard]] bool isFloatingDungeonWorld() const;
 
   void setupForceRegions();
 

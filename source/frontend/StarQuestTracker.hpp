@@ -28,7 +28,7 @@ public:
 
   explicit QuestTrackerPane(Services services);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;
 
   void setQuest(QuestPtr const& quest);

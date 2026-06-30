@@ -34,8 +34,8 @@ public:
     // Calls stopAudio()
     ~DynamicTarget();
 
-    List<AudioInstancePtr> pullNewAudios();
-    List<Particle> pullNewParticles();
+    [[nodiscard]] List<AudioInstancePtr> pullNewAudios();
+    [[nodiscard]] List<Particle> pullNewParticles();
 
     // Stops all looping audio immediately and lets non-looping audio finish
     // normally
@@ -85,56 +85,56 @@ public:
   NetworkedAnimator& operator=(NetworkedAnimator&& animator);
   NetworkedAnimator& operator=(NetworkedAnimator const& animator);
 
-  StringList stateTypes() const;
-  StringList states(String const& stateType) const;
+  [[nodiscard]] StringList stateTypes() const;
+  [[nodiscard]] StringList states(String const& stateType) const;
 
   // Returns whether a state change occurred.  If startNew is true, always
   // forces a state change and starts the state off at the beginning even if
   // this state is already the current state.
-  bool setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  String state(String const& stateType) const;
-  int stateFrame(String const& stateType) const;
-  int stateNextFrame(String const& stateType) const;
-  float stateFrameProgress(String const& stateType) const;
-  float stateTimer(String const& stateType) const;
-  bool stateReverse(String const& stateType) const;
+  [[nodiscard]] bool setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
+  [[nodiscard]] bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
+  [[nodiscard]] String state(String const& stateType) const;
+  [[nodiscard]] int stateFrame(String const& stateType) const;
+  [[nodiscard]] int stateNextFrame(String const& stateType) const;
+  [[nodiscard]] float stateFrameProgress(String const& stateType) const;
+  [[nodiscard]] float stateTimer(String const& stateType) const;
+  [[nodiscard]] bool stateReverse(String const& stateType) const;
 
-  float stateCycle(String const& stateType, Maybe<String> state) const;
-  int stateFrames(String const& stateType, Maybe<String> state) const;
+  [[nodiscard]] float stateCycle(String const& stateType, Maybe<String> state) const;
+  [[nodiscard]] int stateFrames(String const& stateType, Maybe<String> state) const;
 
-  bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
+  [[nodiscard]] bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;
   StringMap<AnimatedPartSet::Part>& parts();
-  StringList partNames() const;
+  [[nodiscard]] StringList partNames() const;
 
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
-  Json stateNextProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
-  Json partNextProperty(String const& partName, String const& propertyName) const;
+  [[nodiscard]] Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  [[nodiscard]] Json stateNextProperty(String const& stateType, String const& propertyName) const;
+  [[nodiscard]] Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  [[nodiscard]] Json partNextProperty(String const& partName, String const& propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.
-  Mat3F globalTransformation() const;
+  [[nodiscard]] Mat3F globalTransformation() const;
   // The transformation applied from the given set of transformation groups
-  Mat3F groupTransformation(StringList const& transformationGroups) const;
+  [[nodiscard]] Mat3F groupTransformation(StringList const& transformationGroups) const;
   // The transformation that is applied to the given part NOT including the
   // global transformation
-  Mat3F partTransformation(String const& partName) const;
+  [[nodiscard]] Mat3F partTransformation(String const& partName) const;
   // Returns the total transformation for the given part, which includes the
   // globalTransformation, as well as the part rotation, scaling, and
   // translation.
-  Mat3F finalPartTransformation(String const& partName) const;
+  [[nodiscard]] Mat3F finalPartTransformation(String const& partName) const;
 
   // partPoint / partPoly takes a propertyName and looks up the associated part
   // property and interprets is a Vec2F or a PolyF, then applies the final part
   // transformation and returns it.
-  Maybe<Vec2F> partPoint(String const& partName, String const& propertyName) const;
-  Maybe<PolyF> partPoly(String const& partName, String const& propertyName) const;
+  [[nodiscard]] Maybe<Vec2F> partPoint(String const& partName, String const& propertyName) const;
+  [[nodiscard]] Maybe<PolyF> partPoly(String const& partName, String const& propertyName) const;
 
   // Every part image can have one or more <tag> directives in it, which if set
   // here will be replaced by the tag value when constructing Drawables.  All
@@ -142,36 +142,36 @@ public:
   // current state frame is (1 indexed, so the first frame is 1).
   void setGlobalTag(String tagName, Maybe<String> tagValue = {});
   void removeGlobalTag(String const& tagName);
-  String const* globalTagPtr(String const& tagName) const;
+  [[nodiscard]] String const* globalTagPtr(String const& tagName) const;
   void setPartTag(String const& partType, String tagName, Maybe<String> tagValue = {});
   void setLocalTag(String tagName, Maybe<String> tagValue = {});
 
   void setPartDrawables(String const& partName, List<Drawable> const& drawables);
   void addPartDrawables(String const& partName, List<Drawable> const& drawables);
 
-  String applyPartTags(String const& partName, String apply) const;
+  [[nodiscard]] String applyPartTags(String const& partName, String apply) const;
 
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
-  bool flipped() const;
-  float flippedRelativeCenterLine() const;
+  [[nodiscard]] bool flipped() const;
+  [[nodiscard]] float flippedRelativeCenterLine() const;
   void setFlipped(bool flipped, float relativeCenterLine = 0.0f);
 
   // Animation rate defaults to 1.0, which means normal animation speed.  This
   // can be used to globally speed up or slow down all components of
   // NetworkedAnimator together.
   void setAnimationRate(float rate);
-  float animationRate();
+  [[nodiscard]] float animationRate();
 
   // Given angle is an absolute angle.  Will rotate over time at the configured
   // angular velocity unless the immediate flag is set.
-  bool hasRotationGroup(String const& rotationGroup) const;
+  [[nodiscard]] bool hasRotationGroup(String const& rotationGroup) const;
   void rotateGroup(String const& rotationGroup, float targetAngle, bool immediate = false);
-  float currentRotationAngle(String const& rotationGroup) const;
+  [[nodiscard]] float currentRotationAngle(String const& rotationGroup) const;
 
   // Transformation groups can be used for arbitrary part transforamtions.
   // They apply immediately, and are optionally interpolated on slaves.
-  bool hasTransformationGroup(String const& transformationGroup) const;
+  [[nodiscard]] bool hasTransformationGroup(String const& transformationGroup) const;
   void translateTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
   void scaleTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
@@ -179,7 +179,7 @@ public:
   void transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetTransformationGroup(String const& transformationGroup);
   void setTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] Mat3F getTransformationGroup(String const& transformationGroup);
 
   void translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -188,9 +188,9 @@ public:
   void transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetLocalTransformationGroup(String const& transformationGroup);
   void setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getLocalTransformationGroup(String const& transformationGroup);
+  [[nodiscard]] Mat3F getLocalTransformationGroup(String const& transformationGroup);
 
-  bool hasParticleEmitter(String const& emitterName) const;
+  [[nodiscard]] bool hasParticleEmitter(String const& emitterName) const;
   // Active particle emitters emit over time based on emission rate/variance.
   void setParticleEmitterActive(String const& emitterName, bool active);
   // Set the emission rate in particles / sec for a given emitter
@@ -206,13 +206,13 @@ public:
   // burstCount times
   void burstParticleEmitter(String const& emitterName);
 
-  bool hasLight(String const& lightName) const;
+  [[nodiscard]] bool hasLight(String const& lightName) const;
   void setLightActive(String const& lightName, bool active);
   void setLightPosition(String const& lightName, Vec2F position);
   void setLightColor(String const& lightName, Color color);
   void setLightPointAngle(String const& lightName, float angle);
 
-  bool hasSound(String const& soundName) const;
+  [[nodiscard]] bool hasSound(String const& soundName) const;
   void setSoundPool(String const& soundName, StringList soundPool);
   // Plays a sound from the given independent sound pool.  Multiple sounds may
   // be played as part of this group, and playing a new one will not interrupt
@@ -231,10 +231,10 @@ public:
 
   void setEffectEnabled(String const& effect, bool enabled);
 
-  List<Drawable> drawables(Vec2F const& translate = Vec2F()) const;
-  List<pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] List<Drawable> drawables(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] List<pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
 
-  List<LightSource> lightSources(Vec2F const& translate = Vec2F()) const;
+  [[nodiscard]] List<LightSource> lightSources(Vec2F const& translate = Vec2F()) const;
 
   // Dynamic target is optional, if not given, generated particles and sounds
   // will be discarded
@@ -243,7 +243,7 @@ public:
   // Run through the current animations until the final frame, including any
   // transition animations.
   void finishAnimations();
-  uint8_t version() const;
+  [[nodiscard]] uint8_t version() const;
 
 private:
   struct RotationGroup {
@@ -257,13 +257,13 @@ private:
   };
 
   struct TransformationGroup {
-    Mat3F affineTransform() const;
+    [[nodiscard]] Mat3F affineTransform() const;
     void setAffineTransform(Mat3F const& matrix);
 
-    Mat3F localAffineTransform() const;
+    [[nodiscard]] Mat3F localAffineTransform() const;
     void setLocalAffineTransform(Mat3F const& matrix);
 
-    Mat3F animationAffineTransform() const;
+    [[nodiscard]] Mat3F animationAffineTransform() const;
     void setAnimationAffineTransform(Mat3F const& matrix);
     void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
 
@@ -373,7 +373,7 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  Json mergeIncludes(Json config, Json includes, String relativePath);
+  [[nodiscard]] Json mergeIncludes(Json config, Json includes, String relativePath);
 
   AssetsConstPtr m_assets;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;

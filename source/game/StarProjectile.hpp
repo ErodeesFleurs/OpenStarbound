@@ -27,27 +27,27 @@ public:
   Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters);
   Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
-  EntityType entityType() const override;
+  [[nodiscard]] EntityType entityType() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String typeName() const;
-  String name() const override;
-  String description() const override;
+  [[nodiscard]] String typeName() const;
+  [[nodiscard]] String name() const override;
+  [[nodiscard]] String description() const override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  Vec2F velocity() const;
+  [[nodiscard]] Vec2F velocity() const;
 
-  bool ephemeral() const override;
-  ClientEntityMode clientEntityMode() const override;
-  bool masterOnly() const override;
+  [[nodiscard]] bool ephemeral() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] bool masterOnly() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -55,30 +55,30 @@ public:
 
   // If the bullet time to live has run out, or if it has collided, etc this
   // will return true.
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
   void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
   void update(float dt, uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
-  String projectileType() const;
+  [[nodiscard]] String projectileType() const;
   
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] Json configValue(String const& name, Json const& def = Json()) const;
 
   // InitialPosition, InitialDirection, InitialVelocity, PowerMultiplier, and
   // additional status effects must be set before the projectile is added to
   // the world
 
-  float initialSpeed() const;
+  [[nodiscard]] float initialSpeed() const;
   void setInitialSpeed(float speed);
 
   void setInitialPosition(Vec2F const& position);
@@ -88,21 +88,21 @@ public:
 
   void setReferenceVelocity(Maybe<Vec2F> const& velocity);
 
-  float powerMultiplier() const;
+  [[nodiscard]] float powerMultiplier() const;
   void setPowerMultiplier(float multiplier);
 
   // If trackSource is true, then the projectile will (while the entity exists)
   // attempt to track the change in position of the parent entity and move
   // relative to it.
   void setSourceEntity(EntityId source, bool trackSource);
-  EntityId sourceEntity() const;
+  [[nodiscard]] EntityId sourceEntity() const;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  PolyF statusEffectArea() const override;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] PolyF statusEffectArea() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] size_t movingCollisionCount() const override;
+  [[nodiscard]] Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
   using Entity::setTeam;
 
@@ -117,18 +117,18 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource);
+  [[nodiscard]] static List<Particle> sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource);
 
-  int getFrame() const;
+  [[nodiscard]] int getFrame() const;
   void setFrame(int frame);
-  String drawableFrame();
+  [[nodiscard]] String drawableFrame();
 
   void processAction(Json const& action);
   void tickShared(float dt);
 
   void setup();
 
-  LuaCallbacks makeProjectileCallbacks();
+  [[nodiscard]] LuaCallbacks makeProjectileCallbacks();
 
   void renderPendingRenderables(RenderCallback* renderCallback);
 

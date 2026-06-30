@@ -12,18 +12,18 @@ public:
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.
-  bool interpolationEnabled() const;
-  unsigned extrapolationHint() const;
+  [[nodiscard]] bool interpolationEnabled() const;
+  [[nodiscard]] unsigned extrapolationHint() const;
 
   // Time in-between entity updates
-  float entityUpdateDelta() const;
+  [[nodiscard]] float entityUpdateDelta() const;
 
   void receiveTimeUpdate(double remoteTime);
   void update(double newLocalTime);
 
   // Lead time that incoming interpolated data as of this moment should be
   // marked for.  If interpolation is disabled, this is always 0.0
-  float interpolationLeadTime() const;
+  [[nodiscard]] float interpolationLeadTime() const;
 
 private:
   bool m_interpolationEnabled;

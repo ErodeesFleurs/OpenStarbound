@@ -30,7 +30,7 @@ public:
   virtual void log(char const* msg, LogLevel level) = 0;
 
   void setLevel(LogLevel level);
-  LogLevel level();
+  [[nodiscard]] LogLevel level();
 
 private:
   atomic<LogLevel> m_level = LogLevel::Info;
@@ -63,7 +63,7 @@ public:
   static void removeSink(LogSinkPtr s);
 
   // Default LogSink that outputs to stdout.
-  static LogSinkPtr stdoutSink();
+  [[nodiscard]] static LogSinkPtr stdoutSink();
   // Don't use the stdout sink.
   static void removeStdoutSink();
 
@@ -81,7 +81,7 @@ public:
   template <typename... Args>
   static void error(char const* msg, Args const&... args);
 
-  static bool loggable(LogLevel level);
+  [[nodiscard]] static bool loggable(LogLevel level);
   static void refreshLoggable();
 private:
 
@@ -95,14 +95,14 @@ private:
 // be displayed every frame, or in a debug output window, etc.
 class LogMap {
 public:
-  static String getValue(String const& key);
+  [[nodiscard]] static String getValue(String const& key);
   static void setValue(String const& key, String const& value);
 
   // Shorthand, converts given type to string using std::ostream.
   template <typename T>
   static void set(String const& key, T const& t);
 
-  static Map<String, String> getValues();
+  [[nodiscard]] static Map<String, String> getValues();
   static void clear();
 
 private:
@@ -141,13 +141,13 @@ public:
   static void logPoint(char const* space, Vec2F const& position, Vec4B const& color);
   static void logText(char const* space, String text, Vec2F const& position, Vec4B const& color);
 
-  static Deque<Line> getLines(char const* space, bool andClear);
-  static Deque<Point> getPoints(char const* space, bool andClear);
-  static Deque<LogText> getText(char const* space, bool andClear);
+  [[nodiscard]] static Deque<Line> getLines(char const* space, bool andClear);
+  [[nodiscard]] static Deque<Point> getPoints(char const* space, bool andClear);
+  [[nodiscard]] static Deque<LogText> getText(char const* space, bool andClear);
 
   static void clear();
 
-  static bool observed();
+  [[nodiscard]] static bool observed();
   static void setObserved(bool observed);
 
 private:
@@ -162,7 +162,7 @@ template <typename... Args>
 void Logger::logf(LogLevel level, char const* msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strf(msg, args...);
-    MutexLocker locker(s_mutex);
+    [[nodiscard]] MutexLocker locker(s_mutex);
     for (auto const& l : s_sinks) {
       if (l->level() <= level) {
         l->log(output.c_str(), level);

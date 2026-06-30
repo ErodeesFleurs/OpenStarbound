@@ -23,26 +23,26 @@ struct KeySet {
   }
 };
 
-static KeySet const& staticKeys() {
+[[nodiscard]] static KeySet const& staticKeys() {
   static KeySet keys;
 
   return keys;
 }
 
-PrivateKey const& privateKey() { return staticKeys().privateKey; }
+[[nodiscard]] PrivateKey const& privateKey() { return staticKeys().privateKey; }
 
 
 
-Signature sign(void const* data, size_t len) {
+[[nodiscard]] Signature sign(void const* data, size_t len) {
   Signature signature;
   ed25519_SignMessage(signature.data(), privateKey().data(), nullptr, const_cast<unsigned char*>(static_cast<unsigned char const*>(data)), len);
   return signature;
 }
 
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void const* data, size_t len) {
+[[nodiscard]] bool verify(uint8_t const* signature, uint8_t const* publicKey, void const* data, size_t len) {
   return ed25519_VerifySignature(signature, publicKey, const_cast<unsigned char*>(static_cast<unsigned char const*>(data)), len);
 }
 
-PublicKey  const& publicKey()  { return staticKeys().publicKey;  }
+[[nodiscard]] PublicKey  const& publicKey()  { return staticKeys().publicKey;  }
 
 }

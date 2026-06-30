@@ -45,30 +45,30 @@ class LiquidsDatabase {
 public:
   LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase);
 
-  LiquidCellEngineParameters liquidEngineParameters() const;
-  float backgroundDrain() const;
+  [[nodiscard]] LiquidCellEngineParameters liquidEngineParameters() const;
+  [[nodiscard]] float backgroundDrain() const;
 
-  StringList liquidNames() const;
+  [[nodiscard]] StringList liquidNames() const;
 
   // Returns settings object for all liquids except "empty"
-  List<LiquidSettingsConstPtr> allLiquidSettings() const;
+  [[nodiscard]] List<LiquidSettingsConstPtr> allLiquidSettings() const;
 
-  bool isLiquidName(String const& name) const;
-  bool isValidLiquidId(LiquidId liquidId) const;
+  [[nodiscard]] bool isLiquidName(String const& name) const;
+  [[nodiscard]] bool isValidLiquidId(LiquidId liquidId) const;
 
-  LiquidId liquidId(String const& str) const;
-  String liquidName(LiquidId liquidId) const;
-  String liquidDescription(LiquidId liquidId, String const& species) const;
-  String liquidDescription(LiquidId liquidId) const;
-  Maybe<String> liquidPath(LiquidId liquidId) const;
-  Maybe<Json> liquidConfig(LiquidId liquidId) const;
+  [[nodiscard]] LiquidId liquidId(String const& str) const;
+  [[nodiscard]] String liquidName(LiquidId liquidId) const;
+  [[nodiscard]] String liquidDescription(LiquidId liquidId, String const& species) const;
+  [[nodiscard]] String liquidDescription(LiquidId liquidId) const;
+  [[nodiscard]] Maybe<String> liquidPath(LiquidId liquidId) const;
+  [[nodiscard]] Maybe<Json> liquidConfig(LiquidId liquidId) const;
 
   // Returns null on EmptyLiquidId or invalid liquid id
-  LiquidSettingsConstPtr liquidSettings(LiquidId liquidId) const;
+  [[nodiscard]] LiquidSettingsConstPtr liquidSettings(LiquidId liquidId) const;
 
-  Vec3F radiantLight(LiquidLevel level) const;
+  [[nodiscard]] Vec3F radiantLight(LiquidLevel level) const;
 
-  Maybe<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
+  [[nodiscard]] Maybe<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
 
 private:
   LiquidCellEngineParameters m_liquidEngineParameters;
@@ -77,25 +77,25 @@ private:
   StringMap<LiquidId> m_liquidNames;
 };
 
-inline float LiquidsDatabase::backgroundDrain() const {
+[[nodiscard]] inline float LiquidsDatabase::backgroundDrain() const {
   return m_backgroundDrain;
 }
 
-inline bool LiquidsDatabase::isLiquidName(String const& name) const {
+[[nodiscard]] inline bool LiquidsDatabase::isLiquidName(String const& name) const {
   return m_liquidNames.contains(name);
 }
 
-inline bool LiquidsDatabase::isValidLiquidId(LiquidId liquidId) const {
+[[nodiscard]] inline bool LiquidsDatabase::isValidLiquidId(LiquidId liquidId) const {
   return liquidId == EmptyLiquidId || (liquidId < m_settings.size() && m_settings[liquidId]);
 }
 
-inline LiquidSettingsConstPtr LiquidsDatabase::liquidSettings(LiquidId liquidId) const {
+[[nodiscard]] inline LiquidSettingsConstPtr LiquidsDatabase::liquidSettings(LiquidId liquidId) const {
   if (liquidId >= m_settings.size())
     return {};
   return m_settings[liquidId];
 }
 
-inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
+[[nodiscard]] inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
   if (level.liquid < m_settings.size()) {
     if (auto const& settings = m_settings[level.liquid])
       return settings->radiantLightLevel * level.level;

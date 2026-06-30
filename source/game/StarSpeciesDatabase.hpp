@@ -67,22 +67,22 @@ class SpeciesDefinition {
 public:
   SpeciesDefinition(Json const& config, AssetsConstPtr assets);
 
-  Json config() const;
-  String kind() const;
-  bool playerSelectable() const;
-  SpeciesOption const& options() const;
-  Json humanoidConfig() const;
-  List<Personality> const& personalities() const;
-  String nameGen(Gender gender) const;
-  String ouchNoise(Gender gender) const;
-  List<ItemDescriptor> defaultItems() const;
-  List<ItemDescriptor> defaultBlueprints() const;
-  StringList charGenTextLabels() const;
-  String skull() const;
-  List<PersistentStatusEffect> statusEffects() const;
-  String effectDirectives() const;
+  [[nodiscard]] Json config() const;
+  [[nodiscard]] String kind() const;
+  [[nodiscard]] bool playerSelectable() const;
+  [[nodiscard]] SpeciesOption const& options() const;
+  [[nodiscard]] Json humanoidConfig() const;
+  [[nodiscard]] List<Personality> const& personalities() const;
+  [[nodiscard]] String nameGen(Gender gender) const;
+  [[nodiscard]] String ouchNoise(Gender gender) const;
+  [[nodiscard]] List<ItemDescriptor> defaultItems() const;
+  [[nodiscard]] List<ItemDescriptor> defaultBlueprints() const;
+  [[nodiscard]] StringList charGenTextLabels() const;
+  [[nodiscard]] String skull() const;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const;
+  [[nodiscard]] String effectDirectives() const;
 
-  SpeciesCharCreationTooltip const& tooltip() const;
+  [[nodiscard]] SpeciesCharCreationTooltip const& tooltip() const;
 
 private:
   String m_kind;
@@ -113,15 +113,15 @@ class SpeciesDatabase {
 public:
   SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices);
 
-  bool hasSpecies(String const& kind) const;
-  SpeciesDefinitionPtr species(String const& kind) const;
-  StringList speciesNames() const;
-  StringMap<SpeciesDefinitionPtr> allSpecies() const;
+  [[nodiscard]] bool hasSpecies(String const& kind) const;
+  [[nodiscard]] SpeciesDefinitionPtr species(String const& kind) const;
+  [[nodiscard]] StringList speciesNames() const;
+  [[nodiscard]] StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
-  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
-  CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
+  [[nodiscard]] Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
+  [[nodiscard]] CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
 
-  CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
+  [[nodiscard]] CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
 
 private:
   PatternedNameGeneratorConstPtr m_nameGenerator;

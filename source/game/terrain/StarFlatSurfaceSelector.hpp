@@ -9,7 +9,7 @@ struct FlatSurfaceSelector : TerrainSelector {
 
   FlatSurfaceSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   float surfaceLevel;
   float adjustment;

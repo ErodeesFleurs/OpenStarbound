@@ -147,17 +147,17 @@ inline bool isRealDungeon(DungeonId dungeon) {
 // Returns the inclusive beginning and end of the entity id space for the
 // given connection.  All client connection id spaces will be within the range
 // [-2^31, -1].
-pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
+[[nodiscard]] pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
 
-bool entityIdInSpace(EntityId entityId, ConnectionId connectionId);
+[[nodiscard]] bool entityIdInSpace(EntityId entityId, ConnectionId connectionId);
 
-ConnectionId connectionForEntity(EntityId entityId);
+[[nodiscard]] ConnectionId connectionForEntity(EntityId entityId);
 
 // Returns an angle in the range [-pi / 2, pi / 2], and the horizontal
 // hemisphere of the angle.  The angle is specified as positive being upward
 // rotation and negative being downward rotation, unless ccRotation is true, in
 // which case the angle is always positive == counter-clocwise.
-pair<float, Direction> getAngleSide(float angle, bool ccRotation = false);
+[[nodiscard]] pair<float, Direction> getAngleSide(float angle, bool ccRotation = false);
 
 enum class TileDamageResult {
   None = 0,

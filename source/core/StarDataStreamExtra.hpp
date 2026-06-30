@@ -62,9 +62,9 @@ DataStream& operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array)
   size_t count = array.count();
   for (size_t i = 0; i < count; ++i)
     ds << array.atIndex(i);
-
-  return ds;
-}
+ 
+   return ds;
+ }
 
 template <typename ElementT, size_t RankN>
 DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
@@ -76,9 +76,9 @@ DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
   size_t count = array.count();
   for (size_t i = 0; i < count; ++i)
     ds >> array.atIndex(i);
-
+ 
   return ds;
-}
+ }
 
 inline DataStream& operator<<(DataStream& ds, Color const& color) {
   ds << color.toRgbaF();

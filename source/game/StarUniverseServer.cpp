@@ -169,7 +169,7 @@ WorldServerServices UniverseServer::worldServerServices() const {
 UniverseServer::~UniverseServer() {
   stop();
   stopLua();
-  join();
+  (void)join();
   m_workerPool.stop();
 
   RecursiveMutexLocker locker(m_mainLock);
@@ -249,22 +249,22 @@ void UniverseServer::setTickRate(float tickRate) {
   ServerGlobalTimestep = 1.0f / tickRate;
 }
 
-List<WorldId> UniverseServer::activeWorlds() const {
+[[nodiscard]] List<WorldId> UniverseServer::activeWorlds() const {
   RecursiveMutexLocker locker(m_mainLock);
   return m_worlds.keys();
 }
 
-bool UniverseServer::isWorldActive(WorldId const& worldId) const {
+[[nodiscard]] bool UniverseServer::isWorldActive(WorldId const& worldId) const {
   RecursiveMutexLocker locker(m_mainLock);
   return m_worlds.contains(worldId);
 }
 
-List<ConnectionId> UniverseServer::clientIds() const {
+[[nodiscard]] List<ConnectionId> UniverseServer::clientIds() const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.keys();
 }
 
-List<pair<ConnectionId, int64_t>> UniverseServer::clientIdsAndCreationTime() const {
+[[nodiscard]] List<pair<ConnectionId, int64_t>> UniverseServer::clientIdsAndCreationTime() const {
   List<pair<ConnectionId, int64_t>> result;
   ReadLocker clientsLocker(m_clientsLock);
   result.reserve(m_clients.size());
@@ -273,21 +273,21 @@ List<pair<ConnectionId, int64_t>> UniverseServer::clientIdsAndCreationTime() con
   return result;
 }
 
-size_t UniverseServer::numberOfClients() const {
+[[nodiscard]] size_t UniverseServer::numberOfClients() const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.size();
 }
 
-uint32_t UniverseServer::maxClients() const {
+[[nodiscard]] uint32_t UniverseServer::maxClients() const {
   return m_maxPlayers;
 }
 
-bool UniverseServer::isConnectedClient(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseServer::isConnectedClient(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.contains(clientId);
 }
 
-String UniverseServer::clientDescriptor(ConnectionId clientId) const {
+[[nodiscard]] String UniverseServer::clientDescriptor(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->descriptiveName();
@@ -295,22 +295,22 @@ String UniverseServer::clientDescriptor(ConnectionId clientId) const {
     return "disconnected_client";
 }
 
-String UniverseServer::clientNick(ConnectionId clientId) const {
+[[nodiscard]] String UniverseServer::clientNick(ConnectionId clientId) const {
   return m_chatProcessor->connectionNick(clientId);
 }
 
-Maybe<ConnectionId> UniverseServer::findNick(String const& nick) const {
+[[nodiscard]] Maybe<ConnectionId> UniverseServer::findNick(String const& nick) const {
   return m_chatProcessor->findNick(nick);
 }
 
-Maybe<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
+[[nodiscard]] Maybe<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->playerUuid();
   return {};
 }
 
-Maybe<ConnectionId> UniverseServer::clientForUuid(Uuid const& uuid) const {
+[[nodiscard]] Maybe<ConnectionId> UniverseServer::clientForUuid(Uuid const& uuid) const {
   ReadLocker clientsLocker(m_clientsLock);
   return getClientForUuid(uuid);
 }
@@ -328,14 +328,14 @@ String UniverseServer::adminCommand(String text) {
   return m_commandProcessor->adminCommand(command, text);
 }
 
-bool UniverseServer::isAdmin(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseServer::isAdmin(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->isAdmin();
   return false;
 }
 
-bool UniverseServer::canBecomeAdmin(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseServer::canBecomeAdmin(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->canBecomeAdmin();
@@ -348,14 +348,14 @@ void UniverseServer::setAdmin(ConnectionId clientId, bool admin) {
     clientContext->setAdmin(admin);
 }
 
-bool UniverseServer::isLocal(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseServer::isLocal(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return !clientContext->remoteAddress();
   return false;
 }
 
-bool UniverseServer::isPvp(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseServer::isPvp(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
     return clientContext->team().type == TeamType::PVP;
@@ -1759,7 +1759,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
             blocked = true;
           } else {
             try {
-              parseWarpAction(entityMessage->args.get(0).toString());
+              (void)parseWarpAction(entityMessage->args.get(0).toString());
             } catch (StarException const&) {
               Logger::warn("UniverseServer: Blocked warp entity message with unparseable warp action from client {}", clientId);
               blocked = true;
@@ -2607,7 +2607,7 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
 
     auto systemThread = make_shared<SystemWorldServerThread>(location, systemWorld, storageFile, m_versioningDatabase);
     systemThread->setUpdateAction([this](SystemWorldServerThread* systemWorldServer) { return systemWorldUpdated(systemWorldServer); });
-    systemThread->start();
+    (void)systemThread->start();
     m_systemWorlds.set(location, systemThread);
   }
 

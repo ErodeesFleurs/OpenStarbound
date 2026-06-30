@@ -19,30 +19,30 @@ public:
   OpenGlRenderer();
   ~OpenGlRenderer();
 
-  String rendererId() const override;
-  Vec2U screenSize() const override;
+  [[nodiscard]] String rendererId() const override;
+  [[nodiscard]] Vec2U screenSize() const override;
 
   void loadConfig(Json const& config) override;
   void loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) override;
 
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
   void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
-  Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
-  Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
+  [[nodiscard]] Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
+  [[nodiscard]] Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
   void setEffectTexture(String const& textureName, ImageView const& image) override;
 
   void setScissorRect(Maybe<RectI> const& scissorRect) override;
 
-  bool switchEffectConfig(String const& name) override;
+  [[nodiscard]] bool switchEffectConfig(String const& name) override;
 
-  TexturePtr createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
+  [[nodiscard]] TexturePtr createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) override;
   void setSizeLimitEnabled(bool enabled) override;
   void setMultiTexturingEnabled(bool enabled) override;
   void setMultiSampling(unsigned multiSampling) override;
-  TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
-  RenderBufferPtr createRenderBuffer() override;
+  [[nodiscard]] TextureGroupPtr createTextureGroup(TextureGroupSize size, TextureFiltering filtering) override;
+  [[nodiscard]] RenderBufferPtr createRenderBuffer() override;
 
-  List<RenderPrimitive>& immediatePrimitives() override;
+  [[nodiscard]] List<RenderPrimitive>& immediatePrimitives() override;
   void render(RenderPrimitive primitive) override;
   void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) override;
 
@@ -58,7 +58,7 @@ private:
   public:
     GlTextureAtlasSet(unsigned atlasNumCells);
 
-    GLuint createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) override;
+    [[nodiscard]] GLuint createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) override;
     void destroyAtlasTexture(GLuint const& glTexture) override;
     void copyAtlasPixels(GLuint const& glTexture, Vec2U const& bottomLeft, Image const& image) override;
 
@@ -69,28 +69,28 @@ private:
     GlTextureGroup(unsigned atlasNumCells);
     ~GlTextureGroup();
 
-    TextureFiltering filtering() const override;
-    TexturePtr create(Image const& texture) override;
+    [[nodiscard]] TextureFiltering filtering() const override;
+    [[nodiscard]] TexturePtr create(Image const& texture) override;
 
     GlTextureAtlasSet textureAtlasSet;
   };
 
   struct GlTexture : public Texture {
-    virtual GLuint glTextureId() const = 0;
-    virtual Vec2U glTextureSize() const = 0;
-    virtual Vec2U glTextureCoordinateOffset() const = 0;
+    [[nodiscard]] virtual GLuint glTextureId() const = 0;
+    [[nodiscard]] virtual Vec2U glTextureSize() const = 0;
+    [[nodiscard]] virtual Vec2U glTextureCoordinateOffset() const = 0;
   };
 
   struct GlGroupedTexture : public GlTexture {
     ~GlGroupedTexture();
 
-    Vec2U size() const override;
-    TextureFiltering filtering() const override;
-    TextureAddressing addressing() const override;
+    [[nodiscard]] Vec2U size() const override;
+    [[nodiscard]] TextureFiltering filtering() const override;
+    [[nodiscard]] TextureAddressing addressing() const override;
 
-    GLuint glTextureId() const override;
-    Vec2U glTextureSize() const override;
-    Vec2U glTextureCoordinateOffset() const override;
+    [[nodiscard]] GLuint glTextureId() const override;
+    [[nodiscard]] Vec2U glTextureSize() const override;
+    [[nodiscard]] Vec2U glTextureCoordinateOffset() const override;
 
     void incrementBufferUseCount();
     void decrementBufferUseCount();
@@ -103,13 +103,13 @@ private:
   struct GlLoneTexture : public GlTexture {
     ~GlLoneTexture();
 
-    Vec2U size() const override;
-    TextureFiltering filtering() const override;
-    TextureAddressing addressing() const override;
+    [[nodiscard]] Vec2U size() const override;
+    [[nodiscard]] TextureFiltering filtering() const override;
+    [[nodiscard]] TextureAddressing addressing() const override;
 
-    GLuint glTextureId() const override;
-    Vec2U glTextureSize() const override;
-    Vec2U glTextureCoordinateOffset() const override;
+    [[nodiscard]] GLuint glTextureId() const override;
+    [[nodiscard]] Vec2U glTextureSize() const override;
+    [[nodiscard]] Vec2U glTextureCoordinateOffset() const override;
 
     GLuint textureId = 0;
     Vec2U textureSize;
@@ -201,18 +201,18 @@ private:
     StringMap<GLuint> attributes;
     StringMap<GLuint> uniforms;
 
-    GLuint getAttribute(String const& name);
-    GLuint getUniform(String const& name);
+    [[nodiscard]] GLuint getAttribute(String const& name);
+    [[nodiscard]] GLuint getUniform(String const& name);
     bool includeVBTextures;
   };
 
-  static bool logGlErrorSummary(String prefix);
+  [[nodiscard]] static bool logGlErrorSummary(String prefix);
   static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
 
   
-  static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
+  [[nodiscard]] static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
-  SharedPtr<GlRenderBuffer> createGlRenderBuffer();
+  [[nodiscard]] SharedPtr<GlRenderBuffer> createGlRenderBuffer();
 
   void flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
 

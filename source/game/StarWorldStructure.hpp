@@ -47,25 +47,25 @@ public:
   WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath);
   WorldStructure(Json const& store);
 
-  Json configValue(String const& name) const;
+  [[nodiscard]] Json configValue(String const& name) const;
 
-  List<Overlay> const& backgroundOverlays() const;
-  List<Overlay> const& foregroundOverlays() const;
+  [[nodiscard]] List<Overlay> const& backgroundOverlays() const;
+  [[nodiscard]] List<Overlay> const& foregroundOverlays() const;
 
-  List<Block> const& backgroundBlocks() const;
-  List<Block> const& foregroundBlocks() const;
+  [[nodiscard]] List<Block> const& backgroundBlocks() const;
+  [[nodiscard]] List<Block> const& foregroundBlocks() const;
 
-  List<Object> const& objects() const;
+  [[nodiscard]] List<Object> const& objects() const;
 
-  List<Vec2I> flaggedBlocks(String const& flag) const;
+  [[nodiscard]] List<Vec2I> flaggedBlocks(String const& flag) const;
 
-  RectI region() const;
-  Vec2I anchorPosition() const;
+  [[nodiscard]] RectI region() const;
+  [[nodiscard]] Vec2I anchorPosition() const;
 
   void setAnchorPosition(Vec2I const& anchorPosition);
   void translate(Vec2I const& distance);
 
-  Json store() const;
+  [[nodiscard]] Json store() const;
 
 private:
   struct BlockKey {

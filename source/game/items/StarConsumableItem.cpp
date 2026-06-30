@@ -63,7 +63,7 @@ void ConsumableItem::uninit() {
   FireableItem::uninit();
 }
 
-bool ConsumableItem::canUse() const {
+[[nodiscard]] bool ConsumableItem::canUse() const {
   if (!count() || m_consuming)
     return false;
 

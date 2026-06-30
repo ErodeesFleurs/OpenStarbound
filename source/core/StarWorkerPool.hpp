@@ -16,16 +16,16 @@ class WorkerPoolHandle {
 public:
   // Returns true if the work is completed (either due to error or actual
   // completion, will not re-throw)
-  bool done() const;
+  [[nodiscard]] bool done() const;
 
   // Waits up to given millis for the computation to finish.  Returns true if
   // the computation finished within the allotted time, false otherwise.  If
   // the computation is finished but it threw an exception, it will be
   // re-thrown here.
-  bool wait(unsigned millis) const;
+  [[nodiscard]] bool wait(unsigned millis) const;
 
   // synonym for wait(0)
-  bool poll() const;
+  [[nodiscard]] bool poll() const;
 
   // Wait until the computation finishes completely.  If the computation threw
   // an exception it will be re-thrown by this method.
@@ -54,22 +54,22 @@ class WorkerPoolPromise {
 public:
   // Returns true if the work is completed (either due to error or actual
   // completion, will not re-throw)
-  bool done() const;
+  [[nodiscard]] bool done() const;
 
   // Waits for the given amount of time for the work to be completed.  If the
   // work is completed, returns true.  If the producer function throws for any
   // reason, this method will re-throw the exception.  If millis is zero, does
   // not wait at all simply polls to see if the computation is finished.
-  bool wait(unsigned millis) const;
+  [[nodiscard]] bool wait(unsigned millis) const;
 
   // synonym for wait(0)
-  bool poll() const;
+  [[nodiscard]] bool poll() const;
 
   // Blocks until the work is done, and returns the result.  May be called
   // multiple times to access the result.  If the computation threw
   // an exception it will be re-thrown by this method.
-  ResultType& get();
-  ResultType const& get() const;
+  [[nodiscard]] ResultType& get();
+  [[nodiscard]] ResultType const& get() const;
 
 private:
   friend WorkerPool;
@@ -115,16 +115,16 @@ public:
   // required that the caller of this method hold on to the worker handle, the
   // work will be managed and completed regardless of the WorkerPoolHandle
   // lifetime.
-  WorkerPoolHandle addWork(function<void()> work);
+  [[nodiscard]] WorkerPoolHandle addWork(function<void()> work);
 
   // Like addWork, but the worker is expected to produce some result.  The
   // returned promise can be used to get this return value once the producer is
   // complete.
   template <typename ResultType>
-  WorkerPoolPromise<ResultType> addProducer(function<ResultType()> producer);
+  [[nodiscard]] WorkerPoolPromise<ResultType> addProducer(function<ResultType()> producer);
 
   // Returns the current number of worker threads.
-  size_t getWorkerCount() const;
+  [[nodiscard]] size_t getWorkerCount() const;
 
 private:
   class WorkerThread : public Thread {
@@ -152,14 +152,14 @@ private:
 };
 
 template <typename ResultType>
-bool WorkerPoolPromise<ResultType>::done() const {
-  MutexLocker locker(m_impl->mutex);
+[[nodiscard]] bool WorkerPoolPromise<ResultType>::done() const {
+  [[nodiscard]] MutexLocker locker(m_impl->mutex);
   return m_impl->result || m_impl->exception;
 }
 
 template <typename ResultType>
-bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
-  MutexLocker locker(m_impl->mutex);
+[[nodiscard]] bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
+  [[nodiscard]] MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->result && !m_impl->exception && millis != 0)
     m_impl->condition.wait(m_impl->mutex, millis);
@@ -174,13 +174,13 @@ bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
 }
 
 template <typename ResultType>
-bool WorkerPoolPromise<ResultType>::poll() const {
+[[nodiscard]] bool WorkerPoolPromise<ResultType>::poll() const {
   return wait(0);
 }
 
 template <typename ResultType>
-ResultType& WorkerPoolPromise<ResultType>::get() {
-  MutexLocker locker(m_impl->mutex);
+[[nodiscard]] ResultType& WorkerPoolPromise<ResultType>::get() {
+  [[nodiscard]] MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->result && !m_impl->exception)
     m_impl->condition.wait(m_impl->mutex);
@@ -192,7 +192,7 @@ ResultType& WorkerPoolPromise<ResultType>::get() {
 }
 
 template <typename ResultType>
-ResultType const& WorkerPoolPromise<ResultType>::get() const {
+[[nodiscard]] ResultType const& WorkerPoolPromise<ResultType>::get() const {
   return const_cast<WorkerPoolPromise*>(this)->get();
 }
 
@@ -201,7 +201,7 @@ WorkerPoolPromise<ResultType>::WorkerPoolPromise(shared_ptr<Impl> impl)
   : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
-WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> producer) {
+[[nodiscard]] WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> producer) {
   producer = requireDependencyValueAs<WorkerPoolException>(std::move(producer), "WorkerPool", "producer");
 
   // Construct a worker pool promise and wrap the producer to signal the
@@ -210,11 +210,11 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> pro
   queueWork([workerPoolPromiseImpl, producer = std::move(producer)]() {
     try {
       auto result = producer();
-      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
+      [[nodiscard]] MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->result = std::move(result);
       workerPoolPromiseImpl->condition.broadcast();
     } catch (...) {
-      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
+      [[nodiscard]] MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->exception = std::current_exception();
       workerPoolPromiseImpl->condition.broadcast();
     }

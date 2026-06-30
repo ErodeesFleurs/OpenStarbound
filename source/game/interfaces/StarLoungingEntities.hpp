@@ -38,9 +38,9 @@ struct LoungeAnchor : EntityAnchor {
 // may be called on both the master and slave.
 class LoungeableEntity : public AnchorableEntity {
 public:
-  size_t anchorCount() const override = 0;
-  EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const override;
-  virtual LoungeAnchorConstPtr loungeAnchor(size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] size_t anchorCount() const override = 0;
+  [[nodiscard]] EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const override;
+  [[nodiscard]] virtual LoungeAnchorConstPtr loungeAnchor(size_t anchorPositionIndex) const = 0;
 
   // Default does nothing.
   virtual void loungeControl(size_t anchorPositionIndex, LoungeControl loungeControl);
@@ -49,9 +49,9 @@ public:
   // Queries around this entity's metaBoundBox for any LoungingEntities
   // reporting that they are lounging in this entity, and returns ones that are
   // lounging in the given position.
-  Set<EntityId> entitiesLoungingIn(size_t anchorPositionIndex) const;
+  [[nodiscard]] Set<EntityId> entitiesLoungingIn(size_t anchorPositionIndex) const;
   // Returns pairs of entity ids, and the position they are lounging in.
-  Set<pair<EntityId, size_t>> entitiesLounging() const;
+  [[nodiscard]] Set<pair<EntityId, size_t>> entitiesLounging() const;
 };
 
 // Any lounging entity should report the entity it is lounging in on both
@@ -59,10 +59,10 @@ public:
 // in the same spot.
 class LoungingEntity : public virtual Entity {
 public:
-  virtual Maybe<EntityAnchorState> loungingIn() const = 0;
+  [[nodiscard]] virtual Maybe<EntityAnchorState> loungingIn() const = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.
-  bool inConflictingLoungeAnchor() const;
+  [[nodiscard]] bool inConflictingLoungeAnchor() const;
 };
 
 }

@@ -103,7 +103,7 @@ public:
     unsigned int minimumPlaySamples = 4096;
 
     Speaker(SpeakerId speakerId);
-    Json toJson() const;
+    [[nodiscard]] Json toJson() const;
   };
 
   using SpeakerPtr = std::shared_ptr<Speaker>;
@@ -117,16 +117,16 @@ public:
   void init();
 
   void loadJson(Json const& config, bool skipSave = false);
-  Json saveJson() const;
+  [[nodiscard]] Json saveJson() const;
 
   void save() const;
   void scheduleSave();
 
   // Sets the local speaker ID and returns the local speaker. Must be called upon loading into a world.
-  SpeakerPtr setLocalSpeaker(SpeakerId speakerId);
-  SpeakerPtr localSpeaker();
-  SpeakerPtr speaker(SpeakerId speakerId);
-  HashMap<SpeakerId, SpeakerPtr>& speakers();
+  [[nodiscard]] SpeakerPtr setLocalSpeaker(SpeakerId speakerId);
+  [[nodiscard]] SpeakerPtr localSpeaker();
+  [[nodiscard]] SpeakerPtr speaker(SpeakerId speakerId);
+  [[nodiscard]] HashMap<SpeakerId, SpeakerPtr>& speakers();
   List<Voice::SpeakerPtr> sortedSpeakers(bool onlyPlaying);
   void clearSpeakers();
 
@@ -140,18 +140,18 @@ public:
   void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
   void setDeviceName(Maybe<String> device);
-  StringList availableDevices();
+  [[nodiscard]] StringList availableDevices();
 
-  int send(DataStreamBuffer& out, size_t budget = 0);
-  bool receive(SpeakerPtr speaker, std::string_view view);
+  [[nodiscard]] int send(DataStreamBuffer& out, size_t budget = 0);
+  [[nodiscard]] bool receive(SpeakerPtr speaker, std::string_view view);
 
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
 
   inline int encoderChannels() const { return static_cast<int>(m_channelMode); }
 
-  static OpusDecoder* createDecoder(int channels);
-  static OpusEncoder* createEncoder(int channels);
+  [[nodiscard]] static OpusDecoder* createDecoder(int channels);
+  [[nodiscard]] static OpusEncoder* createEncoder(int channels);
 private:
   void resetEncoder();
   void resetDevice();
@@ -159,7 +159,7 @@ private:
   void closeDevice();
   inline bool shouldEnableInput() const { return m_enabled && m_inputEnabled; }
 
-  bool playSpeaker(SpeakerPtr const& speaker, int channels);
+  [[nodiscard]] bool playSpeaker(SpeakerPtr const& speaker, int channels);
 
   void thread();
 

@@ -24,8 +24,8 @@ using SystemObjectPtr = SharedPtr<SystemObject>;
 struct SystemObjectConfig;
 
 struct CelestialOrbit {
-  static CelestialOrbit fromJson(Json const& json);
-  Json toJson() const;
+  [[nodiscard]] static CelestialOrbit fromJson(Json const& json);
+  [[nodiscard]] Json toJson() const;
 
   CelestialCoordinate target;
   int direction;
@@ -42,11 +42,11 @@ DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit);
 
 // in transit, at a planet, orbiting a planet,, at a system object, or at a vector position
 using SystemLocation = MVariant<CelestialCoordinate, CelestialOrbit, Uuid, Vec2F>;
-Json jsonFromSystemLocation(SystemLocation const& location);
-SystemLocation jsonToSystemLocation(Json const& json);
+[[nodiscard]] Json jsonFromSystemLocation(SystemLocation const& location);
+[[nodiscard]] SystemLocation jsonToSystemLocation(Json const& json);
 
 struct SystemWorldConfig {
-  static SystemWorldConfig fromJson(Json const& config);
+  [[nodiscard]] static SystemWorldConfig fromJson(Json const& config);
 
   float starGravitationalConstant;
   float planetGravitationalConstant;
@@ -79,31 +79,31 @@ public:
 
   virtual ~SystemWorld() = default;
 
-  AssetsConstPtr assets() const;
-  PatternedNameGeneratorConstPtr nameGenerator() const;
-  SystemWorldConfig const& systemConfig() const;
-  double time() const;
-  Vec3I location() const;
-  List<CelestialCoordinate> planets() const;
+  [[nodiscard]] AssetsConstPtr assets() const;
+  [[nodiscard]] PatternedNameGeneratorConstPtr nameGenerator() const;
+  [[nodiscard]] SystemWorldConfig const& systemConfig() const;
+  [[nodiscard]] double time() const;
+  [[nodiscard]] Vec3I location() const;
+  [[nodiscard]] List<CelestialCoordinate> planets() const;
 
-  uint64_t coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
-  float planetOrbitDistance(CelestialCoordinate const& coord) const;
+  [[nodiscard]] uint64_t coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
+  [[nodiscard]] float planetOrbitDistance(CelestialCoordinate const& coord) const;
   // assumes circular orbit
-  float orbitInterval(float distance, bool isMoon) const;
-  Vec2F orbitPosition(CelestialOrbit const& orbit) const;
-  float clusterSize(CelestialCoordinate const& planet) const;
-  float planetSize(CelestialCoordinate const& planet) const;
-  Vec2F planetPosition(CelestialCoordinate const& planet) const;
-  Maybe<Vec2F> systemLocationPosition(SystemLocation const& position) const;
-  Vec2F randomArrivalPosition() const;
-  Maybe<WarpAction> objectWarpAction(Uuid const& uuid) const;
+  [[nodiscard]] float orbitInterval(float distance, bool isMoon) const;
+  [[nodiscard]] Vec2F orbitPosition(CelestialOrbit const& orbit) const;
+  [[nodiscard]] float clusterSize(CelestialCoordinate const& planet) const;
+  [[nodiscard]] float planetSize(CelestialCoordinate const& planet) const;
+  [[nodiscard]] Vec2F planetPosition(CelestialCoordinate const& planet) const;
+  [[nodiscard]] Maybe<Vec2F> systemLocationPosition(SystemLocation const& position) const;
+  [[nodiscard]] Vec2F randomArrivalPosition() const;
+  [[nodiscard]] Maybe<WarpAction> objectWarpAction(Uuid const& uuid) const;
 
-  virtual List<SystemObjectPtr> objects() const = 0;
-  virtual List<Uuid> objectKeys() const = 0;
-  virtual SystemObjectPtr getObject(Uuid const& uuid) const = 0;
+  [[nodiscard]] virtual List<SystemObjectPtr> objects() const = 0;
+  [[nodiscard]] virtual List<Uuid> objectKeys() const = 0;
+  [[nodiscard]] virtual SystemObjectPtr getObject(Uuid const& uuid) const = 0;
 
-  SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
-  static Json systemObjectTypeConfig(AssetsConstPtr assets, String const& typeName);
+  [[nodiscard]] SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
+  [[nodiscard]] static Json systemObjectTypeConfig(AssetsConstPtr assets, String const& typeName);
 
 protected:
   Vec3I m_location;
@@ -142,30 +142,30 @@ public:
 
   void init();
 
-  Uuid uuid() const;
-  String name() const;
-  bool permanent() const;
-  Vec2F position() const;
+  [[nodiscard]] Uuid uuid() const;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] bool permanent() const;
+  [[nodiscard]] Vec2F position() const;
 
-  WarpAction warpAction() const;
-  Maybe<float> threatLevel() const;
-  SkyParameters skyParameters() const;
-  JsonObject parameters() const;
+  [[nodiscard]] WarpAction warpAction() const;
+  [[nodiscard]] Maybe<float> threatLevel() const;
+  [[nodiscard]] SkyParameters skyParameters() const;
+  [[nodiscard]] JsonObject parameters() const;
 
-  bool shouldDestroy() const;
+  [[nodiscard]] bool shouldDestroy() const;
 
   void enterOrbit(CelestialCoordinate const& target, Vec2F const& targetPosition, double time);
-  Maybe<CelestialCoordinate> orbitTarget() const;
-  Maybe<CelestialOrbit> orbit() const;
+  [[nodiscard]] Maybe<CelestialCoordinate> orbitTarget() const;
+  [[nodiscard]] Maybe<CelestialOrbit> orbit() const;
 
   void clientUpdate(float dt);
   void serverUpdate(SystemWorldServer& system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
-  ByteArray netStore() const;
-  Json diskStore() const;
+  [[nodiscard]] ByteArray netStore() const;
+  [[nodiscard]] Json diskStore() const;
 private:
 
   void setPosition(Vec2F const& position);
@@ -190,24 +190,24 @@ public:
   SystemClientShip(SystemWorld& world, Uuid uuid, float speed, SystemLocation const& position);
   SystemClientShip(SystemWorld& world, Uuid uuid, SystemLocation const& position);
 
-  Uuid uuid() const;
-  Vec2F position() const;
-  SystemLocation systemLocation() const;
-  SystemLocation destination() const;
+  [[nodiscard]] Uuid uuid() const;
+  [[nodiscard]] Vec2F position() const;
+  [[nodiscard]] SystemLocation systemLocation() const;
+  [[nodiscard]] SystemLocation destination() const;
   void setDestination(SystemLocation const& destination);
   void setSpeed(float speed);
   void startFlying();
 
-  bool flying() const;
+  [[nodiscard]] bool flying() const;
 
   // update is only called on master
   void clientUpdate(float dt);
   void serverUpdate(SystemWorld& system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
-  ByteArray netStore() const;
+  [[nodiscard]] ByteArray netStore() const;
 private:
   struct ClientShipConfig {
     float orbitDistance;

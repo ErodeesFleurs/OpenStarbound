@@ -10,19 +10,19 @@ using CodexConstPtr = SharedPtr<Codex const>;
 class Codex {
 public:
   Codex(Json const& config, String const& path);
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  String id() const;
-  String species() const;
-  String title() const;
-  String description() const;
-  String icon() const;
-  String page(size_t pageNum) const;
-  List<String> pages() const;
-  size_t pageCount() const;
-  Json itemConfig() const;
-  String directory() const;
-  String filename() const;
+  [[nodiscard]] String id() const;
+  [[nodiscard]] String species() const;
+  [[nodiscard]] String title() const;
+  [[nodiscard]] String description() const;
+  [[nodiscard]] String icon() const;
+  [[nodiscard]] String page(size_t pageNum) const;
+  [[nodiscard]] List<String> pages() const;
+  [[nodiscard]] size_t pageCount() const;
+  [[nodiscard]] Json itemConfig() const;
+  [[nodiscard]] String directory() const;
+  [[nodiscard]] String filename() const;
 
 private:
   String m_id;

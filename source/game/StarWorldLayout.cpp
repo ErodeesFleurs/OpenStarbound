@@ -681,8 +681,8 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // Logger::info("before expansion:\ntarget cells are: {}\nother cells are: {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
-    starAssert(!targetCells.empty());
-    starAssert(targetCells.size() < 3);
+    assert(!targetCells.empty());
+    assert(targetCells.size() < 3);
 
     // check the current width to see how much (if any) to expand
     int currentWidth = 0;

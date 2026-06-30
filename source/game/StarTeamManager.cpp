@@ -66,7 +66,7 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
   }
 }
 
-TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
+[[nodiscard]] TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
   RecursiveMutexLocker lock(m_mutex);
   for (auto const& [_, team] : m_teams) {
     if (team.members.contains(playerUuid))
@@ -75,7 +75,7 @@ TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
   return 0;
 }
 
-HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
+[[nodiscard]] HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   HashMap<Uuid, TeamNumber> result;
   for (auto const& [_, team] : m_teams) {
     for (auto const& [memberUuid, _] : team.members)
@@ -84,7 +84,7 @@ HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   return result;
 }
 
-Maybe<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
+[[nodiscard]] Maybe<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
   for (auto const& [teamUuid, team] : m_teams) {
     if (team.members.contains(playerUuid))
       return teamUuid;
@@ -116,7 +116,7 @@ void TeamManager::expirePolledInvitations() {
   });
 }
 
-bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
+[[nodiscard]] bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
   for (auto const& [_, connectedPlayers] : m_connectedPlayers) {
     if (connectedPlayers.contains(playerUuid))
       return true;

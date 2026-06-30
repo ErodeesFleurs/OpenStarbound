@@ -23,7 +23,7 @@ public:
   void enableDelete(WidgetCallbackFunc const& callback);
   void disableDelete();
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   void update(float dt) override;
 

@@ -17,7 +17,7 @@ struct ParallaxLayer {
   ParallaxLayer() = default;
   ParallaxLayer(Json const& store);
 
-  Json store() const;
+  [[nodiscard]] Json store() const;
 
   void addImageDirectives(Directives const& newDirectives);
   void fadeToSkyColor(Color skyColor);
@@ -61,11 +61,11 @@ public:
       Maybe<TreeVariant> parallaxTreeVariant = {});
   Parallax(Json const& store);
 
-  Json store() const;
+  [[nodiscard]] Json store() const;
 
   void fadeToSkyColor(Color const& skyColor);
 
-  ParallaxLayers const& layers() const;
+  [[nodiscard]] ParallaxLayers const& layers() const;
 
 private:
   void buildLayer(Json const& layerSettings, String const& kind);

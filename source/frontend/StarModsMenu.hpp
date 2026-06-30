@@ -24,7 +24,7 @@ public:
   void update(float dt) override;
 
 private:
-  static String bestModName(JsonObject const& metadata, String const& sourcePath);
+  [[nodiscard]] static String bestModName(JsonObject const& metadata, String const& sourcePath);
 
   void openLink();
   void openWorkshop();

@@ -255,40 +255,40 @@ void Npc::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-Vec2F Npc::position() const {
+[[nodiscard]] Vec2F Npc::position() const {
   return m_movementController->position();
 }
 
-RectF Npc::metaBoundBox() const {
+[[nodiscard]] RectF Npc::metaBoundBox() const {
   return RectF(-4, -4, 4, 4);
 }
 
-Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
+[[nodiscard]] Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F{humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(humanoid()->facingDirection()),
                humanoid()->mouthOffset(ignoreAdjustments)[1]};
 }
 
-Vec2F Npc::feetOffset() const {
+[[nodiscard]] Vec2F Npc::feetOffset() const {
   return {humanoid()->feetOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->feetOffset()[1]};
 }
 
-Vec2F Npc::headArmorOffset() const {
+[[nodiscard]] Vec2F Npc::headArmorOffset() const {
   return {humanoid()->headArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->headArmorOffset()[1]};
 }
 
-Vec2F Npc::chestArmorOffset() const {
+[[nodiscard]] Vec2F Npc::chestArmorOffset() const {
   return {humanoid()->chestArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->chestArmorOffset()[1]};
 }
 
-Vec2F Npc::backArmorOffset() const {
+[[nodiscard]] Vec2F Npc::backArmorOffset() const {
   return {humanoid()->backArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->backArmorOffset()[1]};
 }
 
-Vec2F Npc::legsArmorOffset() const {
+[[nodiscard]] Vec2F Npc::legsArmorOffset() const {
   return {humanoid()->legsArmorOffset()[0] * numericalDirection(humanoid()->facingDirection()), humanoid()->legsArmorOffset()[1]};
 }
 
-RectF Npc::collisionArea() const {
+[[nodiscard]] RectF Npc::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
@@ -314,27 +314,27 @@ void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibility
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-String Npc::description() const {
+[[nodiscard]] String Npc::description() const {
   return m_npcVariant.description.value("Some funny looking person");
 }
 
-String Npc::species() const {
+[[nodiscard]] String Npc::species() const {
   return m_npcVariant.humanoidIdentity.species;
 }
 
-Gender Npc::gender() const {
+[[nodiscard]] Gender Npc::gender() const {
   return m_npcVariant.humanoidIdentity.gender;
 }
 
-String Npc::npcType() const {
+[[nodiscard]] String Npc::npcType() const {
   return m_npcVariant.typeName;
 }
 
-Json Npc::scriptConfigParameter(String const& parameterName, Json const& defaultValue) const {
+[[nodiscard]] Json Npc::scriptConfigParameter(String const& parameterName, Json const& defaultValue) const {
   return m_npcVariant.scriptConfig.query(parameterName, defaultValue);
 }
 
-Maybe<HitType> Npc::queryHit(DamageSource const& source) const {
+[[nodiscard]] Maybe<HitType> Npc::queryHit(DamageSource const& source) const {
   if (!inWorld() || !m_statusController->resourcePositive("health") || m_statusController->statPositive("invulnerable"))
     return {};
 
@@ -347,7 +347,7 @@ Maybe<HitType> Npc::queryHit(DamageSource const& source) const {
   return {};
 }
 
-Maybe<PolyF> Npc::hitPoly() const {
+[[nodiscard]] Maybe<PolyF> Npc::hitPoly() const {
   return m_movementController->collisionBody();
 }
 
@@ -373,7 +373,7 @@ List<DamageNotification> Npc::selfDamageNotifications() {
   return m_statusController->pullSelfDamageNotifications();
 }
 
-bool Npc::shouldDestroy() const {
+[[nodiscard]] bool Npc::shouldDestroy() const {
   if (auto res = m_scriptComponent.invoke<bool>("shouldDie"))
     return *res;
   else if (!m_statusController->resourcePositive("health") || m_scriptComponent.error())
@@ -555,47 +555,47 @@ void Npc::setPosition(Vec2F const& pos) {
   m_movementController->setPosition(pos);
 }
 
-float Npc::maxHealth() const {
+[[nodiscard]] float Npc::maxHealth() const {
   return *m_statusController->resourceMax("health");
 }
 
-float Npc::health() const {
+[[nodiscard]] float Npc::health() const {
   return m_statusController->resource("health");
 }
 
-DamageBarType Npc::damageBar() const {
+[[nodiscard]] DamageBarType Npc::damageBar() const {
   return DamageBarType::Default;
 }
 
-List<Drawable> Npc::portrait(PortraitMode mode) const {
+[[nodiscard]] List<Drawable> Npc::portrait(PortraitMode mode) const {
   return humanoid()->renderPortrait(mode);
 }
 
-String Npc::name() const {
+[[nodiscard]] String Npc::name() const {
   return m_npcVariant.humanoidIdentity.name;
 }
 
-Maybe<String> Npc::statusText() const {
+[[nodiscard]] Maybe<String> Npc::statusText() const {
   return m_statusText.get();
 }
 
-bool Npc::displayNametag() const {
+[[nodiscard]] bool Npc::displayNametag() const {
   return m_displayNametag.get();
 }
 
-Vec3B Npc::nametagColor() const {
+[[nodiscard]] Vec3B Npc::nametagColor() const {
   return m_npcVariant.nametagColor;
 }
 
-Vec2F Npc::nametagOrigin() const {
+[[nodiscard]] Vec2F Npc::nametagOrigin() const {
   return mouthPosition(false);
 }
 
-String Npc::nametag() const {
+[[nodiscard]] String Npc::nametag() const {
   return name();
 }
 
-bool Npc::aggressive() const {
+[[nodiscard]] bool Npc::aggressive() const {
   return m_aggressive.get();
 }
 
@@ -607,7 +607,7 @@ Maybe<LuaValue> Npc::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
-Vec2F Npc::getAbsolutePosition(Vec2F relativePosition) const {
+[[nodiscard]] Vec2F Npc::getAbsolutePosition(Vec2F relativePosition) const {
   if (humanoid()->facingDirection() == Direction::Left)
     relativePosition[0] *= -1;
   return m_movementController->position() + relativePosition;
@@ -1021,11 +1021,11 @@ void Npc::getNetStates(bool initial) {
   }
 }
 
-Vec2F Npc::mouthPosition() const {
+[[nodiscard]] Vec2F Npc::mouthPosition() const {
   return mouthOffset(true) + position();
 }
 
-Vec2F Npc::mouthPosition(bool ignoreAdjustments) const {
+[[nodiscard]] Vec2F Npc::mouthPosition(bool ignoreAdjustments) const {
   return mouthOffset(ignoreAdjustments) + position();
 }
 
@@ -1062,7 +1062,7 @@ void Npc::setDance(Maybe<String> const& danceName) {
   }
 }
 
-bool Npc::isInteractive() const {
+[[nodiscard]] bool Npc::isInteractive() const {
   return m_isInteractive.get();
 }
 
@@ -1080,25 +1080,25 @@ InteractAction Npc::interact(InteractRequest const& request) {
   return InteractAction(result.getString(0), entityId(), result.get(1));
 }
 
-RectF Npc::interactiveBoundBox() const {
+[[nodiscard]] RectF Npc::interactiveBoundBox() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
-Maybe<EntityAnchorState> Npc::loungingIn() const {
+[[nodiscard]] Maybe<EntityAnchorState> Npc::loungingIn() const {
   if (is<LoungeAnchor>(m_movementController->entityAnchor()))
     return m_movementController->anchorState();
   return {};
 }
 
-List<QuestArcDescriptor> Npc::offeredQuests() const {
+[[nodiscard]] List<QuestArcDescriptor> Npc::offeredQuests() const {
   return m_offeredQuests.get();
 }
 
-StringSet Npc::turnInQuests() const {
+[[nodiscard]] StringSet Npc::turnInQuests() const {
   return m_turnInQuests.get();
 }
 
-Vec2F Npc::questIndicatorPosition() const {
+[[nodiscard]] Vec2F Npc::questIndicatorPosition() const {
   Vec2F pos = position() + m_questIndicatorOffset;
   pos[1] += interactiveBoundBox().yMax();
   return pos;
@@ -1119,7 +1119,7 @@ bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
   return true;
 }
 
-bool Npc::canUseTool() const {
+[[nodiscard]] bool Npc::canUseTool() const {
   bool canUse = !shouldDestroy() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
@@ -1133,7 +1133,7 @@ void Npc::disableWornArmor(bool disable) {
   m_disableWornArmor.set(disable);
 }
 
-List<LightSource> Npc::lightSources() const {
+[[nodiscard]] List<LightSource> Npc::lightSources() const {
   List<LightSource> lights;
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
@@ -1148,57 +1148,57 @@ Maybe<Json> Npc::receiveMessage(ConnectionId sendingConnection, String const& me
   return result;
 }
 
-Vec2F Npc::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
+[[nodiscard]] Vec2F Npc::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
   return m_tools->armPosition(*humanoid(), hand, facingDirection, armAngle, offset);
 }
 
-Vec2F Npc::handOffset(ToolHand hand, Direction facingDirection) const {
+[[nodiscard]] Vec2F Npc::handOffset(ToolHand hand, Direction facingDirection) const {
   return m_tools->handOffset(*humanoid(), hand, facingDirection);
 }
 
-Vec2F Npc::handPosition(ToolHand hand, Vec2F const& handOffset) const {
+[[nodiscard]] Vec2F Npc::handPosition(ToolHand hand, Vec2F const& handOffset) const {
   return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
-ItemPtr Npc::handItem(ToolHand hand) const {
+[[nodiscard]] ItemPtr Npc::handItem(ToolHand hand) const {
   if (hand == ToolHand::Primary)
     return m_tools->primaryHandItem();
   return m_tools->altHandItem();
 }
 
-Vec2F Npc::armAdjustment() const {
+[[nodiscard]] Vec2F Npc::armAdjustment() const {
   return humanoid()->armAdjustment();
 }
 
-Vec2F Npc::velocity() const {
+[[nodiscard]] Vec2F Npc::velocity() const {
   return m_movementController->velocity();
 }
 
-Vec2F Npc::aimPosition() const {
+[[nodiscard]] Vec2F Npc::aimPosition() const {
   return world()->geometry().xwrap(Vec2F(m_xAimPosition.get(), m_yAimPosition.get()) + position());
 }
 
-float Npc::interactRadius() const {
+[[nodiscard]] float Npc::interactRadius() const {
   return 9999;
 }
 
-Direction Npc::facingDirection() const {
+[[nodiscard]] Direction Npc::facingDirection() const {
   return m_movementController->facingDirection();
 }
 
-Direction Npc::walkingDirection() const {
+[[nodiscard]] Direction Npc::walkingDirection() const {
   return m_movementController->movingDirection();
 }
 
-bool Npc::isAdmin() const {
+[[nodiscard]] bool Npc::isAdmin() const {
   return false;
 }
 
-Color Npc::favoriteColor() const {
+[[nodiscard]] Color Npc::favoriteColor() const {
   return Color::White;
 }
 
-float Npc::beamGunRadius() const {
+[[nodiscard]] float Npc::beamGunRadius() const {
   return m_tools->beamGunRadius();
 }
 
@@ -1206,11 +1206,11 @@ void Npc::addParticles(List<Particle> const&) {}
 
 void Npc::addSound(String const&, float, float) {}
 
-bool Npc::inToolRange() const {
+[[nodiscard]] bool Npc::inToolRange() const {
   return true;
 }
 
-bool Npc::inToolRange(Vec2F const&) const {
+[[nodiscard]] bool Npc::inToolRange(Vec2F const&) const {
   return true;
 }
 
@@ -1218,23 +1218,23 @@ void Npc::addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEff
   m_statusController->addEphemeralEffects(statusEffects);
 }
 
-ActiveUniqueStatusEffectSummary Npc::activeUniqueStatusEffectSummary() const {
+[[nodiscard]] ActiveUniqueStatusEffectSummary Npc::activeUniqueStatusEffectSummary() const {
   return m_statusController->activeUniqueStatusEffectSummary();
 }
 
-float Npc::powerMultiplier() const {
+[[nodiscard]] float Npc::powerMultiplier() const {
   return m_statusController->stat("powerMultiplier");
 }
 
-bool Npc::fullEnergy() const {
+[[nodiscard]] bool Npc::fullEnergy() const {
   return *m_statusController->resourcePercentage("energy") >= 1.0;
 }
 
-float Npc::energy() const {
+[[nodiscard]] float Npc::energy() const {
   return m_statusController->resource("energy");
 }
 
-bool Npc::energyLocked() const {
+[[nodiscard]] bool Npc::energyLocked() const {
   return m_statusController->resourceLocked("energy");
 }
 
@@ -1287,7 +1287,7 @@ void Npc::playEmote(HumanoidEmote emote) {
   addEmote(emote);
 }
 
-List<DamageSource> Npc::damageSources() const {
+[[nodiscard]] List<DamageSource> Npc::damageSources() const {
   auto damageSources = m_tools->damageSources();
 
   if (m_damageOnTouch.get() && !m_npcVariant.touchDamageConfig.isNull()) {
@@ -1310,11 +1310,11 @@ List<DamageSource> Npc::damageSources() const {
   return damageSources;
 }
 
-List<PhysicsForceRegion> Npc::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> Npc::forceRegions() const {
   return m_tools->forceRegions();
 }
 
-HumanoidIdentity const& Npc::identity() const {
+[[nodiscard]] HumanoidIdentity const& Npc::identity() const {
   return m_npcVariant.humanoidIdentity;
 }
 
@@ -1469,7 +1469,7 @@ void Npc::setDescription(String const& description) {
 HumanoidPtr Npc::humanoid() {
   return m_netHumanoid.netElements().last()->humanoid();
 }
-HumanoidPtr Npc::humanoid() const {
+[[nodiscard]] HumanoidPtr Npc::humanoid() const {
   return m_netHumanoid.netElements().last()->humanoid();
 }
 
@@ -1520,7 +1520,7 @@ void Npc::refreshHumanoidParameters() {
   }
 }
 
-bool Npc::forceNude() const {
+[[nodiscard]] bool Npc::forceNude() const {
   return m_statusController->statPositive("nude");
 }
 

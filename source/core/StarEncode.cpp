@@ -4,7 +4,7 @@
 
 namespace Star {
 
-size_t hexEncode(char const* data, size_t len, char* output, size_t outLen) {
+[[nodiscard]] size_t hexEncode(char const* data, size_t len, char* output, size_t outLen) {
   static char const hex[] = "0123456789abcdef";
 
   len = std::min(len, outLen / 2);
@@ -16,7 +16,7 @@ size_t hexEncode(char const* data, size_t len, char* output, size_t outLen) {
   return len * 2;
 }
 
-size_t hexDecode(char const* src, size_t len, char* output, size_t outLen) {
+[[nodiscard]] size_t hexDecode(char const* src, size_t len, char* output, size_t outLen) {
   for (size_t i = 0; i < len / 2; ++i) {
     if (i >= outLen)
       return i;
@@ -45,7 +45,7 @@ size_t hexDecode(char const* src, size_t len, char* output, size_t outLen) {
   return len / 2;
 }
 
-size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen) {
+[[nodiscard]] size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen) {
   for (size_t i = 0; i < len; ++i) {
     if (i >= outLen)
       return i;
@@ -67,7 +67,7 @@ size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen) {
 
 static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
+[[nodiscard]] size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
   if (outLen == 0)
     return 0;
   size_t written = 0;
@@ -131,7 +131,7 @@ static inline bool is_base64(unsigned char c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
+[[nodiscard]] size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
   if (outLen == 0)
     return 0;
 
@@ -183,40 +183,40 @@ size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
   return written;
 }
 
-String hexEncode(char const* data, size_t len) {
+[[nodiscard]] String hexEncode(char const* data, size_t len) {
   std::string res(len * 2, '\0');
   [[maybe_unused]] size_t encoded = hexEncode(data, len, &res[0], res.size());
-  starAssert(encoded == res.size());
+  assert(encoded == res.size());
   return res;
 }
 
-String base64Encode(char const* data, size_t len) {
+[[nodiscard]] String base64Encode(char const* data, size_t len) {
   std::string res(len * 4 / 3 + 3, '\0');
   [[maybe_unused]] size_t encoded = base64Encode(data, len, &res[0], res.size());
-  starAssert(encoded <= res.size());
+  assert(encoded <= res.size());
   res.resize(encoded);
   return res;
 }
 
-String hexEncode(ByteArray const& data) {
+[[nodiscard]] String hexEncode(ByteArray const& data) {
   return hexEncode(data.ptr(), data.size());
 }
 
-ByteArray hexDecode(String const& encodedData) {
+[[nodiscard]] ByteArray hexDecode(String const& encodedData) {
   ByteArray res(encodedData.size() / 2, 0);
   [[maybe_unused]] size_t decoded = hexDecode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
-  starAssert(decoded == res.size());
+  assert(decoded == res.size());
   return res;
 }
 
-String base64Encode(ByteArray const& data) {
+[[nodiscard]] String base64Encode(ByteArray const& data) {
   return base64Encode(data.ptr(), data.size());
 }
 
-ByteArray base64Decode(String const& encodedData) {
+[[nodiscard]] ByteArray base64Decode(String const& encodedData) {
   ByteArray res(encodedData.size() * 3 / 4, 0);
   [[maybe_unused]] size_t decoded = base64Decode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
-  starAssert(decoded <= res.size());
+  assert(decoded <= res.size());
   res.resize(decoded);
   return res;
 }

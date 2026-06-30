@@ -7,19 +7,19 @@ namespace Star {
 
 MemoryAssetSource::MemoryAssetSource(String const& name, JsonObject metadata) : m_name(name), m_metadata(metadata) {}
 
-String MemoryAssetSource::name() const {
+[[nodiscard]] String MemoryAssetSource::name() const {
   return m_name;
 }
 
-JsonObject MemoryAssetSource::metadata() const {
+[[nodiscard]] JsonObject MemoryAssetSource::metadata() const {
   return m_metadata;
 }
 
-StringList MemoryAssetSource::assetPaths() const {
+[[nodiscard]] StringList MemoryAssetSource::assetPaths() const {
   return m_files.keys();
 }
 
-IODevicePtr MemoryAssetSource::open(String const& path) {
+[[nodiscard]] IODevicePtr MemoryAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
     AssetReader(char* assetData, size_t assetSize, String name) {
       this->assetData = assetData;
@@ -80,15 +80,15 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
   }
 }
 
-bool MemoryAssetSource::empty() const {
+[[nodiscard]] bool MemoryAssetSource::empty() const {
   return m_files.empty();
 }
 
-bool MemoryAssetSource::contains(String const& path) const {
+[[nodiscard]] bool MemoryAssetSource::contains(String const& path) const {
   return m_files.contains(path);
 }
 
-bool MemoryAssetSource::erase(String const& path) {
+[[nodiscard]] bool MemoryAssetSource::erase(String const& path) {
   return m_files.erase(path) != 0;
 }
 
@@ -104,7 +104,7 @@ void MemoryAssetSource::set(String const& path, Image&& image) {
   m_files[path] = make_shared<Image>(std::move(image));
 }
 
-ByteArray MemoryAssetSource::read(String const& path) {
+[[nodiscard]] ByteArray MemoryAssetSource::read(String const& path) {
   auto assetData = m_files.ptr(path);
   if (!assetData)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
@@ -116,7 +116,7 @@ ByteArray MemoryAssetSource::read(String const& path) {
   }
 }
 
-ImageConstPtr MemoryAssetSource::image(String const& path) {
+[[nodiscard]] ImageConstPtr MemoryAssetSource::image(String const& path) {
   auto assetData = m_files.ptr(path);
   if (!assetData)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);

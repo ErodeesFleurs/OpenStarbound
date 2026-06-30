@@ -28,17 +28,17 @@ class MiningTool : public Item, public SwingableItem, public DurabilityItem {
 public:
   MiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
   // In pixels, offset from image center
-  Vec2F handPosition() const override;
+  [[nodiscard]] Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  float durabilityStatus() override;
+  [[nodiscard]] float durabilityStatus() override;
 
-  float getAngle(float aimAngle) override;
+  [[nodiscard]] float getAngle(float aimAngle) override;
 
 private:
   void changeDurability(float amount);
@@ -67,14 +67,14 @@ class HarvestingTool : public Item, public SwingableItem {
 public:
   HarvestingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
   // In pixels, offset from image center
-  Vec2F handPosition() const override;
+  [[nodiscard]] Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  float getAngle(float aimAngle) override;
+  [[nodiscard]] float getAngle(float aimAngle) override;
 
 private:
   String m_image;
@@ -96,11 +96,11 @@ class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
   Flashlight(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] List<LightSource> lightSources() const;
 
 private:
   String m_image;
@@ -115,20 +115,20 @@ class WireTool : public Item, public FireableItem, public PointableItem, public 
 public:
   WireTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> drawables() const override;
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
 
   void setEnd(EndType type) override;
 
   // In pixels, offset from image center
-  Vec2F handPosition() const override;
+  [[nodiscard]] Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  float getAngle(float aimAngle) override;
+  [[nodiscard]] float getAngle(float aimAngle) override;
 
   void setConnector(WireConnector* connector);
 
@@ -147,21 +147,21 @@ class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool,
 public:
   BeamMiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
   void setEnd(EndType type) override;
-  List<PreviewTile> previewTiles(bool shifting) const override;
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<PreviewTile> previewTiles(bool shifting) const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  float getAngle(float angle) override;
+  [[nodiscard]] float getAngle(float angle) override;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
 
 private:
   AssetsConstPtr m_assets;
@@ -183,14 +183,14 @@ class TillingTool : public Item, public SwingableItem {
 public:
   TillingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
   // In pixels, offset from image center
-  Vec2F handPosition() const override;
+  [[nodiscard]] Vec2F handPosition() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  float getAngle(float aimAngle) override;
+  [[nodiscard]] float getAngle(float aimAngle) override;
 
 private:
   AssetsConstPtr m_assets;
@@ -217,18 +217,18 @@ class PaintingBeamTool
 public:
   PaintingBeamTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
   void setEnd(EndType type) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  List<PreviewTile> previewTiles(bool shifting) const override;
+  [[nodiscard]] List<PreviewTile> previewTiles(bool shifting) const override;
   void init(ToolUserEntity& owner, ToolHand hand) override;
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  float getAngle(float angle) override;
+  [[nodiscard]] float getAngle(float angle) override;
 
 private:
   List<Color> m_colors;

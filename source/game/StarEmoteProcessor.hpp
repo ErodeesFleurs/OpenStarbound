@@ -13,7 +13,7 @@ class EmoteProcessor {
 public:
   EmoteProcessor(AssetsConstPtr assets);
 
-  HumanoidEmote detectEmotes(String const& chatter) const;
+  [[nodiscard]] HumanoidEmote detectEmotes(String const& chatter) const;
 
 private:
   struct EmoteBinding {

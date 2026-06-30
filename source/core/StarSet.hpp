@@ -27,7 +27,7 @@ public:
 
   [[nodiscard]] bool contains(value_type const& v) const;
 
-  bool add(value_type const& v);
+  [[nodiscard]] bool add(value_type const& v);
 
   // Like add, but always adds new value, potentially replacing another equal
   // (comparing equal, may not be actually equal) value.  Returns whether an
@@ -37,19 +37,19 @@ public:
   template <typename Container>
   void addAll(Container const& s);
 
-  bool remove(value_type const& v);
+  [[nodiscard]] bool remove(value_type const& v);
 
   template <typename Container>
   void removeAll(Container const& s);
 
-  value_type first();
+  [[nodiscard]] value_type first();
   [[nodiscard]] Maybe<value_type> maybeFirst();
-  value_type takeFirst();
+  [[nodiscard]] value_type takeFirst();
   [[nodiscard]] Maybe<value_type> maybeTakeFirst();
 
-  value_type last();
+  [[nodiscard]] value_type last();
   [[nodiscard]] Maybe<value_type> maybeLast();
-  value_type takeLast();
+  [[nodiscard]] value_type takeLast();
   [[nodiscard]] Maybe<value_type> maybeTakeLast();
 
   [[nodiscard]] bool hasIntersection(SetMixin const& s) const;
@@ -69,20 +69,20 @@ public:
   using value_type = typename Base::value_type;
 
   template <typename Container>
-  static Set from(Container const& c);
+  [[nodiscard]] static Set from(Container const& c);
 
   using Base::Base;
 
   // Returns set of elements that are in this set and the given set.
-  Set intersection(Set const& s) const;
-  Set intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
+  [[nodiscard]] Set intersection(Set const& s) const;
+  [[nodiscard]] Set intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
 
   // Returns elements in this set that are not in the given set
-  Set difference(Set const& s) const;
-  Set difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
+  [[nodiscard]] Set difference(Set const& s) const;
+  [[nodiscard]] Set difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
 
   // Returns elements in either this set or the given set
-  Set combination(Set const& s) const;
+  [[nodiscard]] Set combination(Set const& s) const;
 };
 
 template <typename BaseSet>
@@ -96,13 +96,13 @@ public:
   using value_type = typename Base::value_type;
 
   template <typename Container>
-  static HashSetMixin from(Container const& c);
+  [[nodiscard]] static HashSetMixin from(Container const& c);
 
   using Base::Base;
 
-  HashSetMixin intersection(HashSetMixin const& s) const;
-  HashSetMixin difference(HashSetMixin const& s) const;
-  HashSetMixin combination(HashSetMixin const& s) const;
+  [[nodiscard]] HashSetMixin intersection(HashSetMixin const& s) const;
+  [[nodiscard]] HashSetMixin difference(HashSetMixin const& s) const;
+  [[nodiscard]] HashSetMixin combination(HashSetMixin const& s) const;
 };
 
 template <typename Value, typename Hash = hash<Value>, typename Equals = std::equal_to<Value>, typename Allocator = std::allocator<Value>>
@@ -131,7 +131,7 @@ bool SetMixin<BaseSet>::add(value_type const& v) {
 }
 
 template <typename BaseSet>
-[[nodiscard]] bool SetMixin<BaseSet>::replace(value_type v) {
+bool SetMixin<BaseSet>::replace(value_type v) {
   bool replaced = remove(v);
   Base::insert(std::move(v));
   return replaced;
@@ -156,7 +156,7 @@ void SetMixin<BaseSet>::removeAll(Container const& s) {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::first() -> value_type {
+[[nodiscard]] auto SetMixin<BaseSet>::first() -> value_type {
   if (Base::empty())
     throw SetException("first called on empty set");
   return *Base::begin();
@@ -170,7 +170,7 @@ template <typename BaseSet>
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::takeFirst() -> value_type {
+[[nodiscard]] auto SetMixin<BaseSet>::takeFirst() -> value_type {
   if (Base::empty())
     throw SetException("takeFirst called on empty set");
   auto i = Base::begin();
@@ -283,7 +283,7 @@ Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::difference(Set co
 
 template <typename Value, typename Compare, typename Allocator>
 Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::combination(Set const& s) const {
-  Set ret(*this);
+  [[nodiscard]] Set ret(*this);
   ret.addAll(s);
   return ret;
 }
@@ -318,7 +318,7 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::difference(HashSetMixin const& s) c
 
 template <typename BaseMap>
 HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) const {
-  HashSetMixin ret(*this);
+  [[nodiscard]] HashSetMixin ret(*this);
   ret.addAll(s);
   return ret;
 }

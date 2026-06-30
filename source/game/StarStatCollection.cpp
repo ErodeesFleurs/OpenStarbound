@@ -51,31 +51,31 @@ StatCollection::StatCollection(Json const& config) {
   }
 }
 
-StringList StatCollection::statNames() const {
+[[nodiscard]] StringList StatCollection::statNames() const {
   return m_stats.effectiveStatNames();
 }
 
-float StatCollection::stat(String const& statName) const {
+[[nodiscard]] float StatCollection::stat(String const& statName) const {
   return m_stats.statEffectiveValue(statName);
 }
 
-bool StatCollection::statPositive(String const& statName) const {
+[[nodiscard]] bool StatCollection::statPositive(String const& statName) const {
   return stat(statName) > 0.0f;
 }
 
-StringList StatCollection::resourceNames() const {
+[[nodiscard]] StringList StatCollection::resourceNames() const {
   return m_stats.resourceNames();
 }
 
-bool StatCollection::isResource(String const& resourceName) const {
+[[nodiscard]] bool StatCollection::isResource(String const& resourceName) const {
   return m_stats.isResource(resourceName);
 }
 
-float StatCollection::resource(String const& resourceName) const {
+[[nodiscard]] float StatCollection::resource(String const& resourceName) const {
   return m_stats.resourceValue(resourceName);
 }
 
-bool StatCollection::resourcePositive(String const& resourceName) const {
+[[nodiscard]] bool StatCollection::resourcePositive(String const& resourceName) const {
   return resource(resourceName) > 0.0f;
 }
 
@@ -99,7 +99,7 @@ bool StatCollection::overConsumeResource(String const& resourceName, float amoun
   return m_stats.overConsumeResourceValue(resourceName, amount);
 }
 
-bool StatCollection::resourceLocked(String const& resourceName) const {
+[[nodiscard]] bool StatCollection::resourceLocked(String const& resourceName) const {
   return m_stats.resourceLocked(resourceName);
 }
 
@@ -121,11 +121,11 @@ void StatCollection::resetAllResources() {
     resetResource(resourceName);
 }
 
-Maybe<float> StatCollection::resourceMax(String const& resourceName) const {
+[[nodiscard]] Maybe<float> StatCollection::resourceMax(String const& resourceName) const {
   return m_stats.resourceMaxValue(resourceName);
 }
 
-Maybe<float> StatCollection::resourcePercentage(String const& resourceName) const {
+[[nodiscard]] Maybe<float> StatCollection::resourcePercentage(String const& resourceName) const {
   return m_stats.resourcePercentage(resourceName);
 }
 

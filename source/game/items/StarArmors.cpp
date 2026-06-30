@@ -65,23 +65,23 @@ ArmorItem::ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageM
   m_statusEffectsInCosmeticSlot = config.getBool("statusEffectsInCosmeticSlots", false);
 }
 
-List<PersistentStatusEffect> ArmorItem::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> ArmorItem::statusEffects() const {
   return m_statusEffects;
 }
 
-bool ArmorItem::statusEffectsInCosmeticSlot() const {
+[[nodiscard]] bool ArmorItem::statusEffectsInCosmeticSlot() const {
   return m_statusEffectsInCosmeticSlot;
 }
 
-List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> ArmorItem::cosmeticStatusEffects() const {
   return m_cosmeticStatusEffects;
 }
 
-StringSet ArmorItem::effectSources() const {
+[[nodiscard]] StringSet ArmorItem::effectSources() const {
   return m_effectSources;
 }
 
-List<Drawable> ArmorItem::drawables() const {
+[[nodiscard]] List<Drawable> ArmorItem::drawables() const {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
   Drawable::translateAll(drawables, -handPosition() / TilePixels);
@@ -99,19 +99,19 @@ List<String> const& ArmorItem::colorOptions() {
   return m_colorOptions;
 }
 
-Directives const& ArmorItem::directives(bool flip) const {
+[[nodiscard]] Directives const& ArmorItem::directives(bool flip) const {
   return (flip && m_flipDirectives) ? *m_flipDirectives : m_directives;
 }
 
-bool ArmorItem::fullbright() const {
+[[nodiscard]] bool ArmorItem::fullbright() const {
   return m_fullbright;
 }
 
-bool ArmorItem::flipping() const {
+[[nodiscard]] bool ArmorItem::flipping() const {
   return m_flipDirectives.isValid();
 }
 
-bool ArmorItem::visible(bool extraCosmetic) const {
+[[nodiscard]] bool ArmorItem::visible(bool extraCosmetic) const {
   return extraCosmetic || !m_hideInVanillaSlots;
 }
 
@@ -123,16 +123,16 @@ HashSet<ArmorType> const& ArmorItem::armorTypesToHide() {
   return *m_armorTypesToHide;
 }
 
-bool ArmorItem::hideBody() const {
+[[nodiscard]] bool ArmorItem::hideBody() const {
   return m_hideBody;
 }
 
-bool ArmorItem::bypassNude() const {
+[[nodiscard]] bool ArmorItem::bypassNude() const {
   return m_bypassNude;
 }
 
 
-Maybe<String> const& ArmorItem::techModule() const {
+[[nodiscard]] Maybe<String> const& ArmorItem::techModule() const {
   return m_techModule;
 }
 
@@ -185,22 +185,22 @@ ItemPtr HeadArmor::clone() const {
   return make_shared<HeadArmor>(*this);
 }
 
-ArmorType HeadArmor::armorType() const {
+[[nodiscard]] ArmorType HeadArmor::armorType() const {
   return ArmorType::Head;
 }
 
-String const& HeadArmor::frameset(Gender gender) const {
+[[nodiscard]] String const& HeadArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
   else
     return m_femaleImage;
 }
 
-Directives const& HeadArmor::maskDirectives() const {
+[[nodiscard]] Directives const& HeadArmor::maskDirectives() const {
   return m_maskDirectives;
 }
 
-List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
+[[nodiscard]] List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
@@ -223,32 +223,32 @@ ItemPtr ChestArmor::clone() const {
   return make_shared<ChestArmor>(*this);
 }
 
-ArmorType ChestArmor::armorType() const {
+[[nodiscard]] ArmorType ChestArmor::armorType() const {
   return ArmorType::Chest;
 }
 
-String const& ChestArmor::bodyFrameset(Gender gender) const {
+[[nodiscard]] String const& ChestArmor::bodyFrameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleBodyImage;
   else
     return m_femaleBodyImage;
 }
 
-String const& ChestArmor::frontSleeveFrameset(Gender gender) const {
+[[nodiscard]] String const& ChestArmor::frontSleeveFrameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleFrontSleeveImage;
   else
     return m_femaleFrontSleeveImage;
 }
 
-String const& ChestArmor::backSleeveFrameset(Gender gender) const {
+[[nodiscard]] String const& ChestArmor::backSleeveFrameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleBackSleeveImage;
   else
     return m_femaleBackSleeveImage;
 }
 
-List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
+[[nodiscard]] List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
@@ -264,18 +264,18 @@ ItemPtr LegsArmor::clone() const {
   return make_shared<LegsArmor>(*this);
 }
 
-ArmorType LegsArmor::armorType() const {
+[[nodiscard]] ArmorType LegsArmor::armorType() const {
   return ArmorType::Legs;
 }
 
-String const& LegsArmor::frameset(Gender gender) const {
+[[nodiscard]] String const& LegsArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
   else
     return m_femaleImage;
 }
 
-List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
+[[nodiscard]] List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
@@ -291,18 +291,18 @@ ItemPtr BackArmor::clone() const {
   return make_shared<BackArmor>(*this);
 }
 
-ArmorType BackArmor::armorType() const {
+[[nodiscard]] ArmorType BackArmor::armorType() const {
   return ArmorType::Back;
 }
 
-String const& BackArmor::frameset(Gender gender) const {
+[[nodiscard]] String const& BackArmor::frameset(Gender gender) const {
   if (gender == Gender::Male)
     return m_maleImage;
   else
     return m_femaleImage;
 }
 
-List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
+[[nodiscard]] List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
   HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);

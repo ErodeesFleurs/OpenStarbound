@@ -6,7 +6,7 @@ namespace Star {
 
 UdpSocket::UdpSocket(NetworkMode networkMode) : Socket(SocketType::Udp, networkMode) {}
 
-size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datasize) {
+[[nodiscard]] size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datasize) {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::receive");
 
@@ -32,7 +32,7 @@ size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datas
   return len;
 }
 
-size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, size_t size) {
+[[nodiscard]] size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::send");
 
@@ -64,12 +64,12 @@ UdpServer::~UdpServer() {
   close();
 }
 
-size_t UdpServer::receive(HostAddressWithPort* address, char* data, size_t bufsize, unsigned timeout) {
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
+[[nodiscard]] size_t UdpServer::receive(HostAddressWithPort* address, char* data, size_t bufsize, unsigned timeout) {
+  (void)Socket::poll({{m_listenSocket, {true, false}}}, timeout);
   return m_listenSocket->receive(address, data, bufsize);
 }
 
-size_t UdpServer::send(HostAddressWithPort const& address, char const* data, size_t len) {
+[[nodiscard]] size_t UdpServer::send(HostAddressWithPort const& address, char const* data, size_t len) {
   return m_listenSocket->send(address, data, len);
 }
 
@@ -77,7 +77,7 @@ void UdpServer::close() {
   m_listenSocket->close();
 }
 
-bool UdpServer::isListening() const {
+[[nodiscard]] bool UdpServer::isListening() const {
   return m_listenSocket->isActive();
 }
 

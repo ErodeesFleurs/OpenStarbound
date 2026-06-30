@@ -23,7 +23,7 @@ public:
 
 protected:
   void renderImpl() override;
-  RectI shift(float begin, float end, RectI templ);
+  [[nodiscard]] RectI shift(float begin, float end, RectI templ);
 
   float m_progressLevel = 0.0f;
   float m_maxLevel = 1.0f;

@@ -168,7 +168,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   }
 }
 
-List<DamageSource> ActiveItem::damageSources() const {
+[[nodiscard]] List<DamageSource> ActiveItem::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
   for (auto ds : m_itemDamageSources.get()) {
     if (ds.damageArea.is<PolyF>()) {
@@ -189,7 +189,7 @@ List<DamageSource> ActiveItem::damageSources() const {
   return damageSources;
 }
 
-List<PolyF> ActiveItem::shieldPolys() const {
+[[nodiscard]] List<PolyF> ActiveItem::shieldPolys() const {
   List<PolyF> shieldPolys = m_shieldPolys.get();
   for (auto sp : m_itemShieldPolys.get()) {
     sp.rotate(m_armAngle.get());
@@ -201,7 +201,7 @@ List<PolyF> ActiveItem::shieldPolys() const {
   return shieldPolys;
 }
 
-List<PhysicsForceRegion> ActiveItem::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> ActiveItem::forceRegions() const {
   List<PhysicsForceRegion> forceRegions = m_forceRegions.get();
   for (auto fr : m_itemForceRegions.get()) {
     if (auto dfr = fr.ptr<DirectionalForceRegion>()) {
@@ -220,39 +220,39 @@ List<PhysicsForceRegion> ActiveItem::forceRegions() const {
   return forceRegions;
 }
 
-bool ActiveItem::holdingItem() const {
+[[nodiscard]] bool ActiveItem::holdingItem() const {
   return m_holdingItem.get();
 }
 
-Maybe<String> ActiveItem::backArmFrame() const {
+[[nodiscard]] Maybe<String> ActiveItem::backArmFrame() const {
   return m_backArmFrame.get();
 }
 
-Maybe<String> ActiveItem::frontArmFrame() const {
+[[nodiscard]] Maybe<String> ActiveItem::frontArmFrame() const {
   return m_frontArmFrame.get();
 }
 
-bool ActiveItem::twoHandedGrip() const {
+[[nodiscard]] bool ActiveItem::twoHandedGrip() const {
   return m_twoHandedGrip.get();
 }
 
-bool ActiveItem::recoil() const {
+[[nodiscard]] bool ActiveItem::recoil() const {
   return m_recoil.get();
 }
 
-bool ActiveItem::outsideOfHand() const {
+[[nodiscard]] bool ActiveItem::outsideOfHand() const {
   return m_outsideOfHand.get();
 }
 
-float ActiveItem::armAngle() const {
+[[nodiscard]] float ActiveItem::armAngle() const {
   return m_armAngle.get();
 }
 
-Maybe<Direction> ActiveItem::facingDirection() const {
+[[nodiscard]] Maybe<Direction> ActiveItem::facingDirection() const {
   return m_facingDirection.get();
 }
 
-List<Drawable> ActiveItem::handDrawables() const {
+[[nodiscard]] List<Drawable> ActiveItem::handDrawables() const {
   if (m_itemAnimator.constParts().empty()) {
     auto drawables = Item::iconDrawables();
     Drawable::scaleAll(drawables, 1.0f / TilePixels);
@@ -262,11 +262,11 @@ List<Drawable> ActiveItem::handDrawables() const {
   }
 }
 
-List<pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+[[nodiscard]] List<pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
   return m_scriptedAnimator.drawables();
 }
 
-List<LightSource> ActiveItem::lights() const {
+[[nodiscard]] List<LightSource> ActiveItem::lights() const {
   // Same as pullNewAudios, we translate and flip ourselves.
   List<LightSource> result;
   for (auto& light : m_itemAnimator.lightSources()) {
@@ -318,7 +318,7 @@ List<Particle> ActiveItem::pullNewParticles() {
   return result;
 }
 
-Maybe<String> ActiveItem::cursor() const {
+[[nodiscard]] Maybe<String> ActiveItem::cursor() const {
   return m_cursor;
 }
 
@@ -335,11 +335,11 @@ float ActiveItem::durabilityStatus() {
   return 1.0;
 }
 
-Vec2F ActiveItem::armPosition(Vec2F const& offset) const {
+[[nodiscard]] Vec2F ActiveItem::armPosition(Vec2F const& offset) const {
   return owner()->armPosition(hand(), owner()->facingDirection(), m_armAngle.get(), offset);
 }
 
-Vec2F ActiveItem::handPosition(Vec2F const& offset) const {
+[[nodiscard]] Vec2F ActiveItem::handPosition(Vec2F const& offset) const {
   return armPosition(offset + owner()->handOffset(hand(), owner()->facingDirection()));
 }
 

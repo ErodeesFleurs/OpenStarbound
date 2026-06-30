@@ -17,18 +17,18 @@ class Player;
 class Companion {
 public:
   Companion(Json const& json);
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  Uuid podUuid() const;
-  Maybe<String> name() const;
-  Maybe<String> description() const;
+  [[nodiscard]] Uuid podUuid() const;
+  [[nodiscard]] Maybe<String> name() const;
+  [[nodiscard]] Maybe<String> description() const;
 
-  List<Drawable> portrait() const;
+  [[nodiscard]] List<Drawable> portrait() const;
 
-  Maybe<float> resource(String const& resourceName) const;
-  Maybe<float> resourceMax(String const& resourceName) const;
+  [[nodiscard]] Maybe<float> resource(String const& resourceName) const;
+  [[nodiscard]] Maybe<float> resourceMax(String const& resourceName) const;
 
-  Maybe<float> stat(String const& statName) const;
+  [[nodiscard]] Maybe<float> stat(String const& statName) const;
 
 private:
   Json m_json;
@@ -40,20 +40,20 @@ public:
   PlayerCompanions(Json const& config);
 
   void diskLoad(Json const& diskStore);
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
 
-  List<CompanionPtr> getCompanions(String const& category) const;
+  [[nodiscard]] List<CompanionPtr> getCompanions(String const& category) const;
 
   void init(Player& player, World& world);
   void uninit();
 
   void dismissCompanion(String const& category, Uuid const& podUuid);
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:
-  LuaCallbacks makeCompanionsCallbacks();
+  [[nodiscard]] LuaCallbacks makeCompanionsCallbacks();
 
   World* m_world;
   Json m_config;

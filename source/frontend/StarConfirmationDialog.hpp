@@ -23,7 +23,7 @@ public:
   void displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
   void displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);
   
-  Maybe<EntityId> sourceEntityId();
+  [[nodiscard]] Maybe<EntityId> sourceEntityId();
 
   void dismissed() override;
 

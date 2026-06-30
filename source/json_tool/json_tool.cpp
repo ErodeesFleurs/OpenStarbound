@@ -174,7 +174,7 @@ bool process(function<void(FormattedJson const&)> output,
     output(command.get<RemoveCommand>().path->remove(input));
 
   } else {
-    starAssert(command.empty());
+    assert(command.empty());
     output(input);
   }
   return true;

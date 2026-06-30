@@ -5,7 +5,7 @@
 
 namespace Star {
 
-BiomeItem variantToBiomeItem(Json const& store) {
+[[nodiscard]] BiomeItem variantToBiomeItem(Json const& store) {
   auto type = store.get(0);
   if (type == "grass") {
     return GrassVariant(store.get(1));
@@ -26,7 +26,7 @@ BiomeItem variantToBiomeItem(Json const& store) {
   }
 }
 
-Json variantFromBiomeItem(BiomeItem const& biomeItem) {
+[[nodiscard]] Json variantFromBiomeItem(BiomeItem const& biomeItem) {
   if (auto grassVariant = biomeItem.ptr<GrassVariant>()) {
     return JsonArray{"grass", grassVariant->toJson()};
   } else if (auto bushVariant = biomeItem.ptr<BushVariant>()) {
@@ -58,11 +58,11 @@ EnumMap<BiomePlacementMode> const BiomePlacementModeNames{
 BiomeItemPlacement::BiomeItemPlacement(BiomeItem item, Vec2I position, float priority)
   : item(std::move(item)), position(position), priority(priority) {}
 
-bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
+[[nodiscard]] bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
   return priority < rhs.priority;
 }
 
-Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDatabase, Json const& config, RandomSource& rand, float biomeHueShift) {
+[[nodiscard]] Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDatabase, Json const& config, RandomSource& rand, float biomeHueShift) {
   plantDatabase = requireServiceValueAs<BiomeException>(std::move(plantDatabase), "BiomeItemDistribution", "plant database");
 
   auto type = config.getString("type");
@@ -220,7 +220,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& store) {
     });
 }
 
-Json BiomeItemDistribution::toJson() const {
+[[nodiscard]] Json BiomeItemDistribution::toJson() const {
   return JsonObject{
     {"mode", BiomePlacementModeNames.getRight(m_mode)},
     {"distribution", DistributionTypeNames.getRight(m_distribution)},
@@ -239,11 +239,11 @@ Json BiomeItemDistribution::toJson() const {
   };
 }
 
-BiomePlacementMode BiomeItemDistribution::mode() const {
+[[nodiscard]] BiomePlacementMode BiomeItemDistribution::mode() const {
   return m_mode;
 }
 
-List<BiomeItem> BiomeItemDistribution::allItems() const {
+[[nodiscard]] List<BiomeItem> BiomeItemDistribution::allItems() const {
   if (m_distribution == DistributionType::Random) {
     return m_randomItems;
   } else if (m_distribution == DistributionType::Periodic) {
@@ -256,7 +256,7 @@ List<BiomeItem> BiomeItemDistribution::allItems() const {
   }
 }
 
-Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const {
+[[nodiscard]] Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const {
   if (m_distribution == DistributionType::Random) {
     if (staticRandomFloat(x, y, m_blockSeed) <= m_blockProbability)
       return BiomeItemPlacement{staticRandomValueFrom(m_randomItems, x, y, m_blockSeed), Vec2I(x, y), m_priority};

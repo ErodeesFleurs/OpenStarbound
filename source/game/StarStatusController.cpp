@@ -150,7 +150,7 @@ void StatusController::diskLoad(Json const& store) {
   }
 }
 
-Json StatusController::statusProperty(String const& name, Json const& def) const {
+[[nodiscard]] Json StatusController::statusProperty(String const& name, Json const& def) const {
   return m_statusProperties.value(name, def);
 }
 
@@ -161,31 +161,31 @@ void StatusController::setStatusProperty(String const& name, Json value) {
     m_statusProperties.set(name, value);
 }
 
-StringList StatusController::statNames() const {
+[[nodiscard]] StringList StatusController::statNames() const {
   return m_statCollection.statNames();
 }
 
-float StatusController::stat(String const& statName) const {
+[[nodiscard]] float StatusController::stat(String const& statName) const {
   return m_statCollection.stat(statName);
 }
 
-bool StatusController::statPositive(String const& statName) const {
+[[nodiscard]] bool StatusController::statPositive(String const& statName) const {
   return m_statCollection.statPositive(statName);
 }
 
-StringList StatusController::resourceNames() const {
+[[nodiscard]] StringList StatusController::resourceNames() const {
   return m_statCollection.resourceNames();
 }
 
-bool StatusController::isResource(String const& resourceName) const {
+[[nodiscard]] bool StatusController::isResource(String const& resourceName) const {
   return m_statCollection.isResource(resourceName);
 }
 
-float StatusController::resource(String const& resourceName) const {
+[[nodiscard]] float StatusController::resource(String const& resourceName) const {
   return m_statCollection.resource(resourceName);
 }
 
-bool StatusController::resourcePositive(String const& resourceName) const {
+[[nodiscard]] bool StatusController::resourcePositive(String const& resourceName) const {
   return m_statCollection.resourcePositive(resourceName);
 }
 
@@ -217,7 +217,7 @@ bool StatusController::overConsumeResource(String const& resourceName, float amo
   return false;
 }
 
-bool StatusController::resourceLocked(String const& resourceName) const {
+[[nodiscard]] bool StatusController::resourceLocked(String const& resourceName) const {
   return m_statCollection.resourceLocked(resourceName);
 }
 
@@ -233,11 +233,11 @@ void StatusController::resetAllResources() {
   m_statCollection.resetAllResources();
 }
 
-Maybe<float> StatusController::resourceMax(String const& resourceName) const {
+[[nodiscard]] Maybe<float> StatusController::resourceMax(String const& resourceName) const {
   return m_statCollection.resourceMax(resourceName);
 }
 
-Maybe<float> StatusController::resourcePercentage(String const& resourceName) const {
+[[nodiscard]] Maybe<float> StatusController::resourcePercentage(String const& resourceName) const {
   return m_statCollection.resourcePercentage(resourceName);
 }
 
@@ -249,7 +249,7 @@ float StatusController::modifyResourcePercentage(String const& resourceName, flo
   return m_statCollection.modifyResourcePercentage(resourceName, resourcePercentage);
 }
 
-List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
+[[nodiscard]] List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
   auto category = m_persistentEffects.maybe(statEffectCategory).value();
   List<PersistentStatusEffect> persistentEffects =
     category.statModifiers.transformed(construct<PersistentStatusEffect>());
@@ -352,7 +352,7 @@ void StatusController::clearEphemeralEffects() {
     removeEphemeralEffect(key);
 }
 
-bool StatusController::appliesEnvironmentStatusEffects() const {
+[[nodiscard]] bool StatusController::appliesEnvironmentStatusEffects() const {
   return m_appliesEnvironmentStatusEffects;
 }
 
@@ -360,7 +360,7 @@ void StatusController::setAppliesEnvironmentStatusEffects(bool appliesEnvironmen
   m_appliesEnvironmentStatusEffects = appliesEnvironmentStatusEffects;
 }
 
-ActiveUniqueStatusEffectSummary StatusController::activeUniqueStatusEffectSummary() const {
+[[nodiscard]] ActiveUniqueStatusEffectSummary StatusController::activeUniqueStatusEffectSummary() const {
   ActiveUniqueStatusEffectSummary summary;
   for (auto const& metadata : m_uniqueEffectMetadata.netElements()) {
     if (metadata->duration)
@@ -371,7 +371,7 @@ ActiveUniqueStatusEffectSummary StatusController::activeUniqueStatusEffectSummar
   return summary;
 }
 
-bool StatusController::uniqueStatusEffectActive(String const& effectName) const {
+[[nodiscard]] bool StatusController::uniqueStatusEffectActive(String const& effectName) const {
   for (auto const& metadata : m_uniqueEffectMetadata.netElements()) {
     if (metadata->effect == effectName)
       return true;
@@ -380,7 +380,7 @@ bool StatusController::uniqueStatusEffectActive(String const& effectName) const 
   return false;
 }
 
-const Directives& StatusController::primaryDirectives() const {
+[[nodiscard]] const Directives& StatusController::primaryDirectives() const {
   return m_primaryDirectives;
 }
 
@@ -416,15 +416,15 @@ void StatusController::applySelfDamageRequest(DamageRequest dr) {
   m_pendingSelfDamageNotifications.appendAll(std::move(damageNotifications));
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::damageTakenSince(uint64_t since) const {
+[[nodiscard]] pair<List<DamageNotification>, uint64_t> StatusController::damageTakenSince(uint64_t since) const {
   return m_recentDamageTaken.query(since);
 }
 
-pair<List<pair<EntityId, DamageRequest>>, uint64_t> StatusController::inflictedHitsSince(uint64_t since) const {
+[[nodiscard]] pair<List<pair<EntityId, DamageRequest>>, uint64_t> StatusController::inflictedHitsSince(uint64_t since) const {
   return m_recentHitsGiven.query(since);
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::inflictedDamageSince(uint64_t since) const {
+[[nodiscard]] pair<List<DamageNotification>, uint64_t> StatusController::inflictedDamageSince(uint64_t since) const {
   return m_recentDamageGiven.query(since);
 }
 
@@ -574,18 +574,18 @@ void StatusController::tickSlave(float dt) {
   updateAnimators(dt);
 }
 
-const DirectivesGroup& StatusController::parentDirectives() const {
+[[nodiscard]] const DirectivesGroup& StatusController::parentDirectives() const {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
+[[nodiscard]] List<Drawable> StatusController::drawables() const {
   List<Drawable> drawables;
   for (auto const& animator : m_effectAnimators.netElements())
     drawables.appendAll(animator->animator.drawables(m_movementController->position()));
   return drawables;
 }
 
-List<LightSource> StatusController::lightSources() const {
+[[nodiscard]] List<LightSource> StatusController::lightSources() const {
   List<LightSource> lightSources;
   for (auto const& animator : m_effectAnimators.netElements())
     lightSources.appendAll(animator->animator.lightSources(m_movementController->position()));
@@ -598,7 +598,7 @@ List<OverheadBar> StatusController::overheadBars() {
   return {};
 }
 
-bool StatusController::toolUsageSuppressed() const {
+[[nodiscard]] bool StatusController::toolUsageSuppressed() const {
   return m_toolUsageSuppressed.get();
 }
 
@@ -746,7 +746,7 @@ void StatusController::updatePersistentUniqueEffects() {
   }
 }
 
-float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
+[[nodiscard]] float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
   auto world = m_parentEntity ? m_parentEntity->worldPtr() : nullptr;
   auto statusEffectDb = world ? world->statusEffectDatabase() : m_statusEffectDatabase;
   return statusEffectDb->uniqueEffectConfig(effect).defaultDuration;

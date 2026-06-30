@@ -12,9 +12,9 @@ class PathFinder;
 using PathFinderPtr = SharedPtr<PathFinder>;
 
 struct Node {
-  Node withVelocity(Vec2F velocity) const;
+  [[nodiscard]] Node withVelocity(Vec2F velocity) const;
 
-  bool operator<(Node const& other) const;
+  [[nodiscard]] bool operator<(Node const& other) const;
 
   Vec2F position;
   Maybe<Vec2F> velocity; // Only valid when jumping/falling

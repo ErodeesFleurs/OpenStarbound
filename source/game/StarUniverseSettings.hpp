@@ -19,21 +19,21 @@ struct PlaceDungeonFlagAction {
 
 using UniverseFlagAction = MVariant<PlaceDungeonFlagAction>;
 
-UniverseFlagAction parseUniverseFlagAction(Json const& json);
+[[nodiscard]] UniverseFlagAction parseUniverseFlagAction(Json const& json);
 
 class UniverseSettings {
 public:
   UniverseSettings(AssetsConstPtr assets);
   UniverseSettings(AssetsConstPtr assets, Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  Uuid uuid() const;
-  StringSet flags() const;
+  [[nodiscard]] Uuid uuid() const;
+  [[nodiscard]] StringSet flags() const;
   void setFlag(String const& flag);
-  Maybe<List<UniverseFlagAction>> pullPendingFlagActions();
-  List<UniverseFlagAction> currentFlagActions() const;
-  List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
+  [[nodiscard]] Maybe<List<UniverseFlagAction>> pullPendingFlagActions();
+  [[nodiscard]] List<UniverseFlagAction> currentFlagActions() const;
+  [[nodiscard]] List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
   void resetFlags();
 
 private:

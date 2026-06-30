@@ -13,7 +13,7 @@ public:
 
   KarstCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
 private:
   struct LayerPerlins {
@@ -26,9 +26,9 @@ private:
   struct Sector {
     Sector(KarstCaveSelector const* parent, Vec2I sector);
 
-    float get(int x, int y);
+    [[nodiscard]] float get(int x, int y);
 
-    bool inside(int x, int y);
+    [[nodiscard]] bool inside(int x, int y);
     void set(int x, int y, float value);
 
     KarstCaveSelector const* parent;
@@ -38,7 +38,7 @@ private:
     float m_maxValue;
   };
 
-  LayerPerlins const& layerPerlins(int y) const;
+  [[nodiscard]] LayerPerlins const& layerPerlins(int y) const;
 
   int m_sectorSize;
   int m_layerResolution;

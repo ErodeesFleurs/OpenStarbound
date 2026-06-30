@@ -24,19 +24,19 @@ TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContex
   m_statusUpdateTimer = 0;
 }
 
-bool TeamClient::isTeamLeader() {
+[[nodiscard]] bool TeamClient::isTeamLeader() const {
   if (!m_teamUuid)
     return false;
   return m_teamLeader == m_clientContext->playerUuid();
 }
 
-bool TeamClient::isTeamLeader(Uuid const& playerUuid) {
+[[nodiscard]] bool TeamClient::isTeamLeader(Uuid const& playerUuid) const {
   if (!m_teamUuid)
     return false;
   return m_teamLeader == playerUuid;
 }
 
-bool TeamClient::isMemberOfTeam() {
+[[nodiscard]] bool TeamClient::isMemberOfTeam() const {
   return static_cast<bool>(m_teamUuid);
 }
 
@@ -74,7 +74,7 @@ void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
 }
 
-Maybe<Uuid> TeamClient::currentTeam() const {
+[[nodiscard]] Maybe<Uuid> TeamClient::currentTeam() const {
   return m_teamUuid;
 }
 
@@ -100,16 +100,16 @@ void TeamClient::removeFromTeam(Uuid const& playerUuid) {
   invokeRemote("team.removeFromTeam", request, [this](Json) { forceUpdate(); });
 }
 
-bool TeamClient::hasInvitationPending() {
+[[nodiscard]] bool TeamClient::hasInvitationPending() const {
   return m_hasPendingInvitation;
 }
 
-std::pair<Uuid, String> TeamClient::pullInvitation() {
+[[nodiscard]] std::pair<Uuid, String> TeamClient::pullInvitation() {
   m_hasPendingInvitation = false;
   return pair<Uuid, String>(m_pendingInvitation.inviterUuid, m_pendingInvitation.inviterName);
 }
 
-List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
+[[nodiscard]] List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
   return take(m_pendingInviteResults);
 }
 
@@ -199,7 +199,7 @@ void TeamClient::statusUpdate() {
     });
 }
 
-List<TeamClient::Member> TeamClient::members() {
+[[nodiscard]] List<TeamClient::Member> TeamClient::members() const {
   return m_members;
 }
 

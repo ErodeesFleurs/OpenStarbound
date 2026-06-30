@@ -52,7 +52,7 @@ MaterialId biomeMaterialForJson(int variant) {
     return Biome3MaterialId;
   if (variant == 4)
     return Biome4MaterialId;
-  starAssert(variant == 5);
+  assert(variant == 5);
   return Biome5MaterialId;
 }
 
@@ -941,7 +941,7 @@ Vec2I Connector::positionAdjustment() const {
     return Vec2I(1, 0);
   if (m_direction == Direction::Up)
     return Vec2I(0, 1);
-  starAssert(m_direction == Direction::Down);
+  assert(m_direction == Direction::Down);
   return Vec2I(0, -1);
 }
 

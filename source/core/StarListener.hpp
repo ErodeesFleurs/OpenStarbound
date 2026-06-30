@@ -33,7 +33,7 @@ class TrackerListener : public Listener {
 public:
   TrackerListener() = default;
 
-  bool pullTriggered();
+  [[nodiscard]] bool pullTriggered();
 
 protected:
   void trigger() override;
@@ -56,7 +56,7 @@ private:
   std::set<ListenerWeakPtr, std::owner_less<ListenerWeakPtr>> m_listeners;
 };
 
-inline bool TrackerListener::pullTriggered() {
+[[nodiscard]] inline bool TrackerListener::pullTriggered() {
   return triggered.exchange(false);
 }
 

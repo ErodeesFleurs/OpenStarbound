@@ -17,7 +17,7 @@ namespace Dungeon {
     ImagePartReader(AssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "ImagePartReader", "assets")), m_tileset(requireServiceValueAs<DungeonException>(std::move(tileset), "ImagePartReader", "image tileset")) {}
 
     void readAsset(String const& asset) override;
-    Vec2U size() const override;
+    [[nodiscard]] Vec2U size() const override;
 
     void forEachTile(TileCallback const& callback) const override;
     void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
@@ -32,10 +32,10 @@ namespace Dungeon {
   public:
     ImageTileset(Json const& tileset);
 
-    Tile const* getTile(Vec4B color) const;
+    [[nodiscard]] Tile const* getTile(Vec4B color) const;
 
   private:
-    unsigned colorAsInt(Vec4B color) const;
+    [[nodiscard]] unsigned colorAsInt(Vec4B color) const;
 
     Map<unsigned, Tile> m_tiles;
   };

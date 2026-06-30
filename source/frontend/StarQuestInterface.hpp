@@ -37,14 +37,14 @@ public:
 
   void displayed() override;
   void tick(float dt) override;
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   void fetchData();
 
   void pollDialog(PaneManager& paneManager);
 
 private:
-  WidgetPtr getSelected();
+  [[nodiscard]] WidgetPtr getSelected();
   void setSelected(WidgetPtr selected);
   void toggleTracking();
   void abandon();
@@ -74,7 +74,7 @@ protected:
   virtual void close();
   virtual void decline();
   virtual void accept();
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   QuestPtr m_quest;
   PlayerPtr m_player;

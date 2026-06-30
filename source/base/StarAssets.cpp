@@ -26,7 +26,7 @@
 namespace Star {
 
 // if a ptr is returned, can be optionally used to format an error
-static const char* validateBasePath(std::string_view const& basePath) {
+[[nodiscard]] static const char* validateBasePath(std::string_view const& basePath) {
   if (basePath.empty() || basePath[0] != '/')
     return "Path '{}' must be absolute";
 
@@ -86,7 +86,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
+[[nodiscard]] Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
   if (auto alias = aliases.ptr(frame)) {
     return frames.get(*alias);
   } else {
@@ -94,7 +94,7 @@ Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
   }
 }
 
-Json FramesSpecification::toJson() const {
+[[nodiscard]] Json FramesSpecification::toJson() const {
   return JsonObject{
     {"aliases", jsonFromMap(aliases)},
     {"frames", jsonFromMapV(frames, jsonFromRectU)},
@@ -421,44 +421,44 @@ void Assets::hotReload() const {
   m_framesSpecifications.clear();
 }
 
-StringList Assets::assetSources() const {
+[[nodiscard]] StringList Assets::assetSources() const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSources;
 }
 
-JsonObject Assets::assetSourceMetadata(String const& sourceName) const {
+[[nodiscard]] JsonObject Assets::assetSourceMetadata(String const& sourceName) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.getRight(sourceName)->metadata();
 }
 
-ByteArray Assets::digest() const {
+[[nodiscard]] ByteArray Assets::digest() const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_digest;
 }
 
-bool Assets::assetExists(String const& path) const {
+[[nodiscard]] bool Assets::assetExists(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_files.contains(path);
 }
 
-Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
+[[nodiscard]] Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_files.maybe(path);
 }
 
-String Assets::assetSource(String const& path) const {
+[[nodiscard]] String Assets::assetSource(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   if (auto assetFile = m_files.ptr(path))
     return m_assetSourcePaths.getLeft(assetFile->source);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
+[[nodiscard]] Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.maybeLeft(source);
 }
 
-StringList Assets::scan(String const& suffix) const {
+[[nodiscard]] StringList Assets::scan(String const& suffix) const {
   if (suffix.beginsWith(".") && !suffix.substr(1).hasChar('.')) {
     return scanExtension(suffix).values();
   } else if (suffix.empty()) {
@@ -474,7 +474,7 @@ StringList Assets::scan(String const& suffix) const {
   }
 }
 
-StringList Assets::scan(String const& prefix, String const& suffix) const {
+[[nodiscard]] StringList Assets::scan(String const& prefix, String const& suffix) const {
   StringList result;
   if (suffix.beginsWith(".") && !suffix.substr(1).hasChar('.')) {
     auto& filesWithExtension = scanExtension(suffix);
@@ -493,19 +493,19 @@ StringList Assets::scan(String const& prefix, String const& suffix) const {
 
 const CaseInsensitiveStringSet NullExtensionScan;
 
-CaseInsensitiveStringSet const& Assets::scanExtension(String const& extension) const {
+[[nodiscard]] CaseInsensitiveStringSet const& Assets::scanExtension(String const& extension) const {
   auto find = m_filesByExtension.find(extension.beginsWith(".") ? extension.substr(1) : extension);
   return find != m_filesByExtension.end() ? find->second : NullExtensionScan;
 }
 
-Json Assets::json(String const& path) const {
+[[nodiscard]] Json Assets::json(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, true, false);
 
   return as<JsonData>(getAsset(AssetId{AssetType::Json, std::move(components)}))->json;
 }
 
-Json Assets::fetchJson(Json const& v, String const& dir) const {
+[[nodiscard]] Json Assets::fetchJson(Json const& v, String const& dir) const {
   if (v.isType(Json::Type::String))
     return Assets::json(AssetPath::relativeTo(dir, v.toString()));
   else
@@ -531,7 +531,7 @@ void Assets::queueJsons(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-ImageConstPtr Assets::image(AssetPath const& path) const {
+[[nodiscard]] ImageConstPtr Assets::image(AssetPath const& path) const {
   return as<ImageData>(getAsset(AssetId{AssetType::Image, path}))->image;
 }
 
@@ -554,14 +554,14 @@ void Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-ImageConstPtr Assets::tryImage(AssetPath const& path) const {
+[[nodiscard]] ImageConstPtr Assets::tryImage(AssetPath const& path) const {
   if (auto imageData = as<ImageData>(tryAsset(AssetId{AssetType::Image, path})))
     return imageData->image;
   else
     return {};
 }
 
-FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
+[[nodiscard]] FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -569,7 +569,7 @@ FramesSpecificationConstPtr Assets::imageFrames(String const& path) const {
   return bestFramesSpecification(path);
 }
 
-AudioConstPtr Assets::audio(String const& path) const {
+[[nodiscard]] AudioConstPtr Assets::audio(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -595,7 +595,7 @@ void Assets::queueAudios(CaseInsensitiveStringSet const& paths) const {
   };
 }
 
-AudioConstPtr Assets::tryAudio(String const& path) const {
+[[nodiscard]] AudioConstPtr Assets::tryAudio(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
@@ -605,21 +605,21 @@ AudioConstPtr Assets::tryAudio(String const& path) const {
     return {};
 }
 
-FontConstPtr Assets::font(String const& path) const {
+[[nodiscard]] FontConstPtr Assets::font(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
   return as<FontData>(getAsset(AssetId{AssetType::Font, std::move(components)}))->font;
 }
 
-ByteArrayConstPtr Assets::bytes(String const& path) const {
+[[nodiscard]] ByteArrayConstPtr Assets::bytes(String const& path) const {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
   return as<BytesData>(getAsset(AssetId{AssetType::Bytes, std::move(components)}))->bytes;
 }
 
-IODevicePtr Assets::openFile(String const& path) const {
+[[nodiscard]] IODevicePtr Assets::openFile(String const& path) const {
   return open(path);
 }
 
@@ -658,35 +658,35 @@ void Assets::cleanup() {
   }
 }
 
-bool Assets::AssetId::operator==(AssetId const& assetId) const {
+[[nodiscard]] bool Assets::AssetId::operator==(AssetId const& assetId) const {
   return tie(type, path) == tie(assetId.type, assetId.path);
 }
 
-size_t Assets::AssetIdHash::operator()(AssetId const& id) const {
+[[nodiscard]] size_t Assets::AssetIdHash::operator()(AssetId const& id) const {
   return hashOf(id.type, id.path.basePath, id.path.subPath, id.path.directives);
 }
 
-bool Assets::JsonData::shouldPersist() const {
+[[nodiscard]] bool Assets::JsonData::shouldPersist() const {
   return forcePersist || !json.unique();
 }
 
-bool Assets::ImageData::shouldPersist() const {
+[[nodiscard]] bool Assets::ImageData::shouldPersist() const {
   return forcePersist || (!alias && image.use_count() != 1);
 }
 
-bool Assets::AudioData::shouldPersist() const {
+[[nodiscard]] bool Assets::AudioData::shouldPersist() const {
   return forcePersist || audio.use_count() != 1;
 }
 
-bool Assets::FontData::shouldPersist() const {
+[[nodiscard]] bool Assets::FontData::shouldPersist() const {
   return forcePersist || font.use_count() != 1;
 }
 
-bool Assets::BytesData::shouldPersist() const {
+[[nodiscard]] bool Assets::BytesData::shouldPersist() const {
   return forcePersist || bytes.use_count() != 1;
 }
 
-FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {
+[[nodiscard]] FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {
   FramesSpecification framesSpecification;
 
   framesSpecification.framesFile = std::move(path);
@@ -797,7 +797,7 @@ void Assets::queueAsset(AssetId const& assetId) const {
   }
 }
 
-shared_ptr<Assets::AssetData> Assets::tryAsset(AssetId const& id) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::tryAsset(AssetId const& id) const {
   MutexLocker assetsLocker(m_assetsMutex);
 
   auto i = m_assetsCache.find(id);
@@ -818,7 +818,7 @@ shared_ptr<Assets::AssetData> Assets::tryAsset(AssetId const& id) const {
   }
 }
 
-shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
   MutexLocker assetsLocker(m_assetsMutex);
 
   while (true) {
@@ -904,7 +904,7 @@ decltype(auto) Assets::unlockDuring(Function f) const {
   }
 }
 
-FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image) const {
+[[nodiscard]] FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image) const {
   if (auto framesSpecification = m_framesSpecifications.maybe(image)) {
     return *framesSpecification;
   }
@@ -963,19 +963,19 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
   return framesSpecification;
 }
 
-IODevicePtr Assets::open(String const& path) const {
+[[nodiscard]] IODevicePtr Assets::open(String const& path) const {
   if (auto assetFile = m_files.ptr(path))
     return assetFile->source->open(assetFile->sourceName);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ByteArray Assets::read(String const& path) const {
+[[nodiscard]] ByteArray Assets::read(String const& path) const {
   if (auto assetFile = m_files.ptr(path))
     return assetFile->source->read(assetFile->sourceName);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ImageConstPtr Assets::readImage(String const& path) const {
+[[nodiscard]] ImageConstPtr Assets::readImage(String const& path) const {
   if (auto assetFile = m_files.ptr(path)) {
     ImageConstPtr image;
     if (auto memorySource = as<MemoryAssetSource>(assetFile->source))
@@ -991,7 +991,7 @@ ImageConstPtr Assets::readImage(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
+[[nodiscard]] ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
   RecursiveMutexLocker luaLocker(m_luaMutex);
   LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
   LuaValue result = luaEngine->createUserData(*image);
@@ -1025,7 +1025,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const& result, JsonArray const& patchData, Maybe<Json> const& external) const {
+[[nodiscard]] Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const& result, JsonArray const& patchData, Maybe<Json> const& external) const {
   auto externalRef = external.value();
   auto newResult = result;
   for (auto const& patch : patchData) {
@@ -1057,7 +1057,7 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
   return newResult;
 }
 
-Json Assets::readJson(String const& path) const {
+[[nodiscard]] Json Assets::readJson(String const& path) const {
   ByteArray streamData = read(path);
   try {
     return applyJsonPatches(inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top), path, m_files.get(path).patchSources);
@@ -1066,7 +1066,7 @@ Json Assets::readJson(String const& path) const {
   }
 }
 
-Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
+[[nodiscard]] Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
   Json result = input;
   for (auto const& [patchPath, patchSource] : patches) {
     auto patchAssetPath = AssetPath::split(patchPath);
@@ -1109,7 +1109,7 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
   return result;
 }
 
-bool Assets::doLoad(AssetId const& id) const {
+[[nodiscard]] bool Assets::doLoad(AssetId const& id) const {
   try {
     // loadAsset automatically manages the queue and freshens the asset
     // data.
@@ -1128,7 +1128,7 @@ bool Assets::doLoad(AssetId const& id) const {
   return true;
 }
 
-bool Assets::doPost(AssetId const& id) const {
+[[nodiscard]] bool Assets::doPost(AssetId const& id) const {
   shared_ptr<AssetData> assetData;
   try {
     assetData = m_assetsCache.get(id);
@@ -1151,7 +1151,7 @@ bool Assets::doPost(AssetId const& id) const {
   return true;
 }
 
-shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
   if (auto asset = m_assetsCache.value(id))
     return asset;
 
@@ -1215,7 +1215,7 @@ shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
   }
 }
 
-shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
   Json json;
 
   if (path.subPath) {
@@ -1244,7 +1244,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
   }
 }
 
-shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
   validatePath(path, true, true);
   if (!path.directives.empty()) {
     shared_ptr<ImageData> source =
@@ -1323,7 +1323,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
   }
 }
 
-shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = make_shared<AudioData>();
     newData->audio = make_shared<Audio>(open(path.basePath), path.basePath);
@@ -1332,7 +1332,7 @@ shared_ptr<Assets::AssetData> Assets::loadAudio(AssetPath const& path) const {
   });
 }
 
-shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = make_shared<FontData>();
     newData->font = Font::loadFont(make_shared<ByteArray>(read(path.basePath)));
@@ -1340,7 +1340,7 @@ shared_ptr<Assets::AssetData> Assets::loadFont(AssetPath const& path) const {
   });
 }
 
-shared_ptr<Assets::AssetData> Assets::loadBytes(AssetPath const& path) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::loadBytes(AssetPath const& path) const {
   return unlockDuring([&]() {
     auto newData = make_shared<BytesData>();
     newData->bytes = make_shared<ByteArray>(read(path.basePath));
@@ -1348,7 +1348,7 @@ shared_ptr<Assets::AssetData> Assets::loadBytes(AssetPath const& path) const {
   });
 }
 
-shared_ptr<Assets::AssetData> Assets::postProcessAudio(shared_ptr<AssetData> const& original) const {
+[[nodiscard]] shared_ptr<Assets::AssetData> Assets::postProcessAudio(shared_ptr<AssetData> const& original) const {
   return unlockDuring([&]() -> shared_ptr<AssetData> {
     if (auto audioData = as<AudioData>(original)) {
       if (audioData->audio->totalTime() < m_settings.audioDecompressLimit) {

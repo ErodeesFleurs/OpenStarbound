@@ -4,12 +4,12 @@
 
 namespace Star {
 
-bool WorkerPoolHandle::done() const {
+[[nodiscard]] bool WorkerPoolHandle::done() const {
   MutexLocker locker(m_impl->mutex);
   return m_impl->done;
 }
 
-bool WorkerPoolHandle::wait(unsigned millis) const {
+[[nodiscard]] bool WorkerPoolHandle::wait(unsigned millis) const {
   MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->done && millis != 0)
@@ -21,7 +21,7 @@ bool WorkerPoolHandle::wait(unsigned millis) const {
   return m_impl->done;
 }
 
-bool WorkerPoolHandle::poll() const {
+[[nodiscard]] bool WorkerPoolHandle::poll() const {
   return wait(0);
 }
 
@@ -100,7 +100,7 @@ void WorkerPool::finish() {
   stop();
 }
 
-WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
+[[nodiscard]] WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
   work = requireDependencyValueAs<WorkerPoolException>(std::move(work), "WorkerPool", "work");
 
   // Construct a worker pool handle and wrap the work to signal the handle when
@@ -124,7 +124,7 @@ WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
   return workerPoolHandleImpl;
 }
 
-size_t WorkerPool::getWorkerCount() const {
+[[nodiscard]] size_t WorkerPool::getWorkerCount() const {
   return m_workerThreads.size();
 }
 
@@ -133,11 +133,11 @@ WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
     parent(parent),
     shouldStop(false),
     waiting(false) {
-  start();
+  (void)start();
 }
 
 WorkerPool::WorkerThread::~WorkerThread() {
-  join();
+  (void)join();
 }
 
 void WorkerPool::WorkerThread::run() {

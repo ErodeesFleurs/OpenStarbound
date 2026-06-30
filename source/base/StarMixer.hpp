@@ -32,31 +32,31 @@ class AudioInstance {
 public:
   AudioInstance(Audio const& audio);
 
-  Maybe<Vec2F> position() const;
+  [[nodiscard]] Maybe<Vec2F> position() const;
   void setPosition(Maybe<Vec2F> position);
   // If the audio has no position, sets the position to zero before translating
   void translate(Vec2F const& distance);
 
-  float rangeMultiplier() const;
+  [[nodiscard]] float rangeMultiplier() const;
   void setRangeMultiplier(float rangeMultiplier);
 
   void setVolume(float targetValue, float rampTime = 0.0f);
   void setPitchMultiplier(float targetValue, float rampTime = 0.0f);
 
   // Returns the currently remaining loops
-  int loops() const;
+  [[nodiscard]] int loops() const;
   // Sets the remaining loops, set to 0 to stop looping
   void setLoops(int loops);
 
   // Returns the current audio playing time position
-  double currentTime() const;
+  [[nodiscard]] double currentTime() const;
   // Total length of time of the audio in seconds
-  double totalTime() const;
+  [[nodiscard]] double totalTime() const;
   // Seeks the audio to the current time in seconds
   void seekTime(double time);
 
   // The MixerGroup defaults to Effects
-  MixerGroup mixerGroup() const;
+  [[nodiscard]] MixerGroup mixerGroup() const;
   void setMixerGroup(MixerGroup mixerGroup);
 
   // If set, uses wall clock time in milliseconds to set precise start and stop
@@ -65,7 +65,7 @@ public:
   void setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime = 0);
 
   void stop(float rampTime = 0.0f);
-  bool finished() const;
+  [[nodiscard]] bool finished() const;
 
 private:
   friend class Mixer;
@@ -103,19 +103,19 @@ public:
 
   Mixer(unsigned sampleRate, unsigned channels);
 
-  unsigned sampleRate() const;
-  unsigned channels() const;
+  [[nodiscard]] unsigned sampleRate() const;
+  [[nodiscard]] unsigned channels() const;
 
   // Construct a really crappy low-pass filter based on averaging
-  EffectFunction lowpass(size_t avgSize) const;
+  [[nodiscard]] EffectFunction lowpass(size_t avgSize) const;
   // Construct a very simple echo filter.
-  EffectFunction echo(float time, float dry, float wet) const;
+  [[nodiscard]] EffectFunction echo(float time, float dry, float wet) const;
 
   // Adds / removes effects that affect all playback.
   void addEffect(String const& effectName, EffectFunction effectFunction, float rampTime);
   void removeEffect(String const& effectName, float rampTime);
-  StringList currentEffects();
-  bool hasEffect(String const& effectName);
+  [[nodiscard]] StringList currentEffects();
+  [[nodiscard]] bool hasEffect(String const& effectName);
 
   // Global speed
   void setSpeed(float speed);

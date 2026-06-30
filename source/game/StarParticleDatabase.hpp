@@ -18,8 +18,8 @@ class ParticleConfig {
 public:
   ParticleConfig(Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  String const& kind();
-  Particle instance();
+  [[nodiscard]] String const& kind() const;
+  [[nodiscard]] Particle instance() const;
 
 private:
   String m_kind;
@@ -31,16 +31,16 @@ class ParticleDatabase {
 public:
   ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  ParticleConfigPtr config(String const& kind) const;
+  [[nodiscard]] ParticleConfigPtr config(String const& kind) const;
 
   // If the given variant is a string, loads the particle of that kind,
   // otherwise loads the given config directly.  If the config is given
   // directly it is assumed to optionally contain the variance config in-line.
-  ParticleVariantCreator particleCreator(Json const& kindOrConfig, String const& relativePath = "") const;
+  [[nodiscard]] ParticleVariantCreator particleCreator(Json const& kindOrConfig, String const& relativePath = "") const;
 
   // Like particleCreator except just returns a single particle.  Probably not
   // what you want if you want to support particle variance.
-  Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
+  [[nodiscard]] Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
 
 private:
   AssetsConstPtr m_assets;

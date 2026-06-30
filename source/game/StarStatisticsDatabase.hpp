@@ -30,15 +30,15 @@ class StatisticsDatabase {
 public:
   StatisticsDatabase(AssetsConstPtr assets);
 
-  StatEventPtr event(String const& eventName) const;
+  [[nodiscard]] StatEventPtr event(String const& eventName) const;
 
-  AchievementPtr achievement(String const& name) const;
-  StringList allAchievements() const;
-  StringList achievementsForStat(String const& statName) const;
+  [[nodiscard]] AchievementPtr achievement(String const& name) const;
+  [[nodiscard]] StringList allAchievements() const;
+  [[nodiscard]] StringList achievementsForStat(String const& statName) const;
 
 private:
-  StatEventPtr readEvent(String const& path) const;
-  AchievementPtr readAchievement(String const& path) const;
+  [[nodiscard]] StatEventPtr readEvent(String const& path) const;
+  [[nodiscard]] AchievementPtr readAchievement(String const& path) const;
 
   AssetsConstPtr m_assets;
   StringMap<String> m_eventPaths;

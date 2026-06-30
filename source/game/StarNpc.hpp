@@ -53,49 +53,49 @@ public:
   Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase);
   Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] EntityType entityType() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
-  Vec2F feetOffset() const;
-  Vec2F headArmorOffset() const;
-  Vec2F chestArmorOffset() const;
-  Vec2F legsArmorOffset() const;
-  Vec2F backArmorOffset() const;
+  [[nodiscard]] Vec2F mouthOffset(bool ignoreAdjustments = true) const;
+  [[nodiscard]] Vec2F feetOffset() const;
+  [[nodiscard]] Vec2F headArmorOffset() const;
+  [[nodiscard]] Vec2F chestArmorOffset() const;
+  [[nodiscard]] Vec2F legsArmorOffset() const;
+  [[nodiscard]] Vec2F backArmorOffset() const;
 
-  RectF collisionArea() const override;
+  [[nodiscard]] RectF collisionArea() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  String description() const override;
-  String species() const override;
-  Gender gender() const;
-  String npcType() const;
+  [[nodiscard]] String description() const override;
+  [[nodiscard]] String species() const override;
+  [[nodiscard]] Gender gender() const;
+  [[nodiscard]] String npcType() const;
 
-  Json scriptConfigParameter(String const& parameterName, Json const& defaultValue = Json()) const;
+  [[nodiscard]] Json scriptConfigParameter(String const& parameterName, Json const& defaultValue = Json()) const;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const override;
 
   void damagedOther(DamageNotification const& damage) override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] List<DamageNotification> selfDamageNotifications() override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
   void update(float dt, uint64_t currentVersion) override;
@@ -106,92 +106,92 @@ public:
 
   void setPosition(Vec2F const& pos);
 
-  float maxHealth() const override;
-  float health() const override;
-  DamageBarType damageBar() const override;
+  [[nodiscard]] float maxHealth() const override;
+  [[nodiscard]] float health() const override;
+  [[nodiscard]] DamageBarType damageBar() const override;
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  String name() const override;
-  Maybe<String> statusText() const override;
-  bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  [[nodiscard]] List<Drawable> portrait(PortraitMode mode) const override;
+  [[nodiscard]] String name() const override;
+  [[nodiscard]] Maybe<String> statusText() const override;
+  [[nodiscard]] bool displayNametag() const override;
+  [[nodiscard]] Vec3B nametagColor() const override;
+  [[nodiscard]] Vec2F nametagOrigin() const override;
+  [[nodiscard]] String nametag() const override;
 
-  bool aggressive() const;
+  [[nodiscard]] bool aggressive() const;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  List<ChatAction> pullPendingChatActions() override;
+  [[nodiscard]] Vec2F mouthPosition() const override;
+  [[nodiscard]] Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] List<ChatAction> pullPendingChatActions() override;
 
-  bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
-  RectF interactiveBoundBox() const override;
+  [[nodiscard]] bool isInteractive() const override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] RectF interactiveBoundBox() const override;
 
-  Maybe<EntityAnchorState> loungingIn() const override;
+  [[nodiscard]] Maybe<EntityAnchorState> loungingIn() const override;
 
-  List<QuestArcDescriptor> offeredQuests() const override;
-  StringSet turnInQuests() const override;
-  Vec2F questIndicatorPosition() const override;
+  [[nodiscard]] List<QuestArcDescriptor> offeredQuests() const override;
+  [[nodiscard]] StringSet turnInQuests() const override;
+  [[nodiscard]] Vec2F questIndicatorPosition() const override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] List<LightSource> lightSources() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
-  Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
-  Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
-  ItemPtr handItem(ToolHand hand) const override;
-  Vec2F armAdjustment() const override;
-  Vec2F velocity() const override;
-  Vec2F aimPosition() const override;
-  float interactRadius() const override;
-  Direction facingDirection() const override;
-  Direction walkingDirection() const override;
-  bool isAdmin() const override;
-  Color favoriteColor() const override;
-  float beamGunRadius() const override;
+  [[nodiscard]] Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
+  [[nodiscard]] Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
+  [[nodiscard]] Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
+  [[nodiscard]] ItemPtr handItem(ToolHand hand) const override;
+  [[nodiscard]] Vec2F armAdjustment() const override;
+  [[nodiscard]] Vec2F velocity() const override;
+  [[nodiscard]] Vec2F aimPosition() const override;
+  [[nodiscard]] float interactRadius() const override;
+  [[nodiscard]] Direction facingDirection() const override;
+  [[nodiscard]] Direction walkingDirection() const override;
+  [[nodiscard]] bool isAdmin() const override;
+  [[nodiscard]] Color favoriteColor() const override;
+  [[nodiscard]] float beamGunRadius() const override;
   void addParticles(List<Particle> const& particles) override;
   void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
-  bool inToolRange() const override;
-  bool inToolRange(Vec2F const& position) const override;
+  [[nodiscard]] bool inToolRange() const override;
+  [[nodiscard]] bool inToolRange(Vec2F const& position) const override;
   void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
-  float powerMultiplier() const override;
-  bool fullEnergy() const override;
-  float energy() const override;
-  bool energyLocked() const override;
-  bool consumeEnergy(float energy) override;
+  [[nodiscard]] ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
+  [[nodiscard]] float powerMultiplier() const override;
+  [[nodiscard]] bool fullEnergy() const override;
+  [[nodiscard]] float energy() const override;
+  [[nodiscard]] bool energyLocked() const override;
+  [[nodiscard]] bool consumeEnergy(float energy) override;
   void queueUIMessage(String const& message) override;
-  bool instrumentPlaying() override;
+  [[nodiscard]] bool instrumentPlaying() override;
   void instrumentEquipped(String const& instrumentKind) override;
   void interact(InteractAction const& action) override;
   void addEffectEmitters(StringSet const& emitters) override;
   void requestEmote(String const& emote) override;
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
-  Songbook* songbook();
+  [[nodiscard]] ActorMovementController* movementController() override;
+  [[nodiscard]] StatusController* statusController() override;
+  [[nodiscard]] Songbook* songbook();
   void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
 
   using Entity::setUniqueId;
 
-  HumanoidIdentity const& identity() const;
+  [[nodiscard]] HumanoidIdentity const& identity() const;
   void updateIdentity();
   void setIdentity(HumanoidIdentity identity);
 
   void setHumanoidParameter(String key, Maybe<Json> value);
-  Maybe<Json> getHumanoidParameter(String key);
+  [[nodiscard]] Maybe<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
-  JsonObject getHumanoidParameters();
+  [[nodiscard]] JsonObject getHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
   void setEmoteDirectives(String const& directives);
@@ -221,16 +221,16 @@ public:
   void setName(String const& name);
   void setDescription(String const& description);
 
-  HumanoidPtr humanoid();
-  HumanoidPtr humanoid() const;
+  [[nodiscard]] HumanoidPtr humanoid();
+  [[nodiscard]] HumanoidPtr humanoid() const;
 
-  bool forceNude() const;
+  [[nodiscard]] bool forceNude() const;
 
 private:
-  Vec2F getAbsolutePosition(Vec2F relativePosition) const;
+  [[nodiscard]] Vec2F getAbsolutePosition(Vec2F relativePosition) const;
 
   void tickShared(float dt);
-  LuaCallbacks makeNpcCallbacks();
+  [[nodiscard]] LuaCallbacks makeNpcCallbacks();
 
   void setupNetStates();
   void getNetStates(bool initial);
@@ -240,9 +240,9 @@ private:
   void addEmote(HumanoidEmote const& emote);
   void setDance(Maybe<String> const& danceName);
 
-  bool setItemSlot(String const& slot, ItemDescriptor itemDescriptor);
+  [[nodiscard]] bool setItemSlot(String const& slot, ItemDescriptor itemDescriptor);
 
-  bool canUseTool() const;
+  [[nodiscard]] bool canUseTool() const;
 
   void disableWornArmor(bool disable);
 

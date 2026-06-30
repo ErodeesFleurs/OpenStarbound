@@ -17,7 +17,7 @@ void validateWorld(TestUniverse& testUniverse) {
   auto assets = testRoot().assets();
   for (auto const& drawable : testUniverse.currentClientDrawables()) {
     if (drawable.isImage())
-      assets->image(drawable.imagePart().image);
+      (void)assets->image(drawable.imagePart().image);
   }
 }
 

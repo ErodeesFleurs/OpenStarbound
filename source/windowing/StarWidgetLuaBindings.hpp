@@ -15,11 +15,11 @@ struct LuaConverter<CanvasWidgetPtr> : LuaUserDataConverter<CanvasWidgetPtr> {};
 
 template <>
 struct LuaUserDataMethods<CanvasWidgetPtr> {
-  static LuaMethods<CanvasWidgetPtr> make();
+  [[nodiscard]] static LuaMethods<CanvasWidgetPtr> make();
 };
 
 namespace LuaBindings {
-  LuaCallbacks makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr reader = {});
+  [[nodiscard]] LuaCallbacks makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr reader = {});
 }
 
 }

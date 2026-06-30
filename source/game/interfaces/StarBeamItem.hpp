@@ -21,18 +21,18 @@ public:
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
 
-  virtual float getAngle(float angle);
-  virtual List<Drawable> drawables() const;
-  virtual Vec2F handPosition() const;
-  virtual Vec2F firePosition() const;
+  [[nodiscard]] virtual float getAngle(float angle);
+  [[nodiscard]] virtual List<Drawable> drawables() const;
+  [[nodiscard]] virtual Vec2F handPosition() const;
+  [[nodiscard]] virtual Vec2F firePosition() const;
   virtual void setRange(float range);
-  virtual float getAppropriateOpacity() const;
+  [[nodiscard]] virtual float getAppropriateOpacity() const;
   virtual void setEnd(EndType type);
 
 protected:
-  List<Drawable> beamDrawables(bool canPlace = true) const;
+  [[nodiscard]] List<Drawable> beamDrawables(bool canPlace = true) const;
 
   String m_image;
   StringList m_endImages;

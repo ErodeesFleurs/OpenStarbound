@@ -50,9 +50,9 @@ public:
 
   // Will be called at updateRate hz, or as close as possible.
   virtual void update();
-  
+
   // Returns how many frames have been skipped.
-  virtual unsigned framesSkipped() const;
+  [[nodiscard]] virtual unsigned framesSkipped() const;
 
   // Will be called at updateRate hz, or more or less depending on settings and
   // performance.  update() is always prioritized over render().
@@ -66,8 +66,8 @@ public:
   // due to an Application exception.
   virtual void shutdown();
 
-  ApplicationControllerPtr const& appController() const;
-  RendererPtr const& renderer() const;
+  [[nodiscard]] ApplicationControllerPtr const& appController() const;
+  [[nodiscard]] RendererPtr const& renderer() const;
 
 private:
   ApplicationControllerPtr m_appController;

@@ -87,23 +87,23 @@ LiquidsDatabase::LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr
   }
 }
 
-LiquidCellEngineParameters LiquidsDatabase::liquidEngineParameters() const {
+[[nodiscard]] LiquidCellEngineParameters LiquidsDatabase::liquidEngineParameters() const {
   return m_liquidEngineParameters;
 }
 
-StringList LiquidsDatabase::liquidNames() const {
+[[nodiscard]] StringList LiquidsDatabase::liquidNames() const {
   return m_liquidNames.keys();
 }
 
-List<LiquidSettingsConstPtr> LiquidsDatabase::allLiquidSettings() const {
+[[nodiscard]] List<LiquidSettingsConstPtr> LiquidsDatabase::allLiquidSettings() const {
   return filtered<List<LiquidSettingsConstPtr>>(m_settings, mem_fn(&LiquidSettingsConstPtr::operator bool));
 }
 
-LiquidId LiquidsDatabase::liquidId(String const& str) const {
+[[nodiscard]] LiquidId LiquidsDatabase::liquidId(String const& str) const {
   return m_liquidNames.get(str);
 }
 
-String LiquidsDatabase::liquidName(LiquidId liquidId) const {
+[[nodiscard]] String LiquidsDatabase::liquidName(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return "empty";
   else if (auto settings = liquidSettings(liquidId))
@@ -111,7 +111,7 @@ String LiquidsDatabase::liquidName(LiquidId liquidId) const {
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& species) const {
+[[nodiscard]] String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& species) const {
   if (liquidId == EmptyLiquidId)
     return String();
   else if (auto settings = liquidSettings(liquidId))
@@ -120,7 +120,7 @@ String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& speci
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
+[[nodiscard]] String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return String();
   else if (auto settings = liquidSettings(liquidId))
@@ -128,7 +128,7 @@ String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
+[[nodiscard]] Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -136,7 +136,7 @@ Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
   return {};
 }
 
-Maybe<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
+[[nodiscard]] Maybe<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -144,7 +144,7 @@ Maybe<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
   return {};
 }
 
-Maybe<LiquidInteractionResult> LiquidsDatabase::interact(LiquidId target, LiquidId other) const {
+[[nodiscard]] Maybe<LiquidInteractionResult> LiquidsDatabase::interact(LiquidId target, LiquidId other) const {
   if (auto settings = liquidSettings(target))
     return settings->interactions.value(other);
   return {};

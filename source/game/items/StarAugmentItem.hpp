@@ -13,14 +13,14 @@ public:
   AugmentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, ItemDatabase const& itemDatabase, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  StringList augmentScripts() const;
+  [[nodiscard]] StringList augmentScripts() const;
 
   // Makes no change to the given item if the augment can't be applied.
   // Consumes itself and returns true if the augment is applied.
   // Has no effect if augmentation fails.
-  ItemPtr applyTo(ItemPtr const item);
+  [[nodiscard]] ItemPtr applyTo(ItemPtr const item);
 
 private:
   ItemDatabase const& m_itemDatabase;

@@ -13,7 +13,7 @@ DataStream::DataStream()
     m_nullTerminatedStrings(false),
     m_streamCompatibilityVersion(CurrentStreamVersion) {}
 
-ByteOrder DataStream::byteOrder() const {
+[[nodiscard]] ByteOrder DataStream::byteOrder() const {
   return m_byteOrder;
 }
 
@@ -21,7 +21,7 @@ void DataStream::setByteOrder(ByteOrder byteOrder) {
   m_byteOrder = byteOrder;
 }
 
-bool DataStream::nullTerminatedStrings() const {
+[[nodiscard]] bool DataStream::nullTerminatedStrings() const {
   return m_nullTerminatedStrings;
 }
 
@@ -29,7 +29,7 @@ void DataStream::setNullTerminatedStrings(bool nullTerminatedStrings) {
   m_nullTerminatedStrings = nullTerminatedStrings;
 }
 
-unsigned DataStream::streamCompatibilityVersion() const {
+[[nodiscard]] unsigned DataStream::streamCompatibilityVersion() const {
   return m_streamCompatibilityVersion;
 }
 
@@ -41,7 +41,7 @@ void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rule
   m_streamCompatibilityVersion = rules.version();
 }
 
-ByteArray DataStream::readBytes(size_t len) {
+[[nodiscard]] ByteArray DataStream::readBytes(size_t len) {
   ByteArray ba;
   ba.resize(len);
   readData(ba.ptr(), len);
@@ -235,19 +235,19 @@ size_t DataStream::readVlqS(size_t& i) {
   return res;
 }
 
-uint64_t DataStream::readVlqU() {
+[[nodiscard]] uint64_t DataStream::readVlqU() {
   uint64_t i;
   readVlqU(i);
   return i;
 }
 
-int64_t DataStream::readVlqI() {
+[[nodiscard]] int64_t DataStream::readVlqI() {
   int64_t i;
   readVlqI(i);
   return i;
 }
 
-size_t DataStream::readVlqS() {
+[[nodiscard]] size_t DataStream::readVlqS() {
   size_t i;
   readVlqS(i);
   return i;

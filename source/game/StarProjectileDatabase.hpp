@@ -106,19 +106,19 @@ class ProjectileDatabase {
 public:
   ProjectileDatabase(AssetsConstPtr assets);
 
-  StringList allProjectileTypes() const;
-  bool isProjectile(String const& typeName) const;
+  [[nodiscard]] StringList allProjectileTypes() const;
+  [[nodiscard]] bool isProjectile(String const& typeName) const;
 
-  Json projectileConfig(String const& type) const;
+  [[nodiscard]] Json projectileConfig(String const& type) const;
 
-  String damageKindImage(String const& type) const;
-  float gravityMultiplier(String const& type) const;
+  [[nodiscard]] String damageKindImage(String const& type) const;
+  [[nodiscard]] float gravityMultiplier(String const& type) const;
 
-  ProjectilePtr createProjectile(String const& type, Json const& parameters = JsonObject()) const;
-  ProjectilePtr netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ProjectilePtr createProjectile(String const& type, Json const& parameters = JsonObject()) const;
+  [[nodiscard]] ProjectilePtr netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
-  ProjectileConfigPtr readConfig(String const& path);
+  [[nodiscard]] ProjectileConfigPtr readConfig(String const& path);
 
   AssetsConstPtr m_assets;
   StringMap<ProjectileConfigPtr> m_configs;

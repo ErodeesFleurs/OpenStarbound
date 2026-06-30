@@ -25,26 +25,26 @@ public:
 
   InspectionTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] List<LightSource> lightSources() const;
 
-  float inspectionHighlightLevel(InspectableEntityPtr const& inspectableEntity) const;
+  [[nodiscard]] float inspectionHighlightLevel(InspectableEntityPtr const& inspectableEntity) const;
 
-  List<InspectionResult> pullInspectionResults();
+  [[nodiscard]] List<InspectionResult> pullInspectionResults();
 
 private:
-  InspectionResult inspect(Vec2F const& position);
+  [[nodiscard]] InspectionResult inspect(Vec2F const& position);
 
-  float inspectionLevel(InspectableEntityPtr const& inspectableEntity) const;
-  float pointInspectionLevel(Vec2F const& position) const;
-  bool hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
+  [[nodiscard]] float inspectionLevel(InspectableEntityPtr const& inspectableEntity) const;
+  [[nodiscard]] float pointInspectionLevel(Vec2F const& position) const;
+  [[nodiscard]] bool hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
 
-  String inspectionFailureText(String const& failureType, String const& species) const;
+  [[nodiscard]] String inspectionFailureText(String const& failureType, String const& species) const;
 
   float m_currentAngle;
   Vec2F m_currentPosition;

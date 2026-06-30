@@ -108,12 +108,12 @@ public:
   using Index = typename Base::Index;
   using Leaf = typename Base::Leaf;
 
-  bool contains(Key const& k);
+  [[nodiscard]] bool contains(Key const& k);
 
-  Maybe<Data> find(Key const& k);
+  [[nodiscard]] Maybe<Data> find(Key const& k);
 
   // Range is inclusve on lower bound and exclusive on upper bound.
-  List<pair<Key, Data>> find(Key const& lower, Key const& upper);
+  [[nodiscard]] List<pair<Key, Data>> find(Key const& lower, Key const& upper);
 
   // Visitor is called as visitor(key, data).
   template <typename Visitor>
@@ -135,21 +135,21 @@ public:
   void forAllNodes(Visitor&& visitor);
 
   // returns true if old value overwritten.
-  bool insert(Key k, Data data);
+  [[nodiscard]] bool insert(Key k, Data data);
 
   // returns true if key was found.
-  bool remove(Key k);
+  [[nodiscard]] bool remove(Key k);
 
   // Removes list of keys in the given range, returns count removed.
   // TODO: SLOW, right now does lots of different removes separately.  Need to
   // implement batch inserts and deletes.
-  List<pair<Key, Data>> remove(Key const& lower, Key const& upper);
+  [[nodiscard]] List<pair<Key, Data>> remove(Key const& lower, Key const& upper);
 
-  uint64_t indexCount();
-  uint64_t leafCount();
-  uint64_t recordCount();
+  [[nodiscard]] uint64_t indexCount();
+  [[nodiscard]] uint64_t leafCount();
+  [[nodiscard]] uint64_t recordCount();
 
-  uint32_t indexLevels();
+  [[nodiscard]] uint32_t indexLevels();
 
   void createNewRoot();
 
@@ -167,24 +167,24 @@ private:
   };
 
   struct RecordCounter {
-    bool operator()(Index const& index);
-    bool operator()(Leaf const& leaf);
+    [[nodiscard]] bool operator()(Index const& index);
+    [[nodiscard]] bool operator()(Leaf const& leaf);
 
     BTreeMixin* parent;
     uint64_t count;
   };
 
   struct IndexCounter {
-    bool operator()(Index const& index);
-    bool operator()(Leaf const&);
+    [[nodiscard]] bool operator()(Index const& index);
+    [[nodiscard]] bool operator()(Leaf const&);
 
     BTreeMixin* parent;
     uint64_t count;
   };
 
   struct LeafCounter {
-    bool operator()(Index const& index);
-    bool operator()(Leaf const&);
+    [[nodiscard]] bool operator()(Index const& index);
+    [[nodiscard]] bool operator()(Leaf const&);
 
     BTreeMixin* parent;
     uint64_t count;
@@ -217,23 +217,23 @@ private:
     Pointer newPointer;
   };
 
-  bool contains(Index const& index, Key const& k);
-  bool contains(Leaf const& leaf, Key const& k);
+  [[nodiscard]] bool contains(Index const& index, Key const& k);
+  [[nodiscard]] bool contains(Leaf const& leaf, Key const& k);
 
-  Maybe<Data> find(Index const& index, Key const& k);
-  Maybe<Data> find(Leaf const& leaf, Key const& k);
-
-  // Returns the highest key for the last leaf we have searched
-  template <typename Visitor>
-  Key forEach(Index const& index, Key const& lower, Key const& upper, Visitor&& o);
-  template <typename Visitor>
-  Key forEach(Leaf const& leaf, Key const& lower, Key const& upper, Visitor&& o);
+  [[nodiscard]] Maybe<Data> find(Index const& index, Key const& k);
+  [[nodiscard]] Maybe<Data> find(Leaf const& leaf, Key const& k);
 
   // Returns the highest key for the last leaf we have searched
   template <typename Visitor>
-  Key forAll(Index const& index, Visitor&& o);
+  [[nodiscard]] Key forEach(Index const& index, Key const& lower, Key const& upper, Visitor&& o);
   template <typename Visitor>
-  Key forAll(Leaf const& leaf, Visitor&& o);
+  [[nodiscard]] Key forEach(Leaf const& leaf, Key const& lower, Key const& upper, Visitor&& o);
+
+  // Returns the highest key for the last leaf we have searched
+  template <typename Visitor>
+  [[nodiscard]] Key forAll(Index const& index, Visitor&& o);
+  template <typename Visitor>
+  [[nodiscard]] Key forAll(Leaf const& leaf, Visitor&& o);
 
   template <typename Visitor, typename ErrorHandler>
   void recoverAll(Index const& index, Visitor&& o, ErrorHandler&& error);
@@ -244,21 +244,21 @@ private:
   // split up into insert / remove methods
   void modify(Leaf& leafNode, ModifyInfo& info);
   void modify(Index& indexNode, ModifyInfo& info);
-  bool modify(DataElement e, ModifyAction action);
+  [[nodiscard]] bool modify(DataElement e, ModifyAction action);
 
   // Traverses Indexes down the tree on the left side to get the least valued
   // key that is pointed to by any leaf under this index.  Needed when joining.
-  Key getLeftKey(Index const& index);
+  [[nodiscard]] Key getLeftKey(Index const& index);
 
   template <typename Visitor>
   void forAllNodes(Index const& index, Visitor&& visitor);
 
-  pair<size_t, bool> leafFind(Leaf const& leaf, Key const& key);
-  size_t indexFind(Index const& index, Key const& key);
+  [[nodiscard]] pair<size_t, bool> leafFind(Leaf const& leaf, Key const& key);
+  [[nodiscard]] size_t indexFind(Index const& index, Key const& key);
 };
 
 template <typename Base>
-bool BTreeMixin<Base>::contains(Key const& k) {
+[[nodiscard]] bool BTreeMixin<Base>::contains(Key const& k) {
   if (Base::rootIsLeaf())
     return contains(Base::loadLeaf(Base::rootPointer()), k);
   else
@@ -266,7 +266,7 @@ bool BTreeMixin<Base>::contains(Key const& k) {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Key const& k) -> Maybe<Data> {
+[[nodiscard]] auto BTreeMixin<Base>::find(Key const& k) -> Maybe<Data> {
   if (Base::rootIsLeaf())
     return find(Base::loadLeaf(Base::rootPointer()), k);
   else
@@ -274,7 +274,7 @@ auto BTreeMixin<Base>::find(Key const& k) -> Maybe<Data> {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Key const& lower, Key const& upper) -> List<pair<Key, Data>> {
+[[nodiscard]] auto BTreeMixin<Base>::find(Key const& lower, Key const& upper) -> List<pair<Key, Data>> {
   DataCollector collector;
   forEach(lower, upper, collector);
   return collector.list;
@@ -331,7 +331,7 @@ bool BTreeMixin<Base>::remove(Key k) {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::remove(Key const& lower, Key const& upper) -> List<pair<Key, Data>> {
+[[nodiscard]] auto BTreeMixin<Base>::remove(Key const& lower, Key const& upper) -> List<pair<Key, Data>> {
   DataCollector collector;
   forEach(lower, upper, collector);
 
@@ -342,28 +342,28 @@ auto BTreeMixin<Base>::remove(Key const& lower, Key const& upper) -> List<pair<K
 }
 
 template <typename Base>
-uint64_t BTreeMixin<Base>::indexCount() {
+[[nodiscard]] uint64_t BTreeMixin<Base>::indexCount() {
   IndexCounter counter = {this, 0};
   forAllNodes(counter);
   return counter.count;
 }
 
 template <typename Base>
-uint64_t BTreeMixin<Base>::leafCount() {
+[[nodiscard]] uint64_t BTreeMixin<Base>::leafCount() {
   LeafCounter counter = {this, 0};
   forAllNodes(counter);
   return counter.count;
 }
 
 template <typename Base>
-uint64_t BTreeMixin<Base>::recordCount() {
+[[nodiscard]] uint64_t BTreeMixin<Base>::recordCount() {
   RecordCounter counter = {this, 0};
   forAllNodes(counter);
   return counter.count;
 }
 
 template <typename Base>
-uint32_t BTreeMixin<Base>::indexLevels() {
+[[nodiscard]] uint32_t BTreeMixin<Base>::indexLevels() {
   if (Base::rootIsLeaf())
     return 0;
   else
@@ -428,7 +428,7 @@ BTreeMixin<Base>::ModifyInfo::ModifyInfo(ModifyAction a, DataElement e)
 }
 
 template <typename Base>
-bool BTreeMixin<Base>::contains(Index const& index, Key const& k) {
+[[nodiscard]] bool BTreeMixin<Base>::contains(Index const& index, Key const& k) {
   size_t i = indexFind(index, k);
   if (Base::indexLevel(index) == 0)
     return contains(Base::loadLeaf(Base::indexPointer(index, i)), k);
@@ -437,12 +437,12 @@ bool BTreeMixin<Base>::contains(Index const& index, Key const& k) {
 }
 
 template <typename Base>
-bool BTreeMixin<Base>::contains(Leaf const& leaf, Key const& k) {
+[[nodiscard]] bool BTreeMixin<Base>::contains(Leaf const& leaf, Key const& k) {
   return leafFind(leaf, k).second;
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> Maybe<Data> {
+[[nodiscard]] auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> Maybe<Data> {
   size_t i = indexFind(index, k);
   if (Base::indexLevel(index) == 0)
     return find(Base::loadLeaf(Base::indexPointer(index, i)), k);
@@ -451,7 +451,7 @@ auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> Maybe<Data> {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> Maybe<Data> {
+[[nodiscard]] auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> Maybe<Data> {
   pair<size_t, bool> res = leafFind(leaf, k);
   if (res.second)
     return Base::leafData(leaf, res.first);
@@ -795,8 +795,8 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
 }
 
 template <typename Base>
-bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
-  ModifyInfo info(action, std::move(e));
+[[nodiscard]] bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
+  [[nodiscard]] ModifyInfo info(action, std::move(e));
 
   Leaf lowerLeaf;
   Index lowerIndex;

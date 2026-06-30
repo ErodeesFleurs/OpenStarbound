@@ -19,10 +19,10 @@ struct TerrainSelectorParameters {
   TerrainSelectorParameters();
   explicit TerrainSelectorParameters(Json const& v);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  TerrainSelectorParameters withSeed(uint64_t seed) const;
-  TerrainSelectorParameters withCommonality(float commonality) const;
+  [[nodiscard]] TerrainSelectorParameters withSeed(uint64_t seed) const;
+  [[nodiscard]] TerrainSelectorParameters withCommonality(float commonality) const;
 
   unsigned worldWidth = 0;
   float baseHeight = 0.0f;
@@ -36,7 +36,7 @@ struct TerrainSelector {
 
   // Returns a float signifying the "solid-ness" of a block, >= 0.0 should be
   // considered solid, < 0.0 should be considered open space.
-  virtual float get(int x, int y) const = 0;
+  [[nodiscard]] virtual float get(int x, int y) const = 0;
 
   String type;
   Json config;
@@ -50,16 +50,16 @@ public:
     Json parameters;
   };
 
-  Config selectorConfig(String const& name) const;
-  TerrainSelectorConstPtr createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
+  [[nodiscard]] Config selectorConfig(String const& name) const;
+  [[nodiscard]] TerrainSelectorConstPtr createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
 
   TerrainDatabase(AssetsConstPtr assets);
 
-  TerrainSelectorConstPtr createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
-  TerrainSelectorConstPtr constantSelector(float value);
+  [[nodiscard]] TerrainSelectorConstPtr createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
+  [[nodiscard]] TerrainSelectorConstPtr constantSelector(float value);
 
-  Json storeSelector(TerrainSelectorConstPtr const& selector) const;
-  TerrainSelectorConstPtr loadSelector(Json const& store) const;
+  [[nodiscard]] Json storeSelector(TerrainSelectorConstPtr const& selector) const;
+  [[nodiscard]] TerrainSelectorConstPtr loadSelector(Json const& store) const;
 
 private:
   StringMap<Config> m_terrainSelectors;

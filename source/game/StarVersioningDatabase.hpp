@@ -32,17 +32,17 @@ struct VersionedJson {
   // Writes and reads a binary file containing a versioned json with a magic
   // header marking it as a starbound versioned json file.  Writes using a
   // safe write/flush/swap.
-  static VersionedJson readFile(String const& filename);
+  [[nodiscard]] static VersionedJson readFile(String const& filename);
   static void writeFile(VersionedJson const& versionedJson, String const& filename);
   static void writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson);
   static void readSubVersioning(DataStream& ds, VersionedJson& versionedJson);
 
   // Writes and reads a json containing a versioned json
   // This allows embedding versioned metadata within a file
-  static VersionedJson fromJson(Json const& source);
-  Json toJson() const;
+  [[nodiscard]] static VersionedJson fromJson(Json const& source);
+  [[nodiscard]] Json toJson() const;
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
   // If the identifier does not match the given identifier, throws a
   // VersionedJsonException.
@@ -64,20 +64,20 @@ public:
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
   // config file.
-  VersionedJson makeCurrentVersionedJson(String const& identifier, Json const& content) const;
+  [[nodiscard]] VersionedJson makeCurrentVersionedJson(String const& identifier, Json const& content) const;
 
   // Returns true if the version in this VersionedJson matches the configured
   // current version and does not need updating.
-  bool versionedJsonCurrent(VersionedJson const& versionedJson) const;
+  [[nodiscard]] bool versionedJsonCurrent(VersionedJson const& versionedJson) const;
 
   // Brings the given versioned json up to the current configured latest
   // version using update scripts.  If successful, returns the up to date
   // VersionedJson, otherwise throws VersioningDatabaseException.
-  VersionedJson updateVersionedJson(VersionedJson const& versionedJson) const;
+  [[nodiscard]] VersionedJson updateVersionedJson(VersionedJson const& versionedJson) const;
 
   // Convenience method, checkts the versionedJson expected identifier and then
   // brings the given versionedJson up to date and returns the content.
-  Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
+  [[nodiscard]] Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
 
 private:
   struct VersionUpdateScript {
@@ -86,7 +86,7 @@ private:
     VersionNumber toVersion;
   };
 
-  LuaCallbacks makeVersioningCallbacks() const;
+  [[nodiscard]] LuaCallbacks makeVersioningCallbacks() const;
 
   mutable RecursiveMutex m_mutex;
   mutable LuaRoot m_luaRoot;

@@ -16,39 +16,39 @@ public:
   // Some static versions of drawing functions are given that do not require an
   // active CelestialDatabasePtr to draw.
 
-  static List<pair<String, float>> drawSystemPlanetaryObject(CelestialParameters const& celestialParameters);
-  static List<pair<String, float>> drawSystemCentralBody(CelestialParameters const& celestialParameters);
+  [[nodiscard]] static List<pair<String, float>> drawSystemPlanetaryObject(CelestialParameters const& celestialParameters);
+  [[nodiscard]] static List<pair<String, float>> drawSystemCentralBody(CelestialParameters const& celestialParameters);
 
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
   static List<pair<String, float>> drawWorld(
     CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
-  static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
-  static int worldRadialPosition(CelestialParameters const& celestialParameters, AssetsConstPtr assets);
+  [[nodiscard]] static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
+  [[nodiscard]] static int worldRadialPosition(CelestialParameters const& celestialParameters, AssetsConstPtr assets);
 
   // Each orbiting body will occupy a unique orbital slot, but to give
   // graphical diversity, will also fit into exactly one radial slot for
   // display purposes.  The range of radial numbers is [0, RadialPosiitons)
-  static int planetRadialPositions(AssetsConstPtr assets);
-  static int satelliteRadialPositions(AssetsConstPtr assets);
+  [[nodiscard]] static int planetRadialPositions(AssetsConstPtr assets);
+  [[nodiscard]] static int satelliteRadialPositions(AssetsConstPtr assets);
 
-  static List<pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime, AssetsConstPtr assets);
+  [[nodiscard]] static List<pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime, AssetsConstPtr assets);
 
   // Returns the small graphic for the given planetary object appropriate for a
   // system-level view.
-  static List<pair<String, float>> drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
-  static List<pair<String, float>> drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  [[nodiscard]] static List<pair<String, float>> drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  [[nodiscard]] static List<pair<String, float>> drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
 
   // Returns the graphics appropriate to draw an entire world (planetary object
   // or satellite object) in a map view.  Shadows the satellite the same as
   // its parent planetary object.
-  static List<pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
+  [[nodiscard]] static List<pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
 
   // Draw all of the left and right image pairs for all the layers for the
   // world horizon.
-  static List<pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
+  [[nodiscard]] static List<pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
 
-  static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets);
+  [[nodiscard]] static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets);
 
 private:
 };

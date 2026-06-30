@@ -13,7 +13,7 @@ using StepStreamException = TypedException<StarException, StepStreamExceptionTag
 template <typename T>
 class NetElementFloating : public NetElement {
 public:
-  T get() const;
+  [[nodiscard]] T get() const;
   void set(T value);
 
   // If a fixed point base is given, then instead of transmitting the value as
@@ -40,7 +40,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
@@ -51,9 +51,9 @@ private:
   };
 
   void writeValue(DataStream& ds, T t) const;
-  T readValue(DataStream& ds) const;
+  [[nodiscard]] T readValue(DataStream& ds) const;
 
-  T interpolate() const;
+  [[nodiscard]] T interpolate() const;
 
   Maybe<T> m_fixedPointBase;
   NetElementVersion const* m_netVersion = nullptr;

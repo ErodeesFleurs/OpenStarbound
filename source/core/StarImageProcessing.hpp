@@ -11,8 +11,8 @@ class Image;
 struct ImageOperationExceptionTag { static constexpr char const* typeName = "ImageOperationException"; };
 using ImageOperationException = TypedException<StarException, ImageOperationExceptionTag>;
 
-StringList colorDirectivesFromConfig(JsonArray const& directives);
-String paletteSwapDirectivesFromConfig(Json const& swaps);
+[[nodiscard]] StringList colorDirectivesFromConfig(JsonArray const& directives);
+[[nodiscard]] String paletteSwapDirectivesFromConfig(Json const& swaps);
 
 struct NullImageOperation {
   bool unloaded = false;
@@ -24,7 +24,7 @@ struct ErrorImageOperation {
 
 struct HueShiftImageOperation {
   // Specify hue shift angle as -360 to 360 rather than -1 to 1
-  static HueShiftImageOperation hueShiftDegrees(float degrees);
+  [[nodiscard]] static HueShiftImageOperation hueShiftDegrees(float degrees);
 
   // value here is normalized to 1.0
   float hueShiftAmount;
@@ -32,7 +32,7 @@ struct HueShiftImageOperation {
 
 struct SaturationShiftImageOperation {
   // Specify saturation shift as amount normalized to 100
-  static SaturationShiftImageOperation saturationShift100(float amount);
+  [[nodiscard]] static SaturationShiftImageOperation saturationShift100(float amount);
 
   // value here is normalized to 1.0
   float saturationShiftAmount;
@@ -41,7 +41,7 @@ struct SaturationShiftImageOperation {
 struct BrightnessMultiplyImageOperation {
   // Specify brightness multiply as amount where 0 means "no change" and 100
   // means "x2" and -100 means "x0"
-  static BrightnessMultiplyImageOperation brightnessMultiply100(float amount);
+  [[nodiscard]] static BrightnessMultiplyImageOperation brightnessMultiply100(float amount);
 
   float brightnessMultiply;
 };
@@ -137,26 +137,26 @@ using ImageOperation = Variant<NullImageOperation, ErrorImageOperation, HueShift
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
   MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation>;
 
-ImageOperation imageOperationFromString(StringView string);
-String imageOperationToString(ImageOperation const& operation);
+[[nodiscard]] ImageOperation imageOperationFromString(StringView string);
+[[nodiscard]] String imageOperationToString(ImageOperation const& operation);
 
 void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter);
 
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
-List<ImageOperation> parseImageOperations(StringView params);
+[[nodiscard]] List<ImageOperation> parseImageOperations(StringView params);
 
 // Each operation separated by '?', returns string with leading '?'
-String printImageOperations(List<ImageOperation> const& operations);
+[[nodiscard]] String printImageOperations(List<ImageOperation> const& operations);
 
 void addImageOperationReferences(ImageOperation const& operation, StringList& out);
 
-StringList imageOperationReferences(List<ImageOperation> const& operations);
+[[nodiscard]] StringList imageOperationReferences(List<ImageOperation> const& operations);
 
 using ImageReferenceCallback = function<Image const*(String const& refName)>;
 
 void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 
-Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
+[[nodiscard]] Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
 
 }

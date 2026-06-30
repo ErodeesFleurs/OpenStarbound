@@ -272,14 +272,14 @@ struct LuaConverter<MVariant<Types...>> {
 
 template <>
 struct LuaConverter<Color> {
-  static LuaValue from(LuaEngine& engine, Color const& c);
-  static Maybe<Color> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, Color const& c);
+  [[nodiscard]] static Maybe<Color> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<LuaCallbacks> {
-  static LuaValue from(LuaEngine& engine, LuaCallbacks const& c);
-  static Maybe<LuaCallbacks> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, LuaCallbacks const& c);
+  [[nodiscard]] static Maybe<LuaCallbacks> to(LuaEngine& engine, LuaValue const& v);
 };
 
 }

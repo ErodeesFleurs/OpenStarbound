@@ -22,8 +22,8 @@ enum class IOMode : uint8_t {
   Truncate = 0x8,
 };
 
-IOMode operator|(IOMode a, IOMode b);
-bool operator&(IOMode a, IOMode b);
+[[nodiscard]] IOMode operator|(IOMode a, IOMode b);
+[[nodiscard]] bool operator&(IOMode a, IOMode b);
 
 // Should match SEEK_SET, SEEK_CUR, AND SEEK_END
 enum IOSeek : uint8_t {
@@ -40,14 +40,14 @@ public:
 
   // Do a read or write that may result in less data read or written than
   // requested.
-  virtual size_t read(char* data, size_t len) = 0;
-  virtual size_t write(char const* data, size_t len) = 0;
+  [[nodiscard]] virtual size_t read(char* data, size_t len) = 0;
+  [[nodiscard]] virtual size_t write(char const* data, size_t len) = 0;
 
   // std::span convenience overloads (delegate to virtual methods)
-  size_t read(std::span<char> data) { return read(data.data(), data.size()); }
-  size_t write(std::span<char const> data) { return write(data.data(), data.size()); }
+  [[nodiscard]] size_t read(std::span<char> data) { return read(data.data(), data.size()); }
+  [[nodiscard]] size_t write(std::span<char const> data) { return write(data.data(), data.size()); }
 
-  virtual StreamOffset pos() = 0;
+  [[nodiscard]] virtual StreamOffset pos() = 0;
   virtual void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
 
   // Default implementation throws unsupported exception.
@@ -57,8 +57,8 @@ public:
   // current file position.  Default implementation stores the file position,
   // then seeks and calls read/write partial, then restores the file position,
   // and is not thread safe.
-  virtual size_t readAbsolute(StreamOffset readPosition, char* data, size_t len);
-  virtual size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len);
+  [[nodiscard]] virtual size_t readAbsolute(StreamOffset readPosition, char* data, size_t len);
+  [[nodiscard]] virtual size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len);
 
   // Read and write fully, and throw an exception in every other case.  The
   // default implementations here will call the normal read or write, and if
@@ -79,29 +79,29 @@ public:
   virtual void sync();
 
   // Returns a clone of this device with the same mode
-  virtual IODevicePtr clone() = 0;
+  [[nodiscard]] virtual IODevicePtr clone() = 0;
 
   // Default implementation just prints address of generic IODevice
-  virtual String deviceName() const;
+  [[nodiscard]] virtual String deviceName() const;
 
   // Is the file position at the end of the file and there is no more to read?
   // This is not the same as feof, which returns true after an unsuccessful read
   // past the end, it should return true after successfully reading the final
   // byte.  Default implementation returns pos() >= size();
-  virtual bool atEnd();
+  [[nodiscard]] virtual bool atEnd();
 
   // Default is to store position, seek end, then restore position.
-  virtual StreamOffset size();
+  [[nodiscard]] virtual StreamOffset size();
 
-  IOMode mode() const;
-  bool isOpen() const;
-  bool isReadable() const;
-  bool isWritable() const;
+  [[nodiscard]] IOMode mode() const;
+  [[nodiscard]] bool isOpen() const;
+  [[nodiscard]] bool isReadable() const;
+  [[nodiscard]] bool isWritable() const;
 
-  ByteArray readBytes(size_t size);
+  [[nodiscard]] ByteArray readBytes(size_t size);
   void writeBytes(ByteArray const& p);
 
-  ByteArray readBytesAbsolute(StreamOffset readPosition, size_t size);
+  [[nodiscard]] ByteArray readBytesAbsolute(StreamOffset readPosition, size_t size);
   void writeBytesAbsolute(StreamOffset writePosition, ByteArray const& p);
 
 protected:
@@ -114,27 +114,27 @@ private:
   atomic<IOMode> m_mode;
 };
 
-inline IOMode operator|(IOMode a, IOMode b) {
+[[nodiscard]] inline IOMode operator|(IOMode a, IOMode b) {
   return static_cast<IOMode>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
 }
 
-inline bool operator&(IOMode a, IOMode b) {
+[[nodiscard]] inline bool operator&(IOMode a, IOMode b) {
   return static_cast<uint8_t>(a) & static_cast<uint8_t>(b);
 }
 
-inline IOMode IODevice::mode() const {
+[[nodiscard]] inline IOMode IODevice::mode() const {
   return m_mode;
 }
 
-inline bool IODevice::isOpen() const {
+[[nodiscard]] inline bool IODevice::isOpen() const {
   return m_mode != IOMode::Closed;
 }
 
-inline bool IODevice::isReadable() const {
+[[nodiscard]] inline bool IODevice::isReadable() const {
   return m_mode & IOMode::Read;
 }
 
-inline bool IODevice::isWritable() const {
+[[nodiscard]] inline bool IODevice::isWritable() const {
   return m_mode & IOMode::Write;
 }
 

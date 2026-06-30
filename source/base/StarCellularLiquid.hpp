@@ -32,13 +32,13 @@ template <typename LiquidId>
 struct CellularLiquidWorld {
   virtual ~CellularLiquidWorld();
 
-  virtual Vec2I uniqueLocation(Vec2I const& location) const;
+  [[nodiscard]] virtual Vec2I uniqueLocation(Vec2I const& location) const;
 
-  virtual CellularLiquidCell<LiquidId> cell(Vec2I const& location) const = 0;
+  [[nodiscard]] virtual CellularLiquidCell<LiquidId> cell(Vec2I const& location) const = 0;
 
   // Should return an amount between 0.0 and 1.0 as a percentage of liquid
   // drain at this position
-  virtual float drainLevel(Vec2I const& location) const;
+  [[nodiscard]] virtual float drainLevel(Vec2I const& location) const;
 
   // Will be called only on cells which for which the cell method returned a
   // flow cell, to update the flow cell.
@@ -75,12 +75,12 @@ public:
 
   LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld);
 
-  unsigned liquidTickDelta(LiquidId liquid);
+  [[nodiscard]] unsigned liquidTickDelta(LiquidId liquid) const;
   void setLiquidTickDelta(LiquidId liquid, unsigned tickDelta);
 
   void setProcessingLimit(Maybe<unsigned> processingLimit);
 
-  List<RectI> noProcessingLimitRegions() const;
+  [[nodiscard]] List<RectI> noProcessingLimitRegions() const;
   void setNoProcessingLimitRegions(List<RectI> noProcessingLimitRegions);
 
   void visitLocation(Vec2I const& location);
@@ -88,9 +88,9 @@ public:
 
   void update();
 
-  size_t activeCells() const;
-  size_t activeCells(LiquidId liquid) const;
-  bool isActive(Vec2I const& pos) const;
+  [[nodiscard]] size_t activeCells() const;
+  [[nodiscard]] size_t activeCells(LiquidId liquid) const;
+  [[nodiscard]] bool isActive(Vec2I const& pos) const;
 
 private:
   enum class Adjacency {
@@ -132,8 +132,8 @@ private:
   void findInteractions();
   void finish();
 
-  WorkingCell* workingCell(Vec2I p);
-  WorkingCell* adjacentCell(WorkingCell* cell, Adjacency adjacency);
+  [[nodiscard]] WorkingCell* workingCell(Vec2I p);
+  [[nodiscard]] WorkingCell* adjacentCell(WorkingCell* cell, Adjacency adjacency);
 
   void setPressure(float pressure, WorkingCell& cell);
   void transferPressure(float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse);
@@ -161,12 +161,12 @@ template <typename LiquidId>
 CellularLiquidWorld<LiquidId>::~CellularLiquidWorld() = default;
 
 template <typename LiquidId>
-Vec2I CellularLiquidWorld<LiquidId>::uniqueLocation(Vec2I const& location) const {
+[[nodiscard]] Vec2I CellularLiquidWorld<LiquidId>::uniqueLocation(Vec2I const& location) const {
   return location;
 }
 
 template <typename LiquidId>
-float CellularLiquidWorld<LiquidId>::drainLevel(Vec2I const&) const {
+[[nodiscard]] float CellularLiquidWorld<LiquidId>::drainLevel(Vec2I const&) const {
   return 0.0f;
 }
 
@@ -181,7 +181,7 @@ LiquidCellEngine<LiquidId>::LiquidCellEngine(LiquidCellEngineParameters paramete
     : m_engineParameters(parameters), m_cellWorld(cellWorld) {}
 
 template <typename LiquidId>
-unsigned LiquidCellEngine<LiquidId>::liquidTickDelta(LiquidId liquid) {
+[[nodiscard]] unsigned LiquidCellEngine<LiquidId>::liquidTickDelta(LiquidId liquid) const {
   return m_liquidTickDeltas.value(liquid, 1);
 }
 
@@ -196,7 +196,7 @@ void LiquidCellEngine<LiquidId>::setProcessingLimit(Maybe<unsigned> processingLi
 }
 
 template <typename LiquidId>
-List<RectI> LiquidCellEngine<LiquidId>::noProcessingLimitRegions() const {
+[[nodiscard]] List<RectI> LiquidCellEngine<LiquidId>::noProcessingLimitRegions() const {
   return m_noProcessingLimitRegions;
 }
 
@@ -234,7 +234,7 @@ void LiquidCellEngine<LiquidId>::update() {
 }
 
 template <typename LiquidId>
-size_t LiquidCellEngine<LiquidId>::activeCells() const {
+[[nodiscard]] size_t LiquidCellEngine<LiquidId>::activeCells() const {
   size_t totalSize = 0;
   for (auto const& [_, activeCells] : m_activeCells)
     totalSize += activeCells.size();
@@ -242,12 +242,12 @@ size_t LiquidCellEngine<LiquidId>::activeCells() const {
 }
 
 template <typename LiquidId>
-size_t LiquidCellEngine<LiquidId>::activeCells(LiquidId liquid) const {
+[[nodiscard]] size_t LiquidCellEngine<LiquidId>::activeCells(LiquidId liquid) const {
   return m_activeCells.value(liquid).size();
 }
 
 template <typename LiquidId>
-bool LiquidCellEngine<LiquidId>::isActive(Vec2I const& pos) const {
+[[nodiscard]] bool LiquidCellEngine<LiquidId>::isActive(Vec2I const& pos) const {
   for (auto const& [_, activeCells] : m_activeCells) {
     if (activeCells.contains(pos))
       return true;
@@ -526,7 +526,7 @@ void LiquidCellEngine<LiquidId>::finish() {
 }
 
 template <typename LiquidId>
-typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
+[[nodiscard]] typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
   p = m_cellWorld->uniqueLocation(p);
 
   auto res = m_workingCells.insert(pair<Vec2I, Maybe<WorkingCell>>{p, Maybe<WorkingCell>()});
@@ -541,7 +541,7 @@ typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::wo
 }
 
 template <typename LiquidId>
-typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::adjacentCell(
+[[nodiscard]] typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::adjacentCell(
   WorkingCell* cell, Adjacency adjacency) {
   auto getCell = [this](WorkingCell*& cellptr, Vec2I cellPos) {
     if (cellptr)

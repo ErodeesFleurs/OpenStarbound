@@ -14,8 +14,8 @@ public:
   PacketPool(PacketPool const&) = delete;
   PacketPool& operator=(PacketPool const&) = delete;
 
-  T* acquire() {
-    SpinLocker locker(m_lock);
+  [[nodiscard]] T* acquire() {
+    [[nodiscard]] SpinLocker locker(m_lock);
     if (m_freeList) {
       auto* p = m_freeList;
       m_freeList = *reinterpret_cast<void**>(m_freeList);
@@ -28,14 +28,14 @@ public:
 
   void release(T* p) {
     p->~T();
-    SpinLocker locker(m_lock);
+    [[nodiscard]] SpinLocker locker(m_lock);
       *reinterpret_cast<void**>(p) = m_freeList;
     m_freeList = p;
     ++m_allocCount;
   }
 
   void reserve(size_t count) {
-    SpinLocker locker(m_lock);
+    [[nodiscard]] SpinLocker locker(m_lock);
     for (size_t i = 0; i < count; ++i) {
       auto* p = Star::malloc(sizeof(T));
     *reinterpret_cast<void**>(p) = m_freeList;
@@ -44,7 +44,7 @@ public:
     }
   }
 
-  size_t allocated() const {
+  [[nodiscard]] size_t allocated() const {
     return m_allocCount.load();
   }
 
@@ -55,13 +55,13 @@ private:
 };
 
 template <typename T>
-PacketPool<T>& packetPool() {
+[[nodiscard]] PacketPool<T>& packetPool() {
   static PacketPool<T> pool;
   return pool;
 }
 
 template <typename T, typename... Args>
-std::shared_ptr<T> makePooled(Args&&... args) {
+[[nodiscard]] std::shared_ptr<T> makePooled(Args&&... args) {
   auto& pool = packetPool<T>();
   void* mem = pool.acquire();
   ::new (mem) T(std::forward<Args>(args)...);

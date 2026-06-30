@@ -14,9 +14,9 @@ public:
   explicit GuiReader(GuiContext& context);
 
 protected:
-  WidgetConstructResult titleHandler(String const&, Json const& config);
-  WidgetConstructResult paneFeatureHandler(String const&, Json const& config);
-  WidgetConstructResult backgroundHandler(String const&, Json const& config);
+  [[nodiscard]] WidgetConstructResult titleHandler(String const&, Json const& config);
+  [[nodiscard]] WidgetConstructResult paneFeatureHandler(String const&, Json const& config);
+  [[nodiscard]] WidgetConstructResult backgroundHandler(String const&, Json const& config);
 };
 
 }

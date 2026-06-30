@@ -238,7 +238,7 @@ void Sha256Hasher::push(ByteArray const& data) {
   push(data.ptr(), data.size());
 }
 
-ByteArray Sha256Hasher::compute() {
+[[nodiscard]] ByteArray Sha256Hasher::compute() {
   ByteArray dest(32, 0);
   sha_done(&m_state, reinterpret_cast<uint8_t*>(dest.ptr()));
   m_finished = true;
@@ -257,7 +257,7 @@ void sha256(char const* source, size_t length, char* hashDestination) {
   sha_done(&state, reinterpret_cast<uint8_t*>(hashDestination));
 }
 
-ByteArray sha256(char const* source, size_t length) {
+[[nodiscard]] ByteArray sha256(char const* source, size_t length) {
   ByteArray dest(32, 0);
   sha256(source, length, dest.ptr());
   return dest;
@@ -273,11 +273,11 @@ void sha256(String const& in, ByteArray& out) {
   sha256(in.utf8Ptr(), in.utf8Size(), out.ptr());
 }
 
-ByteArray sha256(ByteArray const& in) {
+[[nodiscard]] ByteArray sha256(ByteArray const& in) {
   return sha256(in.ptr(), in.size());
 }
 
-ByteArray sha256(String const& in) {
+[[nodiscard]] ByteArray sha256(String const& in) {
   return sha256(in.utf8Ptr(), in.utf8Size());
 }
 

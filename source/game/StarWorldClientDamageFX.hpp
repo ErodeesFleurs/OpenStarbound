@@ -22,7 +22,7 @@ public:
     EntityId sourceEntityId;
     EntityId targetEntityId;
 
-    bool operator<(DamageNumberKey const& other) const;
+    [[nodiscard]] bool operator<(DamageNumberKey const& other) const;
   };
 
   explicit StarWorldClientDamageFX(WorldClient& worldClient);

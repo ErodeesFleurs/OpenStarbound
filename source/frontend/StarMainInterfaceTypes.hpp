@@ -51,7 +51,7 @@ extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
 using MainInterfacePaneManager = RegisteredPaneManager<MainInterfacePanes>;
 
 struct MainInterfaceConfig {
-  static MainInterfaceConfigPtr loadFromAssets(MainInterfaceConfigServices services);
+  [[nodiscard]] static MainInterfaceConfigPtr loadFromAssets(MainInterfaceConfigServices services);
 
   TextStyle textStyle;
 

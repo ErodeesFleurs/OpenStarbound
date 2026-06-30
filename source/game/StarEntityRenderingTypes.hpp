@@ -36,7 +36,7 @@ EntityRenderLayer const RenderLayerForegroundOverlay = 20 << RenderLayerLowerBit
 EntityRenderLayer const RenderLayerFrontParticle = 21 << RenderLayerLowerBits;
 EntityRenderLayer const RenderLayerOverlay = 22 << RenderLayerLowerBits;
 
-EntityRenderLayer parseRenderLayer(String renderLayer);
+[[nodiscard]] EntityRenderLayer parseRenderLayer(String renderLayer);
 
 struct PreviewTile {
   PreviewTile() = default;

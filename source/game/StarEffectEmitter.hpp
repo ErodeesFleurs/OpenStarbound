@@ -25,7 +25,7 @@ public:
 
   void render(RenderCallback* renderCallback, ParticleDatabaseConstPtr particleDatabase);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
   void fromJson(Json const& diskStore);
 
 private:

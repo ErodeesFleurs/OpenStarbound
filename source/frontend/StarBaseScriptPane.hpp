@@ -40,19 +40,19 @@ public:
 
   void tick(float dt) override;
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   
-  Json const& config() const;
-  Json const& rawConfig() const;
+  [[nodiscard]] Json const& config() const;
+  [[nodiscard]] Json const& rawConfig() const;
 
-  bool interactive() const override;
+  [[nodiscard]] bool interactive() const override;
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
-  Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
+  [[nodiscard]] Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
 
 protected:
-  GuiReaderPtr reader() override;
+  [[nodiscard]] GuiReaderPtr reader() override;
   void construct(Json config);
 
   Json m_config;

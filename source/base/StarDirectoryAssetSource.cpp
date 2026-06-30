@@ -31,26 +31,26 @@ DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringLi
   m_assetPaths.sort();
 }
 
-JsonObject DirectoryAssetSource::metadata() const {
+[[nodiscard]] JsonObject DirectoryAssetSource::metadata() const {
   return m_metadata;
 }
 
-StringList DirectoryAssetSource::assetPaths() const {
+[[nodiscard]] StringList DirectoryAssetSource::assetPaths() const {
   return m_assetPaths;
 }
 
-IODevicePtr DirectoryAssetSource::open(String const& path) {
+[[nodiscard]] IODevicePtr DirectoryAssetSource::open(String const& path) {
   auto file = make_shared<File>(toFilesystem(path));
   file->open(IOMode::Read);
   return file;
 }
 
-ByteArray DirectoryAssetSource::read(String const& path) {
+[[nodiscard]] ByteArray DirectoryAssetSource::read(String const& path) {
   auto device = open(path);
   return device->readBytes(device->size());
 }
 
-String DirectoryAssetSource::toFilesystem(String const& path) const {
+[[nodiscard]] String DirectoryAssetSource::toFilesystem(String const& path) const {
   if (!path.beginsWith("/"))
     throw AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path);
   else

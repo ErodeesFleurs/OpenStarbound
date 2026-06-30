@@ -43,13 +43,13 @@ public:
 
   StoredFunction(ParametricFunction<double, double> data);
 
-  Monotonicity monotonicity() const;
+  [[nodiscard]] Monotonicity monotonicity() const;
 
-  double evaluate(double input) const;
+  [[nodiscard]] double evaluate(double input) const;
 
   // Search for the input which would give the target value.  Will only work if
   // the function Monotonicity is Increasing or Decreasing.
-  SearchResult search(double targetValue, double valueTolerance = DefaultSearchTolerance) const;
+  [[nodiscard]] SearchResult search(double targetValue, double valueTolerance = DefaultSearchTolerance) const;
 
 private:
   Monotonicity m_monotonicity;
@@ -61,7 +61,7 @@ class StoredFunction2 {
 public:
   StoredFunction2(MultiTable2D table);
 
-  double evaluate(double x, double y) const;
+  [[nodiscard]] double evaluate(double x, double y) const;
 
 private:
   MultiTable2D table;
@@ -72,7 +72,7 @@ class StoredConfigFunction {
 public:
   StoredConfigFunction(ParametricTable<int, Json> data);
 
-  Json get(double input) const;
+  [[nodiscard]] Json get(double input) const;
 
 private:
   ParametricTable<int, Json> m_data;
@@ -82,20 +82,20 @@ class FunctionDatabase {
 public:
   FunctionDatabase(AssetsConstPtr assets);
 
-  StringList namedFunctions() const;
-  StringList namedFunctions2() const;
-  StringList namedConfigFunctions() const;
+  [[nodiscard]] StringList namedFunctions() const;
+  [[nodiscard]] StringList namedFunctions2() const;
+  [[nodiscard]] StringList namedConfigFunctions() const;
 
   // If configOrName is a string, loads the named function.  If it is an inline
   // config, reads the inline config.
-  StoredFunctionPtr function(Json const& configOrName) const;
-  StoredFunction2Ptr function2(Json const& configOrName) const;
-  StoredConfigFunctionPtr configFunction(Json const& configOrName) const;
+  [[nodiscard]] StoredFunctionPtr function(Json const& configOrName) const;
+  [[nodiscard]] StoredFunction2Ptr function2(Json const& configOrName) const;
+  [[nodiscard]] StoredConfigFunctionPtr configFunction(Json const& configOrName) const;
 
 private:
-  static ParametricFunction<double, double> parametricFunctionFromConfig(Json descriptor);
-  static ParametricTable<int, Json> parametricTableFromConfig(Json descriptor);
-  static MultiTable2D multiTable2DFromConfig(Json descriptor);
+  [[nodiscard]] static ParametricFunction<double, double> parametricFunctionFromConfig(Json descriptor);
+  [[nodiscard]] static ParametricTable<int, Json> parametricTableFromConfig(Json descriptor);
+  [[nodiscard]] static MultiTable2D multiTable2DFromConfig(Json descriptor);
 
   StringMap<StoredFunctionPtr> m_functions;
   StringMap<StoredFunction2Ptr> m_functions2;

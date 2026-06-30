@@ -17,9 +17,9 @@ public:
   SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile, VersioningDatabaseConstPtr versioningDatabase);
   ~SystemWorldServerThread();
 
-  Vec3I location() const;
+  [[nodiscard]] Vec3I location() const;
 
-  List<ConnectionId> clients();
+  [[nodiscard]] List<ConnectionId> clients();
   void addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location);
   void removeClient(ConnectionId clientId);
 
@@ -32,16 +32,16 @@ public:
   void setClientDestination(ConnectionId clientId, SystemLocation const& location);
   void executeClientShipAction(ConnectionId clientId, ClientShipAction action);
 
-  SystemLocation clientShipLocation(ConnectionId clientId);
-  Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
-  SkyParameters clientSkyParameters(ConnectionId clientId);
+  [[nodiscard]] SystemLocation clientShipLocation(ConnectionId clientId);
+  [[nodiscard]] Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
+  [[nodiscard]] SkyParameters clientSkyParameters(ConnectionId clientId);
 
-  List<InstanceWorldId> activeInstanceWorlds() const;
+  [[nodiscard]] List<InstanceWorldId> activeInstanceWorlds() const;
 
   // callback to be run after update in the server thread
   void setUpdateAction(function<void(SystemWorldServerThread*)> updateAction);
   void pushIncomingPacket(ConnectionId clientId, PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  [[nodiscard]] List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
 
   void store();
 

@@ -30,14 +30,14 @@ public:
   void init(CollisionKindAccessor accessor) { m_accessor = std::move(accessor); }
 
   // Get collision geometry for the given block region.
-  List<CollisionBlock> getBlocks(RectI const& region) const;
+  [[nodiscard]] List<CollisionBlock> getBlocks(RectI const& region) const;
 
 private:
   void getBlocksPlatforms(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
   void getBlocksMarchingSquares(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
 
   void populateCollisionBuffer(RectI const& region) const;
-  CollisionKind collisionKind(int x, int y) const;
+  [[nodiscard]] CollisionKind collisionKind(int x, int y) const;
 
   CollisionKindAccessor m_accessor;
 

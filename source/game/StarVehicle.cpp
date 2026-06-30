@@ -448,11 +448,11 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
   return InteractAction();
 }
 
-size_t Vehicle::anchorCount() const {
+[[nodiscard]] size_t Vehicle::anchorCount() const {
   return m_loungePositions.size();
 }
 
-LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
+[[nodiscard]] LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
   auto const& positionConfig = m_loungePositions.valueAt(positionIndex);
   if (!positionConfig.enabled.get())
     return {};
@@ -498,7 +498,7 @@ void Vehicle::loungeAim(size_t index, Vec2F const& aimPosition) {
     loungePosition.masterAimPosition = aimPosition;
 }
 
-List<PhysicsForceRegion> Vehicle::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> Vehicle::forceRegions() const {
   List<PhysicsForceRegion> forces;
   for (auto const& [_, forceRegionConfig] : m_forceRegions) {
     if (forceRegionConfig.enabled.get()) {
@@ -538,11 +538,11 @@ List<DamageSource> Vehicle::damageSources() const {
   return sources;
 }
 
-size_t Vehicle::movingCollisionCount() const {
+[[nodiscard]] size_t Vehicle::movingCollisionCount() const {
   return m_movingCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) const {
+[[nodiscard]] Maybe<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) const {
   auto const& collisionConfig = m_movingCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

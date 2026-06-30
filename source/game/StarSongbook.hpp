@@ -32,12 +32,12 @@ public:
 
   void stop();
   void play(Json const& song, String const& timeSource);
-  bool active() const;
-  bool instrumentPlaying() const;
+  [[nodiscard]] bool active() const;
+  [[nodiscard]] bool instrumentPlaying() const;
 
-  Maybe<String> timeSource() const;
-  Maybe<String> instrument() const;
-  Json song() const;
+  [[nodiscard]] Maybe<String> timeSource() const;
+  [[nodiscard]] Maybe<String> instrument() const;
+  [[nodiscard]] Json song() const;
 
 private:
   struct Note {
@@ -67,8 +67,8 @@ private:
     int64_t epoch;
   };
 
-  static double fundamentalFrequency(double p);
-  static double fundamentalPitch(double p);
+  [[nodiscard]] static double fundamentalFrequency(double p);
+  [[nodiscard]] static double fundamentalPitch(double p);
 
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
@@ -101,11 +101,11 @@ private:
 
   List<AudioInstancePtr> m_pendingAudio;
 
-  List<Note> parseABC(String const& abc);
+  [[nodiscard]] List<Note> parseABC(String const& abc);
 
   StringMap<Map<int, NoteMapping>> m_noteMapping;
 
-  NoteMapping& noteMapping(String const& instrument, String const& species, int note);
+  [[nodiscard]] NoteMapping& noteMapping(String const& instrument, String const& species, int note);
 
   StringMap<AudioConstPtr> m_uncompressedSamples;
 

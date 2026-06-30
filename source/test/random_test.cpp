@@ -20,7 +20,7 @@ TEST(RandTest, All) {
   EXPECT_EQ(rand.randu32(), 265077625u);
 
   for (auto i = 0; i < 1e5; ++i)
-    rand.randu32();
+    (void)rand.randu32();
 
   EXPECT_EQ(rand.randu32(), 724230938u);
 

@@ -9,7 +9,7 @@ class TeleporterObject : public Object, public WarpTargetEntity {
 public:
   TeleporterObject(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
 
-  Vec2F footPosition() const override;
+  [[nodiscard]] Vec2F footPosition() const override;
 };
 
 }

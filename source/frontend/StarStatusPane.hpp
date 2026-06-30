@@ -26,7 +26,7 @@ class StatusPane : public Pane {
 public:
   StatusPane(UniverseClientPtr client, StatusPaneServices services);
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
 protected:
   void renderImpl() override;

@@ -31,7 +31,7 @@ struct SkyParameters {
   SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
   explicit SkyParameters(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   void read(DataStream& ds);
   void write(DataStream& ds) const;

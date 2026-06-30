@@ -58,7 +58,7 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
       }
       if (!configValue("treasurePools").isNull()) {
         String treasurePool = Random::randValueFrom(configValue("treasurePools").toArray()).toString();
-        world->treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
+        (void)world->treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
       }
       itemsUpdated();
     }
@@ -204,26 +204,26 @@ InteractAction ContainerObject::interact(InteractRequest const&) {
   return InteractAction(InteractActionType::OpenContainer, entityId(), Json());
 }
 
-Json ContainerObject::containerGuiConfig() const {
+[[nodiscard]] Json ContainerObject::containerGuiConfig() const {
   return config()->assets->json(configValue("uiConfig").toString().replace("<slots>", toString(m_items->size())));
 }
 
-String ContainerObject::containerDescription() const {
+[[nodiscard]] String ContainerObject::containerDescription() const {
   return Object::shortDescription();
 }
 
-String ContainerObject::containerSubTitle() const {
+[[nodiscard]] String ContainerObject::containerSubTitle() const {
   Json categories = config()->assets->json("/items/categories.config:labels");
   return categories.getString(Object::category(), Object::category());
 }
 
-ItemDescriptor ContainerObject::iconItem() const {
+[[nodiscard]] ItemDescriptor ContainerObject::iconItem() const {
   if (configValue("hasWindowIcon", true).toBool())
     return ItemDescriptor(name(), 1);
   return {};
 }
 
-ItemBagConstPtr ContainerObject::itemBag() const {
+[[nodiscard]] ItemBagConstPtr ContainerObject::itemBag() const {
   return m_items;
 }
 
@@ -329,7 +329,7 @@ RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
   }
 }
 
-bool ContainerObject::isCrafting() const {
+[[nodiscard]] bool ContainerObject::isCrafting() const {
   return m_crafting.get();
 }
 
@@ -360,7 +360,7 @@ void ContainerObject::stopCrafting() {
   }
 }
 
-float ContainerObject::craftingProgress() const {
+[[nodiscard]] float ContainerObject::craftingProgress() const {
   if (!isCrafting())
     return 1;
   return clamp(m_craftingProgress.get(), 0.0f, 1.0f);
@@ -387,7 +387,7 @@ void ContainerObject::burnContainerContents() {
           auto itemsToConsume = min<uint64_t>((leftToFill + fuelSingle - 1) / fuelSingle, item->count());
           level = min(maxLevel, level + fuelSingle * itemsToConsume);
           [[maybe_unused]] auto consumed = item->consume(itemsToConsume);
-          starAssert(consumed);
+          assert(consumed);
         }
       }
     }
@@ -486,7 +486,7 @@ void ContainerObject::tickCrafting(float dt) {
     m_craftingProgress.set(0);
     for (auto const& input : m_goalRecipe.inputs) {
       [[maybe_unused]] bool consumed = m_items->consumeItems(input);
-      starAssert(consumed);
+      assert(consumed);
     }
     ItemPtr overflow = m_items->putItems(m_items->size() - 1, m_itemDatabase->item(m_goalRecipe.output));
     if (overflow)

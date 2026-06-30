@@ -22,7 +22,7 @@ struct EntityAnchorState {
   EntityId entityId;
   size_t positionIndex;
 
-  bool operator==(EntityAnchorState const& eas) const;
+  [[nodiscard]] bool operator==(EntityAnchorState const& eas) const;
 };
 
 DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState);
@@ -30,8 +30,8 @@ DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
 
 class AnchorableEntity : public virtual Entity {
 public:
-  virtual size_t anchorCount() const = 0;
-  virtual EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] virtual size_t anchorCount() const = 0;
+  [[nodiscard]] virtual EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const = 0;
 };
 
 }

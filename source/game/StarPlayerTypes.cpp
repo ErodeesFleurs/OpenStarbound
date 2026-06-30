@@ -42,7 +42,7 @@ ShipUpgrades::ShipUpgrades(Json config) {
   capabilities.addAll(jsonToStringList(config.get("capabilities", JsonArray{})));
 }
 
-Json ShipUpgrades::toJson() const {
+[[nodiscard]] Json ShipUpgrades::toJson() const {
   return JsonObject{{"shipLevel", shipLevel},
       {"maxFuel", maxFuel},
       {"crewSize", crewSize},
@@ -62,7 +62,7 @@ ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
   return *this;
 }
 
-bool ShipUpgrades::operator==(ShipUpgrades const& rhs) const {
+[[nodiscard]] bool ShipUpgrades::operator==(ShipUpgrades const& rhs) const {
   return tie(shipLevel, maxFuel, crewSize, fuelEfficiency, shipSpeed, capabilities)
       == tie(rhs.shipLevel, rhs.maxFuel, rhs.crewSize, rhs.fuelEfficiency, rhs.shipSpeed, rhs.capabilities);
 }

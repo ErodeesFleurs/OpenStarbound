@@ -17,8 +17,8 @@ public:
       ImageStretchSet const& pressed = ImageStretchSet());
   void setImages(Json const& images);
 
-  bool isHovered() const;
-  bool isPressed() const;
+  [[nodiscard]] bool isHovered() const;
+  [[nodiscard]] bool isPressed() const;
 
   void setHovered(bool hovered);
   void setPressed(bool pressed);
@@ -26,7 +26,7 @@ public:
   void mouseOver() override;
   void mouseOut() override;
 
-  Vec2U baseSize() const;
+  [[nodiscard]] Vec2U baseSize() const;
 
 protected:
   void renderImpl() override;
@@ -51,15 +51,15 @@ public:
 
   void setButtonImages(Json const& images);
 
-  int trackSize() const;
-  float sizeRatio() const;
-  Vec2I size() const override;
-  float scrollRatio() const;
-  Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
+  [[nodiscard]] int trackSize() const;
+  [[nodiscard]] float sizeRatio() const;
+  [[nodiscard]] Vec2I size() const override;
+  [[nodiscard]] float scrollRatio() const;
+  [[nodiscard]] Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
 
-  ButtonWidgetPtr forwardButton() const;
-  ButtonWidgetPtr backwardButton() const;
-  ScrollThumbPtr thumb() const;
+  [[nodiscard]] ButtonWidgetPtr forwardButton() const;
+  [[nodiscard]] ButtonWidgetPtr backwardButton() const;
+  [[nodiscard]] ScrollThumbPtr thumb() const;
 
 protected:
   void drawChildren() override;
@@ -82,32 +82,32 @@ public:
   void setButtonImages(Json const& images);
   void setThumbImages(Json const& images);
 
-  RectI contentBoundRect() const;
-  Vec2I contentSize() const;
+  [[nodiscard]] RectI contentBoundRect() const;
+  [[nodiscard]] Vec2I contentSize() const;
 
-  Vec2I areaSize() const;
+  [[nodiscard]] Vec2I areaSize() const;
 
   void scrollAreaBy(Vec2I const& offset);
 
-  Vec2I scrollOffset() const;
-  Vec2I maxScrollPosition() const;
+  [[nodiscard]] Vec2I scrollOffset() const;
+  [[nodiscard]] Vec2I maxScrollPosition() const;
 
-  bool horizontalScroll() const;
+  [[nodiscard]] bool horizontalScroll() const;
   void setHorizontalScroll(bool horizontal);
 
-  bool verticalScroll() const;
+  [[nodiscard]] bool verticalScroll() const;
   void setVerticalScroll(bool vertical);
 
   void setUpdatesChildren(bool slop);
 
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;
 
 protected:
   void drawChildren() override;
 
 private:
-  int advanceFactorHelper();
+  [[nodiscard]] int advanceFactorHelper();
 
   int m_buttonAdvance;
   int64_t m_advanceLimiter;

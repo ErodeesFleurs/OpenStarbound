@@ -13,16 +13,16 @@ public:
 
   explicit StarWorldClientAudio(WorldClient& worldClient);
 
-  Vec2I environmentBiomeTrackPosition() const;
-  AmbientNoisesDescriptionPtr currentAmbientNoises() const;
-  AmbientNoisesDescriptionPtr currentMusicTrack() const;
-  AmbientNoisesDescriptionPtr currentAltMusicTrack() const;
+  [[nodiscard]] Vec2I environmentBiomeTrackPosition() const;
+  [[nodiscard]] AmbientNoisesDescriptionPtr currentAmbientNoises() const;
+  [[nodiscard]] AmbientNoisesDescriptionPtr currentMusicTrack() const;
+  [[nodiscard]] AmbientNoisesDescriptionPtr currentAltMusicTrack() const;
 
   void playAltMusic(StringList const& newTracks, float fadeTime, int loops = -1);
   void stopAltMusic(float fadeTime);
 
-  List<AudioInstancePtr> pullPendingAudio();
-  List<AudioInstancePtr> pullPendingMusic();
+  [[nodiscard]] List<AudioInstancePtr> pullPendingAudio();
+  [[nodiscard]] List<AudioInstancePtr> pullPendingMusic();
 
 private:
   WorldClient& m_worldClient;

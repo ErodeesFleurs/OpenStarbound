@@ -9,7 +9,7 @@ namespace Star {
 class NetworkedAnimator;
 
 namespace LuaBindings {
-  LuaCallbacks makeNetworkedAnimatorCallbacks(NetworkedAnimator& networkedAnimator);
+  [[nodiscard]] LuaCallbacks makeNetworkedAnimatorCallbacks(NetworkedAnimator& networkedAnimator);
 }
 
 }

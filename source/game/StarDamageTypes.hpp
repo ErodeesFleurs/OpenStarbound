@@ -42,11 +42,11 @@ struct EntityDamageTeam {
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
   explicit EntityDamageTeam(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  bool canDamage(EntityDamageTeam victim, bool victimIsSelf) const;
+  [[nodiscard]] bool canDamage(EntityDamageTeam victim, bool victimIsSelf) const;
 
-  bool operator==(EntityDamageTeam const& rhs) const;
+  [[nodiscard]] bool operator==(EntityDamageTeam const& rhs) const;
 
   TeamType type = TeamType::Null;
   TeamNumber team = 0;
@@ -54,5 +54,5 @@ struct EntityDamageTeam {
 DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team);
 DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);
 
-TeamNumber soloPvpTeam(ConnectionId clientId);
+[[nodiscard]] TeamNumber soloPvpTeam(ConnectionId clientId);
 }

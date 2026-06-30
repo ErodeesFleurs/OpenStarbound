@@ -17,8 +17,8 @@ class CodexDatabase {
 public:
   CodexDatabase(AssetsConstPtr assets);
 
-  StringMap<CodexConstPtr> codexes() const;
-  CodexConstPtr codex(String const& codexId) const;
+  [[nodiscard]] StringMap<CodexConstPtr> codexes() const;
+  [[nodiscard]] CodexConstPtr codex(String const& codexId) const;
 
 private:
   StringMap<CodexConstPtr> m_codexes;

@@ -26,22 +26,22 @@ public:
   Lightmap& operator=(Lightmap const& lightMap);
   Lightmap& operator=(Lightmap&& lightMap) noexcept;
 
-  operator ImageView();
+  [[nodiscard]] operator ImageView();
 
   void set(unsigned x, unsigned y, float v);
   void set(unsigned x, unsigned y, Vec3F const& v);
   void add(unsigned x, unsigned y, Vec3F const& v);
-  Vec3F get(unsigned x, unsigned y) const;
+  [[nodiscard]] Vec3F get(unsigned x, unsigned y) const;
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
-  Vec2U size() const;
-  unsigned width() const;
-  unsigned height() const;
-  float* data();
+  [[nodiscard]] Vec2U size() const;
+  [[nodiscard]] unsigned width() const;
+  [[nodiscard]] unsigned height() const;
+  [[nodiscard]] float* data();
 
 private:
-  size_t len() const;
+  [[nodiscard]] size_t len() const;
 
   std::unique_ptr<float[]> m_data;
   unsigned m_width = 0;
@@ -79,7 +79,7 @@ inline void Lightmap::add(unsigned x, unsigned y, Vec3F const& v) {
   ptr[2] += v.z();
 }
 
-inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
+[[nodiscard]] inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   if (x >= m_width || y >= m_height) {
     throw LightmapException(strf("[{}, {}] out of range in Lightmap::get", x, y));
     return Vec3F();
@@ -88,19 +88,19 @@ inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   return Vec3F(ptr[0], ptr[1], ptr[2]);
 }
 
-inline bool Lightmap::empty() const {
+[[nodiscard]] inline bool Lightmap::empty() const {
   return m_width == 0 || m_height == 0;
 }
 
-inline Vec2U Lightmap::size() const {
+[[nodiscard]] inline Vec2U Lightmap::size() const {
   return {m_width, m_height};
 }
 
-inline unsigned Lightmap::width() const {
+[[nodiscard]] inline unsigned Lightmap::width() const {
   return m_width;
 }
 
-inline unsigned Lightmap::height() const {
+[[nodiscard]] inline unsigned Lightmap::height() const {
   return m_height;
 }
 
@@ -108,7 +108,7 @@ inline float* Lightmap::data() {
   return m_data.get();
 }
 
-inline size_t Lightmap::len() const {
+[[nodiscard]] inline size_t Lightmap::len() const {
   return m_width * m_height * 3;
 }
 
@@ -131,9 +131,9 @@ public:
   // Once begin is called, this will return the region that could possibly
   // affect the target calculation region.  All lighting values should be set
   // for the given calculation region before calling 'calculate'.
-  RectI calculationRegion() const;
+  [[nodiscard]] RectI calculationRegion() const;
 
-  size_t baseIndexFor(Vec2I const& position);
+  [[nodiscard]] size_t baseIndexFor(Vec2I const& position) const;
 
   void setCellIndex(size_t cellIndex, Vec3F const& light, bool obstacle);
 
@@ -168,7 +168,7 @@ public:
 
   void begin(Vec2F const& queryPosition);
 
-  RectI calculationRegion() const;
+  [[nodiscard]] RectI calculationRegion() const;
 
   void setCell(Vec2I const& position, Cell const& cell);
   void setCellColumn(Vec2I const& position, Cell const* cells, size_t count);
@@ -176,7 +176,7 @@ public:
   void addSpreadLight(Vec2F const& position, float light);
   void addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience);
 
-  float calculate();
+  [[nodiscard]] float calculate();
 
 private:
   ScalarCellularLightArray m_lightArray;
@@ -185,7 +185,7 @@ private:
   RectI m_calculationRegion;
 };
 
-inline size_t CellularLightingCalculator::baseIndexFor(Vec2I const& position) {
+[[nodiscard]] inline size_t CellularLightingCalculator::baseIndexFor(Vec2I const& position) const {
   return (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
 }
 

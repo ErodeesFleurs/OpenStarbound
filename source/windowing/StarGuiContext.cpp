@@ -289,14 +289,14 @@ void GuiContext::drawImageStretchSet(ImageStretchSet const& imageSet, RectF cons
     int position = 0;
     auto texSize = Vec2F(textureSize(imageSet.inner));
     if (direction == GuiDirection::Horizontal) {
-      starAssert(texSize[0] > 0);
+      assert(texSize[0] > 0);
       while (position < inner.width()) {
         RectF partialImage = RectF::withSize(Vec2F(), Vec2F(std::min(inner.width() - position, texSize[0]), texSize[1]));
         drawInterfaceQuad(imageSet.inner, partialImage, RectF::withSize(inner.min() + Vec2F(position, 0), partialImage.size()), color);
         position += partialImage.size()[0];
       }
     } else {
-      starAssert(texSize[1] > 0);
+      assert(texSize[1] > 0);
       while (position < inner.height()) {
         RectF partialImage = RectF::withSize(
             Vec2F(0, max(0.0f, texSize[1] - (inner.height() - position))),

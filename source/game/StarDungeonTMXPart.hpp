@@ -38,7 +38,7 @@ namespace Dungeon {
       size_t lastGid;
     };
 
-    static bool tilesetComparator(TilesetInfo const& a, TilesetInfo const& b);
+    [[nodiscard]] static bool tilesetComparator(TilesetInfo const& a, TilesetInfo const& b);
 
     // The default empty background tile has clear=true.  (If you use the pink
     // tile in the background, clear will be false instead.) Analogous to
@@ -79,8 +79,8 @@ namespace Dungeon {
       return m_layer;
     }
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
     RectI m_rect;
@@ -122,8 +122,8 @@ namespace Dungeon {
       return m_kind;
     }
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
     // "Tile Objects" in Tiled are objects that contain an image from a tileset,
@@ -133,14 +133,14 @@ namespace Dungeon {
       unsigned flipBits;
     };
 
-    static Vec2I getSize(Json const& tmx);
-    static Vec2I getImagePosition(Tiled::Properties const& properties);
-    static ObjectKind getObjectKind(Json const& tmx, Maybe<Json >const& objectProperties);
-    static Maybe<TileObjectInfo> getTileObjectInfo(Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer);
-    static TileLayer getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties);
+    [[nodiscard]] static Vec2I getSize(Json const& tmx);
+    [[nodiscard]] static Vec2I getImagePosition(Tiled::Properties const& properties);
+    [[nodiscard]] static ObjectKind getObjectKind(Json const& tmx, Maybe<Json >const& objectProperties);
+    [[nodiscard]] static Maybe<TileObjectInfo> getTileObjectInfo(Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer);
+    [[nodiscard]] static TileLayer getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties);
 
-    static Vec2I getPos(Json const& tmx);
-    static StarException tmxObjectError(Json const& tmx, String const& msg);
+    [[nodiscard]] static Vec2I getPos(Json const& tmx);
+    [[nodiscard]] static StarException tmxObjectError(Json const& tmx, String const& msg);
 
     RectI m_rect;
     Tiled::TileConstPtr m_tile;
@@ -158,10 +158,10 @@ namespace Dungeon {
       return m_objects;
     }
 
-    String name() const;
+    [[nodiscard]] String name() const;
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
 
   private:
     String m_name;
@@ -188,8 +188,8 @@ namespace Dungeon {
       return m_height;
     }
 
-    bool forEachTile(TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTile(TileCallback const& callback) const;
+    [[nodiscard]] bool forEachTileAt(Vec2I pos, TileCallback const& callback) const;
 
   private:
     List<TMXTileLayerPtr> m_tileLayers;
@@ -205,7 +205,7 @@ namespace Dungeon {
 
     void readAsset(String const& asset) override;
 
-    Vec2U size() const override;
+    [[nodiscard]] Vec2U size() const override;
 
     void forEachTile(TileCallback const& callback) const override;
     void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;

@@ -48,19 +48,19 @@ ScriptableThread::~ScriptableThread() {
   m_stop = true;
 
   m_scriptContexts.clear();
-  
-  join();
+
+  (void)join();
 }
 
 void ScriptableThread::start() {
   m_stop = false;
   m_errorOccurred = false;
-  Thread::start();
+  (void)Thread::start();
 }
 
 void ScriptableThread::stop() {
   m_stop = true;
-  Thread::join();
+  (void)Thread::join();
 }
 
 void ScriptableThread::setPause(bool pause) {

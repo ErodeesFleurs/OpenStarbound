@@ -10,7 +10,7 @@ struct PerlinSelector : TerrainSelector {
 
   PerlinSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   PerlinF function;
 

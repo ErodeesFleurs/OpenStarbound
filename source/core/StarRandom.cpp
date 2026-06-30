@@ -57,67 +57,67 @@ void RandomSource::addEntropy(uint64_t seed) {
     m_data[i] ^= 69069 * m_data[i - 2] + 362437;
 }
 
-uint32_t RandomSource::randu32() {
+[[nodiscard]] uint32_t RandomSource::randu32() {
   return gen32();
 }
 
-uint64_t RandomSource::randu64() {
+[[nodiscard]] uint64_t RandomSource::randu64() {
   uint64_t r = randu32();
   r = r << 32;
   r = r | randu32();
   return r;
 }
 
-int32_t RandomSource::randi32() {
+[[nodiscard]] int32_t RandomSource::randi32() {
   return static_cast<int32_t>(randu32());
 }
 
-int64_t RandomSource::randi64() {
+[[nodiscard]] int64_t RandomSource::randi64() {
   return static_cast<int64_t>(randu64());
 }
 
-float RandomSource::randf() {
+[[nodiscard]] float RandomSource::randf() {
   return (randu32() & 0x7fffffff) / 2147483648.0f;
 }
 
-double RandomSource::randd() {
+[[nodiscard]] double RandomSource::randd() {
   return (randu64() & 0x7fffffffffffffff) / 9223372036854775808.0;
 }
 
-int64_t RandomSource::randInt(int64_t max) {
+[[nodiscard]] int64_t RandomSource::randInt(int64_t max) {
   return randUInt(max);
 }
 
-uint64_t RandomSource::randUInt(uint64_t max) {
+[[nodiscard]] uint64_t RandomSource::randUInt(uint64_t max) {
   uint64_t denom = static_cast<uint64_t>(-1) / (static_cast<uint64_t>(max) + 1);
   return randu64() / denom;
 }
 
-int64_t RandomSource::randInt(int64_t min, int64_t max) {
+[[nodiscard]] int64_t RandomSource::randInt(int64_t min, int64_t max) {
   if (max < min)
     throw StarException("Maximum bound in randInt must be >= minimum bound!");
   return randInt(max - min) + min;
 }
 
-uint64_t RandomSource::randUInt(uint64_t min, uint64_t max) {
+[[nodiscard]] uint64_t RandomSource::randUInt(uint64_t min, uint64_t max) {
   if (max < min)
     throw StarException("Maximum bound in randUInt must be >= minimum bound!");
   return randUInt(max - min) + min;
 }
 
-float RandomSource::randf(float min, float max) {
+[[nodiscard]] float RandomSource::randf(float min, float max) {
   if (max < min)
     throw StarException("Maximum bound in randf must be >= minimum bound!");
   return randf() * (max - min) + min;
 }
 
-double RandomSource::randd(double min, double max) {
+[[nodiscard]] double RandomSource::randd(double min, double max) {
   if (max < min)
     throw StarException("Maximum bound in randd must be >= minimum bound!");
   return randd() * (max - min) + min;
 }
 
-bool RandomSource::randb() {
+[[nodiscard]] bool RandomSource::randb() {
   uint32_t v = gen32();
   bool parity = false;
   while (v) {
@@ -140,14 +140,14 @@ void RandomSource::randBytes(char* buf, size_t len) {
   }
 }
 
-ByteArray RandomSource::randBytes(size_t len) {
+[[nodiscard]] ByteArray RandomSource::randBytes(size_t len) {
   ByteArray array(len, 0);
   randBytes(array.ptr(), len);
   return array;
 }
 
 // normal distribution via Box-Muller
-float RandomSource::nrandf(float stddev, float mean) {
+[[nodiscard]] float RandomSource::nrandf(float stddev, float mean) {
   float rand1, rand2, distSqr;
   do {
     rand1 = 2 * randf() - 1;
@@ -159,7 +159,7 @@ float RandomSource::nrandf(float stddev, float mean) {
   return (rand1 * mapping * stddev + mean);
 }
 
-double RandomSource::nrandd(double stddev, double mean) {
+[[nodiscard]] double RandomSource::nrandd(double stddev, double mean) {
   double rand1, rand2, distSqr;
   do {
     rand1 = 2 * randd() - 1;
@@ -171,7 +171,7 @@ double RandomSource::nrandd(double stddev, double mean) {
   return (rand1 * mapping * stddev + mean);
 }
 
-int64_t RandomSource::stochasticRound(double val) {
+[[nodiscard]] int64_t RandomSource::stochasticRound(double val) {
   double fpart = val - floor(val);
   if (randd() < fpart)
     return ceil(val);
@@ -233,97 +233,97 @@ namespace Random {
     g_randSource->addEntropy(seed);
   }
 
-  uint32_t randu32() {
+  [[nodiscard]] uint32_t randu32() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randu32();
   }
 
-  uint64_t randu64() {
+  [[nodiscard]] uint64_t randu64() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randu64();
   }
 
-  int32_t randi32() {
+  [[nodiscard]] int32_t randi32() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randi32();
   }
 
-  int64_t randi64() {
+  [[nodiscard]] int64_t randi64() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randi64();
   }
 
-  float randf() {
+  [[nodiscard]] float randf() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randf();
   }
 
-  double randd() {
+  [[nodiscard]] double randd() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randd();
   }
 
-  float randf(float min, float max) {
+  [[nodiscard]] float randf(float min, float max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randf(min, max);
   }
 
-  double randd(double min, double max) {
+  [[nodiscard]] double randd(double min, double max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randd(min, max);
   }
 
-  bool randb() {
+  [[nodiscard]] bool randb() {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randb();
   }
 
-  long long randInt(long long max) {
+  [[nodiscard]] long long randInt(long long max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randInt(max);
   }
 
-  unsigned long long randUInt(unsigned long long max) {
+  [[nodiscard]] unsigned long long randUInt(unsigned long long max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randUInt(max);
   }
 
-  long long randInt(long long min, long long max) {
+  [[nodiscard]] long long randInt(long long min, long long max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randInt(min, max);
   }
 
-  unsigned long long randUInt(unsigned long long min, unsigned long long max) {
+  [[nodiscard]] unsigned long long randUInt(unsigned long long min, unsigned long long max) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randUInt(min, max);
   }
 
-  float nrandf(float stddev, float mean) {
+  [[nodiscard]] float nrandf(float stddev, float mean) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->nrandf(stddev, mean);
   }
 
-  double nrandd(double stddev, double mean) {
+  [[nodiscard]] double nrandd(double stddev, double mean) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->nrandd(stddev, mean);
   }
 
-  int64_t stochasticRound(double val) {
+  [[nodiscard]] int64_t stochasticRound(double val) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->stochasticRound(val);
@@ -335,7 +335,7 @@ namespace Random {
     g_randSource->randBytes(buf, len);
   }
 
-  ByteArray randBytes(size_t len) {
+  [[nodiscard]] ByteArray randBytes(size_t len) {
     MutexLocker locker(g_randMutex);
     checkInit();
     return g_randSource->randBytes(len);

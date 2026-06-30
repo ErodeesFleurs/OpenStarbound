@@ -34,18 +34,18 @@ public:
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
 
-  Maybe<Uuid> currentTeam() const;
+  [[nodiscard]] Maybe<Uuid> currentTeam() const;
 
   void makeLeader(Uuid const& playerUuid);
   void removeFromTeam(Uuid const& playerUuid);
 
-  bool isTeamLeader();
-  bool isTeamLeader(Uuid const& playerUuid);
-  bool isMemberOfTeam();
+  [[nodiscard]] bool isTeamLeader() const;
+  [[nodiscard]] bool isTeamLeader(Uuid const& playerUuid) const;
+  [[nodiscard]] bool isMemberOfTeam() const;
 
-  bool hasInvitationPending();
-  pair<Uuid, String> pullInvitation();
-  List<Variant<pair<String, bool>, StringList>> pullInviteResults();
+  [[nodiscard]] bool hasInvitationPending() const;
+  [[nodiscard]] pair<Uuid, String> pullInvitation();
+  [[nodiscard]] List<Variant<pair<String, bool>, StringList>> pullInviteResults();
 
   void update();
 
@@ -54,7 +54,7 @@ public:
 
   void forceUpdate();
 
-  List<Member> members();
+  [[nodiscard]] List<Member> members() const;
 
 private:
   struct PendingInvitation {

@@ -21,7 +21,7 @@ using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 // "<1 bandage, 3 apple>."
 struct QuestItem {
   bool operator==(QuestItem const& rhs) const;
-  ItemDescriptor descriptor() const;
+  [[nodiscard]] ItemDescriptor descriptor() const;
 
   String itemName;
   Json parameters;
@@ -77,11 +77,11 @@ using QuestJson = Json;
 using QuestParamDetail = MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson>;
 
 struct QuestParam {
-  static QuestParam fromJson(Json const& json);
-  static QuestParam diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
+  [[nodiscard]] static QuestParam fromJson(Json const& json);
+  [[nodiscard]] static QuestParam diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
-  Json toJson() const;
-  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
+  [[nodiscard]] Json toJson() const;
+  [[nodiscard]] Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestParam const& rhs) const;
 
@@ -92,11 +92,11 @@ struct QuestParam {
 };
 
 struct QuestDescriptor {
-  static QuestDescriptor fromJson(Json const& json);
-  static QuestDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
+  [[nodiscard]] static QuestDescriptor fromJson(Json const& json);
+  [[nodiscard]] static QuestDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
-  Json toJson() const;
-  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
+  [[nodiscard]] Json toJson() const;
+  [[nodiscard]] Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestDescriptor const& rhs) const;
 
@@ -107,11 +107,11 @@ struct QuestDescriptor {
 };
 
 struct QuestArcDescriptor {
-  static QuestArcDescriptor fromJson(Json const& json);
-  static QuestArcDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
+  [[nodiscard]] static QuestArcDescriptor fromJson(Json const& json);
+  [[nodiscard]] static QuestArcDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
-  Json toJson() const;
-  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
+  [[nodiscard]] Json toJson() const;
+  [[nodiscard]] Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestArcDescriptor const& rhs) const;
 
@@ -119,13 +119,13 @@ struct QuestArcDescriptor {
   Maybe<String> stagehandUniqueId;
 };
 
-String questParamText(QuestParam const& param, ItemDatabaseConstPtr itemDatabase);
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase);
+[[nodiscard]] String questParamText(QuestParam const& param, ItemDatabaseConstPtr itemDatabase);
+[[nodiscard]] StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase);
 
-StringMap<QuestParam> questParamsFromJson(Json const& json);
-StringMap<QuestParam> questParamsDiskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
-Json questParamsToJson(StringMap<QuestParam> const& parameters);
-Json questParamsDiskStore(StringMap<QuestParam> const& parameters, VersioningDatabaseConstPtr versioningDatabase);
+[[nodiscard]] StringMap<QuestParam> questParamsFromJson(Json const& json);
+[[nodiscard]] StringMap<QuestParam> questParamsDiskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
+[[nodiscard]] Json questParamsToJson(StringMap<QuestParam> const& parameters);
+[[nodiscard]] Json questParamsDiskStore(StringMap<QuestParam> const& parameters, VersioningDatabaseConstPtr versioningDatabase);
 
 DataStream& operator>>(DataStream& ds, QuestItem& param);
 DataStream& operator<<(DataStream& ds, QuestItem const& param);

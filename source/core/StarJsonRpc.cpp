@@ -26,7 +26,7 @@ void JsonRpc::clearHandlers() {
   m_handlers.clear();
 }
 
-RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
+[[nodiscard]] RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
   uint64_t id = m_requestId++;
   JsonObject request;
   m_pending.append(JsonObject{
@@ -41,11 +41,11 @@ RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& argume
   return promise;
 }
 
-bool JsonRpc::sendPending() const {
+[[nodiscard]] bool JsonRpc::sendPending() const {
   return !m_pending.empty();
 }
 
-ByteArray JsonRpc::send() {
+[[nodiscard]] ByteArray JsonRpc::send() {
   if (m_pending.empty())
     return {};
 

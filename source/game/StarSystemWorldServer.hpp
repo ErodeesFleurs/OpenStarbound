@@ -22,35 +22,35 @@ public:
 
   // null while flying, system coordinate when in space or at a system object
   // planet coordinates while orbiting a planet
-  SystemClientShipPtr clientShip(ConnectionId clientId) const;
-  SystemLocation clientShipLocation(ConnectionId clientId) const;
-  Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
-  SkyParameters clientSkyParameters(ConnectionId clientId) const;
+  [[nodiscard]] SystemClientShipPtr clientShip(ConnectionId clientId) const;
+  [[nodiscard]] SystemLocation clientShipLocation(ConnectionId clientId) const;
+  [[nodiscard]] Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
+  [[nodiscard]] SkyParameters clientSkyParameters(ConnectionId clientId) const;
 
-  List<ConnectionId> clients() const;
+  [[nodiscard]] List<ConnectionId> clients() const;
   void addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location);
   void removeClientShip(ConnectionId clientId);
-  List<SystemClientShipPtr> shipsAtLocation(SystemLocation const& location) const;
-  List<InstanceWorldId> activeInstanceWorlds() const;
+  [[nodiscard]] List<SystemClientShipPtr> shipsAtLocation(SystemLocation const& location) const;
+  [[nodiscard]] List<InstanceWorldId> activeInstanceWorlds() const;
 
   // removeObject queues up object for destruction, any ships at the location
   // are moved away
   void removeObject(Uuid objectUuid);
-  bool addObject(SystemObjectPtr object, bool doRangeCheck = false);
+  [[nodiscard]] bool addObject(SystemObjectPtr object, bool doRangeCheck = false);
 
   void update(float dt);
 
-  List<SystemObjectPtr> objects() const override;
-  List<Uuid> objectKeys() const override;
-  SystemObjectPtr getObject(Uuid const& uuid) const override;
+  [[nodiscard]] List<SystemObjectPtr> objects() const override;
+  [[nodiscard]] List<Uuid> objectKeys() const override;
+  [[nodiscard]] SystemObjectPtr getObject(Uuid const& uuid) const override;
 
-  List<ConnectionId> pullShipFlights();
+  [[nodiscard]] List<ConnectionId> pullShipFlights();
 
   void handleIncomingPacket(ConnectionId clientId, PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  [[nodiscard]] List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
 
-  bool triggeredStorage();
-  Json diskStore();
+  [[nodiscard]] bool triggeredStorage();
+  [[nodiscard]] Json diskStore();
 
 private:
   struct ClientNetVersions {
@@ -64,9 +64,9 @@ private:
   // random position for new ships entering the system
   void placeInitialObjects();
   void spawnObjects();
-  Vec2F randomObjectSpawnPosition(RandomSource& rand) const;
+  [[nodiscard]] Vec2F randomObjectSpawnPosition(RandomSource& rand) const;
 
-  SkyParameters locationSkyParameters(SystemLocation const& location) const;
+  [[nodiscard]] SkyParameters locationSkyParameters(SystemLocation const& location) const;
 
   // setting this to true asynchronously triggers storage from the server thread
   bool m_triggerStorage;

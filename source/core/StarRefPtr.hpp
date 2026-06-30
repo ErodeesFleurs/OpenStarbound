@@ -38,11 +38,11 @@ public:
 
   void reset(T* r, bool addRef = true);
 
-  T& operator*() const;
-  T* operator->() const;
-  T* get() const;
+  [[nodiscard]] T& operator*() const;
+  [[nodiscard]] T* operator->() const;
+  [[nodiscard]] T* get() const;
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
 private:
   template <typename T2>
@@ -70,26 +70,26 @@ template <typename T>
 bool operator!=(T* a, RefPtr<T> const& b);
 
 template <typename T, typename U>
-bool operator<(RefPtr<T> const& a, RefPtr<U> const& b);
+[[nodiscard]] bool operator<(RefPtr<T> const& a, RefPtr<U> const& b);
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2> const& p);
+[[nodiscard]] bool is(RefPtr<Type2> const& p);
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2 const> const& p);
+[[nodiscard]] bool is(RefPtr<Type2 const> const& p);
 
 template <typename Type1, typename Type2>
-RefPtr<Type1> as(RefPtr<Type2> const& p);
+[[nodiscard]] RefPtr<Type1> as(RefPtr<Type2> const& p);
 
 template <typename Type1, typename Type2>
-RefPtr<Type1 const> as(RefPtr<Type2 const> const& p);
+[[nodiscard]] RefPtr<Type1 const> as(RefPtr<Type2 const> const& p);
 
 template <typename T, typename... Args>
-RefPtr<T> make_ref(Args&&... args);
+[[nodiscard]] RefPtr<T> make_ref(Args&&... args);
 
 template <typename T>
 struct hash<RefPtr<T>> {
-  size_t operator()(RefPtr<T> const& a) const;
+  [[nodiscard]] size_t operator()(RefPtr<T> const& a) const;
 
   hash<T*> hasher;
 };

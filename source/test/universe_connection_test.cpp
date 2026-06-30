@@ -20,7 +20,7 @@ class ASyncClientThread : public Thread {
 public:
   ASyncClientThread(UniverseConnection conn)
     : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
-    start();
+    (void)start();
   }
 
   virtual void run() {
@@ -67,7 +67,7 @@ class SyncClientThread : public Thread {
 public:
   SyncClientThread(UniverseConnection conn)
     : Thread("UniverseConnectionTestClientThread"), m_connection(std::move(conn)) {
-    start();
+    (void)start();
   }
 
   virtual void run() {
@@ -137,16 +137,16 @@ TEST(UniverseConnections, All) {
   }
 
   for (auto& c : localASyncClients)
-    c.join();
+    (void)c.join();
 
   for (auto& c : remoteASyncClients)
-    c.join();
+    (void)c.join();
 
   for (auto& c : localSyncClients)
-    c.join();
+    (void)c.join();
 
   for (auto& c : remoteSyncClients)
-    c.join();
+    (void)c.join();
 
   server.removeAllConnections();
 }

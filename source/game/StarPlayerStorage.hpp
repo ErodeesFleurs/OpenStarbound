@@ -19,23 +19,23 @@ public:
   PlayerStorage(String const& storageDir, ConfigurationPtr configuration, EntityFactoryConstPtr entityFactory);
   ~PlayerStorage();
 
-  size_t playerCount() const;
+  [[nodiscard]] size_t playerCount() const;
   // Returns nothing if index is out of bounds.
-  Maybe<Uuid> playerUuidAt(size_t index);
+  [[nodiscard]] Maybe<Uuid> playerUuidAt(size_t index);
   // Returns nothing if name doesn't match a player.
-  Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
+  [[nodiscard]] Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
   // Returns nothing if name doesn't match a player.
-  List<Uuid> playerUuidListByName(String const& name, Maybe<Uuid> except = {});
+  [[nodiscard]] List<Uuid> playerUuidListByName(String const& name, Maybe<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
-  Json savePlayer(PlayerPtr const& player);
+  [[nodiscard]] Json savePlayer(PlayerPtr const& player);
 
-  Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
-  Json getPlayerData(Uuid const& uuid);
-  PlayerPtr loadPlayer(Uuid const& uuid);
+  [[nodiscard]] Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
+  [[nodiscard]] Json getPlayerData(Uuid const& uuid);
+  [[nodiscard]] PlayerPtr loadPlayer(Uuid const& uuid);
   void deletePlayer(Uuid const& uuid);
 
-  WorldChunks loadShipData(Uuid const& uuid);
+  [[nodiscard]] WorldChunks loadShipData(Uuid const& uuid);
   void applyShipUpdates(Uuid const& uuid, WorldChunks const& updates);
 
   // Move the given player to the top of the player ordering.
@@ -47,10 +47,10 @@ public:
 
   // Get / Set PlayerStorage global metadata
   void setMetadata(String key, Json value);
-  Json getMetadata(String const& key);
+  [[nodiscard]] Json getMetadata(String const& key);
 
 private:
-  String const& uuidFileName(Uuid const& uuid);
+  [[nodiscard]] String const& uuidFileName(Uuid const& uuid);
   void writeMetadata();
 
   mutable RecursiveMutex m_mutex;

@@ -88,13 +88,13 @@ public:
     Json parameters;
   };
 
-  static uint64_t getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch = false);
-  static uint64_t getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch = false);
-  static HashMap<ItemDescriptor, uint64_t> normalizeBag(List<ItemPtr> const& bag);
-  static bool canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies);
-  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset);
-  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
-  static String guiFilterString(ItemPtr const& item);
+  [[nodiscard]] static uint64_t getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch = false);
+  [[nodiscard]] static uint64_t getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch = false);
+  [[nodiscard]] static HashMap<ItemDescriptor, uint64_t> normalizeBag(List<ItemPtr> const& bag);
+  [[nodiscard]] static bool canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies);
+  [[nodiscard]] static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset);
+  [[nodiscard]] static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
+  [[nodiscard]] static String guiFilterString(ItemPtr const& item);
 
   ItemDatabase(AssetsConstPtr assets,
                function<ObjectDatabaseConstPtr()> objectDatabase,
@@ -117,69 +117,69 @@ public:
   // spawning the new item, it will be logged and the itemPtr will be set to a
   // default item.
   template <typename ItemT>
-  bool loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const;
-  bool loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const;
+  [[nodiscard]] bool loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const;
+  [[nodiscard]] bool loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
-  bool diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const;
+  [[nodiscard]] bool diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const;
 
-  ItemPtr diskLoad(Json const& diskStore) const;
-  ItemPtr fromJson(Json const& spec) const;
+  [[nodiscard]] ItemPtr diskLoad(Json const& diskStore) const;
+  [[nodiscard]] ItemPtr fromJson(Json const& spec) const;
 
-  Json diskStore(ItemConstPtr const& itemPtr) const;
+  [[nodiscard]] Json diskStore(ItemConstPtr const& itemPtr) const;
 
-  Json toJson(ItemConstPtr const& itemPtr) const;
+  [[nodiscard]] Json toJson(ItemConstPtr const& itemPtr) const;
 
-  bool hasItem(String const& itemName) const;
-  ItemType itemType(String const& itemName) const;
+  [[nodiscard]] bool hasItem(String const& itemName) const;
+  [[nodiscard]] ItemType itemType(String const& itemName) const;
   // Friendly name here can be different than the final friendly name, as it
   // can be modified by custom config or builder scripts.
-  String itemFriendlyName(String const& itemName) const;
-  StringSet itemTags(String const& itemName) const;
+  [[nodiscard]] String itemFriendlyName(String const& itemName) const;
+  [[nodiscard]] StringSet itemTags(String const& itemName) const;
 
   // Generate an item config for the given itemName, parameters, level and seed.
   // Level and seed are used by generation in some item types, and may be stored as part
   // of the unique item data or may be ignored.
-  ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  [[nodiscard]] ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
 
   // Returns the path to the item's json file in the assets.
-  Maybe<String> itemFile(String const& itemName) const;
+  [[nodiscard]] Maybe<String> itemFile(String const& itemName) const;
 
   // Generates the config for the given item descriptor and then loads the item
   // from the appropriate factory.  If there is a problem instantiating the
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  [[nodiscard]] ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  [[nodiscard]] ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
-  bool hasRecipeToMake(ItemDescriptor const& item) const;
-  bool hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const;
+  [[nodiscard]] bool hasRecipeToMake(ItemDescriptor const& item) const;
+  [[nodiscard]] bool hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const;
 
-  HashSet<ItemRecipe> recipesForOutputItem(String itemName) const;
+  [[nodiscard]] HashSet<ItemRecipe> recipesForOutputItem(String itemName) const;
 
-  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
-  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
+  [[nodiscard]] HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
+  [[nodiscard]] HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
 
-  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
-  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
+  [[nodiscard]] HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
+  [[nodiscard]] HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
 
-  uint64_t maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
-  uint64_t maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
+  [[nodiscard]] uint64_t maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
+  [[nodiscard]] uint64_t maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
 
-  ItemRecipe getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
+  [[nodiscard]] ItemRecipe getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
 
-  ItemRecipe parseRecipe(Json const& config) const;
+  [[nodiscard]] ItemRecipe parseRecipe(Json const& config) const;
 
-  HashSet<ItemRecipe> const& allRecipes() const;
-  HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
+  [[nodiscard]] HashSet<ItemRecipe> const& allRecipes() const;
+  [[nodiscard]] HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
-  ItemPtr applyAugment(ItemPtr const item, AugmentItem& augment) const;
-  bool ageItem(ItemPtr& item, double aging) const;
+  [[nodiscard]] ItemPtr applyAugment(ItemPtr const item, AugmentItem& augment) const;
+  [[nodiscard]] bool ageItem(ItemPtr& item, double aging) const;
 
-  List<String> allItems() const;
+  [[nodiscard]] List<String> allItems() const;
 
 private:
   struct ItemData {
@@ -194,11 +194,11 @@ private:
     String filename;
   };
 
-  static ItemPtr createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config);
-  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  [[nodiscard]] static ItemPtr createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config);
+  [[nodiscard]] ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
-  ItemData const& itemData(String const& name) const;
-  ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
+  [[nodiscard]] ItemData const& itemData(String const& name) const;
+  [[nodiscard]] ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
 
   void addItemSet(ItemType type, String const& extension);
   void addObjectDropItem(String const& objectPath, Json const& objectConfig);

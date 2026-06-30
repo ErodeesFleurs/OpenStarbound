@@ -35,9 +35,9 @@ private:
     EntityId entityId;
   };
 
-  TextPositioning namePosition(Vec2F bubblePosition) const;
-  TextPositioning statusPosition(Vec2F bubblePosition) const;
-  RectF determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
+  [[nodiscard]] TextPositioning namePosition(Vec2F bubblePosition) const;
+  [[nodiscard]] TextPositioning statusPosition(Vec2F bubblePosition) const;
+  [[nodiscard]] RectF determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
 
   GuiContext& m_guiContext;
   bool m_showMasterNames;

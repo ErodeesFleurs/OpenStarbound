@@ -7,36 +7,36 @@ namespace Star {
 Configuration::Configuration(Json defaultConfiguration, Json currentConfiguration)
   : m_defaultConfig(defaultConfiguration), m_currentConfig(currentConfiguration) {}
 
-Json Configuration::defaultConfiguration() const {
+[[nodiscard]] Json Configuration::defaultConfiguration() const {
   return m_defaultConfig;
 }
 
-Json Configuration::currentConfiguration() const {
+[[nodiscard]] Json Configuration::currentConfiguration() const {
   MutexLocker locker(m_mutex);
   return m_currentConfig;
 }
 
-String Configuration::printConfiguration() const {
+[[nodiscard]] String Configuration::printConfiguration() const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.printJson(2, true);
 }
 
-Json Configuration::get(String const& key, Json def) const {
+[[nodiscard]] Json Configuration::get(String const& key, Json def) const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.get(key, def);
 }
 
-Json Configuration::getPath(String const& path, Json def) const {
+[[nodiscard]] Json Configuration::getPath(String const& path, Json def) const {
   MutexLocker locker(m_mutex);
   return m_currentConfig.query(path, def);
 }
 
-Json Configuration::getDefault(String const& key) const {
+[[nodiscard]] Json Configuration::getDefault(String const& key) const {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.get(key, {});
 }
 
-Json Configuration::getDefaultPath(String const& path) const {
+[[nodiscard]] Json Configuration::getDefaultPath(String const& path) const {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.query(path, {});
 }

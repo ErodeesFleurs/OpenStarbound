@@ -25,24 +25,24 @@ public:
   // its parameter is the button being checked.
   void setCallback(WidgetCallbackFunc callback);
 
-  ButtonWidget* button(int id) const;
-  List<ButtonWidget*> buttons() const;
-  size_t buttonCount() const;
+  [[nodiscard]] ButtonWidget* button(int id) const;
+  [[nodiscard]] List<ButtonWidget*> buttons() const;
+  [[nodiscard]] size_t buttonCount() const;
 
-  int addButton(ButtonWidget* button, int id = NoButton);
+  [[nodiscard]] int addButton(ButtonWidget* button, int id = NoButton);
   void removeButton(ButtonWidget* button);
 
-  int id(ButtonWidget* button) const;
+  [[nodiscard]] int id(ButtonWidget* button) const;
 
   void select(int id);
 
   // Will return null if no button is checked.
-  ButtonWidget* checkedButton() const;
+  [[nodiscard]] ButtonWidget* checkedButton() const;
   // Will return NoButton if no button is checked.
-  int checkedId() const;
+  [[nodiscard]] int checkedId() const;
 
   // when true it is not required for one of the buttons to be selected
-  bool toggle() const;
+  [[nodiscard]] bool toggle() const;
   void setToggle(bool toggleMode);
 
 protected:

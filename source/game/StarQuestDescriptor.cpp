@@ -161,7 +161,7 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
     return detail.get<QuestJson>().set("type", "json");
 
   } else {
-    starAssert(detail.empty());
+    assert(detail.empty());
     return JsonObject{{"type", "noDetail"}};
   }
 }

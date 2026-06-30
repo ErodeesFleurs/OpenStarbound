@@ -11,7 +11,7 @@ class PreviewableItem;
 class PreviewableItem {
 public:
   virtual ~PreviewableItem() = default;
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const = 0;
+  [[nodiscard]] virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const = 0;
 };
 
 }

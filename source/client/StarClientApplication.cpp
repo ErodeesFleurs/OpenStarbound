@@ -227,7 +227,7 @@ void ClientApplication::shutdown() {
 
   if (m_universeServer) {
     m_universeServer->stop();
-    m_universeServer->join();
+    (void)m_universeServer->join();
     m_universeServer.reset();
   }
 
@@ -672,7 +672,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     if (m_universeServer) {
       m_universeServer->stop();
-      m_universeServer->join();
+      (void)m_universeServer->join();
       m_universeServer.reset();
     }
     m_cinematicOverlay->stop();
@@ -866,7 +866,7 @@ void ClientApplication::changeState(MainAppState newState) {
               m_root->reload();
               m_root->fullyLoad();
             });
-          m_universeServer->start();
+          (void)m_universeServer->start();
         } catch (StarException const& e) {
           setError("Unable to start local server", e);
           return;

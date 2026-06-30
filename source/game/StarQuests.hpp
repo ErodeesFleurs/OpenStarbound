@@ -47,15 +47,15 @@ public:
   Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   Quest(AssetsConstPtr assets, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
 
-  QuestTemplatePtr getTemplate() const;
+  [[nodiscard]] QuestTemplatePtr getTemplate() const;
 
   void init(Player& player, World& world, UniverseClient* client);
   void uninit();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
   void update(float dt);
 
   void offer();
@@ -66,77 +66,77 @@ public:
   void fail();
   void abandon();
 
-  bool interactWithEntity(EntityId entity);
+  [[nodiscard]] bool interactWithEntity(EntityId entity);
 
   // The generated ID for this instance of the quest with these specific
   // parameters. Multiple players iin a universe may have quests with the same
   // questId if the the source of the quest was the same.
-  String questId() const;
+  [[nodiscard]] String questId() const;
   // The ID of the template this quest was created from
-  String templateId() const;
+  [[nodiscard]] String templateId() const;
 
-  StringMap<QuestParam> const& parameters() const;
+  [[nodiscard]] StringMap<QuestParam> const& parameters() const;
 
-  QuestState state() const;
+  [[nodiscard]] QuestState state() const;
 
   // Whether to show the Complete / Failed dialog
-  bool showDialog() const;
+  [[nodiscard]] bool showDialog() const;
   void setDialogShown();
 
   void setEntityParameter(String const& paramName, EntityConstPtr const& entity);
   void setParameter(String const& paramName, QuestParam const& paramValue);
 
-  Maybe<List<Drawable>> portrait(String const& portraitName) const;
-  Maybe<String> portraitTitle(String const& portraitName) const;
+  [[nodiscard]] Maybe<List<Drawable>> portrait(String const& portraitName) const;
+  [[nodiscard]] Maybe<String> portraitTitle(String const& portraitName) const;
 
-  QuestDescriptor questDescriptor() const;
-  QuestArcDescriptor questArcDescriptor() const;
-  size_t questArcPosition() const;
+  [[nodiscard]] QuestDescriptor questDescriptor() const;
+  [[nodiscard]] QuestArcDescriptor questArcDescriptor() const;
+  [[nodiscard]] size_t questArcPosition() const;
 
-  Maybe<WorldId> worldId() const;
-  Maybe<pair<Vec3I, SystemLocation>> location() const;
-  Maybe<Uuid> serverUuid() const;
+  [[nodiscard]] Maybe<WorldId> worldId() const;
+  [[nodiscard]] Maybe<pair<Vec3I, SystemLocation>> location() const;
+  [[nodiscard]] Maybe<Uuid> serverUuid() const;
   void setWorldId(Maybe<WorldId> worldId);
   void setLocation(Maybe<pair<Vec3I, SystemLocation>> location);
   void setServerUuid(Maybe<Uuid> serverUuid);
 
-  String title() const;
-  String text() const;
-  String completionText() const;
-  String failureText() const;
+  [[nodiscard]] String title() const;
+  [[nodiscard]] String text() const;
+  [[nodiscard]] String completionText() const;
+  [[nodiscard]] String failureText() const;
 
-  size_t money() const;
-  List<ItemConstPtr> rewards() const;
+  [[nodiscard]] size_t money() const;
+  [[nodiscard]] List<ItemConstPtr> rewards() const;
 
   // The time when this quest last changed state (active/completed/failed)
-  int64_t lastUpdatedOn() const;
-  bool unread() const;
+  [[nodiscard]] int64_t lastUpdatedOn() const;
+  [[nodiscard]] bool unread() const;
   void markAsRead();
-  bool canTurnIn() const;
+  [[nodiscard]] bool canTurnIn() const;
 
-  String questGiverIndicator() const;
-  String questReceiverIndicator() const;
+  [[nodiscard]] String questGiverIndicator() const;
+  [[nodiscard]] String questReceiverIndicator() const;
 
   // The String returned by this method is an image path, not a reference to a configured indicator
-  Maybe<String> customIndicator(EntityPtr const& entity) const;
+  [[nodiscard]] Maybe<String> customIndicator(EntityPtr const& entity) const;
 
-  Maybe<JsonArray> objectiveList() const;
-  Maybe<float> progress() const;
-  Maybe<float> compassDirection() const;
+  [[nodiscard]] Maybe<JsonArray> objectiveList() const;
+  [[nodiscard]] Maybe<float> progress() const;
+  [[nodiscard]] Maybe<float> compassDirection() const;
 
   void setObjectiveList(Maybe<JsonArray> const& objectiveList);
   void setProgress(Maybe<float> const& progress);
   void setCompassDirection(Maybe<float> const& compassDirection);
 
-  Maybe<String> completionCinema() const;
-  bool canBeAbandoned() const;
-  bool ephemeral() const;
-  bool showInLog() const;
-  bool showAcceptDialog() const;
-  bool showCompleteDialog() const;
-  bool showFailDialog() const;
-  bool mainQuest() const;
-  bool hideCrossServer() const;
+  [[nodiscard]] Maybe<String> completionCinema() const;
+  [[nodiscard]] bool canBeAbandoned() const;
+  [[nodiscard]] bool ephemeral() const;
+  [[nodiscard]] bool showInLog() const;
+  [[nodiscard]] bool showAcceptDialog() const;
+  [[nodiscard]] bool showCompleteDialog() const;
+  [[nodiscard]] bool showFailDialog() const;
+  [[nodiscard]] bool mainQuest() const;
+  [[nodiscard]] bool hideCrossServer() const;
 
 private:
   struct DisplayParameters {
@@ -153,12 +153,12 @@ private:
 
   void initScript();
   void uninitScript();
-  LuaCallbacks makeQuestCallbacks(Player& player);
+  [[nodiscard]] LuaCallbacks makeQuestCallbacks(Player& player);
 
   void setEntityParameter(String const& paramName, Entity const* entity);
   void addReward(ItemDescriptor const& reward);
 
-  String const& defaultCustomIndicator() const;
+  [[nodiscard]] String const& defaultCustomIndicator() const;
 
   Player* m_player;
   World* m_world;

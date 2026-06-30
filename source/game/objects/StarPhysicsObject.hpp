@@ -17,12 +17,12 @@ public:
 
   void update(float dt, uint64_t currentStep) override;
 
-  RectF metaBoundBox() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
 
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  [[nodiscard]] size_t movingCollisionCount() const override;
+  [[nodiscard]] Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
 private:
   struct PhysicsForceConfig {

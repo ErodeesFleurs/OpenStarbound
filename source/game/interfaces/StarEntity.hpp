@@ -52,7 +52,7 @@ class Entity {
 public:
   virtual ~Entity();
 
-  virtual EntityType entityType() const = 0;
+  [[nodiscard]] virtual EntityType entityType() const = 0;
 
   // Called when an entity is first inserted into a World.  Calling base class
   // init sets the world pointer, entityId, and entityMode.
@@ -67,7 +67,7 @@ public:
   // uninitialized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  [[nodiscard]] virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.  New slave entities receive their first net state before init()
@@ -81,56 +81,56 @@ public:
 
   // Base position of this entity, bound boxes, drawables, and other entity
   // positions are relative to this.
-  virtual Vec2F position() const = 0;
+  [[nodiscard]] virtual Vec2F position() const = 0;
 
   // Largest bounding-box of this entity.  Any damage boxes / drawables / light
   // or sound *sources* must be contained within this bounding box.  Used for
   // all top-level spatial queries.
-  virtual RectF metaBoundBox() const = 0;
+  [[nodiscard]] virtual RectF metaBoundBox() const = 0;
 
   // By default returns a null rect, if non-null, it defines the area around
   // this entity where it is likely for the entity to physically collide with
   // collision geometry.
-  virtual RectF collisionArea() const;
+  [[nodiscard]] virtual RectF collisionArea() const;
 
   // Should this entity allow object / block placement over it, and can the
   // entity immediately be despawned without terribly bad effects?
-  virtual bool ephemeral() const;
+  [[nodiscard]] virtual bool ephemeral() const;
 
   // How should this entity be treated if created on the client?  Defaults to
   // ClientSlave.
-  virtual ClientEntityMode clientEntityMode() const;
+  [[nodiscard]] virtual ClientEntityMode clientEntityMode() const;
   // Should this entity only exist on the master side?
-  virtual bool masterOnly() const;
+  [[nodiscard]] virtual bool masterOnly() const;
 
-  virtual String name() const;
-  virtual String description() const;
+  [[nodiscard]] virtual String name() const;
+  [[nodiscard]] virtual String description() const;
 
   // Gameplay affecting light sources (separate from light sources added during
   // rendering)
-  virtual List<LightSource> lightSources() const;
+  [[nodiscard]] virtual List<LightSource> lightSources() const;
 
   // All damage sources for this frame.
-  virtual List<DamageSource> damageSources() const;
+  [[nodiscard]] virtual List<DamageSource> damageSources() const;
 
   // Return the damage that would result from being hit by the given damage
   // source.  Will be called on master and slave entities.  Culling based on
   // team damage and self damage will be done outside of this query.
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const;
+  [[nodiscard]] virtual Maybe<HitType> queryHit(DamageSource const& source) const;
 
   // Return the polygonal area in which the entity can be hit. Not used for
   // actual hit computation, only for determining more precisely where a
   // hit intersection occurred (e.g. by projectiles)
-  virtual Maybe<PolyF> hitPoly() const;
+  [[nodiscard]] virtual Maybe<PolyF> hitPoly() const;
 
   // Apply a request to damage this entity. Will only be called on Master
   // entities. DamageRequest might be adjusted based on protection and other
   // effects
-  virtual List<DamageNotification> applyDamage(DamageRequest const& damage);
+  [[nodiscard]] virtual List<DamageNotification> applyDamage(DamageRequest const& damage);
 
   // Pull any pending damage notifications applied internally, only called on
   // Master entities.
-  virtual List<DamageNotification> selfDamageNotifications();
+  [[nodiscard]] virtual List<DamageNotification> selfDamageNotifications();
 
   // Called on master entities when a DamageRequest has been generated due to a
   // DamageSource from this entity being applied to another entity.  Will be
@@ -144,7 +144,7 @@ public:
 
   // Returning true here indicates that this entity should be removed from the
   // world, default returns false.
-  virtual bool shouldDestroy() const;
+  [[nodiscard]] virtual bool shouldDestroy() const;
   // Will be called once before removing the entity from the World on both
   // master and slave entities.
   virtual void destroy(RenderCallback* renderCallback);
@@ -154,7 +154,7 @@ public:
   // to messages.  If the message is NOT handled, should return Nothing,
   // otherwise should return some Json value.
   // This will only ever be called on master entities.
-  virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  [[nodiscard]] virtual Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
   virtual void update(float dt, uint64_t currentStep);
 
@@ -162,37 +162,37 @@ public:
 
   virtual void renderLightSources(RenderCallback* renderer);
 
-  EntityId entityId() const;
+  [[nodiscard]] EntityId entityId() const;
 
-  EntityDamageTeam getTeam() const;
+  [[nodiscard]] EntityDamageTeam getTeam() const;
 
   // Returns true if an entity is initialized in a world, and thus has a valid
   // world pointer, entity id, and entity mode.
-  bool inWorld() const;
+  [[nodiscard]] bool inWorld() const;
 
   // Throws an exception if not currently in a world.
-  World* world() const;
+  [[nodiscard]] World* world() const;
   // Returns nullptr if not currently in a world.
-  World* worldPtr() const;
+  [[nodiscard]] World* worldPtr() const;
 
   // Specifies if the entity is to be saved to disk alongside the sector or
   // despawned.
-  bool persistent() const;
+  [[nodiscard]] bool persistent() const;
 
   // Entity should keep any sector it is in alive.  Default implementation
   // returns false.
-  bool keepAlive() const;
+  [[nodiscard]] bool keepAlive() const;
 
   // If set, then the entity will be discoverable by its unique id and will be
   // indexed in the stored world.  Unique ids must be different across all
   // entities in a single world.
-  Maybe<String> uniqueId() const;
+  [[nodiscard]] Maybe<String> uniqueId() const;
 
   // EntityMode will only be set if the entity is initialized, if the entity is
   // uninitialized then isMaster and isSlave will both return false.
-  Maybe<EntityMode> entityMode() const;
-  bool isMaster() const;
-  bool isSlave() const;
+  [[nodiscard]] Maybe<EntityMode> entityMode() const;
+  [[nodiscard]] bool isMaster() const;
+  [[nodiscard]] bool isSlave() const;
 
 protected:
   Entity();

@@ -207,7 +207,7 @@ void Thread::yield() {
   std::this_thread::yield();
 }
 
-unsigned Thread::numberOfProcessors() {
+[[nodiscard]] unsigned Thread::numberOfProcessors() {
   return std::thread::hardware_concurrency();
 }
 
@@ -223,23 +223,23 @@ Thread::~Thread() = default;
 
 Thread& Thread::operator=(Thread&&) = default;
 
-bool Thread::start() {
+[[nodiscard]] bool Thread::start() {
   return m_impl->start();
 }
 
-bool Thread::join() {
+[[nodiscard]] bool Thread::join() {
   return m_impl->join();
 }
 
-String Thread::name() {
+[[nodiscard]] String Thread::name() {
   return m_impl->name;
 }
 
-bool Thread::isJoined() const {
+[[nodiscard]] bool Thread::isJoined() const {
   return m_impl->joined;
 }
 
-bool Thread::isRunning() const {
+[[nodiscard]] bool Thread::isRunning() const {
   return !m_impl->stopped;
 }
 
@@ -284,19 +284,19 @@ void ThreadFunction<void>::finishNoThrow() noexcept {
   }
 }
 
-bool ThreadFunction<void>::isFinished() const {
+[[nodiscard]] bool ThreadFunction<void>::isFinished() const {
   return !m_impl || m_impl->joined;
 }
 
-bool ThreadFunction<void>::isRunning() const {
+[[nodiscard]] bool ThreadFunction<void>::isRunning() const {
   return m_impl && !m_impl->stopped;
 }
 
-ThreadFunction<void>::operator bool() const {
+[[nodiscard]] ThreadFunction<void>::operator bool() const {
   return !isFinished();
 }
 
-String ThreadFunction<void>::name() {
+[[nodiscard]] String ThreadFunction<void>::name() {
   if (m_impl)
     return m_impl->name;
   else
@@ -318,7 +318,7 @@ void Mutex::lock() {
   m_impl->mutex.lock();
 }
 
-bool Mutex::tryLock() {
+[[nodiscard]] bool Mutex::tryLock() {
   return m_impl->mutex.try_lock();
 }
 
@@ -380,7 +380,7 @@ void RecursiveMutex::lock() {
   }
 }
 
-bool RecursiveMutex::tryLock() {
+[[nodiscard]] bool RecursiveMutex::tryLock() {
   if constexpr (LogRecursiveMutex) {
     if (m_log)
       printStack("RecursiveMutex tryLock waiting");
@@ -427,7 +427,7 @@ void ReadLocker::lock() {
   m_locked = true;
 }
 
-bool ReadLocker::tryLock() {
+[[nodiscard]] bool ReadLocker::tryLock() {
   if (!m_locked) {
     m_locked = m_lock.tryReadLock();
     return m_locked;
@@ -456,7 +456,7 @@ void WriteLocker::lock() {
   m_locked = true;
 }
 
-bool WriteLocker::tryLock() {
+[[nodiscard]] bool WriteLocker::tryLock() {
   if (!m_locked) {
     m_locked = m_lock.tryWriteLock();
     return m_locked;

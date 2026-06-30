@@ -38,74 +38,74 @@ class MaterialDatabase {
 public:
   MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  StringList materialNames() const;
-  bool isMetaMaterialName(String const& name) const;
-  bool isMaterialName(String const& name) const;
-  bool isValidMaterialId(MaterialId material) const;
-  MaterialId materialId(String const& materialName) const;
-  String materialName(MaterialId materialId) const;
-  Maybe<String> materialPath(MaterialId materialId) const;
-  Maybe<Json> materialConfig(MaterialId materialId) const;
-  String materialDescription(MaterialId materialId, String const& species) const;
-  String materialDescription(MaterialId materialId) const;
-  String materialShortDescription(MaterialId materialId) const;
-  String materialCategory(MaterialId materialId) const;
+  [[nodiscard]] StringList materialNames() const;
+  [[nodiscard]] bool isMetaMaterialName(String const& name) const;
+  [[nodiscard]] bool isMaterialName(String const& name) const;
+  [[nodiscard]] bool isValidMaterialId(MaterialId material) const;
+  [[nodiscard]] MaterialId materialId(String const& materialName) const;
+  [[nodiscard]] String materialName(MaterialId materialId) const;
+  [[nodiscard]] Maybe<String> materialPath(MaterialId materialId) const;
+  [[nodiscard]] Maybe<Json> materialConfig(MaterialId materialId) const;
+  [[nodiscard]] String materialDescription(MaterialId materialId, String const& species) const;
+  [[nodiscard]] String materialDescription(MaterialId materialId) const;
+  [[nodiscard]] String materialShortDescription(MaterialId materialId) const;
+  [[nodiscard]] String materialCategory(MaterialId materialId) const;
 
-  StringList modNames() const;
-  bool isModName(String const& name) const;
-  bool isValidModId(ModId mod) const;
-  ModId modId(String const& modName) const;
-  String const& modName(ModId modId) const;
-  Maybe<String> modPath(ModId modId) const;
-  Maybe<Json> modConfig(ModId modId) const;
-  String modDescription(ModId modId, String const& species) const;
-  String modDescription(ModId modId) const;
-  String modShortDescription(ModId modId) const;
+  [[nodiscard]] StringList modNames() const;
+  [[nodiscard]] bool isModName(String const& name) const;
+  [[nodiscard]] bool isValidModId(ModId mod) const;
+  [[nodiscard]] ModId modId(String const& modName) const;
+  [[nodiscard]] String const& modName(ModId modId) const;
+  [[nodiscard]] Maybe<String> modPath(ModId modId) const;
+  [[nodiscard]] Maybe<Json> modConfig(ModId modId) const;
+  [[nodiscard]] String modDescription(ModId modId, String const& species) const;
+  [[nodiscard]] String modDescription(ModId modId) const;
+  [[nodiscard]] String modShortDescription(ModId modId) const;
 
   // Will return nullptr if no rendering profile is available
-  MaterialRenderProfileConstPtr materialRenderProfile(MaterialId modId) const;
-  MaterialRenderProfileConstPtr modRenderProfile(ModId modId) const;
+  [[nodiscard]] MaterialRenderProfileConstPtr materialRenderProfile(MaterialId modId) const;
+  [[nodiscard]] MaterialRenderProfileConstPtr modRenderProfile(ModId modId) const;
 
-  TileDamageParameters materialDamageParameters(MaterialId materialId) const;
-  TileDamageParameters modDamageParameters(ModId modId) const;
+  [[nodiscard]] TileDamageParameters materialDamageParameters(MaterialId materialId) const;
+  [[nodiscard]] TileDamageParameters modDamageParameters(ModId modId) const;
 
-  bool modBreaksWithTile(ModId modId) const;
+  [[nodiscard]] bool modBreaksWithTile(ModId modId) const;
 
-  CollisionKind materialCollisionKind(MaterialId materialId) const;
-  bool canPlaceInLayer(MaterialId materialId, TileLayer layer) const;
+  [[nodiscard]] CollisionKind materialCollisionKind(MaterialId materialId) const;
+  [[nodiscard]] bool canPlaceInLayer(MaterialId materialId, TileLayer layer) const;
 
   // Returned ItemDescriptor may be null
-  ItemDescriptor materialItemDrop(MaterialId materialId) const;
-  ItemDescriptor modItemDrop(ModId modId) const;
+  [[nodiscard]] ItemDescriptor materialItemDrop(MaterialId materialId) const;
+  [[nodiscard]] ItemDescriptor modItemDrop(ModId modId) const;
 
-  MaterialColorVariant materialColorVariants(MaterialId materialId) const;
-  MaterialColorVariant modColorVariants(ModId modId) const;
-  bool isMultiColor(MaterialId materialId) const;
-  bool foregroundLightTransparent(MaterialId materialId) const;
-  bool backgroundLightTransparent(MaterialId materialId) const;
-  bool occludesBehind(MaterialId materialId) const;
+  [[nodiscard]] MaterialColorVariant materialColorVariants(MaterialId materialId) const;
+  [[nodiscard]] MaterialColorVariant modColorVariants(ModId modId) const;
+  [[nodiscard]] bool isMultiColor(MaterialId materialId) const;
+  [[nodiscard]] bool foregroundLightTransparent(MaterialId materialId) const;
+  [[nodiscard]] bool backgroundLightTransparent(MaterialId materialId) const;
+  [[nodiscard]] bool occludesBehind(MaterialId materialId) const;
 
-  ParticleConfigPtr miningParticle(MaterialId materialId, ModId modId = NoModId) const;
-  String miningSound(MaterialId materialId, ModId modId = NoModId) const;
-  String footstepSound(MaterialId materialId, ModId modId = NoModId) const;
-  String defaultFootstepSound() const;
+  [[nodiscard]] ParticleConfigPtr miningParticle(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]] String miningSound(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]] String footstepSound(MaterialId materialId, ModId modId = NoModId) const;
+  [[nodiscard]] String defaultFootstepSound() const;
 
-  Color materialParticleColor(MaterialId materialId, MaterialHue hueShift) const;
-  Vec3F radiantLight(MaterialId materialId, ModId modId) const;
+  [[nodiscard]] Color materialParticleColor(MaterialId materialId, MaterialHue hueShift) const;
+  [[nodiscard]] Vec3F radiantLight(MaterialId materialId, ModId modId) const;
 
-  bool supportsMod(MaterialId materialId, ModId modId) const;
-  ModId tilledModFor(MaterialId materialId) const;
-  bool isTilledMod(ModId modId) const;
+  [[nodiscard]] bool supportsMod(MaterialId materialId, ModId modId) const;
+  [[nodiscard]] ModId tilledModFor(MaterialId materialId) const;
+  [[nodiscard]] bool isTilledMod(ModId modId) const;
 
-  bool isSoil(MaterialId materialId) const;
-  bool isFallingMaterial(MaterialId materialId) const;
-  bool isCascadingFallingMaterial(MaterialId materialId) const;
-  bool blocksLiquidFlow(MaterialId materialId) const;
+  [[nodiscard]] bool isSoil(MaterialId materialId) const;
+  [[nodiscard]] bool isFallingMaterial(MaterialId materialId) const;
+  [[nodiscard]] bool isCascadingFallingMaterial(MaterialId materialId) const;
+  [[nodiscard]] bool blocksLiquidFlow(MaterialId materialId) const;
 
   // Returns the amount of liquid to consume, and optionally the material / mod
   // to transform to (may be NullMaterialId / NullModId)
-  Maybe<LiquidMaterialInteraction> liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const;
-  Maybe<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
+  [[nodiscard]] Maybe<LiquidMaterialInteraction> liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const;
+  [[nodiscard]] Maybe<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
 
 private:
   struct MetaMaterialInfo {
@@ -168,19 +168,19 @@ private:
     TileDamageParameters damageParameters;
   };
 
-  size_t metaMaterialIndex(MaterialId materialId) const;
-  bool containsMetaMaterial(MaterialId materialId) const;
+  [[nodiscard]] size_t metaMaterialIndex(MaterialId materialId) const;
+  [[nodiscard]] bool containsMetaMaterial(MaterialId materialId) const;
   void setMetaMaterial(MaterialId materialId, MetaMaterialInfo info);
 
-  bool containsMaterial(MaterialId materialId) const;
+  [[nodiscard]] bool containsMaterial(MaterialId materialId) const;
   void setMaterial(MaterialId materialId, MaterialInfo info);
 
-  bool containsMod(ModId modId) const;
+  [[nodiscard]] bool containsMod(ModId modId) const;
   void setMod(ModId modId, ModInfo info);
 
-  shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
-  shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
-  shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
+  [[nodiscard]] shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
+  [[nodiscard]] shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
+  [[nodiscard]] shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
 
   List<shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
   StringMap<MaterialId> m_metaMaterialIndex;
@@ -198,7 +198,7 @@ private:
   HashMap<pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
 };
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
+[[nodiscard]] inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
   if (materialId < m_materials.size()) {
     if (auto const& mat = m_materials[materialId])
       return mat->materialRenderProfile;
@@ -207,7 +207,7 @@ inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(Mat
   return {};
 }
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId modId) const {
+[[nodiscard]] inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId modId) const {
   if (modId < m_mods.size()) {
     if (auto const& mod = m_mods[modId])
       return mod->modRenderProfile;
@@ -216,7 +216,7 @@ inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId mo
   return {};
 }
 
-inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {
+[[nodiscard]] inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -229,7 +229,7 @@ inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) 
   return true;
 }
 
-inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const {
+[[nodiscard]] inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -242,7 +242,7 @@ inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) 
   return true;
 }
 
-inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
+[[nodiscard]] inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -252,7 +252,7 @@ inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
   return false;
 }
 
-inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) const {
+[[nodiscard]] inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) const {
   Vec3F radiantLight;
   if (materialId < m_materials.size()) {
     auto const& mat = m_materials[materialId];
@@ -267,7 +267,7 @@ inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) 
   return radiantLight;
 }
 
-inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
+[[nodiscard]] inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->blocksLiquidFlow;
   else
@@ -275,12 +275,12 @@ inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
 
 }
 
-inline Maybe<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(
+[[nodiscard]] inline Maybe<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(
     LiquidId liquid, MaterialId materialId) const {
   return m_liquidMaterialInteractions.maybe({liquid, materialId});
 }
 
-inline Maybe<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
+[[nodiscard]] inline Maybe<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
   return m_liquidModInteractions.maybe({liquid, modId});
 }
 }

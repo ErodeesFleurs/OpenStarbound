@@ -64,7 +64,7 @@ struct MonotonicClock {
   MonotonicClock() {
     timespec ts;
     clock_getres(CLOCK_MONOTONIC, &ts);
-    starAssert(ts.tv_sec == 0);
+    assert(ts.tv_sec == 0);
     storedFrequency = 1'000'000'000 / ts.tv_nsec;
   };
 

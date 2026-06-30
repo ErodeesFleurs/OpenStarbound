@@ -23,7 +23,7 @@ WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId, Ass
 
 WorldServerThread::~WorldServerThread() {
   m_stop = true;
-  join();
+  (void)join();
 
   RecursiveMutexLocker locker(m_mutex);
   for (auto clientId : m_worldServer->clientIds())
@@ -37,12 +37,12 @@ WorldId WorldServerThread::worldId() const {
 void WorldServerThread::start() {
   m_stop = false;
   m_errorOccurred = false;
-  Thread::start();
+  (void)Thread::start();
 }
 
 void WorldServerThread::stop() {
   m_stop = true;
-  Thread::join();
+  (void)Thread::join();
 }
 
 void WorldServerThread::setPause(SharedPtr<atomic<bool> const> pause) {

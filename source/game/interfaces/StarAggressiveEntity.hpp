@@ -8,7 +8,7 @@ class AggressiveEntity;
 
 class AggressiveEntity : public virtual Entity {
 public:
-  virtual bool aggressive() const = 0;
+  [[nodiscard]] virtual bool aggressive() const = 0;
 };
 
 }

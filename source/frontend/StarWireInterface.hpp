@@ -26,10 +26,10 @@ public:
   virtual ~WirePane() = default;
 
   void update(float dt) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
-  SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
-  bool connecting() override;
+  [[nodiscard]] SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
+  [[nodiscard]] bool connecting() override;
 
   virtual void reset();
 

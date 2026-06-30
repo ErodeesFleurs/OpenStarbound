@@ -26,7 +26,7 @@ public:
   using reverse_iterator = const_reverse_iterator;
 
   template <typename Collection>
-  static OrderedSetWrapper from(Collection const& c);
+  [[nodiscard]] static OrderedSetWrapper from(Collection const& c);
 
   OrderedSetWrapper() = default;
   OrderedSetWrapper(OrderedSetWrapper const& set);
@@ -39,73 +39,73 @@ public:
   OrderedSetWrapper& operator=(OrderedSetWrapper const& set);
 
   // Guaranteed to be in order.
-  List<value_type> values() const;
+  [[nodiscard]] List<value_type> values() const;
 
-  bool contains(value_type const& v) const;
+  [[nodiscard]] bool contains(value_type const& v) const;
 
   // add either adds the value to the back, or does not move it from its
   // current order.
-  pair<iterator, bool> insert(value_type const& v);
+  [[nodiscard]] pair<iterator, bool> insert(value_type const& v);
 
   // like insert, but only returns whether the value was added or not.
-  bool add(Value const& v);
+  [[nodiscard]] bool add(Value const& v);
 
   // Always replaces an existing value with a new value if it exists, and
   // always moves to the back.
-  bool replace(Value const& v);
+  [[nodiscard]] bool replace(Value const& v);
 
   // Either adds a value to the end of the order, or moves an existing value to
   // the back.
-  bool addBack(Value const& v);
+  [[nodiscard]] bool addBack(Value const& v);
 
   // Either adds a value to the beginning of the order, or moves an existing
   // value to the beginning.
-  bool addFront(Value const& v);
+  [[nodiscard]] bool addFront(Value const& v);
 
   template <typename Container>
   void addAll(Container const& c);
 
-  iterator toFront(iterator i);
+  [[nodiscard]] iterator toFront(iterator i);
 
-  iterator toBack(iterator i);
+  [[nodiscard]] iterator toBack(iterator i);
 
-  bool remove(value_type const& v);
+  [[nodiscard]] bool remove(value_type const& v);
 
   template <typename Container>
   void removeAll(Container const& c);
 
   void clear();
 
-  value_type const& first() const;
-  value_type const& last() const;
+  [[nodiscard]] value_type const& first() const;
+  [[nodiscard]] value_type const& last() const;
 
   void removeFirst();
   void removeLast();
 
-  value_type takeFirst();
-  value_type takeLast();
+  [[nodiscard]] value_type takeFirst();
+  [[nodiscard]] value_type takeLast();
 
   template <typename Compare>
   void sort(Compare comp);
 
   void sort();
 
-  bool empty() const;
-  size_t size() const;
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] size_t size() const;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  [[nodiscard]] const_reverse_iterator rbegin() const;
+  [[nodiscard]] const_reverse_iterator rend() const;
 
-  Maybe<size_t> indexOf(value_type const& v) const;
+  [[nodiscard]] Maybe<size_t> indexOf(value_type const& v) const;
 
-  value_type const& at(size_t i) const;
-  value_type& at(size_t i);
+  [[nodiscard]] value_type const& at(size_t i) const;
+  [[nodiscard]] value_type& at(size_t i);
 
-  OrderedSetWrapper intersection(OrderedSetWrapper const& s) const;
-  OrderedSetWrapper difference(OrderedSetWrapper const& s) const;
+  [[nodiscard]] OrderedSetWrapper intersection(OrderedSetWrapper const& s) const;
+  [[nodiscard]] OrderedSetWrapper difference(OrderedSetWrapper const& s) const;
 
 private:
   MapType m_map;
@@ -160,7 +160,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::operator=(OrderedSetWrap
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<value_type> {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<value_type> {
   List<value_type> values;
   values.reserve(size());
   for (auto p : *this)
@@ -169,7 +169,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<v
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::contains(value_type const& v) const {
+[[nodiscard]] bool OrderedSetWrapper<Map, Value, Allocator, Args...>::contains(value_type const& v) const {
   return m_map.contains(v);
 }
 
@@ -267,14 +267,14 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::clear() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> value_type const& {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::first() const -> value_type const& {
   if (empty())
     throw SetException("first() called on empty OrderedSet");
   return *begin();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> value_type const& {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::last() const -> value_type const& {
   if (empty())
     throw SetException("last() called on empty OrderedSet");
   return *(prev(end()));
@@ -338,12 +338,12 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::sort() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const {
+[[nodiscard]] bool OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const {
   return m_map.empty();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-size_t OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const {
+[[nodiscard]] size_t OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const {
   return m_map.size();
 }
 
@@ -368,7 +368,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::rend() const -> const_re
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-Maybe<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
+[[nodiscard]] Maybe<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
   auto i = m_map.find(v);
   if (i == m_map.end())
     return {};
@@ -377,21 +377,21 @@ Maybe<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_t
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) const -> value_type const& {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) const -> value_type const& {
   auto it = begin();
   std::advance(it, i);
   return *it;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) -> value_type& {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) -> value_type& {
   auto it = begin();
   std::advance(it, i);
   return *it;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::intersection(OrderedSetWrapper const& s) const -> OrderedSetWrapper {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::intersection(OrderedSetWrapper const& s) const -> OrderedSetWrapper {
   OrderedSetWrapper ret;
   for (auto const& e : s) {
     if (contains(e))
@@ -401,7 +401,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::intersection(OrderedSetW
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::difference(OrderedSetWrapper const& s) const -> OrderedSetWrapper {
+[[nodiscard]] auto OrderedSetWrapper<Map, Value, Allocator, Args...>::difference(OrderedSetWrapper const& s) const -> OrderedSetWrapper {
   OrderedSetWrapper ret;
   for (auto const& e : *this) {
     if (!s.contains(e))

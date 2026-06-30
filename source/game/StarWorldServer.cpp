@@ -581,7 +581,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
         EntityId entityId = entity->entityId();
         if (connectionForEntity(entityId) == clientId) {
-          starAssert(entity->isSlave());
+          assert(entity->isSlave());
           entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, clientInfo->clientState.netCompatibilityRules());
         }
       });
@@ -953,7 +953,7 @@ void WorldServer::forEachCollisionBlock(RectI const& region, function<void(Colli
     if (tile.getCollision() == CollisionKind::Null) {
       iterator(CollisionBlock::nullBlock(pos));
     } else {
-      starAssert(!tile.collisionCacheDirty);
+      assert(!tile.collisionCacheDirty);
       if (auto cache = m_collision.m_collisionCache.ptr(pos)) {
         for (auto const& block : *cache)
           iterator(block);

@@ -73,35 +73,35 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
   m_creationTime = Time::monotonicMilliseconds();
 }
 
-ConnectionId ServerClientContext::clientId() const {
+[[nodiscard]] ConnectionId ServerClientContext::clientId() const {
   return m_clientId;
 }
 
-Maybe<HostAddress> const& ServerClientContext::remoteAddress() const {
+[[nodiscard]] Maybe<HostAddress> const& ServerClientContext::remoteAddress() const {
   return m_remoteAddress;
 }
 
-Uuid const& ServerClientContext::playerUuid() const {
+[[nodiscard]] Uuid const& ServerClientContext::playerUuid() const {
   return m_playerUuid;
 }
 
-String const& ServerClientContext::playerName() const {
+[[nodiscard]] String const& ServerClientContext::playerName() const {
   return m_playerName;
 }
 
-String const& ServerClientContext::shipSpecies() const {
+[[nodiscard]] String const& ServerClientContext::shipSpecies() const {
   return m_shipSpecies;
 }
 
-bool ServerClientContext::canBecomeAdmin() const {
+[[nodiscard]] bool ServerClientContext::canBecomeAdmin() const {
   return m_canBecomeAdmin;
 }
 
-NetCompatibilityRules ServerClientContext::netRules() const {
+[[nodiscard]] NetCompatibilityRules ServerClientContext::netRules() const {
   return m_netRules;
 }
 
-String ServerClientContext::descriptiveName() const {
+[[nodiscard]] String ServerClientContext::descriptiveName() const {
   RecursiveMutexLocker locker(m_mutex);
   String hostName = m_remoteAddress ? toString(*m_remoteAddress) : "local";
   return strf("'{}' <{}> ({})", m_playerName, m_clientId, hostName);
@@ -111,7 +111,7 @@ void ServerClientContext::registerRpcHandlers(JsonRpcHandlers const& rpcHandlers
   m_rpc.registerHandlers(rpcHandlers);
 }
 
-CelestialCoordinate ServerClientContext::shipCoordinate() const {
+[[nodiscard]] CelestialCoordinate ServerClientContext::shipCoordinate() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipCoordinate.get();
 }
@@ -121,7 +121,7 @@ void ServerClientContext::setShipCoordinate(CelestialCoordinate system) {
   m_shipCoordinate.set(system);
 }
 
-SystemLocation ServerClientContext::shipLocation() const {
+[[nodiscard]] SystemLocation ServerClientContext::shipLocation() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipSystemLocation;
 }
@@ -131,7 +131,7 @@ void ServerClientContext::setShipLocation(SystemLocation location) {
   m_shipSystemLocation = location;
 }
 
-Maybe<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
+[[nodiscard]] Maybe<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_orbitWarpActionNetState.get();
 }
@@ -141,7 +141,7 @@ void ServerClientContext::setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> w
   m_orbitWarpActionNetState.set(warpAction);
 }
 
-bool ServerClientContext::isAdmin() const {
+[[nodiscard]] bool ServerClientContext::isAdmin() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_isAdminNetState.get();
 }
@@ -151,7 +151,7 @@ void ServerClientContext::setAdmin(bool admin) {
   m_isAdminNetState.set(admin);
 }
 
-EntityDamageTeam ServerClientContext::team() const {
+[[nodiscard]] EntityDamageTeam ServerClientContext::team() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_teamNetState.get();
 }
@@ -161,7 +161,7 @@ void ServerClientContext::setTeam(EntityDamageTeam team) {
   m_teamNetState.set(team);
 }
 
-ShipUpgrades ServerClientContext::shipUpgrades() const {
+[[nodiscard]] ShipUpgrades ServerClientContext::shipUpgrades() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipUpgrades.get();
 }
@@ -175,7 +175,7 @@ void ServerClientContext::setShipSpecies(String shipSpecies) {
   m_shipSpecies = shipSpecies;
 }
 
-WorldChunks ServerClientContext::shipChunks() const {
+[[nodiscard]] WorldChunks ServerClientContext::shipChunks() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipChunks;
 }
@@ -222,7 +222,7 @@ void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldT
   m_systemWorldThread = std::move(systemWorldThread);
 }
 
-SystemWorldServerThreadPtr ServerClientContext::systemWorld() const {
+[[nodiscard]] SystemWorldServerThreadPtr ServerClientContext::systemWorld() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_systemWorldThread;
 }
@@ -244,12 +244,12 @@ void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
     m_playerWorldIdNetState.set(WorldId());
 }
 
-WorldServerThreadPtr ServerClientContext::playerWorld() const {
+[[nodiscard]] WorldServerThreadPtr ServerClientContext::playerWorld() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_worldThread;
 }
 
-WorldId ServerClientContext::playerWorldId() const {
+[[nodiscard]] WorldId ServerClientContext::playerWorldId() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_playerWorldIdNetState.get();
 }
@@ -258,7 +258,7 @@ void ServerClientContext::clearPlayerWorld() {
   setPlayerWorld({});
 }
 
-WarpToWorld ServerClientContext::playerReturnWarp() const {
+[[nodiscard]] WarpToWorld ServerClientContext::playerReturnWarp() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_returnWarp;
 }
@@ -268,7 +268,7 @@ void ServerClientContext::setPlayerReturnWarp(WarpToWorld warp) {
   m_returnWarp = std::move(warp);
 }
 
-WarpToWorld ServerClientContext::playerReviveWarp() const {
+[[nodiscard]] WarpToWorld ServerClientContext::playerReviveWarp() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_reviveWarp;
 }
@@ -301,7 +301,7 @@ Json ServerClientContext::storeServerData() {
   return store;
 }
 
-int64_t ServerClientContext::creationTime() const {
+[[nodiscard]] int64_t ServerClientContext::creationTime() const {
   return m_creationTime;
 }
 

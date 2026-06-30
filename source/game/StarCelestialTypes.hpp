@@ -39,7 +39,7 @@ struct CelestialChunk {
   CelestialChunk() = default;
   CelestialChunk(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   Vec2I chunkIndex;
   List<CelestialConstellation> constellations;

@@ -82,11 +82,11 @@ void PhysicsObject::update(float dt, uint64_t currentStep) {
     m_netGroup.tickNetInterpolation(dt);
 }
 
-RectF PhysicsObject::metaBoundBox() const {
+[[nodiscard]] RectF PhysicsObject::metaBoundBox() const {
   return m_metaBoundBox;
 }
 
-List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
   List<PhysicsForceRegion> forces;
   for (auto const& [_, forceRegionConfig] : m_physicsForces) {
     if (forceRegionConfig.enabled.get()) {
@@ -98,11 +98,11 @@ List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
   return forces;
 }
 
-size_t PhysicsObject::movingCollisionCount() const {
+[[nodiscard]] size_t PhysicsObject::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(size_t positionIndex) const {
+[[nodiscard]] Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(size_t positionIndex) const {
   auto const& collisionConfig = m_physicsCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

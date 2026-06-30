@@ -16,7 +16,7 @@ using EntityTileDamageStatusPtr = SharedPtr<EntityTileDamageStatus>;
 struct TileDamageExceptionTag { static constexpr char const* typeName = "TileDamageException"; };
 using TileDamageException = TypedException<StarException, TileDamageExceptionTag>;
 
-List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool diameterMode);
+[[nodiscard]] List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool diameterMode);
 
 enum class TileDamageType : uint8_t {
   // Damage done that will not actually kill the target
@@ -36,7 +36,7 @@ enum class TileDamageType : uint8_t {
 };
 extern EnumMap<TileDamageType> const TileDamageTypeNames;
 
-bool tileDamageIsPenetrating(TileDamageType damageType);
+[[nodiscard]] bool tileDamageIsPenetrating(TileDamageType damageType);
 
 struct TileDamage {
   TileDamage() = default;
@@ -59,15 +59,15 @@ public:
   explicit TileDamageParameters(Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
   TileDamageParameters(AssetsConstPtr assets, Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
 
-  float damageDone(TileDamage const& damage) const;
-  float recoveryPerSecond() const;
-  unsigned requiredHarvestLevel() const;
-  float maximumEffectTime() const;
-  float totalHealth() const;
+  [[nodiscard]] float damageDone(TileDamage const& damage) const;
+  [[nodiscard]] float recoveryPerSecond() const;
+  [[nodiscard]] unsigned requiredHarvestLevel() const;
+  [[nodiscard]] float maximumEffectTime() const;
+  [[nodiscard]] float totalHealth() const;
 
-  TileDamageParameters sum(TileDamageParameters const& other) const;
+  [[nodiscard]] TileDamageParameters sum(TileDamageParameters const& other) const;
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   friend DataStream& operator>>(DataStream& ds, TileDamageParameters& tileDamage);
   friend DataStream& operator<<(DataStream& ds, TileDamageParameters const& tileDamage);
@@ -84,20 +84,20 @@ class TileDamageStatus {
 public:
   TileDamageStatus() = default;
 
-  float damagePercentage() const;
-  float damageEffectPercentage() const;
-  Vec2F sourcePosition() const;
-  TileDamageType damageType() const;
+  [[nodiscard]] float damagePercentage() const;
+  [[nodiscard]] float damageEffectPercentage() const;
+  [[nodiscard]] Vec2F sourcePosition() const;
+  [[nodiscard]] TileDamageType damageType() const;
 
   void reset();
   void damage(TileDamageParameters const& damageParameters, Vec2F const& sourcePosition, TileDamage const& damage);
   void recover(TileDamageParameters const& damageParameters, float dt);
 
-  bool healthy() const;
-  bool damaged() const;
-  bool damageProtected() const;
-  bool dead() const;
-  bool harvested() const;
+  [[nodiscard]] bool healthy() const;
+  [[nodiscard]] bool damaged() const;
+  [[nodiscard]] bool damageProtected() const;
+  [[nodiscard]] bool dead() const;
+  [[nodiscard]] bool harvested() const;
 
   friend DataStream& operator>>(DataStream& ds, TileDamageStatus& tileDamageStatus);
   friend DataStream& operator<<(DataStream& ds, TileDamageStatus const& tileDamageStatus);
@@ -117,19 +117,19 @@ class EntityTileDamageStatus : public NetElementGroup {
 public:
   EntityTileDamageStatus();
 
-  float damagePercentage() const;
-  float damageEffectPercentage() const;
-  TileDamageType damageType() const;
+  [[nodiscard]] float damagePercentage() const;
+  [[nodiscard]] float damageEffectPercentage() const;
+  [[nodiscard]] TileDamageType damageType() const;
 
   void reset();
   void damage(TileDamageParameters const& damageParameters, TileDamage const& damage);
   void recover(TileDamageParameters const& damageParameters, float dt);
 
-  bool healthy() const;
-  bool damaged() const;
-  bool damageProtected() const;
-  bool dead() const;
-  bool harvested() const;
+  [[nodiscard]] bool healthy() const;
+  [[nodiscard]] bool damaged() const;
+  [[nodiscard]] bool damageProtected() const;
+  [[nodiscard]] bool dead() const;
+  [[nodiscard]] bool harvested() const;
 
 private:
   NetElementFloat m_damagePercentage;

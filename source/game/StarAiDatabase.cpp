@@ -41,11 +41,11 @@ AiDatabase::AiDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imag
     m_animationConfig.aiAnimations[animationName] = Animation(animationConfig, "/ai/", assets, imageMetadataDatabase);
 }
 
-AiMission AiDatabase::mission(String const& missionName) const {
+[[nodiscard]] AiMission AiDatabase::mission(String const& missionName) const {
   return m_missions.get(missionName);
 }
 
-AiSpeech AiDatabase::shipStatus(unsigned shipLevel) const {
+[[nodiscard]] AiSpeech AiDatabase::shipStatus(unsigned shipLevel) const {
   // Find the first open speech set at this ship level or below.
   auto i = m_shipStatus.upper_bound(shipLevel);
   if (i != m_shipStatus.begin() && (--i)->first <= shipLevel)
@@ -54,50 +54,50 @@ AiSpeech AiDatabase::shipStatus(unsigned shipLevel) const {
   return {};
 }
 
-AiSpeech AiDatabase::noCrewSpeech() const {
+[[nodiscard]] AiSpeech AiDatabase::noCrewSpeech() const {
   return m_noCrewSpeech;
 }
 
-AiSpeech AiDatabase::noMissionsSpeech() const {
+[[nodiscard]] AiSpeech AiDatabase::noMissionsSpeech() const {
   return m_noMissionsSpeech;
 }
 
-String AiDatabase::portraitImage(String const& species, String const& frame) const {
+[[nodiscard]] String AiDatabase::portraitImage(String const& species, String const& frame) const {
   return strf("/ai/{}:{}", m_speciesParameters.get(species).portraitFrames, frame);
 }
 
-Animation AiDatabase::animation(String const& species, String const& animationName) const {
+[[nodiscard]] Animation AiDatabase::animation(String const& species, String const& animationName) const {
   auto faceAnimation = m_animationConfig.aiAnimations.get(animationName);
   faceAnimation.setTag("image", m_speciesParameters.get(species).aiFrames);
   return faceAnimation;
 }
 
-Animation AiDatabase::staticAnimation(String const& species) const {
+[[nodiscard]] Animation AiDatabase::staticAnimation(String const& species) const {
   auto staticAnimation = m_animationConfig.staticAnimation;
   staticAnimation.setTag("image", m_speciesParameters.get(species).staticFrames);
   staticAnimation.setColor(Color::rgbaf(1.0f, 1.0f, 1.0f, m_animationConfig.staticOpacity));
   return staticAnimation;
 }
 
-Animation AiDatabase::scanlineAnimation() const {
+[[nodiscard]] Animation AiDatabase::scanlineAnimation() const {
   auto animation = m_animationConfig.scanlineAnimation;
   animation.setColor(Color::rgbaf(1.0f, 1.0f, 1.0f, m_animationConfig.scanlineOpacity));
   return animation;
 }
 
-float AiDatabase::charactersPerSecond() const {
+[[nodiscard]] float AiDatabase::charactersPerSecond() const {
   return m_animationConfig.charactersPerSecond;
 }
 
-String AiDatabase::defaultAnimation() const {
+[[nodiscard]] String AiDatabase::defaultAnimation() const {
   return m_animationConfig.defaultAnimation;
 }
 
-AiSpeech AiDatabase::parseSpeech(Json const& v) {
+[[nodiscard]] AiSpeech AiDatabase::parseSpeech(Json const& v) {
   return AiSpeech{v.getString("animation"), v.getString("text"), v.getFloat("speedModifier", 1.0f)};
 }
 
-AiDatabase::AiSpeciesParameters AiDatabase::parseSpeciesParameters(Json const& v) {
+[[nodiscard]] AiDatabase::AiSpeciesParameters AiDatabase::parseSpeciesParameters(Json const& v) {
   AiSpeciesParameters species;
   species.aiFrames = v.getString("aiFrames");
   species.portraitFrames = v.getString("portraitFrames");
@@ -105,12 +105,12 @@ AiDatabase::AiSpeciesParameters AiDatabase::parseSpeciesParameters(Json const& v
   return species;
 }
 
-AiSpeciesMissionText AiDatabase::parseSpeciesMissionText(Json const& vm) {
+[[nodiscard]] AiSpeciesMissionText AiDatabase::parseSpeciesMissionText(Json const& vm) {
   return AiSpeciesMissionText{
       vm.getString("buttonText"), vm.getString("repeatButtonText"), parseSpeech(vm.get("selectSpeech", {}))};
 }
 
-AiMission AiDatabase::parseMission(Json const& vm) {
+[[nodiscard]] AiMission AiDatabase::parseMission(Json const& vm) {
   AiMission mission;
   mission.missionName = vm.getString("missionName");
   mission.missionUniqueWorld = vm.getString("missionWorld");

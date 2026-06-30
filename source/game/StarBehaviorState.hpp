@@ -24,14 +24,14 @@ class Blackboard {
 public:
   Blackboard(LuaTable luaContext);
 
-  LuaValue get(NodeParameterType type, String const& key) const;
+  [[nodiscard]] LuaValue get(NodeParameterType type, String const& key) const;
   void set(NodeParameterType type, String const& key, LuaValue value);
 
-  LuaTable parameters(StringMap<NodeParameter> const& nodeParameters, uint64_t nodeId);
+  [[nodiscard]] LuaTable parameters(StringMap<NodeParameter> const& nodeParameters, uint64_t nodeId);
   void setOutput(ActionNode const& node, LuaTable const& output);
 
   // takes the set of currently held ephemeral values
-  Set<pair<NodeParameterType, String>> takeEphemerals();
+  [[nodiscard]] Set<pair<NodeParameterType, String>> takeEphemerals();
 
   // clears any provided ephemerals that are not currently held
   void clearEphemerals(Set<pair<NodeParameterType, String>> ephemerals);
@@ -82,26 +82,26 @@ class BehaviorState {
 public:
   BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, Maybe<BlackboardWeakPtr> blackboard = {});
 
-  NodeStatus run(float dt);
+  [[nodiscard]] NodeStatus run(float dt);
   void clear();
 
-  BlackboardWeakPtr blackboardPtr();
+  [[nodiscard]] BlackboardWeakPtr blackboardPtr();
 private:
-  BlackboardPtr board();
+  [[nodiscard]] BlackboardPtr board();
 
-  LuaThread nodeLuaThread(String const& funcName);
+  [[nodiscard]] LuaThread nodeLuaThread(String const& funcName);
 
-  NodeStatus runNode(BehaviorNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runNode(BehaviorNode const& node, NodeState& state);
 
-  NodeStatus runAction(ActionNode const& node, NodeState& state);
-  NodeStatus runDecorator(DecoratorNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runAction(ActionNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runDecorator(DecoratorNode const& node, NodeState& state);
 
-  NodeStatus runComposite(CompositeNode const& node, NodeState& state);
-  NodeStatus runSequence(SequenceNode const& node, NodeState& state);
-  NodeStatus runSelector(SelectorNode const& node, NodeState& state);
-  NodeStatus runParallel(ParallelNode const& node, NodeState& state);
-  NodeStatus runDynamic(DynamicNode const& node, NodeState& state);
-  NodeStatus runRandomize(RandomizeNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runComposite(CompositeNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runSequence(SequenceNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runSelector(SelectorNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runParallel(ParallelNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runDynamic(DynamicNode const& node, NodeState& state);
+  [[nodiscard]] NodeStatus runRandomize(RandomizeNode const& node, NodeState& state);
 
   BehaviorTreeConstPtr m_tree;
   NodeState m_rootState;

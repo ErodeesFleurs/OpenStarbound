@@ -19,7 +19,7 @@ class StagehandDatabase {
 public:
   StagehandDatabase(AssetsConstPtr assets);
 
-  StagehandPtr createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
+  [[nodiscard]] StagehandPtr createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
 
 private:
   StringMap<Json> m_stagehandTypes;

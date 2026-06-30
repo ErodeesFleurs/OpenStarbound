@@ -442,7 +442,7 @@ void Player::uninit() {
   Entity::uninit();
 }
 
-List<Drawable> Player::drawables() const {
+[[nodiscard]] List<Drawable> Player::drawables() const {
   List<Drawable> drawables;
 
   if (!isTeleporting()) {
@@ -489,7 +489,7 @@ List<Drawable> Player::drawables() const {
   return drawables;
 }
 
-List<OverheadBar> Player::bars() const {
+[[nodiscard]] List<OverheadBar> Player::bars() const {
   return m_statusController->overheadBars();
 }
 
@@ -518,15 +518,15 @@ void Player::addEphemeralStatusEffects(List<EphemeralStatusEffect> const& status
   m_statusController->addEphemeralEffects(statusEffects);
 }
 
-ActiveUniqueStatusEffectSummary Player::activeUniqueStatusEffectSummary() const {
+[[nodiscard]] ActiveUniqueStatusEffectSummary Player::activeUniqueStatusEffectSummary() const {
   return m_statusController->activeUniqueStatusEffectSummary();
 }
 
-float Player::powerMultiplier() const {
+[[nodiscard]] float Player::powerMultiplier() const {
   return m_statusController->stat("powerMultiplier");
 }
 
-bool Player::isDead() const {
+[[nodiscard]] bool Player::isDead() const {
   return !m_statusController->resourcePositive("health");
 }
 
@@ -534,7 +534,7 @@ void Player::kill() {
   m_statusController->setResource("health", 0);
 }
 
-bool Player::wireToolInUse() const {
+[[nodiscard]] bool Player::wireToolInUse() const {
   return static_cast<bool>(as<WireTool>(m_tools->primaryHandItem()));
 }
 
@@ -543,15 +543,15 @@ void Player::setWireConnector(WireConnector* wireConnector) const {
     wireTool->setConnector(wireConnector);
 }
 
-List<Drawable> Player::portrait(PortraitMode mode) const {
+[[nodiscard]] List<Drawable> Player::portrait(PortraitMode mode) const {
   return m_appearance.portrait(mode);
 }
 
-bool Player::underwater() const {
+[[nodiscard]] bool Player::underwater() const {
   return m_appearance.underwater();
 }
 
-List<LightSource> Player::lightSources() const {
+[[nodiscard]] List<LightSource> Player::lightSources() const {
   List<LightSource> lights;
   lights.appendAll(m_tools->lightSources());
   lights.appendAll(m_statusController->lightSources());
@@ -560,15 +560,15 @@ List<LightSource> Player::lightSources() const {
   return lights;
 }
 
-RectF Player::metaBoundBox() const {
+[[nodiscard]] RectF Player::metaBoundBox() const {
   return m_config->metaBoundBox;
 }
 
-Maybe<HitType> Player::queryHit(DamageSource const& source) const {
+[[nodiscard]] Maybe<HitType> Player::queryHit(DamageSource const& source) const {
   return m_damagePipeline->queryHit(source);
 }
 
-Maybe<PolyF> Player::hitPoly() const {
+[[nodiscard]] Maybe<PolyF> Player::hitPoly() const {
   return m_damagePipeline->hitPoly();
 }
 
@@ -588,11 +588,11 @@ void Player::damagedOther(DamageNotification const& damage) {
   m_damagePipeline->damagedOther(damage);
 }
 
-List<DamageSource> Player::damageSources() const {
+[[nodiscard]] List<DamageSource> Player::damageSources() const {
   return m_damagePipeline->damageSources();
 }
 
-bool Player::shouldDestroy() const {
+[[nodiscard]] bool Player::shouldDestroy() const {
   return isDead();
 }
 
@@ -625,7 +625,7 @@ void Player::destroy(RenderCallback* renderCallback) {
   m_songbook->stop();
 }
 
-Maybe<EntityAnchorState> Player::loungingIn() const {
+[[nodiscard]] Maybe<EntityAnchorState> Player::loungingIn() const {
   if (is<LoungeAnchor>(m_movementController->entityAnchor()))
     return m_movementController->anchorState();
   return {};
@@ -654,52 +654,52 @@ void Player::stopLounging() {
   }
 }
 
-Vec2F Player::position() const {
+[[nodiscard]] Vec2F Player::position() const {
   return m_movementController->position();
 }
 
-Vec2F Player::velocity() const {
+[[nodiscard]] Vec2F Player::velocity() const {
   return m_movementController->velocity();
 }
 
-Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
+[[nodiscard]] Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
     humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]);
 }
 
-Vec2F Player::feetOffset() const {
+[[nodiscard]] Vec2F Player::feetOffset() const {
   return Vec2F(humanoid()->feetOffset()[0] * numericalDirection(facingDirection()), humanoid()->feetOffset()[1]);
 }
 
-Vec2F Player::headArmorOffset() const {
+[[nodiscard]] Vec2F Player::headArmorOffset() const {
   return Vec2F(
     humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]);
 }
 
-Vec2F Player::chestArmorOffset() const {
+[[nodiscard]] Vec2F Player::chestArmorOffset() const {
   return Vec2F(
     humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]);
 }
 
-Vec2F Player::backArmorOffset() const {
+[[nodiscard]] Vec2F Player::backArmorOffset() const {
   return Vec2F(
     humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]);
 }
 
-Vec2F Player::legsArmorOffset() const {
+[[nodiscard]] Vec2F Player::legsArmorOffset() const {
   return Vec2F(
     humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]);
 }
 
-Vec2F Player::mouthPosition() const {
+[[nodiscard]] Vec2F Player::mouthPosition() const {
   return position() + mouthOffset(true);
 }
 
-Vec2F Player::mouthPosition(bool ignoreAdjustments) const {
+[[nodiscard]] Vec2F Player::mouthPosition(bool ignoreAdjustments) const {
   return position() + mouthOffset(ignoreAdjustments);
 }
 
-RectF Player::collisionArea() const {
+[[nodiscard]] RectF Player::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
@@ -707,7 +707,7 @@ void Player::revive(Vec2F const& footPosition) {
   m_teleporter->revive(footPosition);
 }
 
-bool Player::shifting() const {
+[[nodiscard]] bool Player::shifting() const {
   return m_shifting;
 }
 
@@ -739,7 +739,7 @@ void Player::setBuildToolControlPresses(String const& bindId, Maybe<unsigned> pr
     m_buildToolControlPresses.remove(bindId);
 }
 
-Maybe<unsigned> Player::buildToolControlPresses(String const& bindId) const {
+[[nodiscard]] Maybe<unsigned> Player::buildToolControlPresses(String const& bindId) const {
   return m_buildToolControlPresses.maybe(bindId);
 }
 
@@ -1117,11 +1117,11 @@ void Player::update(float dt, uint64_t) {
     SpatialLogger::logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
 }
 
-float Player::timeSinceLastGaveDamage() const {
+[[nodiscard]] float Player::timeSinceLastGaveDamage() const {
   return m_damagePipeline->timeSinceLastGaveDamage();
 }
 
-EntityId Player::lastDamagedTarget() const {
+[[nodiscard]] EntityId Player::lastDamagedTarget() const {
   return m_damagePipeline->lastDamagedTarget();
 }
 
@@ -1198,7 +1198,7 @@ void Player::renderLightSources(RenderCallback* renderCallback) {
   m_deployment->renderLightSources(renderCallback);
 }
 
-Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {
+[[nodiscard]] Json Player::getGenericProperty(String const& name, Json const& defaultValue) const {
   return m_genericProperties.value(name, defaultValue);
 }
 
@@ -1209,11 +1209,11 @@ void Player::setGenericProperty(String const& name, Json const& value) {
     m_genericProperties.set(name, value);
 }
 
-PlayerInventoryPtr Player::inventory() const {
+[[nodiscard]] PlayerInventoryPtr Player::inventory() const {
   return m_inventory;
 }
 
-uint64_t Player::itemsCanHold(ItemPtr const& items) const {
+[[nodiscard]] uint64_t Player::itemsCanHold(ItemPtr const& items) const {
   return m_inventory->itemsCanFit(items);
 }
 
@@ -1275,15 +1275,15 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
   }
 }
 
-ItemPtr Player::essentialItem(EssentialItem essentialItem) const {
+[[nodiscard]] ItemPtr Player::essentialItem(EssentialItem essentialItem) const {
   return m_inventory->essentialItem(essentialItem);
 }
 
-bool Player::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] bool Player::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasItem(descriptor, exactMatch);
 }
 
-uint64_t Player::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] uint64_t Player::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return m_inventory->hasCountOfItem(descriptor, exactMatch);
 }
 
@@ -1348,7 +1348,7 @@ void Player::refreshEquipment() {
   refreshItems();
 }
 
-PlayerBlueprintsPtr Player::blueprints() const {
+[[nodiscard]] PlayerBlueprintsPtr Player::blueprints() const {
   return m_blueprints;
 }
 
@@ -1368,7 +1368,7 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
   return false;
 }
 
-bool Player::blueprintKnown(ItemDescriptor const& descriptor) const {
+[[nodiscard]] bool Player::blueprintKnown(ItemDescriptor const& descriptor) const {
   if (descriptor.isNull())
     return false;
 
@@ -1386,15 +1386,15 @@ bool Player::addCollectable(String const& collectionName, String const& collecta
   }
 }
 
-PlayerUniverseMapPtr Player::universeMap() const {
+[[nodiscard]] PlayerUniverseMapPtr Player::universeMap() const {
   return m_universeMap;
 }
 
-PlayerCodexesPtr Player::codexes() const {
+[[nodiscard]] PlayerCodexesPtr Player::codexes() const {
   return m_codexes;
 }
 
-PlayerTechPtr Player::techs() const {
+[[nodiscard]] PlayerTechPtr Player::techs() const {
   return m_techs;
 }
 
@@ -1405,15 +1405,15 @@ void Player::overrideTech(Maybe<StringList> const& techModules) {
     m_techController->clearOverrideTech();
 }
 
-bool Player::techOverridden() const {
+[[nodiscard]] bool Player::techOverridden() const {
   return m_techController->techOverridden();
 }
 
-PlayerCompanionsPtr Player::companions() const {
+[[nodiscard]] PlayerCompanionsPtr Player::companions() const {
   return m_companions;
 }
 
-PlayerLogPtr Player::log() const {
+[[nodiscard]] PlayerLogPtr Player::log() const {
   return m_log;
 }
 
@@ -1482,30 +1482,30 @@ void Player::aim(Vec2F const& position) {
   m_aimPosition = position;
 }
 
-Vec2F Player::aimPosition() const {
+[[nodiscard]] Vec2F Player::aimPosition() const {
   return m_aimPosition;
 }
 
-Vec2F Player::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
+[[nodiscard]] Vec2F Player::armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
   return m_tools->armPosition(*humanoid(), hand, facingDirection, armAngle, offset);
 }
 
-Vec2F Player::handOffset(ToolHand hand, Direction facingDirection) const {
+[[nodiscard]] Vec2F Player::handOffset(ToolHand hand, Direction facingDirection) const {
   return m_tools->handOffset(*humanoid(), hand, facingDirection);
 }
 
-Vec2F Player::handPosition(ToolHand hand, Vec2F const& handOffset) const {
+[[nodiscard]] Vec2F Player::handPosition(ToolHand hand, Vec2F const& handOffset) const {
   return m_tools->handPosition(hand, *humanoid(), handOffset);
 }
 
-ItemPtr Player::handItem(ToolHand hand) const {
+[[nodiscard]] ItemPtr Player::handItem(ToolHand hand) const {
   if (hand == ToolHand::Primary)
     return m_tools->primaryHandItem();
   else
     return m_tools->altHandItem();
 }
 
-Vec2F Player::armAdjustment() const {
+[[nodiscard]] Vec2F Player::armAdjustment() const {
   return humanoid()->armAdjustment();
 }
 
@@ -1517,7 +1517,7 @@ void Player::playEmote(HumanoidEmote emote) {
   m_chatAndEmotes->playEmote(emote);
 }
 
-bool Player::canUseTool() const {
+[[nodiscard]] bool Player::canUseTool() const {
   bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
@@ -1557,14 +1557,14 @@ void Player::endTrigger() {
   m_useDown = false;
 }
 
-float Player::toolRadius() const {
+[[nodiscard]] float Player::toolRadius() const {
   auto radius = m_tools->toolRadius();
   if (radius)
     return *radius;
   return interactRadius();
 }
 
-float Player::interactRadius() const {
+[[nodiscard]] float Player::interactRadius() const {
   return m_interactRadius;
 }
 
@@ -1582,47 +1582,47 @@ List<InteractAction> Player::pullInteractActions() {
   return results;
 }
 
-uint64_t Player::currency(String const& currencyType) const {
+[[nodiscard]] uint64_t Player::currency(String const& currencyType) const {
   return m_inventory->currency(currencyType);
 }
 
-float Player::health() const {
+[[nodiscard]] float Player::health() const {
   return m_statusController->resource("health");
 }
 
-float Player::maxHealth() const {
+[[nodiscard]] float Player::maxHealth() const {
   return *m_statusController->resourceMax("health");
 }
 
-DamageBarType Player::damageBar() const {
+[[nodiscard]] DamageBarType Player::damageBar() const {
   return DamageBarType::Default;
 }
 
-float Player::healthPercentage() const {
+[[nodiscard]] float Player::healthPercentage() const {
   return *m_statusController->resourcePercentage("health");
 }
 
-float Player::energy() const {
+[[nodiscard]] float Player::energy() const {
   return m_statusController->resource("energy");
 }
 
-float Player::maxEnergy() const {
+[[nodiscard]] float Player::maxEnergy() const {
   return *m_statusController->resourceMax("energy");
 }
 
-float Player::energyPercentage() const {
+[[nodiscard]] float Player::energyPercentage() const {
   return *m_statusController->resourcePercentage("energy");
 }
 
-float Player::energyRegenBlockPercent() const {
+[[nodiscard]] float Player::energyRegenBlockPercent() const {
   return *m_statusController->resourcePercentage("energyRegenBlock");
 }
 
-bool Player::fullEnergy() const {
+[[nodiscard]] bool Player::fullEnergy() const {
   return energy() >= maxEnergy();
 }
 
-bool Player::energyLocked() const {
+[[nodiscard]] bool Player::energyLocked() const {
   return m_statusController->resourceLocked("energy");
 }
 
@@ -1632,27 +1632,27 @@ bool Player::consumeEnergy(float energy) {
   return m_statusController->overConsumeResource("energy", energy);
 }
 
-float Player::foodPercentage() const {
+[[nodiscard]] float Player::foodPercentage() const {
   return *m_statusController->resourcePercentage("food");
 }
 
-float Player::breath() const {
+[[nodiscard]] float Player::breath() const {
   return m_statusController->resource("breath");
 }
 
-float Player::maxBreath() const {
+[[nodiscard]] float Player::maxBreath() const {
   return *m_statusController->resourceMax("breath");
 }
 
-float Player::protection() const {
+[[nodiscard]] float Player::protection() const {
   return m_statusController->stat("protection");
 }
 
-bool Player::forceNude() const {
+[[nodiscard]] bool Player::forceNude() const {
   return m_statusController->statPositive("nude");
 }
 
-String Player::description() const {
+[[nodiscard]] String Player::description() const {
   return m_description;
 }
 
@@ -1660,11 +1660,11 @@ void Player::setDescription(String const& description) {
   m_description = description;
 }
 
-Direction Player::walkingDirection() const {
+[[nodiscard]] Direction Player::walkingDirection() const {
   return m_movementController->movingDirection();
 }
 
-Direction Player::facingDirection() const {
+[[nodiscard]] Direction Player::facingDirection() const {
   return m_movementController->facingDirection();
 }
 
@@ -1899,7 +1899,7 @@ void Player::processStateChanges(float dt) {
   humanoid()->setEmoteState(m_chatAndEmotes->emoteState());
 }
 
-String Player::getFootstepSound(Vec2I const& sensor) const {
+[[nodiscard]] String Player::getFootstepSound(Vec2I const& sensor) const {
   auto materialDatabase = m_materialDatabase;
 
   String fallback = materialDatabase->defaultFootstepSound();
@@ -1916,19 +1916,19 @@ String Player::getFootstepSound(Vec2I const& sensor) const {
   return fallback;
 }
 
-bool Player::inInteractionRange() const {
+[[nodiscard]] bool Player::inInteractionRange() const {
   return inInteractionRange(centerOfTile(aimPosition()));
 }
 
-bool Player::inInteractionRange(Vec2F aimPos) const {
+[[nodiscard]] bool Player::inInteractionRange(Vec2F aimPos) const {
   return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < interactRadius();
 }
 
-bool Player::inToolRange() const {
+[[nodiscard]] bool Player::inToolRange() const {
   return inToolRange(centerOfTile(aimPosition()));
 }
 
-bool Player::inToolRange(Vec2F const& aimPos) const {
+[[nodiscard]] bool Player::inToolRange(Vec2F const& aimPos) const {
   return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < toolRadius();
 }
 
@@ -2033,7 +2033,7 @@ void Player::setAdmin(bool isAdmin) {
   m_isAdmin = isAdmin;
 }
 
-bool Player::isAdmin() const {
+[[nodiscard]] bool Player::isAdmin() const {
   return m_isAdmin;
 }
 
@@ -2041,15 +2041,15 @@ void Player::setFavoriteColor(Color color) {
   m_appearance.setFavoriteColor(color);
 }
 
-Color Player::favoriteColor() const {
+[[nodiscard]] Color Player::favoriteColor() const {
   return m_appearance.favoriteColor();
 }
 
-bool Player::isTeleporting() const {
+[[nodiscard]] bool Player::isTeleporting() const {
   return m_teleporter->isTeleporting();
 }
 
-bool Player::isTeleportingOut() const {
+[[nodiscard]] bool Player::isTeleportingOut() const {
   return m_teleporter->isTeleportingOut();
 }
 
@@ -2061,11 +2061,11 @@ void Player::deployAbort(String const& animationType) {
   m_teleporter->deployAbort(animationType);
 }
 
-bool Player::isDeploying() const {
+[[nodiscard]] bool Player::isDeploying() const {
   return m_teleporter->isDeploying();
 }
 
-bool Player::isDeployed() const {
+[[nodiscard]] bool Player::isDeployed() const {
   return m_teleporter->isDeployed();
 }
 
@@ -2089,15 +2089,15 @@ void Player::moveTo(Vec2F const& footPosition) {
   m_teleporter->moveTo(footPosition);
 }
 
-ItemPtr Player::primaryHandItem() const {
+[[nodiscard]] ItemPtr Player::primaryHandItem() const {
   return m_tools->primaryHandItem();
 }
 
-ItemPtr Player::altHandItem() const {
+[[nodiscard]] ItemPtr Player::altHandItem() const {
   return m_tools->altHandItem();
 }
 
-Uuid Player::uuid() const {
+[[nodiscard]] Uuid Player::uuid() const {
   return Uuid(*uniqueId());
 }
 
@@ -2135,11 +2135,11 @@ void Player::setShipSpecies(String species) {
   m_shipSpecies = std::move(species);
 }
 
-String Player::shipSpecies() const {
+[[nodiscard]] String Player::shipSpecies() const {
   return m_shipSpecies;
 }
 
-String Player::name() const {
+[[nodiscard]] String Player::name() const {
   return m_appearance.name();
 }
 
@@ -2147,23 +2147,23 @@ void Player::setName(String const& name) {
   m_appearance.setName(name);
 }
 
-Maybe<String> Player::statusText() const {
+[[nodiscard]] Maybe<String> Player::statusText() const {
   return m_appearance.statusText();
 }
 
-bool Player::displayNametag() const {
+[[nodiscard]] bool Player::displayNametag() const {
   return m_appearance.displayNametag();
 }
 
-Vec3B Player::nametagColor() const {
+[[nodiscard]] Vec3B Player::nametagColor() const {
   return m_appearance.nametagColor();
 }
 
-Vec2F Player::nametagOrigin() const {
+[[nodiscard]] Vec2F Player::nametagOrigin() const {
   return m_appearance.nametagOrigin();
 }
 
-String Player::nametag() const {
+[[nodiscard]] String Player::nametag() const {
   return m_appearance.nametag();
 }
 
@@ -2251,7 +2251,7 @@ void Player::setSpecies(String const& species) {
   m_appearance.setSpecies(species);
 }
 
-Gender Player::gender() const {
+[[nodiscard]] Gender Player::gender() const {
   return m_appearance.gender();
 }
 
@@ -2259,7 +2259,7 @@ void Player::setGender(Gender const& gender) {
   m_appearance.setGender(gender);
 }
 
-String Player::species() const {
+[[nodiscard]] String Player::species() const {
   return m_appearance.species();
 }
 
@@ -2274,11 +2274,11 @@ void Player::setImagePath(Maybe<String> const& imagePath) {
 HumanoidPtr Player::humanoid() {
   return m_appearance.humanoid();
 }
-HumanoidPtr Player::humanoid() const {
+[[nodiscard]] HumanoidPtr Player::humanoid() const {
   return m_appearance.humanoid();
 }
 
-HumanoidIdentity const& Player::identity() const {
+[[nodiscard]] HumanoidIdentity const& Player::identity() const {
   return m_appearance.identity();
 }
 
@@ -2315,11 +2315,11 @@ void Player::setDance(Maybe<String> const& danceName) {
   m_chatAndEmotes->setDance(danceName);
 }
 
-pair<HumanoidEmote, float> Player::currentEmote() const {
+[[nodiscard]] pair<HumanoidEmote, float> Player::currentEmote() const {
   return m_chatAndEmotes->currentEmote();
 }
 
-Player::State Player::currentState() const {
+[[nodiscard]] Player::State Player::currentState() const {
   return m_state;
 }
 
@@ -2327,15 +2327,15 @@ List<ChatAction> Player::pullPendingChatActions() {
   return m_chatAndEmotes->pullPendingChatActions();
 }
 
-Maybe<String> Player::inspectionLogName() const {
+[[nodiscard]] Maybe<String> Player::inspectionLogName() const {
   return m_appearance.inspectionLogName();
 }
 
-Maybe<String> Player::inspectionDescription(String const& species) const {
+[[nodiscard]] Maybe<String> Player::inspectionDescription(String const& species) const {
   return m_appearance.inspectionDescription(species);
 }
 
-float Player::beamGunRadius() const {
+[[nodiscard]] float Player::beamGunRadius() const {
   return m_tools->beamGunRadius();
 }
 
@@ -2349,12 +2349,12 @@ void Player::instrumentEquipped(String const& instrumentKind) {
 }
 
 void Player::interact(InteractAction const& action) {
-  starAssert(!isSlave());
+  assert(!isSlave());
   m_pendingInteractActions.append(RpcPromise<InteractAction>::createFulfilled(action));
 }
 
 void Player::addEffectEmitters(StringSet const& emitters) {
-  starAssert(!isSlave());
+  assert(!isSlave());
   m_effectEmitter->addEffectSources("normal", emitters);
 }
 
@@ -2370,7 +2370,7 @@ StatusController* Player::statusController() {
   return m_statusController.get();
 }
 
-List<PhysicsForceRegion> Player::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> Player::forceRegions() const {
   return m_tools->forceRegions();
 }
 
@@ -2480,7 +2480,7 @@ void Player::finalizeCreation() {
                        m_appearance.m_identity.gender == Gender::Male ? "him" : "her");
 }
 
-bool Player::invisible() const {
+[[nodiscard]] bool Player::invisible() const {
   return m_statusController->statPositive("invisible");
 }
 
@@ -2509,7 +2509,7 @@ void Player::dropEverything() {
   dropSelectedItems({});
 }
 
-bool Player::isPermaDead() const {
+[[nodiscard]] bool Player::isPermaDead() const {
   if (!isDead())
     return false;
   return modeConfig().permadeath;
@@ -2571,7 +2571,7 @@ AiState& Player::aiState() {
   return m_aiState;
 }
 
-bool Player::inspecting() const {
+[[nodiscard]] bool Player::inspecting() const {
   return is<InspectionTool>(m_tools->primaryHandItem()) || is<InspectionTool>(m_tools->altHandItem());
 }
 
@@ -2625,7 +2625,7 @@ NetworkedAnimatorPtr Player::effectsAnimator() {
 
 const String secretProprefix = "\0JsonProperty\0"s;
 
-Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
+[[nodiscard]] Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     auto& view = tag->utf8();
     DataStreamExternalBuffer buffer(view.data(), view.size());
@@ -2643,11 +2643,11 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
   return {};
 }
 
-String const* Player::getSecretPropertyPtr(String const& name) const {
+[[nodiscard]] String const* Player::getSecretPropertyPtr(String const& name) const {
   return m_effectsAnimator->globalTagPtr(secretProprefix + name);
 }
 
-Json Player::getSecretProperty(String const& name, Json defaultValue) const {
+[[nodiscard]] Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     DataStreamExternalBuffer buffer(tag->utf8Ptr(), tag->utf8Size());
     try {

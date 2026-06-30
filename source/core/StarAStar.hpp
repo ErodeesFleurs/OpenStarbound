@@ -56,13 +56,13 @@ namespace AStar {
     // false to signal failure.  On success, will return true.  If the given
     // maxExploreNodes is exhausted before success or failure, will return
     // nothing.
-    Maybe<bool> explore(Maybe<unsigned> maxExploreNodes = {});
+    [[nodiscard]] Maybe<bool> explore(Maybe<unsigned> maxExploreNodes = {});
     // Returns the result if it was found.
-    Maybe<Path<Edge>> const& result() const;
+    [[nodiscard]] Maybe<Path<Edge>> const& result() const;
 
     // Convenience, equivalent to calling start, then explore({}) and returns
     // result()
-    Maybe<Path<Edge>> const& findPath(Node startNode, Node goalNode);
+    [[nodiscard]] Maybe<Path<Edge>> const& findPath(Node startNode, Node goalNode);
 
   private:
     struct ScoredNode {
@@ -79,7 +79,7 @@ namespace AStar {
       Maybe<Edge> cameFrom;
     };
 
-    Path<Edge> reconstructPath(Node currentNode);
+    [[nodiscard]] Path<Edge> reconstructPath(Node currentNode);
 
     HeuristicFunction m_heuristicCost;
     NeighborFunction m_getAdjacent;

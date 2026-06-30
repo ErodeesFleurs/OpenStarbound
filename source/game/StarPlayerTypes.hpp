@@ -38,11 +38,11 @@ struct PlayerModeConfig {
 
 struct ShipUpgrades {
   explicit ShipUpgrades(Json config = {});
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  ShipUpgrades& apply(Json const& upgrades);
+  [[nodiscard]] ShipUpgrades& apply(Json const& upgrades);
 
-  bool operator==(ShipUpgrades const& rhs) const;
+  [[nodiscard]] bool operator==(ShipUpgrades const& rhs) const;
 
   unsigned shipLevel;
   unsigned maxFuel;

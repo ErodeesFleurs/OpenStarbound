@@ -9,12 +9,12 @@ namespace Star {
 struct PhysicsCategoryFilter {
   enum Type { Whitelist, Blacklist };
 
-  static PhysicsCategoryFilter whitelist(StringSet categories);
-  static PhysicsCategoryFilter blacklist(StringSet categories);
+  [[nodiscard]] static PhysicsCategoryFilter whitelist(StringSet categories);
+  [[nodiscard]] static PhysicsCategoryFilter blacklist(StringSet categories);
 
   PhysicsCategoryFilter(Type type = Blacklist, StringSet categories = {});
 
-  bool check(StringSet const& categories) const;
+  [[nodiscard]] bool check(StringSet const& categories) const;
 
   bool operator==(PhysicsCategoryFilter const& rhs) const;
 
@@ -25,12 +25,12 @@ struct PhysicsCategoryFilter {
 DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& rfr);
 DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr);
 
-PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json);
+[[nodiscard]] PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json);
 
 struct DirectionalForceRegion {
-  static DirectionalForceRegion fromJson(Json const& json);
+  [[nodiscard]] static DirectionalForceRegion fromJson(Json const& json);
 
-  RectF boundBox() const;
+  [[nodiscard]] RectF boundBox() const;
 
   void translate(Vec2F const& pos);
 
@@ -47,9 +47,9 @@ DataStream& operator>>(DataStream& ds, DirectionalForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& rfr);
 
 struct RadialForceRegion {
-  static RadialForceRegion fromJson(Json const& json);
+  [[nodiscard]] static RadialForceRegion fromJson(Json const& json);
 
-  RectF boundBox() const;
+  [[nodiscard]] RectF boundBox() const;
 
   void translate(Vec2F const& pos);
 
@@ -67,9 +67,9 @@ DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, RadialForceRegion const& rfr);
 
 struct GradientForceRegion {
-  static GradientForceRegion fromJson(Json const& json);
+  [[nodiscard]] static GradientForceRegion fromJson(Json const& json);
 
-  RectF boundBox() const;
+  [[nodiscard]] RectF boundBox() const;
 
   void translate(Vec2F const& pos);
 
@@ -87,6 +87,6 @@ DataStream& operator<<(DataStream& ds, GradientForceRegion const& rfr);
 
 using PhysicsForceRegion = Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion>;
 
-PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
+[[nodiscard]] PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
 
 }

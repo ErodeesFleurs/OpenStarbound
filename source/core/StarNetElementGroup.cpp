@@ -3,7 +3,7 @@
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
-  starAssert(!m_elements.any([element](GroupElement const& groupElement) {
+  assert(!m_elements.any([element](GroupElement const& groupElement) {
       return groupElement.element == element;
     }));
 

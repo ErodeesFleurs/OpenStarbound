@@ -106,7 +106,7 @@ public:
 
 // std::tie for LuaTupleReturn
 template <typename... Types>
-LuaTupleReturn<Types&...> luaTie(Types&... args);
+[[nodiscard]] LuaTupleReturn<Types&...> luaTie(Types&... args);
 
 // Constructs a LuaTupleReturn from the given arguments similar to make_tuple
 template <typename... Types>
@@ -155,8 +155,8 @@ public:
   bool operator==(LuaReference const& rhs) const;
   bool operator!=(LuaReference const& rhs) const;
 
-  LuaEngine& engine() const;
-  int handleIndex() const;
+  [[nodiscard]] LuaEngine& engine() const;
+  [[nodiscard]] int handleIndex() const;
 
 private:
   LuaDetail::LuaHandle m_handle;
@@ -166,11 +166,11 @@ class LuaString : public LuaReference {
 public:
   using LuaReference::LuaReference;
 
-  char const* ptr() const;
-  size_t length() const;
+  [[nodiscard]] char const* ptr() const;
+  [[nodiscard]] size_t length() const;
 
-  String toString() const;
-  StringView view() const;
+  [[nodiscard]] String toString() const;
+  [[nodiscard]] StringView view() const;
 };
 
 bool operator==(LuaString const& s1, LuaString const& s2);
@@ -194,9 +194,9 @@ public:
   using LuaReference::LuaReference;
 
   template <typename T = LuaValue, typename K>
-  T get(K key) const;
+  [[nodiscard]] T get(K key) const;
   template <typename T = LuaValue>
-  T get(char const* key) const;
+  [[nodiscard]] T get(char const* key) const;
 
   template <typename T, typename K>
   void set(K key, T t) const;
@@ -205,8 +205,8 @@ public:
 
   // Shorthand for get(path) != LuaNil
   template <typename K>
-  bool contains(K key) const;
-  bool contains(char const* key) const;
+  [[nodiscard]] bool contains(K key) const;
+  [[nodiscard]] bool contains(char const* key) const;
 
   // Shorthand for setting to LuaNil
   template <typename K>
@@ -214,7 +214,7 @@ public:
   void remove(char const* key) const;
 
   // Result of lua # operator
-  LuaInt length() const;
+  [[nodiscard]] LuaInt length() const;
 
   // If iteration function returns bool, returning false signals stopping.
   template <typename Function>
@@ -223,20 +223,20 @@ public:
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
 
-  Maybe<LuaTable> getMetatable() const;
+  [[nodiscard]] Maybe<LuaTable> getMetatable() const;
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
-  T rawGet(K key) const;
+  [[nodiscard]] T rawGet(K key) const;
   template <typename T = LuaValue>
-  T rawGet(char const* key) const;
+  [[nodiscard]] T rawGet(char const* key) const;
 
   template <typename T, typename K>
   void rawSet(K key, T t) const;
   template <typename T>
   void rawSet(char const* key, T t) const;
 
-  LuaInt rawLength() const;
+  [[nodiscard]] LuaInt rawLength() const;
 };
 
 class LuaFunction : public LuaReference {
@@ -244,7 +244,7 @@ public:
   using LuaReference::LuaReference;
 
   template <typename Ret = LuaValue, typename... Args>
-  Ret invoke(Args const&... args) const;
+  [[nodiscard]] Ret invoke(Args const&... args) const;
 };
 
 class LuaThread : public LuaReference {
@@ -259,9 +259,9 @@ public:
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
   template <typename Ret = LuaValue, typename... Args>
-  Maybe<Ret> resume(Args const&... args) const;
+  [[nodiscard]] Maybe<Ret> resume(Args const&... args) const;
   void pushFunction(LuaFunction const& func) const;
-  Status status() const;
+  [[nodiscard]] Status status() const;
 };
 
 // Keeping LuaReferences in LuaUserData will lead to circular references to
@@ -272,10 +272,10 @@ public:
   using LuaReference::LuaReference;
 
   template <typename T>
-  bool is() const;
+  [[nodiscard]] bool is() const;
 
   template <typename T>
-  T& get() const;
+  [[nodiscard]] T& get() const;
 };
 
 LuaValue const LuaNil = LuaValue();
@@ -287,12 +287,12 @@ public:
   template <typename Function>
   void registerCallback(String name, Function&& func);
 
-  bool removeCallback(String name);
+  [[nodiscard]] bool removeCallback(String name);
 
   template <typename Return, typename... Args, typename Function>
   void registerCallbackWithSignature(String name, Function&& func);
 
-  LuaCallbacks& merge(LuaCallbacks const& callbacks);
+  [[nodiscard]] LuaCallbacks& merge(LuaCallbacks const& callbacks);
 
   StringMap<LuaDetail::LuaWrappedFunction> const& callbacks() const;
 
@@ -335,9 +335,9 @@ public:
   // other tables.  If any table in the path is not a table but is accessed as
   // one, instead returns LuaNil.
   template <typename T = LuaValue>
-  T getPath(String path) const;
+  [[nodiscard]] T getPath(String path) const;
   // Shorthand for getPath != LuaNil
-  bool containsPath(String path) const;
+  [[nodiscard]] bool containsPath(String path) const;
   // Will create new tables if the key contains paths that are nil
   template <typename T>
   void setPath(String path, T value);
@@ -351,7 +351,7 @@ public:
   // Evaluate a piece of lua code in this context, similar to the lua repl.
   // Can evaluate both expressions and statements.
   template <typename T = LuaValue>
-  T eval(String const& lua);
+  [[nodiscard]] T eval(String const& lua);
 
   // Override the built-in require function with the given function that takes
   // this LuaContext and the module name to load.
@@ -363,43 +363,43 @@ public:
   // to get a function, and then invoking it.
 
   template <typename Ret = LuaValue, typename... Args>
-  Ret invokePath(String const& key, Args const&... args) const;
+  [[nodiscard]] Ret invokePath(String const& key, Args const&... args) const;
 
   // For convenience, calls to LuaEngine conversion / create functions are
   // duplicated here.
 
   template <typename T>
-  LuaValue luaFrom(T&& t);
+  [[nodiscard]] LuaValue luaFrom(T&& t);
   template <typename T>
-  LuaValue luaFrom(T const& t);
+  [[nodiscard]] LuaValue luaFrom(T const& t);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue&& v);
+  [[nodiscard]] Maybe<T> luaMaybeTo(LuaValue&& v);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue const& v);
+  [[nodiscard]] Maybe<T> luaMaybeTo(LuaValue const& v);
   template <typename T>
-  T luaTo(LuaValue const& v);
+  [[nodiscard]] T luaTo(LuaValue const& v);
   template <typename T>
-  T luaTo(LuaValue&& v);
+  [[nodiscard]] T luaTo(LuaValue&& v);
 
-  LuaString createString(String const& str);
-  LuaString createString(char const* str);
+  [[nodiscard]] LuaString createString(String const& str);
+  [[nodiscard]] LuaString createString(char const* str);
 
-  LuaTable createTable();
-
-  template <typename Container>
-  LuaTable createTable(Container const& map);
+  [[nodiscard]] LuaTable createTable();
 
   template <typename Container>
-  LuaTable createArrayTable(Container const& array);
+  [[nodiscard]] LuaTable createTable(Container const& map);
+
+  template <typename Container>
+  [[nodiscard]] LuaTable createArrayTable(Container const& array);
 
   template <typename Function>
-  LuaFunction createFunction(Function&& func);
+  [[nodiscard]] LuaFunction createFunction(Function&& func);
 
   template <typename Return, typename... Args, typename Function>
-  LuaFunction createFunctionWithSignature(Function&& func);
+  [[nodiscard]] LuaFunction createFunctionWithSignature(Function&& func);
 
   template <typename T>
-  LuaUserData createUserData(T t);
+  [[nodiscard]] LuaUserData createUserData(T t);
 };
 
 template <typename T>
@@ -453,15 +453,15 @@ struct LuaConverter;
 // template.
 template <typename T>
 struct LuaUserDataMethods {
-  static LuaMethods<T> make();
+  [[nodiscard]] static LuaMethods<T> make();
 };
 
 // Convenience converter that simply converts to/from LuaUserData, can be
 // derived from by a declared converter.
 template <typename T>
 struct LuaUserDataConverter {
-  static LuaValue from(LuaEngine& engine, T t);
-  static Maybe<T> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, T t);
+  [[nodiscard]] static Maybe<T> to(LuaEngine& engine, LuaValue const& v);
 };
 
 struct LuaProfileEntry {
@@ -491,7 +491,7 @@ class LuaEngine : public RefCounter {
 public:
   // If 'safe' is true, then creates a lua engine with all builtin lua
   // functions that can affect the real world disabled.
-  static LuaEnginePtr create(bool safe = true);
+  [[nodiscard]] static LuaEnginePtr create(bool safe = true);
 
   explicit LuaEngine(ConstructorToken) {}
   ~LuaEngine();
@@ -510,29 +510,29 @@ public:
   // recursive entries into LuaEngine accumulate the same instruction counter.
   // 0 disables the instruction limit.
   void setInstructionLimit(uint64_t instructionLimit = 0);
-  uint64_t instructionLimit() const;
+  [[nodiscard]] uint64_t instructionLimit() const;
 
   // If profiling is enabled, then every 'measureInterval' instructions, the
   // function call stack will be recorded, and a summary of function timing can
   // be printed using profileReport
   void setProfilingEnabled(bool profilingEnabled);
-  bool profilingEnabled() const;
+  [[nodiscard]] bool profilingEnabled() const;
 
   // Print a summary of the profiling data gathered since profiling was last
   // enabled.
-  List<LuaProfileEntry> getProfile();
+  [[nodiscard]] List<LuaProfileEntry> getProfile();
 
   // If an instruction limit is set or profiling is neabled, this field
   // describes the resolution of instruction count measurement, and affects the
   // accuracy of profiling and the instruction count limit.  Defaults to 1000
   void setInstructionMeasureInterval(unsigned measureInterval = 1000);
-  unsigned instructionMeasureInterval() const;
+  [[nodiscard]] unsigned instructionMeasureInterval() const;
 
   // Sets the LuaEngine recursion limit, limiting the number of times a
   // LuaEngine call may directly or inderectly trigger a call back into the
   // LuaEngine, preventing a C++ stack overflow.  0 disables the limit.
   void setRecursionLimit(unsigned recursionLimit = 0);
-  unsigned recursionLimit() const;
+  [[nodiscard]] unsigned recursionLimit() const;
 
   // Compile a given script into bytecode.  If name is given, then it will be
   // used as the internal name for the resulting chunk and will provide better
@@ -541,74 +541,74 @@ public:
   // Unfortunately the only way to completely ensure that a single script will
   // execute in two separate contexts and truly be isolated is to compile the
   // script to bytecode and load once in each context as a separate chunk.
-  ByteArray compile(char const* contents, size_t size, char const* name = nullptr);
-  ByteArray compile(String const& contents, String const& name = String());
-  ByteArray compile(ByteArray const& contents, String const& name = String());
+  [[nodiscard]] ByteArray compile(char const* contents, size_t size, char const* name = nullptr);
+  [[nodiscard]] ByteArray compile(String const& contents, String const& name = String());
+  [[nodiscard]] ByteArray compile(ByteArray const& contents, String const& name = String());
 
   // Returns the debug info of the state.
-  lua_Debug const& debugInfo(int level = 1, const char* what = "nSlu");
+  [[nodiscard]] lua_Debug const& debugInfo(int level = 1, const char* what = "nSlu");
 
   // Generic from/to lua conversion, calls template specialization of
   // LuaConverter for actual conversion.
   template <typename T>
-  LuaValue luaFrom(T&& t);
+  [[nodiscard]] LuaValue luaFrom(T&& t);
   template <typename T>
-  LuaValue luaFrom(T const& t);
+  [[nodiscard]] LuaValue luaFrom(T const& t);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue&& v);
+  [[nodiscard]] Maybe<T> luaMaybeTo(LuaValue&& v);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue const& v);
+  [[nodiscard]] Maybe<T> luaMaybeTo(LuaValue const& v);
 
   // Wraps luaMaybeTo, throws an exception if conversion fails.
   template <typename T>
-  T luaTo(LuaValue const& v);
+  [[nodiscard]] T luaTo(LuaValue const& v);
   template <typename T>
-  T luaTo(LuaValue&& v);
+  [[nodiscard]] T luaTo(LuaValue&& v);
 
-  LuaString createString(std::string const& str);
-  LuaString createString(String const& str);
-  LuaString createString(char const* str);
+  [[nodiscard]] LuaString createString(std::string const& str);
+  [[nodiscard]] LuaString createString(String const& str);
+  [[nodiscard]] LuaString createString(char const* str);
 
-  LuaTable createTable(int narr = 0, int nrec = 0);
-
-  template <typename Container>
-  LuaTable createTable(Container const& map);
+  [[nodiscard]] LuaTable createTable(int narr = 0, int nrec = 0);
 
   template <typename Container>
-  LuaTable createArrayTable(Container const& array);
+  [[nodiscard]] LuaTable createTable(Container const& map);
+
+  template <typename Container>
+  [[nodiscard]] LuaTable createArrayTable(Container const& array);
 
   // Creates a function and deduces the signature of the function using
   // FunctionTraits.  As a convenience, the given function may optionally take
   // a LuaEngine& parameter as the first parameter, and if it does, when called
   // the function will get a reference to the calling LuaEngine.
   template <typename Function>
-  LuaFunction createFunction(Function&& func);
+  [[nodiscard]] LuaFunction createFunction(Function&& func);
 
   // If the function signature is not deducible using FunctionTraits, you can
   // specify the return and argument types manually using this createFunction
   // version.
   template <typename Return, typename... Args, typename Function>
-  LuaFunction createFunctionWithSignature(Function&& func);
+  [[nodiscard]] LuaFunction createFunctionWithSignature(Function&& func);
 
-  LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
+  [[nodiscard]] LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
 
-  LuaFunction createRawFunction(lua_CFunction func);
+  [[nodiscard]] LuaFunction createRawFunction(lua_CFunction func);
 
-  LuaFunction createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name);
+  [[nodiscard]] LuaFunction createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name);
 
-  LuaThread createThread();
+  [[nodiscard]] LuaThread createThread();
 
   template <typename T>
-  LuaUserData createUserData(T t);
+  [[nodiscard]] LuaUserData createUserData(T t);
 
-  LuaContext createContext();
+  [[nodiscard]] LuaContext createContext();
 
   // Global environment changes only affect newly created contexts
 
   template <typename T = LuaValue, typename K>
-  T getGlobal(K key);
+  [[nodiscard]] T getGlobal(K key);
   template <typename T = LuaValue>
-  T getGlobal(char const* key);
+  [[nodiscard]] T getGlobal(char const* key);
 
   template <typename T, typename K>
   void setGlobal(K key, T value);
@@ -626,10 +626,10 @@ public:
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
 
   // Bytes in use by lua
-  size_t memoryUsage() const;
+  [[nodiscard]] size_t memoryUsage() const;
 
   // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
-  LuaNullEnforcer nullTerminate();
+  [[nodiscard]] LuaNullEnforcer nullTerminate();
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
   void addImGui();
@@ -659,40 +659,40 @@ private:
 
   // Get the LuaEngine* out of the lua registry magic entry.  Uses 1 stack
   // space, and does not call lua_checkstack.
-  static LuaEngine* luaEnginePtr(lua_State* state);
+  [[nodiscard]] static LuaEngine* luaEnginePtr(lua_State* state);
   // Counts instructions when instruction limiting is enabled.
   static void countHook(lua_State* state, lua_Debug* ar);
 
-  static void* allocate(void* userdata, void* ptr, size_t oldSize, size_t newSize);
+  [[nodiscard]] static void* allocate(void* userdata, void* ptr, size_t oldSize, size_t newSize);
 
   // Pops lua error from stack and throws LuaException
   void handleError(lua_State* state, int res);
 
   // lua_pcall with a better message handler that includes a traceback.
-  int pcallWithTraceback(lua_State* state, int nargs, int nresults);
+  [[nodiscard]] int pcallWithTraceback(lua_State* state, int nargs, int nresults);
 
   // override for lua coroutine resume with traceback
-  static int coresumeWithTraceback(lua_State* state);
+  [[nodiscard]] static int coresumeWithTraceback(lua_State* state);
   // propagates errors from one state to another, i.e. past thread boundaries
   // pops error off the top of the from stack and pushes onto the to stack
   static void propagateErrorWithTraceback(lua_State* from, lua_State* to);
 
-  char const* stringPtr(int handleIndex);
-  size_t stringLength(int handleIndex);
-  String string(int handleIndex);
-  StringView stringView(int handleIndex);
+  [[nodiscard]] char const* stringPtr(int handleIndex);
+  [[nodiscard]] size_t stringLength(int handleIndex);
+  [[nodiscard]] String string(int handleIndex);
+  [[nodiscard]] StringView stringView(int handleIndex);
 
-  LuaValue tableGet(bool raw, int handleIndex, LuaValue const& key);
-  LuaValue tableGet(bool raw, int handleIndex, char const* key);
+  [[nodiscard]] LuaValue tableGet(bool raw, int handleIndex, LuaValue const& key);
+  [[nodiscard]] LuaValue tableGet(bool raw, int handleIndex, char const* key);
 
   void tableSet(bool raw, int handleIndex, LuaValue const& key, LuaValue const& value);
   void tableSet(bool raw, int handleIndex, char const* key, LuaValue const& value);
 
-  LuaInt tableLength(bool raw, int handleIndex);
+  [[nodiscard]] LuaInt tableLength(bool raw, int handleIndex);
 
   void tableIterate(int handleIndex, function<bool(LuaValue, LuaValue)> iterator);
 
-  Maybe<LuaTable> tableGetMetatable(int handleIndex);
+  [[nodiscard]] Maybe<LuaTable> tableGetMetatable(int handleIndex);
   void tableSetMetatable(int handleIndex, LuaTable const& table);
 
   template <typename... Args>
@@ -707,10 +707,10 @@ private:
   void registerUserDataType();
 
   template <typename T>
-  bool userDataIsType(int handleIndex);
+  [[nodiscard]] bool userDataIsType(int handleIndex);
 
   template <typename T>
-  T* getUserData(int handleIndex);
+  [[nodiscard]] T* getUserData(int handleIndex);
 
   void setContextRequire(int handleIndex, LuaContext::RequireFunction requireFunction);
 
@@ -718,31 +718,31 @@ private:
 
   LuaDetail::LuaFunctionReturn contextEval(int handleIndex, String const& lua);
 
-  LuaValue contextGetPath(int handleIndex, String path);
+  [[nodiscard]] LuaValue contextGetPath(int handleIndex, String path);
   void contextSetPath(int handleIndex, String path, LuaValue const& value);
 
-  int popHandle(lua_State* state);
+  [[nodiscard]] int popHandle(lua_State* state);
   void pushHandle(lua_State* state, int handleIndex);
-  int copyHandle(int handleIndex);
+  [[nodiscard]] int copyHandle(int handleIndex);
   void destroyHandle(int handleIndex);
 
-  int placeHandle();
+  [[nodiscard]] int placeHandle();
 
   void pushLuaValue(lua_State* state, LuaValue const& luaValue);
-  LuaValue popLuaValue(lua_State* state);
+  [[nodiscard]] LuaValue popLuaValue(lua_State* state);
 
   template <typename T>
-  size_t pushArgument(lua_State* state, T const& arg);
+  [[nodiscard]] size_t pushArgument(lua_State* state, T const& arg);
 
   template <typename T>
-  size_t pushArgument(lua_State* state, LuaVariadic<T> const& args);
+  [[nodiscard]] size_t pushArgument(lua_State* state, LuaVariadic<T> const& args);
 
-  size_t doPushArguments(lua_State*);
+  [[nodiscard]] size_t doPushArguments(lua_State*);
   template <typename First, typename... Rest>
-  size_t doPushArguments(lua_State* state, First const& first, Rest const&... rest);
+  [[nodiscard]] size_t doPushArguments(lua_State* state, First const& first, Rest const&... rest);
 
   template <typename... Args>
-  size_t pushArguments(lua_State* state, Args const&... args);
+  [[nodiscard]] size_t pushArguments(lua_State* state, Args const&... args);
 
   void incrementRecursionLevel();
   void decrementRecursionLevel();

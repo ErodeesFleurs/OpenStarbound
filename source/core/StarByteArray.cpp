@@ -214,7 +214,7 @@ ByteArray ByteArray::xorWith(ByteArray const& rhs, bool extend) {
 }
 
 void ByteArray::insert(size_t pos, char byte) {
-  starAssert(pos <= m_size);
+  assert(pos <= m_size);
   resize(m_size + 1);
   for (size_t i = m_size - 1; i > pos; --i)
     m_data[i] = m_data[i - 1];

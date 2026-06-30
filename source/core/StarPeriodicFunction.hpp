@@ -19,7 +19,7 @@ public:
   void update(Float delta);
 
   template <typename WeightOperator>
-  Float value(WeightOperator weightOperator) const;
+  [[nodiscard]] Float value(WeightOperator weightOperator) const;
 
 private:
   Float m_halfPeriod;

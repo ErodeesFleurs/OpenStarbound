@@ -22,7 +22,7 @@ TreeVariant::TreeVariant(Json const& variant) {
   tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
 }
 
-Json TreeVariant::toJson() const {
+[[nodiscard]] Json TreeVariant::toJson() const {
   return JsonObject{
       {"stemName", stemName},
       {"foliageName", foliageName},
@@ -52,7 +52,7 @@ GrassVariant::GrassVariant(Json const& variant) {
   tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
 }
 
-Json GrassVariant::toJson() const {
+[[nodiscard]] Json GrassVariant::toJson() const {
   return JsonObject{{"name", name},
       {"directory", directory},
       {"images", jsonFromStringList(images)},
@@ -78,7 +78,7 @@ BushVariant::BushVariant(Json const& variant) {
   tileDamageParameters = TileDamageParameters(variant.get("tileDamageParameters"));
 }
 
-Json BushVariant::toJson() const {
+[[nodiscard]] Json BushVariant::toJson() const {
   return JsonObject{{"bushName", bushName},
       {"modName", modName},
       {"directory", directory},
@@ -131,7 +131,7 @@ PlantDatabase::PlantDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPt
   }
 }
 
-StringList PlantDatabase::treeStemNames(bool ceiling) const {
+[[nodiscard]] StringList PlantDatabase::treeStemNames(bool ceiling) const {
   StringList names;
   for (auto const& [stemName, stemConfig] : m_treeStemConfigs) {
     if (stemConfig.settings.getBool("ceiling", false) == ceiling)
@@ -140,31 +140,31 @@ StringList PlantDatabase::treeStemNames(bool ceiling) const {
   return names;
 }
 
-StringList PlantDatabase::treeFoliageNames() const {
+[[nodiscard]] StringList PlantDatabase::treeFoliageNames() const {
   return m_treeFoliageConfigs.keys();
 }
 
-String PlantDatabase::treeStemShape(String const& stemName) const {
+[[nodiscard]] String PlantDatabase::treeStemShape(String const& stemName) const {
   return m_treeStemConfigs.get(stemName).settings.get("shape").toString();
 }
 
-String PlantDatabase::treeFoliageShape(String const& foliageName) const {
+[[nodiscard]] String PlantDatabase::treeFoliageShape(String const& foliageName) const {
   return m_treeFoliageConfigs.get(foliageName).settings.get("shape").toString();
 }
 
-Maybe<String> PlantDatabase::treeStemDirectory(String const& stemName) const {
+[[nodiscard]] Maybe<String> PlantDatabase::treeStemDirectory(String const& stemName) const {
   if (auto stem = m_treeStemConfigs.maybe(stemName))
     return stem->directory;
   return {};
 }
 
-Maybe<String> PlantDatabase::treeFoliageDirectory(String const& foliageName) const {
+[[nodiscard]] Maybe<String> PlantDatabase::treeFoliageDirectory(String const& foliageName) const {
   if (auto foliage = m_treeFoliageConfigs.maybe(foliageName))
     return foliage->directory;
   return {};
 }
 
-TreeVariant PlantDatabase::buildTreeVariant(
+[[nodiscard]] TreeVariant PlantDatabase::buildTreeVariant(
     String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const {
   if (!m_treeStemConfigs.contains(stemName) || !m_treeFoliageConfigs.contains(foliageName))
     throw PlantDatabaseException::format("stemName '{}' or foliageName '{}' not found in plant database", stemName, foliageName);
@@ -206,7 +206,7 @@ TreeVariant PlantDatabase::buildTreeVariant(
   return treeVariant;
 }
 
-TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHueShift) const {
+[[nodiscard]] TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHueShift) const {
   if (!m_treeStemConfigs.contains(stemName))
     throw PlantDatabaseException(strf("stemName '{}' not found in plant database", stemName));
 
@@ -241,7 +241,7 @@ TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHu
   return treeVariant;
 }
 
-StringList PlantDatabase::grassNames(bool ceiling) const {
+[[nodiscard]] StringList PlantDatabase::grassNames(bool ceiling) const {
   StringList names;
   for (auto const& [grassName, grassConfig] : m_grassConfigs) {
     if (grassConfig.settings.getBool("ceiling", false) == ceiling)
@@ -250,7 +250,7 @@ StringList PlantDatabase::grassNames(bool ceiling) const {
   return names;
 }
 
-GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift) const {
+[[nodiscard]] GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift) const {
   if (!m_grassConfigs.contains(name))
     throw PlantDatabaseException(strf("grass '{}' not found in plant database", name));
 
@@ -279,7 +279,7 @@ GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift
   return grassVariant;
 }
 
-StringList PlantDatabase::bushNames(bool ceiling) const {
+[[nodiscard]] StringList PlantDatabase::bushNames(bool ceiling) const {
   StringList names;
   for (auto const& [bushName, bushConfig] : m_bushConfigs) {
     if (bushConfig.settings.getBool("ceiling") == ceiling)
@@ -288,11 +288,11 @@ StringList PlantDatabase::bushNames(bool ceiling) const {
   return names;
 }
 
-StringList PlantDatabase::bushMods(String const& bushName) const {
+[[nodiscard]] StringList PlantDatabase::bushMods(String const& bushName) const {
   return m_bushConfigs.get(bushName).settings.opt("mods").apply(jsonToStringList).value();
 }
 
-BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const {
+[[nodiscard]] BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const {
   if (!m_bushConfigs.contains(bushName))
     throw PlantDatabaseException(strf("bush '{}' not found in plant database", bushName));
 
@@ -330,7 +330,7 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   return bushVariant;
 }
 
-PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, uint64_t seed) const {
+[[nodiscard]] PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, uint64_t seed) const {
   try {
     return make_shared<Plant>(m_assets, m_imageMetadataDatabase, treeVariant, seed);
   } catch (std::exception const& e) {
@@ -338,7 +338,7 @@ PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, uint64_t see
   }
 }
 
-PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, uint64_t seed) const {
+[[nodiscard]] PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, uint64_t seed) const {
   try {
     return make_shared<Plant>(m_assets, m_imageMetadataDatabase, grassVariant, seed);
   } catch (std::exception const& e) {
@@ -346,7 +346,7 @@ PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, uint64_t s
   }
 }
 
-PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t seed) const {
+[[nodiscard]] PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t seed) const {
   try {
     return make_shared<Plant>(m_assets, m_imageMetadataDatabase, bushVariant, seed);
   } catch (std::exception const& e) {
@@ -356,7 +356,7 @@ PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t see
   }
 }
 
-Json PlantDatabase::Config::toJson() const {
+[[nodiscard]] Json PlantDatabase::Config::toJson() const {
   return JsonObject{
     {"config", settings},
     {"path", directory}
@@ -364,11 +364,11 @@ Json PlantDatabase::Config::toJson() const {
 }
 
 
-Json PlantDatabase::treeFoliageConfig(String const & foliageName) const{
+[[nodiscard]] Json PlantDatabase::treeFoliageConfig(String const & foliageName) const{
   return m_treeFoliageConfigs.get(foliageName).toJson();
 }
 
-Json PlantDatabase::treeStemConfig(String const & stemName) const {
+[[nodiscard]] Json PlantDatabase::treeStemConfig(String const & stemName) const {
   return m_treeStemConfigs.get(stemName).toJson();
 }
 

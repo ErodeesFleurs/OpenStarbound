@@ -54,15 +54,15 @@ ModId const UndergroundBiomeModId = 65533;
 // The first mod id that is reserved for special hard-coded mod values.
 ModId const FirstMetaMod = 65520;
 
-float materialHueToDegrees(MaterialHue hue);
-MaterialHue materialHueFromDegrees(float degrees);
+[[nodiscard]] float materialHueToDegrees(MaterialHue hue);
+[[nodiscard]] MaterialHue materialHueFromDegrees(float degrees);
 
-bool isRealMaterial(MaterialId material);
-bool isConnectableMaterial(MaterialId material);
-bool isBiomeMaterial(MaterialId material);
+[[nodiscard]] bool isRealMaterial(MaterialId material);
+[[nodiscard]] bool isConnectableMaterial(MaterialId material);
+[[nodiscard]] bool isBiomeMaterial(MaterialId material);
 
-bool isRealMod(ModId mod);
-bool isBiomeMod(ModId mod);
+[[nodiscard]] bool isRealMod(ModId mod);
+[[nodiscard]] bool isBiomeMod(ModId mod);
 
 inline float materialHueToDegrees(MaterialHue hue) {
   return hue * 360.0f / 255.0f;

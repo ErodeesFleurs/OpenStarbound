@@ -179,7 +179,7 @@ void SignalHandler::setHandleFatal(bool handleFatal) {
   s_activeHandler->setHandleFatal(handleFatal);
 }
 
-bool SignalHandler::handlingFatal() const {
+[[nodiscard]] bool SignalHandler::handlingFatal() const {
   return s_activeHandler->handlingFatal;
 }
 
@@ -187,11 +187,11 @@ void SignalHandler::setHandleInterrupt(bool handleInterrupt) {
   s_activeHandler->setHandleInterrupt(handleInterrupt);
 }
 
-bool SignalHandler::handlingInterrupt() const {
+[[nodiscard]] bool SignalHandler::handlingInterrupt() const {
   return s_activeHandler->handlingInterrupt;
 }
 
-bool SignalHandler::interruptCaught() const {
+[[nodiscard]] bool SignalHandler::interruptCaught() const {
   return s_activeHandler->interrupted;
 }
 

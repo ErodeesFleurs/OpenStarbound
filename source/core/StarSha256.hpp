@@ -20,7 +20,7 @@ public:
 
   // Produces 32 bytes
   void compute(char* hashDestination);
-  ByteArray compute();
+  [[nodiscard]] ByteArray compute();
 
 private:
   bool m_finished = false;
@@ -30,12 +30,12 @@ private:
 // Sha256 must, obviously, have 32 bytes available in the destination.
 void sha256(char const* source, size_t length, char* hashDestination);
 
-ByteArray sha256(char const* source, size_t length);
+[[nodiscard]] ByteArray sha256(char const* source, size_t length);
 
 void sha256(ByteArray const& in, ByteArray& out);
 void sha256(String const& in, ByteArray& out);
 
-ByteArray sha256(ByteArray const& in);
-ByteArray sha256(String const& in);
+[[nodiscard]] ByteArray sha256(ByteArray const& in);
+[[nodiscard]] ByteArray sha256(String const& in);
 
 }

@@ -22,7 +22,7 @@ ServerRconThread::ServerRconThread(UniverseServer& universe, HostAddressWithPort
 
 ServerRconThread::~ServerRconThread() {
   stop();
-  join();
+  (void)join();
 }
 
 void ServerRconThread::clearClients(bool all) {
@@ -38,7 +38,7 @@ void ServerRconThread::clearClients(bool all) {
 
 void ServerRconThread::start() {
   m_stop = false;
-  Thread::start();
+  (void)Thread::start();
 }
 
 void ServerRconThread::stop() {

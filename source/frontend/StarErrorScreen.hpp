@@ -29,19 +29,19 @@ public:
   // Resets accepted
   void setMessage(String const& message);
 
-  bool accepted();
+  [[nodiscard]] bool accepted();
 
   void render();
 
-  bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] bool handleInputEvent(InputEvent const& event);
   void update(float dt);
 
 private:
   void renderCursor();
 
-  float interfaceScale() const;
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
+  [[nodiscard]] float interfaceScale() const;
+  [[nodiscard]] unsigned windowHeight() const;
+  [[nodiscard]] unsigned windowWidth() const;
 
   GuiContext& m_guiContext;
   PaneManagerPtr m_paneManager;

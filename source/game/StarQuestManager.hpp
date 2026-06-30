@@ -20,63 +20,63 @@ public:
   QuestManager(AssetsConstPtr assets, Player& player, World& world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   void diskLoad(Json const& quests);
-  Json diskStore();
+  [[nodiscard]] Json diskStore();
 
   void setUniverseClient(UniverseClient* client);
-  AssetsConstPtr assets() const;
-  ItemDatabaseConstPtr itemDatabase() const;
-  ObjectDatabaseConstPtr objectDatabase() const;
-  QuestTemplateDatabaseConstPtr questTemplateDatabase() const;
-  VersioningDatabaseConstPtr versioningDatabase() const;
+  [[nodiscard]] AssetsConstPtr assets() const;
+  [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const;
+  [[nodiscard]] ObjectDatabaseConstPtr objectDatabase() const;
+  [[nodiscard]] QuestTemplateDatabaseConstPtr questTemplateDatabase() const;
+  [[nodiscard]] VersioningDatabaseConstPtr versioningDatabase() const;
 
   void init(World& world);
   void uninit();
 
-  bool canStart(QuestArcDescriptor const& questArc) const;
+  [[nodiscard]] bool canStart(QuestArcDescriptor const& questArc) const;
 
   // Show a dialog offering the player a quest, and later start it if they
   // accept it.
   void offer(QuestPtr const& quest);
-  StringMap<QuestPtr> quests() const;
+  [[nodiscard]] StringMap<QuestPtr> quests() const;
   // Only returns quests that are exclusive to the current server.
-  StringMap<QuestPtr> serverQuests() const;
-  QuestPtr getQuest(String const& questId) const;
+  [[nodiscard]] StringMap<QuestPtr> serverQuests() const;
+  [[nodiscard]] QuestPtr getQuest(String const& questId) const;
 
-  bool hasQuest(String const& questId) const;
-  bool hasAcceptedQuest(String const& questId) const;
-  bool isActive(String const& questId) const;
-  bool isCurrent(String const& questId) const;
-  bool isTracked(String const& questId) const;
+  [[nodiscard]] bool hasQuest(String const& questId) const;
+  [[nodiscard]] bool hasAcceptedQuest(String const& questId) const;
+  [[nodiscard]] bool isActive(String const& questId) const;
+  [[nodiscard]] bool isCurrent(String const& questId) const;
+  [[nodiscard]] bool isTracked(String const& questId) const;
   void setAsTracked(Maybe<String> const& questId);
   void markAsRead(String const& questId);
-  bool hasCompleted(String const& questId) const;
-  bool canTurnIn(String const& questId) const;
+  [[nodiscard]] bool hasCompleted(String const& questId) const;
+  [[nodiscard]] bool canTurnIn(String const& questId) const;
 
-  Maybe<QuestPtr> getFirstNewQuest();
-  Maybe<QuestPtr> getFirstCompletableQuest();
-  Maybe<QuestPtr> getFirstFailableQuest();
-  Maybe<QuestPtr> getFirstMainQuest();
+  [[nodiscard]] Maybe<QuestPtr> getFirstNewQuest();
+  [[nodiscard]] Maybe<QuestPtr> getFirstCompletableQuest();
+  [[nodiscard]] Maybe<QuestPtr> getFirstFailableQuest();
+  [[nodiscard]] Maybe<QuestPtr> getFirstMainQuest();
 
-  List<QuestPtr> listActiveQuests() const;
-  List<QuestPtr> listCompletedQuests() const;
-  List<QuestPtr> listFailedQuests() const;
+  [[nodiscard]] List<QuestPtr> listActiveQuests() const;
+  [[nodiscard]] List<QuestPtr> listCompletedQuests() const;
+  [[nodiscard]] List<QuestPtr> listFailedQuests() const;
 
-  Maybe<String> currentQuestId() const;
-  Maybe<QuestPtr> currentQuest() const;
-  Maybe<String> trackedQuestId() const;
-  Maybe<QuestPtr> trackedQuest() const;
-  Maybe<QuestIndicator> getQuestIndicator(EntityPtr const& entity) const;
+  [[nodiscard]] Maybe<String> currentQuestId() const;
+  [[nodiscard]] Maybe<QuestPtr> currentQuest() const;
+  [[nodiscard]] Maybe<String> trackedQuestId() const;
+  [[nodiscard]] Maybe<QuestPtr> trackedQuest() const;
+  [[nodiscard]] Maybe<QuestIndicator> getQuestIndicator(EntityPtr const& entity) const;
 
   // Handled at this level to allow multiple active quests to specify interestingObjects
-  StringSet interestingObjects();
+  [[nodiscard]] StringSet interestingObjects();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:
   void startInitialQuests();
   void setMostRecentQuestCurrent();
-  bool questValidOnServer(QuestPtr quest) const;
+  [[nodiscard]] bool questValidOnServer(QuestPtr quest) const;
 
   Player* m_player;
   World* m_world;

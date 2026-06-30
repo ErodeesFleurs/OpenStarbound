@@ -51,11 +51,11 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
-  EntityId sourceEntityId() const;
+  [[nodiscard]] EntityId sourceEntityId() const;
 
-  ItemPtr addItems(ItemPtr const& items);
+  [[nodiscard]] ItemPtr addItems(ItemPtr const& items);
 
 protected:
   void update(float dt) override;
@@ -66,14 +66,14 @@ private:
   void buildItemList();
   void setupWidget(WidgetPtr const& widget, Json const& itemConfig);
   void updateSelection();
-  int itemPrice();
+  [[nodiscard]] int itemPrice();
   void updateBuyTotal();
   void buy();
 
   void updateSellTotal();
   void sell();
 
-  int maxBuyCount();
+  [[nodiscard]] int maxBuyCount();
   void countChanged();
   void countTextChanged();
 

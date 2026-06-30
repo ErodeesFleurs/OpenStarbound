@@ -17,39 +17,39 @@ public:
   Stagehand(Json const& config);
   Stagehand(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  EntityType entityType() const override;
+  [[nodiscard]] EntityType entityType() const override;
 
   void setPosition(Vec2F const& position);
 
-  Vec2F position() const override;
+  [[nodiscard]] Vec2F position() const override;
 
-  RectF metaBoundBox() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  String name() const override;
+  [[nodiscard]] String name() const override;
 
   void update(float dt, uint64_t currentStep) override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
-  String typeName() const;
+  [[nodiscard]] String typeName() const;
   
-  Json configValue(String const& name, Json const& def = Json()) const;
+  [[nodiscard]] Json configValue(String const& name, Json const& def = Json()) const;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   using Entity::setUniqueId;
 
@@ -58,7 +58,7 @@ private:
 
   void readConfig(Json config);
 
-  LuaCallbacks makeStagehandCallbacks();
+  [[nodiscard]] LuaCallbacks makeStagehandCallbacks();
 
   Json m_config;
 

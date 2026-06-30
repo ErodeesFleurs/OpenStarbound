@@ -29,19 +29,19 @@ public:
   bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
     WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, Maybe<TerrainLayer> variantLayer = {});
 
-  WorldRenderData& renderData();
-  MutexLocker lockRenderData();
+  [[nodiscard]] WorldRenderData& renderData();
+  [[nodiscard]] MutexLocker lockRenderData();
 
   template <typename Function>
   static void forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
 private:
   friend class TilePainter;
 
-  static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
+  [[nodiscard]] static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
 
-  static QuadZLevel materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
-  static QuadZLevel modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
-  static QuadZLevel damageZLevel();
+  [[nodiscard]] static QuadZLevel materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
+  [[nodiscard]] static QuadZLevel modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
+  [[nodiscard]] static QuadZLevel damageZLevel();
 
   static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
     WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);

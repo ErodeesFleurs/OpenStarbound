@@ -50,8 +50,8 @@ DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveM
 
 using StatModifier = MVariant<StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier>;
 
-StatModifier jsonToStatModifier(Json const& config);
-Json jsonFromStatModifier(StatModifier const& modifier);
+[[nodiscard]] StatModifier jsonToStatModifier(Json const& config);
+[[nodiscard]] Json jsonFromStatModifier(StatModifier const& modifier);
 
 using StatModifierGroupId = uint32_t;
 using StatModifierGroupMap = IdMap<StatModifierGroupId, List<StatModifier>>;
@@ -67,8 +67,8 @@ using ActiveUniqueStatusEffectSummary = List<pair<UniqueStatusEffect, Maybe<floa
 using PersistentStatusEffect = MVariant<StatModifier, UniqueStatusEffect>;
 
 // Reads either a name of a unique stat effect or a stat modifier object
-PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config);
-Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
+[[nodiscard]] PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config);
+[[nodiscard]] Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
 
 // Ephemeral effects are always unique effects and either use the default
 // duration in their config or optionally the default
@@ -84,7 +84,7 @@ DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralSta
 
 // Reads either a name of a unique stat effect or an object containing the
 // type name and optionally the duration.
-EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config);
-Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect);
+[[nodiscard]] EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config);
+[[nodiscard]] Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect);
 
 }

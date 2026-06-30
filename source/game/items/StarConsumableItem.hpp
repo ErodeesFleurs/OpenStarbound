@@ -11,9 +11,9 @@ class ConsumableItem : public Item, public SwingableItem {
 public:
   ConsumableItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
@@ -21,7 +21,7 @@ public:
   void uninit() override;
 
 private:
-  bool canUse() const;
+  [[nodiscard]] bool canUse() const;
 
   void triggerEffects();
   void maybeConsume();

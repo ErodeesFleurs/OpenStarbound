@@ -13,7 +13,7 @@ class NetElementBasicField : public NetElement {
 public:
   virtual ~NetElementBasicField() = default;
 
-  T const& get() const;
+  [[nodiscard]] T const& get() const;
 
   // Updates the value if the value is different than the existing value,
   // requires T have operator==
@@ -23,7 +23,7 @@ public:
   void push(T value);
 
   // Has this field been updated since the last call to pullUpdated?
-  bool pullUpdated();
+  [[nodiscard]] bool pullUpdated();
 
   // Update the value in place.  The mutator will be called as bool
   // mutator(T&), return true to signal that the value was updated.
@@ -41,7 +41,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
 protected:
@@ -103,10 +103,10 @@ public:
 
   // Returns the number of times this event has been triggered since the last
   // pullOccurrences call.
-  uint64_t pullOccurrences();
+  [[nodiscard]] uint64_t pullOccurrences();
 
   // Pulls whether this event occurred at all, ignoring the number
-  bool pullOccurred();
+  [[nodiscard]] bool pullOccurred();
 
   // Ignore all the existing ocurrences
   void ignoreOccurrences();
@@ -147,7 +147,7 @@ using NetElementString = NetElementData<String>;
 using NetElementBytes = NetElementData<ByteArray>;
 
 template <typename T>
-T const& NetElementBasicField<T>::get() const {
+[[nodiscard]] T const& NetElementBasicField<T>::get() const {
   return m_value;
 }
 
@@ -167,7 +167,7 @@ void NetElementBasicField<T>::push(T value) {
 }
 
 template <typename T>
-bool NetElementBasicField<T>::pullUpdated() {
+[[nodiscard]] bool NetElementBasicField<T>::pullUpdated() {
   return take(m_updated);
 }
 

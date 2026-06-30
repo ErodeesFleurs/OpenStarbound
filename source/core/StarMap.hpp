@@ -27,67 +27,67 @@ public:
   using mapped_const_ptr = std::decay_t<mapped_type> const*;
 
   template <typename MapType>
-  static MapMixin from(MapType const& m);
+  [[nodiscard]] static MapMixin from(MapType const& m);
 
   using Base::Base;
 
-  List<key_type> keys() const;
-  List<mapped_type> values() const;
-  List<pair<key_type, mapped_type>> pairs() const;
+  [[nodiscard]] List<key_type> keys() const;
+  [[nodiscard]] List<mapped_type> values() const;
+  [[nodiscard]] List<pair<key_type, mapped_type>> pairs() const;
 
-  bool contains(key_type const& k) const;
+  [[nodiscard]] bool contains(key_type const& k) const;
 
   // Removes the item with key k and returns true if contains(k) is true,
   // false otherwise.
-  bool remove(key_type const& k);
+  [[nodiscard]] bool remove(key_type const& k);
 
   // Removes *all* items that have a value matching the given one.  Returns
   // true if any elements were removed.
-  bool removeValues(mapped_type const& v);
+  [[nodiscard]] bool removeValues(mapped_type const& v);
 
   // Throws exception if key not found
-  mapped_type take(key_type const& k);
+  [[nodiscard]] mapped_type take(key_type const& k);
 
-  Maybe<mapped_type> maybeTake(key_type const& k);
+  [[nodiscard]] Maybe<mapped_type> maybeTake(key_type const& k);
 
   // Throws exception if key not found
-  mapped_type& get(key_type const& k);
-  mapped_type const& get(key_type const& k) const;
+  [[nodiscard]] mapped_type& get(key_type const& k);
+  [[nodiscard]] mapped_type const& get(key_type const& k) const;
 
   // Return d if key not found
-  mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
+  [[nodiscard]] mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
 
-  Maybe<mapped_type> maybe(key_type const& k) const;
+  [[nodiscard]] Maybe<mapped_type> maybe(key_type const& k) const;
 
-  mapped_const_ptr ptr(key_type const& k) const;
-  mapped_ptr ptr(key_type const& k);
+  [[nodiscard]] mapped_const_ptr ptr(key_type const& k) const;
+  [[nodiscard]] mapped_ptr ptr(key_type const& k);
 
   // Finds first value matching the given value and returns its key.
-  key_type keyOf(mapped_type const& v) const;
+  [[nodiscard]] key_type keyOf(mapped_type const& v) const;
 
   // Finds all of the values matching the given value and returns their keys.
-  List<key_type> keysOf(mapped_type const& v) const;
+  [[nodiscard]] List<key_type> keysOf(mapped_type const& v) const;
 
-  bool hasValue(mapped_type const& v) const;
+  [[nodiscard]] bool hasValue(mapped_type const& v) const;
 
   using Base::insert;
 
   // Same as insert(value_type), returns the iterator to either the newly
   // inserted value or the existing value, and then a bool that is true if the
   // new element was inserted.
-  pair<iterator, bool> insert(key_type k, mapped_type v);
+  [[nodiscard]] pair<iterator, bool> insert(key_type k, mapped_type v);
 
   // Add a key / value pair, throw if the key already exists
-  mapped_type& add(key_type k, mapped_type v);
+  [[nodiscard]] mapped_type& add(key_type k, mapped_type v);
 
   // Set a key to a value, always override if it already exists
-  mapped_type& set(key_type k, mapped_type v);
+  [[nodiscard]] mapped_type& set(key_type k, mapped_type v);
 
   // Appends all values of given map into this map.  If overwite is false, then
   // skips values that already exist in this map.  Returns false if any keys
   // previously existed.
   template <typename MapType>
-  bool merge(MapType const& m, bool overwrite = false);
+  [[nodiscard]] bool merge(MapType const& m, bool overwrite = false);
 
   bool operator==(MapMixin const& m) const;
 };
@@ -111,7 +111,7 @@ auto MapMixin<BaseMap>::from(MapType const& m) -> MapMixin {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::keys() const -> List<key_type> {
+[[nodiscard]] auto MapMixin<BaseMap>::keys() const -> List<key_type> {
   List<key_type> klist;
   klist.reserve(Base::size());
   for (auto const& entry : *this)
@@ -120,7 +120,7 @@ auto MapMixin<BaseMap>::keys() const -> List<key_type> {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::values() const -> List<mapped_type> {
+[[nodiscard]] auto MapMixin<BaseMap>::values() const -> List<mapped_type> {
   List<mapped_type> vlist;
   vlist.reserve(Base::size());
   for (auto const& entry : *this)
@@ -129,7 +129,7 @@ auto MapMixin<BaseMap>::values() const -> List<mapped_type> {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::pairs() const -> List<pair<key_type, mapped_type>> {
+[[nodiscard]] auto MapMixin<BaseMap>::pairs() const -> List<pair<key_type, mapped_type>> {
   List<pair<key_type, mapped_type>> plist;
   plist.reserve(Base::size());
   for (auto const& entry : *this)
@@ -138,7 +138,7 @@ auto MapMixin<BaseMap>::pairs() const -> List<pair<key_type, mapped_type>> {
 }
 
 template <typename BaseMap>
-bool MapMixin<BaseMap>::contains(key_type const& k) const {
+[[nodiscard]] bool MapMixin<BaseMap>::contains(key_type const& k) const {
   return Base::find(k) != Base::end();
 }
 
@@ -198,7 +198,7 @@ auto MapMixin<BaseMap>::get(key_type const& k) const -> mapped_type const& {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::value(key_type const& k, mapped_type d) const -> mapped_type {
+[[nodiscard]] auto MapMixin<BaseMap>::value(key_type const& k, mapped_type d) const -> mapped_type {
   const_iterator i = Base::find(k);
   if (i == Base::end())
     return d;
@@ -207,7 +207,7 @@ auto MapMixin<BaseMap>::value(key_type const& k, mapped_type d) const -> mapped_
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::maybe(key_type const& k) const -> Maybe<mapped_type> {
+[[nodiscard]] auto MapMixin<BaseMap>::maybe(key_type const& k) const -> Maybe<mapped_type> {
   auto i = Base::find(k);
   if (i == Base::end())
     return {};
@@ -216,7 +216,7 @@ auto MapMixin<BaseMap>::maybe(key_type const& k) const -> Maybe<mapped_type> {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::ptr(key_type const& k) const -> mapped_const_ptr {
+[[nodiscard]] auto MapMixin<BaseMap>::ptr(key_type const& k) const -> mapped_const_ptr {
   auto i = Base::find(k);
   if (i == Base::end())
     return nullptr;
@@ -225,7 +225,7 @@ auto MapMixin<BaseMap>::ptr(key_type const& k) const -> mapped_const_ptr {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::ptr(key_type const& k) -> mapped_ptr {
+[[nodiscard]] auto MapMixin<BaseMap>::ptr(key_type const& k) -> mapped_ptr {
   auto i = Base::find(k);
   if (i == Base::end())
     return nullptr;
@@ -234,7 +234,7 @@ auto MapMixin<BaseMap>::ptr(key_type const& k) -> mapped_ptr {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
+[[nodiscard]] auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
   for (auto const& [key, value] : *this) {
     if (value == v)
       return key;
@@ -243,7 +243,7 @@ auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::keysOf(mapped_type const& v) const -> List<key_type> {
+[[nodiscard]] auto MapMixin<BaseMap>::keysOf(mapped_type const& v) const -> List<key_type> {
   List<key_type> keys;
   keys.reserve(Base::size());
   for (auto const& [key, value] : *this) {
@@ -254,7 +254,7 @@ auto MapMixin<BaseMap>::keysOf(mapped_type const& v) const -> List<key_type> {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
+[[nodiscard]] auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
   for (auto const& entry : *this) {
     if (entry.second == v)
       return true;

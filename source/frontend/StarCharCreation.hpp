@@ -42,9 +42,9 @@ public:
   void randomizeName();
 
   void tick(float dt) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
-  PanePtr createTooltip(Vec2I const&) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const&) override;
 
 private:
   void nameBoxCallback(Widget* object);

@@ -31,9 +31,9 @@ public:
 
   void addTab(String const& widgetName, WidgetPtr widget, String const& title);
 
-  size_t tabCount() const;
+  [[nodiscard]] size_t tabCount() const;
   void tabSelect(size_t page);
-  size_t selectedTab() const;
+  [[nodiscard]] size_t selectedTab() const;
 
   // Callback is called when the tab changes
   void setCallback(WidgetCallbackFunc callback);

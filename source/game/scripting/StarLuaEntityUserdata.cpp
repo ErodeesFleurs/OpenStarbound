@@ -178,7 +178,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
                 {"origin", jsonFromVec2F(nametagEntity->nametagOrigin())},
             };
             if (auto status = nametagEntity->statusText())
-                result.set("status", *status);
+                result = result.set("status", *status);
         }
 
         return result;

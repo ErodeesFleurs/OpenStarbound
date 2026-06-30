@@ -41,13 +41,13 @@ using NodeParameterValue = Variant<String, Json>;
 using NodeParameter = pair<NodeParameterType, NodeParameterValue>;
 using NodeOutput = pair<NodeParameterType, pair<Maybe<String>, bool>>;
 
-NodeParameterValue nodeParameterValueFromJson(Json const& json);
+[[nodiscard]] NodeParameterValue nodeParameterValueFromJson(Json const& json);
 
-Json jsonFromNodeParameter(NodeParameter const& parameter);
-NodeParameter jsonToNodeParameter(Json const& json);
+[[nodiscard]] Json jsonFromNodeParameter(NodeParameter const& parameter);
+[[nodiscard]] NodeParameter jsonToNodeParameter(Json const& json);
 
-Json jsonFromNodeOutput(NodeOutput const& output);
-NodeOutput jsonToNodeOutput(Json const& json);
+[[nodiscard]] Json jsonFromNodeOutput(NodeOutput const& output);
+[[nodiscard]] NodeOutput jsonToNodeOutput(Json const& json);
 
 enum class BehaviorNodeType : uint16_t {
   Action,
@@ -67,8 +67,8 @@ enum class CompositeType : uint16_t {
 extern EnumMap<CompositeType> const CompositeTypeNames;
 
 // replaces global tags in nodeParameters in place
-NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
-Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
+[[nodiscard]] NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
+[[nodiscard]] Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
 void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
 
 struct ActionNode {
@@ -134,9 +134,9 @@ class BehaviorDatabase {
 public:
   BehaviorDatabase(AssetsConstPtr assets);
 
-  BehaviorTreeConstPtr behaviorTree(String const& name) const;
-  BehaviorTreeConstPtr buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;
-  Json behaviorConfig(String const& name) const;
+  [[nodiscard]] BehaviorTreeConstPtr behaviorTree(String const& name) const;
+  [[nodiscard]] BehaviorTreeConstPtr buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;
+  [[nodiscard]] Json behaviorConfig(String const& name) const;
 
 private:
   StringMap<Json> m_configs;
@@ -147,8 +147,8 @@ private:
   void loadTree(String const& name);
 
   // constructs node variants
-  CompositeNode compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
-  BehaviorNodeConstPtr behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
+  [[nodiscard]] CompositeNode compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
+  [[nodiscard]] BehaviorNodeConstPtr behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
 };
 
 }

@@ -45,46 +45,46 @@ public:
   LuaBaseComponent(LuaBaseComponent const& component) = delete;
   LuaBaseComponent& operator=(LuaBaseComponent const& component) = delete;
 
-  StringList const& scripts() const;
+  [[nodiscard]] StringList const& scripts() const;
   void setScript(String script);
   void setScripts(StringList scripts);
 
   void addCallbacks(String groupName, LuaCallbacks callbacks);
-  bool removeCallbacks(String const& groupName);
+  [[nodiscard]] bool removeCallbacks(String const& groupName);
 
   // If true, component will automatically uninit and re-init when root is
   // reloaded.
-  bool autoReInit() const;
+  [[nodiscard]] bool autoReInit() const;
   void setAutoReInit(bool autoReInit);
 
   // Lua components require access to a LuaRoot object to initialize /
   // uninitialize.
   void setLuaRoot(LuaRootPtr luaRoot);
-  LuaRootPtr const& luaRoot();
+  [[nodiscard]] LuaRootPtr const& luaRoot();
 
   // init returns true on success, false if there has been an error
   // initializing the script.  LuaRoot must be set before calling or this will
   // always fail.  Calls the 'init' entry point on the script context.
-  bool init();
+  [[nodiscard]] bool init();
   // uninit will uninitialize the LuaComponent if it is currently initialized.
   // This calls the 'uninit' entry point on the script context before
   // destroying the context.
   void uninit();
 
-  bool initialized() const;
+  [[nodiscard]] bool initialized() const;
 
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> invoke(String const& name, V&&... args);
+  [[nodiscard]] Maybe<Ret> invoke(String const& name, V&&... args);
 
   template <typename Ret = LuaValue>
-  Maybe<LuaValue> eval(String const& code);
+  [[nodiscard]] Maybe<LuaValue> eval(String const& code);
 
   // Returns last error, if there has been an error.  Errors can only be
   // cleared by re-initializing the context.
-  Maybe<String> const& error() const;
+  [[nodiscard]] Maybe<String> const& error() const;
 
-  Maybe<LuaContext> const& context() const;
-  Maybe<LuaContext>& context();
+  [[nodiscard]] Maybe<LuaContext> const& context() const;
+  [[nodiscard]] Maybe<LuaContext>& context();
 
 protected:
   virtual void contextSetup();
@@ -94,10 +94,10 @@ protected:
 
   // Checks the initialization state of the script, while also reloading the
   // script and clearing the error state if a root reload has occurred.
-  bool checkInitialization();
+  [[nodiscard]] bool checkInitialization();
 
 private:
-  LuaCallbacks makeThreadsCallbacks();
+  [[nodiscard]] LuaCallbacks makeThreadsCallbacks();
   
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
@@ -116,7 +116,7 @@ private:
 template <typename Base>
 class LuaStorableComponent : public Base {
 public:
-  JsonObject getScriptStorage() const;
+  [[nodiscard]] JsonObject getScriptStorage() const;
   void setScriptStorage(JsonObject storage);
 
 protected:
@@ -136,17 +136,17 @@ class LuaUpdatableComponent : public Base {
 public:
   LuaUpdatableComponent();
 
-  unsigned updateDelta() const;
-  float updateDt(float dt) const;
-  float updateDt() const;
+  [[nodiscard]] unsigned updateDelta() const;
+  [[nodiscard]] float updateDt(float dt) const;
+  [[nodiscard]] float updateDt() const;
   void setUpdateDelta(unsigned updateDelta);
 
   // Returns true if the next update will call the internal script update
   // method.
-  bool updateReady() const;
+  [[nodiscard]] bool updateReady() const;
 
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> update(V&&... args);
+  [[nodiscard]] Maybe<Ret> update(V&&... args);
 
   void contextSetup() {
     Base::contextSetup();
@@ -180,7 +180,7 @@ class LuaMessageHandlingComponent : public Base {
 public:
   LuaMessageHandlingComponent();
 
-  Maybe<Json> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 protected:
   void contextShutdown() override;

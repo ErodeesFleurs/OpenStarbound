@@ -13,7 +13,7 @@ class ActorMovementController;
 // theres potentially more things shared that could be moved here
 class ActorEntity : public virtual Entity {
 public:
-  virtual ActorMovementController* movementController() = 0;
-  virtual StatusController* statusController() = 0;
+  [[nodiscard]] virtual ActorMovementController* movementController() = 0;
+  [[nodiscard]] virtual StatusController* statusController() = 0;
 };
 }

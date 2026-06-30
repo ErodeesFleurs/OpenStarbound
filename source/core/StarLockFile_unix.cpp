@@ -11,7 +11,7 @@ namespace Star {
 
 int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String filename, int64_t lockTimeout) {
+[[nodiscard]] Maybe<LockFile> LockFile::acquireLock(String filename, int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return lock;
@@ -35,7 +35,7 @@ LockFile& LockFile::operator=(LockFile&& lockFile) {
   return *this;
 }
 
-bool LockFile::lock(int64_t timeout) {
+[[nodiscard]] bool LockFile::lock(int64_t timeout) {
   auto doFLock = [](String const& filename, bool block) -> shared_ptr<int> {
     int fd = open(filename.utf8Ptr(), O_RDONLY | O_CREAT, 0644);
     if (fd < 0)
@@ -87,7 +87,7 @@ void LockFile::unlock() {
   }
 }
 
-bool LockFile::isLocked() const {
+[[nodiscard]] bool LockFile::isLocked() const {
   return m_handle != nullptr;
 }
 

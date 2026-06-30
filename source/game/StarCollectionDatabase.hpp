@@ -48,17 +48,17 @@ class CollectionDatabase {
 public:
   CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, ItemDatabaseConstPtr itemDatabase);
 
-  List<Collection> collections() const;
-  Collection collection(String const& collectionName) const;
-  List<Collectable> collectables(String const& collectionName) const;
-  Collectable collectable(String const& collectionName, String const& collectableName) const;
+  [[nodiscard]] List<Collection> collections() const;
+  [[nodiscard]] Collection collection(String const& collectionName) const;
+  [[nodiscard]] List<Collectable> collectables(String const& collectionName) const;
+  [[nodiscard]] Collectable collectable(String const& collectionName, String const& collectableName) const;
 
-  bool hasCollectable(String const& collectionName, String const& collectableName) const;
+  [[nodiscard]] bool hasCollectable(String const& collectionName, String const& collectableName) const;
 
 private:
-  Collectable parseGenericCollectable(String const& name, Json const& config) const;
-  Collectable parseMonsterCollectable(String const& name, Json const& config) const;
-  Collectable parseItemCollectable(String const& name, Json const& config) const;
+  [[nodiscard]] Collectable parseGenericCollectable(String const& name, Json const& config) const;
+  [[nodiscard]] Collectable parseMonsterCollectable(String const& name, Json const& config) const;
+  [[nodiscard]] Collectable parseItemCollectable(String const& name, Json const& config) const;
 
   MonsterDatabaseConstPtr m_monsterDatabase;
   ItemDatabaseConstPtr m_itemDatabase;

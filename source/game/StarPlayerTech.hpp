@@ -17,24 +17,24 @@ public:
   PlayerTech(TechDatabaseConstPtr techDatabase);
   PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  bool isAvailable(String const& techModule) const;
+  [[nodiscard]] bool isAvailable(String const& techModule) const;
   void makeAvailable(String const& techModule);
   void makeUnavailable(String const& techModule);
 
-  bool isEnabled(String const& techModule) const;
+  [[nodiscard]] bool isEnabled(String const& techModule) const;
   void enable(String const& techModule);
   void disable(String const& techModule);
 
-  bool isEquipped(String const& techModule) const;
+  [[nodiscard]] bool isEquipped(String const& techModule) const;
   void equip(String const& techModule);
   void unequip(String const& techModule);
 
-  StringSet const& availableTechs() const;
-  StringSet const& enabledTechs() const;
-  HashMap<TechType, String> const& equippedTechs() const;
-  StringList techModules() const;
+  [[nodiscard]] StringSet const& availableTechs() const;
+  [[nodiscard]] StringSet const& enabledTechs() const;
+  [[nodiscard]] HashMap<TechType, String> const& equippedTechs() const;
+  [[nodiscard]] StringList techModules() const;
 
 private:
   TechDatabaseConstPtr m_techDatabase;

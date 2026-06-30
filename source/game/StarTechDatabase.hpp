@@ -41,11 +41,11 @@ class TechDatabase {
 public:
   TechDatabase(AssetsConstPtr assets);
 
-  bool contains(String const& techName) const;
-  TechConfig tech(String const& techName) const;
+  [[nodiscard]] bool contains(String const& techName) const;
+  [[nodiscard]] TechConfig tech(String const& techName) const;
 
 private:
-  TechConfig parseTech(Json const& config, String const& path) const;
+  [[nodiscard]] TechConfig parseTech(Json const& config, String const& path) const;
 
   StringMap<TechConfig> m_tech;
 };

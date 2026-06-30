@@ -24,24 +24,24 @@ public:
   explicit PlayerAppearance(Player& player);
   void init();
 
-  String name() const;
+  [[nodiscard]] String name() const;
   void setName(String const& name);
-  String species() const;
+  [[nodiscard]] String species() const;
   void setSpecies(String const& species);
-  Gender gender() const;
+  [[nodiscard]] Gender gender() const;
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
   void setImagePath(Maybe<String> const& imagePath);
-  HumanoidIdentity const& identity() const;
+  [[nodiscard]] HumanoidIdentity const& identity() const;
   void setIdentity(HumanoidIdentity identity);
   void updateIdentity();
-  HumanoidPtr humanoid();
-  HumanoidPtr humanoid() const;
+  [[nodiscard]] HumanoidPtr humanoid();
+  [[nodiscard]] HumanoidPtr humanoid() const;
 
   void setHumanoidParameter(String key, Maybe<Json> value);
-  Maybe<Json> getHumanoidParameter(String key);
+  [[nodiscard]] Maybe<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
-  JsonObject getHumanoidParameters();
+  [[nodiscard]] JsonObject getHumanoidParameters();
   void refreshHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
@@ -59,34 +59,34 @@ public:
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
-  bool displayNametag() const;
-  Vec3B nametagColor() const;
-  Vec2F nametagOrigin() const;
-  String nametag() const;
+  [[nodiscard]] bool displayNametag() const;
+  [[nodiscard]] Vec3B nametagColor() const;
+  [[nodiscard]] Vec2F nametagOrigin() const;
+  [[nodiscard]] String nametag() const;
   void setNametag(Maybe<String> nametag);
-  Maybe<String> statusText() const;
+  [[nodiscard]] Maybe<String> statusText() const;
 
-  List<Drawable> portrait(PortraitMode mode) const;
-  bool underwater() const;
+  [[nodiscard]] List<Drawable> portrait(PortraitMode mode) const;
+  [[nodiscard]] bool underwater() const;
   void animatePortrait(float dt);
 
-  Color favoriteColor() const;
+  [[nodiscard]] Color favoriteColor() const;
   void setFavoriteColor(Color color);
 
   void setAnimationParameter(String name, Json value);
 
-  Maybe<String> inspectionLogName() const;
-  Maybe<String> inspectionDescription(String const& species) const;
+  [[nodiscard]] Maybe<String> inspectionLogName() const;
+  [[nodiscard]] Maybe<String> inspectionDescription(String const& species) const;
 
-  NetElementDynamicGroup<NetHumanoid>& netHumanoid();
-  NetElementData<Maybe<String>>& deathParticleBurst();
-  NetElementHashMap<String, Json>& scriptedAnimationParameters();
-  NetElementEvent& refreshedHumanoidParameters();
+  [[nodiscard]] NetElementDynamicGroup<NetHumanoid>& netHumanoid();
+  [[nodiscard]] NetElementData<Maybe<String>>& deathParticleBurst();
+  [[nodiscard]] NetElementHashMap<String, Json>& scriptedAnimationParameters();
+  [[nodiscard]] NetElementEvent& refreshedHumanoidParameters();
   NetworkedAnimator::DynamicTarget& humanoidDynamicTarget();
-  NetElementData<Maybe<String>>& humanoidDanceNetState();
-  NetElementData<HumanoidIdentity>& identityNetState();
+  [[nodiscard]] NetElementData<Maybe<String>>& humanoidDanceNetState();
+  [[nodiscard]] NetElementData<HumanoidIdentity>& identityNetState();
 
-  bool& identityUpdated();
+  [[nodiscard]] bool& identityUpdated();
 
   HumanoidIdentity m_identity;
   JsonObject m_humanoidParameters;

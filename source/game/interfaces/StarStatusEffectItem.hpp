@@ -9,7 +9,7 @@ class StatusEffectItem;
 class StatusEffectItem {
 public:
   virtual ~StatusEffectItem() = default;
-  virtual List<PersistentStatusEffect> statusEffects() const = 0;
+  [[nodiscard]] virtual List<PersistentStatusEffect> statusEffects() const = 0;
 };
 
 }

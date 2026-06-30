@@ -40,7 +40,7 @@ struct WorldRegion {
   WorldRegion() = default;
   explicit WorldRegion(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   TerrainSelectorIndex terrainSelectorIndex = NullTerrainSelectorIndex;
   TerrainSelectorIndex foregroundCaveSelectorIndex = NullTerrainSelectorIndex;
@@ -59,14 +59,14 @@ struct WorldRegion {
 class WorldLayout {
 public:
   struct BlockNoise {
-    static BlockNoise build(Json const& config, uint64_t seed);
+    [[nodiscard]] static BlockNoise build(Json const& config, uint64_t seed);
 
     BlockNoise() = default;
     explicit BlockNoise(Json const& store);
 
-    Json toJson() const;
+    [[nodiscard]] Json toJson() const;
 
-    Vec2I apply(Vec2I const& input, Vec2U const& worldSize) const;
+    [[nodiscard]] Vec2I apply(Vec2I const& input, Vec2U const& worldSize) const;
 
     // Individual noise only applied for horizontal / vertical biome transitions
     PerlinF horizontalNoise;
@@ -83,37 +83,37 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
+  [[nodiscard]] static WorldLayout buildTerrestrialLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
+  [[nodiscard]] static WorldLayout buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
+  [[nodiscard]] static WorldLayout buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
 
   WorldLayout() = default;
   WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  Maybe<BlockNoise> const& blockNoise() const;
-  Maybe<PerlinF> const& blendNoise() const;
+  [[nodiscard]] Maybe<BlockNoise> const& blockNoise() const;
+  [[nodiscard]] Maybe<PerlinF> const& blendNoise() const;
 
-  List<RectI> playerStartSearchRegions() const;
+  [[nodiscard]] List<RectI> playerStartSearchRegions() const;
 
-  BiomeConstPtr const& getBiome(BiomeIndex index) const;
-  TerrainSelectorConstPtr const& getTerrainSelector(TerrainSelectorIndex index) const;
+  [[nodiscard]] BiomeConstPtr const& getBiome(BiomeIndex index) const;
+  [[nodiscard]] TerrainSelectorConstPtr const& getTerrainSelector(TerrainSelectorIndex index) const;
 
   // Will return region weighting in order of greatest to least weighting.
-  List<RegionWeighting> getWeighting(int x, int y) const;
+  [[nodiscard]] List<RegionWeighting> getWeighting(int x, int y) const;
 
-  List<RectI> previewAddBiomeRegion(Vec2I const& position, int width) const;
-  List<RectI> previewExpandBiomeRegion(Vec2I const& position, int width) const;
+  [[nodiscard]] List<RectI> previewAddBiomeRegion(Vec2I const& position, int width) const;
+  [[nodiscard]] List<RectI> previewExpandBiomeRegion(Vec2I const& position, int width) const;
 
   void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // sets the environment biome index for all regions in the current layer
   // to the biome at the specified position, and returns the name of the biome
-  String setLayerEnvironmentBiome(Vec2I const& position);
+  [[nodiscard]] String setLayerEnvironmentBiome(Vec2I const& position);
 
-  pair<size_t, size_t> findLayerAndCell(int x, int y) const;
+  [[nodiscard]] pair<size_t, size_t> findLayerAndCell(int x, int y) const;
 
 private:
   struct WorldLayer {
@@ -137,12 +137,12 @@ private:
     WorldRegionLiquids regionLiquids;
   };
 
-  pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const;
+  [[nodiscard]] pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const;
 
-  BiomeIndex registerBiome(BiomeConstPtr biome);
-  TerrainSelectorIndex registerTerrainSelector(TerrainSelectorConstPtr terrainSelector);
+  [[nodiscard]] BiomeIndex registerBiome(BiomeConstPtr biome);
+  [[nodiscard]] TerrainSelectorIndex registerTerrainSelector(TerrainSelectorConstPtr terrainSelector);
 
-  WorldRegion buildRegion(uint64_t seed, RegionParams const& regionParams);
+  [[nodiscard]] WorldRegion buildRegion(uint64_t seed, RegionParams const& regionParams);
   void addLayer(uint64_t seed, int yStart, RegionParams regionParams);
   void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
                 RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
@@ -151,9 +151,9 @@ private:
                 bool useSecondaryEnvironmentBiomeIndex, int playerStartSearchYRange);
   void finalize(Color mainSkyColor);
 
-  pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
-  pair<size_t, int> leftCell(WorldLayer const& layer, size_t cellIndex, int x) const;
-  pair<size_t, int> rightCell(WorldLayer const& layer, size_t cellIndex, int x) const;
+  [[nodiscard]] pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
+  [[nodiscard]] pair<size_t, int> leftCell(WorldLayer const& layer, size_t cellIndex, int x) const;
+  [[nodiscard]] pair<size_t, int> rightCell(WorldLayer const& layer, size_t cellIndex, int x) const;
 
   Vec2U m_worldSize;
 

@@ -11,14 +11,14 @@ public:
   // 'ignorePatterns' is ignored.
   DirectoryAssetSource(String const& baseDirectory, StringList const& ignorePatterns = {});
 
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] JsonObject metadata() const override;
+  [[nodiscard]] StringList assetPaths() const override;
 
-  IODevicePtr open(String const& path) override;
-  ByteArray read(String const& path) override;
+  [[nodiscard]] IODevicePtr open(String const& path) override;
+  [[nodiscard]] ByteArray read(String const& path) override;
 
   // Converts an asset path to the path on the filesystem
-  String toFilesystem(String const& path) const;
+  [[nodiscard]] String toFilesystem(String const& path) const;
 
   // Update metadata file or add a new one.
   void setMetadata(JsonObject metadata);

@@ -15,21 +15,21 @@ class MemoryAssetSource : public AssetSource {
 public:
   MemoryAssetSource(String const& name, JsonObject metadata = JsonObject());
 
-  String name() const;
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] JsonObject metadata() const override;
+  [[nodiscard]] StringList assetPaths() const override;
 
   // do not use the returned IODevice after the file is gone or bad things will happen
-  IODevicePtr open(String const& path) override;
+  [[nodiscard]] IODevicePtr open(String const& path) override;
 
-  bool empty() const;
-  bool contains(String const& path) const;
-  bool erase(String const& path);
+  [[nodiscard]] bool empty() const;
+  [[nodiscard]] bool contains(String const& path) const;
+  [[nodiscard]] bool erase(String const& path);
   void set(String const& path, ByteArray data);
   void set(String const& path, Image const& image);
   void set(String const& path, Image&& image);
-  ByteArray read(String const& path) override;
-  ImageConstPtr image(String const& path);
+  [[nodiscard]] ByteArray read(String const& path) override;
+  [[nodiscard]] ImageConstPtr image(String const& path);
 
 private:
   using FileEntry = Variant<ByteArray, ImagePtr>;

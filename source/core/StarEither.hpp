@@ -18,10 +18,10 @@ struct EitherRightValue {
 };
 
 template <typename Value>
-EitherLeftValue<Value> makeLeft(Value value);
+[[nodiscard]] EitherLeftValue<Value> makeLeft(Value value);
 
 template <typename Value>
-EitherRightValue<Value> makeRight(Value value);
+[[nodiscard]] EitherRightValue<Value> makeRight(Value value);
 
 // Container that contains exactly one of either Left or Right.
 template <typename Left, typename Right>
@@ -55,21 +55,21 @@ public:
   [[nodiscard]] bool isRight() const;
 
   template <typename Function>
-  auto apply(Function&& function) const -> Either<Left, decltype(function(std::declval<Right>()))>;
+  [[nodiscard]] auto apply(Function&& function) const -> Either<Left, decltype(function(std::declval<Right>()))>;
 
   template <typename Function>
-  auto sequence(Function&& function) const -> decltype(function(std::declval<Right>()));
+  [[nodiscard]] auto sequence(Function&& function) const -> decltype(function(std::declval<Right>()));
 
   void setLeft(Left left);
   void setRight(Right left);
 
   // left() and right() throw EitherException on invalid access
 
-  Left const& left() const;
-  Right const& right() const;
+  [[nodiscard]] Left const& left() const;
+  [[nodiscard]] Right const& right() const;
 
-  Left& left();
-  Right& right();
+  [[nodiscard]] Left& left();
+  [[nodiscard]] Right& right();
 
   [[nodiscard]] Maybe<Left> maybeLeft() const;
   [[nodiscard]] Maybe<Right> maybeRight() const;

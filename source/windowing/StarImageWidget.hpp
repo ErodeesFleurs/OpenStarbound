@@ -10,24 +10,24 @@ class ImageWidget : public Widget {
 public:
   ImageWidget(GuiContext& context, String const& image = {});
 
-  bool interactive() const override;
+  [[nodiscard]] bool interactive() const override;
   void setImage(String const& image);
   void setScale(float scale);
   void setRotation(float rotation);
-  String image() const;
+  [[nodiscard]] String image() const;
 
   void setDrawables(List<Drawable> drawables);
-  Vec2I offset();
+  [[nodiscard]] Vec2I offset();
   void setOffset(Vec2I const& offset);
-  bool centered();
+  [[nodiscard]] bool centered();
   void setCentered(bool centered);
-  bool trim();
+  [[nodiscard]] bool trim();
   void setTrim(bool trim);
 
   void setMaxSize(Vec2I const& size);
   void setMinSize(Vec2I const& size);
 
-  RectI screenBoundRect() const override;
+  [[nodiscard]] RectI screenBoundRect() const override;
 
 protected:
   void renderImpl() override;

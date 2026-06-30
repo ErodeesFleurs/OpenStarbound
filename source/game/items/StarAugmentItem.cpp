@@ -17,7 +17,7 @@ ItemPtr AugmentItem::clone() const {
   return make_shared<AugmentItem>(*this);
 }
 
-StringList AugmentItem::augmentScripts() const {
+[[nodiscard]] StringList AugmentItem::augmentScripts() const {
   return jsonToStringList(instanceValue("scripts")).transformed([dir = directory()](String const& s) { return AssetPath::relativeTo(dir, s); });
 }
 

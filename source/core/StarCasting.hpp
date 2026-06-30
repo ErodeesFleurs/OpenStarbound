@@ -9,52 +9,52 @@ struct PointerConvertExceptionTag { static constexpr char const* typeName = "Poi
 using PointerConvertException = TypedException<StarException, PointerConvertExceptionTag>;
 
 template <typename Type1, typename Type2>
-bool is(Type2* p) {
+[[nodiscard]] bool is(Type2* p) {
   return dynamic_cast<Type1*>(p) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-bool is(Type2 const* p) {
+[[nodiscard]] bool is(Type2 const* p) {
   return dynamic_cast<Type1 const*>(p) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2> const& p) {
+[[nodiscard]] bool is(shared_ptr<Type2> const& p) {
   return dynamic_cast<Type1*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2 const> const& p) {
+[[nodiscard]] bool is(shared_ptr<Type2 const> const& p) {
   return dynamic_cast<Type1 const*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-bool ris(Type2& r) {
+[[nodiscard]] bool ris(Type2& r) {
   return dynamic_cast<Type1*>(&r) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-bool ris(Type2 const& r) {
+[[nodiscard]] bool ris(Type2 const& r) {
   return dynamic_cast<Type1 const*>(&r) != nullptr;
 }
 
 template <typename Type1, typename Type2>
-Type1* as(Type2* p) {
+[[nodiscard]] Type1* as(Type2* p) {
   return dynamic_cast<Type1*>(p);
 }
 
 template <typename Type1, typename Type2>
-Type1 const* as(Type2 const* p) {
+[[nodiscard]] Type1 const* as(Type2 const* p) {
   return dynamic_cast<Type1 const*>(p);
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1> as(shared_ptr<Type2> const& p) {
+[[nodiscard]] shared_ptr<Type1> as(shared_ptr<Type2> const& p) {
   return std::dynamic_pointer_cast<Type1>(p);
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
+[[nodiscard]] shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
   return std::dynamic_pointer_cast<Type1 const>(p);
 }
 

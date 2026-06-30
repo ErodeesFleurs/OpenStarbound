@@ -19,29 +19,29 @@ namespace Star {
 // portion of the path starts with a '?', and '?' separates each subsquent
 // directive.
 struct AssetPath {
-  static AssetPath split(String const& path);
-  static String join(AssetPath const& path);
+  [[nodiscard]] static AssetPath split(String const& path);
+  [[nodiscard]] static String join(AssetPath const& path);
 
   // Get / modify sub-path directly on a joined path string
-  static String setSubPath(String const& joinedPath, String const& subPath);
-  static String removeSubPath(String const& joinedPath);
+  [[nodiscard]] static String setSubPath(String const& joinedPath, String const& subPath);
+  [[nodiscard]] static String removeSubPath(String const& joinedPath);
 
   // Get / modify directives directly on a joined path string
-  static String getDirectives(String const& joinedPath);
-  static String addDirectives(String const& joinedPath, String const& directives);
-  static String removeDirectives(String const& joinedPath);
+  [[nodiscard]] static String getDirectives(String const& joinedPath);
+  [[nodiscard]] static String addDirectives(String const& joinedPath, String const& directives);
+  [[nodiscard]] static String removeDirectives(String const& joinedPath);
 
   // The base directory name for any given path, including the trailing '/'.
   // Ignores sub-path and directives.
-  static String directory(String const& path);
+  [[nodiscard]] static String directory(String const& path);
 
   // The file part of any given path, ignoring sub-path and directives.  Path
   // must be a file not a directory.
-  static String filename(String const& path);
+  [[nodiscard]] static String filename(String const& path);
 
   // The file extension of a given file path, ignoring directives and
   // sub-paths.
-  static String extension(String const& path);
+  [[nodiscard]] static String extension(String const& path);
 
   // Computes an absolute asset path from a relative path relative to another
   // asset.  The sourcePath must be an absolute path (may point to a directory
@@ -50,7 +50,7 @@ struct AssetPath {
   // is an absolute path, it is returned unchanged.  If it is a relative path,
   // then it is computed as relative to the directory component of the
   // sourcePath.
-  static String relativeTo(String const& sourcePath, String const& givenPath);
+  [[nodiscard]] static String relativeTo(String const& sourcePath, String const& givenPath);
 
   AssetPath() = default;
   AssetPath(const char* path);
@@ -60,7 +60,7 @@ struct AssetPath {
   Maybe<String> subPath;
   DirectivesGroup directives;
 
-  bool operator==(AssetPath const& rhs) const;
+  [[nodiscard]] bool operator==(AssetPath const& rhs) const;
 };
 
 DataStream& operator>>(DataStream& ds, AssetPath& path);
@@ -70,7 +70,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
 
 template <>
 struct hash<AssetPath> {
-  size_t operator()(AssetPath const& s) const;
+  [[nodiscard]] size_t operator()(AssetPath const& s) const;
 };
 
 }

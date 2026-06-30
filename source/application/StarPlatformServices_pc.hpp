@@ -54,19 +54,19 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static UniquePtr<PcPlatformServices> create(String const& path, StringList platformArguments);
+  [[nodiscard]] static UniquePtr<PcPlatformServices> create(String const& path, StringList platformArguments);
 
   explicit PcPlatformServices(ConstructorToken) {}
 
-  StatisticsServicePtr statisticsService() const;
-  P2PNetworkingServicePtr p2pNetworkingService() const;
-  UserGeneratedContentServicePtr userGeneratedContentService() const;
-  DesktopServicePtr desktopService() const;
+  [[nodiscard]] StatisticsServicePtr statisticsService() const;
+  [[nodiscard]] P2PNetworkingServicePtr p2pNetworkingService() const;
+  [[nodiscard]] UserGeneratedContentServicePtr userGeneratedContentService() const;
+  [[nodiscard]] DesktopServicePtr desktopService() const;
 
   // Will return true if there is an in-game overlay active.  This is important
   // because the cursor must be visible when such an overlay is active,
   // regardless of the ApplicationController setting.
-  bool overlayActive() const;
+  [[nodiscard]] bool overlayActive() const;
 
   void update();
 

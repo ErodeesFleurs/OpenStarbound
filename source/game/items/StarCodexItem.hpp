@@ -10,14 +10,14 @@ namespace Star {
 class CodexItem : public Item, public SwingableItem {
 public:
   CodexItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] List<Drawable> drawables() const override;
 
   void fireTriggered() override;
 
-  List<Drawable> iconDrawables() const override;
-  List<Drawable> dropDrawables() const override;
+  [[nodiscard]] List<Drawable> iconDrawables() const override;
+  [[nodiscard]] List<Drawable> dropDrawables() const override;
 
 private:
   AssetsConstPtr m_assets;

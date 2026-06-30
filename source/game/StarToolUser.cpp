@@ -62,7 +62,7 @@ ToolUser::ToolUser(AssetsConstPtr assets, ToolUserEntity& user, ItemDatabaseCons
   init(user);
 }
 
-Json ToolUser::diskStore() const {
+[[nodiscard]] Json ToolUser::diskStore() const {
   JsonObject res;
   if (m_primaryHandItem.get())
     res["primaryHandItem"] = m_itemDatabase->diskStore(m_primaryHandItem.get());
@@ -77,21 +77,21 @@ void ToolUser::diskLoad(Json const& diskStore) {
   m_altHandItem.set(m_itemDatabase->diskLoad(diskStore.get("altHandItem", {})));
 }
 
-ItemPtr ToolUser::primaryHandItem() const {
+[[nodiscard]] ItemPtr ToolUser::primaryHandItem() const {
   return m_primaryHandItem.get();
 }
 
-ItemPtr ToolUser::altHandItem() const {
+[[nodiscard]] ItemPtr ToolUser::altHandItem() const {
   return m_altHandItem.get();
 }
 
-ItemDescriptor ToolUser::primaryHandItemDescriptor() const {
+[[nodiscard]] ItemDescriptor ToolUser::primaryHandItemDescriptor() const {
   if (m_primaryHandItem.get())
     return m_primaryHandItem.get()->descriptor();
   return {};
 }
 
-ItemDescriptor ToolUser::altHandItemDescriptor() const {
+[[nodiscard]] ItemDescriptor ToolUser::altHandItemDescriptor() const {
   if (m_altHandItem.get())
     return m_altHandItem.get()->descriptor();
   return {};
@@ -115,7 +115,7 @@ void ToolUser::uninit() {
   m_altHandItemInitialized = false;
 }
 
-List<LightSource> ToolUser::lightSources() const {
+[[nodiscard]] List<LightSource> ToolUser::lightSources() const {
   if (m_suppress.get() || !m_user)
     return {};
 
@@ -144,7 +144,7 @@ void ToolUser::effects(EffectEmitter& emitter) const {
     emitter.addEffectSources("alt", item->effectSources());
 }
 
-List<PersistentStatusEffect> ToolUser::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> ToolUser::statusEffects() const {
   if (m_suppress.get())
     return {};
 
@@ -163,7 +163,7 @@ List<PersistentStatusEffect> ToolUser::statusEffects() const {
   return statusEffects;
 }
 
-Maybe<float> ToolUser::toolRadius() const {
+[[nodiscard]] Maybe<float> ToolUser::toolRadius() const {
   if (m_suppress.get())
     return {};
   else if (is<BeamItem>(m_primaryHandItem.get()) || is<BeamItem>(m_altHandItem.get()))
@@ -218,7 +218,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   return {};
 }
 
-Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
+[[nodiscard]] Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
   if (m_suppress.get() || !m_user) {
     humanoid.setHandParameters(ToolHand::Primary, false, 0.0f, 0.0f, false, false, false);
     humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
@@ -340,28 +340,28 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
   }
 }
 
-Vec2F ToolUser::armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
+[[nodiscard]] Vec2F ToolUser::armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const {
   if (hand == ToolHand::Primary)
     return humanoid.primaryArmPosition(facingDirection, armAngle, offset);
   else
     return humanoid.altArmPosition(facingDirection, armAngle, offset);
 }
 
-Vec2F ToolUser::handOffset(Humanoid const& humanoid, ToolHand hand, Direction direction) const {
+[[nodiscard]] Vec2F ToolUser::handOffset(Humanoid const& humanoid, ToolHand hand, Direction direction) const {
   if (hand == ToolHand::Primary)
     return humanoid.primaryHandOffset(direction);
   else
     return humanoid.altHandOffset(direction);
 }
 
-Vec2F ToolUser::handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const {
+[[nodiscard]] Vec2F ToolUser::handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const {
   if (hand == ToolHand::Primary)
     return humanoid.primaryHandPosition(handOffset);
   else
     return humanoid.altHandPosition(handOffset);
 }
 
-bool ToolUser::queryShieldHit(DamageSource const& source) const {
+[[nodiscard]] bool ToolUser::queryShieldHit(DamageSource const& source) const {
   if (m_suppress.get() || !m_user)
     return false;
 
@@ -498,15 +498,15 @@ void ToolUser::endAltFire() {
   m_fireAlt = false;
 }
 
-bool ToolUser::firingPrimary() const {
+[[nodiscard]] bool ToolUser::firingPrimary() const {
   return m_fireMain;
 }
 
-bool ToolUser::firingAlt() const {
+[[nodiscard]] bool ToolUser::firingAlt() const {
   return m_fireAlt;
 }
 
-List<DamageSource> ToolUser::damageSources() const {
+[[nodiscard]] List<DamageSource> ToolUser::damageSources() const {
   if (m_suppress.get())
     return {};
 
@@ -518,7 +518,7 @@ List<DamageSource> ToolUser::damageSources() const {
   return ds;
 }
 
-List<PhysicsForceRegion> ToolUser::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> ToolUser::forceRegions() const {
   if (m_suppress.get())
     return {};
 
@@ -616,7 +616,7 @@ Maybe<Json> ToolUser::receiveMessage(String const& message, bool localMessage, J
   return result;
 }
 
-float ToolUser::beamGunRadius() const {
+[[nodiscard]] float ToolUser::beamGunRadius() const {
   return m_beamGunRadius + m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat();
 }
 
@@ -750,7 +750,7 @@ void ToolUser::NetItem::blankNetDelta(float interpolationTime) {
   }
 }
 
-ItemPtr const& ToolUser::NetItem::get() const {
+[[nodiscard]] ItemPtr const& ToolUser::NetItem::get() const {
   return m_item;
 }
 

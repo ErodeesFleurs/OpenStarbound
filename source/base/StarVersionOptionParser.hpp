@@ -15,10 +15,10 @@ public:
 
   // Parse the command line options, or, in the case of an error, -h, or -v,
   // prints the appropriate text and immediately exits.
-  Options parseOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] Options parseOrDie(StringList const& cmdLineArguments) const;
 
   // First sets the command name based on argv[0], then calls parseOrDie.
-  Options commandParseOrDie(int argc, char** argv);
+  [[nodiscard]] Options commandParseOrDie(int argc, char** argv);
 };
 
 }

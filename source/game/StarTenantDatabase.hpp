@@ -35,7 +35,7 @@ struct TenantRent {
 };
 
 struct Tenant {
-  bool criteriaSatisfied(StringMap<unsigned> const& colonyTags) const;
+  [[nodiscard]] bool criteriaSatisfied(StringMap<unsigned> const& colonyTags) const;
 
   String name;
   float priority;
@@ -58,14 +58,14 @@ public:
 
   void cleanup();
 
-  TenantPtr getTenant(String const& name) const;
+  [[nodiscard]] TenantPtr getTenant(String const& name) const;
 
   // Return the list of all tenants for which colonyTags is a superset of
   // colonyTagCriteria
-  List<TenantPtr> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
+  [[nodiscard]] List<TenantPtr> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
 
 private:
-  TenantPtr readTenant(String const& path) const;
+  [[nodiscard]] TenantPtr readTenant(String const& path) const;
 
   AssetsConstPtr m_assets;
   Map<String, String> m_paths;

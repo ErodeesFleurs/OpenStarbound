@@ -22,7 +22,7 @@ struct EntitySplashConfig {
   Particle splashParticleVariance;
   float splashYVelocityFactor = 0.0f;
 
-  List<Particle> doSplash(Vec2F position, Vec2F velocity, World& world) const;
+  [[nodiscard]] List<Particle> doSplash(Vec2F position, Vec2F velocity, World& world) const;
 };
 
 }

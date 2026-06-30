@@ -18,11 +18,11 @@ struct BiomePlaceables {
   BiomePlaceables() = default;
   explicit BiomePlaceables(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   // If any of the item distributions contain trees, this returns the first
   // tree type.
-  Maybe<TreeVariant> firstTreeType() const;
+  [[nodiscard]]   [[nodiscard]] Maybe<TreeVariant> firstTreeType() const;
 
   ModId grassMod = NoModId;
   float grassModDensity = 0.0f;
@@ -36,7 +36,7 @@ struct Biome {
   Biome() = default;
   explicit Biome(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   String baseName;
   String description;

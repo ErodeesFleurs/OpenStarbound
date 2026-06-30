@@ -41,13 +41,13 @@ void File::copy(String const& source, String const& target) {
   }
 }
 
-FilePtr File::open(const String& filename, IOMode mode) {
+[[nodiscard]] FilePtr File::open(const String& filename, IOMode mode) {
   auto file = make_shared<File>(filename);
   file->open(mode);
   return file;
 }
 
-ByteArray File::readFile(String const& filename) {
+[[nodiscard]] ByteArray File::readFile(String const& filename) {
   FilePtr file = File::open(filename, IOMode::Read);
   ByteArray bytes;
   while (!file->atEnd()) {
@@ -59,7 +59,7 @@ ByteArray File::readFile(String const& filename) {
   return bytes;
 }
 
-String File::readFileString(String const& filename) {
+[[nodiscard]] String File::readFileString(String const& filename) {
   FilePtr file = File::open(filename, IOMode::Read);
   std::string str;
   while (!file->atEnd()) {
@@ -72,7 +72,7 @@ String File::readFileString(String const& filename) {
   return str;
 }
 
-StreamOffset File::fileSize(String const& filename) {
+[[nodiscard]] StreamOffset File::fileSize(String const& filename) {
   return File::open(filename, IOMode::Read)->size();
 }
 
@@ -123,7 +123,7 @@ File::~File() {
   close();
 }
 
-StreamOffset File::pos() {
+[[nodiscard]] StreamOffset File::pos() {
   if (!m_file)
     throw IOException("pos called on closed File");
 
@@ -137,18 +137,18 @@ void File::seek(StreamOffset offset, IOSeek seekMode) {
   fseek(m_file, offset, seekMode);
 }
 
-StreamOffset File::size() {
+[[nodiscard]] StreamOffset File::size() {
   return fsize(m_file);
 }
 
-bool File::atEnd() {
+[[nodiscard]] bool File::atEnd() {
   if (!m_file)
     throw IOException("eof called on closed File");
 
   return ftell(m_file) >= fsize(m_file);
 }
 
-size_t File::read(char* data, size_t len) {
+[[nodiscard]] size_t File::read(char* data, size_t len) {
   if (!m_file)
     throw IOException("read called on closed File");
 
@@ -158,7 +158,7 @@ size_t File::read(char* data, size_t len) {
   return fread(m_file, data, len);
 }
 
-size_t File::write(const char* data, size_t len) {
+[[nodiscard]] size_t File::write(const char* data, size_t len) {
   if (!m_file)
     throw IOException("write called on closed File");
 
@@ -168,15 +168,15 @@ size_t File::write(const char* data, size_t len) {
   return fwrite(m_file, data, len);
 }
 
-size_t File::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
+[[nodiscard]] size_t File::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
   return pread(m_file, data, len, readPosition);
 }
 
-size_t File::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+[[nodiscard]] size_t File::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
   return pwrite(m_file, data, len, writePosition);
 }
 
-String File::fileName() const {
+[[nodiscard]] String File::fileName() const {
   return m_filename;
 }
 
@@ -229,14 +229,14 @@ void File::close() {
   setMode(IOMode::Closed);
 }
 
-String File::deviceName() const {
+[[nodiscard]] String File::deviceName() const {
   if (m_filename.empty())
     return "<unnamed temp file>";
   else
     return m_filename;
 }
 
-IODevicePtr File::clone() {
+[[nodiscard]] IODevicePtr File::clone() {
   auto cloned = make_shared<File>(m_filename);
   if (isOpen()) {
     // Open with same mode

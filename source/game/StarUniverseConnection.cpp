@@ -29,7 +29,7 @@ UniverseConnection& UniverseConnection::operator=(UniverseConnection&& rhs) {
   return *this;
 }
 
-bool UniverseConnection::isOpen() const {
+[[nodiscard]] bool UniverseConnection::isOpen() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->isOpen();
 }
@@ -115,12 +115,12 @@ PacketSocket& UniverseConnection::packetSocket() {
   return *m_packetSocket;
 }
 
-Maybe<PacketStats> UniverseConnection::incomingStats() const {
+[[nodiscard]] Maybe<PacketStats> UniverseConnection::incomingStats() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->incomingStats();
 }
 
-Maybe<PacketStats> UniverseConnection::outgoingStats() const {
+[[nodiscard]] Maybe<PacketStats> UniverseConnection::outgoingStats() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->outgoingStats();
 }
@@ -205,17 +205,17 @@ UniverseConnectionServer::~UniverseConnectionServer() {
   removeAllConnections();
 }
 
-bool UniverseConnectionServer::hasConnection(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseConnectionServer::hasConnection(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   return m_connections.contains(clientId);
 }
 
-List<ConnectionId> UniverseConnectionServer::allConnections() const {
+[[nodiscard]] List<ConnectionId> UniverseConnectionServer::allConnections() const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   return m_connections.keys();
 }
 
-bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
+[[nodiscard]] bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -226,7 +226,7 @@ bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
   throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::connectionIsOpen", clientId);
 }
 
-int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
+[[nodiscard]] int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -290,14 +290,14 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   }
 }
 
-uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
+[[nodiscard]] uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
   uint64_t total = 0;
   for (auto const& stats : m_workerStats)
     total += stats.packetsProcessed.load();
   return total;
 }
 
-size_t UniverseConnectionServer::numWorkerThreads() const {
+[[nodiscard]] size_t UniverseConnectionServer::numWorkerThreads() const {
   return m_numWorkerThreads;
 }
 

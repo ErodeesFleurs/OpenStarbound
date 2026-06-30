@@ -57,7 +57,7 @@ namespace Tiled {
     if (layer == TileLayer::Background) {
       return getBackBrush(materialName, properties);
     } else {
-      starAssert(layer == TileLayer::Foreground);
+      assert(layer == TileLayer::Foreground);
       return getFrontBrush(materialName, properties);
     }
   }
@@ -309,14 +309,14 @@ namespace Tiled {
   }
 
   size_t Tileset::size() const {
-    starAssert(m_tilesBack.size() == m_tilesFront.size());
+    assert(m_tilesBack.size() == m_tilesFront.size());
     return m_tilesBack.size();
   }
 
   List<TileConstPtr> const& Tileset::tiles(TileLayer layer) const {
     if (layer == TileLayer::Background)
       return m_tilesBack;
-    starAssert(layer == TileLayer::Foreground);
+    assert(layer == TileLayer::Foreground);
     return m_tilesFront;
   }
 }

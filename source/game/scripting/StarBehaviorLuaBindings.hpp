@@ -9,6 +9,6 @@ class BehaviorDatabase;
 using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
 
 namespace LuaBindings {
-  LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>& list, BehaviorDatabaseConstPtr behaviorDatabase);
+  [[nodiscard]] LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>& list, BehaviorDatabaseConstPtr behaviorDatabase);
 }
 }

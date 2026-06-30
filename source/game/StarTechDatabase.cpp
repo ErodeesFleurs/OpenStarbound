@@ -24,17 +24,17 @@ TechDatabase::TechDatabase(AssetsConstPtr assets) {
   }
 }
 
-bool TechDatabase::contains(String const& techName) const {
+[[nodiscard]] bool TechDatabase::contains(String const& techName) const {
   return m_tech.contains(techName);
 }
 
-TechConfig TechDatabase::tech(String const& techName) const {
+[[nodiscard]] TechConfig TechDatabase::tech(String const& techName) const {
   if (auto techConfig = m_tech.ptr(techName))
     return *techConfig;
   throw TechDatabaseException::format("No such tech '{}'", techName);
 }
 
-TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
+[[nodiscard]] TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
   try {
     TechConfig tech;
     tech.name = config.getString("name");

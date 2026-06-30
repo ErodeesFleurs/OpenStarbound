@@ -12,8 +12,8 @@ public:
   VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor = VerticalAnchor::TopAnchor, int verticalSpacing = 0);
 
   void update(float dt) override;
-  Vec2I size() const override;
-  RectI relativeBoundRect() const override;
+  [[nodiscard]] Vec2I size() const override;
+  [[nodiscard]] RectI relativeBoundRect() const override;
 
   void setHorizontalAnchor(HorizontalAnchor horizontalAnchor);
   void setVerticalAnchor(VerticalAnchor verticalAnchor);
@@ -21,7 +21,7 @@ public:
   void setFillDown(bool fillDown);
 
 private:
-  RectI contentBoundRect() const;
+  [[nodiscard]] RectI contentBoundRect() const;
 
   HorizontalAnchor m_horizontalAnchor;
   VerticalAnchor m_verticalAnchor;

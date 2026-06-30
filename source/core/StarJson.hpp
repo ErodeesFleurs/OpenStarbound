@@ -29,8 +29,8 @@ public:
     using const_iterator = typename Container::const_iterator;
     using iterator = const_iterator;
 
-    const_iterator begin() const;
-    const_iterator end() const;
+    [[nodiscard]] const_iterator begin() const;
+    [[nodiscard]] const_iterator end() const;
 
     shared_ptr<Container const> ptr;
   };
@@ -45,16 +45,16 @@ public:
     Object = 6
   };
 
-  static String typeName(Type t);
-  static Type typeFromName(String const& t);
+  [[nodiscard]] static String typeName(Type t);
+  [[nodiscard]] static Type typeFromName(String const& t);
 
-  static Json ofType(Type t);
+  [[nodiscard]] static Json ofType(Type t);
 
   // Parses JSON or JSON sub-type
-  static Json parse(String const& string);
+  [[nodiscard]] static Json parse(String const& string);
 
   // Parses JSON sequence
-  static Json parseSequence(String const& sequence);
+  [[nodiscard]] static Json parseSequence(String const& sequence);
 
   // Parses JSON object or array only (the only top level types allowed by
   // JSON)
@@ -87,26 +87,26 @@ public:
   // Bools, Strings, Arrays, Objects, and Null are not automatically
   // convertible to any other type.
 
-  double toDouble() const;
-  float toFloat() const;
-  bool toBool() const;
-  int64_t toInt() const;
-  uint64_t toUInt() const;
-  String toString() const;
-  JsonArray toArray() const;
-  JsonObject toObject() const;
+  [[nodiscard]] double toDouble() const;
+  [[nodiscard]] float toFloat() const;
+  [[nodiscard]] bool toBool() const;
+  [[nodiscard]] int64_t toInt() const;
+  [[nodiscard]] uint64_t toUInt() const;
+  [[nodiscard]] String toString() const;
+  [[nodiscard]] JsonArray toArray() const;
+  [[nodiscard]] JsonObject toObject() const;
 
   // Internally, String, JsonArray, and JsonObject are shared via shared_ptr
   // since this class is immutable.  Use these methods to get at this pointer
   // without causing a copy.
-  StringConstPtr stringPtr() const;
-  JsonArrayConstPtr arrayPtr() const;
-  JsonObjectConstPtr objectPtr() const;
+  [[nodiscard]] StringConstPtr stringPtr() const;
+  [[nodiscard]] JsonArrayConstPtr arrayPtr() const;
+  [[nodiscard]] JsonObjectConstPtr objectPtr() const;
 
   // As a convenience, make it easy to safely and quickly iterate over a
   // JsonArray or JsonObject contents by holding the container pointer.
-  IteratorWrapper<JsonArray> iterateArray() const;
-  IteratorWrapper<JsonObject> iterateObject() const;
+  [[nodiscard]] IteratorWrapper<JsonArray> iterateArray() const;
+  [[nodiscard]] IteratorWrapper<JsonObject> iterateObject() const;
 
   // opt* methods work like this, if the json is null, it returns none.  If the
   // json is convertible, it returns the converted type, otherwise an exception
@@ -125,53 +125,53 @@ public:
   [[nodiscard]] size_t size() const;
 
   // If this json is array type, get the value at the given index
-  Json get(size_t index) const;
-  double getDouble(size_t index) const;
-  float getFloat(size_t index) const;
-  bool getBool(size_t index) const;
-  int64_t getInt(size_t index) const;
-  uint64_t getUInt(size_t index) const;
-  String getString(size_t index) const;
-  JsonArray getArray(size_t index) const;
-  JsonObject getObject(size_t index) const;
+  [[nodiscard]] Json get(size_t index) const;
+  [[nodiscard]] double getDouble(size_t index) const;
+  [[nodiscard]] float getFloat(size_t index) const;
+  [[nodiscard]] bool getBool(size_t index) const;
+  [[nodiscard]] int64_t getInt(size_t index) const;
+  [[nodiscard]] uint64_t getUInt(size_t index) const;
+  [[nodiscard]] String getString(size_t index) const;
+  [[nodiscard]] JsonArray getArray(size_t index) const;
+  [[nodiscard]] JsonObject getObject(size_t index) const;
 
   // These versions of get* return default value if the index is out of range,
   // or if the value pointed to is null.
-  Json get(size_t index, Json def) const;
-  double getDouble(size_t index, double def) const;
-  float getFloat(size_t index, float def) const;
-  bool getBool(size_t index, bool def) const;
-  int64_t getInt(size_t index, int64_t def) const;
-  uint64_t getUInt(size_t index, int64_t def) const;
-  String getString(size_t index, String def) const;
-  JsonArray getArray(size_t index, JsonArray def) const;
-  JsonObject getObject(size_t index, JsonObject def) const;
+  [[nodiscard]] Json get(size_t index, Json def) const;
+  [[nodiscard]] double getDouble(size_t index, double def) const;
+  [[nodiscard]] float getFloat(size_t index, float def) const;
+  [[nodiscard]] bool getBool(size_t index, bool def) const;
+  [[nodiscard]] int64_t getInt(size_t index, int64_t def) const;
+  [[nodiscard]] uint64_t getUInt(size_t index, int64_t def) const;
+  [[nodiscard]] String getString(size_t index, String def) const;
+  [[nodiscard]] JsonArray getArray(size_t index, JsonArray def) const;
+  [[nodiscard]] JsonObject getObject(size_t index, JsonObject def) const;
 
   // If object type, whether object contains key
   [[nodiscard]] bool contains(String const& key) const;
 
   // If this json is object type, get the value for the given key
-  Json get(String const& key) const;
-  double getDouble(String const& key) const;
-  float getFloat(String const& key) const;
-  bool getBool(String const& key) const;
-  int64_t getInt(String const& key) const;
-  uint64_t getUInt(String const& key) const;
-  String getString(String const& key) const;
-  JsonArray getArray(String const& key) const;
-  JsonObject getObject(String const& key) const;
+  [[nodiscard]] Json get(String const& key) const;
+  [[nodiscard]] double getDouble(String const& key) const;
+  [[nodiscard]] float getFloat(String const& key) const;
+  [[nodiscard]] bool getBool(String const& key) const;
+  [[nodiscard]] int64_t getInt(String const& key) const;
+  [[nodiscard]] uint64_t getUInt(String const& key) const;
+  [[nodiscard]] String getString(String const& key) const;
+  [[nodiscard]] JsonArray getArray(String const& key) const;
+  [[nodiscard]] JsonObject getObject(String const& key) const;
 
   // These versions of get* return the default if the key is missing or the
   // value is null.
-  Json get(String const& key, Json def) const;
-  double getDouble(String const& key, double def) const;
-  float getFloat(String const& key, float def) const;
-  bool getBool(String const& key, bool def) const;
-  int64_t getInt(String const& key, int64_t def) const;
-  uint64_t getUInt(String const& key, int64_t def) const;
-  String getString(String const& key, String def) const;
-  JsonArray getArray(String const& key, JsonArray def) const;
-  JsonObject getObject(String const& key, JsonObject def) const;
+  [[nodiscard]] Json get(String const& key, Json def) const;
+  [[nodiscard]] double getDouble(String const& key, double def) const;
+  [[nodiscard]] float getFloat(String const& key, float def) const;
+  [[nodiscard]] bool getBool(String const& key, bool def) const;
+  [[nodiscard]] int64_t getInt(String const& key, int64_t def) const;
+  [[nodiscard]] uint64_t getUInt(String const& key, int64_t def) const;
+  [[nodiscard]] String getString(String const& key, String def) const;
+  [[nodiscard]] JsonArray getArray(String const& key, JsonArray def) const;
+  [[nodiscard]] JsonObject getObject(String const& key, JsonObject def) const;
 
   // Works the same way as opt methods above.  Will never return a null value,
   // if there is a null entry it will just return an empty Maybe.
@@ -187,27 +187,27 @@ public:
 
   // Combines gets recursively in friendly expressions.  For
   // example, call like this: json.query("path.to.array[3][4]")
-  Json query(String const& path) const;
-  double queryDouble(String const& path) const;
-  float queryFloat(String const& path) const;
-  bool queryBool(String const& path) const;
-  int64_t queryInt(String const& path) const;
-  uint64_t queryUInt(String const& path) const;
-  String queryString(String const& path) const;
-  JsonArray queryArray(String const& path) const;
-  JsonObject queryObject(String const& path) const;
+  [[nodiscard]] Json query(String const& path) const;
+  [[nodiscard]] double queryDouble(String const& path) const;
+  [[nodiscard]] float queryFloat(String const& path) const;
+  [[nodiscard]] bool queryBool(String const& path) const;
+  [[nodiscard]] int64_t queryInt(String const& path) const;
+  [[nodiscard]] uint64_t queryUInt(String const& path) const;
+  [[nodiscard]] String queryString(String const& path) const;
+  [[nodiscard]] JsonArray queryArray(String const& path) const;
+  [[nodiscard]] JsonObject queryObject(String const& path) const;
 
   // These versions of get* do not throw on missing / null keys anywhere in the
   // query path.
-  Json query(String const& path, Json def) const;
-  double queryDouble(String const& path, double def) const;
-  float queryFloat(String const& path, float def) const;
-  bool queryBool(String const& path, bool def) const;
-  int64_t queryInt(String const& path, int64_t def) const;
-  uint64_t queryUInt(String const& path, uint64_t def) const;
-  String queryString(String const& path, String const& def) const;
-  JsonArray queryArray(String const& path, JsonArray def) const;
-  JsonObject queryObject(String const& path, JsonObject def) const;
+  [[nodiscard]] Json query(String const& path, Json def) const;
+  [[nodiscard]] double queryDouble(String const& path, double def) const;
+  [[nodiscard]] float queryFloat(String const& path, float def) const;
+  [[nodiscard]] bool queryBool(String const& path, bool def) const;
+  [[nodiscard]] int64_t queryInt(String const& path, int64_t def) const;
+  [[nodiscard]] uint64_t queryUInt(String const& path, uint64_t def) const;
+  [[nodiscard]] String queryString(String const& path, String const& def) const;
+  [[nodiscard]] JsonArray queryArray(String const& path, JsonArray def) const;
+  [[nodiscard]] JsonObject queryObject(String const& path, JsonObject def) const;
 
   // Returns none on on missing / null keys anywhere in the query path.  Will
   // never return a null value, just an empty Maybe.
@@ -223,18 +223,18 @@ public:
 
   // Returns a *new* object with the given values set/erased.  Throws if not an
   // object.
-  Json set(String key, Json value) const;
-  Json setPath(String path, Json value) const;
-  Json setAll(JsonObject values) const;
-  Json eraseKey(String key) const;
-  Json erasePath(String path) const;
+  [[nodiscard]] Json set(String key, Json value) const;
+  [[nodiscard]] Json setPath(String path, Json value) const;
+  [[nodiscard]] Json setAll(JsonObject values) const;
+  [[nodiscard]] Json eraseKey(String key) const;
+  [[nodiscard]] Json erasePath(String path) const;
 
   // Returns a *new* array with the given values set/inserted/appended/erased.
   // Throws if not an array.
-  Json set(size_t index, Json value) const;
-  Json insert(size_t index, Json value) const;
-  Json append(Json value) const;
-  Json eraseIndex(size_t index) const;
+  [[nodiscard]] Json set(size_t index, Json value) const;
+  [[nodiscard]] Json insert(size_t index, Json value) const;
+  [[nodiscard]] Json append(Json value) const;
+  [[nodiscard]] Json eraseIndex(size_t index) const;
 
   [[nodiscard]] Type type() const;
   [[nodiscard]] String typeName() const;
@@ -246,7 +246,7 @@ public:
   // isNull returns true when the type of the Json is null.  operator bool() is
   // the opposite of isNull().
   [[nodiscard]] bool isNull() const;
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   // Prints JSON or JSON sub-type.  If sort is true, then any object anywhere
   // inside this value will be sorted alphanumerically before being written,
@@ -254,9 +254,9 @@ public:
   // cross-platform.
   [[nodiscard]] String repr(int pretty = 0, bool sort = false) const;
   // Prints JSON object or array only (only top level types allowed by JSON)
-  String printJson(int pretty = 0, bool sort = false) const;
+  [[nodiscard]] String printJson(int pretty = 0, bool sort = false) const;
   // Same but avoids quotation marks if this is a string
-  String printString() const;
+  [[nodiscard]] String printString() const;
 
   // operator== and operator!= compare for exact equality with all types, and
   // additionally equality with numeric conversion with Int <-> Float
@@ -269,8 +269,8 @@ public:
   void getHash(XXHash3& hasher) const;
 
 private:
-  Json const* ptr(size_t index) const;
-  Json const* ptr(String const& key) const;
+  [[nodiscard]] Json const* ptr(size_t index) const;
+  [[nodiscard]] Json const* ptr(String const& key) const;
 
   Variant<Empty, double, bool, int64_t, StringConstPtr, JsonArrayConstPtr, JsonObjectConstPtr> m_data;
 };
@@ -297,26 +297,26 @@ DataStream& operator>>(DataStream& ds, JsonObject& m);
 // returns the merger.  If both values are objects, then the resulting object
 // is the combination of both objects, but for each repeated key jsonMerge is
 // called recursively on both values to determine the result.
-Json jsonMerge(Json const& base, Json const& merger);
+[[nodiscard]] Json jsonMerge(Json const& base, Json const& merger);
 // Same as above, but applies null mergers.
-Json jsonMergeNulling(Json const& base, Json const& merger);
+[[nodiscard]] Json jsonMergeNulling(Json const& base, Json const& merger);
 
 template <typename... T>
-Json jsonMerge(Json const& base, Json const& merger, T const&... rest);
+[[nodiscard]] Json jsonMerge(Json const& base, Json const& merger, T const&... rest);
 
 // Similar to jsonMerge, but query only for a single key.  Gets a value equal
 // to jsonMerge(jsons...).query(key, Json()), but much faster than doing an
 // entire merge operation.
 template <typename... T>
-Json jsonMergeQuery(String const& key, Json const& first, T const&... rest);
+[[nodiscard]] Json jsonMergeQuery(String const& key, Json const& first, T const&... rest);
 
 // jsonMergeQuery with a default.
 template <typename... T>
-Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest);
+[[nodiscard]] Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest);
 
 template <>
 struct hash<Json> {
-  size_t operator()(Json const& v) const;
+  [[nodiscard]] size_t operator()(Json const& v) const;
 };
 
 template <typename Container>
@@ -370,7 +370,7 @@ Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 // each element in the second array must successfully compare with some
 // element of the first array, regardless of order or duplication.
 // For all other types, the values must be equal.
-bool jsonPartialMatch(Json const& base, Json const& compare);
+[[nodiscard]] bool jsonPartialMatch(Json const& base, Json const& compare);
 
 }
 

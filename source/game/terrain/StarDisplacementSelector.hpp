@@ -12,7 +12,7 @@ struct DisplacementSelector : TerrainSelector {
   DisplacementSelector(
       Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   PerlinF xDisplacementFunction;
   PerlinF yDisplacementFunction;
@@ -26,7 +26,7 @@ struct DisplacementSelector : TerrainSelector {
   Vec2F yClampRange;
   float yClampSmoothing;
 
-  float clampY(float v) const;
+  [[nodiscard]] float clampY(float v) const;
 
   TerrainSelectorConstPtr m_source;
 };

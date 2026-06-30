@@ -14,10 +14,10 @@ public:
   PlayerBlueprints() = default;
   PlayerBlueprints(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  bool isKnown(ItemDescriptor const& itemDescriptor) const;
-  bool isNew(ItemDescriptor const& itemDescriptor) const;
+  [[nodiscard]] bool isKnown(ItemDescriptor const& itemDescriptor) const;
+  [[nodiscard]] bool isNew(ItemDescriptor const& itemDescriptor) const;
   void add(ItemDescriptor const& itemDescriptor);
   void markAsRead(ItemDescriptor const& itemDescriptor);
 

@@ -29,35 +29,35 @@ public:
 
   ToolUser(AssetsConstPtr assets, ToolUserEntity& user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
   void diskLoad(Json const& diskStore);
 
   void init(ToolUserEntity& user);
   void uninit();
 
-  ItemPtr primaryHandItem() const;
-  ItemPtr altHandItem() const;
-  ItemDescriptor primaryHandItemDescriptor() const;
-  ItemDescriptor altHandItemDescriptor() const;
+  [[nodiscard]] ItemPtr primaryHandItem() const;
+  [[nodiscard]] ItemPtr altHandItem() const;
+  [[nodiscard]] ItemDescriptor primaryHandItemDescriptor() const;
+  [[nodiscard]] ItemDescriptor altHandItemDescriptor() const;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] List<LightSource> lightSources() const;
   void effects(EffectEmitter& emitter) const;
-  List<PersistentStatusEffect> statusEffects() const;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const;
 
-  Maybe<float> toolRadius() const;
+  [[nodiscard]] Maybe<float> toolRadius() const;
   // FIXME: There is a render method in ToolUser, why can't this be rendered
   // with the rest of everything else, there are TILE previews and OBJECT
   // previews, but of course one has to go through the render method and the
   // other has to be rendered separately.
-  List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor);
+  [[nodiscard]] List<Drawable> renderObjectPreviews(Vec2F aimPosition, Direction walkingDirection, bool inToolRange, Color favoriteColor);
   // Returns the facing override direciton if there is one
-  Maybe<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
+  [[nodiscard]] Maybe<Direction> setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const;
   void setupHumanoidHandItemDrawables(Humanoid& humanoid) const;
 
-  Vec2F armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const;
-  Vec2F handOffset(Humanoid const& humanoid, ToolHand hand, Direction facingDirection) const;
-  Vec2F handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const;
-  bool queryShieldHit(DamageSource const& source) const;
+  [[nodiscard]] Vec2F armPosition(Humanoid const& humanoid, ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset) const;
+  [[nodiscard]] Vec2F handOffset(Humanoid const& humanoid, ToolHand hand, Direction facingDirection) const;
+  [[nodiscard]] Vec2F handPosition(ToolHand hand, Humanoid const& humanoid, Vec2F const& handOffset) const;
+  [[nodiscard]] bool queryShieldHit(DamageSource const& source) const;
 
   void tick(float dt, bool shifting, HashSet<MoveControlType> const& moves);
 
@@ -66,11 +66,11 @@ public:
   void endPrimaryFire();
   void endAltFire();
 
-  bool firingPrimary() const;
-  bool firingAlt() const;
+  [[nodiscard]] bool firingPrimary() const;
+  [[nodiscard]] bool firingAlt() const;
 
-  List<DamageSource> damageSources() const;
-  List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]] List<DamageSource> damageSources() const;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const;
 
   void render(RenderCallback* renderCallback, bool inToolRange, bool shifting, EntityRenderLayer renderLayer);
 
@@ -78,9 +78,9 @@ public:
 
   void suppressItems(bool suppress);
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
-  float beamGunRadius() const;
+  [[nodiscard]] float beamGunRadius() const;
 
 private:
   class NetItem : public NetElement {
@@ -96,14 +96,14 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
-    ItemPtr const& get() const;
+    [[nodiscard]] ItemPtr const& get() const;
     void set(ItemPtr item);
 
-    bool pullNewItem();
+    [[nodiscard]] bool pullNewItem();
 
   private:
     void updateItemDescriptor();

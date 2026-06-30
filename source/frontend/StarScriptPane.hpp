@@ -20,14 +20,14 @@ public:
 
   void tick(float dt) override;
 
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
-  bool openWithInventory() const;
-  bool closeWithInventory() const;
+  [[nodiscard]] bool openWithInventory() const;
+  [[nodiscard]] bool closeWithInventory() const;
 
-  EntityId sourceEntityId() const;
+  [[nodiscard]] EntityId sourceEntityId() const;
 
-  LuaCallbacks makePaneCallbacks() override;
+  [[nodiscard]] LuaCallbacks makePaneCallbacks() override;
 private:
   UniverseClientPtr m_client;
   EntityId m_sourceEntityId;

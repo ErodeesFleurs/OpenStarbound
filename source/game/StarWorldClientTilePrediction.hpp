@@ -14,7 +14,7 @@ public:
   explicit StarWorldClientTilePrediction(WorldClient& worldClient);
 
   void informTilePrediction(Vec2I const& pos, TileModification const& modification);
-  bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
+  [[nodiscard]] bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
   void expirePredictedTiles();
 
 private:

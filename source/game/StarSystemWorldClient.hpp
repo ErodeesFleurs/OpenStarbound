@@ -12,30 +12,30 @@ class SystemWorldClient : public SystemWorld {
 public:
   SystemWorldClient(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator, PlayerUniverseMapPtr clientContext);
 
-  CelestialCoordinate currentSystem() const;
+  [[nodiscard]] CelestialCoordinate currentSystem() const;
 
-  Maybe<Vec2F> shipPosition() const;
-  SystemLocation shipLocation() const;
-  SystemLocation shipDestination() const;
-  bool flying() const;
+  [[nodiscard]] Maybe<Vec2F> shipPosition() const;
+  [[nodiscard]] SystemLocation shipLocation() const;
+  [[nodiscard]] SystemLocation shipDestination() const;
+  [[nodiscard]] bool flying() const;
 
   void update(float dt);
 
-  List<SystemObjectPtr> objects() const override;
-  List<Uuid> objectKeys() const override;
-  SystemObjectPtr getObject(Uuid const& uuid) const override;
+  [[nodiscard]] List<SystemObjectPtr> objects() const override;
+  [[nodiscard]] List<Uuid> objectKeys() const override;
+  [[nodiscard]] SystemObjectPtr getObject(Uuid const& uuid) const override;
 
-  List<SystemClientShipPtr> ships() const;
-  SystemClientShipPtr getShip(Uuid const& uuid) const;
+  [[nodiscard]] List<SystemClientShipPtr> ships() const;
+  [[nodiscard]] SystemClientShipPtr getShip(Uuid const& uuid) const;
 
-  Uuid spawnObject(String typeName, Maybe<Vec2F> position = {}, Maybe<Uuid> const& uuid = {}, JsonObject parameters = {});
+  [[nodiscard]] Uuid spawnObject(String typeName, Maybe<Vec2F> position = {}, Maybe<Uuid> const& uuid = {}, JsonObject parameters = {});
 
   // returns whether the packet was handled
-  bool handleIncomingPacket(PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets();
+  [[nodiscard]] bool handleIncomingPacket(PacketPtr packet);
+  [[nodiscard]] List<PacketPtr> pullOutgoingPackets();
 private:
-  SystemObjectPtr netLoadObject(ByteArray netStore);
-  SystemClientShipPtr netLoadShip(ByteArray netStore);
+  [[nodiscard]] SystemObjectPtr netLoadObject(ByteArray netStore);
+  [[nodiscard]] SystemClientShipPtr netLoadShip(ByteArray netStore);
 
   // m_ship can be a null pointer, indicating that the system is not initialized
   SystemClientShipPtr m_ship;

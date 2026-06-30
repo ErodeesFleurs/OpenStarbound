@@ -19,37 +19,37 @@ public:
 
   virtual void fire(FireMode mode, bool shifting, bool edgeTriggered);
   virtual void endFire(FireMode mode, bool shifting);
-  virtual FireMode fireMode() const;
-  virtual float fireTimer() const;
+  [[nodiscard]] virtual FireMode fireMode() const;
+  [[nodiscard]] virtual float fireTimer() const;
   virtual void setFireTimer(float fireTimer);
-  virtual float cooldownTime() const;
+  [[nodiscard]] virtual float cooldownTime() const;
   virtual void setCooldownTime(float cooldownTime);
-  virtual float windupTime() const;
+  [[nodiscard]] virtual float windupTime() const;
   virtual void setWindupTime(float time);
-  virtual bool ready() const;
-  virtual bool firing() const;
-  virtual bool inUse() const;
-  virtual bool walkWhileFiring() const;
-  virtual bool stopWhileFiring() const;
-  virtual bool windup() const;
+  [[nodiscard]] virtual bool ready() const;
+  [[nodiscard]] virtual bool firing() const;
+  [[nodiscard]] virtual bool inUse() const;
+  [[nodiscard]] virtual bool walkWhileFiring() const;
+  [[nodiscard]] virtual bool stopWhileFiring() const;
+  [[nodiscard]] virtual bool windup() const;
   virtual void triggerCooldown();
-  virtual bool coolingDown() const;
+  [[nodiscard]] virtual bool coolingDown() const;
   virtual void setCoolingDown(bool coolingdown);
-  virtual float timeFiring() const;
+  [[nodiscard]] virtual float timeFiring() const;
   virtual void setTimeFiring(float timeFiring);
-  virtual Vec2F firePosition() const;
-  virtual Vec2F handPosition() const;
+  [[nodiscard]] virtual Vec2F firePosition() const;
+  [[nodiscard]] virtual Vec2F handPosition() const;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<PersistentStatusEffect> statusEffects() const override;
+  [[nodiscard]] List<PersistentStatusEffect> statusEffects() const override;
 
-  virtual bool validAimPos(Vec2F const& aimPos);
+  [[nodiscard]] virtual bool validAimPos(Vec2F const& aimPos);
 
-  Json fireableParam(String const& key) const;
-  Json fireableParam(String const& key, Json const& defaultVal) const;
+  [[nodiscard]] Json fireableParam(String const& key) const;
+  [[nodiscard]] Json fireableParam(String const& key, Json const& defaultVal) const;
 
 protected:
   void setParams(Json const& params);
@@ -58,7 +58,7 @@ protected:
   virtual void fireTriggered();
 
   // firePosition translated by the hand in the owner's space
-  Vec2F ownerFirePosition() const;
+  [[nodiscard]] Vec2F ownerFirePosition() const;
 
   float m_fireTimer = 0;
   float m_cooldownTime = 10;

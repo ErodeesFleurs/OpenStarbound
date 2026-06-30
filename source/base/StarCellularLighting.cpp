@@ -97,7 +97,7 @@ void CellularLightingCalculator::begin(RectI const& queryRegion) {
   }
 }
 
-RectI CellularLightingCalculator::calculationRegion() const {
+[[nodiscard]] RectI CellularLightingCalculator::calculationRegion() const {
   return m_calculationRegion;
 }
 
@@ -203,7 +203,7 @@ void CellularLightIntensityCalculator::begin(Vec2F const& queryPosition) {
   m_lightArray.begin(m_calculationRegion.width(), m_calculationRegion.height());
 }
 
-RectI CellularLightIntensityCalculator::calculationRegion() const {
+[[nodiscard]] RectI CellularLightIntensityCalculator::calculationRegion() const {
   return m_calculationRegion;
 }
 
@@ -228,7 +228,7 @@ void CellularLightIntensityCalculator::addPointLight(Vec2F const& position, floa
 }
 
 
-float CellularLightIntensityCalculator::calculate() {
+[[nodiscard]] float CellularLightIntensityCalculator::calculate() {
   Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 

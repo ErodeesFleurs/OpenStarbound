@@ -31,13 +31,13 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  [[nodiscard]] bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
-  NetElementVersion const* netVersion() const;
-  bool netInterpolationEnabled() const;
-  float netExtrapolationHint() const;
+  [[nodiscard]] NetElementVersion const* netVersion() const;
+  [[nodiscard]] bool netInterpolationEnabled() const;
+  [[nodiscard]] float netExtrapolationHint() const;
 
 private:
   struct GroupElement {
@@ -54,15 +54,15 @@ private:
   mutable DataStreamBuffer m_buffer;
 };
 
-inline NetElementVersion const* NetElementGroup::netVersion() const {
+[[nodiscard]] inline NetElementVersion const* NetElementGroup::netVersion() const {
   return m_version;
 }
 
-inline bool NetElementGroup::netInterpolationEnabled() const {
+[[nodiscard]] inline bool NetElementGroup::netInterpolationEnabled() const {
   return m_interpolationEnabled;
 }
 
-inline float NetElementGroup::netExtrapolationHint() const {
+[[nodiscard]] inline float NetElementGroup::netExtrapolationHint() const {
   return m_extrapolationHint;
 }
 

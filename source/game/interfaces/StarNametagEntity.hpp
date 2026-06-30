@@ -8,11 +8,11 @@ class NametagEntity;
 
 class NametagEntity : public virtual Entity {
 public:
-  virtual String nametag() const = 0;
-  virtual Maybe<String> statusText() const = 0;
-  virtual bool displayNametag() const = 0;
-  virtual Vec3B nametagColor() const = 0;
-  virtual Vec2F nametagOrigin() const = 0;
+  [[nodiscard]] virtual String nametag() const = 0;
+  [[nodiscard]] virtual Maybe<String> statusText() const = 0;
+  [[nodiscard]] virtual bool displayNametag() const = 0;
+  [[nodiscard]] virtual Vec3B nametagColor() const = 0;
+  [[nodiscard]] virtual Vec2F nametagOrigin() const = 0;
 };
 
 }

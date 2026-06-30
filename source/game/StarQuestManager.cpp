@@ -74,23 +74,23 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
   m_client = client;
 }
 
-AssetsConstPtr QuestManager::assets() const {
+[[nodiscard]] AssetsConstPtr QuestManager::assets() const {
   return m_assets;
 }
 
-ItemDatabaseConstPtr QuestManager::itemDatabase() const {
+[[nodiscard]] ItemDatabaseConstPtr QuestManager::itemDatabase() const {
   return m_itemDatabase;
 }
 
-ObjectDatabaseConstPtr QuestManager::objectDatabase() const {
+[[nodiscard]] ObjectDatabaseConstPtr QuestManager::objectDatabase() const {
   return m_objectDatabase;
 }
 
-QuestTemplateDatabaseConstPtr QuestManager::questTemplateDatabase() const {
+[[nodiscard]] QuestTemplateDatabaseConstPtr QuestManager::questTemplateDatabase() const {
   return m_questTemplateDatabase;
 }
 
-VersioningDatabaseConstPtr QuestManager::versioningDatabase() const {
+[[nodiscard]] VersioningDatabaseConstPtr QuestManager::versioningDatabase() const {
   return m_versioningDatabase;
 }
 
@@ -119,7 +119,7 @@ void QuestManager::uninit() {
   m_world = nullptr;
 }
 
-bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
+[[nodiscard]] bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
   if (questArc.quests.empty())
     return false;
 
@@ -147,17 +147,17 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
 }
 
 void QuestManager::offer(QuestPtr const& quest) {
-  starAssert(m_world);
+  assert(m_world);
   m_quests[quest->questId()] = quest;
   quest->init(*m_player, *m_world, m_client);
   quest->offer();
 }
 
-StringMap<QuestPtr> QuestManager::quests() const {
+[[nodiscard]] StringMap<QuestPtr> QuestManager::quests() const {
   return m_quests;
 }
 
-StringMap<QuestPtr> QuestManager::serverQuests() const {
+[[nodiscard]] StringMap<QuestPtr> QuestManager::serverQuests() const {
   StringMap<QuestPtr> filtered;
   for (auto const& [questId, quest] : m_quests) {
     if (!questValidOnServer(quest))
@@ -167,27 +167,27 @@ StringMap<QuestPtr> QuestManager::serverQuests() const {
   return filtered;
 }
 
-QuestPtr QuestManager::getQuest(String const& questId) const {
+[[nodiscard]] QuestPtr QuestManager::getQuest(String const& questId) const {
   return m_quests.get(questId);
 }
 
-bool QuestManager::hasQuest(String const& questId) const {
+[[nodiscard]] bool QuestManager::hasQuest(String const& questId) const {
   return m_quests.contains(questId);
 }
 
-bool QuestManager::hasAcceptedQuest(String const& questId) const {
+[[nodiscard]] bool QuestManager::hasAcceptedQuest(String const& questId) const {
   return m_quests.contains(questId) && m_quests.get(questId)->state() != QuestState::New && m_quests.get(questId)->state() != QuestState::Offer;
 }
 
-bool QuestManager::isActive(String const& questId) const {
+[[nodiscard]] bool QuestManager::isActive(String const& questId) const {
   return m_quests.contains(questId) && m_quests.get(questId)->state() == QuestState::Active;
 }
 
-bool QuestManager::isCurrent(String const& questId) const {
+[[nodiscard]] bool QuestManager::isCurrent(String const& questId) const {
   return m_onWorldQuestId.orMaybe(m_trackedQuestId) == questId;
 }
 
-bool QuestManager::isTracked(String const& questId) const {
+[[nodiscard]] bool QuestManager::isTracked(String const& questId) const {
   return m_trackedQuestId == questId;
 }
 
@@ -212,14 +212,14 @@ void QuestManager::markAsRead(String const& questId) {
   getQuest(questId)->markAsRead();
 }
 
-bool QuestManager::hasCompleted(String const& questId) const {
+[[nodiscard]] bool QuestManager::hasCompleted(String const& questId) const {
   if (auto quest = m_quests.maybe(questId))
     if ((*quest)->state() == QuestState::Complete)
       return true;
   return false;
 }
 
-bool QuestManager::canTurnIn(String const& questId) const {
+[[nodiscard]] bool QuestManager::canTurnIn(String const& questId) const {
   if (auto quest = m_quests.maybe(questId))
     if ((*quest)->state() == QuestState::Active && (*quest)->canTurnIn())
       return true;
@@ -270,7 +270,7 @@ void sortQuests(List<QuestPtr>& quests) {
             });
 }
 
-List<QuestPtr> QuestManager::listActiveQuests() const {
+[[nodiscard]] List<QuestPtr> QuestManager::listActiveQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([&](QuestPtr quest) {
     return quest->state() == QuestState::Active && quest->showInLog();
@@ -279,7 +279,7 @@ List<QuestPtr> QuestManager::listActiveQuests() const {
   return result;
 }
 
-List<QuestPtr> QuestManager::listCompletedQuests() const {
+[[nodiscard]] List<QuestPtr> QuestManager::listCompletedQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([](QuestPtr quest) {
     return quest->state() == QuestState::Complete && quest->showInLog();
@@ -288,7 +288,7 @@ List<QuestPtr> QuestManager::listCompletedQuests() const {
   return result;
 }
 
-List<QuestPtr> QuestManager::listFailedQuests() const {
+[[nodiscard]] List<QuestPtr> QuestManager::listFailedQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([](QuestPtr quest) {
     return quest->state() == QuestState::Failed && quest->showInLog();
@@ -297,11 +297,11 @@ List<QuestPtr> QuestManager::listFailedQuests() const {
   return result;
 }
 
-Maybe<String> QuestManager::currentQuestId() const {
+[[nodiscard]] Maybe<String> QuestManager::currentQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<QuestPtr> QuestManager::currentQuest() const {
+[[nodiscard]] Maybe<QuestPtr> QuestManager::currentQuest() const {
   auto questId = m_onWorldQuestId.orMaybe(m_trackedQuestId);
   if (questId && isActive(*questId)) {
     auto current = getQuest(*questId);
@@ -311,11 +311,11 @@ Maybe<QuestPtr> QuestManager::currentQuest() const {
   return {};
 }
 
-Maybe<String> QuestManager::trackedQuestId() const {
+[[nodiscard]] Maybe<String> QuestManager::trackedQuestId() const {
   return m_trackedQuestId;
 }
 
-Maybe<QuestPtr> QuestManager::trackedQuest() const {
+[[nodiscard]] Maybe<QuestPtr> QuestManager::trackedQuest() const {
   if (m_trackedQuestId && isActive(*m_trackedQuestId)) {
     auto current = getQuest(*m_trackedQuestId);
     if (current->showInLog())
@@ -324,7 +324,7 @@ Maybe<QuestPtr> QuestManager::trackedQuest() const {
   return {};
 }
 
-Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) const {
+[[nodiscard]] Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) const {
   Maybe<String> indicatorType;
   Vec2F indicatorPos = entity->position() + Vec2F(0, 2.75);
   auto questGiver = as<InteractiveEntity>(entity);
@@ -385,7 +385,7 @@ StringSet QuestManager::interestingObjects() {
 }
 
 Maybe<Json> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  starAssert(m_world);
+  assert(m_world);
   Maybe<Json> result;
   for (auto const& [_, quest] : m_quests)
     result = result.orMaybe(quest->receiveMessage(message, localMessage, args));
@@ -456,7 +456,7 @@ void QuestManager::setMostRecentQuestCurrent() {
     setAsTracked(sortedActiveQuests.last()->questId());
 }
 
-bool QuestManager::questValidOnServer(QuestPtr q) const {
+[[nodiscard]] bool QuestManager::questValidOnServer(QuestPtr q) const {
   return !(q->hideCrossServer() && q->serverUuid().isValid() && *q->serverUuid() != m_player->clientContext()->serverUuid());
 }
 

@@ -119,9 +119,9 @@ struct ObjectOrientation {
   Json touchDamageConfig;
   MaterialDatabaseConstPtr materialDatabase;
 
-  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
-  bool placementValid(World const* world, Vec2I const& position) const;
-  bool anchorsValid(World const* world, Vec2I const& position) const;
+  [[nodiscard]] static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
+  [[nodiscard]] bool placementValid(World const* world, Vec2I const& position) const;
+  [[nodiscard]] bool anchorsValid(World const* world, Vec2I const& position) const;
 };
 
 // TODO: This is used very strangely and inconsistently. We go to all the trouble of populating
@@ -132,7 +132,7 @@ struct ObjectOrientation {
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
   // valid, returns NPos
-  size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
+  [[nodiscard]] size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
 
   String path;
   AssetsConstPtr assets;
@@ -208,8 +208,8 @@ struct ObjectConfig {
 
 class ObjectDatabase {
 public:
-  static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& touchDamage);
+  [[nodiscard]] static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
+  [[nodiscard]] static Json parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& touchDamage);
   static List<ObjectOrientationPtr> parseOrientations(
     AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
 
@@ -217,17 +217,17 @@ public:
 
   void cleanup();
 
-  StringList allObjects() const;
-  bool isObject(String const& name) const;
+  [[nodiscard]] StringList allObjects() const;
+  [[nodiscard]] bool isObject(String const& name) const;
 
-  ObjectConfigPtr getConfig(String const& objectName) const;
-  List<ObjectOrientationPtr> const& getOrientations(String const& objectName) const;
+  [[nodiscard]] ObjectConfigPtr getConfig(String const& objectName) const;
+  [[nodiscard]] List<ObjectOrientationPtr> const& getOrientations(String const& objectName) const;
 
-  ObjectPtr createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
-  ObjectPtr diskLoadObject(Json const& diskStore) const;
-  ObjectPtr netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ObjectPtr createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
+  [[nodiscard]] ObjectPtr diskLoadObject(Json const& diskStore) const;
+  [[nodiscard]] ObjectPtr netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  bool canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const;
+  [[nodiscard]] bool canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const;
   // If the object is placeable in the given position, creates the given object
   // and sets its position and direction and returns it, otherwise returns
   // null.
@@ -238,7 +238,7 @@ public:
                                      Direction direction, Json parameters = {}) const;
 
 private:
-  ObjectConfigPtr readConfig(String const& path) const;
+  [[nodiscard]] ObjectConfigPtr readConfig(String const& path) const;
 
   AssetsConstPtr m_assets;
   MaterialDatabaseConstPtr m_materialDatabase;

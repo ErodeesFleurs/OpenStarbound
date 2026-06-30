@@ -33,7 +33,7 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   });
   m_client = make_shared<UniverseClient>(playerStorage, statistics, root.assets(), root.configuration(), root.materialDatabase(), root.itemDatabase(), root.objectDatabase(), root.speciesDatabase(), root.entityFactory(), root.liquidsDatabase(), root.terrainDatabase(), root.biomeDatabase(), root.nameGenerator(), root.functionDatabase(), root.behaviorDatabase(), root.particleDatabase(), root.damageDatabase(), root.projectileDatabase(), root.effectSourceDatabase(), root.techDatabase(), root.statusEffectDatabase(), root.plantDatabase(), root.treasureDatabase(), root.imageMetadataDatabase(), root.dungeonDefinitions(), luaRootServices);
 
-  m_server->start();
+  (void)m_server->start();
 
   m_mainPlayer = root.playerFactory()->create();
   m_mainPlayer->setSpecies("human");

@@ -8,8 +8,8 @@ namespace Star {
 // a network.
 class NetElementVersion {
 public:
-  uint64_t current() const;
-  uint64_t increment();
+  [[nodiscard]] uint64_t current() const;
+  [[nodiscard]] uint64_t increment();
 
 private:
   uint64_t m_version = 0;
@@ -46,7 +46,7 @@ public:
   // the version at the time of the *last* call to writeDelta, + 1.  If
   // fromVersion is 0, this will always write the full state.  Should return
   // true if a delta was needed and was written to DataStream, false otherwise.
-  virtual bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
+  [[nodiscard]] virtual bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
   // Read a delta written by writeNetDelta.  'interpolationTime' is the time in
   // the future that data from this delta should be delayed and smoothed into,
   // if interpolation is enabled.
@@ -55,14 +55,14 @@ public:
   // received even if no deltas are produced, so no extrapolation takes place.
   virtual void blankNetDelta(float interpolationTime);
 
-  VersionNumber compatibilityVersion() const;
+  [[nodiscard]] VersionNumber compatibilityVersion() const;
   void setCompatibilityVersion(VersionNumber version);
-  bool checkWithRules(NetCompatibilityRules const& rules) const;
+  [[nodiscard]] bool checkWithRules(NetCompatibilityRules const& rules) const;
 private:
   VersionNumber m_netCompatibilityVersion = AnyVersion;
 };
 
-inline VersionNumber NetElement::compatibilityVersion() const {
+[[nodiscard]] inline VersionNumber NetElement::compatibilityVersion() const {
   return m_netCompatibilityVersion;
 }
 
@@ -70,7 +70,7 @@ inline void NetElement::setCompatibilityVersion(VersionNumber version) {
   m_netCompatibilityVersion = version;
 }
 
-inline bool NetElement::checkWithRules(NetCompatibilityRules const& rules) const {
+[[nodiscard]] inline bool NetElement::checkWithRules(NetCompatibilityRules const& rules) const {
   if (m_netCompatibilityVersion != AnyVersion)
     return rules.version() >= m_netCompatibilityVersion;
   return true;

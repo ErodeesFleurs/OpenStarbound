@@ -45,7 +45,7 @@ public:
 
   // Parse the given arguments into an options set, returns the options parsed
   // and a list of all the errors encountered while parsing.
-  pair<Options, StringList> parseOptions(StringList const& arguments) const;
+  [[nodiscard]] pair<Options, StringList> parseOptions(StringList const& arguments) const;
 
   // Print help text to the given std::ostream
   void printHelp(std::ostream& os) const;

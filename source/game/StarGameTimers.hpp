@@ -18,8 +18,8 @@ struct GameTimer {
   void setDone();
   void invert();
 
-  bool ready() const;
-  float percent() const;
+  [[nodiscard]] bool ready() const;
+  [[nodiscard]] float percent() const;
 };
 
 DataStream& operator>>(DataStream& ds, GameTimer& gt);
@@ -45,9 +45,9 @@ struct SlidingWindow {
   void update(float newValue);
   void processUpdate(float newValue);
 
-  float min();
-  float max();
-  float average();
+  [[nodiscard]] float min();
+  [[nodiscard]] float max();
+  [[nodiscard]] float average();
 };
 
 // Keeps long term track of elapsed time based on epochTime.
@@ -56,11 +56,11 @@ public:
   EpochTimer() = default;
   explicit EpochTimer(Json json);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   void update(double newEpochTime);
 
-  double elapsedTime() const;
+  [[nodiscard]] double elapsedTime() const;
   void setElapsedTime(double elapsedTime);
 
   friend DataStream& operator>>(DataStream& ds, EpochTimer& et);

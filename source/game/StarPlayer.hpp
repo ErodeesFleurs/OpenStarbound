@@ -138,79 +138,79 @@ public:
 
   void diskLoad(Json const& diskStore);
 
-  ClientContextPtr clientContext() const;
+  [[nodiscard]] ClientContextPtr clientContext() const;
   void setClientContext(ClientContextPtr clientContext);
 
-  StatisticsPtr statistics() const;
+  [[nodiscard]] StatisticsPtr statistics() const;
   void setStatistics(StatisticsPtr statistics);
 
   void setUniverseClient(UniverseClient* universeClient);
-  UniverseClient* universeClient() const;
+  [[nodiscard]] UniverseClient* universeClient() const;
 
-  QuestManagerPtr questManager() const;
-  ItemDatabaseConstPtr itemDatabase() const;
+  [[nodiscard]] QuestManagerPtr questManager() const;
+  [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const;
 
-  Json diskStore();
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] Json diskStore();
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] EntityType entityType() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  Vec2F velocity() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] Vec2F velocity() const override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
-  Vec2F feetOffset() const;
-  Vec2F headArmorOffset() const;
-  Vec2F chestArmorOffset() const;
-  Vec2F legsArmorOffset() const;
-  Vec2F backArmorOffset() const;
-
-  // relative to current position
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F mouthPosition() const override;
+  [[nodiscard]] Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  [[nodiscard]] Vec2F mouthOffset(bool ignoreAdjustments = true) const;
+  [[nodiscard]] Vec2F feetOffset() const;
+  [[nodiscard]] Vec2F headArmorOffset() const;
+  [[nodiscard]] Vec2F chestArmorOffset() const;
+  [[nodiscard]] Vec2F legsArmorOffset() const;
+  [[nodiscard]] Vec2F backArmorOffset() const;
 
   // relative to current position
-  RectF collisionArea() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  // relative to current position
+  [[nodiscard]] RectF collisionArea() const override;
+
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationStep = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] List<DamageNotification> selfDamageNotifications() override;
 
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
   void damagedOther(DamageNotification const& damage) override;
 
-  List<DamageSource> damageSources() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  Maybe<EntityAnchorState> loungingIn() const override;
-  bool lounge(EntityId loungeableEntityId, size_t anchorIndex);
+  [[nodiscard]] Maybe<EntityAnchorState> loungingIn() const override;
+  [[nodiscard]] bool lounge(EntityId loungeableEntityId, size_t anchorIndex);
   void stopLounging();
 
   void revive(Vec2F const& footPosition);
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  bool underwater() const;
+  [[nodiscard]] List<Drawable> portrait(PortraitMode mode) const override;
+  [[nodiscard]] bool underwater() const;
 
-  bool shifting() const;
+  [[nodiscard]] bool shifting() const;
   void setShifting(bool shifting);
   void special(int specialKey);
   void setBuildToolControlPresses(String const& bindId, Maybe<unsigned> presses);
-  Maybe<unsigned> buildToolControlPresses(String const& bindId) const;
+  [[nodiscard]] Maybe<unsigned> buildToolControlPresses(String const& bindId) const;
 
   void setMoveVector(Vec2F const& vec);
   void moveLeft();
@@ -221,46 +221,46 @@ public:
 
   void dropItem();
 
-  float toolRadius() const;
-  float interactRadius() const override;
+  [[nodiscard]] float toolRadius() const;
+  [[nodiscard]] float interactRadius() const override;
   void setInteractRadius(float interactRadius);
-  List<InteractAction> pullInteractActions();
+  [[nodiscard]] List<InteractAction> pullInteractActions();
 
-  uint64_t currency(String const& currencyType) const;
+  [[nodiscard]] uint64_t currency(String const& currencyType) const;
 
-  float health() const override;
-  float maxHealth() const override;
-  DamageBarType damageBar() const override;
-  float healthPercentage() const;
+  [[nodiscard]] float health() const override;
+  [[nodiscard]] float maxHealth() const override;
+  [[nodiscard]] DamageBarType damageBar() const override;
+  [[nodiscard]] float healthPercentage() const;
 
-  float energy() const override;
-  float maxEnergy() const;
-  float energyPercentage() const;
+  [[nodiscard]] float energy() const override;
+  [[nodiscard]] float maxEnergy() const;
+  [[nodiscard]] float energyPercentage() const;
 
-  float energyRegenBlockPercent() const;
+  [[nodiscard]] float energyRegenBlockPercent() const;
 
-  bool energyLocked() const override;
-  bool fullEnergy() const override;
-  bool consumeEnergy(float energy) override;
+  [[nodiscard]] bool energyLocked() const override;
+  [[nodiscard]] bool fullEnergy() const override;
+  [[nodiscard]] bool consumeEnergy(float energy) override;
 
-  float foodPercentage() const;
+  [[nodiscard]] float foodPercentage() const;
 
-  float breath() const;
-  float maxBreath() const;
+  [[nodiscard]] float breath() const;
+  [[nodiscard]] float maxBreath() const;
 
-  float protection() const;
+  [[nodiscard]] float protection() const;
 
-  bool forceNude() const;
+  [[nodiscard]] bool forceNude() const;
 
-  String description() const override;
+  [[nodiscard]] String description() const override;
   void setDescription(String const& description);
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] List<LightSource> lightSources() const override;
 
-  Direction walkingDirection() const override;
-  Direction facingDirection() const override;
+  [[nodiscard]] Direction walkingDirection() const override;
+  [[nodiscard]] Direction facingDirection() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   void update(float dt, uint64_t currentStep) override;
 
@@ -268,28 +268,28 @@ public:
 
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
+  [[nodiscard]] Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
   void setGenericProperty(String const& name, Json const& value);
 
-  PlayerInventoryPtr inventory() const;
+  [[nodiscard]] PlayerInventoryPtr inventory() const;
   // Returns the number of items from this stack that could be
   // picked up from the world, using inventory tab filtering
-  uint64_t itemsCanHold(ItemPtr const& items) const;
+  [[nodiscard]] uint64_t itemsCanHold(ItemPtr const& items) const;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
-  ItemPtr pickupItems(ItemPtr const& items, bool silent = false);
+  [[nodiscard]] ItemPtr pickupItems(ItemPtr const& items, bool silent = false);
   // Pick up all of the given items as possible, dropping the overflow.
   // The item parameter is invalid after use.
   void giveItem(ItemPtr const& item);
 
   void triggerPickupEvents(ItemPtr const& item);
 
-  ItemPtr essentialItem(EssentialItem essentialItem) const;
-  bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  [[nodiscard]] ItemPtr essentialItem(EssentialItem essentialItem) const;
+  [[nodiscard]] bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  [[nodiscard]] uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
   // altough multiple entries may match, they might have different
   // serializations
-  ItemDescriptor takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false);
+  [[nodiscard]] ItemDescriptor takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false);
   void giveItem(ItemDescriptor const& descriptor);
 
   // Clear the item swap slot.
@@ -301,44 +301,44 @@ public:
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
-  PlayerBlueprintsPtr blueprints() const;
-  bool addBlueprint(ItemDescriptor const& descriptor, bool showFailure = false);
-  bool blueprintKnown(ItemDescriptor const& descriptor) const;
+  [[nodiscard]] PlayerBlueprintsPtr blueprints() const;
+  [[nodiscard]] bool addBlueprint(ItemDescriptor const& descriptor, bool showFailure = false);
+  [[nodiscard]] bool blueprintKnown(ItemDescriptor const& descriptor) const;
 
-  bool addCollectable(String const& collectionName, String const& collectableName);
+  [[nodiscard]] bool addCollectable(String const& collectionName, String const& collectableName);
 
-  PlayerUniverseMapPtr universeMap() const;
+  [[nodiscard]] PlayerUniverseMapPtr universeMap() const;
 
-  PlayerCodexesPtr codexes() const;
+  [[nodiscard]] PlayerCodexesPtr codexes() const;
 
-  PlayerTechPtr techs() const;
+  [[nodiscard]] PlayerTechPtr techs() const;
   void overrideTech(Maybe<StringList> const& techModules);
-  bool techOverridden() const;
+  [[nodiscard]] bool techOverridden() const;
 
-  PlayerCompanionsPtr companions() const;
+  [[nodiscard]] PlayerCompanionsPtr companions() const;
 
-  PlayerLogPtr log() const;
+  [[nodiscard]] PlayerLogPtr log() const;
 
-  InteractiveEntityPtr bestInteractionEntity(bool includeNearby);
+  [[nodiscard]] InteractiveEntityPtr bestInteractionEntity(bool includeNearby);
   void interactWithEntity(InteractiveEntityPtr entity);
 
   // Aim this player's target at the given world position.
   void aim(Vec2F const& position);
-  Vec2F aimPosition() const override;
+  [[nodiscard]] Vec2F aimPosition() const override;
 
-  Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
-  Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
+  [[nodiscard]] Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
+  [[nodiscard]] Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
 
-  Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
-  ItemPtr handItem(ToolHand hand) const override;
+  [[nodiscard]] Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
+  [[nodiscard]] ItemPtr handItem(ToolHand hand) const override;
 
-  Vec2F armAdjustment() const override;
+  [[nodiscard]] Vec2F armAdjustment() const override;
 
   void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
 
-  bool canUseTool() const;
+  [[nodiscard]] bool canUseTool() const;
 
   // "Fires" whatever is in the primary (left) item slot, or the primary fire
   // of the 2H item, at whatever the current aim position is.  Will auto-repeat
@@ -356,37 +356,37 @@ public:
   void beginTrigger();
   void endTrigger();
 
-  ItemPtr primaryHandItem() const;
-  ItemPtr altHandItem() const;
+  [[nodiscard]] ItemPtr primaryHandItem() const;
+  [[nodiscard]] ItemPtr altHandItem() const;
 
-  Uuid uuid() const;
+  [[nodiscard]] Uuid uuid() const;
 
-  PlayerMode modeType() const;
+  [[nodiscard]] PlayerMode modeType() const;
   void setModeType(PlayerMode mode);
-  PlayerModeConfig modeConfig() const;
+  [[nodiscard]] PlayerModeConfig modeConfig() const;
 
-  ShipUpgrades shipUpgrades();
+  [[nodiscard]] ShipUpgrades shipUpgrades();
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void applyShipUpgrades(Json const& upgrades);
   void setShipSpecies(String species);
-  String shipSpecies() const;
+  [[nodiscard]] String shipSpecies() const;
 
-  String name() const override;
+  [[nodiscard]] String name() const override;
   void setName(String const& name);
 
-  Maybe<String> statusText() const override;
-  bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  [[nodiscard]] Maybe<String> statusText() const override;
+  [[nodiscard]] bool displayNametag() const override;
+  [[nodiscard]] Vec3B nametagColor() const override;
+  [[nodiscard]] Vec2F nametagOrigin() const override;
+  [[nodiscard]] String nametag() const override;
   void setNametag(Maybe<String> nametag);
 
   void updateIdentity();
 
   void setHumanoidParameter(String key, Maybe<Json> value);
-  Maybe<Json> getHumanoidParameter(String key);
+  [[nodiscard]] Maybe<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
-  JsonObject getHumanoidParameters();
+  [[nodiscard]] JsonObject getHumanoidParameters();
   void refreshHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
@@ -408,43 +408,43 @@ public:
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
-  String species() const override;
+  [[nodiscard]] String species() const override;
   void setSpecies(String const& species);
-  Gender gender() const;
+  [[nodiscard]] Gender gender() const;
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
   void setImagePath(Maybe<String> const& imagePath);
 
-  HumanoidPtr humanoid();
-  HumanoidPtr humanoid() const;
-  HumanoidIdentity const& identity() const;
+  [[nodiscard]] HumanoidPtr humanoid();
+  [[nodiscard]] HumanoidPtr humanoid() const;
+  [[nodiscard]] HumanoidIdentity const& identity() const;
 
   void setIdentity(HumanoidIdentity identity);
 
   void setAdmin(bool isAdmin);
-  bool isAdmin() const override;
+  [[nodiscard]] bool isAdmin() const override;
 
-  bool inToolRange() const override;
-  bool inToolRange(Vec2F const& aimPos) const override;
-  bool inInteractionRange() const;
-  bool inInteractionRange(Vec2F aimPos) const;
+  [[nodiscard]] bool inToolRange() const override;
+  [[nodiscard]] bool inToolRange(Vec2F const& aimPos) const override;
+  [[nodiscard]] bool inInteractionRange() const;
+  [[nodiscard]] bool inInteractionRange(Vec2F aimPos) const;
 
   void addParticles(List<Particle> const& particles) override;
   void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
 
-  bool wireToolInUse() const;
+  [[nodiscard]] bool wireToolInUse() const;
   void setWireConnector(WireConnector* wireConnector) const;
 
   void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
+  [[nodiscard]] ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
 
-  float powerMultiplier() const override;
+  [[nodiscard]] float powerMultiplier() const override;
 
-  bool isDead() const;
+  [[nodiscard]] bool isDead() const;
   void kill();
 
   void setFavoriteColor(Color color);
-  Color favoriteColor() const override;
+  [[nodiscard]] Color favoriteColor() const override;
 
   // Starts the teleport animation sequence, locking player movement and
   // preventing some update code
@@ -452,20 +452,20 @@ public:
   void teleportIn();
   void teleportAbort();
 
-  bool isTeleporting() const;
-  bool isTeleportingOut() const;
-  bool canDeploy();
+  [[nodiscard]] bool isTeleporting() const;
+  [[nodiscard]] bool isTeleportingOut() const;
+  [[nodiscard]] bool canDeploy();
   void deployAbort(String const& animationType = "default");
-  bool isDeploying() const;
-  bool isDeployed() const;
+  [[nodiscard]] bool isDeploying() const;
+  [[nodiscard]] bool isDeployed() const;
 
   void setBusyState(PlayerBusyState busyState);
 
   // A hard move to a specified location
   void moveTo(Vec2F const& footPosition);
 
-  List<String> pullQueuedMessages();
-  List<ItemPtr> pullQueuedItemDrops();
+  [[nodiscard]] List<String> pullQueuedMessages();
+  [[nodiscard]] List<ItemPtr> pullQueuedItemDrops();
 
   void queueUIMessage(String const& message) override;
   void queueItemPickupMessage(ItemPtr const& item);
@@ -473,86 +473,86 @@ public:
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
   void setDance(Maybe<String> const& danceName);
-  pair<HumanoidEmote, float> currentEmote() const;
+  [[nodiscard]] pair<HumanoidEmote, float> currentEmote() const;
 
-  State currentState() const;
+  [[nodiscard]] State currentState() const;
 
-  List<ChatAction> pullPendingChatActions() override;
+  [[nodiscard]] List<ChatAction> pullPendingChatActions() override;
 
-  Maybe<String> inspectionLogName() const override;
-  Maybe<String> inspectionDescription(String const& species) const override;
+  [[nodiscard]] Maybe<String> inspectionLogName() const override;
+  [[nodiscard]] Maybe<String> inspectionDescription(String const& species) const override;
 
-  float beamGunRadius() const override;
+  [[nodiscard]] float beamGunRadius() const override;
 
-  bool instrumentPlaying() override;
+  [[nodiscard]] bool instrumentPlaying() override;
   void instrumentEquipped(String const& instrumentKind) override;
   void interact(InteractAction const& action) override;
   void addEffectEmitters(StringSet const& emitters) override;
   void requestEmote(String const& emote) override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  [[nodiscard]] ActorMovementController* movementController() override;
+  [[nodiscard]] StatusController* statusController() override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
 
-  StatusControllerPtr statusControllerPtr();
-  ActorMovementControllerPtr movementControllerPtr();
+  [[nodiscard]] StatusControllerPtr statusControllerPtr();
+  [[nodiscard]] ActorMovementControllerPtr movementControllerPtr();
 
-  PlayerConfigPtr config();
+  [[nodiscard]] PlayerConfigPtr config();
 
-  SongbookPtr songbook() const;
+  [[nodiscard]] SongbookPtr songbook() const;
 
   void finalizeCreation();
 
-  float timeSinceLastGaveDamage() const;
-  EntityId lastDamagedTarget() const;
+  [[nodiscard]] float timeSinceLastGaveDamage() const;
+  [[nodiscard]] EntityId lastDamagedTarget() const;
 
-  bool invisible() const;
+  [[nodiscard]] bool invisible() const;
 
   void animatePortrait(float dt);
 
-  bool isOutside();
+  [[nodiscard]] bool isOutside();
 
   void dropSelectedItems(function<bool(ItemPtr)> filter);
   void dropEverything();
 
-  bool isPermaDead() const;
+  [[nodiscard]] bool isPermaDead() const;
 
-  bool interruptRadioMessage();
-  Maybe<RadioMessage> pullPendingRadioMessage();
+  [[nodiscard]] bool interruptRadioMessage();
+  [[nodiscard]] Maybe<RadioMessage> pullPendingRadioMessage();
   void queueRadioMessage(Json const& messageConfig, float delay = 0);
   void queueRadioMessage(RadioMessage message);
 
   // If a cinematic should play, returns it and clears it.  May stop cinematics
   // by returning a null Json.
-  Maybe<Json> pullPendingCinematic();
+  [[nodiscard]] Maybe<Json> pullPendingCinematic();
   void setPendingCinematic(Json const& cinematic, bool unique = false);
 
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
+  [[nodiscard]] Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
 
-  Maybe<PlayerWarpRequest> pullPendingWarp();
+  [[nodiscard]] Maybe<PlayerWarpRequest> pullPendingWarp();
   void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
 
-  Maybe<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
+  [[nodiscard]] Maybe<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
   void queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise);
 
-  AiState const& aiState() const;
-  AiState& aiState();
+  [[nodiscard]] AiState const& aiState() const;
+  [[nodiscard]] AiState& aiState();
 
   // In inspection mode, scannable, scanned, and interesting objects will be
   // rendered with special highlighting.
-  bool inspecting() const;
+  [[nodiscard]] bool inspecting() const;
 
   // Will return the highlight effect to give an inspectable entity when inspecting
-  EntityHighlightEffect inspectionHighlight(InspectableEntityPtr const& inspectableEntity) const;
+  [[nodiscard]] EntityHighlightEffect inspectionHighlight(InspectableEntityPtr const& inspectableEntity) const;
 
-  Vec2F cameraPosition();
+  [[nodiscard]] Vec2F cameraPosition();
 
   using Entity::setTeam;
 
-  NetworkedAnimatorPtr effectsAnimator();
+  [[nodiscard]] NetworkedAnimatorPtr effectsAnimator();
 
   // We need to store ephemeral/large/always-changing networked properties that other clients can read. Candidates:
   // genericProperties:
@@ -568,10 +568,10 @@ public:
   // I call this a 'secret property'.
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
-  Maybe<StringView> getSecretPropertyView(String const& name) const;
-  String const* getSecretPropertyPtr(String const& name) const;
+  [[nodiscard]] Maybe<StringView> getSecretPropertyView(String const& name) const;
+  [[nodiscard]] String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
-  Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
+  [[nodiscard]] Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
   // Sets a secret Json property. It will be serialized.
   void setSecretProperty(String const& name, Json const& value);
 
@@ -595,14 +595,14 @@ private:
   void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
   void setNetArmorSecrets(bool includeEmpty = false);
 
-  List<Drawable> drawables() const;
-  List<OverheadBar> bars() const;
-  List<Particle> particles();
-  String getFootstepSound(Vec2I const& sensor) const;
+  [[nodiscard]] List<Drawable> drawables() const;
+  [[nodiscard]] List<OverheadBar> bars() const;
+  [[nodiscard]] List<Particle> particles();
+  [[nodiscard]] String getFootstepSound(Vec2I const& sensor) const;
 
   void tickShared(float dt);
 
-  HumanoidEmote detectEmotes(String const& chatter);
+  [[nodiscard]] HumanoidEmote detectEmotes(String const& chatter);
 
   friend class PlayerChatAndEmotes;
   friend class PlayerDamagePipeline;

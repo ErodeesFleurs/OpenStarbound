@@ -182,7 +182,7 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
+      assert(!packetBuffer.empty());
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
@@ -396,7 +396,7 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
+      assert(!packetBuffer.empty());
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;

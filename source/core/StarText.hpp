@@ -22,7 +22,7 @@ struct TextStyle {
 
   TextStyle() = default;
   TextStyle(Json const& config);
-  TextStyle& loadJson(Json const& config);
+  [[nodiscard]] TextStyle& loadJson(Json const& config);
 };
 
 namespace Text {
@@ -33,14 +33,14 @@ namespace Text {
   extern std::string const AllEsc;
   extern std::string const AllEscEnd;
 
-  String stripEscapeCodes(String const& s);
+  [[nodiscard]] String stripEscapeCodes(String const& s);
   inline bool isEscapeCode(Utf32Type c) { return c == CmdEsc || c == StartEsc; }
 
   using TextCallback = function<bool(StringView text)>;
   using CommandsCallback = function<bool(StringView commands)>;
-  bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
-  String preprocessEscapeCodes(String const& s);
-  String extractCodes(String const& s);
+  [[nodiscard]] bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
+  [[nodiscard]] String preprocessEscapeCodes(String const& s);
+  [[nodiscard]] String extractCodes(String const& s);
 }
 
 }

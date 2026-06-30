@@ -27,18 +27,18 @@ public:
 
   // addPoint does not need to be called in order, it will insert the point in
   // the correct ordered position for the given index, and return the position.
-  size_t addPoint(IndexType index, ValueType value);
+  [[nodiscard]] size_t addPoint(IndexType index, ValueType value);
   void clearPoints();
 
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] size_t size() const;
+  [[nodiscard]] bool empty() const;
 
-  IndexType const& index(size_t i) const;
-  ValueType const& value(size_t i) const;
+  [[nodiscard]] IndexType const& index(size_t i) const;
+  [[nodiscard]] ValueType const& value(size_t i) const;
 
   // Returns true if the values of the table are also valid indexes (true when
   // the data points are monotonic increasing)
-  bool isInvertible() const;
+  [[nodiscard]] bool isInvertible() const;
 
   // Invert the table, switching indexes and values.  Throws an exception if
   // the function is not invertible.  Will not generally compile unless the
@@ -47,14 +47,14 @@ public:
 
   // Find the value to the left of the given index.  If the index is lower than
   // the lowest index point, returns the first value.
-  ValueType const& get(IndexType index) const;
+  [[nodiscard]] ValueType const& get(IndexType index) const;
 
 protected:
   using IndexList = std::vector<IndexType>;
   using ValueList = std::vector<ValueType>;
 
-  IndexList const& indexes() const;
-  ValueList const& values() const;
+  [[nodiscard]] IndexList const& indexes() const;
+  [[nodiscard]] ValueList const& values() const;
 
 private:
   IndexList m_indexes;
@@ -82,18 +82,18 @@ public:
       InterpolationMode interpolationMode = InterpolationMode::Linear,
       BoundMode boundMode = BoundMode::Clamp);
 
-  InterpolationMode interpolationMode() const;
+  [[nodiscard]] InterpolationMode interpolationMode() const;
   void setInterpolationMode(InterpolationMode interpolationType);
 
-  BoundMode boundMode() const;
+  [[nodiscard]] BoundMode boundMode() const;
   void setBoundMode(BoundMode boundMode);
 
   // Interpolates a value at the given index according to the interpolation and
   // bound mode.
-  ValueType interpolate(IndexType index) const;
+  [[nodiscard]] ValueType interpolate(IndexType index) const;
 
   // Synonym for interpolate
-  ValueType operator()(IndexType index) const;
+  [[nodiscard]] ValueType operator()(IndexType index) const;
 
 private:
   InterpolationMode m_interpolationMode;
@@ -154,27 +154,27 @@ void ParametricTable<IndexType, ValueType>::clearPoints() {
 }
 
 template <typename IndexType, typename ValueType>
-size_t ParametricTable<IndexType, ValueType>::size() const {
+[[nodiscard]] size_t ParametricTable<IndexType, ValueType>::size() const {
   return m_indexes.size();
 }
 
 template <typename IndexType, typename ValueType>
-bool ParametricTable<IndexType, ValueType>::empty() const {
+[[nodiscard]] bool ParametricTable<IndexType, ValueType>::empty() const {
   return m_indexes.empty();
 }
 
 template <typename IndexType, typename ValueType>
-IndexType const& ParametricTable<IndexType, ValueType>::index(size_t i) const {
+[[nodiscard]] IndexType const& ParametricTable<IndexType, ValueType>::index(size_t i) const {
   return m_indexes.at(i);
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::value(size_t i) const {
+[[nodiscard]] ValueType const& ParametricTable<IndexType, ValueType>::value(size_t i) const {
   return m_values.at(i);
 }
 
 template <typename IndexType, typename ValueType>
-bool ParametricTable<IndexType, ValueType>::isInvertible() const {
+[[nodiscard]] bool ParametricTable<IndexType, ValueType>::isInvertible() const {
   if (empty())
     return true;
 
@@ -196,7 +196,7 @@ void ParametricTable<IndexType, ValueType>::invert() const {
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::get(IndexType index) const {
+[[nodiscard]] ValueType const& ParametricTable<IndexType, ValueType>::get(IndexType index) const {
   if (empty())
     throw MathException("get called on empty ParametricTable");
 

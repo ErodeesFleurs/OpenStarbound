@@ -25,7 +25,7 @@ public:
   WorldServerThread(WorldServerPtr server, WorldId worldId, AssetsConstPtr assets, ConfigurationPtr configuration);
   ~WorldServerThread();
 
-  WorldId worldId() const;
+  [[nodiscard]] WorldId worldId() const;
 
   void start();
   // Signals the WorldServerThread to stop and then joins it
@@ -34,32 +34,32 @@ public:
 
   // An exception occurred from the actual WorldServer itself and the
   // WorldServerThread has stopped running.
-  bool serverErrorOccurred();
-  bool shouldExpire();
+  [[nodiscard]] bool serverErrorOccurred();
+  [[nodiscard]] bool shouldExpire();
 
-  bool spawnTargetValid(SpawnTarget const& spawnTarget);
+  [[nodiscard]] bool spawnTargetValid(SpawnTarget const& spawnTarget);
 
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
+  [[nodiscard]] bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
   // Returns final outgoing packets
-  List<PacketPtr> removeClient(ConnectionId clientId);
+  [[nodiscard]] List<PacketPtr> removeClient(ConnectionId clientId);
 
-  List<ConnectionId> clients() const;
-  bool hasClient(ConnectionId clientId) const;
-  bool noClients() const;
+  [[nodiscard]] List<ConnectionId> clients() const;
+  [[nodiscard]] bool hasClient(ConnectionId clientId) const;
+  [[nodiscard]] bool noClients() const;
 
   // Clients that have caused an error with incoming packets are removed from
   // the world and no further packets are handled from them.  They are still
   // added to this WorldServerThread, and must be removed and the final
   // outgoing packets should be sent to them.
-  List<ConnectionId> erroredClients() const;
+  [[nodiscard]] List<ConnectionId> erroredClients() const;
 
   void pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  [[nodiscard]] List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
 
-  Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
+  [[nodiscard]] Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  Maybe<pair<String, String>> pullNewPlanetType();
+  [[nodiscard]] Maybe<pair<String, String>> pullNewPlanetType();
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the server error
@@ -77,7 +77,7 @@ public:
 
   // Syncs all active sectors to disk and reads the full content of the world
   // into memory, useful for the ship.
-  WorldChunks readChunks();
+  [[nodiscard]] WorldChunks readChunks();
 
 protected:
   virtual void run();

@@ -11,7 +11,7 @@ enum class WireDirection {
   Output
 };
 
-WireDirection otherWireDirection(WireDirection direction);
+[[nodiscard]] WireDirection otherWireDirection(WireDirection direction);
 
 // Identifier for a specific WireNode in a WireEntity, node indexes for input
 // and output nodes are separate.
@@ -34,7 +34,7 @@ struct WireConnection {
 
 template <>
 struct hash<WireConnection> {
-  size_t operator()(WireConnection const& wireConnection) const;
+  [[nodiscard]] size_t operator()(WireConnection const& wireConnection) const;
 };
 
 DataStream& operator>>(DataStream& ds, WireConnection& wireConnection);
@@ -44,7 +44,7 @@ class WireCoordinator {
 public:
   virtual ~WireCoordinator() = default;
 
-  virtual bool readInputConnection(WireConnection const& connection) = 0;
+  [[nodiscard]] virtual bool readInputConnection(WireConnection const& connection) = 0;
 };
 
 class WireConnector {
@@ -58,8 +58,8 @@ public:
 
   virtual ~WireConnector() = default;
 
-  virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) = 0;
-  virtual bool connecting() = 0;
+  [[nodiscard]] virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) = 0;
+  [[nodiscard]] virtual bool connecting() = 0;
 };
 
 }

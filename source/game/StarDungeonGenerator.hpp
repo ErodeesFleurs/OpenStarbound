@@ -54,16 +54,16 @@ public:
   virtual void setLiquid(Vec2I const& pos, LiquidStore const& liquid) = 0;
   virtual void connectWireGroup(List<Vec2I> const& wireGroup) = 0;
   virtual void setTileProtection(DungeonId dungeonId, bool isProtected) = 0;
-  virtual bool checkSolid(Vec2I const& position, TileLayer layer) = 0;
-  virtual bool checkOpen(Vec2I const& position, TileLayer layer) = 0;
-  virtual bool checkOceanLiquid(Vec2I const& position) = 0;
-  virtual DungeonId getDungeonIdAt(Vec2I const& position) = 0;
+  [[nodiscard]] virtual bool checkSolid(Vec2I const& position, TileLayer layer) = 0;
+  [[nodiscard]] virtual bool checkOpen(Vec2I const& position, TileLayer layer) = 0;
+  [[nodiscard]] virtual bool checkOceanLiquid(Vec2I const& position) = 0;
+  [[nodiscard]] virtual DungeonId getDungeonIdAt(Vec2I const& position) = 0;
   virtual void setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) = 0;
   virtual void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) = 0;
 
-  virtual WorldGeometry getWorldGeometry() const = 0;
-  virtual MaterialDatabaseConstPtr materialDatabase() const = 0;
-  virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
+  [[nodiscard]] virtual WorldGeometry getWorldGeometry() const = 0;
+  [[nodiscard]] virtual MaterialDatabaseConstPtr materialDatabase() const = 0;
+  [[nodiscard]] virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
 
   virtual void setPlayerStart(Vec2F const& startPosition) = 0;
 };
@@ -87,11 +87,11 @@ namespace Dungeon {
   public:
     DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
 
-    Vec2I wrapPosition(Vec2I const& pos) const;
-    MaterialId materialId(String const& materialName) const;
-    ModId modId(String const& modName) const;
-    CollisionKind materialCollisionKind(MaterialId material) const;
-    LiquidId liquidId(String const& liquidName) const;
+    [[nodiscard]] Vec2I wrapPosition(Vec2I const& pos) const;
+    [[nodiscard]] MaterialId materialId(String const& materialName) const;
+    [[nodiscard]] ModId modId(String const& modName) const;
+    [[nodiscard]] CollisionKind materialCollisionKind(MaterialId material) const;
+    [[nodiscard]] LiquidId liquidId(String const& liquidName) const;
 
     void setMarkDungeonId(Maybe<DungeonId> markDungeonId = {});
 
@@ -101,8 +101,8 @@ namespace Dungeon {
     void setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant);
     void setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
     void setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
-    bool needsForegroundBiomeMod(Vec2I const& position);
-    bool needsBackgroundBiomeMod(Vec2I const& position);
+    [[nodiscard]] bool needsForegroundBiomeMod(Vec2I const& position);
+    [[nodiscard]] bool needsBackgroundBiomeMod(Vec2I const& position);
     void placeObject(Vec2I const& position, String const& objectType, Direction direction, Json const& parameters);
     void placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters);
     void placeSurfaceBiomeItems(Vec2I const& pos);
@@ -112,10 +112,10 @@ namespace Dungeon {
     void spawnNpc(Vec2F const& pos, Json const& definition);
     void spawnStagehand(Vec2F const& pos, Json const& definition);
     void setPlayerStart(Vec2F const& startPosition);
-    bool checkSolid(Vec2I position, TileLayer layer);
-    bool checkOpen(Vec2I position, TileLayer layer);
-    bool checkLiquid(Vec2I const& position);
-    bool otherDungeonPresent(Vec2I position);
+    [[nodiscard]] bool checkSolid(Vec2I position, TileLayer layer);
+    [[nodiscard]] bool checkOpen(Vec2I position, TileLayer layer);
+    [[nodiscard]] bool checkLiquid(Vec2I const& position);
+    [[nodiscard]] bool otherDungeonPresent(Vec2I position);
     void setDungeonId(Vec2I const& pos, DungeonId dungeonId);
     void markPosition(Vec2F const& pos);
     void markPosition(Vec2I const& pos);
@@ -126,7 +126,7 @@ namespace Dungeon {
     void flushLiquid();
     void flush();
 
-    List<RectI> boundingBoxes() const;
+    [[nodiscard]] List<RectI> boundingBoxes() const;
 
     void reset();
 
@@ -187,23 +187,23 @@ namespace Dungeon {
 
   class Rule {
   public:
-    static Maybe<RuleConstPtr> parse(Json const& rule);
-    static List<RuleConstPtr> readRules(Json const& rules);
+    [[nodiscard]] static Maybe<RuleConstPtr> parse(Json const& rule);
+    [[nodiscard]] static List<RuleConstPtr> readRules(Json const& rules);
 
     virtual ~Rule() = default;
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
 
-    virtual bool overdrawable() const;
-    virtual bool ignorePartMaximum() const;
-    virtual bool allowSpawnCount(int currentCount) const;
+    [[nodiscard]] virtual bool overdrawable() const;
+    [[nodiscard]] virtual bool ignorePartMaximum() const;
+    [[nodiscard]] virtual bool allowSpawnCount(int currentCount) const;
 
-    virtual bool doesNotConnectToPart(String const& name) const;
-    virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const;
+    [[nodiscard]] virtual bool doesNotConnectToPart(String const& name) const;
+    [[nodiscard]] virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const;
 
-    virtual bool requiresOpen() const;
-    virtual bool requiresSolid() const;
-    virtual bool requiresLiquid() const;
+    [[nodiscard]] virtual bool requiresOpen() const;
+    [[nodiscard]] virtual bool requiresSolid() const;
+    [[nodiscard]] virtual bool requiresLiquid() const;
 
   protected:
     Rule() = default;
@@ -213,7 +213,7 @@ namespace Dungeon {
   public:
     WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
 
-    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
 
     bool requiresOpen() const override {
       return true;
@@ -226,7 +226,7 @@ namespace Dungeon {
   public:
     WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
 
-    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
 
     bool requiresSolid() const override {
       return true;
@@ -239,7 +239,7 @@ namespace Dungeon {
   public:
     WorldGenMustContainLiquidRule() = default;
 
-    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
     
     bool requiresLiquid() const override {
       return true;
@@ -250,7 +250,7 @@ namespace Dungeon {
   public:
     WorldGenMustNotContainLiquidRule() = default;
 
-    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    [[nodiscard]] bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
   };
 
   class AllowOverdrawingRule : public Rule {
@@ -334,8 +334,8 @@ namespace Dungeon {
 
   class Brush {
   public:
-    static BrushConstPtr parse(Json const& brush);
-    static List<BrushConstPtr> readBrushes(Json const& brushes);
+    [[nodiscard]] static BrushConstPtr parse(Json const& brush);
+    [[nodiscard]] static List<BrushConstPtr> readBrushes(Json const& brushes);
 
     virtual ~Brush() = default;
 
@@ -545,12 +545,12 @@ namespace Dungeon {
   public:
     Connector(Part& part, String value, bool forwardOnly, Direction direction, Vec2I offset);
 
-    bool connectsTo(Connector const& connector) const;
+    [[nodiscard]] bool connectsTo(Connector const& connector) const;
 
-    String value() const;
-    Vec2I positionAdjustment() const;
-    Part const& part() const;
-    Vec2I offset() const;
+    [[nodiscard]] String value() const;
+    [[nodiscard]] Vec2I positionAdjustment() const;
+    [[nodiscard]] Part const& part() const;
+    [[nodiscard]] Vec2I offset() const;
 
   private:
     String m_value;
@@ -569,7 +569,7 @@ namespace Dungeon {
     virtual void readAsset(String const& asset) = 0;
 
     // Returns the dimensions of the part
-    virtual Vec2U size() const = 0;
+    [[nodiscard]] virtual Vec2U size() const = 0;
 
     // Iterate over every tile in every layer of the part.
     // The callback receives the position of the tile (within the part), and
@@ -588,23 +588,23 @@ namespace Dungeon {
   public:
     Part(DungeonDefinition& dungeon, Json const& part, PartReaderPtr reader);
 
-    String const& name() const;
-    Vec2U size() const;
-    Vec2I anchorPoint() const;
-    float chance() const;
-    bool markDungeonId() const;
-    Maybe<float> minimumThreatLevel() const;
-    Maybe<float> maximumThreatLevel() const;
-    bool clearAnchoredObjects() const;
-    int placementLevelConstraint() const;
-    bool ignoresPartMaximum() const;
-    bool allowsPlacement(int currentPlacementCount) const;
-    List<ConnectorConstPtr> const& connections() const;
-    bool doesNotConnectTo(Part const& part) const;
-    bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
-    bool collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
+    [[nodiscard]] String const& name() const;
+    [[nodiscard]] Vec2U size() const;
+    [[nodiscard]] Vec2I anchorPoint() const;
+    [[nodiscard]] float chance() const;
+    [[nodiscard]] bool markDungeonId() const;
+    [[nodiscard]] Maybe<float> minimumThreatLevel() const;
+    [[nodiscard]] Maybe<float> maximumThreatLevel() const;
+    [[nodiscard]] bool clearAnchoredObjects() const;
+    [[nodiscard]] int placementLevelConstraint() const;
+    [[nodiscard]] bool ignoresPartMaximum() const;
+    [[nodiscard]] bool allowsPlacement(int currentPlacementCount) const;
+    [[nodiscard]] List<ConnectorConstPtr> const& connections() const;
+    [[nodiscard]] bool doesNotConnectTo(Part const& part) const;
+    [[nodiscard]] bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
+    [[nodiscard]] bool collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
 
-    bool canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] bool canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const;
 
     void place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
 
@@ -613,9 +613,9 @@ namespace Dungeon {
   private:
     void placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
 
-    bool tileUsesPlaces(Vec2I pos) const;
-    Direction pickByEdge(Vec2I position, Vec2U size) const;
-    Direction pickByNeighbours(Vec2I pos) const;
+    [[nodiscard]] bool tileUsesPlaces(Vec2I pos) const;
+    [[nodiscard]] Direction pickByEdge(Vec2I position, Vec2U size) const;
+    [[nodiscard]] Direction pickByNeighbours(Vec2I pos) const;
     void scanConnectors();
     void scanAnchor();
 
@@ -641,14 +641,14 @@ namespace Dungeon {
   };
 
   struct Tile {
-    bool canPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
+    [[nodiscard]] bool canPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
     void place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const;
-    bool usesPlaces() const;
-    bool modifiesPlaces() const;
-    bool collidesWithPlaces() const;
-    bool requiresOpen() const;
-    bool requiresSolid() const;
-    bool requiresLiquid() const;
+    [[nodiscard]] bool usesPlaces() const;
+    [[nodiscard]] bool modifiesPlaces() const;
+    [[nodiscard]] bool collidesWithPlaces() const;
+    [[nodiscard]] bool requiresOpen() const;
+    [[nodiscard]] bool requiresSolid() const;
+    [[nodiscard]] bool requiresLiquid() const;
 
     List<BrushConstPtr> brushes;
     List<RuleConstPtr> rules;
@@ -660,22 +660,22 @@ class DungeonDefinition {
 public:
   DungeonDefinition(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, JsonObject const& definition, String const& directory);
 
-  JsonObject metadata() const;
-  String directory() const;
-  String name() const;
-  String displayName() const;
-  bool isProtected() const;
-  Maybe<float> gravity() const;
-  Maybe<bool> breathable() const;
+  [[nodiscard]] JsonObject metadata() const;
+  [[nodiscard]] String directory() const;
+  [[nodiscard]] String name() const;
+  [[nodiscard]] String displayName() const;
+  [[nodiscard]] bool isProtected() const;
+  [[nodiscard]] Maybe<float> gravity() const;
+  [[nodiscard]] Maybe<bool> breathable() const;
   StringMap<Dungeon::PartConstPtr> const& parts() const;
 
-  List<String> const& anchors() const;
-  Maybe<Json> const& optTileset() const;
-  int maxParts() const;
-  int maxRadius() const;
-  int extendSurfaceFreeSpace() const;
+  [[nodiscard]] List<String> const& anchors() const;
+  [[nodiscard]] Maybe<Json> const& optTileset() const;
+  [[nodiscard]] int maxParts() const;
+  [[nodiscard]] int maxRadius() const;
+  [[nodiscard]] int extendSurfaceFreeSpace() const;
 
-  JsonObject metaData() const;
+  [[nodiscard]] JsonObject metaData() const;
 
 private:
   JsonObject m_metadata;
@@ -701,11 +701,11 @@ class DungeonDefinitions {
 public:
   DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase);
 
-  DungeonDefinitionConstPtr get(String const& name) const;
-  JsonObject getMetadata(String const& name) const;
+  [[nodiscard]] DungeonDefinitionConstPtr get(String const& name) const;
+  [[nodiscard]] JsonObject getMetadata(String const& name) const;
 
 private:
-  DungeonDefinitionPtr readDefinition(String const& path) const;
+  [[nodiscard]] DungeonDefinitionPtr readDefinition(String const& path) const;
 
   StringMap<String> m_paths;
   AssetsConstPtr m_assets;
@@ -718,13 +718,13 @@ class DungeonGenerator {
 public:
   DungeonGenerator(DungeonDefinitionsConstPtr dungeonDefinitions, String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
 
-  Maybe<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  [[nodiscard]] Maybe<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
-  pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
+  [[nodiscard]] pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
   Dungeon::PartConstPtr pickAnchor();
   List<Dungeon::ConnectorConstPtr> findConnectablePart(Dungeon::ConnectorConstPtr connector) const;
 
-  DungeonDefinitionConstPtr definition() const;
+  [[nodiscard]] DungeonDefinitionConstPtr definition() const;
 
 private:
   DungeonDefinitionConstPtr m_def;

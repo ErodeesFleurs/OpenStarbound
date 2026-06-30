@@ -16,9 +16,9 @@ public:
   explicit Uuid(ByteArray const& bytes);
   explicit Uuid(String const& hex);
 
-  char const* ptr() const;
-  ByteArray bytes() const;
-  String hex() const;
+  [[nodiscard]] char const* ptr() const;
+  [[nodiscard]] ByteArray bytes() const;
+  [[nodiscard]] String hex() const;
 
   auto operator<=>(Uuid const&) const = default;
 
@@ -28,7 +28,7 @@ private:
 
 template <>
 struct hash<Uuid> {
-  size_t operator()(Uuid const& u) const;
+  [[nodiscard]] size_t operator()(Uuid const& u) const;
 };
 
 DataStream& operator>>(DataStream& ds, Uuid& uuid);

@@ -111,7 +111,7 @@ public:
   void addClient(UniverseConnection remoteConnection);
   // Constructs an in-process connection to a UniverseServer for a
   // UniverseClient, and returns the other side of the connection.
-  UniverseConnection addLocalClient();
+  [[nodiscard]] UniverseConnection addLocalClient();
 
   // Signals the UniverseServer to stop and then joins the thread.
   void stop();
@@ -120,71 +120,71 @@ public:
   void setTimescale(float timescale);
   void setTickRate(float tickRate);
 
-  List<WorldId> activeWorlds() const;
-  bool isWorldActive(WorldId const& worldId) const;
+  [[nodiscard]] List<WorldId> activeWorlds() const;
+  [[nodiscard]] bool isWorldActive(WorldId const& worldId) const;
 
-  List<ConnectionId> clientIds() const;
-  List<pair<ConnectionId, int64_t>> clientIdsAndCreationTime() const;
-  size_t numberOfClients() const;
-  uint32_t maxClients() const;
-  bool isConnectedClient(ConnectionId clientId) const;
+  [[nodiscard]] List<ConnectionId> clientIds() const;
+  [[nodiscard]] List<pair<ConnectionId, int64_t>> clientIdsAndCreationTime() const;
+  [[nodiscard]] size_t numberOfClients() const;
+  [[nodiscard]] uint32_t maxClients() const;
+  [[nodiscard]] bool isConnectedClient(ConnectionId clientId) const;
 
-  String clientDescriptor(ConnectionId clientId) const;
+  [[nodiscard]] String clientDescriptor(ConnectionId clientId) const;
 
-  String clientNick(ConnectionId clientId) const;
-  Maybe<ConnectionId> findNick(String const& nick) const;
+  [[nodiscard]] String clientNick(ConnectionId clientId) const;
+  [[nodiscard]] Maybe<ConnectionId> findNick(String const& nick) const;
 
-  Maybe<Uuid> uuidForClient(ConnectionId clientId) const;
-  Maybe<ConnectionId> clientForUuid(Uuid const& uuid) const;
+  [[nodiscard]] Maybe<Uuid> uuidForClient(ConnectionId clientId) const;
+  [[nodiscard]] Maybe<ConnectionId> clientForUuid(Uuid const& uuid) const;
 
   void adminBroadcast(String const& text);
   void adminWhisper(ConnectionId clientId, String const& text);
-  String adminCommand(String text);
+  [[nodiscard]] String adminCommand(String text);
 
-  bool isAdmin(ConnectionId clientId) const;
-  bool canBecomeAdmin(ConnectionId clientId) const;
+  [[nodiscard]] bool isAdmin(ConnectionId clientId) const;
+  [[nodiscard]] bool canBecomeAdmin(ConnectionId clientId) const;
   void setAdmin(ConnectionId clientId, bool admin);
 
-  bool isLocal(ConnectionId clientId) const;
+  [[nodiscard]] bool isLocal(ConnectionId clientId) const;
 
-  bool isPvp(ConnectionId clientId) const;
+  [[nodiscard]] bool isPvp(ConnectionId clientId) const;
   void setPvp(ConnectionId clientId, bool pvp);
 
-  RpcThreadPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+  [[nodiscard]] RpcThreadPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
 
   void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
   void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
-  WorldId clientWorld(ConnectionId clientId) const;
-  CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
+  [[nodiscard]] WorldId clientWorld(ConnectionId clientId) const;
+  [[nodiscard]] CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
 
-  ClockPtr universeClock() const;
-  UniverseSettingsPtr universeSettings() const;
+  [[nodiscard]] ClockPtr universeClock() const;
+  [[nodiscard]] UniverseSettingsPtr universeSettings() const;
 
-  CelestialDatabase& celestialDatabase();
+  [[nodiscard]] CelestialDatabase& celestialDatabase();
 
   // If the client exists and is in a valid connection state, executes the
   // given function on the client world and player object in a thread safe way.
   // Returns true if function was called, false if client was not found or in
   // an invalid connection state.
-  bool executeForClient(ConnectionId clientId, function<void(WorldServer*, PlayerPtr)> action);
+  [[nodiscard]] bool executeForClient(ConnectionId clientId, function<void(WorldServer*, PlayerPtr)> action);
   void disconnectClient(ConnectionId clientId, String const& reason);
   void banUser(ConnectionId clientId, String const& reason, pair<bool, bool> banType, Maybe<int> timeout);
-  bool unbanIp(String const& addressString);
-  bool unbanUuid(String const& uuidString);
+  [[nodiscard]] bool unbanIp(String const& addressString);
+  [[nodiscard]] bool unbanUuid(String const& uuidString);
 
-  bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
+  [[nodiscard]] bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
 
-  bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
+  [[nodiscard]] bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
 
-  StringList weatherList(CelestialCoordinate const& coordinate);
+  [[nodiscard]] StringList weatherList(CelestialCoordinate const& coordinate);
 
-  bool sendPacket(ConnectionId clientId, PacketPtr packet);
+  [[nodiscard]] bool sendPacket(ConnectionId clientId, PacketPtr packet);
 
 protected:
   virtual void run();
 
 private:
-  WorldServerServices worldServerServices() const;
+  [[nodiscard]] WorldServerServices worldServerServices() const;
 
   struct TimeoutBan {
     int64_t banExpiry;
@@ -227,13 +227,13 @@ private:
   // Either returns the default configured starter world, or a new randomized
   // starter world, or if a randomized world is not yet available, starts a job
   // to find a randomized starter world and returns nothing until it is ready.
-  Maybe<CelestialCoordinate> nextStarterWorld();
+  [[nodiscard]] Maybe<CelestialCoordinate> nextStarterWorld();
 
   void loadTempWorldIndex();
   void saveTempWorldIndex();
-  String tempWorldFile(InstanceWorldId const& worldId) const;
+  [[nodiscard]] String tempWorldFile(InstanceWorldId const& worldId) const;
 
-  Maybe<String> isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const;
+  [[nodiscard]] Maybe<String> isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const;
   void doTempBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType, int timeout);
   void doPermBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType);
   void removeTimedBan();
@@ -247,39 +247,39 @@ private:
   void acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress);
 
   // Main lock and clients read lock must be held when calling
-  WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
-  bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
+  [[nodiscard]] WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
+  [[nodiscard]] bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
 
   void doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
-  Maybe<ConnectionId> getClientForUuid(Uuid const& uuid) const;
+  [[nodiscard]] Maybe<ConnectionId> getClientForUuid(Uuid const& uuid) const;
 
   // Get the world only if it is already loaded, Main lock must be held when
   // calling.
-  WorldServerThreadPtr getWorld(WorldId const& worldId);
+  [[nodiscard]] WorldServerThreadPtr getWorld(WorldId const& worldId);
 
   // If the world is not created, block and load it, otherwise just return the
   // loaded world.  Main lock and Clients read lock must be held when calling.
-  WorldServerThreadPtr createWorld(WorldId const& worldId);
+  [[nodiscard]] WorldServerThreadPtr createWorld(WorldId const& worldId);
 
   // Trigger off-thread world creation, returns a value when the creation is
   // finished, either successfully or with an error.  Main lock and Clients
   // read lock must be held when calling.
-  Maybe<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
+  [[nodiscard]] Maybe<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
 
   // Main lock and clients read lock must be held when calling world promise
   // generators
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> makeWorldPromise(WorldId const& worldId);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> shipWorldPromise(ClientShipWorldId const& uuid);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> celestialWorldPromise(CelestialWorldId const& coordinate);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  [[nodiscard]] Maybe<WorkerPoolPromise<WorldServerThreadPtr>> makeWorldPromise(WorldId const& worldId);
+  [[nodiscard]] Maybe<WorkerPoolPromise<WorldServerThreadPtr>> shipWorldPromise(ClientShipWorldId const& uuid);
+  [[nodiscard]] Maybe<WorkerPoolPromise<WorldServerThreadPtr>> celestialWorldPromise(CelestialWorldId const& coordinate);
+  [[nodiscard]] Maybe<WorkerPoolPromise<WorldServerThreadPtr>> instanceWorldPromise(InstanceWorldId const& instanceWorld);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
-  SystemWorldServerThreadPtr createSystemWorld(Vec3I const& location);
+  [[nodiscard]] SystemWorldServerThreadPtr createSystemWorld(Vec3I const& location);
 
-  bool instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
+  [[nodiscard]] bool instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
 
   // Signal that a world either failed to load, or died due to an exception,
   // kicks clients if that world is a ship world.  Main lock and clients read
@@ -288,7 +288,7 @@ private:
 
   // Get SkyParameters if the coordinate is a valid world, and empty
   // SkyParameters otherwise.
-  SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
+  [[nodiscard]] SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
 
   mutable RecursiveMutex m_mainLock;
 

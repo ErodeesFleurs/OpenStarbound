@@ -49,7 +49,7 @@ class Variant {
 public:
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  static constexpr VariantTypeIndex typeIndexOf();
+  [[nodiscard]] static constexpr VariantTypeIndex typeIndexOf();
 
   // If the first type has a default constructor, constructs an Variant which
   // contains a default constructed value of that type.
@@ -95,32 +95,32 @@ public:
   // Returns true if this Variant contains the given type.
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  bool is() const;
+  [[nodiscard]] bool is() const;
 
   // get throws BadVariantCast on bad casts
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  T const& get() const;
+  [[nodiscard]] T const& get() const;
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  T& get();
+  [[nodiscard]] T& get();
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  Maybe<T> maybe() const;
+  [[nodiscard]] Maybe<T> maybe() const;
 
   // ptr() does not throw if this Variant does not hold the given type, instead
   // simply returns nullptr.
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  T const* ptr() const;
+  [[nodiscard]] T const* ptr() const;
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  T* ptr();
+  [[nodiscard]] T* ptr();
 
   // Calls the given function with the type currently being held, and returns
   // the value returned by that function.  Will throw if this Variant has been
@@ -133,7 +133,7 @@ public:
   // Returns an index for the held type, which can be passed into makeType to
   // make this Variant hold a specific type.  Returns InvalidVariantType if
   // invalidated.
-  VariantTypeIndex typeIndex() const;
+  [[nodiscard]] VariantTypeIndex typeIndex() const;
 
   // Make this Variant hold a new default constructed type of the given type
   // index.  Can only be used if every alternative type has a default
@@ -146,14 +146,14 @@ public:
   // *good* way to ensure that the Variant has a valid type, so it may become
   // invalidated.  It is not possible to directly construct an invalidated
   // Variant.
-  bool invalid() const;
+  [[nodiscard]] bool invalid() const;
 
   // Requires that every type included in this Variant has operator==
   bool operator==(Variant const& x) const;
   bool operator!=(Variant const& x) const;
 
   // Requires that every type included in this Variant has operator<
-  bool operator<(Variant const& x) const;
+  [[nodiscard]] bool operator<(Variant const& x) const;
 
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
@@ -163,7 +163,7 @@ public:
   bool operator!=(T const& x) const;
   template <typename T>
     requires detail::HasType_v<T, FirstType, RestTypes...>
-  bool operator<(T const& x) const;
+  [[nodiscard]] bool operator<(T const& x) const;
 
 private:
   template <typename MatchType, VariantTypeIndex Index, typename... Rest>
@@ -216,7 +216,7 @@ class MVariant {
 public:
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  static constexpr VariantTypeIndex typeIndexOf();
+  [[nodiscard]] static constexpr VariantTypeIndex typeIndexOf();
 
   MVariant() = default;
   MVariant(MVariant const& x);
@@ -264,7 +264,7 @@ public:
   bool operator!=(MVariant const& x) const;
 
   // Requires that every type included in this MVariant has operator<
-  bool operator<(MVariant const& x) const;
+  [[nodiscard]] bool operator<(MVariant const& x) const;
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
@@ -274,55 +274,55 @@ public:
   bool operator!=(T const& x) const;
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  bool operator<(T const& x) const;
+  [[nodiscard]] bool operator<(T const& x) const;
 
   // get throws BadVariantCast on bad casts
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  T const& get() const;
+  [[nodiscard]] T const& get() const;
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  T& get();
+  [[nodiscard]] T& get();
 
   // maybe() and ptr() do not throw if this MVariant does not hold the given
   // type, instead simply returns Nothing / nullptr.
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  Maybe<T> maybe() const;
+  [[nodiscard]] Maybe<T> maybe() const;
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  T const* ptr() const;
+  [[nodiscard]] T const* ptr() const;
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  T* ptr();
+  [[nodiscard]] T* ptr();
 
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  bool is() const;
+  [[nodiscard]] bool is() const;
 
   // Takes the given value out and leaves this empty
   template <typename T>
     requires detail::HasType_v<T, Types...>
-  T take();
+  [[nodiscard]] T take();
 
   // Returns a Variant of all the allowed types if non-empty, throws
   // BadVariantCast if empty.
-  Variant<Types...> value() const;
+  [[nodiscard]] Variant<Types...> value() const;
 
   // Moves the contents of this MVariant into the given Variant if non-empty,
   // throws BadVariantCast if empty.
-  Variant<Types...> takeValue();
+  [[nodiscard]] Variant<Types...> takeValue();
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
   void reset();
 
   // Equivalent to !empty()
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   // If this MVariant holds a type, calls the given function with the type
   // being held.  If nothing is currently held, the function is not called.
@@ -336,7 +336,7 @@ public:
   // make this MVariant hold a specific type.  Types are always indexed in the
   // order they are specified starting from 1.  A type index of 0 indicates an
   // empty MVariant.
-  VariantTypeIndex typeIndex() const;
+  [[nodiscard]] VariantTypeIndex typeIndex() const;
 
   // Make this MVariant hold a new default constructed type of the given type
   // index.  Can only be used if every alternative type has a default
@@ -346,7 +346,7 @@ public:
 private:
   struct MVariantEmpty {
     bool operator==(MVariantEmpty const& rhs) const;
-    bool operator<(MVariantEmpty const& rhs) const;
+    [[nodiscard]] bool operator<(MVariantEmpty const& rhs) const;
   };
 
   template <typename Function>
@@ -465,7 +465,7 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T&
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-T const& Variant<FirstType, RestTypes...>::get() const {
+[[nodiscard]] T const& Variant<FirstType, RestTypes...>::get() const {
   if (!is<T>())
     throw BadVariantCast();
   return *std::launder(reinterpret_cast<T const*>(m_buffer));
@@ -474,7 +474,7 @@ T const& Variant<FirstType, RestTypes...>::get() const {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-T& Variant<FirstType, RestTypes...>::get() {
+[[nodiscard]] T& Variant<FirstType, RestTypes...>::get() {
   if (!is<T>())
     throw BadVariantCast();
   return *std::launder(reinterpret_cast<T*>(m_buffer));
@@ -483,7 +483,7 @@ T& Variant<FirstType, RestTypes...>::get() {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
+[[nodiscard]] Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
   if (!is<T>())
     return {};
   return *std::launder(reinterpret_cast<T const*>(m_buffer));
@@ -492,7 +492,7 @@ Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-T const* Variant<FirstType, RestTypes...>::ptr() const {
+[[nodiscard]] T const* Variant<FirstType, RestTypes...>::ptr() const {
   if (!is<T>())
     return nullptr;
   return std::launder(reinterpret_cast<T const*>(m_buffer));
@@ -501,7 +501,7 @@ T const* Variant<FirstType, RestTypes...>::ptr() const {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-T* Variant<FirstType, RestTypes...>::ptr() {
+[[nodiscard]] T* Variant<FirstType, RestTypes...>::ptr() {
   if (!is<T>())
     return nullptr;
   return std::launder(reinterpret_cast<T*>(m_buffer));
@@ -510,7 +510,7 @@ T* Variant<FirstType, RestTypes...>::ptr() {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
   requires detail::HasType_v<T, FirstType, RestTypes...>
-bool Variant<FirstType, RestTypes...>::is() const {
+[[nodiscard]] bool Variant<FirstType, RestTypes...>::is() const {
   return m_typeIndex == TypeIndex<T>::value;
 }
 
@@ -831,42 +831,42 @@ bool MVariant<Types...>::operator<(T const& x) const {
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-T const& MVariant<Types...>::get() const {
+[[nodiscard]] T const& MVariant<Types...>::get() const {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-T& MVariant<Types...>::get() {
+[[nodiscard]] T& MVariant<Types...>::get() {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-Maybe<T> MVariant<Types...>::maybe() const {
+[[nodiscard]] Maybe<T> MVariant<Types...>::maybe() const {
   return m_variant.template maybe<T>();
 }
 
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-T const* MVariant<Types...>::ptr() const {
+[[nodiscard]] T const* MVariant<Types...>::ptr() const {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-T* MVariant<Types...>::ptr() {
+[[nodiscard]] T* MVariant<Types...>::ptr() {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
 template <typename T>
   requires detail::HasType_v<T, Types...>
-bool MVariant<Types...>::is() const {
+[[nodiscard]] bool MVariant<Types...>::is() const {
   return m_variant.template is<T>();
 }
 
@@ -880,7 +880,7 @@ T MVariant<Types...>::take() {
 }
 
 template <typename... Types>
-Variant<Types...> MVariant<Types...>::value() const {
+[[nodiscard]] Variant<Types...> MVariant<Types...>::value() const {
   if (empty())
     throw BadVariantCast();
 
@@ -905,7 +905,7 @@ Variant<Types...> MVariant<Types...>::takeValue() {
 }
 
 template <typename... Types>
-bool MVariant<Types...>::empty() const {
+[[nodiscard]] bool MVariant<Types...>::empty() const {
   return m_variant.template is<MVariantEmpty>();
 }
 

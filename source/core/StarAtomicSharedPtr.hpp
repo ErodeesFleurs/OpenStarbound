@@ -18,15 +18,15 @@ public:
   AtomicSharedPtr(AtomicSharedPtr&& p);
   AtomicSharedPtr(SharedPtr p);
 
-  SharedPtr load() const;
-  WeakPtr weak() const;
+  [[nodiscard]] SharedPtr load() const;
+  [[nodiscard]] WeakPtr weak() const;
   void store(SharedPtr p);
   void reset();
 
-  explicit operator bool() const;
-  bool unique() const;
+  [[nodiscard]] explicit operator bool() const;
+  [[nodiscard]] bool unique() const;
 
-  SharedPtr operator->() const;
+  [[nodiscard]] SharedPtr operator->() const;
 
   AtomicSharedPtr& operator=(AtomicSharedPtr const& p);
   AtomicSharedPtr& operator=(AtomicSharedPtr&& p);
@@ -51,63 +51,63 @@ AtomicSharedPtr<T>::AtomicSharedPtr(SharedPtr p)
 
 template <typename T>
 auto AtomicSharedPtr<T>::load() const -> SharedPtr {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   return m_ptr;
 }
 
 template <typename T>
 auto AtomicSharedPtr<T>::weak() const -> WeakPtr {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   return WeakPtr(m_ptr);
 }
 
 template <typename T>
 void AtomicSharedPtr<T>::store(SharedPtr p) {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   m_ptr = std::move(p);
 }
 
 template <typename T>
 void AtomicSharedPtr<T>::reset() {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   m_ptr.reset();
 }
 
 template <typename T>
 AtomicSharedPtr<T>::operator bool() const {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   return m_ptr != nullptr;
 }
 
 template <typename T>
 bool AtomicSharedPtr<T>::unique() const {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   return m_ptr.unique();
 }
 
 template <typename T>
 auto AtomicSharedPtr<T>::operator-> () const -> SharedPtr {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   return m_ptr;
 }
 
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr const& p) {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   m_ptr = p.load();
   return *this;
 }
 
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr&& p) {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   m_ptr = std::move(p.m_ptr);
   return *this;
 }
 
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(SharedPtr p) {
-  SpinLocker locker(m_lock);
+  [[nodiscard]] SpinLocker locker(m_lock);
   m_ptr = std::move(p);
   return *this;
 }

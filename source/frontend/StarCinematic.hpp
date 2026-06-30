@@ -33,19 +33,19 @@ public:
   void update(float dt);
   void render();
 
-  bool completed() const;
-  bool completable() const;
+  [[nodiscard]] bool completed() const;
+  [[nodiscard]] bool completable() const;
 
   // this won't synchronize audio, so it should only be used for testing
   void setTime(float timecode);
 
   void stop();
 
-  bool handleInputEvent(InputEvent const& event);
-  bool suppressInput() const;
+  [[nodiscard]] bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] bool suppressInput() const;
 
-  bool muteSfx() const;
-  bool muteMusic() const;
+  [[nodiscard]] bool muteSfx() const;
+  [[nodiscard]] bool muteMusic() const;
 
 private:
   struct TimeSkip {
@@ -102,9 +102,9 @@ private:
 
   // since the clock time includes the background fade in/out time, this function gives the adjusted
   // timecode to use for events within the cinematic
-  float currentTimecode() const;
+  [[nodiscard]] float currentTimecode() const;
 
-  PanelValues determinePanelValues(PanelPtr panel, float timecode);
+  [[nodiscard]] PanelValues determinePanelValues(PanelPtr panel, float timecode);
 
   List<TimeSkip> m_timeSkips;
   Maybe<TimeSkip> m_currentTimeSkip;

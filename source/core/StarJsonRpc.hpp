@@ -22,7 +22,7 @@ using JsonRpcHandlers = StringMap<JsonRpcRemoteFunction>;
 class JsonRpcInterface {
 public:
   virtual ~JsonRpcInterface() = default;
-  virtual RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) = 0;
+  [[nodiscard]] virtual RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) = 0;
 };
 
 // Simple class to handle remote methods based on Json types.  Does not
@@ -38,10 +38,10 @@ public:
   void removeHandler(String const& handler);
   void clearHandlers();
 
-  RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) override;
+  [[nodiscard]] RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) override;
 
-  bool sendPending() const;
-  ByteArray send();
+  [[nodiscard]] bool sendPending() const;
+  [[nodiscard]] ByteArray send();
   void receive(ByteArray const& inbuffer);
 
 private:

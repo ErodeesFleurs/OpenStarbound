@@ -92,17 +92,17 @@ public:
 
   Element interpolate(PositionArray const& coord) const {
     if (m_interpolationMode == InterpolationMode::HalfStep) {
-      PiecewiseInterpolator piecewiseInterpolator(StepWeightOperator<Position>(), m_boundMode);
+      [[nodiscard]] PiecewiseInterpolator piecewiseInterpolator(StepWeightOperator<Position>(), m_boundMode);
       return piecewiseInterpolator.interpolate(m_array, toIndexSpace(coord));
 
     } else if (m_interpolationMode == InterpolationMode::Linear) {
-      Interpolator2 interpolator2(LinearWeightOperator<Position>(), m_boundMode);
+      [[nodiscard]] Interpolator2 interpolator2(LinearWeightOperator<Position>(), m_boundMode);
       return interpolator2.interpolate(m_array, toIndexSpace(coord));
 
     } else if (m_interpolationMode == InterpolationMode::Cubic) {
       // MultiTable uses CubicWeights with linear extrapolation (not
       // configurable atm)
-      Interpolator4 interpolator4(Cubic4WeightOperator<Position>(true), m_boundMode);
+      [[nodiscard]] Interpolator4 interpolator4(Cubic4WeightOperator<Position>(true), m_boundMode);
       return interpolator4.interpolate(m_array, toIndexSpace(coord));
 
     } else {

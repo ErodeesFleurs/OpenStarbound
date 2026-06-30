@@ -2,23 +2,23 @@
 
 namespace Star {
 
-RectF InteractiveEntity::interactiveBoundBox() const {
+[[nodiscard]] RectF InteractiveEntity::interactiveBoundBox() const {
   return metaBoundBox();
 }
 
-bool InteractiveEntity::isInteractive() const {
+[[nodiscard]] bool InteractiveEntity::isInteractive() const {
   return true;
 }
 
-List<QuestArcDescriptor> InteractiveEntity::offeredQuests() const {
+[[nodiscard]] List<QuestArcDescriptor> InteractiveEntity::offeredQuests() const {
   return {};
 }
 
-StringSet InteractiveEntity::turnInQuests() const {
+[[nodiscard]] StringSet InteractiveEntity::turnInQuests() const {
   return {};
 }
 
-Vec2F InteractiveEntity::questIndicatorPosition() const {
+[[nodiscard]] Vec2F InteractiveEntity::questIndicatorPosition() const {
   return position();
 }
 

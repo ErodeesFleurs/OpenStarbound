@@ -38,7 +38,7 @@ UniquePtr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
 
 UniquePtr<DynamicLib> DynamicLib::currentExecutable() {
   void* handle = GetModuleHandle(0);
-  starAssert(handle);
+  assert(handle);
   return make_unique<PrivateDynLib>(handle, false);
 }
 

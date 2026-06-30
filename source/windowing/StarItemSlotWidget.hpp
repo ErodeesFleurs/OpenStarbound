@@ -18,12 +18,12 @@ public:
   ItemSlotWidget(GuiContext& context, ItemPtr const& item, String const& backingImage);
 
   void update(float dt) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
   void setMiddleClickCallback(WidgetCallbackFunc callback);
   void setItem(ItemPtr const& item);
-  ItemPtr item() const;
+  [[nodiscard]] ItemPtr item() const;
   void setProgress(float progress);
   void setBackingImageAffinity(bool full, bool empty);
   void setCountPosition(TextPositioning textPositioning);

@@ -25,26 +25,26 @@ public:
 
   using value_type = Element;
 
-  static constexpr Array filled(Element const& e);
+  [[nodiscard]] static constexpr Array filled(Element const& e);
 
   template <typename Iterator>
-  static constexpr Array copyFrom(Iterator p, size_t n = NPos);
+  [[nodiscard]] static constexpr Array copyFrom(Iterator p, size_t n = NPos);
 
   constexpr Array();
 
-  explicit constexpr Array(Element const& e1);
+  [[nodiscard]] explicit constexpr Array(Element const& e1);
 
   template <typename... T>
   constexpr Array(Element const& e1, T const&... rest);
 
   template <typename Element2>
-  explicit constexpr Array(Array<Element2, SizeN> const& a);
+  [[nodiscard]] explicit constexpr Array(Array<Element2, SizeN> const& a);
 
   template <size_t i>
-  reference get();
+  [[nodiscard]] reference get();
 
   template <size_t i>
-  const_reference get() const;
+  [[nodiscard]] const_reference get() const;
 
   template <typename T2>
   Array& operator=(Array<T2, SizeN> const& array);
@@ -60,7 +60,7 @@ public:
   constexpr bool operator>=(Array const& a) const;
 
   template <size_t Size2>
-  Array<ElementT, Size2> toSize() const;
+  [[nodiscard]] Array<ElementT, Size2> toSize() const;
 
 private:
   // Instead of {} array initialization, use recursive assignment to mimic old
@@ -72,7 +72,7 @@ private:
 
 template <typename DataT, size_t SizeT>
 struct hash<Array<DataT, SizeT>> {
-  size_t operator()(Array<DataT, SizeT> const& a) const;
+  [[nodiscard]] size_t operator()(Array<DataT, SizeT> const& a) const;
   Star::hash<DataT> dataHasher;
 };
 

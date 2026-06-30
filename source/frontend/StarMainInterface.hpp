@@ -143,28 +143,28 @@ public:
 
   ~MainInterface();
 
-  RunningState currentState() const;
+  [[nodiscard]] RunningState currentState() const;
 
-  MainInterfacePaneManager& paneManager();
+  [[nodiscard]] MainInterfacePaneManager& paneManager();
 
-  float interfaceScale() const;
+  [[nodiscard]] float interfaceScale() const;
 
-  bool escapeDialogOpen() const;
+  [[nodiscard]] bool escapeDialogOpen() const;
 
   void openCraftingWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
   void openMerchantWindow(Json const& config, EntityId sourceEntityId = NullEntityId);
   void togglePlainCraftingWindow();
 
-  bool windowsOpen() const;
+  [[nodiscard]] bool windowsOpen() const;
 
-  MerchantPanePtr activeMerchantPane() const;
+  [[nodiscard]] MerchantPanePtr activeMerchantPane() const;
 
   // Return true if this event was consumed or should be handled elsewhere.
-  bool handleInputEvent(InputEvent const& event);
+  [[nodiscard]] bool handleInputEvent(InputEvent const& event);
   // Return true if mouse / keyboard events are currently locked here
-  bool inputFocus() const;
+  [[nodiscard]] bool inputFocus() const;
   // If input is focused, should MainInterface also accept text input events?
-  bool textInputActive() const;
+  [[nodiscard]] bool textInputActive() const;
   void handleInteractAction(InteractAction interactAction);
 
   void preUpdate(float dt);
@@ -176,9 +176,9 @@ public:
   void renderInWorldElements();
   void render();
 
-  Vec2F cursorWorldPosition() const;
+  [[nodiscard]] Vec2F cursorWorldPosition() const;
 
-  bool isDebugDisplayed();
+  [[nodiscard]] bool isDebugDisplayed();
 
   void doChat(String const& chat, bool addToHistory);
 
@@ -188,17 +188,17 @@ public:
   void queueItemPickupText(ItemPtr const& item);
   void queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request);
 
-  bool fixedCamera() const;
-  bool hudVisible() const;
+  [[nodiscard]] bool fixedCamera() const;
+  [[nodiscard]] bool hudVisible() const;
   void setHudVisible(bool visible = true);
 
   void warpToOrbitedWorld(bool deploy = false);
   void warpToOwnShip();
   void warpTo(WarpAction const& warpAction);
 
-  CanvasWidgetPtr fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
+  [[nodiscard]] CanvasWidgetPtr fetchCanvas(String const& canvasName, bool ignoreInterfaceScale = false);
 
-  ClientCommandProcessorPtr commandProcessor() const;
+  [[nodiscard]] ClientCommandProcessorPtr commandProcessor() const;
 
   struct ScriptPaneInfo {
     ScriptPanePtr scriptPane;
@@ -212,12 +212,12 @@ public:
   void reviveScriptPanes(List<ScriptPaneInfo>& panes);
   void displayDefaultPanes();
 private:
-  PanePtr createEscapeDialog();
+  [[nodiscard]] PanePtr createEscapeDialog();
   void initHttpTrustDialog();
 
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
-  Vec2F mainBarPosition() const;
+  [[nodiscard]] unsigned windowHeight() const;
+  [[nodiscard]] unsigned windowWidth() const;
+  [[nodiscard]] Vec2F mainBarPosition() const;
 
   void renderBreath();
   void renderMessages();
@@ -230,9 +230,9 @@ private:
   void updateCursor();
   void renderCursor();
 
-  bool overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
+  [[nodiscard]] bool overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const;
 
-  bool overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
+  [[nodiscard]] bool overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
 
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 

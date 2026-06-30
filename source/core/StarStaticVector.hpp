@@ -46,39 +46,39 @@ public:
   StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   StaticVector& operator=(std::initializer_list<Element> list);
 
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] size_t size() const;
+  [[nodiscard]] bool empty() const;
   void resize(size_t size, Element const& e = Element());
 
-  reference at(size_t i);
-  const_reference at(size_t i) const;
+  [[nodiscard]] reference at(size_t i);
+  [[nodiscard]] const_reference at(size_t i) const;
 
-  reference operator[](size_t i);
-  const_reference operator[](size_t i) const;
+  [[nodiscard]] reference operator[](size_t i);
+  [[nodiscard]] const_reference operator[](size_t i) const;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  iterator begin();
-  iterator end();
+  [[nodiscard]] iterator begin();
+  [[nodiscard]] iterator end();
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  [[nodiscard]] const_reverse_iterator rbegin() const;
+  [[nodiscard]] const_reverse_iterator rend() const;
 
-  reverse_iterator rbegin();
-  reverse_iterator rend();
+  [[nodiscard]] reverse_iterator rbegin();
+  [[nodiscard]] reverse_iterator rend();
 
   // Pointer to internal data, always valid even if empty.
-  Element const* ptr() const;
-  Element* ptr();
+  [[nodiscard]] Element const* ptr() const;
+  [[nodiscard]] Element* ptr();
 
   void push_back(Element e);
   void pop_back();
 
-  iterator insert(iterator pos, Element e);
+  [[nodiscard]] iterator insert(iterator pos, Element e);
   template <typename Iterator>
-  iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, initializer_list<Element> list);
+  [[nodiscard]] iterator insert(iterator pos, Iterator begin, Iterator end);
+  [[nodiscard]] iterator insert(iterator pos, initializer_list<Element> list);
 
   template <typename... Args>
   void emplace(iterator pos, Args&&... args);
@@ -88,12 +88,12 @@ public:
 
   void clear();
 
-  iterator erase(iterator pos);
-  iterator erase(iterator begin, iterator end);
+  [[nodiscard]] iterator erase(iterator pos);
+  [[nodiscard]] iterator erase(iterator begin, iterator end);
 
   bool operator==(StaticVector const& other) const;
   bool operator!=(StaticVector const& other) const;
-  bool operator<(StaticVector const& other) const;
+  [[nodiscard]] bool operator<(StaticVector const& other) const;
 
 private:
   size_t m_size = 0;
@@ -183,12 +183,12 @@ auto StaticVector<Element, MaxSize>::operator=(std::initializer_list<Element> li
 }
 
 template <typename Element, size_t MaxSize>
-size_t StaticVector<Element, MaxSize>::size() const {
+[[nodiscard]] size_t StaticVector<Element, MaxSize>::size() const {
   return m_size;
 }
 
 template <typename Element, size_t MaxSize>
-bool StaticVector<Element, MaxSize>::empty() const {
+[[nodiscard]] bool StaticVector<Element, MaxSize>::empty() const {
   return m_size == 0;
 }
 
@@ -204,28 +204,28 @@ void StaticVector<Element, MaxSize>::resize(size_t size, Element const& e) {
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(size_t i) -> reference {
+[[nodiscard]] auto StaticVector<Element, MaxSize>::at(size_t i) -> reference {
   if (i >= m_size)
     throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
   return ptr()[i];
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::at(size_t i) const -> const_reference {
+[[nodiscard]] auto StaticVector<Element, MaxSize>::at(size_t i) const -> const_reference {
   if (i >= m_size)
     throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
   return ptr()[i];
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::operator[](size_t i) -> reference {
-  starAssert(i < m_size);
+[[nodiscard]] auto StaticVector<Element, MaxSize>::operator[](size_t i) -> reference {
+  assert(i < m_size);
   return ptr()[i];
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::operator[](size_t i) const -> const_reference {
-  starAssert(i < m_size);
+[[nodiscard]] auto StaticVector<Element, MaxSize>::operator[](size_t i) const -> const_reference {
+  assert(i < m_size);
   return ptr()[i];
 }
 
@@ -270,12 +270,12 @@ auto StaticVector<Element, MaxSize>::rend() -> reverse_iterator {
 }
 
 template <typename Element, size_t MaxSize>
-Element const* StaticVector<Element, MaxSize>::ptr() const {
+[[nodiscard]] Element const* StaticVector<Element, MaxSize>::ptr() const {
   return std::launder(reinterpret_cast<Element const*>(m_elements));
 }
 
 template <typename Element, size_t MaxSize>
-Element* StaticVector<Element, MaxSize>::ptr() {
+[[nodiscard]] Element* StaticVector<Element, MaxSize>::ptr() {
   return std::launder(reinterpret_cast<Element*>(m_elements));
 }
 

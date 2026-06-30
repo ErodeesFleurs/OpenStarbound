@@ -38,7 +38,7 @@ struct SkyColoring {
   SkyColoring() = default;
   explicit SkyColoring(Json const& variant);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   Color mainColor = Color::Clear;
 
@@ -73,7 +73,7 @@ struct SkyWorldHorizon {
   SkyWorldHorizon() = default;
   SkyWorldHorizon(Vec2F center, float scale, float rotation);
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
   Vec2F center;
 

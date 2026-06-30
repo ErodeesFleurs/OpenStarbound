@@ -11,16 +11,16 @@ public:
   // is not called, measured in seconds.
   TickRateMonitor(double window);
 
-  double window() const;
+  [[nodiscard]] double window() const;
 
   // Resets to a zero tick-rate state
   void reset();
 
   // Ticks the given number of times, returns the current rate.
-  double tick(unsigned count = 1);
+  [[nodiscard]] double tick(unsigned count = 1);
 
   // Returns the rate as of the *current* time, not the time of the last tick.
-  double rate() const;
+  [[nodiscard]] double rate() const;
 
 private:
   void dropOff(double currentTime);
@@ -40,32 +40,32 @@ public:
   // It should be chosen so that it is not so short that the actual target rate
   // drifts, but not too long so that the rate returns to normal quickly enough
   // with outliers.
-  double window() const;
+  [[nodiscard]] double window() const;
   // Setting the window to a new value will reset the TickRateApproacher
   void setWindow(double window);
 
-  double targetTickRate() const;
+  [[nodiscard]] double targetTickRate() const;
   void setTargetTickRate(double targetTickRate);
 
   // Resets such that the current tick rate is assumed to be perfectly at the
   // target.
   void reset();
 
-  double tick(unsigned count = 1);
-  double rate() const;
+  [[nodiscard]] double tick(unsigned count = 1);
+  [[nodiscard]] double rate() const;
 
   // How many ticks we currently should perform, so that if each tick happened
   // instantly, we would be as close to the target tick rate as possible.  If
   // we are ahead, may be negative.
-  double ticksBehind();
+  [[nodiscard]] double ticksBehind();
 
   // The negative of ticksBehind, is positive for how many ticks ahead we
   // currently are.
-  double ticksAhead();
+  [[nodiscard]] double ticksAhead();
 
   // How much spare time we have until the tick rate will begin to be behind
   // the target tick rate.
-  double spareTime();
+  [[nodiscard]] double spareTime();
 
 private:
   TickRateMonitor m_tickRateMonitor;

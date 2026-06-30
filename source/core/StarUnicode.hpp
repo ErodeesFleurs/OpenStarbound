@@ -19,21 +19,21 @@ void throwInvalidUtf32CodePoint(Utf32Type val);
 
 // If passed NPos as a size, assumes modified UTF-8 and stops on NULL byte.
 // Otherwise, ignores NULL.
-size_t utf8Length(Utf8Type const* utf8, size_t size = NPos);
+[[nodiscard]] size_t utf8Length(Utf8Type const* utf8, size_t size = NPos);
 // Encode up to six utf8 bytes into a utf32 character.  If passed NPos as len,
 // assumes modified UTF-8 and stops on NULL, otherwise ignores.
-size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, size_t len = NPos);
+[[nodiscard]] size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, size_t len = NPos);
 // Encode single utf32 char into up to 6 utf8 characters.
-size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len = 6);
+[[nodiscard]] size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len = 6);
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint = {});
-std::string hexStringFromUtf32(Utf32Type character);
+[[nodiscard]] Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint = {});
+[[nodiscard]] std::string hexStringFromUtf32(Utf32Type character);
 
-bool isUtf16LeadSurrogate(Utf32Type codepoint);
-bool isUtf16TrailSurrogate(Utf32Type codepoint);
+[[nodiscard]] bool isUtf16LeadSurrogate(Utf32Type codepoint);
+[[nodiscard]] bool isUtf16TrailSurrogate(Utf32Type codepoint);
 
-Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail);
-pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
+[[nodiscard]] Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail);
+[[nodiscard]] pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
 
 // Bidirectional iterator that can make utf8 appear as utf32
 template <class BaseIterator, class U32Type = Utf32Type>
@@ -65,7 +65,7 @@ public:
   }
 
   U8ToU32Iterator operator++(int) {
-    U8ToU32Iterator clone(*this);
+    [[nodiscard]] U8ToU32Iterator clone(*this);
     increment();
     return clone;
   }
@@ -76,7 +76,7 @@ public:
   }
 
   U8ToU32Iterator operator--(int) {
-    U8ToU32Iterator clone(*this);
+    [[nodiscard]] U8ToU32Iterator clone(*this);
     decrement();
     return clone;
   }
@@ -143,7 +143,7 @@ private:
     // see how many extra byts we have:
     unsigned extra = utf8_trailing_byte_count(*m_position);
     // extract the extra bits, 6 from each extra byte:
-    BaseIterator next(m_position);
+    [[nodiscard]] BaseIterator next(m_position);
     for (unsigned c = 0; c < extra; ++c) {
       ++next;
       m_value <<= 6;

@@ -20,61 +20,61 @@ public:
   void render(RenderCallback* renderCallback) override;
 
   void destroy(RenderCallback* renderCallback) override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Json containerGuiConfig() const override;
-  String containerDescription() const override;
-  String containerSubTitle() const override;
-  ItemDescriptor iconItem() const override;
+  [[nodiscard]] Json containerGuiConfig() const override;
+  [[nodiscard]] String containerDescription() const override;
+  [[nodiscard]] String containerSubTitle() const override;
+  [[nodiscard]] ItemDescriptor iconItem() const override;
 
-  ItemBagConstPtr itemBag() const override;
+  [[nodiscard]] ItemBagConstPtr itemBag() const override;
 
   void containerOpen() override;
   void containerClose() override;
 
   void startCrafting() override;
   void stopCrafting() override;
-  bool isCrafting() const override;
-  float craftingProgress() const override;
+  [[nodiscard]] bool isCrafting() const override;
+  [[nodiscard]] float craftingProgress() const override;
 
   void burnContainerContents() override;
 
-  RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
-  RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) override;
-  RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) override;
-  RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) override;
-  RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) override;
-  RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
-  RpcPromise<bool> consumeItems(size_t slot, size_t count) override;
-  RpcPromise<List<ItemPtr>> clearContainer() override;
+  [[nodiscard]] RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
+  [[nodiscard]] RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) override;
+  [[nodiscard]] RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) override;
+  [[nodiscard]] RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) override;
+  [[nodiscard]] RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) override;
+  [[nodiscard]] RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
+  [[nodiscard]] RpcPromise<bool> consumeItems(size_t slot, size_t count) override;
+  [[nodiscard]] RpcPromise<List<ItemPtr>> clearContainer() override;
 
 protected:
   void getNetStates(bool initial) override;
   void setNetStates() override;
 
   void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  [[nodiscard]] Json writeStoredData() const override;
 
 private:
   using ContainerCallback = std::function<void(ContainerObject*)>;
 
-  ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
+  [[nodiscard]] ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
   void tickCrafting(float dt);
 
-  ItemPtr doAddItems(ItemPtr const& items);
-  ItemPtr doStackItems(ItemPtr const& items);
-  ItemPtr doPutItems(size_t slot, ItemPtr const& items);
-  ItemPtr doTakeItems(size_t slot, size_t count = NPos);
-  ItemPtr doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine = true);
-  ItemPtr doApplyAugment(size_t slot, ItemPtr const& augment);
-  bool doConsumeItems(ItemDescriptor const& descriptor);
-  bool doConsumeItems(size_t slot, size_t count);
-  List<ItemPtr> doClearContainer();
+  [[nodiscard]] ItemPtr doAddItems(ItemPtr const& items);
+  [[nodiscard]] ItemPtr doStackItems(ItemPtr const& items);
+  [[nodiscard]] ItemPtr doPutItems(size_t slot, ItemPtr const& items);
+  [[nodiscard]] ItemPtr doTakeItems(size_t slot, size_t count = NPos);
+  [[nodiscard]] ItemPtr doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine = true);
+  [[nodiscard]] ItemPtr doApplyAugment(size_t slot, ItemPtr const& augment);
+  [[nodiscard]] bool doConsumeItems(ItemDescriptor const& descriptor);
+  [[nodiscard]] bool doConsumeItems(size_t slot, size_t count);
+  [[nodiscard]] List<ItemPtr> doClearContainer();
 
   template<typename T>
-  RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, function<T(Json)> converter);
+  [[nodiscard]] RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, function<T(Json)> converter);
 
   void itemsUpdated();
 

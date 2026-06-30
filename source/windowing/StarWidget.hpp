@@ -35,33 +35,33 @@ public:
   virtual void render(RectI const& region) final;
   virtual void update(float dt);
 
-  GuiContext& context() const;
+  [[nodiscard]] GuiContext& context() const;
   void setContext(GuiContext& context);
 
   // Position of widget with drawing offset (useful for drawing)
-  virtual Vec2I position() const;
+  [[nodiscard]] virtual Vec2I position() const;
   // Position of widget ignoring offset (useful for moving and placing widgets
   // relative to its current position)
-  virtual Vec2I relativePosition() const;
+  [[nodiscard]] virtual Vec2I relativePosition() const;
   // Set position of widget, ignoring offset
   virtual void setPosition(Vec2I const& position);
 
-  virtual Vec2I drawingOffset() const;
+  [[nodiscard]] virtual Vec2I drawingOffset() const;
   virtual void setDrawingOffset(Vec2I const& offset);
 
-  virtual Vec2I size() const;
+  [[nodiscard]] virtual Vec2I size() const;
   virtual void setSize(Vec2I const& size);
 
-  virtual RectI relativeBoundRect() const;
-  virtual RectI screenBoundRect() const;
+  [[nodiscard]] virtual RectI relativeBoundRect() const;
+  [[nodiscard]] virtual RectI screenBoundRect() const;
 
-  virtual bool inMember(Vec2I const& position) const;
+  [[nodiscard]] virtual bool inMember(Vec2I const& position) const;
 
-  virtual bool sendEvent(InputEvent const& event);
+  [[nodiscard]] virtual bool sendEvent(InputEvent const& event);
 
   virtual void show();
   virtual void hide();
-  virtual bool visibility() const;
+  [[nodiscard]] virtual bool visibility() const;
   virtual void toggleVisibility();
   virtual void setVisibility(bool visibility);
 
@@ -69,76 +69,76 @@ public:
   virtual void mouseOut();
   virtual void mouseReturnStillDown();
   virtual void setMouseTransparent(bool transparent);
-  virtual bool mouseTransparent();
+  [[nodiscard]] virtual bool mouseTransparent();
 
-  virtual bool active() const;
+  [[nodiscard]] virtual bool active() const;
 
-  virtual bool interactive() const;
+  [[nodiscard]] virtual bool interactive() const;
 
-  virtual bool hasFocus() const;
+  [[nodiscard]] virtual bool hasFocus() const;
   virtual void focus();
   virtual void blur();
 
-  virtual Widget* parent() const;
+  [[nodiscard]] virtual Widget* parent() const;
   virtual void setParent(Widget* parent);
 
-  virtual Pane const* window() const;
-  virtual Pane* window();
+  [[nodiscard]] virtual Pane const* window() const;
+  [[nodiscard]] virtual Pane* window();
 
   virtual void addChild(String const& name, WidgetPtr member);
   virtual void addChildAt(String const& name, WidgetPtr member, size_t at);
-  virtual bool removeChild(Widget* member);
-  virtual bool removeChild(String const& name);
-  virtual bool removeChildAt(size_t at);
-  virtual WidgetPtr getChildAt(Vec2I const& pos);
-  virtual bool containsChild(String const& name);
-  virtual WidgetPtr fetchChild(String const& name);
+  [[nodiscard]] virtual bool removeChild(Widget* member);
+  [[nodiscard]] virtual bool removeChild(String const& name);
+  [[nodiscard]] virtual bool removeChildAt(size_t at);
+  [[nodiscard]] virtual WidgetPtr getChildAt(Vec2I const& pos);
+  [[nodiscard]] virtual bool containsChild(String const& name);
+  [[nodiscard]] virtual WidgetPtr fetchChild(String const& name);
   template <typename WidgetType>
-  shared_ptr<WidgetType> fetchChild(String const& name);
+  [[nodiscard]] shared_ptr<WidgetType> fetchChild(String const& name);
 
-  virtual WidgetPtr findChild(String const& name);
+  [[nodiscard]] virtual WidgetPtr findChild(String const& name);
   template <typename WidgetType>
-  shared_ptr<WidgetType> findChild(String const& name);
+  [[nodiscard]] shared_ptr<WidgetType> findChild(String const& name);
 
-  WidgetPtr childPtr(Widget const* widget) const;
+  [[nodiscard]] WidgetPtr childPtr(Widget const* widget) const;
 
-  virtual size_t numChildren() const;
-  virtual WidgetPtr getChildNum(size_t num) const;
+  [[nodiscard]] virtual size_t numChildren() const;
+  [[nodiscard]] virtual WidgetPtr getChildNum(size_t num) const;
   template <typename WidgetType>
-  shared_ptr<WidgetType> getChildNum(size_t num) const;
+  [[nodiscard]] shared_ptr<WidgetType> getChildNum(size_t num) const;
   virtual void removeAllChildren();
 
-  virtual String const& name() const;
+  [[nodiscard]] virtual String const& name() const;
   virtual void setName(String const& name);
-  String fullName() const;
+  [[nodiscard]] String fullName() const;
 
-  unsigned windowHeight() const;
-  unsigned windowWidth() const;
-  Vec2I windowSize() const;
-  virtual Vec2I screenPosition() const;
+  [[nodiscard]] unsigned windowHeight() const;
+  [[nodiscard]] unsigned windowWidth() const;
+  [[nodiscard]] Vec2I windowSize() const;
+  [[nodiscard]] virtual Vec2I screenPosition() const;
   void disableScissoring();
   void enableScissoring();
   void determineSizeFromChildren();
   void markAsContainer();
 
-  virtual WidgetPtr keyboardCapturer() const;
-  virtual KeyboardCaptureMode keyboardCaptureMode() const;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const;
+  [[nodiscard]] virtual WidgetPtr keyboardCapturer() const;
+  [[nodiscard]] virtual KeyboardCaptureMode keyboardCaptureMode() const;
+  [[nodiscard]] virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const;
 
   void setData(Json const& data);
-  Json const& data();
+  [[nodiscard]] Json const& data();
 
-  bool setLabel(String const& name, String const& value);
+  [[nodiscard]] bool setLabel(String const& name, String const& value);
 
 protected:
   friend std::ostream& operator<<(std::ostream& os, Widget const& widget);
-  String toStringImpl(int indentLevel) const;
+  [[nodiscard]] String toStringImpl(int indentLevel) const;
 
   virtual void renderImpl();
   virtual void drawChildren();
-  bool setupDrawRegion(RectI const& region);
-  virtual RectI getScissorRect() const;
-  virtual RectI noScissor() const;
+  [[nodiscard]] bool setupDrawRegion(RectI const& region);
+  [[nodiscard]] virtual RectI getScissorRect() const;
+  [[nodiscard]] virtual RectI noScissor() const;
 
   Widget* m_parent = nullptr;
 

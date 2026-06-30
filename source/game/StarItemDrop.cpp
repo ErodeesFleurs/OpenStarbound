@@ -47,6 +47,9 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
     return {};
 
   itemDatabase = itemDropItemDatabase(std::move(itemDatabase));
+
+  assert(itemDatabase);
+
   return createRandomizedDrop(itemDatabase->item(descriptor), position, eternal, std::move(assets), std::move(itemDatabase));
 }
 
@@ -71,13 +74,15 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
     return {};
 
   itemDatabase = itemDropItemDatabase(std::move(itemDatabase));
+
+  assert(itemDatabase);
   return throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction, eternal, std::move(assets), std::move(itemDatabase));
 }
 
 ItemDrop::ItemDrop(ItemPtr item, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   : ItemDrop(std::move(assets), std::move(itemDatabase)) {
   m_item = std::move(item);
-  
+
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
 
   updateCollisionPoly();
@@ -186,13 +191,13 @@ void ItemDrop::uninit() {
   }
 }
 
-String ItemDrop::name() const {
+[[nodiscard]] String ItemDrop::name() const {
   if (m_item)
     return m_item->name();
   return Entity::name();
 }
 
-String ItemDrop::description() const {
+[[nodiscard]] String ItemDrop::description() const {
   return m_item->description();
 }
 
@@ -214,19 +219,19 @@ void ItemDrop::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-Vec2F ItemDrop::position() const {
+[[nodiscard]] Vec2F ItemDrop::position() const {
   return m_movementController.position();
 }
 
-RectF ItemDrop::metaBoundBox() const {
+[[nodiscard]] RectF ItemDrop::metaBoundBox() const {
   return m_boundBox;
 }
 
-bool ItemDrop::ephemeral() const {
+[[nodiscard]] bool ItemDrop::ephemeral() const {
   return true;
 }
 
-RectF ItemDrop::collisionArea() const {
+[[nodiscard]] RectF ItemDrop::collisionArea() const {
   return m_boundBox;
 }
 
@@ -235,7 +240,7 @@ void ItemDrop::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
-    
+
     if (m_owningEntity.get() != NullEntityId) {
       updateTaken(true);
     } else {
@@ -282,8 +287,8 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
-    
-    
+
+
     if (m_overrideMode) {
       m_mode.set(*m_overrideMode);
     }
@@ -324,7 +329,7 @@ void ItemDrop::update(float dt, uint64_t) {
   }
 }
 
-bool ItemDrop::shouldDestroy() const {
+[[nodiscard]] bool ItemDrop::shouldDestroy() const {
   return m_mode.get() == Mode::Dead || (m_item->empty() && m_owningEntity.get() == NullEntityId);
 }
 
@@ -403,7 +408,7 @@ void ItemDrop::setIntangibleTime(float intangibleTime) {
     m_mode.set(Mode::Intangible);
 }
 
-bool ItemDrop::canTake() const {
+[[nodiscard]] bool ItemDrop::canTake() const {
   if (m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty()) {
     if (isMaster())
       if (auto res = m_scriptComponent.invoke<bool>("canTake"))
@@ -439,7 +444,7 @@ void ItemDrop::setPosition(Vec2F const& position) {
   m_movementController.setPosition(position);
 }
 
-Vec2F ItemDrop::velocity() const {
+[[nodiscard]] Vec2F ItemDrop::velocity() const {
   return m_movementController.velocity();
 }
 
@@ -452,8 +457,8 @@ EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
     {ItemDrop::Mode::Available, "Available"},
     {ItemDrop::Mode::Taken, "Taken"},
     {ItemDrop::Mode::Dead, "Dead"}};
-    
-Json ItemDrop::configValue(String const& name, Json const& def) const {
+
+[[nodiscard]] Json ItemDrop::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config.query(name, def));
 }
 

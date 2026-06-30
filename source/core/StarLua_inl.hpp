@@ -332,20 +332,20 @@ struct LuaConverter<HashMap<Key, Value, Hash, Equals, Allocator>> : LuaMapConver
 
 template <>
 struct LuaConverter<Json> {
-  static LuaValue from(LuaEngine& engine, Json const& v);
-  static Maybe<Json> to(LuaEngine& engine, LuaValue const& v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, Json const& v);
+  [[nodiscard]] static Maybe<Json> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<JsonObject> {
-  static LuaValue from(LuaEngine& engine, JsonObject v);
-  static Maybe<JsonObject> to(LuaEngine& engine, LuaValue v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, JsonObject v);
+  [[nodiscard]] static Maybe<JsonObject> to(LuaEngine& engine, LuaValue v);
 };
 
 template <>
 struct LuaConverter<JsonArray> {
-  static LuaValue from(LuaEngine& engine, JsonArray v);
-  static Maybe<JsonArray> to(LuaEngine& engine, LuaValue v);
+  [[nodiscard]] static LuaValue from(LuaEngine& engine, JsonArray v);
+  [[nodiscard]] static Maybe<JsonArray> to(LuaEngine& engine, LuaValue v);
 };
 
 namespace LuaDetail {
@@ -408,7 +408,7 @@ namespace LuaDetail {
       if (auto l = ret.ptr<LuaValue>()) {
         return {engine.luaTo<T>(*l)};
       } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        LuaVariadic<T> result(vec->size());
+        [[nodiscard]] LuaVariadic<T> result(vec->size());
         for (size_t i = 0; i < vec->size(); ++i)
           result[i] = engine.luaTo<T>((*vec)[i]);
         return result;
@@ -462,7 +462,7 @@ namespace LuaDetail {
 
   template <typename T>
   LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaVariadic<T> const& vals) {
-    LuaVariadic<LuaValue> ret(vals.size());
+    [[nodiscard]] LuaVariadic<LuaValue> ret(vals.size());
     for (auto pair : zipIterator(vals, ret)) {
       auto [val, out] = pair;
       out = engine.luaFrom(val);
@@ -490,7 +490,7 @@ namespace LuaDetail {
       if (index >= argc)
         return {};
 
-      LuaVariadic<T> subargs(argc - index);
+      [[nodiscard]] LuaVariadic<T> subargs(argc - index);
       for (size_t i = index; i < argc; ++i)
         subargs[i - index] = engine.luaTo<T>(std::move(argv[i]));
       return subargs;
@@ -734,7 +734,7 @@ namespace LuaDetail {
   // index.
   void shallowCopy(lua_State* state, int sourceIndex, int targetIndex);
 
-  LuaTable insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type);
+  [[nodiscard]] LuaTable insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type);
 
   // Creates a custom lua table from a JsonArray or JsonObject that has
   // slightly different behavior than a standard lua table.  The table
@@ -744,27 +744,27 @@ namespace LuaDetail {
   // lua tables, so iterating over the table with pairs or ipairs works exactly
   // like a standard lua table, so will skip over nil entries and in the case
   // of ipairs, stop at the first nil entry.
-  LuaTable jsonContainerToTable(LuaEngine& engine, Json const& container);
+  [[nodiscard]] LuaTable jsonContainerToTable(LuaEngine& engine, Json const& container);
 
   // popJsonContainer must be called with a lua table on the top of the stack.
   // Uses the table contents, as well as any hint entries if the table was
   // created originally from a Json, to determine whether a JsonArray or
   // JsonObject is more appropriate.
-  Maybe<Json> tableToJsonContainer(LuaTable const& t);
+  [[nodiscard]] Maybe<Json> tableToJsonContainer(LuaTable const& t);
 
   // Special lua functions to operate on our custom jarray / jobject container
   // types.  Should always do some "sensible" action if given a regular lua
   // table instead of a custom json container one.
 
   // Create a JsonList container table
-  Json jarrayCreate();
+  [[nodiscard]] Json jarrayCreate();
   // Create a JsonMap container table
-  Json jobjectCreate();
+  [[nodiscard]] Json jobjectCreate();
 
   // Adds the Json array metatable to a Lua table or creates one.
-  LuaTable jarray(LuaEngine& engine, Maybe<LuaTable> table);
+  [[nodiscard]] LuaTable jarray(LuaEngine& engine, Maybe<LuaTable> table);
   // Adds the Json object metatable to a Lua table or creates one.
-  LuaTable jobject(LuaEngine& engine, Maybe<LuaTable> table);
+  [[nodiscard]] LuaTable jobject(LuaEngine& engine, Maybe<LuaTable> table);
 
   // *Really* remove an entry from a JsonList or JsonMap container table,
   // including removing it from the __nils table.  If the given table is not a
@@ -774,7 +774,7 @@ namespace LuaDetail {
   // Returns the element count of the lua table argument, or, in the case of a
   // special JsonList container table, returns the "true" element count
   // including any nil entries.
-  size_t jcontSize(LuaTable const& t);
+  [[nodiscard]] size_t jcontSize(LuaTable const& t);
 
   // Resize the given lua table by removing any indexed entries greater than the
   // target size, and in the case of a special JsonList container table, pads
@@ -784,7 +784,7 @@ namespace LuaDetail {
   // Coerces a values (strings, floats, ints) into an integer, but fails if the
   // number looks fractional (does not parse as int, float is not an exact
   // integer)
-  Maybe<LuaInt> asInteger(LuaValue const& v);
+  [[nodiscard]] Maybe<LuaInt> asInteger(LuaValue const& v);
 }
 
 template <typename Container>
@@ -1261,7 +1261,7 @@ LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const
   } else if (returnValues == 1) {
     return popLuaValue(m_state);
   } else {
-    LuaVariadic<LuaValue> ret(returnValues);
+    [[nodiscard]] LuaVariadic<LuaValue> ret(returnValues);
     for (int i = returnValues - 1; i >= 0; --i)
       ret[i] = popLuaValue(m_state);
     return ret;
@@ -1295,7 +1295,7 @@ Maybe<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Arg
   } else if (returnValues == 1) {
     return LuaDetail::LuaFunctionReturn(popLuaValue(threadState));
   } else {
-    LuaVariadic<LuaValue> ret(returnValues);
+    [[nodiscard]] LuaVariadic<LuaValue> ret(returnValues);
     for (int i = returnValues - 1; i >= 0; --i)
       ret[i] = popLuaValue(threadState);
     return LuaDetail::LuaFunctionReturn(std::move(ret));

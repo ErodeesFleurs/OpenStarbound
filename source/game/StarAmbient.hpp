@@ -15,7 +15,7 @@ struct AmbientTrackGroup {
   AmbientTrackGroup(StringList tracks);
   AmbientTrackGroup(Json const& config, String const& directory = "");
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   StringList tracks;
 };
@@ -26,7 +26,7 @@ struct AmbientNoisesDescription {
   AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops = -1);
   AmbientNoisesDescription(Json const& config, String const& directory = "");
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   AmbientTrackGroup daySounds;
   AmbientTrackGroup nightSounds;
@@ -47,8 +47,8 @@ public:
   void setTrackFadeInTime(float fadeInTime);
 
   // Returns a new AudioInstance if a new ambient sound is to be started.
-  AudioInstancePtr updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime = false);
-  AudioInstancePtr updateWeather(WeatherNoisesDescriptionPtr current);
+  [[nodiscard]] AudioInstancePtr updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime = false);
+  [[nodiscard]] AudioInstancePtr updateWeather(WeatherNoisesDescriptionPtr current);
   void cancelAll();
 
   void setVolume(float volume, float delay, float duration);

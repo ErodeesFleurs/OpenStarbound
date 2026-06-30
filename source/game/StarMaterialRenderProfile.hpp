@@ -125,9 +125,9 @@ struct MaterialRenderProfile {
 
   // Get an overlay image for rendering damaged tiles, as well as the offset
   // for it in world coordinates.
-  pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
+  [[nodiscard]] pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
-MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath = "");
+[[nodiscard]] MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath = "");
 
 }

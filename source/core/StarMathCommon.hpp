@@ -144,7 +144,7 @@ constexpr T clampDynamic(T const val, T const a, T const b) {
 
 template <typename IntType, typename PowType>
 IntType intPow(IntType i, PowType p) {
-  starAssert(p >= 0);
+  assert(p >= 0);
 
   if (p == 0)
     return 1;

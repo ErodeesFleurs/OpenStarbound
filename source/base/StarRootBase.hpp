@@ -12,8 +12,8 @@ using RootException = TypedException<StarException, RootExceptionTag>;
 
 class RootBase {
 public:
-  virtual AssetsConstPtr assets() = 0;
-  virtual ConfigurationPtr configuration() = 0;
+  [[nodiscard]] virtual AssetsConstPtr assets() = 0;
+  [[nodiscard]] virtual ConfigurationPtr configuration() = 0;
 
 protected:
   RootBase();

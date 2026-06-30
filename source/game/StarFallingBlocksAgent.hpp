@@ -26,7 +26,7 @@ class FallingBlocksFacade {
 public:
   virtual ~FallingBlocksFacade() = default;
 
-  virtual FallingBlockType blockType(Vec2I const& pos) = 0;
+  [[nodiscard]] virtual FallingBlockType blockType(Vec2I const& pos) = 0;
   virtual void moveBlock(Vec2I const& from, Vec2I const& to) = 0;
 };
 

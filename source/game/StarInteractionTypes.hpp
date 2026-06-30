@@ -39,7 +39,7 @@ struct InteractAction {
   InteractAction(InteractActionType type, EntityId entityId, Json data);
   InteractAction(String const& typeName, EntityId entityId, Json data);
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   InteractActionType type = InteractActionType::None;
   EntityId entityId = NullEntityId;

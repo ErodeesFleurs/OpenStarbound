@@ -62,73 +62,73 @@ public:
   Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& diskStore);
   Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] Json diskStore() const;
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
-  EntityType entityType() const override;
+  [[nodiscard]] EntityType entityType() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
-  String description() const override;
+  [[nodiscard]] String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  bool ephemeral() const override;
+  [[nodiscard]] bool ephemeral() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
 
   // Forces the plant to check if it has been invalidly placed in some way, and
   // should die.  shouldDie does not, by default, do this expensive calculation
-  bool checkBroken() override;
+  [[nodiscard]] bool checkBroken() override;
 
   // Base tile grid position
-  Vec2I tilePosition() const override;
+  [[nodiscard]] Vec2I tilePosition() const override;
   void setTilePosition(Vec2I const& tilePosition) override;
 
   // Spaces this plant currently occupies
-  List<Vec2I> spaces() const override;
+  [[nodiscard]] List<Vec2I> spaces() const override;
 
   // Root blocks for this plant.
-  List<Vec2I> roots() const override;
+  [[nodiscard]] List<Vec2I> roots() const override;
 
   void update(float dt, uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  [[nodiscard]] bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
 
   // Central root position
-  Vec2I primaryRoot() const;
+  [[nodiscard]] Vec2I primaryRoot() const;
   // Plant hangs from the ceiling
-  bool ceiling() const;
+  [[nodiscard]] bool ceiling() const;
 
-  List<PlantPiece> pieces() const;
-  RectF interactiveBoundBox() const override;
+  [[nodiscard]] List<PlantPiece> pieces() const;
+  [[nodiscard]] RectF interactiveBoundBox() const override;
 
 private:
   Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
-  Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
-  bool damagable() const;
+  [[nodiscard]] Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
+  [[nodiscard]] bool damagable() const;
 
   void scanSpacesAndRoots();
-  List<PlantPiece> spawnFolliage(String const& key, String const& type);
-  float branchRotation(float xPos, float rotoffset) const;
+  [[nodiscard]] List<PlantPiece> spawnFolliage(String const& key, String const& type);
+  [[nodiscard]] float branchRotation(float xPos, float rotoffset) const;
   void calcBoundBox();
 
   void readPieces(ByteArray pieces);
-  ByteArray writePieces() const;
+  [[nodiscard]] ByteArray writePieces() const;
 
   void readPiecesFromJson(Json const& pieces);
-  Json writePiecesToJson() const;
+  [[nodiscard]] Json writePiecesToJson() const;
 
   void validatePieces();
 

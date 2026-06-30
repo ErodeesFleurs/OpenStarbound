@@ -8,20 +8,20 @@ class SteamStatisticsService : public StatisticsService {
 public:
   SteamStatisticsService(PcPlatformServicesStatePtr state);
 
-  bool initialized() const override;
-  Maybe<String> error() const override;
+  [[nodiscard]] bool initialized() const override;
+  [[nodiscard]] Maybe<String> error() const override;
 
-  bool setStat(String const& name, String const& type, Json const& value) override;
-  Json getStat(String const& name, String const& type, Json def = {}) const override;
+  [[nodiscard]] bool setStat(String const& name, String const& type, Json const& value) override;
+  [[nodiscard]] Json getStat(String const& name, String const& type, Json def = {}) const override;
 
-  bool reportEvent(String const& name, Json const& fields) override;
+  [[nodiscard]] bool reportEvent(String const& name, Json const& fields) override;
 
-  bool unlockAchievement(String const& name) override;
-  StringSet achievementsUnlocked() const override;
+  [[nodiscard]] bool unlockAchievement(String const& name) override;
+  [[nodiscard]] StringSet achievementsUnlocked() const override;
 
   void refresh() override;
   void flush() override;
-  bool reset() override;
+  [[nodiscard]] bool reset() override;
 
 private:
   STEAM_CALLBACK(SteamStatisticsService, onUserStatsReceived, UserStatsReceived_t, m_callbackUserStatsReceived);

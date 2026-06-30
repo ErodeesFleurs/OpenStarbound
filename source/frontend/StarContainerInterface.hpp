@@ -38,9 +38,9 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
 
-  bool giveContainerResult(ContainerResult result);
+  [[nodiscard]] bool giveContainerResult(ContainerResult result);
 
 protected:
   void update(float dt) override;

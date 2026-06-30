@@ -72,15 +72,15 @@ struct WorldGeneratorFacade {
 
   // Should return true if this entity should maintain the sector, false
   // otherwise.
-  virtual bool entityKeepAlive(WorldStorage& storage, EntityPtr const& entity) const = 0;
+  [[nodiscard]] virtual bool entityKeepAlive(WorldStorage& storage, EntityPtr const& entity) const = 0;
 
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
-  virtual bool entityPersistent(WorldStorage& storage, EntityPtr const& entity) const = 0;
+  [[nodiscard]] virtual bool entityPersistent(WorldStorage& storage, EntityPtr const& entity) const = 0;
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id) = 0;
+  [[nodiscard]] virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id) = 0;
 };
 
 // Handles paging entity and tile data in / out of disk backed storage for
@@ -100,9 +100,9 @@ public:
   using TileArray = ServerTileSectorArray::Array;
   using TileArrayPtr = ServerTileSectorArray::ArrayPtr;
 
-  static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
+  [[nodiscard]] static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
   static void applyWorldChunksUpdateToFile(String const& file, WorldChunks const& update);
-  static WorldChunks getWorldChunksFromFile(String const& file);
+  [[nodiscard]] static WorldChunks getWorldChunksFromFile(String const& file);
 
   // Create a new world of the given size.
   WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
@@ -112,22 +112,22 @@ public:
   WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
   ~WorldStorage();
 
-  VersionedJson worldMetadata();
+  [[nodiscard]] VersionedJson worldMetadata();
   void setWorldMetadata(VersionedJson const& metadata);
 
-  ServerTileSectorArrayPtr const& tileArray() const;
-  EntityMapPtr const& entityMap() const;
+  [[nodiscard]] ServerTileSectorArrayPtr const& tileArray() const;
+  [[nodiscard]] EntityMapPtr const& entityMap() const;
 
-  Maybe<Sector> sectorForPosition(Vec2I const& position) const;
-  List<Sector> sectorsForRegion(RectI const& region) const;
-  Maybe<RectI> regionForSector(Sector sector) const;
+  [[nodiscard]] Maybe<Sector> sectorForPosition(Vec2I const& position) const;
+  [[nodiscard]] List<Sector> sectorsForRegion(RectI const& region) const;
+  [[nodiscard]] Maybe<RectI> regionForSector(Sector sector) const;
 
-  SectorLoadLevel sectorLoadLevel(Sector sector) const;
+  [[nodiscard]] SectorLoadLevel sectorLoadLevel(Sector sector) const;
   // Returns the sector generation level if it is currently loaded, nothing
   // otherwise.
-  Maybe<SectorGenerationLevel> sectorGenerationLevel(Sector sector) const;
+  [[nodiscard]] Maybe<SectorGenerationLevel> sectorGenerationLevel(Sector sector) const;
   // Returns true if the sector is both loaded and fully generated.
-  bool sectorActive(Sector) const;
+  [[nodiscard]] bool sectorActive(Sector) const;
 
   // Fully load the given sector and reset its TTL without triggering any
   // generation.
@@ -145,23 +145,23 @@ public:
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id);
+  [[nodiscard]] RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id);
 
   // Return the remaining time to live for a sector, if loaded.  A sector's
   // time to live is reset when loaded or generated, and when the time to live
   // reaches zero, the sector is automatically unloaded.
-  Maybe<float> sectorTimeToLive(Sector sector) const;
+  [[nodiscard]] Maybe<float> sectorTimeToLive(Sector sector) const;
   // Set the given sector's time to live, if it is loaded at all.  Returns
   // false if the sector was not loaded so no action was taken.
-  bool setSectorTimeToLive(Sector sector, float newTimeToLive);
+  [[nodiscard]] bool setSectorTimeToLive(Sector sector, float newTimeToLive);
 
   // Returns the position for a given unique entity if it exists in this world,
   // loaded or not.
-  Maybe<Vec2F> findUniqueEntity(String const& uniqueId);
+  [[nodiscard]] Maybe<Vec2F> findUniqueEntity(String const& uniqueId);
 
   // If the given unique entity is not loaded, loads its sector and then if the
   // unique entity is found, returns the entity id, otherwise NullEntityId.
-  EntityId loadUniqueEntity(String const& uniqueId);
+  [[nodiscard]] EntityId loadUniqueEntity(String const& uniqueId);
 
   // Does any queued generation work, potentially limiting the total number of
   // increases of SectorGenerationLevel by the sectorGenerationLevelLimit, if
@@ -183,11 +183,11 @@ public:
 
   // Syncs all active sectors to disk and stores the full content of the world
   // into memory.
-  WorldChunks readChunks();
+  [[nodiscard]] WorldChunks readChunks();
 
   // if this is set, all terrain generation is assumed to be handled by dungeon placement
   // and steps such as microdungeons, biome objects and grass mods will be skipped
-  bool floatingDungeonWorld() const;
+  [[nodiscard]] bool floatingDungeonWorld() const;
   void setFloatingDungeonWorld(bool floatingDungeonWorld);
 
 private:
@@ -231,34 +231,34 @@ private:
     float timeToLive;
   };
 
-  static ByteArray metadataKey();
-  static WorldMetadataStore readWorldMetadata(ByteArray const& data);
-  static ByteArray writeWorldMetadata(WorldMetadataStore const& metadata);
+  [[nodiscard]] static ByteArray metadataKey();
+  [[nodiscard]] static WorldMetadataStore readWorldMetadata(ByteArray const& data);
+  [[nodiscard]] static ByteArray writeWorldMetadata(WorldMetadataStore const& metadata);
 
-  static ByteArray entitySectorKey(Sector const& sector);
-  static EntitySectorStore readEntitySector(ByteArray const& data);
-  static ByteArray writeEntitySector(EntitySectorStore const& store);
+  [[nodiscard]] static ByteArray entitySectorKey(Sector const& sector);
+  [[nodiscard]] static EntitySectorStore readEntitySector(ByteArray const& data);
+  [[nodiscard]] static ByteArray writeEntitySector(EntitySectorStore const& store);
 
-  static ByteArray tileSectorKey(Sector const& sector);
-  static TileSectorStore readTileSector(ByteArray const& data, AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
-  static ByteArray writeTileSector(TileSectorStore const& store);
+  [[nodiscard]] static ByteArray tileSectorKey(Sector const& sector);
+  [[nodiscard]] static TileSectorStore readTileSector(ByteArray const& data, AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
+  [[nodiscard]] static ByteArray writeTileSector(TileSectorStore const& store);
 
-  static ByteArray uniqueIndexKey(String const& uniqueId);
-  static UniqueIndexStore readUniqueIndexStore(ByteArray const& data);
-  static ByteArray writeUniqueIndexStore(UniqueIndexStore const& store);
+  [[nodiscard]] static ByteArray uniqueIndexKey(String const& uniqueId);
+  [[nodiscard]] static UniqueIndexStore readUniqueIndexStore(ByteArray const& data);
+  [[nodiscard]] static ByteArray writeUniqueIndexStore(UniqueIndexStore const& store);
 
-  static ByteArray sectorUniqueKey(Sector const& sector);
-  static SectorUniqueStore readSectorUniqueStore(ByteArray const& data);
-  static ByteArray writeSectorUniqueStore(SectorUniqueStore const& store);
+  [[nodiscard]] static ByteArray sectorUniqueKey(Sector const& sector);
+  [[nodiscard]] static SectorUniqueStore readSectorUniqueStore(ByteArray const& data);
+  [[nodiscard]] static ByteArray writeSectorUniqueStore(SectorUniqueStore const& store);
 
   static void openDatabase(BTreeDatabase& db, IODevicePtr device);
 
   WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory);
 
-  bool belongsInSector(Sector const& sector, Vec2F const& position) const;
+  [[nodiscard]] bool belongsInSector(Sector const& sector, Vec2F const& position) const;
 
   // Generate a random TTL value in the configured range
-  float randomizedSectorTTL() const;
+  [[nodiscard]] float randomizedSectorTTL() const;
 
   // Generate the given sector to the given generation level.  If
   // sectorGenerationLevelLimit is given, stops work as soon as the given
@@ -266,7 +266,7 @@ private:
   // given sector was fully generated, and the total number of generation
   // levels increased.  If any sector's generation level is brought up at all,
   // it will also reset the TTL for that sector.
-  pair<bool, size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit = NPos);
+  [[nodiscard]] pair<bool, size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit = NPos);
 
   // Bring the sector up to the given load level, and all surrounding sectors
   // as appropriate.  If the load level is brought up, also resets the TTL.
@@ -275,7 +275,7 @@ private:
   // Store and unload the given sector to the given level, given the state of
   // the surrounding sectors.  If force is true, will always unload to the
   // given level.
-  bool unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
+  [[nodiscard]] bool unloadSectorToLevel(Sector const& sector, SectorLoadLevel targetLoadLevel, bool force = false);
 
   // Sync this sector to disk without unloading it.
   void syncSector(Sector const& sector);
@@ -285,14 +285,14 @@ private:
   // because first this does not return invalid sectors, and second, If a world
   // is not evenly divided by the sector size, this may return extra sectors on
   // one side because they are within range.
-  List<Sector> adjacentSectors(Sector const& sector) const;
+  [[nodiscard]] List<Sector> adjacentSectors(Sector const& sector) const;
 
   // Replace the sector uniques for this sector with the given set
   void updateSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
   // Merge the stored sector uniques for this sector with the given set
   void mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
 
-  Maybe<SectorAndPosition> getUniqueIndexEntry(String const& uniqueId);
+  [[nodiscard]] Maybe<SectorAndPosition> getUniqueIndexEntry(String const& uniqueId);
   void setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition);
   // Remove the index entry for this unique id, if the index entry found points
   // to the given sector

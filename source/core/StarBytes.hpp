@@ -10,7 +10,7 @@ enum class ByteOrder {
   NoConversion
 };
 
-ByteOrder platformByteOrder();
+[[nodiscard]] ByteOrder platformByteOrder();
 
 void swapByteOrder(void* ptr, size_t len);
 void swapByteOrder(void* dest, void const* src, size_t len);

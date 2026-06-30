@@ -10,16 +10,16 @@ PlayerBlueprints::PlayerBlueprints(Json const& variant) {
       transform<HashSet<ItemDescriptor>>(variant.get("newBlueprints").toArray(), construct<ItemDescriptor>());
 }
 
-Json PlayerBlueprints::toJson() const {
+[[nodiscard]] Json PlayerBlueprints::toJson() const {
   return JsonObject{{"knownBlueprints", transform<JsonArray>(m_knownBlueprints, mem_fn(&ItemDescriptor::toJson))},
       {"newBlueprints", transform<JsonArray>(m_newBlueprints, mem_fn(&ItemDescriptor::toJson))}};
 }
 
-bool PlayerBlueprints::isKnown(ItemDescriptor const& itemDescriptor) const {
+[[nodiscard]] bool PlayerBlueprints::isKnown(ItemDescriptor const& itemDescriptor) const {
   return m_knownBlueprints.contains(itemDescriptor.singular());
 }
 
-bool PlayerBlueprints::isNew(ItemDescriptor const& itemDescriptor) const {
+[[nodiscard]] bool PlayerBlueprints::isNew(ItemDescriptor const& itemDescriptor) const {
   return m_newBlueprints.contains(itemDescriptor.singular());
 }
 

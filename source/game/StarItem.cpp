@@ -71,11 +71,11 @@ Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDat
 
 Item::~Item() = default;
 
-String Item::name() const {
+[[nodiscard]] String Item::name() const {
   return m_name;
 }
 
-uint64_t Item::count() const {
+[[nodiscard]] uint64_t Item::count() const {
   return m_count;
 }
 
@@ -87,15 +87,15 @@ uint64_t Item::setCount(uint64_t count, bool overfill) {
   return count - m_count;
 }
 
-bool Item::stackableWith(ItemConstPtr const& item) const {
+[[nodiscard]] bool Item::stackableWith(ItemConstPtr const& item) const {
   return item && name() == item->name() && parameters() == item->parameters();
 }
 
-uint64_t Item::maxStack() const {
+[[nodiscard]] uint64_t Item::maxStack() const {
   return m_maxStack;
 }
 
-uint64_t Item::couldStack(ItemConstPtr const& item) const {
+[[nodiscard]] uint64_t Item::couldStack(ItemConstPtr const& item) const {
   if (stackableWith(item) && m_count < m_maxStack) {
     uint64_t take = m_maxStack - m_count;
     return std::min(take, item->count());
@@ -115,11 +115,11 @@ bool Item::stackWith(ItemPtr const& item) {
   }
 }
 
-bool Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] bool Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const {
   return descriptor.name() == m_name && (!exactMatch || descriptor.parameters() == m_parameters);
 }
 
-bool Item::matches(ItemConstPtr const& other, bool exactMatch) const {
+[[nodiscard]] bool Item::matches(ItemConstPtr const& other, bool exactMatch) const {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
@@ -147,69 +147,69 @@ ItemPtr Item::take(uint64_t max) {
   return {};
 }
 
-bool Item::empty() const {
+[[nodiscard]] bool Item::empty() const {
   return m_count == 0;
 }
 
-ItemDescriptor Item::descriptor() const {
+[[nodiscard]] ItemDescriptor Item::descriptor() const {
   return ItemDescriptor(m_name, m_count, m_parameters);
 }
 
-String Item::description() const {
+[[nodiscard]] String Item::description() const {
   return m_description;
 }
 
-String Item::friendlyName() const {
+[[nodiscard]] String Item::friendlyName() const {
   return m_shortDescription;
 }
 
-Rarity Item::rarity() const {
+[[nodiscard]] Rarity Item::rarity() const {
   return m_rarity;
 }
 
-List<Drawable> Item::iconDrawables() const {
+[[nodiscard]] List<Drawable> Item::iconDrawables() const {
   return m_iconDrawables;
 }
 
-Maybe<List<Drawable>> Item::secondaryDrawables() const {
+[[nodiscard]] Maybe<List<Drawable>> Item::secondaryDrawables() const {
   return m_secondaryIconDrawables;
 }
 
-bool Item::hasSecondaryDrawables() const {
+[[nodiscard]] bool Item::hasSecondaryDrawables() const {
   return m_secondaryIconDrawables.isValid();
 }
 
-List<Drawable> Item::dropDrawables() const {
+[[nodiscard]] List<Drawable> Item::dropDrawables() const {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
   return drawables;
 }
 
-bool Item::twoHanded() const {
+[[nodiscard]] bool Item::twoHanded() const {
   return m_twoHanded;
 }
 
-float Item::timeToLive() const {
+[[nodiscard]] float Item::timeToLive() const {
   return m_timeToLive;
 }
 
-uint64_t Item::price() const {
+[[nodiscard]] uint64_t Item::price() const {
   return m_price * count();
 }
 
-String Item::tooltipKind() const {
+[[nodiscard]] String Item::tooltipKind() const {
   return m_tooltipKind;
 }
 
-String Item::largeImage() const {
+[[nodiscard]] String Item::largeImage() const {
   return m_largeImage;
 }
 
-String Item::category() const {
+[[nodiscard]] String Item::category() const {
   return m_category;
 }
 
-String Item::pickupSound() const {
+[[nodiscard]] String Item::pickupSound() const {
   return Random::randFrom(m_pickupSounds);
 }
 
@@ -276,38 +276,38 @@ void Item::setTimeToLive(float timeToLive) {
   m_timeToLive = timeToLive;
 }
 
-List<QuestArcDescriptor> Item::pickupQuestTemplates() const {
+[[nodiscard]] List<QuestArcDescriptor> Item::pickupQuestTemplates() const {
   return instanceValue("pickupQuestTemplates", JsonArray{}).toArray().transformed(&QuestArcDescriptor::fromJson);
 }
 
-StringSet Item::itemTags() const {
+[[nodiscard]] StringSet Item::itemTags() const {
   return jsonToStringSet(m_config.get("itemTags", JsonArray{}));
 }
 
-bool Item::hasItemTag(String const& itemTag) const {
+[[nodiscard]] bool Item::hasItemTag(String const& itemTag) const {
   return itemTags().contains(itemTag);
 }
 
-Json Item::instanceValue(String const& name, Json const& def) const {
+[[nodiscard]] Json Item::instanceValue(String const& name, Json const& def) const {
   return jsonMergeQueryDef(name, def, m_config, m_parameters);
 }
 
-Json Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
+[[nodiscard]] Json Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
   auto value = instanceValue(name, def);
   if (value.isType(type))
     return value;
   return def;
 }
 
-Json Item::instanceValues() const {
+[[nodiscard]] Json Item::instanceValues() const {
   return m_config.setAll(m_parameters.toObject());
 }
 
-Json Item::config() const {
+[[nodiscard]] Json Item::config() const {
   return m_config;
 }
 
-Json Item::parameters() const {
+[[nodiscard]] Json Item::parameters() const {
   return m_parameters;
 }
 
@@ -316,15 +316,15 @@ void Item::setInstanceValue(String const& name, Json const& value) {
     m_parameters = m_parameters.setAll(JsonObject{{name, value}});
 }
 
-String const& Item::directory() const {
+[[nodiscard]] String const& Item::directory() const {
   return m_directory;
 }
 
-List<ItemDescriptor> Item::learnBlueprintsOnPickup() const {
+[[nodiscard]] List<ItemDescriptor> Item::learnBlueprintsOnPickup() const {
   return m_learnBlueprintsOnPickup;
 }
 
-StringMap<String> Item::collectablesOnPickup() const {
+[[nodiscard]] StringMap<String> Item::collectablesOnPickup() const {
   return m_collectablesOnPickup;
 }
 
@@ -338,7 +338,7 @@ ItemPtr GenericItem::clone() const {
   return make_shared<GenericItem>(*this);
 }
 
-bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
+[[nodiscard]] bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
   if (!a && !b) // Both are null
     return true;
   if (a && b) // Both aren't null, compare

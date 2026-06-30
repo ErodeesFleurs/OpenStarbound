@@ -155,19 +155,19 @@ void PlantDrop::uninit() {
   m_movementController.uninit();
 }
 
-String PlantDrop::description() const {
+[[nodiscard]] String PlantDrop::description() const {
   return m_description;
 }
 
-Vec2F PlantDrop::position() const {
+[[nodiscard]] Vec2F PlantDrop::position() const {
   return m_movementController.position();
 }
 
-RectF PlantDrop::metaBoundBox() const {
+[[nodiscard]] RectF PlantDrop::metaBoundBox() const {
   return m_boundingBox;
 }
 
-RectF PlantDrop::collisionRect() const {
+[[nodiscard]] RectF PlantDrop::collisionRect() const {
   PolyF shape = PolyF(m_collisionRect);
   shape.rotate(m_movementController.rotation());
   return shape.boundBox();
@@ -369,7 +369,7 @@ void PlantDrop::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-bool PlantDrop::shouldDestroy() const {
+[[nodiscard]] bool PlantDrop::shouldDestroy() const {
   return m_time <= 0.0f;
 }
 

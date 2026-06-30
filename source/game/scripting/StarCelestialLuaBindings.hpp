@@ -10,6 +10,6 @@ class BiomeDatabase;
 using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
 
 namespace LuaBindings {
-  LuaCallbacks makeCelestialCallbacks(UniverseClient& client, BiomeDatabaseConstPtr biomeDatabase);
+  [[nodiscard]] LuaCallbacks makeCelestialCallbacks(UniverseClient& client, BiomeDatabaseConstPtr biomeDatabase);
 }
 }

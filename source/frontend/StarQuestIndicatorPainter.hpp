@@ -26,7 +26,7 @@ public:
 
 private:
   struct Indicator {
-    Drawable render(float pixelRatio) const;
+    [[nodiscard]] Drawable render(float pixelRatio) const;
 
     EntityId entityId;
     Vec2F screenPos;
@@ -34,7 +34,7 @@ private:
     AnimationPtr animation;
   };
 
-  AnimationPtr indicatorAnimation(String const& indicatorPath) const;
+  [[nodiscard]] AnimationPtr indicatorAnimation(String const& indicatorPath) const;
 
   UniverseClientPtr m_client;
   AssetsConstPtr m_assets;

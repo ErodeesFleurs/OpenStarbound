@@ -25,16 +25,16 @@ class PatternedNameGenerator {
 public:
   PatternedNameGenerator(AssetsConstPtr assets);
 
-  String generateName(String const& rulesAsset) const;
-  String generateName(String const& rulesAsset, uint64_t seed) const;
-  String generateName(String const& rulesAsset, RandomSource& random) const;
+  [[nodiscard]] String generateName(String const& rulesAsset) const;
+  [[nodiscard]] String generateName(String const& rulesAsset, uint64_t seed) const;
+  [[nodiscard]] String generateName(String const& rulesAsset, RandomSource& random) const;
 
 private:
-  String processRule(JsonArray const& rule, RandomSource& random) const;
+  [[nodiscard]] String processRule(JsonArray const& rule, RandomSource& random) const;
 
-  bool isProfane(String const& name) const;
+  [[nodiscard]] bool isProfane(String const& name) const;
 
-  MarkovSource makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames);
+  [[nodiscard]] MarkovSource makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames);
 
   AssetsConstPtr m_assets;
   StringMap<MarkovSource> m_markovSources;

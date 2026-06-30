@@ -189,12 +189,12 @@ WhitespaceStyle detectWhitespace(FormattedJson::ElementList const& elements,
   }
 
   FormattedJson::ElementLocation colonLoc = lastIndexOf<ColonElement>(elements, valueLoc);
-  starAssert((colonLoc == NPos) == array);
+  assert((colonLoc == NPos) == array);
   if (colonLoc != NPos) {
     style.beforeValue = concatWhitespace(elements, colonLoc + 1, valueLoc);
 
     FormattedJson::ElementLocation keyLoc = lastIndexOf<ObjectKeyElement>(elements, colonLoc);
-    starAssert(keyLoc != NPos);
+    assert(keyLoc != NPos);
     style.beforeColon = concatWhitespace(elements, keyLoc + 1, colonLoc);
 
     FormattedJson::ElementLocation prevValueLoc = lastIndexOf<ValueElement>(elements, keyLoc);
@@ -404,7 +404,7 @@ String FormattedJson::toFormattedInt() const {
   return toJson().repr();
 }
 
-String FormattedJson::repr() const {
+[[nodiscard]] String FormattedJson::repr() const {
   if (m_formatting.isValid())
     return *m_formatting;
   String result;
@@ -412,7 +412,7 @@ String FormattedJson::repr() const {
   return result;
 }
 
-String FormattedJson::printJson() const {
+[[nodiscard]] String FormattedJson::printJson() const {
   if (type() != Json::Type::Object && type() != Json::Type::Array)
     throw JsonException("printJson called on non-top-level JSON type");
   return repr();
@@ -422,15 +422,15 @@ Json elemToJson(JsonElement const& elem) {
   return elem.get<ValueElement>().value->toJson();
 }
 
-FormattedJson::ElementList const& FormattedJson::elements() const {
+[[nodiscard]] FormattedJson::ElementList const& FormattedJson::elements() const {
   return m_elements;
 }
 
-bool FormattedJson::operator==(FormattedJson const& v) const {
+[[nodiscard]] bool FormattedJson::operator==(FormattedJson const& v) const {
   return m_jsonValue == v.m_jsonValue;
 }
 
-bool FormattedJson::operator!=(FormattedJson const& v) const {
+[[nodiscard]] bool FormattedJson::operator!=(FormattedJson const& v) const {
   return !(*this == v);
 }
 
@@ -473,14 +473,14 @@ void FormattedJson::appendElement(JsonElement const& elem) {
   m_elements.append(elem);
 
   if (elem.is<ObjectKeyElement>()) {
-    starAssert(isType(Json::Type::Object));
+    assert(isType(Json::Type::Object));
     m_lastKey = loc;
 
   } else if (elem.is<ValueElement>()) {
     m_lastValue = loc;
 
     if (m_lastKey.isValid()) {
-      starAssert(isType(Json::Type::Object));
+      assert(isType(Json::Type::Object));
       String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
 
       m_objectEntryLocations[key] = ObjectEntryLocation{*m_lastKey, loc};
@@ -488,7 +488,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
 
       m_lastKey = {};
     } else {
-      starAssert(isType(Json::Type::Array));
+      assert(isType(Json::Type::Array));
       m_arrayElementLocations.append(loc);
 
       m_jsonValue = m_jsonValue.append(elemToJson(elem));
@@ -501,7 +501,7 @@ FormattedJson const& FormattedJson::getFormattedJson(ElementLocation loc) const 
 }
 
 FormattedJson FormattedJson::formattedAs(String const& formatting) const {
-  starAssert(Json::parse(formatting) == toJson());
+  assert(Json::parse(formatting) == toJson());
   FormattedJson json = *this;
   json.m_formatting = formatting;
   return json;
@@ -663,7 +663,7 @@ std::ostream& operator<<(std::ostream& os, JsonElement const& elem) {
     return os << "ColonElement{}";
   if (elem.is<CommaElement>())
     return os << "CommaElement{}";
-  starAssert(false);
+  assert(false);
   return os;
 }
 

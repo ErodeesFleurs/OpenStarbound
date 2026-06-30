@@ -28,24 +28,24 @@ public:
 
   void init(List<PersistentStatusEffect> inCinematicStatusEffects);
 
-  bool interruptRadioMessage();
+  [[nodiscard]] bool interruptRadioMessage();
   void requestInterrupt();
-  Maybe<RadioMessage> pullPendingRadioMessage();
+  [[nodiscard]] Maybe<RadioMessage> pullPendingRadioMessage();
   void queueRadioMessage(Json const& messageConfig, float delay = 0);
   void queueRadioMessage(RadioMessage message);
   void tickDelayedRadio(float dt);
 
-  Maybe<Json> pullPendingCinematic();
+  [[nodiscard]] Maybe<Json> pullPendingCinematic();
   void setPendingCinematic(Json const& cinematic, bool unique = false);
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
+  [[nodiscard]] Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
   void setPendingAltMusic(Maybe<pair<StringList, int>> tracks, float fadeTime);
 
-  Maybe<PlayerWarpRequest> pullPendingWarp();
+  [[nodiscard]] Maybe<PlayerWarpRequest> pullPendingWarp();
   void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
 
-  Maybe<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
+  [[nodiscard]] Maybe<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
   void queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise);
 
 private:

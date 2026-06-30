@@ -30,19 +30,19 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
-    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
+    [[nodiscard]] ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
+    [[nodiscard]] ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& removeDirectives(bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
+    [[nodiscard]] ImagePart& removeDirectives(bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
   };
 
-  static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White, ImageMetadataDatabaseConstPtr imageMetadata = {});
-  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, ImageMetadataDatabaseConstPtr imageMetadata);
+  [[nodiscard]] static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
+  [[nodiscard]] static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
+  [[nodiscard]] static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White, ImageMetadataDatabaseConstPtr imageMetadata = {});
+  [[nodiscard]] static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, ImageMetadataDatabaseConstPtr imageMetadata);
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);
@@ -63,12 +63,12 @@ struct Drawable {
   static void rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase = Vec2F());
 
   template <typename DrawablesContainer>
-  static RectF boundBoxAll(DrawablesContainer const& drawables, bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata = {});
+  [[nodiscard]] static RectF boundBoxAll(DrawablesContainer const& drawables, bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
   Drawable();
   explicit Drawable(Json const& json, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   void translate(Vec2F const& translation);
   void rotate(float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -82,19 +82,19 @@ struct Drawable {
   // between them.
   void rebase(Vec2F const& newBase = Vec2F());
 
-  RectF boundBox(bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata = {}) const;
+  [[nodiscard]] RectF boundBox(bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata = {}) const;
 
-  bool isLine() const;
-  LinePart& linePart();
-  LinePart const& linePart() const;
+  [[nodiscard]] bool isLine() const;
+  [[nodiscard]] LinePart& linePart();
+  [[nodiscard]] LinePart const& linePart() const;
 
-  bool isPoly() const;
-  PolyPart& polyPart();
-  PolyPart const& polyPart() const;
+  [[nodiscard]] bool isPoly() const;
+  [[nodiscard]] PolyPart& polyPart();
+  [[nodiscard]] PolyPart const& polyPart() const;
 
-  bool isImage() const;
-  ImagePart& imagePart();
-  ImagePart const& imagePart() const;
+  [[nodiscard]] bool isImage() const;
+  [[nodiscard]] ImagePart& imagePart();
+  [[nodiscard]] ImagePart const& imagePart() const;
 
   MVariant<LinePart, PolyPart, ImagePart> part;
 
@@ -143,14 +143,14 @@ void Drawable::rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase) {
 }
 
 template <typename DrawablesContainer>
-RectF Drawable::boundBoxAll(DrawablesContainer const& drawables, bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata) {
+[[nodiscard]] RectF Drawable::boundBoxAll(DrawablesContainer const& drawables, bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata) {
   RectF boundBox = RectF::null();
   for (auto const& drawable : drawables)
     boundBox.combine(drawable.boundBox(cropImages, imageMetadata));
   return boundBox;
 }
 
-inline bool Drawable::isLine() const {
+[[nodiscard]] inline bool Drawable::isLine() const {
   return part.is<LinePart>();
 }
 
@@ -158,11 +158,11 @@ inline Drawable::LinePart& Drawable::linePart() {
   return part.get<LinePart>();
 }
 
-inline Drawable::LinePart const& Drawable::linePart() const {
+[[nodiscard]] inline Drawable::LinePart const& Drawable::linePart() const {
   return part.get<LinePart>();
 }
 
-inline bool Drawable::isPoly() const {
+[[nodiscard]] inline bool Drawable::isPoly() const {
   return part.is<PolyPart>();
 }
 
@@ -170,11 +170,11 @@ inline Drawable::PolyPart& Drawable::polyPart() {
   return part.get<PolyPart>();
 }
 
-inline Drawable::PolyPart const& Drawable::polyPart() const {
+[[nodiscard]] inline Drawable::PolyPart const& Drawable::polyPart() const {
   return part.get<PolyPart>();
 }
 
-inline bool Drawable::isImage() const {
+[[nodiscard]] inline bool Drawable::isImage() const {
   return part.is<ImagePart>();
 }
 
@@ -182,7 +182,7 @@ inline Drawable::ImagePart& Drawable::imagePart() {
   return part.get<ImagePart>();
 }
 
-inline Drawable::ImagePart const& Drawable::imagePart() const {
+[[nodiscard]] inline Drawable::ImagePart const& Drawable::imagePart() const {
   return part.get<ImagePart>();
 }
 

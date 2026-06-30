@@ -10,7 +10,7 @@ struct RidgeBlocksSelector : TerrainSelector {
 
   RidgeBlocksSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
   float commonality;
 

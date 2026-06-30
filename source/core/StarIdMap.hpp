@@ -30,13 +30,13 @@ public:
 
   // New valid id that does not exist in this map.  Tries not to immediately
   // recycle ids, to avoid temporally close id repeats.
-  IdType nextId();
+  [[nodiscard]] IdType nextId();
 
   // Throws exception if key already exists
   void add(IdType id, MappedType mappedType);
 
   // Add with automatically allocated id
-  IdType add(MappedType mappedType);
+  [[nodiscard]] IdType add(MappedType mappedType);
 
   void clear();
 
@@ -84,7 +84,7 @@ IdMapWrapper<BaseMap>::IdMapWrapper()
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
   : m_min(min), m_max(max), m_nextId(m_min) {
-  starAssert(m_max > m_min);
+  assert(m_max > m_min);
 }
 
 template <typename BaseMap>

@@ -538,7 +538,7 @@ ByteArray WorldStorage::writeTileSector(TileSectorStore const& store) {
   DataStreamBuffer ds;
   ds.vuwrite(store.generationLevel);
   ds.vuwrite(store.tileSerializationVersion);
-  starAssert(store.tiles);
+  assert(store.tiles);
   for (size_t y = 0; y < WorldSectorSize; ++y) {
     for (size_t x = 0; x < WorldSectorSize; ++x)
       (*store.tiles)(x, y).write(ds);

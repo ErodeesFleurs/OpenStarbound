@@ -19,9 +19,9 @@ struct ActorJumpProfile {
   ActorJumpProfile() = default;
   ActorJumpProfile(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
-  ActorJumpProfile merge(ActorJumpProfile const& rhs) const;
+  [[nodiscard]] ActorJumpProfile merge(ActorJumpProfile const& rhs) const;
 
   Maybe<float> jumpSpeed;
   Maybe<float> jumpControlForce;
@@ -47,17 +47,17 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
   // Load sensible defaults from a config file.
-  static ActorMovementParameters sensibleDefaults(AssetsConstPtr assets);
+  [[nodiscard]] static ActorMovementParameters sensibleDefaults(AssetsConstPtr assets);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
   explicit ActorMovementParameters(Json const& config = Json());
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
-  ActorMovementParameters merge(ActorMovementParameters const& rhs) const;
+  [[nodiscard]] ActorMovementParameters merge(ActorMovementParameters const& rhs) const;
 
   Maybe<float> mass;
   Maybe<float> gravityMultiplier;
@@ -126,10 +126,10 @@ DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementPa
 struct ActorMovementModifiers {
   explicit ActorMovementModifiers(Json const& config = Json());
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   // Combines each modifier value through addition.
-  ActorMovementModifiers combine(ActorMovementModifiers const& rhs) const;
+  [[nodiscard]] ActorMovementModifiers combine(ActorMovementModifiers const& rhs) const;
 
   float groundMovementModifier;
   float liquidMovementModifier;
@@ -154,7 +154,7 @@ public:
   ActorMovementController(ActorMovementParameters const& parameters, AssetsConstPtr assets);
 
   // Currently active parameters.
-  ActorMovementParameters const& baseParameters() const;
+  [[nodiscard]] ActorMovementParameters const& baseParameters() const;
 
   // Apply any set parameters from the given set on top of the current set.
   void updateBaseParameters(ActorMovementParameters const& parameters);
@@ -164,7 +164,7 @@ public:
   void resetBaseParameters(ActorMovementParameters const& parameters = ActorMovementParameters());
 
   // Currently active modifiers.
-  ActorMovementModifiers const& baseModifiers() const;
+  [[nodiscard]] ActorMovementModifiers const& baseModifiers() const;
 
   // Combine the given modifiers with the already active modifiers.
   void updateBaseModifiers(ActorMovementModifiers const& modifiers);
@@ -174,7 +174,7 @@ public:
 
   // Stores and loads position, velocity, rotation, movingDirection,
   // facingDirection, and crouching
-  Json storeState() const;
+  [[nodiscard]] Json storeState() const;
   void loadState(Json const& state);
 
   // Optionaly anchor this ActorMovementController to the given
@@ -184,28 +184,28 @@ public:
   // AnchorableEntity state.
   void setAnchorState(EntityAnchorState anchorState);
   void resetAnchorState();
-  Maybe<EntityAnchorState> anchorState() const;
-  EntityAnchorConstPtr entityAnchor() const;
+  [[nodiscard]] Maybe<EntityAnchorState> anchorState() const;
+  [[nodiscard]] EntityAnchorConstPtr entityAnchor() const;
 
   // ActorMovementController position and rotation honor the entity anchor, if
   // an anchor is set.
-  Vec2F position() const override;
-  float rotation() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] float rotation() const override;
 
-  bool walking() const;
-  bool running() const;
-  Direction movingDirection() const;
-  Direction facingDirection() const;
-  bool crouching() const;
-  bool flying() const;
-  bool falling() const;
-  bool canJump() const;
-  bool jumping() const;
+  [[nodiscard]] bool walking() const;
+  [[nodiscard]] bool running() const;
+  [[nodiscard]] Direction movingDirection() const;
+  [[nodiscard]] Direction facingDirection() const;
+  [[nodiscard]] bool crouching() const;
+  [[nodiscard]] bool flying() const;
+  [[nodiscard]] bool falling() const;
+  [[nodiscard]] bool canJump() const;
+  [[nodiscard]] bool jumping() const;
   // Slightly different than onGround, in that this is sustained for a few
   // extra frames of movement before it becomes false.
-  bool groundMovement() const;
-  bool liquidMovement() const;
-  bool pathfinding() const;
+  [[nodiscard]] bool groundMovement() const;
+  [[nodiscard]] bool liquidMovement() const;
+  [[nodiscard]] bool pathfinding() const;
 
   // Basic direct physics controls that can be called multiple times per
   // update and will be combined.
@@ -233,8 +233,8 @@ public:
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
 
-  Maybe<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
-  Maybe<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
+  [[nodiscard]] Maybe<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
+  [[nodiscard]] Maybe<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
 
   // Used for user controller input.
   void setMoveSpeedMultiplier(float multiplier = 1.0f);
@@ -340,20 +340,20 @@ public:
   PlatformerAStar::Parameters const& parameters();
   void setParameters(PlatformerAStar::Parameters const& parameters);
   void reset();
-  bool pathfinding() const;
-  Maybe<Vec2F> targetPosition() const;
-  Maybe<Direction> facing() const;
+  [[nodiscard]] bool pathfinding() const;
+  [[nodiscard]] Maybe<Vec2F> targetPosition() const;
+  [[nodiscard]] Maybe<Direction> facing() const;
   Maybe<PlatformerAStar::Action> curAction() const;
 
   // return true for reaching goal, false for failing to find path, nothing for running
-  Maybe<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
-  Maybe<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
+  [[nodiscard]] Maybe<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
+  [[nodiscard]] Maybe<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
 private:
-  bool validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
-  bool movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
+  [[nodiscard]] bool validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
+  [[nodiscard]] bool movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
 
 private:
-  bool onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
+  [[nodiscard]] bool onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
 
   World& m_world;
   PlatformerAStar::Parameters m_parameters;

@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address);
 
 template <>
 struct hash<HostAddress> {
-  size_t operator()(HostAddress const& address) const;
+  [[nodiscard]] size_t operator()(HostAddress const& address) const;
 };
 
 class HostAddressWithPort {
@@ -81,7 +81,7 @@ std::ostream& operator<<(std::ostream& os, HostAddressWithPort const& address);
 
 template <>
 struct hash<HostAddressWithPort> {
-  size_t operator()(HostAddressWithPort const& address) const;
+  [[nodiscard]] size_t operator()(HostAddressWithPort const& address) const;
 };
 
 }

@@ -42,7 +42,7 @@ void WorldServerCollision::forEachCollisionBlock(RectI const& region, function<v
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
-        starAssert(!tile.collisionCacheDirty);
+        assert(!tile.collisionCacheDirty);
         if (auto cache = m_collisionCache.ptr(pos)) {
           for (auto const& block : *cache)
             iterator(block);

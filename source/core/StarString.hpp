@@ -64,9 +64,9 @@ public:
   // "foo?" and "?bar" with "?" also becomes "foo?bar".  Also, if left or right
   // is empty, does not add a joiner, for example "" and "baz" joined with "?"
   // produces "baz".
-  static String joinWith(String const& join, String const& left, String const& right);
+  [[nodiscard]] static String joinWith(String const& join, String const& left, String const& right);
   template <typename... StringType>
-  static String joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest);
+  [[nodiscard]] static String joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest);
 
   String();
   String(String const& s);
@@ -88,92 +88,92 @@ public:
   // const& to internal utf8 data
   std::string const& utf8() const;
   std::string takeUtf8();
-  ByteArray utf8Bytes() const;
+  [[nodiscard]] ByteArray utf8Bytes() const;
   // Pointer to internal utf8 data, null-terminated.
-  char const* utf8Ptr() const;
-  size_t utf8Size() const;
+  [[nodiscard]] char const* utf8Ptr() const;
+  [[nodiscard]] size_t utf8Size() const;
 
-  std::wstring wstring() const;
-  WideString wideString() const;
+  [[nodiscard]] std::wstring wstring() const;
+  [[nodiscard]] WideString wideString() const;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  size_t size() const;
-  size_t length() const;
+  [[nodiscard]] size_t size() const;
+  [[nodiscard]] size_t length() const;
 
   void clear();
   void reserve(size_t n);
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
-  Char operator[](size_t i) const;
+  [[nodiscard]] Char operator[](size_t i) const;
   // Throws StringException if i out of range.
-  Char at(size_t i) const;
+  [[nodiscard]] Char at(size_t i) const;
 
-  String toUpper() const;
-  String toLower() const;
-  String titleCase() const;
+  [[nodiscard]] String toUpper() const;
+  [[nodiscard]] String toLower() const;
+  [[nodiscard]] String titleCase() const;
 
-  bool endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const;
-  bool endsWith(Char end, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool endsWith(Char end, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const;
 
-  String reverse() const;
+  [[nodiscard]] String reverse() const;
 
-  String rot13() const;
+  [[nodiscard]] String rot13() const;
 
-  StringList split(Char c, size_t maxSplit = NPos) const;
-  StringList split(String const& pattern, size_t maxSplit = NPos) const;
-  StringList rsplit(Char c, size_t maxSplit = NPos) const;
-  StringList rsplit(String const& pattern, size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList split(Char c, size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList split(String const& pattern, size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList rsplit(Char c, size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList rsplit(String const& pattern, size_t maxSplit = NPos) const;
 
   // Splits on any number of contiguous instances of any of the given
   // characters.  Behaves differently than regular split in that leading and
   // trailing instances of the characters are also ignored, and in general no
   // empty strings will be in the resulting split list.  If chars is empty,
   // then splits on any whitespace.
-  StringList splitAny(String const& chars = "", size_t maxSplit = NPos) const;
-  StringList rsplitAny(String const& chars = "", size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList splitAny(String const& chars = "", size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList rsplitAny(String const& chars = "", size_t maxSplit = NPos) const;
 
   // Split any with '\n\r'
-  StringList splitLines(size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList splitLines(size_t maxSplit = NPos) const;
   // Shorthand for splitAny("");
-  StringList splitWhitespace(size_t maxSplit = NPos) const;
+  [[nodiscard]] StringList splitWhitespace(size_t maxSplit = NPos) const;
 
   // Splits a string once based on the given characters (defaulting to
   // whitespace), and returns the first part.  This string is set to the
   // second part.
-  String extract(String const& chars = "");
-  String rextract(String const& chars = "");
+  [[nodiscard]] String extract(String const& chars = "");
+  [[nodiscard]] String rextract(String const& chars = "");
 
-  bool hasChar(Char c) const;
+  [[nodiscard]] bool hasChar(Char c) const;
   // Identical to hasChar, except, if string is empty, tests if c is
   // whitespace.
-  bool hasCharOrWhitespace(Char c) const;
+  [[nodiscard]] bool hasCharOrWhitespace(Char c) const;
 
-  String replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] String replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
 
-  String trimEnd(String const& chars = "") const;
-  String trimBeg(String const& chars = "") const;
-  String trim(String const& chars = "") const;
+  [[nodiscard]] String trimEnd(String const& chars = "") const;
+  [[nodiscard]] String trimBeg(String const& chars = "") const;
+  [[nodiscard]] String trim(String const& chars = "") const;
 
-  size_t find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] size_t find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] size_t find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
 
   // If pattern is empty, finds first whitespace
-  size_t findFirstOf(String const& chars = "", size_t beg = 0) const;
+  [[nodiscard]] size_t findFirstOf(String const& chars = "", size_t beg = 0) const;
 
   // If pattern is empty, finds first non-whitespace
-  size_t findFirstNotOf(String const& chars = "", size_t beg = 0) const;
+  [[nodiscard]] size_t findFirstNotOf(String const& chars = "", size_t beg = 0) const;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  size_t findNextBoundary(size_t index, bool backwards = false) const;
+  [[nodiscard]] size_t findNextBoundary(size_t index, bool backwards = false) const;
 
-  String slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] String slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   void append(String const& s);
   void append(std::string const& s);
@@ -194,41 +194,41 @@ public:
   void push_back(Char c);
   void push_front(Char c);
 
-  bool contains(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool contains(String const& s, CaseSensitivity cs = CaseSensitive) const;
 
   // Does this string match the given regular expression?
-  bool regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const;
+  [[nodiscard]] bool regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const;
 
-  int compare(String const& s, CaseSensitivity cs = CaseSensitive) const;
-  bool equals(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] int compare(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] bool equals(String const& s, CaseSensitivity cs = CaseSensitive) const;
   // Synonym for equals(s, String::CaseInsensitive)
-  bool equalsIgnoreCase(String const& s) const;
+  [[nodiscard]] bool equalsIgnoreCase(String const& s) const;
 
-  String substr(size_t position, size_t n = NPos) const;
+  [[nodiscard]] String substr(size_t position, size_t n = NPos) const;
   void erase(size_t pos = 0, size_t n = NPos);
 
-  String padLeft(size_t size, String const& filler) const;
-  String padRight(size_t size, String const& filler) const;
+  [[nodiscard]] String padLeft(size_t size, String const& filler) const;
+  [[nodiscard]] String padRight(size_t size, String const& filler) const;
 
   // Replace angle bracket tags in the string with values given by the given
   // lookup function.  Will be called as:
   // String lookup(String const& key);
   template <typename Lookup>
-  String lookupTags(Lookup&& lookup) const;
+  [[nodiscard]] String lookupTags(Lookup&& lookup) const;
 
   // StringView variant
   template <typename Lookup>
-  Maybe<String> maybeLookupTagsView(Lookup&& lookup) const;
+  [[nodiscard]] Maybe<String> maybeLookupTagsView(Lookup&& lookup) const;
 
   template <typename Lookup>
-  String lookupTagsView(Lookup&& lookup) const;
+  [[nodiscard]] String lookupTagsView(Lookup&& lookup) const;
 
   // Replace angle bracket tags in the string with values given by the tags
   // map.  If replaceWithDefault is true, then values that are not found in the
   // tags map are replace with the default string.  If replaceWithDefault is
   // false, tags that are not found are not replaced at all.
   template <typename MapType>
-  String replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const;
+  [[nodiscard]] String replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const;
 
   String& operator=(String const& s);
   String& operator=(String&& s) noexcept;
@@ -309,7 +309,7 @@ public:
   using const_reference = Base::const_reference;
 
   template <typename Container>
-  static StringList from(Container const& m);
+  [[nodiscard]] static StringList from(Container const& m);
 
   StringList();
   StringList(Base const& l);
@@ -331,34 +331,34 @@ public:
   StringList& operator=(StringList&& rhs) noexcept;
   StringList& operator=(initializer_list<String> list);
 
-  bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
-  StringList trimAll(String const& chars = "") const;
-  String join(String const& separator = "") const;
+  [[nodiscard]] bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
+  [[nodiscard]] StringList trimAll(String const& chars = "") const;
+  [[nodiscard]] String join(String const& separator = "") const;
 
-  StringList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] StringList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   template <typename Filter>
-  StringList filtered(Filter&& filter) const;
+  [[nodiscard]] StringList filtered(Filter&& filter) const;
 
   template <typename Comparator>
-  StringList sorted(Comparator&& comparator) const;
+  [[nodiscard]] StringList sorted(Comparator&& comparator) const;
 
-  StringList sorted() const;
+  [[nodiscard]] StringList sorted() const;
 };
 
 std::ostream& operator<<(std::ostream& os, StringList const& list);
 
 template <>
 struct hash<String> {
-  size_t operator()(String const& s) const;
+  [[nodiscard]] size_t operator()(String const& s) const;
 };
 
 struct CaseInsensitiveStringHash {
-  size_t operator()(String const& s) const;
+  [[nodiscard]] size_t operator()(String const& s) const;
 };
 
 struct CaseInsensitiveStringCompare {
-  bool operator()(String const& lhs, String const& rhs) const;
+  [[nodiscard]] bool operator()(String const& lhs, String const& rhs) const;
 };
 
 using StringSet = HashSet<String>;
@@ -376,7 +376,7 @@ using CaseInsensitiveStringMap = StringMap<MappedT, CaseInsensitiveStringHash, C
 
 template <>
 struct hash<StringList> {
-  size_t operator()(StringList const& s) const;
+  [[nodiscard]] size_t operator()(StringList const& s) const;
 };
 
 template <typename... StringType>

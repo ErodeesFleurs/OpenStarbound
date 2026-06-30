@@ -36,7 +36,7 @@ Songbook::~Songbook() {
   stop();
 }
 
-Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String const& species, int note) {
+[[nodiscard]] Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String const& species, int note) {
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
     auto tuning = m_assets->json(strf("/sfx/instruments/{}/tuning.config", instrument));
@@ -169,7 +169,7 @@ void Songbook::keepAlive(String const& instrument, Vec2F const& position) {
     m_activeCooldown = 3;
 }
 
-List<Songbook::Note> Songbook::parseABC(String const& abc) {
+[[nodiscard]] List<Songbook::Note> Songbook::parseABC(String const& abc) {
   List<Songbook::Note> result;
 
   StringMap<String> fields;
@@ -682,11 +682,11 @@ void Songbook::play(Json const& song, String const& timeSource) {
   m_activeCooldown = 3;
 }
 
-bool Songbook::active() const {
+[[nodiscard]] bool Songbook::active() const {
   return m_activeCooldown > 0;
 }
 
-bool Songbook::instrumentPlaying() const {
+[[nodiscard]] bool Songbook::instrumentPlaying() const {
   if (!active())
     return false;
   if (m_timeSourceInstance) {
@@ -699,23 +699,23 @@ bool Songbook::instrumentPlaying() const {
   return false;
 }
 
-Maybe<String> Songbook::timeSource() const {
+[[nodiscard]] Maybe<String> Songbook::timeSource() const {
   return m_timeSource;
 }
 
-Maybe<String> Songbook::instrument() const {
+[[nodiscard]] Maybe<String> Songbook::instrument() const {
   return m_instrument;
 }
 
-Json Songbook::song() const {
+[[nodiscard]] Json Songbook::song() const {
   return m_song;
 }
 
-double Songbook::fundamentalFrequency(double p) {
+[[nodiscard]] double Songbook::fundamentalFrequency(double p) {
   return 55.0 * pow(2.0, (p - 69.0) / 12.0 + 3.0);
 }
 
-double Songbook::fundamentalPitch(double f) {
+[[nodiscard]] double Songbook::fundamentalPitch(double f) {
   return 69.0 + 12 * log2(f / 440.0);
 }
 

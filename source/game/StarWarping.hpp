@@ -24,12 +24,12 @@ struct InstanceWorldId {
   InstanceWorldId(String instance, Maybe<Uuid> uuid = {}, Maybe<float> level = {});
 
   bool operator==(InstanceWorldId const& other) const;
-  bool operator<(InstanceWorldId const& other) const;
+  [[nodiscard]] bool operator<(InstanceWorldId const& other) const;
 };
 
 template <>
 struct hash<InstanceWorldId> {
-  size_t operator()(InstanceWorldId const& id) const;
+  [[nodiscard]] size_t operator()(InstanceWorldId const& id) const;
 };
 
 DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
@@ -39,8 +39,8 @@ using CelestialWorldId = StrongTypedef<CelestialCoordinate, struct CelestialWorl
 using ClientShipWorldId = StrongTypedef<Uuid, struct ClientShipWorldIdTag>;
 using WorldId = MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId>;
 
-String printWorldId(WorldId const& worldId);
-WorldId parseWorldId(String const& printedId);
+[[nodiscard]] String printWorldId(WorldId const& worldId);
+[[nodiscard]] WorldId parseWorldId(String const& printedId);
 
 // Same as outputting printWorldId
 std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId);
@@ -53,10 +53,10 @@ using SpawnTargetPosition = StrongTypedef<Vec2F, struct SpawnTargetPositionTag>;
 using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
 using SpawnTarget = MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX>;
 
-Json spawnTargetToJson(SpawnTarget spawnTarget);
-SpawnTarget spawnTargetFromJson(Json v);
+[[nodiscard]] Json spawnTargetToJson(SpawnTarget spawnTarget);
+[[nodiscard]] SpawnTarget spawnTargetFromJson(Json v);
 
-String printSpawnTarget(SpawnTarget spawnTarget);
+[[nodiscard]] String printSpawnTarget(SpawnTarget spawnTarget);
 
 struct WarpToWorld {
   WarpToWorld() = default;
@@ -66,10 +66,10 @@ struct WarpToWorld {
   WorldId world;
   SpawnTarget target;
 
-  bool operator==(WarpToWorld const& rhs) const;
-  explicit operator bool() const;
+  [[nodiscard]] bool operator==(WarpToWorld const& rhs) const;
+  [[nodiscard]] explicit operator bool() const;
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 };
 
 using WarpToPlayer = StrongTypedef<Uuid, struct WarpToPlayerTag>;
@@ -82,9 +82,9 @@ enum class WarpAlias {
 
 using WarpAction = MVariant<WarpToWorld, WarpToPlayer, WarpAlias>;
 
-WarpAction parseWarpAction(String const& warpString);
-String printWarpAction(WarpAction const& warpAction);
-JsonObject warpActionToJson(WarpAction const& warpAction);
+[[nodiscard]] WarpAction parseWarpAction(String const& warpString);
+[[nodiscard]] String printWarpAction(WarpAction const& warpAction);
+[[nodiscard]] JsonObject warpActionToJson(WarpAction const& warpAction);
 
 DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
 DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);

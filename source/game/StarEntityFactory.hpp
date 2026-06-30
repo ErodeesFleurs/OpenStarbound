@@ -44,22 +44,22 @@ public:
       ItemDatabaseConstPtr itemDatabase,
       ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  EntityPtr create(String const& entityName, Json const& extraParams = {}) const;
+  [[nodiscard]] EntityPtr create(String const& entityName, Json const& extraParams = {}) const;
 
-  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const;
-  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  Json diskStoreEntity(EntityPtr const& entity) const;
-  EntityPtr diskLoadEntity(EntityType type, Json const& diskStore) const;
+  [[nodiscard]] Json diskStoreEntity(EntityPtr const& entity) const;
+  [[nodiscard]] EntityPtr diskLoadEntity(EntityType type, Json const& diskStore) const;
 
-  Json loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const;
-  VersionedJson storeVersionedJson(EntityType type, Json const& store) const;
+  [[nodiscard]] Json loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const;
+  [[nodiscard]] VersionedJson storeVersionedJson(EntityType type, Json const& store) const;
 
   // Wraps the normal Json based Entity store / load in a VersionedJson, and
   // uses sripts in the VersionedingDatabase to bring the version of the store
   // forward to match the current version.
-  EntityPtr loadVersionedEntity(VersionedJson const& versionedJson) const;
-  VersionedJson storeVersionedEntity(EntityPtr const& entityPtr) const;
+  [[nodiscard]] EntityPtr loadVersionedEntity(VersionedJson const& versionedJson) const;
+  [[nodiscard]] VersionedJson storeVersionedEntity(EntityPtr const& entityPtr) const;
 
 private:
   static EnumMap<EntityType> const EntityStorageIdentifiers;

@@ -16,8 +16,8 @@ public:
       Maybe<unsigned> wrapWidth = {},
       Maybe<float> lineSpacing = {});
 
-  String const& text() const;
-  Maybe<unsigned> getTextCharLimit() const;
+  [[nodiscard]] String const& text() const;
+  [[nodiscard]] Maybe<unsigned> getTextCharLimit() const;
   void setText(String newText);
   void setFontSize(int fontSize);
   void setFontMode(FontMode fontMode);
@@ -30,10 +30,10 @@ public:
   void setTextStyle(TextStyle const& style);
   void setFont(String const& font);
 
-  RectI relativeBoundRect() const override;
+  [[nodiscard]] RectI relativeBoundRect() const override;
 
 protected:
-  RectI getScissorRect() const override;
+  [[nodiscard]] RectI getScissorRect() const override;
   void renderImpl() override;
 
 private:

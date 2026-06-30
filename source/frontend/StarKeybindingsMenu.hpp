@@ -24,15 +24,15 @@ public:
   explicit KeybindingsMenu(KeybindingsMenuServices services);
 
   // We need to handle our own Esc dismissal
-  KeyboardCaptureMode keyboardCaptureMode() const override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] KeyboardCaptureMode keyboardCaptureMode() const override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   void show() override;
   void dismissed() override;
 
 private:
   void buildListsFromConfig();
-  bool activateBinding(Widget* widget);
+  [[nodiscard]] bool activateBinding(Widget* widget);
   void setKeybinding(KeyChord desc);
   void clearActive();
   void exitActiveMode();

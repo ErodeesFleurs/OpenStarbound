@@ -11,10 +11,10 @@ public:
 
   void render(RenderCallback* renderCallback) override;
 
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
+  [[nodiscard]] size_t anchorCount() const override;
+  [[nodiscard]] LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
 
 protected:
   void setOrientationIndex(size_t orientationIndex) override;

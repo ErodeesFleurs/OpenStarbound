@@ -32,13 +32,13 @@ struct SkyRenderData {
   Color bottomRectColor;
   Color flashColor;
 
-  StringList const& starTypes() const;
+  [[nodiscard]] StringList const& starTypes() const;
 
   // Star and orbiter positions here are in view space, from (0, 0) to viewSize
 
-  List<SkyOrbiter> backOrbiters(Vec2F const& viewSize) const;
-  SkyWorldHorizon worldHorizon(Vec2F const& viewSize) const;
-  List<SkyOrbiter> frontOrbiters(Vec2F const& viewSize) const;
+  [[nodiscard]] List<SkyOrbiter> backOrbiters(Vec2F const& viewSize) const;
+  [[nodiscard]] SkyWorldHorizon worldHorizon(Vec2F const& viewSize) const;
+  [[nodiscard]] List<SkyOrbiter> frontOrbiters(Vec2F const& viewSize) const;
 };
 
 DataStream& operator>>(DataStream& ds, SkyRenderData& skyRenderData);

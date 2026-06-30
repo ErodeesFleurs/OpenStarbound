@@ -18,31 +18,31 @@ public:
       bool master, float random);
   PlantDrop(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  [[nodiscard]] ByteArray netStore(NetCompatibilityRules rules = {});
 
-  EntityType entityType() const override;
+  [[nodiscard]] EntityType entityType() const override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String description() const override;
+  [[nodiscard]] String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
   void setPosition();
   void setVelocity(Vec2F const& position);
 
-  RectF collisionRect() const;
+  [[nodiscard]] RectF collisionRect() const;
 
   void update(float dt, uint64_t currentStep) override;
 

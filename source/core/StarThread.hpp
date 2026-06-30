@@ -43,10 +43,10 @@ public:
   // Yield this thread, offering the opportunity to reschedule.
   static void yield();
 
-  static unsigned numberOfProcessors();
+  [[nodiscard]] static unsigned numberOfProcessors();
 
   template <typename Function, typename... Args>
-  static ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> invoke(String const& name, Function&& f, Args&&... args);
+  [[nodiscard]] static ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> invoke(String const& name, Function&& f, Args&&... args);
 
   Thread(String const& name);
   Thread(Thread&&);
@@ -59,23 +59,23 @@ public:
 
   // Start a thread that is currently in the joined state.  Returns true if the
   // thread was joined and is now started, false if the thread was not joined.
-  bool start();
+  [[nodiscard]] bool start();
 
   // Wait for a thread to finish and re-join with the thread, on completion
   // isJoined() will be false.  Returns true if the thread was joinable, and is
   // now joined, false if the thread was already joined.
-  bool join();
+  [[nodiscard]] bool join();
 
   // Returns false when this thread been started without being joined.  This is
   // subtlely different than "!isRunning()", in that the thread could have
   // completed its work, but a thread *must* be joined before being restarted.
-  bool isJoined() const;
+  [[nodiscard]] bool isJoined() const;
 
   // Returns false before start() has been called, true immediately after
   // start() has been called, and false once the run() method returns.
-  bool isRunning() const;
+  [[nodiscard]] bool isRunning() const;
 
-  String name();
+  [[nodiscard]] String name();
 
 protected:
   virtual void run() = 0;
@@ -115,15 +115,15 @@ public:
   // Returns whether the ThreadFunction::finish method been called and the
   // ThreadFunction has stopped.  Also returns true when the ThreadFunction has
   // been default constructed.
-  bool isFinished() const;
+  [[nodiscard]] bool isFinished() const;
   // Returns false if the thread function has stopped running, whether or not
   // finish() has been called.
-  bool isRunning() const;
+  [[nodiscard]] bool isRunning() const;
 
   // Equivalent to !isFinished()
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
-  String name();
+  [[nodiscard]] String name();
 
 private:
   UniquePtr<ThreadFunctionImpl> m_impl;
@@ -143,14 +143,14 @@ public:
   // Finishes the thread, moving and returning the final value of the function.
   // If the function threw an exception, finish() will rethrow that exception.
   // May only be called once, otherwise will throw InvalidMaybeAccessException.
-  Return finish();
+  [[nodiscard]] Return finish();
 
-  bool isFinished() const;
-  bool isRunning() const;
+  [[nodiscard]] bool isFinished() const;
+  [[nodiscard]] bool isRunning() const;
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
-  String name();
+  [[nodiscard]] String name();
 
 private:
   ThreadFunction<void> m_function;
@@ -166,13 +166,13 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  STAR_THREAD_ACQUIRE_CAPABILITY void lock();
+  [[nodiscard]] STAR_THREAD_ACQUIRE_CAPABILITY void lock();
 
   // Attempt to acquire the mutex without blocking.
   STAR_THREAD_TRY_ACQUIRE_CAPABILITY(true)
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
 
-  STAR_THREAD_RELEASE_CAPABILITY void unlock();
+  [[nodiscard]] STAR_THREAD_RELEASE_CAPABILITY void unlock();
 
 private:
   friend struct ConditionVariableImpl;
@@ -220,7 +220,7 @@ public:
   void lock();
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
 
   void unlock();
 
@@ -245,11 +245,11 @@ public:
   MLocker(MLocker const&) = delete;
   MLocker& operator=(MLocker const&) = delete;
 
-  MutexType& mutex();
+  [[nodiscard]] MutexType& mutex();
 
   void unlock();
   void lock();
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
 
 private:
   MutexType& m_mutex;
@@ -263,11 +263,11 @@ public:
   ReadersWriterMutex() = default;
 
   void readLock() { m_mutex.lock_shared(); }
-  bool tryReadLock() { return m_mutex.try_lock_shared(); }
+  [[nodiscard]] bool tryReadLock() { return m_mutex.try_lock_shared(); }
   void readUnlock() { m_mutex.unlock_shared(); }
 
   void writeLock() { m_mutex.lock(); }
-  bool tryWriteLock() { return m_mutex.try_lock(); }
+  [[nodiscard]] bool tryWriteLock() { return m_mutex.try_lock(); }
   void writeUnlock() { m_mutex.unlock(); }
 
 private:
@@ -284,7 +284,7 @@ public:
 
   void unlock();
   void lock();
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
 
 private:
   ReadersWriterMutex& m_lock;
@@ -301,7 +301,7 @@ public:
 
   void unlock();
   void lock();
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
 
 private:
   ReadersWriterMutex& m_lock;
@@ -313,7 +313,7 @@ public:
   SpinLock();
 
   void lock();
-  bool tryLock();
+  [[nodiscard]] bool tryLock();
   void unlock();
 
 private:
@@ -334,7 +334,7 @@ MLocker<MutexType>::~MLocker() {
 }
 
 template <typename MutexType>
-MutexType& MLocker<MutexType>::mutex() {
+[[nodiscard]] MutexType& MLocker<MutexType>::mutex() {
   return m_mutex;
 }
 
@@ -355,7 +355,7 @@ void MLocker<MutexType>::lock() {
 }
 
 template <typename MutexType>
-bool MLocker<MutexType>::tryLock() {
+[[nodiscard]] bool MLocker<MutexType>::tryLock() {
   if (!m_locked) {
     if (m_mutex.tryLock())
       m_locked = true;
@@ -365,7 +365,7 @@ bool MLocker<MutexType>::tryLock() {
 }
 
 template <typename Function, typename... Args>
-ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
+[[nodiscard]] ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
   return {[f = std::forward<Function>(f), ... args = std::forward<Args>(args)]() mutable { return f(std::move(args)...); }, name};
 }
 
@@ -384,28 +384,28 @@ ThreadFunction<Return>::~ThreadFunction() {
 }
 
 template <typename Return>
-Return ThreadFunction<Return>::finish() {
+[[nodiscard]] Return ThreadFunction<Return>::finish() {
   m_function.finish();
   return m_return->take();
 }
 
 template <typename Return>
-bool ThreadFunction<Return>::isFinished() const {
+[[nodiscard]] bool ThreadFunction<Return>::isFinished() const {
   return m_function.isFinished();
 }
 
 template <typename Return>
-bool ThreadFunction<Return>::isRunning() const {
+[[nodiscard]] bool ThreadFunction<Return>::isRunning() const {
   return m_function.isRunning();
 }
 
 template <typename Return>
-ThreadFunction<Return>::operator bool() const {
+[[nodiscard]] ThreadFunction<Return>::operator bool() const {
   return !isFinished();
 }
 
 template <typename Return>
-String ThreadFunction<Return>::name() {
+[[nodiscard]] String ThreadFunction<Return>::name() {
   return m_function.name();
 }
 
@@ -422,7 +422,7 @@ inline void SpinLock::unlock() {
   m_lock.clear(std::memory_order_release);
 }
 
-inline bool SpinLock::tryLock() {
+[[nodiscard]] inline bool SpinLock::tryLock() {
   return !m_lock.test_and_set(std::memory_order_acquire);
 }
 

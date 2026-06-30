@@ -9,6 +9,6 @@ class Configuration;
 using ConfigurationPtr = SharedPtr<Configuration>;
 
 namespace LuaBindings {
-  LuaCallbacks makeCameraCallbacks(WorldCamera& camera, ConfigurationPtr configuration);
+  [[nodiscard]] LuaCallbacks makeCameraCallbacks(WorldCamera& camera, ConfigurationPtr configuration);
 }
 }

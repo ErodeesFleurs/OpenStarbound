@@ -32,11 +32,11 @@ public:
     direction = 0;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] bool hasNext() const {
     return curr != cont.end();
   }
 
-  bool hasPrevious() const {
+  [[nodiscard]] bool hasPrevious() const {
     return curr != cont.begin();
   }
 
@@ -84,11 +84,11 @@ public:
     return t.previous();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] size_t distBack() const {
     return std::distance(curr, cont.end());
   }
 
@@ -128,11 +128,11 @@ public:
     direction = 0;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] bool hasNext() const {
     return curr != cont.end();
   }
 
-  bool hasPrevious() const {
+  [[nodiscard]] bool hasPrevious() const {
     return curr != cont.begin();
   }
 
@@ -205,11 +205,11 @@ public:
     return n.previous();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] size_t distBack() const {
     return std::distance(curr, cont.end());
   }
 
@@ -254,7 +254,7 @@ public:
       --curr;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] bool hasNext() const {
     iterator end = cont.end();
     if (curr == end)
       return cont.begin() != end;
@@ -294,11 +294,11 @@ public:
     return t.next();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] size_t distBack() const {
     return std::distance(curr, cont.end()) - 1;
   }
 
@@ -339,7 +339,7 @@ public:
       --curr;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] bool hasNext() const {
     iterator end = cont.end();
     if (curr == end)
       return cont.begin() != end && !remCalled;
@@ -403,14 +403,14 @@ public:
     }
   }
 
-  size_t distFront() const {
+  [[nodiscard]] size_t distFront() const {
     if (curr == cont.end())
       return 0;
     else
       return std::distance(cont.begin(), curr) - (remCalled ? 1 : 0);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] size_t distBack() const {
     if (curr == cont.end())
       return cont.size();
     else

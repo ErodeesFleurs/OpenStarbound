@@ -86,10 +86,10 @@ public:
   List<RenderVertex> vertexes;
 };
 
-RenderQuad renderTexturedRect(TexturePtr texture, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f);
-RenderPoly renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f);
+[[nodiscard]] RenderQuad renderTexturedRect(TexturePtr texture, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+[[nodiscard]] RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+[[nodiscard]] RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f);
+[[nodiscard]] RenderPoly renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f);
 
 using RenderPrimitive = Variant<RenderTriangle, RenderQuad, RenderPoly>;
 
@@ -97,9 +97,9 @@ class Texture : public RefCounter {
 public:
   virtual ~Texture() = default;
 
-  virtual Vec2U size() const = 0;
-  virtual TextureFiltering filtering() const = 0;
-  virtual TextureAddressing addressing() const = 0;
+  [[nodiscard]] virtual Vec2U size() const = 0;
+  [[nodiscard]] virtual TextureFiltering filtering() const = 0;
+  [[nodiscard]] virtual TextureAddressing addressing() const = 0;
 };
 
 // Textures may be created individually, or in a texture group.  Textures in
@@ -111,8 +111,8 @@ class TextureGroup {
 public:
   virtual ~TextureGroup() = default;
 
-  virtual TextureFiltering filtering() const = 0;
-  virtual TexturePtr create(Image const& texture) = 0;
+  [[nodiscard]] virtual TextureFiltering filtering() const = 0;
+  [[nodiscard]] virtual TexturePtr create(Image const& texture) = 0;
 };
 
 class RenderBuffer {
@@ -130,8 +130,8 @@ class Renderer {
 public:
   virtual ~Renderer() = default;
 
-  virtual String rendererId() const = 0;
-  virtual Vec2U screenSize() const = 0;
+  [[nodiscard]] virtual String rendererId() const = 0;
+  [[nodiscard]] virtual Vec2U screenSize() const = 0;
 
   virtual void loadConfig(Json const& config) = 0;
 
@@ -146,10 +146,10 @@ public:
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
-  virtual Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
-  virtual Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
+  [[nodiscard]] virtual Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
+  [[nodiscard]] virtual Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
   virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
-  virtual bool switchEffectConfig(String const& name) = 0;
+  [[nodiscard]] virtual bool switchEffectConfig(String const& name) = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
   // pixels
@@ -161,10 +161,10 @@ public:
   virtual void setSizeLimitEnabled(bool enabled) = 0;
   virtual void setMultiTexturingEnabled(bool enabled) = 0;
   virtual void setMultiSampling(unsigned multiSampling) = 0;
-  virtual TextureGroupPtr createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
-  virtual RenderBufferPtr createRenderBuffer() = 0;
+  [[nodiscard]] virtual TextureGroupPtr createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
+  [[nodiscard]] virtual RenderBufferPtr createRenderBuffer() = 0;
 
-  virtual List<RenderPrimitive>& immediatePrimitives() = 0;
+  [[nodiscard]] virtual List<RenderPrimitive>& immediatePrimitives() = 0;
   virtual void render(RenderPrimitive primitive) = 0;
   virtual void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
 

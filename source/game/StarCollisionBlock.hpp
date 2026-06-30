@@ -24,7 +24,7 @@ enum class TileCollisionOverride : uint8_t {
   Block
 };
 
-inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over) {
+[[nodiscard]] inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over) {
   switch (over) {
     case TileCollisionOverride::Empty:
       return CollisionKind::None;
@@ -44,10 +44,10 @@ public:
 
   void insert(CollisionKind kind);
   void remove(CollisionKind kind);
-  bool contains(CollisionKind kind) const;
+  [[nodiscard]] bool contains(CollisionKind kind) const;
 
 private:
-  static uint8_t kindBit(CollisionKind kind);
+  [[nodiscard]] static uint8_t kindBit(CollisionKind kind);
 
   uint8_t m_kinds = 0;
 };
@@ -62,16 +62,16 @@ extern EnumMap<TileCollisionOverride> const TileCollisionOverrideNames;
 
 extern EnumMap<CollisionKind> const CollisionKindNames;
 
-bool isColliding(CollisionKind kind, CollisionSet const& collisionSet);
-bool isSolidColliding(CollisionKind kind);
+[[nodiscard]] bool isColliding(CollisionKind kind, CollisionSet const& collisionSet);
+[[nodiscard]] bool isSolidColliding(CollisionKind kind);
 
 // Returns the highest priority collision kind, where Block > Slippery >
 // Dynamic > Platform > None > Null
-CollisionKind maxCollision(CollisionKind first, CollisionKind second);
+[[nodiscard]] CollisionKind maxCollision(CollisionKind first, CollisionKind second);
 
 struct CollisionBlock {
   // Make a null collision block for the given space.
-  static CollisionBlock nullBlock(Vec2I const& space);
+  [[nodiscard]] static CollisionBlock nullBlock(Vec2I const& space);
 
   CollisionKind kind;
   Vec2I space;
@@ -94,27 +94,27 @@ inline void CollisionSet::remove(CollisionKind kind) {
   m_kinds = m_kinds & ~kindBit(kind);
 }
 
-inline bool CollisionSet::contains(CollisionKind kind) const {
+[[nodiscard]] inline bool CollisionSet::contains(CollisionKind kind) const {
   return m_kinds & kindBit(kind);
 }
 
-inline uint8_t CollisionSet::kindBit(CollisionKind kind) {
+[[nodiscard]] inline uint8_t CollisionSet::kindBit(CollisionKind kind) {
   return static_cast<uint8_t>(1u << (static_cast<uint8_t>(kind) + 1));
 }
 
-inline bool isColliding(CollisionKind kind, CollisionSet const& collisionSet) {
+[[nodiscard]] inline bool isColliding(CollisionKind kind, CollisionSet const& collisionSet) {
   return collisionSet.contains(kind);
 }
 
-inline bool isSolidColliding(CollisionKind kind) {
+[[nodiscard]] inline bool isSolidColliding(CollisionKind kind) {
   return isColliding(kind, DefaultCollisionSet);
 }
 
-inline CollisionKind maxCollision(CollisionKind first, CollisionKind second) {
+[[nodiscard]] inline CollisionKind maxCollision(CollisionKind first, CollisionKind second) {
   return max(first, second);
 }
 
-inline CollisionBlock CollisionBlock::nullBlock(Vec2I const& space) {
+[[nodiscard]] inline CollisionBlock CollisionBlock::nullBlock(Vec2I const& space) {
   CollisionBlock block;
   block.kind = CollisionKind::Null;
   block.space = space;

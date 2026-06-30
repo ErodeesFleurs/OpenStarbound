@@ -35,8 +35,8 @@ class DamageDatabase {
 public:
   DamageDatabase(AssetsConstPtr assets);
 
-  DamageKind const& damageKind(String name) const;
-  ElementalType const& elementalType(String const& name) const;
+  [[nodiscard]] DamageKind const& damageKind(String name) const;
+  [[nodiscard]] ElementalType const& elementalType(String const& name) const;
 
 private:
   StringMap<DamageKind> m_damageKinds;

@@ -20,7 +20,7 @@ using MovementControllerPtr = SharedPtr<MovementController>;
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
   // Load sensible defaults from a config file.
-  static MovementParameters sensibleDefaults(AssetsConstPtr assets);
+  [[nodiscard]] static MovementParameters sensibleDefaults(AssetsConstPtr assets);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -28,9 +28,9 @@ struct MovementParameters {
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
-  MovementParameters merge(MovementParameters const& rhs) const;
+  [[nodiscard]] MovementParameters merge(MovementParameters const& rhs) const;
 
-  Json toJson() const;
+  [[nodiscard]] Json toJson() const;
 
   Maybe<float> mass;
   Maybe<float> gravityMultiplier;
@@ -83,7 +83,7 @@ public:
 
   MovementController(MovementParameters const& parameters, World& world, AssetsConstPtr assets);
 
-  MovementParameters const& parameters() const;
+  [[nodiscard]] MovementParameters const& parameters() const;
 
   // Apply any set parameters from the given set on top of the current set.
   void applyParameters(MovementParameters const& parameters);
@@ -93,58 +93,58 @@ public:
   void resetParameters(MovementParameters const& parameters = MovementParameters());
 
   // Stores and loads position, velocity, and rotation.
-  Json storeState() const;
+  [[nodiscard]] Json storeState() const;
   void loadState(Json const& state);
 
   // Currently active mass parameter
-  float mass() const;
+  [[nodiscard]] float mass() const;
 
   // Currently active collisionPoly parameter
-  PolyF const& collisionPoly() const;
+  [[nodiscard]] PolyF const& collisionPoly() const;
   void setCollisionPoly(PolyF const& poly);
 
-  virtual Vec2F position() const;
-  float xPosition() const;
-  float yPosition() const;
+  [[nodiscard]] virtual Vec2F position() const;
+  [[nodiscard]] float xPosition() const;
+  [[nodiscard]] float yPosition() const;
 
-  Vec2F velocity() const;
-  float xVelocity() const;
-  float yVelocity() const;
+  [[nodiscard]] Vec2F velocity() const;
+  [[nodiscard]] float xVelocity() const;
+  [[nodiscard]] float yVelocity() const;
 
-  virtual float rotation() const;
+  [[nodiscard]] virtual float rotation() const;
 
   // CollisionPoly rotated and translated by position
-  PolyF collisionBody() const;
+  [[nodiscard]] PolyF collisionBody() const;
 
   // Gets the bounding box of the collisionPoly() rotated by current rotation,
   // but not translated into world space
-  RectF localBoundBox() const;
+  [[nodiscard]] RectF localBoundBox() const;
 
   // Shorthand for getting the bound box of the current collisionBody()
-  RectF collisionBoundBox() const;
+  [[nodiscard]] RectF collisionBoundBox() const;
 
   // Is the collision body colliding with any collision geometry.
-  bool isColliding() const;
+  [[nodiscard]] bool isColliding() const;
   // Is the collision body colliding with special "Null" collision blocks.
-  bool isNullColliding() const;
+  [[nodiscard]] bool isNullColliding() const;
 
   // Is the body currently stuck in an un-solvable collision.
-  bool isCollisionStuck() const;
+  [[nodiscard]] bool isCollisionStuck() const;
 
   // If this body is sticking, this is the angle toward the surface it's stuck to
-  Maybe<float> stickingDirection() const;
+  [[nodiscard]] Maybe<float> stickingDirection() const;
 
   // From 0.0 to 1.0, the amount of the collision body (or if the collision
   // body is null, just the center position) that is in liquid.
-  float liquidPercentage() const;
+  [[nodiscard]] float liquidPercentage() const;
 
   // Returns the liquid that the body is most in, if any
-  LiquidId liquidId() const;
+  [[nodiscard]] LiquidId liquidId() const;
 
-  bool onGround() const;
-  bool zeroG() const;
+  [[nodiscard]] bool onGround() const;
+  [[nodiscard]] bool zeroG() const;
 
-  bool atWorldLimit(bool bottomOnly = false) const;
+  [[nodiscard]] bool atWorldLimit(bool bottomOnly = false) const;
 
   void setPosition(Vec2F position);
   void setXPosition(float xPosition);
@@ -207,16 +207,16 @@ protected:
   void setOnGround(bool onGround);
 
   // whether force regions were applied in the last update
-  bool appliedForceRegion() const;
+  [[nodiscard]] bool appliedForceRegion() const;
   // The collision correction applied during the most recent update, if any.
-  Vec2F collisionCorrection() const;
+  [[nodiscard]] Vec2F collisionCorrection() const;
   // Horizontal slope of the ground the collision body has collided with, if
   // any.
-  Vec2F surfaceSlope() const;
+  [[nodiscard]] Vec2F surfaceSlope() const;
   // Velocity of the surface that the body is resting on, if any
-  Vec2F surfaceVelocity() const;
+  [[nodiscard]] Vec2F surfaceVelocity() const;
 
-  World* world();
+  [[nodiscard]] World* world();
 
 private:
   AssetsConstPtr m_assets;
@@ -246,7 +246,7 @@ private:
     float sortDistance;
   };
 
-  static CollisionKind maxOrNullCollision(CollisionKind a, CollisionKind b);
+  [[nodiscard]] static CollisionKind maxOrNullCollision(CollisionKind a, CollisionKind b);
   static CollisionResult collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
       bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt);
   static CollisionSeparation collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
@@ -257,7 +257,7 @@ private:
 
   void queryCollisions(RectF const& region);
 
-  float gravity();
+  [[nodiscard]] float gravity();
 
   MovementParameters m_parameters;
 

@@ -14,25 +14,25 @@ public:
   using PaneManager::PaneManager;
 
   void registerPane(KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss = {});
-  PanePtr deregisterPane(KeyT const& paneId);
+  [[nodiscard]] PanePtr deregisterPane(KeyT const& paneId);
   void deregisterAllPanes();
 
   template <typename T = Pane>
-  shared_ptr<T> registeredPane(KeyT const& paneId) const;
+  [[nodiscard]] shared_ptr<T> registeredPane(KeyT const& paneId) const;
   template <typename T = Pane>
-  shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
+  [[nodiscard]] shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
 
   // Displays a registred pane if it is not already displayed.  Returns true
   // if it is newly displayed.
-  bool displayRegisteredPane(KeyT const& paneId);
-  bool registeredPaneIsDisplayed(KeyT const& paneId) const;
+  [[nodiscard]] bool displayRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] bool registeredPaneIsDisplayed(KeyT const& paneId) const;
 
   // Dismisses a registred pane if it is displayed.  Returns true if it
   // has been dismissed.
-  bool dismissRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] bool dismissRegisteredPane(KeyT const& paneId);
 
   // Returns whether the pane is now displayed.
-  bool toggleRegisteredPane(KeyT const& paneId);
+  [[nodiscard]] bool toggleRegisteredPane(KeyT const& paneId);
 
 private:
   struct PaneInfo {
@@ -41,7 +41,7 @@ private:
     DismissCallback dismissCallback;
   };
 
-  PaneInfo const& getRegisteredPaneInfo(KeyT const& paneId) const;
+  [[nodiscard]] PaneInfo const& getRegisteredPaneInfo(KeyT const& paneId) const;
 
   // Map of registered panes by name.
   HashMap<KeyT, PaneInfo> m_registeredPanes;

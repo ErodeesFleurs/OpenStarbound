@@ -355,7 +355,7 @@ void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) 
 
 void ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.read<uint8_t>();
+  (void)ds.read<uint8_t>();
 }
 
 void ClientDisconnectRequestPacket::write(DataStream& ds) const {
@@ -647,7 +647,7 @@ FindUniqueEntityPacket::FindUniqueEntityPacket(String uniqueEntityId)
 
 void WorldStartAcknowledgePacket::read(DataStream& ds) {
   // Packets can't be empty, read the trash data
-  ds.read<bool>();
+  (void)ds.read<bool>();
 }
 
 void WorldStartAcknowledgePacket::write(DataStream& ds) const {
@@ -660,7 +660,7 @@ PingPacket::PingPacket(int64_t time) : time(time) {}
 void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     // Packets can't be empty, read the trash data
-    ds.read<bool>();
+    (void)ds.read<bool>();
     time = 0;
   } else {
     ds.readVlqI(time);
@@ -873,7 +873,7 @@ PongPacket::PongPacket(int64_t time) : time(time) {}
 void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     // Packets can't be empty, read the trash data
-    ds.read<bool>();
+    (void)ds.read<bool>();
     time = 0;
   } else {
     ds.readVlqI(time);

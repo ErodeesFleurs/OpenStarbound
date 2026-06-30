@@ -77,7 +77,7 @@ namespace Dungeon {
       return false;
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
+    assert(m_kind == ObjectKind::Polyline);
     // Used for wiring. Treat each vertex in the polyline as a tile with the
     // wire brush.
     for (Vec2I point : m_polyline) {
@@ -144,7 +144,7 @@ namespace Dungeon {
       return callback(pos, tile());
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
+    assert(m_kind == ObjectKind::Polyline);
     for (Vec2I point : m_polyline) {
       Vec2I pointPos(m_rect.min().x() + point.x(), map->height() - 1 - m_rect.min().y() - point.y());
       if (pos == pointPos && callback(pos, tile()))
@@ -413,7 +413,7 @@ namespace Dungeon {
 
   TMXObjectGroup::TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets) {
     m_name = tmx.getString("name");
-    
+
     // convert group properties in array format to object format
     Maybe<JsonObject> groupProperties = tmx.opt("properties").apply([](Json const& properties) {
         if (properties.type() == Json::Type::Array) {

@@ -74,26 +74,26 @@ private:
   using TextureKey = Variant<MaterialPieceTextureKey, AssetTextureKey>;
 
   struct TextureKeyHash {
-    size_t operator()(TextureKey const& key) const;
+    [[nodiscard]] size_t operator()(TextureKey const& key) const;
   };
 
   // chunkIndex here is the index of the render chunk such that chunkIndex *
   // RenderChunkSize results in the coordinate of the lower left most tile in
   // the render chunk.
 
-  static ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
-  static ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] static ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] static ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
 
   void renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
-  shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
-  shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  [[nodiscard]] shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
 
   bool produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
                                 TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
   void produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
 
-  float liquidDrawLevel(float liquidLevel) const;
+  [[nodiscard]] float liquidDrawLevel(float liquidLevel) const;
 
   List<LiquidInfo> m_liquids;
 

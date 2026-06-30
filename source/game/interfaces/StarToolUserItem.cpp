@@ -14,43 +14,43 @@ void ToolUserItem::uninit() {
 
 void ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&) {}
 
-bool ToolUserItem::initialized() const {
+[[nodiscard]] bool ToolUserItem::initialized() const {
   return static_cast<bool>(m_owner);
 }
 
-ToolUserEntity* ToolUserItem::owner() const {
+[[nodiscard]] ToolUserEntity* ToolUserItem::owner() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::owner");
   return m_owner;
 }
 
-EntityMode ToolUserItem::entityMode() const {
+[[nodiscard]] EntityMode ToolUserItem::entityMode() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::entityMode");
   return m_owner->entityMode().value(EntityMode::Master);
 }
 
-ToolHand ToolUserItem::hand() const {
+[[nodiscard]] ToolHand ToolUserItem::hand() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::hand");
   return *m_hand;
 }
 
-World* ToolUserItem::world() const {
+[[nodiscard]] World* ToolUserItem::world() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::world");
   return m_owner->world();
 }
 
-List<DamageSource> ToolUserItem::damageSources() const {
+[[nodiscard]] List<DamageSource> ToolUserItem::damageSources() const {
   return {};
 }
 
-List<PolyF> ToolUserItem::shieldPolys() const {
+[[nodiscard]] List<PolyF> ToolUserItem::shieldPolys() const {
   return {};
 }
 
-List<PhysicsForceRegion> ToolUserItem::forceRegions() const {
+[[nodiscard]] List<PhysicsForceRegion> ToolUserItem::forceRegions() const {
   return {};
 }
 

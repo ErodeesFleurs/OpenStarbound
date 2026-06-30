@@ -10,10 +10,10 @@ class WormCaveSector {
 public:
   WormCaveSector(int sectorSize, Vec2I sector, Json const& config, size_t seed, float commonality);
 
-  float get(int x, int y);
+  [[nodiscard]] float get(int x, int y);
 
 private:
-  bool inside(int x, int y);
+  [[nodiscard]] bool inside(int x, int y);
   void set(int x, int y, float value);
 
   int m_sectorSize;
@@ -29,7 +29,7 @@ public:
 
   WormCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] float get(int x, int y) const override;
 
 private:
   int m_sectorSize;

@@ -35,7 +35,7 @@ public:
     if (auto cachedPoint = m_pointCache.ptr(t))
       return *cachedPoint;
 
-    PointData intermediates(*this);
+    [[nodiscard]] PointData intermediates(*this);
     PointData temp;
     for (size_t order = Order + 1; order > 1; order--) {
       for (size_t i = 1; i < order; i++) {

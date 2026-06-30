@@ -60,7 +60,7 @@ private:
       float alpha);
   void drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter);
 
-  uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
+  [[nodiscard]] uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
   void setupStars(SkyRenderData const& sky);
 
   RendererPtr m_renderer;

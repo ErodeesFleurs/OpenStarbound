@@ -9,7 +9,7 @@ class DurabilityItem;
 class DurabilityItem {
 public:
   virtual ~DurabilityItem() = default;
-  virtual float durabilityStatus() = 0;
+  [[nodiscard]] virtual float durabilityStatus() = 0;
 };
 
 }

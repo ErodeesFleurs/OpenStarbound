@@ -86,15 +86,15 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
   ds.read(m_index);
 }
 
-JsonObject PackedAssetSource::metadata() const {
+[[nodiscard]] JsonObject PackedAssetSource::metadata() const {
   return m_metadata;
 }
 
-StringList PackedAssetSource::assetPaths() const {
+[[nodiscard]] StringList PackedAssetSource::assetPaths() const {
   return m_index.keys();
 }
 
-IODevicePtr PackedAssetSource::open(String const& path) {
+[[nodiscard]] IODevicePtr PackedAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
     AssetReader(FilePtr file, String path, StreamOffset offset, StreamOffset size)
       : file(file), path(path), fileOffset(offset), assetSize(size), assetPos(0) {
@@ -157,7 +157,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
   return make_shared<AssetReader>(m_packedFile, path, indexEntry->first, indexEntry->second);
 }
 
-ByteArray PackedAssetSource::read(String const& path) {
+[[nodiscard]] ByteArray PackedAssetSource::read(String const& path) {
   auto indexEntry = m_index.ptr(path);
   if (!indexEntry)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);

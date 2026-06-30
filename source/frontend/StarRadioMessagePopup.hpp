@@ -30,7 +30,7 @@ public:
   void update(float dt) override;
   void dismissed() override;
 
-  bool messageActive();
+  [[nodiscard]] bool messageActive();
 
   void setMessage(RadioMessage message);
   void setChatHeight(int chatHeight);

@@ -5,7 +5,7 @@
 
 namespace Star {
 
-Json ItemRecipe::toJson() const {
+[[nodiscard]] Json ItemRecipe::toJson() const {
   JsonArray inputList;
   inputList.reserve(inputs.size());
   for (auto& input : inputs)
@@ -22,15 +22,15 @@ Json ItemRecipe::toJson() const {
     };
 }
 
-bool ItemRecipe::isNull() const {
+[[nodiscard]] bool ItemRecipe::isNull() const {
   return currencyInputs.empty() && inputs.empty() && output.isNull();
 }
 
-bool ItemRecipe::operator==(ItemRecipe const& rhs) const {
+[[nodiscard]] bool ItemRecipe::operator==(ItemRecipe const& rhs) const {
   return std::tie(currencyInputs, inputs, output) == std::tie(rhs.currencyInputs, rhs.inputs, rhs.output);
 }
 
-bool ItemRecipe::operator!=(ItemRecipe const& rhs) const {
+[[nodiscard]] bool ItemRecipe::operator!=(ItemRecipe const& rhs) const {
   return std::tie(currencyInputs, inputs, output) != std::tie(rhs.currencyInputs, rhs.inputs, rhs.output);
 }
 
@@ -40,7 +40,7 @@ std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe) {
   return os;
 }
 
-size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {
+[[nodiscard]] size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {
   return hashOf(v.currencyInputs.keys(), v.currencyInputs.values(), v.inputs, v.output);
 }
 

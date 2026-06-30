@@ -15,22 +15,22 @@ class TcpSocket : public Socket {
   struct ConstructorToken {};
 
 public:
-  static TcpSocketPtr connectTo(HostAddressWithPort const& address);
-  static TcpSocketPtr listen(HostAddressWithPort const& address);
+  [[nodiscard]] static TcpSocketPtr connectTo(HostAddressWithPort const& address);
+  [[nodiscard]] static TcpSocketPtr listen(HostAddressWithPort const& address);
 
   TcpSocket(ConstructorToken, NetworkMode networkMode);
   TcpSocket(ConstructorToken, NetworkMode networkMode, SocketImplPtr impl);
 
-  TcpSocketPtr accept();
+  [[nodiscard]] TcpSocketPtr accept();
 
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
 
-  size_t receive(char* data, size_t len);
-  size_t send(char const* data, size_t len);
+  [[nodiscard]] size_t receive(char* data, size_t len);
+  [[nodiscard]] size_t send(char const* data, size_t len);
 
-  HostAddressWithPort localAddress() const;
-  HostAddressWithPort remoteAddress() const;
+  [[nodiscard]] HostAddressWithPort localAddress() const;
+  [[nodiscard]] HostAddressWithPort remoteAddress() const;
 
 private:
   void connect(HostAddressWithPort const& address);
@@ -49,12 +49,12 @@ public:
   ~TcpServer();
 
   void stop();
-  bool isListening() const;
+  [[nodiscard]] bool isListening() const;
 
   // Blocks until next connection available for the given timeout.  Throws
   // ServerClosed if close() is called.  Cannot be called if AcceptCallback is
   // set.
-  TcpSocketPtr accept(unsigned timeout);
+  [[nodiscard]] TcpSocketPtr accept(unsigned timeout);
 
   // Rather than calling and blocking on accept(), if an AcceptCallback is set
   // here, it will be called whenever a new connection is available.

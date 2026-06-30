@@ -5,7 +5,7 @@ namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
 // up to the first directive marker.
-static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8) {
+[[nodiscard]] static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8) {
   size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
   size_t filenameStart = 0;
   while (true) {
@@ -24,7 +24,7 @@ static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8
   }
 }
 
-AssetPath AssetPath::split(String const& path) {
+[[nodiscard]] AssetPath AssetPath::split(String const& path) {
   AssetPath components;
 
   std::string const& str = path.utf8();
@@ -60,41 +60,41 @@ AssetPath AssetPath::split(String const& path) {
   return components;
 }
 
-String AssetPath::join(AssetPath const& components) {
+[[nodiscard]] String AssetPath::join(AssetPath const& components) {
   return toString(components);
 }
 
-String AssetPath::setSubPath(String const& path, String const& subPath) {
+[[nodiscard]] String AssetPath::setSubPath(String const& path, String const& subPath) {
   auto components = split(path);
   components.subPath = subPath;
   return join(components);
 }
 
-String AssetPath::removeSubPath(String const& path) {
+[[nodiscard]] String AssetPath::removeSubPath(String const& path) {
   auto components = split(path);
   components.subPath.reset();
   return join(components);
 }
 
-String AssetPath::getDirectives(String const& path) {
+[[nodiscard]] String AssetPath::getDirectives(String const& path) {
   size_t firstDirective = path.find('?');
   if (firstDirective == NPos)
     return {};
   return path.substr(firstDirective + 1);
 }
 
-String AssetPath::addDirectives(String const& path, String const& directives) {
+[[nodiscard]] String AssetPath::addDirectives(String const& path, String const& directives) {
   return String::joinWith("?", path, directives);
 }
 
-String AssetPath::removeDirectives(String const& path) {
+[[nodiscard]] String AssetPath::removeDirectives(String const& path) {
   size_t firstDirective = path.find('?');
   if (firstDirective == NPos)
     return path;
   return path.substr(0, firstDirective);
 }
 
-String AssetPath::directory(String const& path) {
+[[nodiscard]] String AssetPath::directory(String const& path) {
   if (auto p = findFilenameRange(path.utf8())) {
     return String(path.utf8().substr(0, p->first));
   } else {
@@ -102,7 +102,7 @@ String AssetPath::directory(String const& path) {
   }
 }
 
-String AssetPath::filename(String const& path) {
+[[nodiscard]] String AssetPath::filename(String const& path) {
   if (auto p = findFilenameRange(path.utf8())) {
     return String(path.utf8().substr(p->first, p->second));
   } else {
@@ -110,7 +110,7 @@ String AssetPath::filename(String const& path) {
   }
 }
 
-String AssetPath::extension(String const& path) {
+[[nodiscard]] String AssetPath::extension(String const& path) {
   auto file = filename(path);
   auto lastDot = file.findLast(".");
   if (lastDot == NPos)
@@ -119,7 +119,7 @@ String AssetPath::extension(String const& path) {
   return file.substr(lastDot + 1);
 }
 
-String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) {
+[[nodiscard]] String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) {
   if (!givenPath.empty() && givenPath[0] == '/')
     return givenPath;
 
@@ -128,7 +128,7 @@ String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) 
   return path;
 }
 
-bool AssetPath::operator==(AssetPath const& rhs) const {
+[[nodiscard]] bool AssetPath::operator==(AssetPath const& rhs) const {
   return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
@@ -159,7 +159,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   return os;
 }
 
-size_t hash<AssetPath>::operator()(AssetPath const& s) const {
+[[nodiscard]] size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 

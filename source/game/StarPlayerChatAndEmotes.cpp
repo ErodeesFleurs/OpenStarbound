@@ -23,7 +23,7 @@ void PlayerChatAndEmotes::init(float emoteCooldown, Vec2F blinkInterval) {
 }
 
 void PlayerChatAndEmotes::addChatMessage(String const& message, Json const& config) {
-  starAssert(!m_player.isSlave());
+  assert(!m_player.isSlave());
   m_chatMessage = message;
   m_chatMessageUpdated = true;
   m_chatMessageChanged = true;
@@ -31,7 +31,7 @@ void PlayerChatAndEmotes::addChatMessage(String const& message, Json const& conf
 }
 
 void PlayerChatAndEmotes::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
-  starAssert(!m_player.isSlave());
+  assert(!m_player.isSlave());
   m_emoteState = emote;
   m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
 }

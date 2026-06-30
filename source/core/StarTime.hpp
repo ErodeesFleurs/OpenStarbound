@@ -8,36 +8,36 @@ class Clock;
 using ClockPtr = SharedPtr<Clock>;
 
 namespace Time {
-  double timeSinceEpoch();
-  int64_t millisecondsSinceEpoch();
+  [[nodiscard]] double timeSinceEpoch();
+  [[nodiscard]] int64_t millisecondsSinceEpoch();
 
-  double monotonicTime();
-  int64_t monotonicMilliseconds();
-  int64_t monotonicMicroseconds();
+  [[nodiscard]] double monotonicTime();
+  [[nodiscard]] int64_t monotonicMilliseconds();
+  [[nodiscard]] int64_t monotonicMicroseconds();
 
   // Pretty print a duration of time (In days, hours, minutes, seconds, and milliseconds)
-  String printDuration(double time);
+  [[nodiscard]] String printDuration(double time);
 
   // Pretty print a given date and time
-  String printDateAndTime(int64_t epochTicks, String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
-  String printCurrentDateAndTime(String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
+  [[nodiscard]] String printDateAndTime(int64_t epochTicks, String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
+  [[nodiscard]] String printCurrentDateAndTime(String format = "<year>-<month>-<day> <hours>:<minutes>:<seconds>.<millis>");
 
   // Ticks since unix epoch
-  int64_t epochTicks();
+  [[nodiscard]] int64_t epochTicks();
   // Epoch ticks per second, static throughout application lifetime.
-  int64_t epochTickFrequency();
+  [[nodiscard]] int64_t epochTickFrequency();
 
   // Ticks since unspecified time before program start
-  int64_t monotonicTicks();
+  [[nodiscard]] int64_t monotonicTicks();
   // Monotonic ticks per second, static throughout application lifetime.
-  int64_t monotonicTickFrequency();
+  [[nodiscard]] int64_t monotonicTickFrequency();
 
-  double ticksToSeconds(int64_t ticks, int64_t tickFrequency);
-  int64_t ticksToMilliseconds(int64_t ticks, int64_t tickFrequency);
-  int64_t ticksToMicroseconds(int64_t ticks, int64_t tickFrequency);
-  int64_t secondsToTicks(double seconds, int64_t tickFrequency);
-  int64_t millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency);
-  int64_t microsecondsToTicks(int64_t microseconds, int64_t tickFrequency);
+  [[nodiscard]] double ticksToSeconds(int64_t ticks, int64_t tickFrequency);
+  [[nodiscard]] int64_t ticksToMilliseconds(int64_t ticks, int64_t tickFrequency);
+  [[nodiscard]] int64_t ticksToMicroseconds(int64_t ticks, int64_t tickFrequency);
+  [[nodiscard]] int64_t secondsToTicks(double seconds, int64_t tickFrequency);
+  [[nodiscard]] int64_t millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency);
+  [[nodiscard]] int64_t microsecondsToTicks(int64_t microseconds, int64_t tickFrequency);
 }
 
 // Keeps track of elapsed real time since a given moment.  Guaranteed
@@ -56,10 +56,10 @@ public:
   void stop();
   void start();
 
-  bool running() const;
+  [[nodiscard]] bool running() const;
 
-  double time() const;
-  int64_t milliseconds() const;
+  [[nodiscard]] double time() const;
+  [[nodiscard]] int64_t milliseconds() const;
 
   // Override actual elapsed time with the given time.
   void setTime(double time);
@@ -81,8 +81,8 @@ private:
 // An instance of Clock that counts down a given amount of time
 class Timer : private Clock {
 public:
-  static Timer withTime(double timeLeft, bool start = true);
-  static Timer withMilliseconds(int64_t millis, bool start = true);
+  [[nodiscard]] static Timer withTime(double timeLeft, bool start = true);
+  [[nodiscard]] static Timer withMilliseconds(int64_t millis, bool start = true);
 
   // Constructs a stopped timer whose time is up.
   Timer();
@@ -95,11 +95,11 @@ public:
 
   // Time remaining on the timer.  If negative is true, will return negative
   // time values after the timer is up, if false it stops at zero.
-  double timeLeft(bool negative = false) const;
-  int64_t millisecondsLeft(bool negative = false) const;
+  [[nodiscard]] double timeLeft(bool negative = false) const;
+  [[nodiscard]] int64_t millisecondsLeft(bool negative = false) const;
 
   // Is the time remaining <= 0.0?
-  bool timeUp() const;
+  [[nodiscard]] bool timeUp() const;
 
   using Clock::stop;
   using Clock::start;

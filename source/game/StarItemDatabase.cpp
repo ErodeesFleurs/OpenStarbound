@@ -57,12 +57,12 @@ EnumMap<ItemType> ItemTypeNames{
   {ItemType::ActiveItem, "activeitem"},
   {ItemType::AugmentItem, "augmentitem"}};
 
-uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
+[[nodiscard]] uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
   auto normalizedBag = normalizeBag(bag);
   return getCountOfItem(normalizedBag, item, exactMatch);
 }
 
-uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch) {
+[[nodiscard]] uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch) {
   ItemDescriptor matchItem = exactMatch ? item.singular() : ItemDescriptor(item.name(), 1);
   if (!bag.contains(matchItem)) {
     return 0;
@@ -71,7 +71,7 @@ uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& b
   }
 }
 
-HashMap<ItemDescriptor, uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const& bag) {
+[[nodiscard]] HashMap<ItemDescriptor, uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const& bag) {
   HashMap<ItemDescriptor, uint64_t> normalizedBag;
   for (auto const& item : bag) {
     if (!item)
@@ -86,7 +86,7 @@ HashMap<ItemDescriptor, uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const
   return normalizedBag;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset) {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
     // add this recipe if we can make it.
@@ -97,7 +97,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint
   return res;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies,
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies,
                                                     HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
@@ -113,11 +113,11 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint
   return res;
 }
 
-String ItemDatabase::guiFilterString(ItemPtr const& item) {
+[[nodiscard]] String ItemDatabase::guiFilterString(ItemPtr const& item) {
   return (item->name() + item->friendlyName() + item->description()).toLower().splitAny(" ,.?*\\+/|\t").join("");
 }
 
-bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies) {
+[[nodiscard]] bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies) {
   for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
     if (availableCurrencies.value(currencyName, 0) < currencyCount)
       return false;
@@ -169,7 +169,7 @@ void ItemDatabase::cleanup() {
   }
 }
 
-ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
+[[nodiscard]] ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
   if (diskStore) {
     return item(ItemDescriptor::loadStore(diskStore, m_versioningDatabase));
   } else {
@@ -177,7 +177,7 @@ ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
   }
 }
 
-ItemPtr ItemDatabase::fromJson(Json const& spec) const {
+[[nodiscard]] ItemPtr ItemDatabase::fromJson(Json const& spec) const {
   return item(ItemDescriptor(spec));
 }
 
@@ -185,37 +185,37 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) 
   return loadItem<Item>(descriptor, itemPtr);
 }
 
-Json ItemDatabase::diskStore(ItemConstPtr const& itemPtr) const {
+[[nodiscard]] Json ItemDatabase::diskStore(ItemConstPtr const& itemPtr) const {
   if (itemPtr)
     return itemPtr->descriptor().diskStore(m_versioningDatabase);
   else
     return Json();
 }
 
-Json ItemDatabase::toJson(ItemConstPtr const& itemPtr) const {
+[[nodiscard]] Json ItemDatabase::toJson(ItemConstPtr const& itemPtr) const {
   if (itemPtr)
     return itemPtr->descriptor().toJson();
   else
     return Json();
 }
 
-bool ItemDatabase::hasItem(String const& itemName) const {
+[[nodiscard]] bool ItemDatabase::hasItem(String const& itemName) const {
   return m_items.contains(itemName);
 }
 
-ItemType ItemDatabase::itemType(String const& itemName) const {
+[[nodiscard]] ItemType ItemDatabase::itemType(String const& itemName) const {
   return itemData(itemName).type;
 }
 
-String ItemDatabase::itemFriendlyName(String const& itemName) const {
+[[nodiscard]] String ItemDatabase::itemFriendlyName(String const& itemName) const {
   return itemData(itemName).friendlyName;
 }
 
-StringSet ItemDatabase::itemTags(String const& itemName) const {
+[[nodiscard]] StringSet ItemDatabase::itemTags(String const& itemName) const {
   return itemData(itemName).itemTags;
 }
 
-ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<uint64_t> seed) const {
+[[nodiscard]] ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<uint64_t> seed) const {
   auto const& data = itemData(itemName);
 
   ItemConfig itemConfig;
@@ -236,7 +236,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   return itemConfig;
 }
 
-Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
+[[nodiscard]] Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   if (!hasItem(itemName)) {
     return {};
   }
@@ -244,7 +244,7 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   return data.directory + data.filename;
 }
 
-ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+[[nodiscard]] ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
   if (!descriptor)
     return {};
 
@@ -264,14 +264,14 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
   }
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+[[nodiscard]] ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
     return tryCreateItem(descriptor, level, seed, ignoreInvalid);
 }
 
-bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
+[[nodiscard]] bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
   auto si = item.singular();
   for (auto const& recipe : m_recipes)
     if (recipe.output.singular() == si)
@@ -279,7 +279,7 @@ bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item) const {
   return false;
 }
 
-bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const {
+[[nodiscard]] bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const {
   auto si = item.singular();
   for (auto const& recipe : m_recipes)
     if (recipe.output.singular() == si)
@@ -289,7 +289,7 @@ bool ItemDatabase::hasRecipeToMake(ItemDescriptor const& item, StringSet const& 
   return false;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesForOutputItem(String itemName) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesForOutputItem(String itemName) const {
   HashSet<ItemRecipe> result;
   for (auto const& recipe : m_recipes)
     if (recipe.output.name() == itemName)
@@ -297,31 +297,31 @@ HashSet<ItemRecipe> ItemDatabase::recipesForOutputItem(String itemName) const {
   return result;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
   return recipesFromSubset(bag, availableCurrencies, m_recipes);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies, allowedTypes);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
   return recipesFromSubset(bag, availableCurrencies, m_recipes, allowedTypes);
 }
 
-uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
+[[nodiscard]] uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
   auto normalizedBag = normalizeBag(bag);
 
   return maxCraftableInBag(normalizedBag, availableCurrencies, recipe);
 }
 
-uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
+[[nodiscard]] uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
   uint64_t res = highest<uint64_t>();
 
   for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
@@ -342,7 +342,7 @@ uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const
   return res;
 }
 
-ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+[[nodiscard]] ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
   // picks the recipe that:
   // * can be crafted (duh)
   // * uses all the input material types
@@ -374,7 +374,7 @@ ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<
   return result;
 }
 
-ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
+[[nodiscard]] ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
   ItemRecipe res;
   try {
     res.currencyInputs = jsonToMapV<StringMap<uint64_t>>(config.get("currencyInputs", JsonObject()), mem_fn(&Json::toUInt));
@@ -409,11 +409,11 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
   return res;
 }
 
-HashSet<ItemRecipe> const& ItemDatabase::allRecipes() const {
+[[nodiscard]] HashSet<ItemRecipe> const& ItemDatabase::allRecipes() const {
   return m_recipes;
 }
 
-HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
+[[nodiscard]] HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
   HashSet<ItemRecipe> res;
   for (auto const& i : m_recipes) {
     if (i.groups.hasIntersection(types))
@@ -473,11 +473,11 @@ bool ItemDatabase::ageItem(ItemPtr& item, double aging) const {
   return false;
 }
 
-List<String> ItemDatabase::allItems() const {
+[[nodiscard]] List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config) {
+[[nodiscard]] ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
     return make_shared<GenericItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
@@ -533,7 +533,7 @@ ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const& item
   }
 }
 
-ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+[[nodiscard]] ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
   ItemDescriptor newDescriptor = descriptor;
 
@@ -570,13 +570,13 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   return result;
 }
 
-ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
+[[nodiscard]] ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
   if (auto itemData = m_items.ptr(name))
     return *itemData;
   throw ItemException::format("No such item '{}'", name);
 }
 
-ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
+[[nodiscard]] ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const {
   ItemRecipe res;
   res.inputs = std::move(inputs);
   res.output = std::move(output);

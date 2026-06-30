@@ -420,8 +420,8 @@ typename YContainer::value_type parametricInterpolate2(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(!xvals.empty());
-  starAssert(xvals.size() == yvals.size());
+  assert(!xvals.empty());
+  assert(xvals.size() == yvals.size());
 
   if (yvals.size() == 1)
     return yvals[0];
@@ -437,8 +437,8 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(!xvals.empty());
-  starAssert(xvals.size() == yvals.size());
+  assert(!xvals.empty());
+  assert(xvals.size() == yvals.size());
 
   if (yvals.size() == 1)
     return yvals[0];

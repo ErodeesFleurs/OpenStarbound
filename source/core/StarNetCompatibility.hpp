@@ -15,13 +15,13 @@ public:
   NetCompatibilityRules(uint64_t) = delete;
   NetCompatibilityRules(VersionNumber version);
 
-  VersionNumber version() const;
+  [[nodiscard]] VersionNumber version() const;
   void setVersion(VersionNumber version);
 
-  bool isAdmin() const;
+  [[nodiscard]] bool isAdmin() const;
   void setIsAdmin(bool admin);
 
-  bool isLegacy() const;
+  [[nodiscard]] bool isLegacy() const;
 
   bool operator==(NetCompatibilityRules const& a) const;
 
@@ -32,7 +32,7 @@ private:
 
 inline NetCompatibilityRules::NetCompatibilityRules(VersionNumber v) : m_version(v) {}
 
-inline VersionNumber NetCompatibilityRules::version() const {
+[[nodiscard]] inline VersionNumber NetCompatibilityRules::version() const {
   return m_version;
 }
 
@@ -40,7 +40,7 @@ inline void NetCompatibilityRules::setVersion(VersionNumber version) {
   m_version = version;
 }
 
-inline bool NetCompatibilityRules::isAdmin() const {
+[[nodiscard]] inline bool NetCompatibilityRules::isAdmin() const {
   return m_isAdmin;
 }
 
@@ -48,7 +48,7 @@ inline void NetCompatibilityRules::setIsAdmin(bool admin) {
   m_isAdmin = admin;
 }
 
-inline bool NetCompatibilityRules::isLegacy() const {
+[[nodiscard]] inline bool NetCompatibilityRules::isLegacy() const {
   return m_version == LegacyVersion;
 }
 

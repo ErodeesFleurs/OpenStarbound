@@ -227,7 +227,7 @@ void Quest::update(float dt) {
 }
 
 void Quest::offer() {
-  starAssert(m_player && m_world);
+  assert(m_player && m_world);
 
   if (!showAcceptDialog()) {
     start();

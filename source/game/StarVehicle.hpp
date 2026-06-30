@@ -27,33 +27,33 @@ class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntit
 public:
   Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json baseConfig, String path, Json dynamicConfig);
 
-  String name() const override;
+  [[nodiscard]] String name() const override;
 
-  Json baseConfig() const;
-  Json dynamicConfig() const;
+  [[nodiscard]] Json baseConfig() const;
+  [[nodiscard]] Json dynamicConfig() const;
 
-  Json diskStore() const;
+  [[nodiscard]] Json diskStore() const;
   void diskLoad(Json diskStore);
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  [[nodiscard]] EntityType entityType() const override;
+  [[nodiscard]] ClientEntityMode clientEntityMode() const override;
 
-  List<DamageSource> damageSources() const override;
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  [[nodiscard]] List<DamageSource> damageSources() const override;
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const override;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  [[nodiscard]] List<DamageNotification> selfDamageNotifications() override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
-  RectF collisionArea() const override;
-  Vec2F velocity() const;
+  [[nodiscard]] Vec2F position() const override;
+  [[nodiscard]] RectF metaBoundBox() const override;
+  [[nodiscard]] RectF collisionArea() const override;
+  [[nodiscard]] Vec2F velocity() const;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  [[nodiscard]] pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
@@ -65,28 +65,28 @@ public:
 
   void renderLightSources(RenderCallback* renderer) override;
 
-  List<LightSource> lightSources() const override;
+  [[nodiscard]] List<LightSource> lightSources() const override;
 
-  bool shouldDestroy() const override;
+  [[nodiscard]] bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  [[nodiscard]] Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  RectF interactiveBoundBox() const override;
-  bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
+  [[nodiscard]] RectF interactiveBoundBox() const override;
+  [[nodiscard]] bool isInteractive() const override;
+  [[nodiscard]] InteractAction interact(InteractRequest const& request) override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
+  [[nodiscard]] size_t anchorCount() const override;
+  [[nodiscard]] LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
   void loungeControl(size_t positionIndex, LoungeControl loungeControl) override;
   void loungeAim(size_t positionIndex, Vec2F const& aimPosition) override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  [[nodiscard]] List<PhysicsForceRegion> forceRegions() const override;
+  [[nodiscard]] size_t movingCollisionCount() const override;
+  [[nodiscard]] Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  [[nodiscard]] Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  [[nodiscard]] Maybe<LuaValue> evalScript(String const& code) override;
 
   void setPosition(Vec2F const& position);
 
@@ -145,10 +145,10 @@ private:
                             Passenger,
                             Front };
 
-  EntityRenderLayer renderLayer(VehicleLayer vehicleLayer) const;
+  [[nodiscard]] EntityRenderLayer renderLayer(VehicleLayer vehicleLayer) const;
 
-  LuaCallbacks makeVehicleCallbacks();
-  Json configValue(String const& name, Json def = {}) const;
+  [[nodiscard]] LuaCallbacks makeVehicleCallbacks();
+  [[nodiscard]] Json configValue(String const& name, Json def = {}) const;
 
   String m_typeName;
   Json m_baseConfig;

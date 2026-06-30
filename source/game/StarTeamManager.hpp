@@ -17,16 +17,16 @@ class TeamManager {
 public:
   TeamManager(ConfigurationPtr configuration);
 
-  JsonRpcHandlers rpcHandlers();
+  [[nodiscard]] JsonRpcHandlers rpcHandlers();
 
-  JsonRpcHandlers authenticatedRpcHandlers(Uuid const& callerUuid);
+  [[nodiscard]] JsonRpcHandlers authenticatedRpcHandlers(Uuid const& callerUuid);
 
   void setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers);
   void playerDisconnected(Uuid const& playerUuid);
 
-  TeamNumber getPvpTeam(Uuid const& playerUuid);
-  HashMap<Uuid, TeamNumber> getPvpTeams();
-  Maybe<Uuid> getTeam(Uuid const& playerUuid) const;
+  [[nodiscard]] TeamNumber getPvpTeam(Uuid const& playerUuid);
+  [[nodiscard]] HashMap<Uuid, TeamNumber> getPvpTeams();
+  [[nodiscard]] Maybe<Uuid> getTeam(Uuid const& playerUuid) const;
 
 private:
   struct TeamMember {
@@ -62,11 +62,11 @@ private:
   void purgeInvitationsFrom(Uuid const& playerUuid);
   void expirePolledInvitations();
 
-  bool playerWithUuidExists(Uuid const& playerUuid) const;
+  [[nodiscard]] bool playerWithUuidExists(Uuid const& playerUuid) const;
 
-  Uuid createTeam(Uuid const& leaderUuid);
-  bool addToTeam(Uuid const& playerUuid, Uuid const& teamUuid);
-  bool removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid);
+  [[nodiscard]] Uuid createTeam(Uuid const& leaderUuid);
+  [[nodiscard]] bool addToTeam(Uuid const& playerUuid, Uuid const& teamUuid);
+  [[nodiscard]] bool removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid);
 
   RecursiveMutex m_mutex;
   Map<Uuid, Team> m_teams;
@@ -80,13 +80,13 @@ private:
 
   TeamNumber m_pvpTeamCounter;
 
-  Json fetchTeamStatus(Json const& args);
-  Json updateStatus(Json const& args);
-  Json invite(Json const& args);
-  Json pollInvitation(Json const& args);
-  Json acceptInvitation(Json const& args);
-  Json removeFromTeam(Json const& args);
-  Json makeLeader(Json const& args);
+  [[nodiscard]] Json fetchTeamStatus(Json const& args);
+  [[nodiscard]] Json updateStatus(Json const& args);
+  [[nodiscard]] Json invite(Json const& args);
+  [[nodiscard]] Json pollInvitation(Json const& args);
+  [[nodiscard]] Json acceptInvitation(Json const& args);
+  [[nodiscard]] Json removeFromTeam(Json const& args);
+  [[nodiscard]] Json makeLeader(Json const& args);
 };
 
 }

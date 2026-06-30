@@ -16,29 +16,29 @@ public:
   WorldClientState(AssetsConstPtr assets);
 
   // Actual area of the client visible screen (rounded to nearest block)
-  RectI window() const;
+  [[nodiscard]] RectI window() const;
   void setWindow(RectI const& window);
 
   // Shortcut to find the window center of the client.
-  Vec2F windowCenter() const;
+  [[nodiscard]] Vec2F windowCenter() const;
 
   // Entity of the unique main Player for this client
-  EntityId playerId() const;
+  [[nodiscard]] EntityId playerId() const;
   void setPlayer(EntityId playerId);
 
   // Entities that should contribute to the monitoring regions of the client.
-  List<EntityId> const& clientPresenceEntities() const;
+  [[nodiscard]] List<EntityId> const& clientPresenceEntities() const;
   void setClientPresenceEntities(List<EntityId> entities);
 
   // All areas of the server monitored by the client, takes a function to
   // resolve an entity id to its bound box.
-  List<RectI> monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const;
+  [[nodiscard]] List<RectI> monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const;
 
-  ByteArray writeDelta();
+  [[nodiscard]] ByteArray writeDelta();
   void readDelta(ByteArray delta);
 
   void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
-  NetCompatibilityRules netCompatibilityRules() const;
+  [[nodiscard]] NetCompatibilityRules netCompatibilityRules() const;
 
   void reset();
 

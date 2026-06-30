@@ -138,7 +138,7 @@ enum class PacketCompressionMode : uint8_t {
 struct Packet {
   virtual ~Packet() = default;
 
-  virtual PacketType type() const = 0;
+  [[nodiscard]] virtual PacketType type() const = 0;
 
   virtual void read(DataStream& ds, NetCompatibilityRules netRules);
   virtual void read(DataStream& ds);
@@ -146,16 +146,16 @@ struct Packet {
   virtual void write(DataStream& ds) const;
 
   virtual void readJson(Json const& json);
-  virtual Json writeJson() const;
+  [[nodiscard]] virtual Json writeJson() const;
 
-  PacketCompressionMode compressionMode() const;
+  [[nodiscard]] PacketCompressionMode compressionMode() const;
   void setCompressionMode(PacketCompressionMode compressionMode);
 
   PacketCompressionMode m_compressionMode = PacketCompressionMode::Automatic;
 };
 
-PacketPtr createPacket(PacketType type);
-PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
+[[nodiscard]] PacketPtr createPacket(PacketType type);
+[[nodiscard]] PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
@@ -249,7 +249,7 @@ struct ChatReceivePacket : AutoPacket<ChatReceivePacket, PacketType::ChatReceive
   explicit ChatReceivePacket(ChatReceivedMessage receivedMessage);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   ChatReceivedMessage receivedMessage;
 
@@ -312,7 +312,7 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   bool pause = false;
   float timescale = 1.0f;
@@ -323,7 +323,7 @@ struct ServerInfoPacket : AutoPacket<ServerInfoPacket, PacketType::ServerInfo> {
   ServerInfoPacket(uint16_t players, uint16_t maxPlayers);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   uint16_t players;
   uint16_t maxPlayers;
@@ -565,7 +565,7 @@ struct GiveItemPacket : AutoPacket<GiveItemPacket, PacketType::GiveItem> {
   explicit GiveItemPacket(ItemDescriptor const& item);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   ItemDescriptor item;
 
@@ -591,7 +591,7 @@ struct UpdateTileProtectionPacket : AutoPacket<UpdateTileProtectionPacket, Packe
   UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   DungeonId dungeonId;
   bool isProtected;
@@ -606,7 +606,7 @@ struct SetDungeonGravityPacket : AutoPacket<SetDungeonGravityPacket, PacketType:
   SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   DungeonId dungeonId;
   Maybe<float> gravity;
@@ -621,7 +621,7 @@ struct SetDungeonBreathablePacket : AutoPacket<SetDungeonBreathablePacket, Packe
   SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   DungeonId dungeonId;
   Maybe<bool> breathable;
@@ -636,7 +636,7 @@ struct SetPlayerStartPacket : AutoPacket<SetPlayerStartPacket, PacketType::SetPl
   SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   Vec2F playerStart;
   bool respawnInWorld;
@@ -904,7 +904,7 @@ struct EntityMessagePacket : AutoPacket<EntityMessagePacket, PacketType::EntityM
   EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   Variant<EntityId, String> entityId;
   String message;
@@ -938,7 +938,7 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] Json writeJson() const override;
 
   JsonObject updatedProperties;
 };

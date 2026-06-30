@@ -16,7 +16,7 @@ SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWo
 
 SystemWorldServerThread::~SystemWorldServerThread() {
   m_stop = true;
-  join();
+  (void)join();
 }
 
 Vec3I SystemWorldServerThread::location() const {

@@ -19,16 +19,16 @@ class ToolUserEntity : public virtual ActorEntity, public virtual ToolHandInterf
 public:
   // Arm/hand methods inherited from ToolHandInterface.
 
-  virtual bool isAdmin() const = 0;
-  virtual Color favoriteColor() const = 0;
-  virtual String species() const = 0;
+  [[nodiscard]] virtual bool isAdmin() const = 0;
+  [[nodiscard]] virtual Color favoriteColor() const = 0;
+  [[nodiscard]] virtual String species() const = 0;
 
   virtual void requestEmote(String const& emote) = 0;
 
   // FIXME: This was used for an Item to get an ItemPtr to itself, which was
   // super bad and weird, but it COULD be used to get the item in the owner's
   // other hand, which is LESS bad.
-  virtual ItemPtr handItem(ToolHand hand) const = 0;
+  [[nodiscard]] virtual ItemPtr handItem(ToolHand hand) const = 0;
 
   // FIXME: What is the difference between interactRadius (which defines a tool
   // range) and inToolRange (which also defines a tool range indirectly).
@@ -37,10 +37,10 @@ public:
   // position, which is again redundant.  Also, what is beamGunRadius and why
   // is it different than interact radius?  Can different tools have a
   // different interact radius?
-  virtual float interactRadius() const = 0;
-  virtual bool inToolRange() const = 0;
-  virtual bool inToolRange(Vec2F const& position) const = 0;
-  virtual float beamGunRadius() const = 0;
+  [[nodiscard]] virtual float interactRadius() const = 0;
+  [[nodiscard]] virtual bool inToolRange() const = 0;
+  [[nodiscard]] virtual bool inToolRange(Vec2F const& position) const = 0;
+  [[nodiscard]] virtual float beamGunRadius() const = 0;
 
   // FIXME: Too specific to Player, just cast to Player if you have to and do
   // that, NPCs cannot possibly implement these properly (and do not implement
@@ -53,24 +53,24 @@ public:
   // when to cancel music anyway, also instrumentEquipped(String) is a straight
   // up ridiculous way of notifying the Player that the player itself is
   // holding an instrument, which it already knows.
-  virtual bool instrumentPlaying() = 0;
+  [[nodiscard]] virtual bool instrumentPlaying() = 0;
   virtual void instrumentEquipped(String const& instrumentKind) = 0;
 
   // FIXME: These were all fine, just need to be fixed because now we have the
   // movement controller itself and can use that directly
-  virtual Vec2F position() const = 0;
-  virtual Vec2F velocity() const = 0;
-  virtual Direction facingDirection() const = 0;
-  virtual Direction walkingDirection() const = 0;
+  [[nodiscard]] virtual Vec2F position() const = 0;
+  [[nodiscard]] virtual Vec2F velocity() const = 0;
+  [[nodiscard]] virtual Direction facingDirection() const = 0;
+  [[nodiscard]] virtual Direction walkingDirection() const = 0;
 
   // FIXME: Ditto here, except we now have the status controller directly.
-  virtual float powerMultiplier() const = 0;
-  virtual bool fullEnergy() const = 0;
-  virtual float energy() const = 0;
-  virtual bool consumeEnergy(float energy) = 0;
-  virtual bool energyLocked() const = 0;
+  [[nodiscard]] virtual float powerMultiplier() const = 0;
+  [[nodiscard]] virtual bool fullEnergy() const = 0;
+  [[nodiscard]] virtual float energy() const = 0;
+  [[nodiscard]] virtual bool consumeEnergy(float energy) = 0;
+  [[nodiscard]] virtual bool energyLocked() const = 0;
   virtual void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) = 0;
-  virtual ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const = 0;
+  [[nodiscard]] virtual ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const = 0;
 
   // FIXME: This is a dumb way of getting limited animation support
   virtual void addEffectEmitters(StringSet const& emitters) = 0;

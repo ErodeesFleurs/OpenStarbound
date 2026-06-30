@@ -25,11 +25,11 @@ public:
   void setTag(String tagName, String tagValue);
   void clearTags();
 
-  Drawable drawable(float pixelSize) const;
+  [[nodiscard]] Drawable drawable(float pixelSize) const;
 
   void update(float dt);
 
-  bool isComplete() const;
+  [[nodiscard]] bool isComplete() const;
   void reset();
 
 private:

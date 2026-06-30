@@ -32,7 +32,7 @@ private:
   StringList m_files;
   String m_lastSearch;
   CallbackListenerPtr m_reloadListener;
-  bool play();
+  [[nodiscard]] bool play();
   void refresh(bool reloadFiles = false);
 };
 

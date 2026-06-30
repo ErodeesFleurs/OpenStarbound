@@ -34,12 +34,12 @@ ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPo
 
 ServerQueryThread::~ServerQueryThread() {
   stop();
-  join();
+  (void)join();
 }
 
 void ServerQueryThread::start() {
   m_stop = false;
-  Thread::start();
+  (void)Thread::start();
   m_lastActiveTime = Time::monotonicMilliseconds();
 }
 
@@ -49,7 +49,7 @@ void ServerQueryThread::stop() {
 }
 
 void ServerQueryThread::sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds) {
-  m_queryServer.send(address, ds->ptr(), ds->size());
+  (void)m_queryServer.send(address, ds->ptr(), ds->size());
 }
 
 uint8_t ServerQueryThread::serverPlayerCount() {

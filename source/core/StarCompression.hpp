@@ -39,13 +39,13 @@ public:
   void setFilename(String filename);
   void setCompression(CompressionLevel compression);
 
-  StreamOffset pos() override;
+  [[nodiscard]] StreamOffset pos() override;
   // Only seek forward is supported on writes.  Seek is emulated *slowly* on
   // reads.
   void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
-  bool atEnd() override;
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  [[nodiscard]] bool atEnd() override;
+  [[nodiscard]] size_t read(char* data, size_t len) override;
+  [[nodiscard]] size_t write(char const* data, size_t len) override;
 
   void open(IOMode mode) override;
   // Compression is ignored on read.  Always truncates on write
@@ -54,7 +54,7 @@ public:
   void sync() override;
   void close() override;
 
-  IODevicePtr clone() override;
+  [[nodiscard]] IODevicePtr clone() override;
 
 private:
   String m_filename;

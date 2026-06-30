@@ -18,23 +18,23 @@ public:
   LiquidItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase);
   virtual ~LiquidItem() = default;
 
-  ItemPtr clone() const override;
+  [[nodiscard]] ItemPtr clone() const override;
 
   void init(ToolUserEntity& owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> nonRotatedDrawables() const override;
+  [[nodiscard]] List<Drawable> nonRotatedDrawables() const override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
-  LiquidId liquidId() const;
-  float liquidQuantity() const;
+  [[nodiscard]] LiquidId liquidId() const;
+  [[nodiscard]] float liquidQuantity() const;
 
-  List<PreviewTile> previewTiles(bool shifting) const override;
+  [[nodiscard]] List<PreviewTile> previewTiles(bool shifting) const override;
 
-  bool canPlace(bool shifting) const;
-  bool canPlaceAtTile(Vec2I pos) const;
-  bool multiplaceEnabled() const;
+  [[nodiscard]] bool canPlace(bool shifting) const;
+  [[nodiscard]] bool canPlaceAtTile(Vec2I pos) const;
+  [[nodiscard]] bool multiplaceEnabled() const;
 
 private:
   LiquidId m_liquidId;

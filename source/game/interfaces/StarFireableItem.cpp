@@ -97,11 +97,11 @@ void FireableItem::endFire(FireMode mode, bool) {
   }
 }
 
-FireMode FireableItem::fireMode() const {
+[[nodiscard]] FireMode FireableItem::fireMode() const {
   return m_mode;
 }
 
-float FireableItem::cooldownTime() const {
+[[nodiscard]] float FireableItem::cooldownTime() const {
   return m_cooldownTime;
 }
 
@@ -109,7 +109,7 @@ void FireableItem::setCooldownTime(float cooldownTime) {
   m_cooldownTime = cooldownTime;
 }
 
-float FireableItem::fireTimer() const {
+[[nodiscard]] float FireableItem::fireTimer() const {
   return m_fireTimer;
 }
 
@@ -117,23 +117,23 @@ void FireableItem::setFireTimer(float fireTimer) {
   m_fireTimer = fireTimer;
 }
 
-bool FireableItem::ready() const {
+[[nodiscard]] bool FireableItem::ready() const {
   return fireTimer() <= 0;
 }
 
-bool FireableItem::firing() const {
+[[nodiscard]] bool FireableItem::firing() const {
   return m_timeFiring > 0;
 }
 
-bool FireableItem::inUse() const {
+[[nodiscard]] bool FireableItem::inUse() const {
   return m_inUse;
 }
 
-bool FireableItem::walkWhileFiring() const {
+[[nodiscard]] bool FireableItem::walkWhileFiring() const {
   return m_walkWhileFiring;
 }
 
-bool FireableItem::stopWhileFiring() const {
+[[nodiscard]] bool FireableItem::stopWhileFiring() const {
   return m_stopWhileFiring;
 }
 
@@ -194,7 +194,7 @@ void FireableItem::triggerCooldown() {
     m_scriptComponent->invoke("triggerCooldown");
 }
 
-bool FireableItem::coolingDown() const {
+[[nodiscard]] bool FireableItem::coolingDown() const {
   return m_cooldown;
 }
 
@@ -202,7 +202,7 @@ void FireableItem::setCoolingDown(bool coolingdown) {
   m_cooldown = coolingdown;
 }
 
-float FireableItem::timeFiring() const {
+[[nodiscard]] float FireableItem::timeFiring() const {
   return m_timeFiring;
 }
 
@@ -210,19 +210,19 @@ void FireableItem::setTimeFiring(float timeFiring) {
   m_timeFiring = timeFiring;
 }
 
-Vec2F FireableItem::handPosition() const {
+[[nodiscard]] Vec2F FireableItem::handPosition() const {
   return m_handPosition;
 }
 
-Vec2F FireableItem::firePosition() const {
+[[nodiscard]] Vec2F FireableItem::firePosition() const {
   return Vec2F();
 }
 
-Json FireableItem::fireableParam(String const& key) const {
+[[nodiscard]] Json FireableItem::fireableParam(String const& key) const {
   return m_fireableParams.get(key);
 }
 
-Json FireableItem::fireableParam(String const& key, Json const& defaultVal) const {
+[[nodiscard]] Json FireableItem::fireableParam(String const& key, Json const& defaultVal) const {
   return m_fireableParams.get(key, defaultVal);
 }
 
@@ -260,14 +260,14 @@ void FireableItem::fireTriggered() {
     m_scriptComponent->invoke("fireTriggered");
 }
 
-Vec2F FireableItem::ownerFirePosition() const {
+[[nodiscard]] Vec2F FireableItem::ownerFirePosition() const {
   if (!initialized())
     throw StarException("FireableItem uninitialized in ownerFirePosition");
 
   return owner()->handPosition(hand(), (this->firePosition() - handPosition()) / TilePixels);
 }
 
-float FireableItem::windupTime() const {
+[[nodiscard]] float FireableItem::windupTime() const {
   return m_windupTime;
 }
 
@@ -275,7 +275,7 @@ void FireableItem::setWindupTime(float time) {
   m_windupTime = time;
 }
 
-List<PersistentStatusEffect> FireableItem::statusEffects() const {
+[[nodiscard]] List<PersistentStatusEffect> FireableItem::statusEffects() const {
   return {};
 }
 

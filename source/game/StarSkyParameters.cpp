@@ -115,7 +115,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
   settings = config.get("settings", JsonObject());
 }
 
-Json SkyParameters::toJson() const {
+[[nodiscard]] Json SkyParameters::toJson() const {
   auto layerToJson = [](pair<String, float> const& layer) -> Json {
     auto const& [image, scale] = layer;
     return JsonObject{{"image", image}, {"scale", scale}};

@@ -19,36 +19,36 @@ class ClientContext {
 public:
   ClientContext(Uuid serverUuid, Uuid playerUuid);
 
-  Uuid serverUuid() const;
+  [[nodiscard]] Uuid serverUuid() const;
   // The player Uuid can differ from the mainPlayer's Uuid
   //  if the player has swapped character - use this for ship saving.
-  Uuid playerUuid() const;
+  [[nodiscard]] Uuid playerUuid() const;
 
   // The coordinate for the world which the player's ship is currently
   // orbiting.
-  CelestialCoordinate shipCoordinate() const;
+  [[nodiscard]] CelestialCoordinate shipCoordinate() const;
 
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  [[nodiscard]] Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
 
   // The current world id of the player
-  WorldId playerWorldId() const;
+  [[nodiscard]] WorldId playerWorldId() const;
 
-  bool isAdmin() const;
-  EntityDamageTeam team() const;
+  [[nodiscard]] bool isAdmin() const;
+  [[nodiscard]] EntityDamageTeam team() const;
 
-  JsonRpcInterfacePtr rpcInterface() const;
+  [[nodiscard]] JsonRpcInterfacePtr rpcInterface() const;
 
-  WorldChunks newShipUpdates();
-  ShipUpgrades shipUpgrades() const;
+  [[nodiscard]] WorldChunks newShipUpdates();
+  [[nodiscard]] ShipUpgrades shipUpgrades() const;
 
   void readUpdate(ByteArray data, NetCompatibilityRules rules);
-  ByteArray writeUpdate(NetCompatibilityRules rules);
+  [[nodiscard]] ByteArray writeUpdate(NetCompatibilityRules rules);
 
   void setConnectionId(ConnectionId connectionId);
-  ConnectionId connectionId() const;
+  [[nodiscard]] ConnectionId connectionId() const;
 
   void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
-  NetCompatibilityRules netCompatibilityRules() const;
+  [[nodiscard]] NetCompatibilityRules netCompatibilityRules() const;
 
 private:
   Uuid m_serverUuid;

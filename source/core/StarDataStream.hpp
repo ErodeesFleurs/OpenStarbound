@@ -29,30 +29,30 @@ public:
   virtual ~DataStream() = default;
 
   // DataStream defaults to big-endian order for all primitive types
-  ByteOrder byteOrder() const;
+  [[nodiscard]] ByteOrder byteOrder() const;
   void setByteOrder(ByteOrder byteOrder);
 
   // DataStream can optionally write strings as null terminated rather than
   // length prefixed
-  bool nullTerminatedStrings() const;
+  [[nodiscard]] bool nullTerminatedStrings() const;
   void setNullTerminatedStrings(bool nullTerminatedStrings);
 
   // streamCompatibilityVersion defaults to CurrentStreamVersion, but can be
   // changed for compatibility with older versions of DataStream serialization.
-  unsigned streamCompatibilityVersion() const;
+  [[nodiscard]] unsigned streamCompatibilityVersion() const;
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
   void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
   // Do direct reads and writes
   virtual void readData(char* data, size_t len) = 0;
   virtual void writeData(char const* data, size_t len) = 0;
-  virtual bool atEnd() { return false; };
+  [[nodiscard]] virtual bool atEnd() { return false; };
 
   // std::span convenience overloads (delegate to virtual methods)
   void readData(std::span<char> data) { readData(data.data(), data.size()); }
   void writeData(std::span<char const> data) { writeData(data.data(), data.size()); }
 
   // These do not read / write sizes, they simply read / write directly.
-  ByteArray readBytes(size_t len);
+  [[nodiscard]] ByteArray readBytes(size_t len);
   void writeBytes(ByteArray const& ba);
 
   DataStream& operator<<(bool d);
@@ -86,17 +86,17 @@ public:
   // fewer bytes.  size_t version can be used to portably write a size_t type,
   // and portably and efficiently handles the case of NPos.
 
-  size_t writeVlqU(uint64_t i);
-  size_t writeVlqI(int64_t i);
-  size_t writeVlqS(size_t i);
+  [[nodiscard]] size_t writeVlqU(uint64_t i);
+  [[nodiscard]] size_t writeVlqI(int64_t i);
+  [[nodiscard]] size_t writeVlqS(size_t i);
 
-  size_t readVlqU(uint64_t& i);
-  size_t readVlqI(int64_t& i);
-  size_t readVlqS(size_t& i);
+  [[nodiscard]] size_t readVlqU(uint64_t& i);
+  [[nodiscard]] size_t readVlqI(int64_t& i);
+  [[nodiscard]] size_t readVlqS(size_t& i);
 
-  uint64_t readVlqU();
-  int64_t readVlqI();
-  size_t readVlqS();
+  [[nodiscard]] uint64_t readVlqU();
+  [[nodiscard]] int64_t readVlqI();
+  [[nodiscard]] size_t readVlqS();
 
   // The following functions write / read data with length and then content
   // following, but note that the length is encoded as an unsigned VLQ integer.
@@ -124,7 +124,7 @@ public:
 
   // Convenience method to avoid temporary.
   template <typename T>
-  T read();
+  [[nodiscard]] T read();
 
   // Convenient argument style reading / writing
 
@@ -238,7 +238,7 @@ DataStream& DataStream::operator>>(EnumType& e) {
 }
 
 template <typename T>
-T DataStream::read() {
+[[nodiscard]] T DataStream::read() {
   T t;
   *this >> t;
   return t;

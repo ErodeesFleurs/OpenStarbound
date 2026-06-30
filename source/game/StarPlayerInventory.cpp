@@ -27,7 +27,7 @@ struct SavedCustomBarItems {
 
 }
 
-bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) const {
+[[nodiscard]] bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) const {
   // any inventory type can have empty slots
   if (!items)
     return true;
@@ -35,7 +35,7 @@ bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagTy
   return checkInventoryFilter(items, bagType);
 }
 
-bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot) {
+[[nodiscard]] bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot) {
   // any equipment slot can be empty
   if (!item)
     return true;
@@ -111,7 +111,7 @@ PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr ite
   m_player = nullptr;
 }
 
-ItemPtr PlayerInventory::itemsAt(InventorySlot const& slot) const {
+[[nodiscard]] ItemPtr PlayerInventory::itemsAt(InventorySlot const& slot) const {
   return retrieve(slot);
 }
 
@@ -203,7 +203,7 @@ bool PlayerInventory::consumeSlot(InventorySlot const& slot, uint64_t count) {
   return consumed;
 }
 
-bool PlayerInventory::slotValid(InventorySlot const& slot) const {
+[[nodiscard]] bool PlayerInventory::slotValid(InventorySlot const& slot) const {
   if (auto bagSlot = slot.ptr<BagSlot>()) {
     if (auto bag = bagContents(bagSlot->first)) {
       if (static_cast<size_t>(bagSlot->second) >= bag->size())
@@ -270,7 +270,7 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
   return items;
 }
 
-uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
+[[nodiscard]] uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
   if (!items || items->empty())
     return 0;
 
@@ -298,11 +298,11 @@ uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
   return min(canFit, items->count());
 }
 
-bool PlayerInventory::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] bool PlayerInventory::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return hasCountOfItem(descriptor, exactMatch) >= descriptor.count();
 }
 
-uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+[[nodiscard]] uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   auto one = descriptor.singular();
 
   uint64_t count = 0;
@@ -359,7 +359,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     quantity = min(leftoverCount, consumeFromItemBags[bagType]);
     if (quantity > 0) {
       [[maybe_unused]] auto res = bag->consumeItems(one.multiply(quantity), exactMatch);
-      starAssert(res);
+      assert(res);
       leftoverCount -= quantity;
     }
   }
@@ -371,12 +371,12 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
       if (item && item->matches(one, exactMatch)) {
         auto toConsume = min(item->count(), quantity);
         [[maybe_unused]] auto res = item->consume(toConsume);
-        starAssert(res);
+        assert(res);
 
         leftoverQuantity -= toConsume;
       }
     }
-    starAssert(leftoverQuantity == 0);
+    assert(leftoverQuantity == 0);
     leftoverCount -= quantity;
   }
 
@@ -385,10 +385,10 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_swapSlot && m_swapSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_swapSlot->count(), quantity);
       [[maybe_unused]] auto res = m_swapSlot->consume(toConsume);
-      starAssert(res);
+      assert(res);
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
+      assert(quantity == 0);
     }
     leftoverCount -= std::min(leftoverCount, consumeFromSwap);
   }
@@ -398,15 +398,15 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_trashSlot && m_trashSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_trashSlot->count(), quantity);
       [[maybe_unused]] auto res = m_trashSlot->consume(toConsume);
-      starAssert(res);
+      assert(res);
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
+      assert(quantity == 0);
     }
     leftoverCount -= std::min(leftoverCount, consumeFromTrash);
   }
 
-  starAssert(leftoverCount == 0);
+  assert(leftoverCount == 0);
   return true;
 }
 
@@ -422,43 +422,43 @@ ItemDescriptor PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool
   return {};
 }
 
-HashMap<ItemDescriptor, uint64_t> PlayerInventory::availableItems() const {
+[[nodiscard]] HashMap<ItemDescriptor, uint64_t> PlayerInventory::availableItems() const {
   return ItemDatabase::normalizeBag(allItems());
 }
 
-HeadArmorPtr PlayerInventory::headArmor() const {
+[[nodiscard]] HeadArmorPtr PlayerInventory::headArmor() const {
   return as<HeadArmor>(m_equipment.value(EquipmentSlot::Head));
 }
 
-ChestArmorPtr PlayerInventory::chestArmor() const {
+[[nodiscard]] ChestArmorPtr PlayerInventory::chestArmor() const {
   return as<ChestArmor>(m_equipment.value(EquipmentSlot::Chest));
 }
 
-LegsArmorPtr PlayerInventory::legsArmor() const {
+[[nodiscard]] LegsArmorPtr PlayerInventory::legsArmor() const {
   return as<LegsArmor>(m_equipment.value(EquipmentSlot::Legs));
 }
 
-BackArmorPtr PlayerInventory::backArmor() const {
+[[nodiscard]] BackArmorPtr PlayerInventory::backArmor() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::Back));
 }
 
-HeadArmorPtr PlayerInventory::headCosmetic() const {
+[[nodiscard]] HeadArmorPtr PlayerInventory::headCosmetic() const {
   return as<HeadArmor>(m_equipment.value(EquipmentSlot::HeadCosmetic));
 }
 
-ChestArmorPtr PlayerInventory::chestCosmetic() const {
+[[nodiscard]] ChestArmorPtr PlayerInventory::chestCosmetic() const {
   return as<ChestArmor>(m_equipment.value(EquipmentSlot::ChestCosmetic));
 }
 
-LegsArmorPtr PlayerInventory::legsCosmetic() const {
+[[nodiscard]] LegsArmorPtr PlayerInventory::legsCosmetic() const {
   return as<LegsArmor>(m_equipment.value(EquipmentSlot::LegsCosmetic));
 }
 
-BackArmorPtr PlayerInventory::backCosmetic() const {
+[[nodiscard]] BackArmorPtr PlayerInventory::backCosmetic() const {
   return as<BackArmor>(m_equipment.value(EquipmentSlot::BackCosmetic));
 }
 
-ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
+[[nodiscard]] ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const {
   if (testMask && !equipmentVisibility(slot))
     return {};
 
@@ -469,7 +469,7 @@ ArmorItemPtr PlayerInventory::equipment(EquipmentSlot slot, bool testMask) const
   return {};
 }
 
-ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
+[[nodiscard]] ItemBagConstPtr PlayerInventory::bagContents(String const& type) const {
   if (!m_bags.contains(type)) return nullptr;
   return m_bags.get(type);
 }
@@ -618,7 +618,7 @@ bool PlayerInventory::clearSwap() {
   return !m_swapSlot;
 }
 
-ItemPtr PlayerInventory::swapSlotItem() const {
+[[nodiscard]] ItemPtr PlayerInventory::swapSlotItem() const {
   return m_swapSlot;
 }
 
@@ -632,7 +632,7 @@ void PlayerInventory::setSwapSlotItem(ItemPtr const& items) {
   }
 }
 
-ItemPtr PlayerInventory::essentialItem(EssentialItem essentialItem) const {
+[[nodiscard]] ItemPtr PlayerInventory::essentialItem(EssentialItem essentialItem) const {
   return m_essential.value(essentialItem);
 }
 
@@ -640,11 +640,11 @@ void PlayerInventory::setEssentialItem(EssentialItem essentialItem, ItemPtr item
   m_essential[essentialItem] = item;
 }
 
-StringMap<uint64_t> PlayerInventory::availableCurrencies() const {
+[[nodiscard]] StringMap<uint64_t> PlayerInventory::availableCurrencies() const {
   return m_currencies;
 }
 
-uint64_t PlayerInventory::currency(String const& currencyType) const {
+[[nodiscard]] uint64_t PlayerInventory::currency(String const& currencyType) const {
   return m_currencies.value(currencyType, 0);
 }
 
@@ -665,11 +665,11 @@ bool PlayerInventory::consumeCurrency(String const& currencyType, uint64_t amoun
   }
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
+[[nodiscard]] Maybe<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
   return m_customBar.at(m_customBarGroup, customBarIndex).first;
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
+[[nodiscard]] Maybe<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
   return m_customBar.at(m_customBarGroup, customBarIndex).second;
 }
 
@@ -721,7 +721,7 @@ void PlayerInventory::addToCustomBar(InventorySlot slot) {
   }
 }
 
-uint8_t PlayerInventory::customBarGroup() const {
+[[nodiscard]] uint8_t PlayerInventory::customBarGroup() const {
   return m_customBarGroup;
 }
 
@@ -729,15 +729,15 @@ void PlayerInventory::setCustomBarGroup(uint8_t group) {
   m_customBarGroup = group;
 }
 
-uint8_t PlayerInventory::customBarGroups() const {
+[[nodiscard]] uint8_t PlayerInventory::customBarGroups() const {
   return m_customBar.size(0);
 }
 
-uint8_t PlayerInventory::customBarIndexes() const {
+[[nodiscard]] uint8_t PlayerInventory::customBarIndexes() const {
   return m_customBar.size(1);
 }
 
-SelectedActionBarLocation PlayerInventory::selectedActionBarLocation() const {
+[[nodiscard]] SelectedActionBarLocation PlayerInventory::selectedActionBarLocation() const {
   return m_selectedActionBar;
 }
 
@@ -745,7 +745,7 @@ void PlayerInventory::selectActionBarLocation(SelectedActionBarLocation location
   m_selectedActionBar = location;
 }
 
-ItemPtr PlayerInventory::primaryHeldItem() const {
+[[nodiscard]] ItemPtr PlayerInventory::primaryHeldItem() const {
   if (m_swapSlot)
     return m_swapSlot;
 
@@ -761,7 +761,7 @@ ItemPtr PlayerInventory::primaryHeldItem() const {
   return {};
 }
 
-ItemPtr PlayerInventory::secondaryHeldItem() const {
+[[nodiscard]] ItemPtr PlayerInventory::secondaryHeldItem() const {
   auto pri = primaryHeldItem();
   if (itemSafeTwoHanded(pri) || m_swapSlot || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
     return {};
@@ -777,7 +777,7 @@ ItemPtr PlayerInventory::secondaryHeldItem() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
+[[nodiscard]] Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   if (m_swapSlot)
     return InventorySlot(SwapSlot());
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -785,7 +785,7 @@ Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
+[[nodiscard]] Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   if (m_swapSlot || itemSafeTwoHanded(primaryHeldItem()))
     return {};
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -797,7 +797,7 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
   return std::exchange(m_inventoryLoadOverflow, {});
 }
 
-bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {
+[[nodiscard]] bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {
   return (m_equipmentVisibilityMask >> static_cast<uint8_t>(slot)) & 0x1;
 }
 
@@ -866,7 +866,7 @@ void PlayerInventory::load(Json const& store) {
   m_equipmentVisibilityMask = static_cast<unsigned>(store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF));
 }
 
-Json PlayerInventory::store() const {
+[[nodiscard]] Json PlayerInventory::store() const {
   JsonArray customBar;
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     JsonArray customBarGroup;
@@ -927,7 +927,7 @@ void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr c
     });
 }
 
-List<ItemPtr> PlayerInventory::allItems() const {
+[[nodiscard]] List<ItemPtr> PlayerInventory::allItems() const {
   List<ItemPtr> items;
   forEveryItem([&items](InventorySlot const&, ItemPtr const& item) {
       items.append(item);
@@ -935,7 +935,7 @@ List<ItemPtr> PlayerInventory::allItems() const {
   return items;
 }
 
-Map<String, uint64_t> PlayerInventory::itemSummary() const {
+[[nodiscard]] Map<String, uint64_t> PlayerInventory::itemSummary() const {
   Map<String, uint64_t> result;
   forEveryItem([&result](auto const&, auto const& item) {
       result[item->name()] += item->count();
@@ -982,7 +982,7 @@ void PlayerInventory::setPlayer(Player& player) {
   m_player = &player;
 }
 
-PlayerInventory const& PlayerInventory::blankInventory() const {
+[[nodiscard]] PlayerInventory const& PlayerInventory::blankInventory() const {
   static thread_local PlayerInventoryPtr inventory;
   if (!inventory || inventory->m_assets != m_assets || inventory->m_configuration != m_configuration)
     inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase, m_configuration);
@@ -1004,7 +1004,7 @@ bool PlayerInventory::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
     return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
-bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) const {
+[[nodiscard]] bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) const {
   Json filterConfig;
 
   auto itemFilters = items->instanceValue("inventoryFilters");
@@ -1064,7 +1064,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
   return true;
 }
 
-ItemPtr const& PlayerInventory::retrieve(InventorySlot const& slot) const {
+[[nodiscard]] ItemPtr const& PlayerInventory::retrieve(InventorySlot const& slot) const {
   return const_cast<PlayerInventory*>(this)->retrieve(slot);
 }
 

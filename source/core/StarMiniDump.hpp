@@ -6,6 +6,6 @@
 
 namespace Star {
 #ifdef STAR_SYSTEM_WINDOWS
-  DWORD WINAPI writeMiniDump(void* ExceptionInfo);
+  [[nodiscard]] DWORD WINAPI writeMiniDump(void* ExceptionInfo);
 #endif
 }

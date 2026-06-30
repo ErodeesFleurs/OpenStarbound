@@ -39,40 +39,40 @@ public:
   SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   SmallVector& operator=(std::initializer_list<Element> list);
 
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] size_t size() const;
+  [[nodiscard]] bool empty() const;
   void resize(size_t size, Element const& e = Element());
   void reserve(size_t capacity);
 
-  reference at(size_t i);
-  const_reference at(size_t i) const;
+  [[nodiscard]] reference at(size_t i);
+  [[nodiscard]] const_reference at(size_t i) const;
 
-  reference operator[](size_t i);
-  const_reference operator[](size_t i) const;
+  [[nodiscard]] reference operator[](size_t i);
+  [[nodiscard]] const_reference operator[](size_t i) const;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] const_iterator begin() const;
+  [[nodiscard]] const_iterator end() const;
 
-  iterator begin();
-  iterator end();
+  [[nodiscard]] iterator begin();
+  [[nodiscard]] iterator end();
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  [[nodiscard]] const_reverse_iterator rbegin() const;
+  [[nodiscard]] const_reverse_iterator rend() const;
 
-  reverse_iterator rbegin();
-  reverse_iterator rend();
+  [[nodiscard]] reverse_iterator rbegin();
+  [[nodiscard]] reverse_iterator rend();
 
   // Pointer to internal data, always valid even if empty.
-  Element const* ptr() const;
-  Element* ptr();
+  [[nodiscard]] Element const* ptr() const;
+  [[nodiscard]] Element* ptr();
 
   void push_back(Element e);
   void pop_back();
 
-  iterator insert(iterator pos, Element e);
+  [[nodiscard]] iterator insert(iterator pos, Element e);
   template <typename Iterator>
-  iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, initializer_list<Element> list);
+  [[nodiscard]] iterator insert(iterator pos, Iterator begin, Iterator end);
+  [[nodiscard]] iterator insert(iterator pos, initializer_list<Element> list);
 
   template <typename... Args>
   void emplace(iterator pos, Args&&... args);
@@ -82,19 +82,19 @@ public:
 
   void clear();
 
-  iterator erase(iterator pos);
-  iterator erase(iterator begin, iterator end);
+  [[nodiscard]] iterator erase(iterator pos);
+  [[nodiscard]] iterator erase(iterator begin, iterator end);
 
   bool operator==(SmallVector const& other) const;
   bool operator!=(SmallVector const& other) const;
-  bool operator<(SmallVector const& other) const;
+  [[nodiscard]] bool operator<(SmallVector const& other) const;
 
 private:
   alignas(Element) unsigned char m_stackElements[(MaxStackSize != 0 ? MaxStackSize : 1) * sizeof(Element)];
 
-  bool isHeapAllocated() const;
-  Element const* stackElements() const;
-  Element* stackElements();
+  [[nodiscard]] bool isHeapAllocated() const;
+  [[nodiscard]] Element const* stackElements() const;
+  [[nodiscard]] Element* stackElements();
 
   Element* m_begin;
   Element* m_end;
@@ -227,12 +227,12 @@ auto SmallVector<Element, MaxStackSize>::operator=(std::initializer_list<Element
 }
 
 template <typename Element, size_t MaxStackSize>
-size_t SmallVector<Element, MaxStackSize>::size() const {
+[[nodiscard]] size_t SmallVector<Element, MaxStackSize>::size() const {
   return m_end - m_begin;
 }
 
 template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::empty() const {
+[[nodiscard]] bool SmallVector<Element, MaxStackSize>::empty() const {
   return m_begin == m_end;
 }
 
@@ -280,28 +280,28 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(size_t i) -> reference {
+[[nodiscard]] auto SmallVector<Element, MaxStackSize>::at(size_t i) -> reference {
   if (i >= size())
     throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(size_t i) const -> const_reference {
+[[nodiscard]] auto SmallVector<Element, MaxStackSize>::at(size_t i) const -> const_reference {
   if (i >= size())
     throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::operator[](size_t i) -> reference {
-  starAssert(i < size());
+[[nodiscard]] auto SmallVector<Element, MaxStackSize>::operator[](size_t i) -> reference {
+  assert(i < size());
   return m_begin[i];
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::operator[](size_t i) const -> const_reference {
-  starAssert(i < size());
+[[nodiscard]] auto SmallVector<Element, MaxStackSize>::operator[](size_t i) const -> const_reference {
+  assert(i < size());
   return m_begin[i];
 }
 
@@ -346,12 +346,12 @@ auto SmallVector<Element, MaxStackSize>::rend() -> reverse_iterator {
 }
 
 template <typename Element, size_t MaxStackSize>
-Element const* SmallVector<Element, MaxStackSize>::ptr() const {
+[[nodiscard]] Element const* SmallVector<Element, MaxStackSize>::ptr() const {
   return m_begin;
 }
 
 template <typename Element, size_t MaxStackSize>
-Element* SmallVector<Element, MaxStackSize>::ptr() {
+[[nodiscard]] Element* SmallVector<Element, MaxStackSize>::ptr() {
   return m_begin;
 }
 

@@ -30,29 +30,29 @@ private:
 template <typename Result, typename Error = String>
 class RpcPromise {
 public:
-  static pair<RpcPromise, RpcPromiseKeeper<Result, Error>> createPair();
-  static RpcPromise createFulfilled(Result result);
-  static RpcPromise createFailed(Error error);
+  [[nodiscard]] static pair<RpcPromise, RpcPromiseKeeper<Result, Error>> createPair();
+  [[nodiscard]] static RpcPromise createFulfilled(Result result);
+  [[nodiscard]] static RpcPromise createFailed(Error error);
 
   // Has the respoonse either failed or succeeded?
-  bool finished() const;
+  [[nodiscard]] bool finished() const;
   // Has the response finished with success?
-  bool succeeded() const;
+  [[nodiscard]] bool succeeded() const;
   // Has the response finished with failure?
-  bool failed() const;
+  [[nodiscard]] bool failed() const;
 
   // Returns the result of the rpc call on success, nothing on failure or when
   // not yet finished.
-  Maybe<Result> const& result() const;
+  [[nodiscard]] Maybe<Result> const& result() const;
 
   // Returns the error of a failed rpc call.  Returns nothing if the call is
   // successful or not yet finished.
-  Maybe<Error> const& error() const;
+  [[nodiscard]] Maybe<Error> const& error() const;
 
   // Wrap this RpcPromise into another promise which returns instead the result
   // of this function when fulfilled
   template <typename Function>
-  decltype(auto) wrap(Function function);
+  [[nodiscard]] decltype(auto) wrap(Function function);
 
 private:
   template <typename ResultT, typename ErrorT>
@@ -65,7 +65,7 @@ private:
 
   RpcPromise() = default;
 
-  function<Value const*()> m_getValue;
+  [[nodiscard]] function<Value const*()> m_getValue;
 };
 
 template <typename Result, typename Error>
@@ -79,7 +79,7 @@ void RpcPromiseKeeper<Result, Error>::fail(Error error) {
 }
 
 template <typename Result, typename Error>
-pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
+[[nodiscard]] pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
   auto valuePtr = std::make_shared<Value>();
 
   RpcPromise promise;
@@ -103,7 +103,7 @@ pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Resu
 }
 
 template <typename Result, typename Error>
-RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result result) {
+[[nodiscard]] RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result result) {
   auto valuePtr = std::make_shared<Value>();
   valuePtr->result = std::move(result);
 
@@ -115,7 +115,7 @@ RpcPromise<Result, Error> RpcPromise<Result, Error>::createFulfilled(Result resu
 }
 
 template <typename Result, typename Error>
-RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
+[[nodiscard]] RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
   auto valuePtr = std::make_shared<Value>();
   valuePtr->error = std::move(error);
 
@@ -127,34 +127,34 @@ RpcPromise<Result, Error> RpcPromise<Result, Error>::createFailed(Error error) {
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::finished() const {
+[[nodiscard]] bool RpcPromise<Result, Error>::finished() const {
   auto val = m_getValue();
   return val->result || val->error;
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::succeeded() const {
+[[nodiscard]] bool RpcPromise<Result, Error>::succeeded() const {
   return m_getValue()->result.isValid();
 }
 
 template <typename Result, typename Error>
-bool RpcPromise<Result, Error>::failed() const {
+[[nodiscard]] bool RpcPromise<Result, Error>::failed() const {
   return m_getValue()->error.isValid();
 }
 
 template <typename Result, typename Error>
-Maybe<Result> const& RpcPromise<Result, Error>::result() const {
+[[nodiscard]] Maybe<Result> const& RpcPromise<Result, Error>::result() const {
   return m_getValue()->result;
 }
 
 template <typename Result, typename Error>
-Maybe<Error> const& RpcPromise<Result, Error>::error() const {
+[[nodiscard]] Maybe<Error> const& RpcPromise<Result, Error>::error() const {
   return m_getValue()->error;
 }
 
 template <typename Result, typename Error>
 template <typename Function>
-decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
+[[nodiscard]] decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
   using WrappedPromise = RpcPromise<std::decay_t<decltype(function(std::declval<Result>()))>, Error>;
   WrappedPromise wrappedPromise;
   wrappedPromise.m_getValue = [wrapper = std::move(function), valuePtr = std::make_shared<typename WrappedPromise::Value>(), otherGetValue = m_getValue]() {

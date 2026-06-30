@@ -32,7 +32,7 @@ public:
 
   // Should always return packet statistics for the most recent completed
   // window of time
-  PacketStats stats() const;
+  [[nodiscard]] PacketStats stats() const;
 
 private:
   void calculate();
@@ -52,32 +52,32 @@ class PacketSocket {
 public:
   virtual ~PacketSocket() = default;
 
-  virtual bool isOpen() const = 0;
+  [[nodiscard]] virtual bool isOpen() const = 0;
   virtual void close() = 0;
 
   // Takes all packets from the given list and queues them for sending.
   virtual void sendPackets(List<PacketPtr> packets) = 0;
   // Receives any packets from the incoming queue, if available
-  virtual List<PacketPtr> receivePackets() = 0;
+  [[nodiscard]] virtual List<PacketPtr> receivePackets() = 0;
 
   // Returns true if any sent packets on the queue are still not completely
   // written.
-  virtual bool sentPacketsPending() const = 0;
+  [[nodiscard]] virtual bool sentPacketsPending() const = 0;
 
   // Write all data possible without blocking, returns true if any data was
   // actually written.
-  virtual bool writeData() = 0;
+  [[nodiscard]] virtual bool writeData() = 0;
   // Read all data available without blocking, returns true if any data was
   // actually received.
-  virtual bool readData() = 0;
+  [[nodiscard]] virtual bool readData() = 0;
 
   // Should return incoming / outgoing packet stats, if they are tracked.
   // Default implementations return nothing.
-  virtual Maybe<PacketStats> incomingStats() const;
-  virtual Maybe<PacketStats> outgoingStats() const;
+  [[nodiscard]] virtual Maybe<PacketStats> incomingStats() const;
+  [[nodiscard]] virtual Maybe<PacketStats> outgoingStats() const;
 
   virtual void setNetRules(NetCompatibilityRules netRules);
-  virtual NetCompatibilityRules netRules() const;
+  [[nodiscard]] virtual NetCompatibilityRules netRules() const;
 
 private:
   NetCompatibilityRules m_netRules;
@@ -88,7 +88,7 @@ public:
   virtual ~CompressedPacketSocket() = default;
 
   virtual void setCompressionStreamEnabled(bool enabled);
-  virtual bool compressionStreamEnabled() const;
+  [[nodiscard]] virtual bool compressionStreamEnabled() const;
 
 private:
   bool m_useCompressionStream = false;
@@ -104,22 +104,22 @@ class LocalPacketSocket : public PacketSocket {
   struct Pipe;
 
 public:
-  static pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> openPair();
+  [[nodiscard]] static pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> openPair();
 
   LocalPacketSocket(ConstructorToken, shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
 
-  bool isOpen() const override;
+  [[nodiscard]] bool isOpen() const override;
   void close() override;
 
   void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  [[nodiscard]] List<PacketPtr> receivePackets() override;
 
-  bool sentPacketsPending() const override;
+  [[nodiscard]] bool sentPacketsPending() const override;
 
   // write / read for local sockets is actually a no-op, sendPackets places
   // packets directly in the incoming queue of the paired local socket.
-  bool writeData() override;
-  bool readData() override;
+  [[nodiscard]] bool writeData() override;
+  [[nodiscard]] bool readData() override;
 
 private:
   struct Pipe {
@@ -136,23 +136,23 @@ class TcpPacketSocket : public CompressedPacketSocket {
   struct ConstructorToken {};
 
 public:
-  static UniquePtr<TcpPacketSocket> open(TcpSocketPtr socket);
+  [[nodiscard]] static UniquePtr<TcpPacketSocket> open(TcpSocketPtr socket);
 
   TcpPacketSocket(ConstructorToken, TcpSocketPtr socket);
 
-  bool isOpen() const override;
+  [[nodiscard]] bool isOpen() const override;
   void close() override;
 
   void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  [[nodiscard]] List<PacketPtr> receivePackets() override;
 
-  bool sentPacketsPending() const override;
+  [[nodiscard]] bool sentPacketsPending() const override;
 
-  bool writeData() override;
-  bool readData() override;
+  [[nodiscard]] bool writeData() override;
+  [[nodiscard]] bool readData() override;
 
-  Maybe<PacketStats> incomingStats() const override;
-  Maybe<PacketStats> outgoingStats() const override;
+  [[nodiscard]] Maybe<PacketStats> incomingStats() const override;
+  [[nodiscard]] Maybe<PacketStats> outgoingStats() const override;
 
 private:
   TcpSocketPtr m_socket;
@@ -169,23 +169,23 @@ class P2PPacketSocket : public CompressedPacketSocket {
   struct ConstructorToken {};
 
 public:
-  static UniquePtr<P2PPacketSocket> open(UniquePtr<P2PSocket> socket);
+  [[nodiscard]] static UniquePtr<P2PPacketSocket> open(UniquePtr<P2PSocket> socket);
 
   P2PPacketSocket(ConstructorToken, P2PSocketPtr socket);
 
-  bool isOpen() const override;
+  [[nodiscard]] bool isOpen() const override;
   void close() override;
 
   void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  [[nodiscard]] List<PacketPtr> receivePackets() override;
 
-  bool sentPacketsPending() const override;
+  [[nodiscard]] bool sentPacketsPending() const override;
 
-  bool writeData() override;
-  bool readData() override;
+  [[nodiscard]] bool writeData() override;
+  [[nodiscard]] bool readData() override;
 
-  Maybe<PacketStats> incomingStats() const override;
-  Maybe<PacketStats> outgoingStats() const override;
+  [[nodiscard]] Maybe<PacketStats> incomingStats() const override;
+  [[nodiscard]] Maybe<PacketStats> outgoingStats() const override;
 
 private:
   P2PSocketPtr m_socket;

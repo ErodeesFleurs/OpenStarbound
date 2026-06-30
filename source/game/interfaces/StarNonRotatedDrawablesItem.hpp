@@ -9,7 +9,7 @@ class NonRotatedDrawablesItem;
 class NonRotatedDrawablesItem {
 public:
   virtual ~NonRotatedDrawablesItem() = default;
-  virtual List<Drawable> nonRotatedDrawables() const = 0;
+  [[nodiscard]] virtual List<Drawable> nonRotatedDrawables() const = 0;
 };
 
 }

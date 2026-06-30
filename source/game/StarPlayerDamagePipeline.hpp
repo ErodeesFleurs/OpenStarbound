@@ -14,19 +14,19 @@ public:
 
   void init();
 
-  Maybe<HitType> queryHit(DamageSource const& source) const;
-  Maybe<PolyF> hitPoly() const;
-  List<DamageNotification> applyDamage(DamageRequest const& request);
-  List<DamageNotification> selfDamageNotifications();
+  [[nodiscard]] Maybe<HitType> queryHit(DamageSource const& source) const;
+  [[nodiscard]] Maybe<PolyF> hitPoly() const;
+  [[nodiscard]] List<DamageNotification> applyDamage(DamageRequest const& request);
+  [[nodiscard]] List<DamageNotification> selfDamageNotifications();
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest);
   void damagedOther(DamageNotification const& damage);
-  List<DamageSource> damageSources() const;
+  [[nodiscard]] List<DamageSource> damageSources() const;
 
   void tick(float dt);
   void tickBuildSources();
 
-  float timeSinceLastGaveDamage() const;
-  EntityId lastDamagedTarget() const;
+  [[nodiscard]] float timeSinceLastGaveDamage() const;
+  [[nodiscard]] EntityId lastDamagedTarget() const;
 
 private:
   Player& m_player;

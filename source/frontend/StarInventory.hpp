@@ -42,15 +42,15 @@ public:
   InventoryPane(MainInterface& parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services);
 
   void displayed() override;
-  PanePtr createTooltip(Vec2I const& screenPosition) override;
-  bool sendEvent(InputEvent const& event) override;
+  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
-  bool giveContainerResult(ContainerResult result);
+  [[nodiscard]] bool giveContainerResult(ContainerResult result);
 
   // update only item grids, to see if they have had their slots changed
   // this is a little hacky and should probably be checked in the player inventory instead
   void updateItems();
-  bool containsNewItems() const;
+  [[nodiscard]] bool containsNewItems() const;
   void clearChangedSlots();
 
 protected:

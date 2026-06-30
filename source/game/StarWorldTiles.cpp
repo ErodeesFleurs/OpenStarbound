@@ -126,7 +126,7 @@ void ServerTile::read(DataStream& ds, VersionNumber serializationVersion) {
   else
     ds.read(biomeTransition);
   if (serializationVersion < 418) {
-    ds.readBytes(1);
+    (void)ds.readBytes(1);
     rootSource = {};
   } else {
     ds.read(rootSource);

@@ -10,7 +10,7 @@ struct SayChatAction {
   SayChatAction(EntityId entity, String const& text, Vec2F const& position);
   SayChatAction(EntityId entity, String const& text, Vec2F const& position, Json const& config);
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   EntityId entity = NullEntityId;
   String text;
@@ -23,7 +23,7 @@ struct PortraitChatAction {
   PortraitChatAction(EntityId entity, String const& portrait, String const& text, Vec2F const& position);
   PortraitChatAction(EntityId entity, String const& portrait, String const& text, Vec2F const& position, Json const& config);
 
-  explicit operator bool() const;
+  [[nodiscard]] explicit operator bool() const;
 
   EntityId entity = NullEntityId;
   String portrait;

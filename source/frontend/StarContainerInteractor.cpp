@@ -7,7 +7,7 @@ void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
     m_openContainer->containerClose();
   m_openContainer = std::move(containerEntity);
   if (m_openContainer) {
-    starAssert(m_openContainer->inWorld());
+    assert(m_openContainer->inWorld());
     m_openContainer->containerOpen();
   }
 }

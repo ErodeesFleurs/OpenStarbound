@@ -62,19 +62,19 @@ private:
   static const int32_t responseCacheTime = 5000;
 
   void sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds);
-  bool processPacket(HostAddressWithPort const& address, char const* data, size_t length);
+  [[nodiscard]] bool processPacket(HostAddressWithPort const& address, char const* data, size_t length);
   void buildPlayerResponse();
   void buildRuleResponse();
-  bool validChallenge(HostAddressWithPort const& address, char const* data, size_t length);
+  [[nodiscard]] bool validChallenge(HostAddressWithPort const& address, char const* data, size_t length);
   void sendChallenge(HostAddressWithPort const& address);
   void pruneChallenges();
-  bool challengeRequest(HostAddressWithPort const& address, char const* data, size_t length);
+  [[nodiscard]] bool challengeRequest(HostAddressWithPort const& address, char const* data, size_t length);
 
   // Server API
-  uint8_t serverPlayerCount();
-  bool serverPassworded();
-  const char* serverPlugins();
-  String serverWorldNames();
+  [[nodiscard]] uint8_t serverPlayerCount();
+  [[nodiscard]] bool serverPassworded();
+  [[nodiscard]] const char* serverPlugins();
+  [[nodiscard]] String serverWorldNames();
 
   UniverseServer& m_universe;
   UdpServer m_queryServer;
@@ -86,8 +86,8 @@ private:
   class RequestChallenge {
   public:
     RequestChallenge();
-    bool before(uint64_t time);
-    int32_t getChallenge();
+    [[nodiscard]] bool before(uint64_t time);
+    [[nodiscard]] int32_t getChallenge();
 
   private:
     uint64_t m_time;
