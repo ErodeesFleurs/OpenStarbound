@@ -6,7 +6,8 @@ namespace Star {
 
 struct GUIBuilderExceptionTag { static constexpr char const* typeName = "GUIBuilderException"; };
 using GUIBuilderException = TypedException<StarException, GUIBuilderExceptionTag>;
-STAR_CLASS(GuiReader);
+class GuiReader;
+using GuiReaderPtr = SharedPtr<GuiReader>;
 
 class GuiReader : public WidgetParser {
 public:

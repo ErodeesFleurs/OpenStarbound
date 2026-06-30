@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ProgressWidget);
+class ProgressWidget;
+using ProgressWidgetPtr = SharedPtr<ProgressWidget>;
 class ProgressWidget : public Widget {
 public:
   ProgressWidget(String const& background,

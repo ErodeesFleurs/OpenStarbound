@@ -7,15 +7,23 @@
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(PlayerBlueprints);
-STAR_CLASS(ListWidget);
-STAR_CLASS(TextBoxWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(AudioInstance);
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class PlayerBlueprints;
+using PlayerBlueprintsPtr = SharedPtr<PlayerBlueprints>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class TextBoxWidget;
+using TextBoxWidgetPtr = SharedPtr<TextBoxWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
 
-STAR_CLASS(CraftingPane);
+class CraftingPane;
+using CraftingPanePtr = SharedPtr<CraftingPane>;
 
 class CraftingPane : public Pane {
 public:

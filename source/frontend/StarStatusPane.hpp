@@ -5,9 +5,12 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(StatusPane);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class StatusPane;
+using StatusPanePtr = SharedPtr<StatusPane>;
 
 class StatusPane : public Pane {
 public:

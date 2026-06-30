@@ -18,7 +18,8 @@ inline Color const& fontModeToColor(FontMode mode) {
   return mode == FontMode::Shadow ? Color::Black : Color::Clear;
 }
 
-STAR_CLASS(TextPainter);
+class TextPainter;
+using TextPainterPtr = SharedPtr<TextPainter>;
 
 struct TextPositioning {
   TextPositioning();

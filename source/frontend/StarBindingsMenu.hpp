@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(BindingsMenu);
+class BindingsMenu;
+using BindingsMenuPtr = SharedPtr<BindingsMenu>;
 
 class BindingsMenu : public BaseScriptPane {
 public:

@@ -5,8 +5,10 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PortraitWidget);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class PortraitWidget;
+using PortraitWidgetPtr = SharedPtr<PortraitWidget>;
 
 class PortraitWidget : public Widget {
 public:

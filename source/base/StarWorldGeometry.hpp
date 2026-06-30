@@ -4,8 +4,6 @@
 
 namespace Star {
 
-STAR_CLASS(WorldGeometry);
-
 // Utility class for dealing with the non-euclidean nature of the World.
 // Handles the surprisingly complex job of deciding intersections and splitting
 // geometry across the world wrap boundary.

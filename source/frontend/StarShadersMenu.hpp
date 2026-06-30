@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(ShadersMenu);
+class ShadersMenu;
+using ShadersMenuPtr = SharedPtr<ShadersMenu>;
 
 class ShadersMenu : public BaseScriptPane {
 public:

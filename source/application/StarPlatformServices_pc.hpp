@@ -18,19 +18,8 @@
 namespace Star {
 
 class PcPlatformServices;
-using PcPlatformServicesPtr = shared_ptr<PcPlatformServices>;
-using PcPlatformServicesConstPtr = shared_ptr<PcPlatformServices const>;
-using PcPlatformServicesWeakPtr = weak_ptr<PcPlatformServices>;
-using PcPlatformServicesConstWeakPtr = weak_ptr<PcPlatformServices const>;
-using PcPlatformServicesUPtr = unique_ptr<PcPlatformServices>;
-using PcPlatformServicesConstUPtr = unique_ptr<PcPlatformServices const>;
 struct PcPlatformServicesState;
-using PcPlatformServicesStatePtr = shared_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstPtr = shared_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateWeakPtr = weak_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstWeakPtr = weak_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateUPtr = unique_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstUPtr = unique_ptr<PcPlatformServicesState const>;
+using PcPlatformServicesStatePtr = SharedPtr<PcPlatformServicesState>;
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();
@@ -64,7 +53,7 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static PcPlatformServicesUPtr create(String const& path, StringList platformArguments);
+  static UniquePtr<PcPlatformServices> create(String const& path, StringList platformArguments);
 
   StatisticsServicePtr statisticsService() const;
   P2PNetworkingServicePtr p2pNetworkingService() const;

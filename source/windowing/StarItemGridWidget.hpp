@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(ItemGridWidget);
+class ItemGridWidget;
+using ItemGridWidgetPtr = SharedPtr<ItemGridWidget>;
 
 class ItemGridWidget : public Widget {
 public:

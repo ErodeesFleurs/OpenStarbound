@@ -6,8 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(BaseScriptPane);
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
 
 // A more 'raw' script pane that doesn't depend on a world being present.
 // Requires a derived class to provide a Lua root.

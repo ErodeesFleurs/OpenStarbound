@@ -7,14 +7,22 @@
 
 namespace Star {
 
-STAR_CLASS(SliderBarWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(VoiceSettingsMenu);
-STAR_CLASS(KeybindingsMenu);
-STAR_CLASS(GraphicsMenu);
-STAR_CLASS(BindingsMenu);
-STAR_CLASS(OptionsMenu);
+class SliderBarWidget;
+using SliderBarWidgetPtr = SharedPtr<SliderBarWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class VoiceSettingsMenu;
+using VoiceSettingsMenuPtr = SharedPtr<VoiceSettingsMenu>;
+class KeybindingsMenu;
+using KeybindingsMenuPtr = SharedPtr<KeybindingsMenu>;
+class GraphicsMenu;
+using GraphicsMenuPtr = SharedPtr<GraphicsMenu>;
+class BindingsMenu;
+using BindingsMenuPtr = SharedPtr<BindingsMenu>;
+class OptionsMenu;
+using OptionsMenuPtr = SharedPtr<OptionsMenu>;
 
 class OptionsMenu : public Pane {
 public:

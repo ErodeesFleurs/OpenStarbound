@@ -5,16 +5,27 @@
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(TextBoxWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(TabSetWidget);
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
+class ItemGridWidget;
+using ItemGridWidgetPtr = SharedPtr<ItemGridWidget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class TextBoxWidget;
+using TextBoxWidgetPtr = SharedPtr<TextBoxWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class TabSetWidget;
+using TabSetWidgetPtr = SharedPtr<TabSetWidget>;
 
-STAR_CLASS(MerchantPane);
+class MerchantPane;
+using MerchantPanePtr = SharedPtr<MerchantPane>;
 
 class MerchantPane : public Pane {
 public:

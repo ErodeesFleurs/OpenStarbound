@@ -5,9 +5,12 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(WorldPainter);
-STAR_CLASS(MainMixer);
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class WorldPainter;
+using WorldPainterPtr = SharedPtr<WorldPainter>;
+class MainMixer;
+using MainMixerPtr = SharedPtr<MainMixer>;
 
 class MainMixer {
 public:

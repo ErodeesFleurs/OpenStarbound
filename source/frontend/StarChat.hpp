@@ -5,13 +5,20 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(TextBoxWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ImageStretchWidget);
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(Chat);
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class TextBoxWidget;
+using TextBoxWidgetPtr = SharedPtr<TextBoxWidget>;
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = SharedPtr<ImageStretchWidget>;
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
+class Chat;
+using ChatPtr = SharedPtr<Chat>;
 
 class Chat : public BaseScriptPane {
 public:

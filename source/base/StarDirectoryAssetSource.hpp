@@ -5,8 +5,6 @@
 
 namespace Star {
 
-STAR_CLASS(DirectoryAssetSource);
-
 class DirectoryAssetSource : public AssetSource {
 public:
   // Any file that forms an asset path that matches any of the patterns in

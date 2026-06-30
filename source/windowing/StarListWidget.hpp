@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(ListWidget);
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
 
 class ListWidget : public Widget {
 public:

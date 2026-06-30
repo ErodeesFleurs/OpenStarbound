@@ -11,26 +11,10 @@ extern bool g_steamIsFlatpak;
 #endif
 
 class ApplicationController;
-using ApplicationControllerPtr = shared_ptr<ApplicationController>;
-using ApplicationControllerConstPtr = shared_ptr<ApplicationController const>;
-using ApplicationControllerWeakPtr = weak_ptr<ApplicationController>;
-using ApplicationControllerConstWeakPtr = weak_ptr<ApplicationController const>;
-using ApplicationControllerUPtr = unique_ptr<ApplicationController>;
-using ApplicationControllerConstUPtr = unique_ptr<ApplicationController const>;
+using ApplicationControllerPtr = SharedPtr<ApplicationController>;
 class Renderer;
-using RendererPtr = shared_ptr<Renderer>;
-using RendererConstPtr = shared_ptr<Renderer const>;
-using RendererWeakPtr = weak_ptr<Renderer>;
-using RendererConstWeakPtr = weak_ptr<Renderer const>;
-using RendererUPtr = unique_ptr<Renderer>;
-using RendererConstUPtr = unique_ptr<Renderer const>;
+using RendererPtr = SharedPtr<Renderer>;
 class Application;
-using ApplicationPtr = shared_ptr<Application>;
-using ApplicationConstPtr = shared_ptr<Application const>;
-using ApplicationWeakPtr = weak_ptr<Application>;
-using ApplicationConstWeakPtr = weak_ptr<Application const>;
-using ApplicationUPtr = unique_ptr<Application>;
-using ApplicationConstUPtr = unique_ptr<Application const>;
 
 struct ApplicationExceptionTag { static constexpr char const* typeName = "ApplicationException"; };
 using ApplicationException = TypedException<StarException, ApplicationExceptionTag>;

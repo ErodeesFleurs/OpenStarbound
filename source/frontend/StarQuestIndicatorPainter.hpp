@@ -5,8 +5,10 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(QuestIndicatorPainter);
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class QuestIndicatorPainter;
+using QuestIndicatorPainterPtr = SharedPtr<QuestIndicatorPainter>;
 
 class QuestIndicatorPainter {
 public:

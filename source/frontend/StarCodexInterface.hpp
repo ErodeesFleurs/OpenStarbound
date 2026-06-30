@@ -5,16 +5,23 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(StackWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ButtonGroupWidget);
-STAR_CLASS(Codex);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class StackWidget;
+using StackWidgetPtr = SharedPtr<StackWidget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class ButtonGroupWidget;
+using ButtonGroupWidgetPtr = SharedPtr<ButtonGroupWidget>;
+class Codex;
+using CodexConstPtr = SharedPtr<Codex const>;
 
-STAR_CLASS(CodexInterface);
+class CodexInterface;
+using CodexInterfacePtr = SharedPtr<CodexInterface>;
 class CodexInterface : public Pane {
 public:
   CodexInterface(PlayerPtr player);

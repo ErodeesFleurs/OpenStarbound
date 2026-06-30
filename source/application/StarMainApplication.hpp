@@ -5,7 +5,7 @@
 #include "StarRenderer.hpp"
 
 namespace Star {
-  int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs);
+  int runMainApplication(UniquePtr<Application> application, StringList cmdLineArgs);
 }
 
 #if defined STAR_SYSTEM_WINDOWS

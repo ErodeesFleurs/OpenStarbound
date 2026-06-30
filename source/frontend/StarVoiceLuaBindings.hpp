@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(Voice);
+class Voice;
+using VoicePtr = SharedPtr<Voice>;
 
 namespace LuaBindings {
   LuaCallbacks makeVoiceCallbacks();

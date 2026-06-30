@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(Configuration);
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
 
 struct RootExceptionTag { static constexpr char const* typeName = "RootException"; };
 using RootException = TypedException<StarException, RootExceptionTag>;

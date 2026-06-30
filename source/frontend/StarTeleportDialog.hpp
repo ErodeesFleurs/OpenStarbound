@@ -7,8 +7,13 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(PaneManager);
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class PaneManager;
+using PaneManagerPtr = SharedPtr<PaneManager>;
+
+class TeleportDialog;
+using TeleportDialogPtr = SharedPtr<TeleportDialog>;
 
 class TeleportDialog : public Pane {
 public:

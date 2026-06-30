@@ -7,8 +7,10 @@
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(NameplatePainter);
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class NameplatePainter;
+using NameplatePainterPtr = SharedPtr<NameplatePainter>;
 
 class NameplatePainter {
 public:

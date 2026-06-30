@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(StackWidget);
+class StackWidget;
+using StackWidgetPtr = SharedPtr<StackWidget>;
 class StackWidget : public Widget {
 public:
   void showPage(size_t page);

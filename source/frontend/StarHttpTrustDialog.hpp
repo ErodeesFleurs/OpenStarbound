@@ -4,8 +4,6 @@
 
 namespace Star {
 
-STAR_CLASS(HttpTrustDialog);
-
 enum class HttpTrustReply {
   Allow,
   Deny
@@ -30,4 +28,3 @@ private:
 };
 
 }
-

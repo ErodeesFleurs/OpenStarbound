@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_CLASS(WorldPainter);
+class WorldPainter;
+using WorldPainterPtr = SharedPtr<WorldPainter>;
 
 // Will update client rendering window internally
 class WorldPainter {

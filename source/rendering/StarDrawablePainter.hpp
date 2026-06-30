@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(DrawablePainter);
+class DrawablePainter;
+using DrawablePainterPtr = SharedPtr<DrawablePainter>;
 
 class DrawablePainter {
 public:

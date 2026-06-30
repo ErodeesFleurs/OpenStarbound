@@ -7,9 +7,15 @@
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(AudioInstance);
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+
+class RadioMessagePopup;
+using RadioMessagePopupPtr = SharedPtr<RadioMessagePopup>;
 
 class RadioMessagePopup : public Pane {
 public:

@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(PaneManager);
+class PaneManager;
+using PaneManagerPtr = SharedPtr<PaneManager>;
 
 enum class PaneLayer {
   // A special class of window only meant to be used by PaneManager to display

@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
 
 // Very simple Widget that allows easy drawing to its surface, to easily tie a
 // simplified rendering / input context into the regular widget / GuiReader

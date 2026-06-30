@@ -5,12 +5,17 @@
 
 namespace Star {
 
-STAR_CLASS(QuestManager);
-STAR_CLASS(Player);
-STAR_CLASS(Cinematic);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(PaneManager);
-STAR_CLASS(ItemBag);
+class QuestManager;
+using QuestManagerPtr = SharedPtr<QuestManager>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class Cinematic;
+using CinematicPtr = SharedPtr<Cinematic>;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class PaneManager;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
 
 class QuestLogInterface : public Pane {
 public:

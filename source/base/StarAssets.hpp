@@ -11,13 +11,22 @@
 
 namespace Star {
 
-STAR_CLASS(Font);
-STAR_CLASS(Audio);
-STAR_CLASS(Image);
-STAR_STRUCT(FramesSpecification);
-STAR_CLASS(Assets);
+class Font;
+using FontPtr = SharedPtr<Font>;
+using FontConstPtr = SharedPtr<Font const>;
+class Audio;
+using AudioConstPtr = SharedPtr<Audio const>;
+class Image;
+using ImagePtr = SharedPtr<Image>;
+using ImageConstPtr = SharedPtr<Image const>;
+struct FramesSpecification;
+using FramesSpecificationConstPtr = SharedPtr<FramesSpecification const>;
+class Assets;
+using AssetsPtr = SharedPtr<Assets>;
+using AssetsConstPtr = SharedPtr<Assets const>;
 
-STAR_CLASS(LuaContext);
+class LuaContext;
+using LuaContextPtr = SharedPtr<LuaContext>;
 
 struct AssetExceptionTag { static constexpr char const* typeName = "AssetException"; };
 using AssetException = TypedException<StarException, AssetExceptionTag>;

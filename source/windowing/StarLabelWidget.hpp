@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
 class LabelWidget : public Widget {
 public:
   LabelWidget(String text = String(),

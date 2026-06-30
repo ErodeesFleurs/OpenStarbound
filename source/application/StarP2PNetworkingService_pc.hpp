@@ -8,14 +8,6 @@
 
 namespace Star {
 
-class PcP2PNetworkingService;
-using PcP2PNetworkingServicePtr = shared_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstPtr = shared_ptr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceWeakPtr = weak_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstWeakPtr = weak_ptr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceUPtr = unique_ptr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstUPtr = unique_ptr<PcP2PNetworkingService const>;
-
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
   PcP2PNetworkingService(PcPlatformServicesStatePtr state);
@@ -62,7 +54,7 @@ private:
     bool connected = false;
   };
 
-  unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
+  UniquePtr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
   STEAM_CALLBACK(PcP2PNetworkingService, steamOnConnectionFailure, P2PSessionConnectFail_t, m_callbackConnectionFailure);
   STEAM_CALLBACK(PcP2PNetworkingService, steamOnJoinRequested, GameRichPresenceJoinRequested_t, m_callbackJoinRequested);

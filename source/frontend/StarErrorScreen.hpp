@@ -7,11 +7,14 @@
 
 namespace Star {
 
-STAR_CLASS(Pane);
-STAR_CLASS(PaneManager);
-STAR_CLASS(GuiContext);
+class Pane;
+using PanePtr = SharedPtr<Pane>;
+class PaneManager;
+using PaneManagerPtr = SharedPtr<PaneManager>;
+class GuiContext;
 
-STAR_CLASS(ErrorScreen);
+class ErrorScreen;
+using ErrorScreenPtr = SharedPtr<ErrorScreen>;
 
 class ErrorScreen {
 public:

@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_CLASS(AssetTextureGroup);
+class AssetTextureGroup;
+using AssetTextureGroupPtr = SharedPtr<AssetTextureGroup>;
 
 // Creates a renderer texture group for textures loaded directly from Assets.
 class AssetTextureGroup {

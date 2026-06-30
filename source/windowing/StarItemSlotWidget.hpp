@@ -6,8 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemSlotWidget);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemSlotWidget;
+using ItemSlotWidgetPtr = SharedPtr<ItemSlotWidget>;
 
 static float const ItemIndicateNewTime = 1.5f;
 

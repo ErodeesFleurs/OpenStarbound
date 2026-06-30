@@ -29,9 +29,12 @@ extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
 enum class VoiceChannelMode: uint8_t { Mono = 1, Stereo = 2 };
 extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames;
 
-STAR_CLASS(Voice);
-STAR_CLASS(VoiceAudioStream);
-STAR_CLASS(ApplicationController);
+class Voice;
+using VoicePtr = SharedPtr<Voice>;
+class VoiceAudioStream;
+using VoiceAudioStreamPtr = SharedPtr<VoiceAudioStream>;
+class ApplicationController;
+using ApplicationControllerPtr = SharedPtr<ApplicationController>;
 
 struct VoiceAudioChunk {
   std::unique_ptr<int16_t[]> data;

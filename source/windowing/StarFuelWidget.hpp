@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(FuelWidget);
+class FuelWidget;
+using FuelWidgetPtr = SharedPtr<FuelWidget>;
 
 class FuelWidget : public Widget {
 public:

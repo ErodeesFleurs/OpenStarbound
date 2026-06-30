@@ -4,9 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(ScriptPane);
-STAR_CLASS(UniverseClient);
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
+class ScriptPane;
+using ScriptPanePtr = SharedPtr<ScriptPane>;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
 
 class ScriptPane : public BaseScriptPane {
 public:

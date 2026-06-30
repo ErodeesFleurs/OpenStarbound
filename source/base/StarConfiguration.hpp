@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(Configuration);
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
 
 struct ConfigurationExceptionTag { static constexpr char const* typeName = "ConfigurationException"; };
 using ConfigurationException = TypedException<StarException, ConfigurationExceptionTag>;

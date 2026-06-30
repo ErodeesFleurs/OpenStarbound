@@ -6,8 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(GraphicsMenu);
-STAR_CLASS(ShadersMenu);
+class GraphicsMenu;
+using GraphicsMenuPtr = SharedPtr<GraphicsMenu>;
+class ShadersMenu;
+using ShadersMenuPtr = SharedPtr<ShadersMenu>;
 
 class GraphicsMenu : public Pane {
 public:

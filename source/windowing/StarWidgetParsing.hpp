@@ -4,8 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(Widget);
-STAR_CLASS(Pane);
+class Widget;
+using WidgetPtr = SharedPtr<Widget>;
+class Pane;
+using PanePtr = SharedPtr<Pane>;
 
 struct WidgetParserExceptionTag { static constexpr char const* typeName = "WidgetParserException"; };
 using WidgetParserException = TypedException<StarException, WidgetParserExceptionTag>;

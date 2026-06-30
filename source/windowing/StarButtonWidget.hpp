@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ButtonWidget);
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
 
 class ButtonWidget : public Widget {
 public:
