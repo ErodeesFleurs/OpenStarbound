@@ -41,15 +41,15 @@ EntityFactory::EntityFactory(
     VersioningDatabaseConstPtr versioningDatabase,
     ItemDatabaseConstPtr itemDatabase,
     ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_playerFactory(std::move(playerFactory))
-  , m_monsterDatabase(std::move(monsterDatabase))
-  , m_objectDatabase(std::move(objectDatabase))
-  , m_projectileDatabase(std::move(projectileDatabase))
-  , m_npcDatabase(std::move(npcDatabase))
-  , m_vehicleDatabase(std::move(vehicleDatabase))
-  , m_versioningDatabase(std::move(versioningDatabase))
-  , m_assets(std::move(assets))
-  , m_itemDatabase(std::move(itemDatabase))
+  : m_playerFactory(requireServiceValueAs<EntityFactoryException>(std::move(playerFactory), "EntityFactory", "player factory"))
+  , m_monsterDatabase(requireServiceValueAs<EntityFactoryException>(std::move(monsterDatabase), "EntityFactory", "monster database"))
+  , m_objectDatabase(requireServiceValueAs<EntityFactoryException>(std::move(objectDatabase), "EntityFactory", "object database"))
+  , m_projectileDatabase(requireServiceValueAs<EntityFactoryException>(std::move(projectileDatabase), "EntityFactory", "projectile database"))
+  , m_npcDatabase(requireServiceValueAs<EntityFactoryException>(std::move(npcDatabase), "EntityFactory", "npc database"))
+  , m_vehicleDatabase(requireServiceValueAs<EntityFactoryException>(std::move(vehicleDatabase), "EntityFactory", "vehicle database"))
+  , m_versioningDatabase(requireServiceValueAs<EntityFactoryException>(std::move(versioningDatabase), "EntityFactory", "versioning database"))
+  , m_assets(requireServiceValueAs<EntityFactoryException>(std::move(assets), "EntityFactory", "assets"))
+  , m_itemDatabase(requireServiceValueAs<EntityFactoryException>(std::move(itemDatabase), "EntityFactory", "item database"))
   , m_imageMetadataDatabase(requireServiceValueAs<EntityFactoryException>(std::move(imageMetadataDatabase), "EntityFactory", "image metadata database")) {}
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {

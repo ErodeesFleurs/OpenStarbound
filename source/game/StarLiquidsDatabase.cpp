@@ -9,8 +9,8 @@ namespace Star {
 LiquidSettings::LiquidSettings() : id(EmptyLiquidId) {}
 
 LiquidsDatabase::LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase) {
-  requireServiceAs<LiquidException>(assets, "LiquidsDatabase", "assets");
-  requireDependencyAs<LiquidException>(materialDatabase, "LiquidsDatabase", "material database");
+  assets = requireServiceValueAs<LiquidException>(std::move(assets), "LiquidsDatabase", "assets");
+  materialDatabase = requireDependencyValueAs<LiquidException>(std::move(materialDatabase), "LiquidsDatabase", "material database");
 
   auto config = assets->json("/liquids.config");
 

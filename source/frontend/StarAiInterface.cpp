@@ -39,8 +39,8 @@ AiInterface::AiInterface(UniverseClientPtr client,
     MainInterfacePaneManager& paneManager,
     AiInterfaceServices services)
   : Pane(services.guiContext),
-    m_client(std::move(client)),
-    m_cinematic(std::move(cinematic)),
+    m_client(requireServiceValueAs<StarException>(std::move(client), "AiInterface", "universe client")),
+    m_cinematic(requireServiceValueAs<StarException>(std::move(cinematic), "AiInterface", "cinematic overlay")),
     m_paneManager(paneManager),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "AiInterface", "assets")),
     m_aiDatabase(requireServiceValueAs<StarException>(std::move(services.aiDatabase), "AiInterface", "ai database")) {

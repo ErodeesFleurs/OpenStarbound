@@ -4,7 +4,7 @@
 namespace Star {
 
 FallingBlocksAgent::FallingBlocksAgent(AssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
-  : m_facade(std::move(worldFacade)) {
+  : m_facade(requireServiceValueAs<StarException>(std::move(worldFacade), "FallingBlocksAgent", "world facade")) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "FallingBlocksAgent", "assets");
 
   m_immediateUpwardPropagateProbability = assets->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();

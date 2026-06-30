@@ -1,10 +1,11 @@
 #include "StarIODeviceCallbacks.hpp"
+#include "StarAlgorithm.hpp"
 #include "vorbis/vorbisfile.h"
 
 namespace Star {
 
-IODeviceCallbacks::IODeviceCallbacks(IODevicePtr device) 
-  : m_device(std::move(device)) {
+IODeviceCallbacks::IODeviceCallbacks(IODevicePtr device)
+  : m_device(requireDependencyValueAs<StarException>(std::move(device), "IODeviceCallbacks", "device")) {
   if (!m_device->isOpen())
     m_device->open(IOMode::Read);
 }

@@ -54,7 +54,7 @@ TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParame
 TerrainSelector::~TerrainSelector() {}
 
 TerrainDatabase::TerrainDatabase(AssetsConstPtr assets) {
-  requireServiceAs<TerrainException>(assets, "TerrainDatabase", "assets");
+  assets = requireServiceValueAs<TerrainException>(std::move(assets), "TerrainDatabase", "assets");
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [this, assets](String const& type) {

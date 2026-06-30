@@ -28,8 +28,8 @@ MerchantPane::MerchantPane(
     EntityId sourceEntityId,
     MerchantPaneServices services)
   : Pane(services.guiContext),
-    m_worldClient(std::move(worldClient)),
-    m_player(std::move(player)),
+    m_worldClient(requireServiceValueAs<StarException>(std::move(worldClient), "MerchantPane", "world client")),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "MerchantPane", "player")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "MerchantPane", "assets")),
     m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "MerchantPane", "item database")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "MerchantPane", "object database")),

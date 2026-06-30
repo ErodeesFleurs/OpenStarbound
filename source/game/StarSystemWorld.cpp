@@ -115,9 +115,9 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
 }
 
 SystemWorld::SystemWorld(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
-  : m_celestialDatabase(std::move(celestialDatabase)),
+  : m_celestialDatabase(requireServiceValueAs<StarException>(std::move(celestialDatabase), "SystemWorld", "celestial database")),
     m_assets(requireServiceValueAs<StarException>(std::move(assets), "SystemWorld", "assets")),
-    m_universeClock(std::move(universeClock)),
+    m_universeClock(requireServiceValueAs<StarException>(std::move(universeClock), "SystemWorld", "universe clock")),
     m_nameGenerator(requireServiceValueAs<StarException>(std::move(nameGenerator), "SystemWorld", "name generator")) {
   m_config = SystemWorldConfig::fromJson(m_assets->json("/systemworld.config"));
 }

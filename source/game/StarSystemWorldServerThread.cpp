@@ -8,7 +8,7 @@ namespace Star {
 SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile, VersioningDatabaseConstPtr versioningDatabase)
   : Thread(strf("SystemWorldServer: {}", location))
   , m_systemLocation(location)
-  , m_systemWorld(std::move(systemWorld))
+  , m_systemWorld(requireServiceValueAs<StarException>(std::move(systemWorld), "SystemWorldServerThread", "system world"))
   , m_storageFile(storageFile)
   , m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "SystemWorldServerThread", "versioning database"))
 {

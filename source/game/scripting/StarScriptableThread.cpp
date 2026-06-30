@@ -1,4 +1,5 @@
 #include "StarScriptableThread.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -17,7 +18,7 @@ ScriptableThread::ScriptableThread(Json parameters, LuaRootServices luaRootServi
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
-      m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
+      m_luaRoot = make_shared<LuaRoot>(requireLuaRootServices(std::move(luaRootServices), "ScriptableThread"));
       m_luaRoot->luaEngine().setNullTerminated(false);
       m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
       m_name = m_parameters.getString("name");

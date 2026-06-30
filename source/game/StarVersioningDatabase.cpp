@@ -123,7 +123,7 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
 }
 
 VersioningDatabase::VersioningDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, function<String(String const&)> toStoragePath, LuaRootServices luaRootServices)
-    : m_luaRoot(std::move(luaRootServices)),
+    : m_luaRoot(requireLuaRootServices(std::move(luaRootServices), "VersioningDatabase")),
       m_assets(requireServiceValueAs<VersioningDatabaseException>(std::move(assets), "VersioningDatabase", "assets")),
       m_liquidsDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(liquidsDatabase), "VersioningDatabase", "liquids database")),
       m_biomeDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(biomeDatabase), "VersioningDatabase", "biome database")),

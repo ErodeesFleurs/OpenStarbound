@@ -1,4 +1,6 @@
 #include "StarUniverseConnection.hpp"
+#include "StarAlgorithm.hpp"
+#include "StarException.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include <thread>
@@ -8,7 +10,7 @@ namespace Star {
 static const int PacketSocketPollSleep = 1;
 
 UniverseConnection::UniverseConnection(UniquePtr<PacketSocket> packetSocket)
-  : m_packetSocket(std::move(packetSocket)) {}
+  : m_packetSocket(requireServiceValueAs<StarException>(std::move(packetSocket), "UniverseConnection", "packet socket")) {}
 
 UniverseConnection::UniverseConnection(UniverseConnection&& rhs) {
   operator=(std::move(rhs));
@@ -124,7 +126,8 @@ Maybe<PacketStats> UniverseConnection::outgoingStats() const {
 }
 
 UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads)
-    : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
+    : m_packetReceiver(requireServiceValueAs<StarException>(std::move(packetReceiver), "UniverseConnectionServer", "packet receiver")),
+      m_shutdown(false) {
   if (numWorkerThreads == 0)
     m_numWorkerThreads = max<size_t>(2, std::thread::hardware_concurrency() / 4);
   else

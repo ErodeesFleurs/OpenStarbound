@@ -1,4 +1,5 @@
 #include "StarVehicle.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
@@ -13,7 +14,14 @@
 namespace Star {
 
 Vehicle::Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json baseConfig, String path, Json dynamicConfig)
-    : m_baseConfig(std::move(baseConfig)), m_particleDatabase(std::move(particleDatabase)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)), m_movementController(MovementParameters(), assets), m_scriptedAnimator(assets) {
+    : m_baseConfig(std::move(baseConfig)),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "Vehicle", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Vehicle", "image metadata database")),
+      m_path(std::move(path)),
+      m_dynamicConfig(std::move(dynamicConfig)),
+      m_movementController(MovementParameters(), requireServiceValueAs<StarException>(assets, "Vehicle", "assets")),
+      m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Vehicle", "assets")) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Vehicle", "assets");
 
   m_typeName = m_baseConfig.getString("name");
 

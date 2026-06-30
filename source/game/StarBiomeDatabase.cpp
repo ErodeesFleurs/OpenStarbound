@@ -14,7 +14,7 @@ BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr mat
   : m_assets(requireServiceValueAs<BiomeException>(std::move(assets), "BiomeDatabase", "assets")),
     m_materialDatabase(requireServiceValueAs<BiomeException>(std::move(materialDatabase), "BiomeDatabase", "material database")),
     m_functionDatabase(requireServiceValueAs<BiomeException>(std::move(functionDatabase), "BiomeDatabase", "function database")),
-    m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+    m_imageMetadataDatabase(requireServiceValueAs<BiomeException>(std::move(imageMetadataDatabase), "BiomeDatabase", "image metadata database")),
     m_plantDatabase(requireServiceValueAs<BiomeException>(std::move(plantDatabase), "BiomeDatabase", "plant database")) {
 
   m_spawnGroups = m_assets->json("/spawning.config:spawnGroups");

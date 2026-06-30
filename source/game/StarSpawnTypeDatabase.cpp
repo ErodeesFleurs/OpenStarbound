@@ -110,7 +110,7 @@ SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups,
 }
 
 SpawnTypeDatabase::SpawnTypeDatabase(AssetsConstPtr assets) {
-  requireServiceAs<SpawnTypeDatabaseException>(assets, "SpawnTypeDatabase", "assets");
+  assets = requireServiceValueAs<SpawnTypeDatabaseException>(std::move(assets), "SpawnTypeDatabase", "assets");
 
   auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);

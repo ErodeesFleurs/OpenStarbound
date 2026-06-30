@@ -142,7 +142,7 @@ void MiningTool::changeDurability(float amount) {
 
 HarvestingTool::HarvestingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config) {
-  requireServiceAs<ItemException>(assets, "HarvestingTool", "assets");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "HarvestingTool", "assets");
 
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
@@ -583,7 +583,7 @@ float TillingTool::getAngle(float aimAngle) {
 
 PaintingBeamTool::PaintingBeamTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
-  requireServiceAs<ItemException>(assets, "PaintingBeamTool", "assets");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "PaintingBeamTool", "assets");
 
   m_blockRadius = instanceValue("blockRadius").toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius").toFloat();

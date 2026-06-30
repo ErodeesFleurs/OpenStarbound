@@ -10,9 +10,9 @@
 namespace Star {
 
 TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_itemDatabase(std::move(itemDatabase)),
+  : m_itemDatabase(requireServiceValueAs<TreasureException>(std::move(itemDatabase), "TreasureDatabase", "item database")),
     m_objectDatabase(requireServiceValueAs<TreasureException>(std::move(objectDatabase), "TreasureDatabase", "object database")) {
-  requireServiceAs<TreasureException>(assets, "TreasureDatabase", "assets");
+  assets = requireServiceValueAs<TreasureException>(std::move(assets), "TreasureDatabase", "assets");
 
   auto& treasurePools = assets->scanExtension("treasurepools");
   auto& treasureChests = assets->scanExtension("treasurechests");

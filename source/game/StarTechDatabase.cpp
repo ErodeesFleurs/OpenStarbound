@@ -12,7 +12,7 @@ EnumMap<TechType> const TechTypeNames{
 };
 
 TechDatabase::TechDatabase(AssetsConstPtr assets) {
-  requireServiceAs<TechDatabaseException>(assets, "TechDatabase", "assets");
+  assets = requireServiceValueAs<TechDatabaseException>(std::move(assets), "TechDatabase", "assets");
   auto& files = assets->scanExtension("tech");
   assets->queueJsons(files);
   for (auto& file : files) {

@@ -11,7 +11,7 @@ WeatherType::WeatherType() {
 
 WeatherType::WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path) {
   if (config.isType(Json::Type::String)) {
-    requireDependencyAs<StarException>(assets, "WeatherType", "assets service to load config path");
+    assets = requireDependencyValueAs<StarException>(std::move(assets), "WeatherType", "assets service to load config path");
 
     path = config.toString();
     config = assets->json(path);

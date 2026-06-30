@@ -147,12 +147,12 @@ ItemDatabase::ItemDatabase(AssetsConstPtr assets,
       m_liquidsDatabase(requireServiceValueAs<ItemException>(std::move(liquidsDatabase), "ItemDatabase", "liquids database")),
       m_functionDatabase(requireServiceValueAs<ItemException>(std::move(functionDatabase), "ItemDatabase", "function database")),
       m_codexDatabase(requireServiceValueAs<ItemException>(std::move(codexDatabase), "ItemDatabase", "codex database")),
-      m_materialDatabase(std::move(materialDatabase)),
+      m_materialDatabase(requireServiceValueAs<ItemException>(std::move(materialDatabase), "ItemDatabase", "material database")),
       m_versioningDatabase(requireServiceValueAs<ItemException>(std::move(versioningDatabase), "ItemDatabase", "versioning database")),
       m_particleDatabase(requireServiceValueAs<ItemException>(std::move(particleDatabase), "ItemDatabase", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "ItemDatabase", "image metadata database")),
-      m_luaRoot(make_shared<LuaRoot>(luaRootServices)),
-      m_rebuilder(make_shared<Rebuilder>(m_assets, "item", std::move(luaRootServices))) {
+      m_luaRoot(make_shared<LuaRoot>(requireLuaRootServices(luaRootServices, "ItemDatabase"))),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "item", requireLuaRootServices(std::move(luaRootServices), "ItemDatabase"))) {
   scanItems();
   addObjectItems();
   addCodexes();

@@ -11,7 +11,7 @@
 namespace Star {
 
 PlayerConfig::PlayerConfig(JsonObject const& cfg, AssetsConstPtr assets)
-    : humanoidTiming(cfg.contains("humanoidTiming") ? Humanoid::HumanoidTiming(cfg.value("humanoidTiming")) : Humanoid::HumanoidTiming::sensibleDefaults(std::move(assets))) {
+    : humanoidTiming(cfg.contains("humanoidTiming") ? Humanoid::HumanoidTiming(cfg.value("humanoidTiming")) : Humanoid::HumanoidTiming::sensibleDefaults(requireServiceValueAs<StarException>(std::move(assets), "PlayerConfig", "assets"))) {
   defaultIdentity = HumanoidIdentity(cfg.value("defaultHumanoidIdentity"));
 
   for (Json v : cfg.value("defaultItems", JsonArray()).toArray())
@@ -73,7 +73,7 @@ PlayerFactory::PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configurati
       m_statusEffectDatabase(requireServiceValueAs<PlayerException>(std::move(statusEffectDatabase), "PlayerFactory", "status effect database")),
       m_particleDatabase(requireServiceValueAs<PlayerException>(std::move(particleDatabase), "PlayerFactory", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<PlayerException>(std::move(imageMetadataDatabase), "PlayerFactory", "image metadata database")),
-      m_rebuilder(make_shared<Rebuilder>(m_assets, "player", std::move(luaRootServices))) {
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "player", requireLuaRootServices(std::move(luaRootServices), "PlayerFactory"))) {
   m_config = make_shared<PlayerConfig>(m_assets->json("/player.config").toObject(), m_assets);
 }
 

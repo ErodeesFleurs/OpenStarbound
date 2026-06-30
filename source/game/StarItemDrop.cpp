@@ -460,9 +460,10 @@ Json ItemDrop::configValue(String const& name, Json const& def) const {
 ItemDrop::ItemDrop(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   : m_itemDatabase(itemDropItemDatabase(std::move(itemDatabase))),
     m_movementController(MovementParameters(), itemDropAssets(assets)) {
+  assets = itemDropAssets(std::move(assets));
   setPersistent(true);
 
-  m_config = itemDropAssets(std::move(assets))->json("/itemdrop.config");
+  m_config = assets->json("/itemdrop.config");
   m_parameters = JsonObject{};
 
   MovementParameters parameters = MovementParameters(m_config.get("movementSettings", JsonObject()));

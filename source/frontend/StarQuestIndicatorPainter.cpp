@@ -9,7 +9,9 @@
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client, Services services)
-  : m_client(client), m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestIndicatorPainter", "assets")), m_guiContext(services.guiContext) {
+  : m_client(requireServiceValueAs<StarException>(client, "QuestIndicatorPainter", "universe client")),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestIndicatorPainter", "assets")),
+    m_guiContext(services.guiContext) {
 }
 
 AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPath) const {
@@ -17,6 +19,8 @@ AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPa
 }
 
 void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {
+  requireServiceAs<StarException>(world, "QuestIndicatorPainter", "world client");
+
   m_camera = camera;
 
   Set<EntityId> foundIndicators;

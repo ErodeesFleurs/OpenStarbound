@@ -1,9 +1,12 @@
 #include "StarWorldClientState.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 WorldClientState::WorldClientState(AssetsConstPtr assets) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "WorldClientState", "assets");
+
   auto clientConfig = assets->json("/client.config");
   m_windowMonitoringBorder = clientConfig.getInt("windowMonitoringBorder");
   m_presenceEntityMonitoringBorder = clientConfig.getInt("presenceEntityMonitoringBorder");

@@ -23,7 +23,7 @@ Collectable::Collectable(String const& name, int order, String const& title, Str
 CollectionDatabase::CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, ItemDatabaseConstPtr itemDatabase)
   : m_monsterDatabase(requireDependencyValueAs<CollectionDatabaseException>(std::move(monsterDatabase), "CollectionDatabase", "monster database")),
     m_itemDatabase(requireDependencyValueAs<CollectionDatabaseException>(std::move(itemDatabase), "CollectionDatabase", "item database")) {
-  requireServiceAs<CollectionDatabaseException>(assets, "CollectionDatabase", "assets");
+  assets = requireServiceValueAs<CollectionDatabaseException>(std::move(assets), "CollectionDatabase", "assets");
 
   auto& files = assets->scanExtension("collection");
   assets->queueJsons(files);

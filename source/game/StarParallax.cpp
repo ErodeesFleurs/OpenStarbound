@@ -1,4 +1,5 @@
 #include "StarParallax.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
@@ -134,12 +135,13 @@ Parallax::Parallax(AssetsConstPtr assets,
     float verticalOrigin,
     float hueShift,
     Maybe<TreeVariant> parallaxTreeVariant) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Parallax", "assets");
   m_seed = seed;
   m_verticalOrigin = verticalOrigin;
   m_parallaxTreeVariant = parallaxTreeVariant;
   m_hueShift = hueShift;
   m_imageDirectory = "/parallax/images/";
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Parallax", "image metadata database");
 
   Json config = assets->json(assetFile);
 

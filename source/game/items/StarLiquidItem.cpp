@@ -8,8 +8,8 @@ namespace Star {
 
 LiquidItem::LiquidItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase)
   : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
-  requireServiceAs<ItemException>(assets, "LiquidItem", "assets");
-  requireServiceAs<ItemException>(liquidsDatabase, "LiquidItem", "liquids database");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "LiquidItem", "assets");
+  liquidsDatabase = requireServiceValueAs<ItemException>(std::move(liquidsDatabase), "LiquidItem", "liquids database");
 
   m_liquidId = liquidsDatabase->liquidId(config.getString("liquid"));
 

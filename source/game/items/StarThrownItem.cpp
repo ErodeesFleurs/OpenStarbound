@@ -38,8 +38,7 @@ void ThrownItem::fireTriggered() {
       return;
 
     if (consume(m_ammoUsage)) {
-      auto worldServer = as<WorldServer>(world());
-      requireDependencyAs<ItemException>(worldServer, "Thrown item", "server world projectile database");
+      auto worldServer = requireDependencyValueAs<ItemException>(as<WorldServer>(world()), "Thrown item", "server world projectile database");
       auto projectileDb = worldServer->projectileDatabase();
       auto projectile = projectileDb->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);

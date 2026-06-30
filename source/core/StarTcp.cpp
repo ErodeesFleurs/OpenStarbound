@@ -1,4 +1,5 @@
 #include "StarTcp.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 
@@ -192,7 +193,7 @@ TcpSocketPtr TcpServer::accept(unsigned timeout) {
 
 void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
   MutexLocker locker(m_mutex);
-  m_callback = callback;
+  m_callback = requireDependencyValueAs<StarException>(std::move(callback), "TcpServer", "accept callback");
   if (m_listenSocket->isActive() && !m_callbackThread) {
     m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() {
         try {

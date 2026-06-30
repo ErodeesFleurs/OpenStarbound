@@ -33,18 +33,17 @@ namespace Star {
 
 Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase)
     : m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Npc", "assets")) {
-  m_assets = std::move(assets);
-  m_npcDatabase = std::move(npcDatabase);
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
-  m_speciesDatabase = std::move(speciesDatabase);
-  m_danceDatabase = std::move(danceDatabase);
-  m_emoteProcessor = std::move(emoteProcessor);
-  m_itemDatabase = std::move(itemDatabase);
-  m_objectDatabase = std::move(objectDatabase);
-  m_liquidsDatabase = std::move(liquidsDatabase);
-  m_statusEffectDatabase = std::move(statusEffectDatabase);
-  m_particleDatabase = std::move(particleDatabase);
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(m_imageMetadataDatabase), "Npc", "image metadata database");
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Npc", "assets");
+  m_npcDatabase = requireServiceValueAs<StarException>(std::move(npcDatabase), "Npc", "npc database");
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Npc", "image metadata database");
+  m_speciesDatabase = requireServiceValueAs<StarException>(std::move(speciesDatabase), "Npc", "species database");
+  m_danceDatabase = requireServiceValueAs<StarException>(std::move(danceDatabase), "Npc", "dance database");
+  m_emoteProcessor = requireServiceValueAs<StarException>(std::move(emoteProcessor), "Npc", "emote processor");
+  m_itemDatabase = requireServiceValueAs<StarException>(std::move(itemDatabase), "Npc", "item database");
+  m_objectDatabase = requireServiceValueAs<StarException>(std::move(objectDatabase), "Npc", "object database");
+  m_liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "Npc", "liquids database");
+  m_statusEffectDatabase = requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "Npc", "status effect database");
+  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "Npc", "particle database");
   m_netHumanoid.setElementFactory([this]() {
     return make_shared<NetHumanoid>(HumanoidIdentity(), JsonObject(), Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   });

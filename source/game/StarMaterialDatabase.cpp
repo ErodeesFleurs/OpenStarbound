@@ -8,9 +8,9 @@
 namespace Star {
 
 MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  requireServiceAs<MaterialException>(assets, "MaterialDatabase", "assets");
-  requireDependencyAs<MaterialException>(particleDatabase, "MaterialDatabase", "particle database");
-  requireDependencyAs<MaterialException>(imageMetadataDatabase, "MaterialDatabase", "image metadata database");
+  assets = requireServiceValueAs<MaterialException>(std::move(assets), "MaterialDatabase", "assets");
+  particleDatabase = requireDependencyValueAs<MaterialException>(std::move(particleDatabase), "MaterialDatabase", "particle database");
+  imageMetadataDatabase = requireDependencyValueAs<MaterialException>(std::move(imageMetadataDatabase), "MaterialDatabase", "image metadata database");
 
   m_metaModIndex = {
       {"metamod:none", NoModId},

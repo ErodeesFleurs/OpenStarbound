@@ -1,4 +1,5 @@
 #include "StarSystemWorldClient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarPlayerUniverseMap.hpp"
@@ -6,7 +7,8 @@
 namespace Star {
 
 SystemWorldClient::SystemWorldClient(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator, PlayerUniverseMapPtr universeMap)
-  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)), m_universeMap(std::move(universeMap)) {}
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)),
+    m_universeMap(requireServiceValueAs<StarException>(std::move(universeMap), "SystemWorldClient", "universe map")) {}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);

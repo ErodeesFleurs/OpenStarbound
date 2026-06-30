@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarString.hpp"
 #include "StarStatusTypes.hpp"
 
@@ -26,7 +27,10 @@ class GuiContext;
 namespace ItemTooltipBuilder {
   struct Services {
     Services(AssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, GuiContext& guiContext)
-      : assets(std::move(assets)), objectDatabase(std::move(objectDatabase)), statusEffectDatabase(std::move(statusEffectDatabase)), guiContext(guiContext) {}
+      : assets(requireServiceValueAs<StarException>(std::move(assets), "ItemTooltipBuilder", "assets")),
+        objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "ItemTooltipBuilder", "object database")),
+        statusEffectDatabase(requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "ItemTooltipBuilder", "status effect database")),
+        guiContext(guiContext) {}
 
     AssetsConstPtr assets;
     ObjectDatabaseConstPtr objectDatabase;

@@ -1,5 +1,6 @@
 #include "StarLuaHttpBindings.hpp"
 
+#include "StarAlgorithm.hpp"
 #include "StarConfiguration.hpp"
 #include "StarException.hpp"
 #include "StarFormat.hpp"
@@ -335,7 +336,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled, ConfigurationPtr confi
 
 void LuaBindings::setHttpTrustRequestCallback(HttpTrustRequestCallback callback) {
   MutexLocker locker(s_trustCallbackMutex);
-  s_trustRequestCallback = std::move(callback);
+  s_trustRequestCallback = requireServiceValueAs<StarException>(std::move(callback), "LuaBindings", "HTTP trust request callback");
 }
 
 void LuaBindings::clearHttpTrustRequestCallback() {

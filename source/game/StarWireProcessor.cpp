@@ -3,12 +3,12 @@
 #include "StarEntityMap.hpp"
 #include "StarWireEntity.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
-WireProcessor::WireProcessor(WorldStoragePtr worldStorage) {
-  m_worldStorage = worldStorage;
-}
+WireProcessor::WireProcessor(WorldStoragePtr worldStorage)
+  : m_worldStorage(requireServiceValueAs<StarException>(std::move(worldStorage), "WireProcessor", "world storage")) {}
 
 void WireProcessor::process() {
   // First, populate all the working entities that are already live

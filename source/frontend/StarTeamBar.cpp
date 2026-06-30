@@ -22,7 +22,7 @@ namespace Star {
 TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Services services)
   : Pane(services.guiContext),
     m_mainInterface(mainInterface),
-    m_client(std::move(client)),
+    m_client(requireServiceValueAs<StarException>(std::move(client), "TeamBar", "universe client")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "TeamBar", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "TeamBar", "configuration")),
     m_guiContext(services.guiContext) {

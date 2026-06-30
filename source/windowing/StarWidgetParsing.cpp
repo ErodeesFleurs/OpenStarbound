@@ -54,7 +54,7 @@ GuiContext& WidgetParser::guiContext() const {
 }
 
 void WidgetParser::construct(Json const& config, Widget* widget) {
-  requireDependencyAs<WidgetParserException>(widget, "WidgetParser", "target widget");
+  widget = requireDependencyValueAs<WidgetParserException>(widget, "WidgetParser", "target widget");
 
   m_pane = dynamic_cast<Pane*>(widget);
   constructImpl(config, widget);

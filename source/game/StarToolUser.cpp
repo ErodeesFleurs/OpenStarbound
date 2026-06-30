@@ -624,7 +624,7 @@ float ToolUser::beamGunRadius() const {
 }
 
 ToolUser::NetItem::NetItem(ItemDatabaseConstPtr itemDatabase)
-    : m_itemDatabase(std::move(itemDatabase)) {}
+    : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ToolUser::NetItem", "item database")) {}
 
 void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
   m_netVersion = version;

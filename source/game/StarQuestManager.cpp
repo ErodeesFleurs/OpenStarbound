@@ -13,7 +13,7 @@ namespace Star {
 
 QuestManager::QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(requireServiceValueAs<StarException>(std::move(assets), "QuestManager", "assets")),
-      m_itemDatabase(std::move(itemDatabase)),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "QuestManager", "item database")),
       m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "QuestManager", "object database")),
       m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "QuestManager", "quest template database")),
       m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "QuestManager", "versioning database")) {

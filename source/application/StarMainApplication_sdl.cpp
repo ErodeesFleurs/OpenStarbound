@@ -1,4 +1,6 @@
 #include "StarMainApplication.hpp"
+#include "StarAlgorithm.hpp"
+#include "StarException.hpp"
 #include "StarLogging.hpp"
 #include "StarSignalHandler.hpp"
 #include "StarTickRateMonitor.hpp"
@@ -675,7 +677,7 @@ public:
   using AudioCallback = std::function<void(uint8_t*, int)>;
   bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
-    m_audioInputCallback = std::move(callback);
+    m_audioInputCallback = requireServiceValueAs<StarException>(std::move(callback), "SdlPlatform", "audio input callback");
     SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
     m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {

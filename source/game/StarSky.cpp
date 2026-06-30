@@ -33,7 +33,7 @@ Sky::Sky(AssetsConstPtr assets) {
   m_netGroup.setNeedsStoreCallback([this]() { return writeNetStates(); });
 }
 
-Sky::Sky(SkyParameters const& skyParameters, bool inOrbit, AssetsConstPtr assets) : Sky(std::move(assets)) {
+Sky::Sky(SkyParameters const& skyParameters, bool inOrbit, AssetsConstPtr assets) : Sky(requireServiceValueAs<StarException>(std::move(assets), "Sky", "assets")) {
   m_skyParameters = skyParameters;
   skyParametersUpdated();
 

@@ -21,7 +21,7 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
   GuiReader reader(context());
 
   m_domain = domain;
-  m_callback = std::move(callback);
+  m_callback = requireServiceValueAs<StarException>(std::move(callback), "HttpTrustDialog", "reply callback");
 
   reader.registerCallback("yes", [this](Widget*) { reply(HttpTrustReply::Allow); });
   reader.registerCallback("no", [this](Widget*) { reply(HttpTrustReply::Deny); });

@@ -22,16 +22,16 @@
 namespace Star {
 
 Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters) {
-  m_assets = std::move(assets);
-  m_config = config;
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets");
+  m_config = requireServiceValueAs<StarException>(config, "Projectile", "config");
   m_parameters = parameters;
 
   setup();
 }
 
 Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
-  m_assets = std::move(assets);
-  m_config = config;
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets");
+  m_config = requireServiceValueAs<StarException>(config, "Projectile", "config");
   data.read(m_parameters);
   setup();
 
@@ -801,8 +801,7 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto worldServer = as<WorldServer>(world());
-      requireDependencyAs<StarException>(worldServer, "Projectile action", "server world monster database");
+      auto worldServer = requireDependencyValueAs<StarException>(as<WorldServer>(world()), "Projectile action", "server world monster database");
       auto monsterDatabase = worldServer->monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 

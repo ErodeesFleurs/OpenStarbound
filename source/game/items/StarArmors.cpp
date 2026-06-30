@@ -19,7 +19,7 @@ EnumMap<ArmorType> ArmorTypeNames{
 
 ArmorItem::ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
   : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config), m_functionDatabase(requireServiceValueAs<ItemException>(std::move(functionDatabase), "ArmorItem", "function database")) {
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<ItemException>(std::move(assets), "ArmorItem", "assets");
 
   refreshStatusEffects();
   m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));

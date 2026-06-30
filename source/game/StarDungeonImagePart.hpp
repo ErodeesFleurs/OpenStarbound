@@ -2,6 +2,7 @@
 
 #include "StarDungeonGenerator.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ namespace Dungeon {
 
   class ImagePartReader : public PartReader {
   public:
-    ImagePartReader(AssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(std::move(assets)), m_tileset(std::move(tileset)) {}
+    ImagePartReader(AssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "ImagePartReader", "assets")), m_tileset(requireServiceValueAs<DungeonException>(std::move(tileset), "ImagePartReader", "image tileset")) {}
 
     virtual void readAsset(String const& asset) override;
     virtual Vec2U size() const override;

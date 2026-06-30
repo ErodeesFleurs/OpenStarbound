@@ -1321,7 +1321,7 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_paths(), m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "DungeonDefinitions", "assets")), m_tilesetDatabase(std::move(tilesetDatabase)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
+DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_paths(), m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "DungeonDefinitions", "assets")), m_tilesetDatabase(requireServiceValueAs<DungeonException>(std::move(tilesetDatabase), "DungeonDefinitions", "tileset database")), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
   for (auto& file : m_assets->scan(".dungeon")) {
     Json dungeon = m_assets->json(file);
     m_paths.insert(dungeon.get("metadata").getString("name"), file);

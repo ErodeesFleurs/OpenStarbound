@@ -20,6 +20,8 @@ struct LuaRootServices {
   String storageDirectory;
 };
 
+LuaRootServices requireLuaRootServices(LuaRootServices services, char const* context);
+
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
 // for single threaded access and have no locking.

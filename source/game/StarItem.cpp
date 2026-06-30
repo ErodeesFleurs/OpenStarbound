@@ -9,7 +9,7 @@
 namespace Star {
 
 Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters) {
-  requireServiceAs<ItemException>(assets, "Item", "assets");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "Item", "assets");
 
   m_config = std::move(config);
   m_directory = std::move(directory);

@@ -72,7 +72,7 @@ TileDamageParameters::TileDamageParameters(Json config, Maybe<float> healthOverr
 
 TileDamageParameters::TileDamageParameters(AssetsConstPtr assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
   if (config.type() == Json::Type::String) {
-    requireDependencyAs<TileDamageException>(assets, "TileDamageParameters", "assets service to load config path");
+    assets = requireDependencyValueAs<TileDamageException>(std::move(assets), "TileDamageParameters", "assets service to load config path");
 
     config = assets->json(config.toString());
   }

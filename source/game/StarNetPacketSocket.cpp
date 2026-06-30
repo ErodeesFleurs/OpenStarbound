@@ -1,6 +1,8 @@
 #include "StarNetPacketSocket.hpp"
-#include "StarIterator.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCompression.hpp"
+#include "StarException.hpp"
+#include "StarIterator.hpp"
 #include "StarLogging.hpp"
 
 constexpr size_t PacketReceiveBufferSize = 1024;
@@ -136,6 +138,7 @@ LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pip
   : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
 UniquePtr<TcpPacketSocket> TcpPacketSocket::open(TcpSocketPtr socket) {
+  socket = requireServiceValueAs<StarException>(std::move(socket), "TcpPacketSocket", "socket");
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
   return UniquePtr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
@@ -350,6 +353,7 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
 TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
 
 UniquePtr<P2PPacketSocket> P2PPacketSocket::open(UniquePtr<P2PSocket> socket) {
+  socket = requireServiceValueAs<StarException>(std::move(socket), "P2PPacketSocket", "socket");
   return UniquePtr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
 }
 

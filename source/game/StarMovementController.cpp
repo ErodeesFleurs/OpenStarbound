@@ -9,7 +9,7 @@
 namespace Star {
 
 MovementParameters MovementParameters::sensibleDefaults(AssetsConstPtr assets) {
-  requireServiceAs<MovementControllerException>(assets, "MovementParameters", "assets");
+  assets = requireServiceValueAs<MovementControllerException>(std::move(assets), "MovementParameters", "assets");
   return MovementParameters(assets->json("/default_movement.config").toObject());
 }
 

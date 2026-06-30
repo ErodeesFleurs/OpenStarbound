@@ -81,7 +81,7 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 }
 
 ActorMovementParameters ActorMovementParameters::sensibleDefaults(AssetsConstPtr assets) {
-  requireServiceAs<ActorMovementControllerException>(assets, "ActorMovementParameters", "assets");
+  assets = requireServiceValueAs<ActorMovementControllerException>(std::move(assets), "ActorMovementParameters", "assets");
   return ActorMovementParameters(assets->json("/default_actor_movement.config").toObject());
 }
 

@@ -103,11 +103,13 @@ void WorkerPool::finish() {
 }
 
 WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
+  work = requireDependencyValueAs<WorkerPoolException>(std::move(work), "WorkerPool", "work");
+
   // Construct a worker pool handle and wrap the work to signal the handle when
   // finished.  Set the result to empty string if successful and to the content
   // of the exception if an exception is thrown.
   auto workerPoolHandleImpl = make_shared<WorkerPoolHandle::Impl>();
-  queueWork([workerPoolHandleImpl, work]() {
+  queueWork([workerPoolHandleImpl, work = std::move(work)]() {
     try {
       work();
       MutexLocker handleLocker(workerPoolHandleImpl->mutex);
@@ -163,7 +165,7 @@ void WorkerPool::WorkerThread::run() {
 
 void WorkerPool::queueWork(function<void()> work) {
   MutexLocker workLock(m_workMutex);
-  m_pendingWork.append(std::move(work));
+  m_pendingWork.append(requireDependencyValueAs<WorkerPoolException>(std::move(work), "WorkerPool", "queued work"));
   m_workCondition.signal();
 }
 

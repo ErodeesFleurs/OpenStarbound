@@ -13,9 +13,9 @@ namespace Star {
 
 WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services)
   : Pane(services.guiContext),
-    m_worldClient(std::move(worldClient)),
-    m_player(std::move(player)),
-    m_worldPainter(std::move(worldPainter)),
+    m_worldClient(requireServiceValueAs<StarException>(std::move(worldClient), "WirePane", "world client")),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "WirePane", "player")),
+    m_worldPainter(requireServiceValueAs<StarException>(std::move(worldPainter), "WirePane", "world painter")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WirePane", "assets")) {
   m_connecting = false;
 

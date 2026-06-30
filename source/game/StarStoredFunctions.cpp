@@ -118,7 +118,7 @@ Json StoredConfigFunction::get(double value) const {
 }
 
 FunctionDatabase::FunctionDatabase(AssetsConstPtr assets) {
-  requireServiceAs<StoredFunctionException>(assets, "FunctionDatabase", "assets");
+  assets = requireServiceValueAs<StoredFunctionException>(std::move(assets), "FunctionDatabase", "assets");
 
   auto& functions = assets->scanExtension("functions");
   auto& sndFunctions = assets->scanExtension("2functions");

@@ -1,5 +1,6 @@
 #include "StarServerRconThread.hpp"
 #include "StarServerRconClient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLogging.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarLexicalCast.hpp"
@@ -9,7 +10,7 @@ namespace Star {
 ServerRconClient::ServerRconClient(UniverseServer& universe, TcpSocketPtr socket, String rconPassword)
   : Thread("RconClient"),
     m_universe(universe),
-    m_socket(socket),
+    m_socket(requireDependencyValueAs<StarException>(std::move(socket), "ServerRconClient", "socket")),
     m_packetBuffer(MaxPacketSize),
     m_stop(true),
     m_authed(false),

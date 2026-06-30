@@ -18,6 +18,8 @@ GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, Graph
     m_paneManager(manager),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "GraphicsMenu", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "GraphicsMenu", "configuration")) {
+  client = requireServiceValueAs<StarException>(std::move(client), "GraphicsMenu", "universe client");
+
   GuiReader reader(context());
   reader.registerCallback("cancel",
       [&](Widget*) {

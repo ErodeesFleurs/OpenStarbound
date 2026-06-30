@@ -7,7 +7,7 @@
 namespace Star {
 
 StagehandDatabase::StagehandDatabase(AssetsConstPtr assets) {
-  requireServiceAs<StagehandDatabaseException>(assets, "StagehandDatabase", "assets");
+  assets = requireServiceValueAs<StagehandDatabaseException>(std::move(assets), "StagehandDatabase", "assets");
   auto& files = assets->scanExtension("stagehand");
   assets->queueJsons(files);
   for (auto& file : files) {

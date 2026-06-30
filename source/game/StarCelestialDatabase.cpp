@@ -641,7 +641,7 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
 }
 
 CelestialSlaveDatabase::CelestialSlaveDatabase(AssetsConstPtr assets, CelestialBaseInformation baseInformation) {
-  requireServiceAs<CelestialException>(assets, "CelestialSlaveDatabase", "assets");
+  assets = requireServiceValueAs<CelestialException>(std::move(assets), "CelestialSlaveDatabase", "assets");
 
   auto config = assets->json("/celestial.config");
 

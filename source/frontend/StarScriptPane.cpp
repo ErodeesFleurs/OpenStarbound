@@ -1,4 +1,5 @@
 #include "StarScriptPane.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -21,7 +22,7 @@ namespace Star {
 
 ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId, BaseScriptPaneServices services)
   : BaseScriptPane(config, true, std::move(services)) {
-  m_client = std::move(client);
+  m_client = requireServiceValueAs<StarException>(std::move(client), "ScriptPane", "universe client");
   m_sourceEntityId = sourceEntityId;
 
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(*m_client->mainPlayer()));

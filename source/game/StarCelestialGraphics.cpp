@@ -215,9 +215,9 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
 
 int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters, AssetsConstPtr assets) {
   if (parameters.coordinate().isPlanetaryBody())
-    return staticRandomU32(parameters.seed(), "RadialNumber") % planetRadialPositions(std::move(assets));
+    return staticRandomU32(parameters.seed(), "RadialNumber") % planetRadialPositions(requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets"));
   if (parameters.coordinate().isSatelliteBody())
-    return staticRandomU32(parameters.seed(), "RadialNumber") % satelliteRadialPositions(std::move(assets));
+    return staticRandomU32(parameters.seed(), "RadialNumber") % satelliteRadialPositions(requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets"));
   return 0;
 }
 

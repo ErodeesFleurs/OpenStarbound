@@ -5,6 +5,7 @@
 #include "vorbis/vorbisfile.h"
 
 #include "StarAudio.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBuffer.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
@@ -358,6 +359,8 @@ private:
 };
 
 Audio::Audio(IODevicePtr device, String name) {
+  device = requireDependencyValueAs<AudioException>(std::move(device), "Audio", "device");
+
   m_name = name;
   if (!device->isOpen())
     device->open(IOMode::Read);

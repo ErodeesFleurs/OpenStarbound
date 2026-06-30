@@ -1,4 +1,5 @@
 #include "StarMonster.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBehaviorLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDamageDatabase.hpp"
@@ -22,12 +23,13 @@
 namespace Star {
 
 Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& monsterVariant, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Maybe<float> level)
-    : m_scriptedAnimator(assets) {
-  m_monsterDatabase = std::move(monsterDatabase);
-  m_liquidsDatabase = std::move(liquidsDatabase);
-  m_statusEffectDatabase = std::move(statusEffectDatabase);
-  m_particleDatabase = std::move(particleDatabase);
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
+    : m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Monster", "assets")) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Monster", "assets");
+  m_monsterDatabase = requireServiceValueAs<StarException>(std::move(monsterDatabase), "Monster", "monster database");
+  m_liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "Monster", "liquids database");
+  m_statusEffectDatabase = requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "Monster", "status effect database");
+  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "Monster", "particle database");
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Monster", "image metadata database");
   m_monsterLevel = level;
 
   m_damageOnTouch = false;

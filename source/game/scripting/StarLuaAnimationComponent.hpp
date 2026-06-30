@@ -53,8 +53,7 @@ private:
 
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
-  requireServiceAs<LuaAnimationComponentException>(assets, "LuaAnimationComponent", "assets");
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<LuaAnimationComponentException>(std::move(assets), "LuaAnimationComponent", "assets");
 
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
@@ -65,8 +64,8 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
     m_activeAudio.append(audio);
   });
   animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
-    requireServiceAs<LuaAnimationComponentException>(m_particleDatabase, "LuaAnimationComponent", "initialized particle database");
-    auto particle = m_particleDatabase->particle(particleConfig);
+    auto particleDatabase = requireServiceValueAs<LuaAnimationComponentException>(m_particleDatabase, "LuaAnimationComponent", "initialized particle database");
+    auto particle = particleDatabase->particle(particleConfig);
     particle.translate(position.value());
     m_pendingParticles.append(particle);
   });

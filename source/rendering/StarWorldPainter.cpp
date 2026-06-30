@@ -33,7 +33,7 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration
 }
 
 void WorldPainter::renderInit(RendererPtr renderer) {
-  m_renderer = std::move(renderer);
+  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "WorldPainter", "renderer");
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup, m_assets, m_registerReloadListener);
   m_tilePainter = make_shared<TilePainter>(m_assets, m_renderer, m_materialDatabase, m_liquidsDatabase);

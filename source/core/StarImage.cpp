@@ -1,4 +1,5 @@
 #include "StarImage.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLogging.hpp"
 
 #include <png.h>
@@ -18,11 +19,15 @@ void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
 };
 
 bool Image::isPng(IODevicePtr device) {
+  device = requireDependencyValueAs<ImageException>(std::move(device), "Image::isPng", "device");
+
   png_byte header[8]{};
   return !png_sig_cmp(header, 0, device->readAbsolute(0, reinterpret_cast<char*>(header), sizeof(header)));
 }
 
 Image Image::readPng(IODevicePtr device) {
+  device = requireDependencyValueAs<ImageException>(std::move(device), "Image::readPng", "device");
+
   png_byte header[8]{};
   device->readFull(reinterpret_cast<char*>(header), sizeof(header));
 
@@ -119,6 +124,8 @@ Image Image::readPng(IODevicePtr device) {
 }
 
 tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
+  device = requireDependencyValueAs<ImageException>(std::move(device), "Image::readPngMetadata", "device");
+
   png_byte header[8];
   device->readFull(reinterpret_cast<char*>(header), sizeof(header));
 
@@ -460,6 +467,8 @@ Image Image::convert(PixelFormat pixelFormat) const {
 }
 
 void Image::writePng(IODevicePtr device) const {
+  device = requireDependencyValueAs<ImageException>(std::move(device), "Image::writePng", "device");
+
   auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
     auto* device = static_cast<IODevice*>(png_get_io_ptr(pngPtr));
     device->writeFull(reinterpret_cast<char*>(data), length);

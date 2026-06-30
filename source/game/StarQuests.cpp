@@ -34,7 +34,7 @@ EnumMap<QuestState> const QuestStateNames{
 
 Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Quest", "assets")),
-      m_itemDatabase(std::move(itemDatabase)),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "Quest", "item database")),
       m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "Quest", "object database")),
       m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "Quest", "quest template database")),
       m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "Quest", "versioning database")) {
@@ -94,7 +94,7 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
 
 Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Quest", "assets")),
-      m_itemDatabase(std::move(itemDatabase)),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "Quest", "item database")),
       m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "Quest", "object database")),
       m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "Quest", "quest template database")),
       m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "Quest", "versioning database")) {

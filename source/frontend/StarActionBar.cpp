@@ -22,7 +22,7 @@ namespace Star {
 ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, ActionBarServices services)
   : Pane(services.guiContext),
     m_paneManager(paneManager),
-    m_player(std::move(player)),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "ActionBar", "player")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ActionBar", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "ActionBar", "configuration")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "ActionBar", "object database")),

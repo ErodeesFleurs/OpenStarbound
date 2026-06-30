@@ -12,10 +12,10 @@ namespace Star {
 
 TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
   : TileDrawer(assets, materialDatabase) {
-  m_renderer = std::move(renderer);
+  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "TilePainter", "renderer");
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "TilePainter", "assets");
   m_materialDatabase = requireServiceValueAs<StarException>(std::move(materialDatabase), "TilePainter", "material database");
   auto liquidDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "TilePainter", "liquids database");
 

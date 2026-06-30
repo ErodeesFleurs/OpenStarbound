@@ -1,4 +1,5 @@
 #include "StarEntity.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarDamageManager.hpp"
 #include "StarNetCompatibility.hpp"
 
@@ -26,8 +27,7 @@ EnumMap<EntityType> const EntityTypeNames{
 Entity::~Entity() {}
 
 void Entity::init(World* world, EntityId entityId, EntityMode mode) {
-  if (!world)
-    throw EntityException("Entity::init called with null world pointer");
+  world = requireDependencyValueAs<EntityException>(world, "Entity::init", "world");
   if (entityId == NullEntityId)
     throw EntityException("Entity::init called with null entity id");
   if (m_world)

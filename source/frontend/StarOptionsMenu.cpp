@@ -20,7 +20,7 @@ OptionsMenu::OptionsMenu(PaneManager& manager, UniverseClientPtr client, Options
     m_paneManager(manager),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "OptionsMenu", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "OptionsMenu", "configuration")),
-    m_luaRootServices(std::move(services.luaRootServices)),
+    m_luaRootServices(requireLuaRootServices(std::move(services.luaRootServices), "OptionsMenu")),
     m_voice(services.voice),
     m_input(services.input) {
   GuiReader reader(context());

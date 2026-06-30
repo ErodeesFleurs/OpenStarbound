@@ -13,7 +13,7 @@ String const SongPathPrefix = "/songs/";
 
 SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services)
   : Pane(services.guiContext),
-    m_player(std::move(player)),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "SongbookInterface", "player")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "SongbookInterface", "assets")),
     m_registerReloadListener(requireServiceValueAs<StarException>(std::move(services.registerReloadListener), "SongbookInterface", "reload listener")) {
   GuiReader reader(context());

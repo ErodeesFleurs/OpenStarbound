@@ -25,7 +25,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     Services services)
   : Pane(services.guiContext),
     m_sourceEntityId(sourceEntityId),
-    m_client(std::move(client)),
+    m_client(requireServiceValueAs<StarException>(std::move(client), "TeleportDialog", "universe client")),
     m_paneManager(paneManager),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "TeleportDialog", "assets")),
     m_currentLocation(std::move(currentLocation)) {

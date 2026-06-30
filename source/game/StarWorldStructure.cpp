@@ -11,8 +11,8 @@ namespace Star {
 WorldStructure::WorldStructure() {}
 
 WorldStructure::WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath) {
-  requireServiceAs<WorldStructureException>(materialDatabase, "WorldStructure", "material database");
-  requireServiceAs<WorldStructureException>(imageMetadataDatabase, "WorldStructure", "image metadata database");
+  materialDatabase = requireServiceValueAs<WorldStructureException>(std::move(materialDatabase), "WorldStructure", "material database");
+  imageMetadataDatabase = requireServiceValueAs<WorldStructureException>(std::move(imageMetadataDatabase), "WorldStructure", "image metadata database");
 
   auto settings = assets->json(configPath);
 

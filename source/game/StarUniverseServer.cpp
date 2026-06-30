@@ -63,7 +63,7 @@ UniverseServer::UniverseServer(String const& storageDir,
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
   m_assets = requireServiceValueAs<UniverseServerException>(std::move(_assets), "UniverseServer", "assets");
   m_configuration = requireServiceValueAs<UniverseServerException>(std::move(_configuration), "UniverseServer", "configuration");
-  m_luaRootServices = std::move(luaRootServices);
+  m_luaRootServices = requireLuaRootServices(std::move(luaRootServices), "UniverseServer");
   m_materialDatabase = requireServiceValueAs<UniverseServerException>(std::move(materialDatabase), "UniverseServer", "material database");
   m_imageMetadataDatabase = requireServiceValueAs<UniverseServerException>(std::move(imageMetadataDatabase), "UniverseServer", "image metadata database");
   m_itemDatabase = requireServiceValueAs<UniverseServerException>(std::move(itemDatabase), "UniverseServer", "item database");
@@ -84,10 +84,10 @@ UniverseServer::UniverseServer(String const& storageDir,
   m_nameGenerator = requireServiceValueAs<UniverseServerException>(std::move(nameGenerator), "UniverseServer", "name generator");
   m_versioningDatabase = requireServiceValueAs<UniverseServerException>(std::move(versioningDatabase), "UniverseServer", "versioning database");
   m_functionDatabase = requireServiceValueAs<UniverseServerException>(std::move(functionDatabase), "UniverseServer", "function database");
-  m_effectSourceDatabase = std::move(effectSourceDatabase);
-  m_particleDatabase = std::move(particleDatabase);
-  m_techDatabase = std::move(techDatabase);
-  m_statusEffectDatabase = std::move(statusEffectDatabase);
+  m_effectSourceDatabase = requireServiceValueAs<UniverseServerException>(std::move(effectSourceDatabase), "UniverseServer", "effect source database");
+  m_particleDatabase = requireServiceValueAs<UniverseServerException>(std::move(particleDatabase), "UniverseServer", "particle database");
+  m_techDatabase = requireServiceValueAs<UniverseServerException>(std::move(techDatabase), "UniverseServer", "tech database");
+  m_statusEffectDatabase = requireServiceValueAs<UniverseServerException>(std::move(statusEffectDatabase), "UniverseServer", "status effect database");
   m_dungeonDefinitions = requireServiceValueAs<UniverseServerException>(std::move(dungeonDefinitions), "UniverseServer", "dungeon definitions");
   m_behaviorDatabase = requireServiceValueAs<UniverseServerException>(std::move(behaviorDatabase), "UniverseServer", "behavior database");
   m_reloadRoot = requireServiceValueAs<UniverseServerException>(std::move(reloadRoot), "UniverseServer", "root reload");

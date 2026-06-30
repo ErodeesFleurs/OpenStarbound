@@ -43,7 +43,7 @@ Spawner::Spawner(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
 }
 
 void Spawner::init(SpawnerFacadePtr facade) {
-  m_facade = std::move(facade);
+  m_facade = requireServiceValueAs<StarException>(std::move(facade), "Spawner", "facade");
 }
 
 void Spawner::uninit() {

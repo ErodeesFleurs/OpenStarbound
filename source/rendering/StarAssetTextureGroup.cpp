@@ -9,7 +9,7 @@
 namespace Star {
 
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
-  : m_textureGroup(std::move(textureGroup)),
+  : m_textureGroup(requireServiceValueAs<StarException>(std::move(textureGroup), "AssetTextureGroup", "texture group")),
     m_assets(requireServiceValueAs<StarException>(std::move(assets), "AssetTextureGroup", "assets")) {
   registerReloadListener = requireServiceValueAs<StarException>(std::move(registerReloadListener), "AssetTextureGroup", "reload listener registrar");
   m_reloadTracker = make_shared<TrackerListener>();

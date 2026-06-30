@@ -28,7 +28,7 @@ SpeciesOption::SpeciesOption()
 
 SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices)
   : m_nameGenerator(requireServiceValueAs<StarException>(std::move(nameGenerator), "SpeciesDatabase", "name generator")),
-    m_luaRoot(make_shared<LuaRoot>(std::move(luaRootServices))) {
+    m_luaRoot(make_shared<LuaRoot>(requireLuaRootServices(std::move(luaRootServices), "SpeciesDatabase"))) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "SpeciesDatabase", "assets");
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);

@@ -12,7 +12,7 @@ EnumMap<RadioMessageType> const RadioMessageTypeNames{
 };
 
 RadioMessageDatabase::RadioMessageDatabase(AssetsConstPtr assets) {
-  requireServiceAs<RadioMessageDatabaseException>(assets, "RadioMessageDatabase", "assets");
+  assets = requireServiceValueAs<RadioMessageDatabaseException>(std::move(assets), "RadioMessageDatabase", "assets");
   m_messageDefaults = assets->json("/radiomessages.config:messageDefaults");
   auto& files = assets->scanExtension("radiomessages");
   for (auto& file : files) {

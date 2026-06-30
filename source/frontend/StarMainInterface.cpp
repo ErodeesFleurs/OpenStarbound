@@ -97,9 +97,9 @@ MainInterface::MainInterface(UniverseClientPtr client,
   , m_outputDirectory(requireNonEmptyServiceValue(std::move(services.outputDirectory), "MainInterface", "output directory"))
   , m_config(MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices{m_assets}))
   , m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata})
-  , m_client(std::move(client))
-  , m_worldPainter(std::move(painter))
-  , m_cinematicOverlay(std::move(cinematicOverlay))
+  , m_client(requireServiceValueAs<StarException>(std::move(client), "MainInterface", "universe client"))
+  , m_worldPainter(requireServiceValueAs<StarException>(std::move(painter), "MainInterface", "world painter"))
+  , m_cinematicOverlay(requireServiceValueAs<StarException>(std::move(cinematicOverlay), "MainInterface", "cinematic overlay"))
   , m_paneManager(m_guiContext)
   , m_containerInteractor(make_shared<ContainerInteractor>())
 {

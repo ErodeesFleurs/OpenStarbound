@@ -16,7 +16,7 @@ MonsterDatabase::MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr 
       m_statusEffectDatabase(requireServiceValueAs<MonsterException>(std::move(statusEffectDatabase), "MonsterDatabase", "status effect database")),
       m_particleDatabase(requireServiceValueAs<MonsterException>(std::move(particleDatabase), "MonsterDatabase", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<MonsterException>(std::move(imageMetadataDatabase), "MonsterDatabase", "image metadata database")),
-      m_rebuilder(make_shared<Rebuilder>(m_assets, "monster", std::move(luaRootServices))) {
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "monster", requireLuaRootServices(std::move(luaRootServices), "MonsterDatabase"))) {
   auto& monsterTypes = m_assets->scanExtension("monstertype");
   auto& monsterParts = m_assets->scanExtension("monsterpart");
   auto& monsterSkills = m_assets->scanExtension("monsterskill");

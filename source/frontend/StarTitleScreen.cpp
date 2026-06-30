@@ -30,7 +30,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
                          UniverseClientPtr client,
                          TitleScreenServices services)
     : m_guiContext(services.guiContext),
-      m_luaRootServices(std::move(services.luaRootServices)),
+      m_luaRootServices(requireLuaRootServices(std::move(services.luaRootServices), "TitleScreen")),
       m_voice(services.voice),
       m_input(services.input),
       m_paneManager(m_guiContext),
@@ -76,7 +76,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
 }
 
 void TitleScreen::renderInit(RendererPtr renderer) {
-  m_renderer = std::move(renderer);
+  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "TitleScreen", "renderer");
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);
 }
 

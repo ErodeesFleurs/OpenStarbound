@@ -29,6 +29,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
     m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "CharCreationPane", "species database")),
     m_nameGenerator(requireServiceValueAs<StarException>(std::move(services.nameGenerator), "CharCreationPane", "name generator")),
     m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CharCreationPane", "item database")) {
+  requestCloseFunc = requireDependencyValueAs<StarException>(std::move(requestCloseFunc), "CharCreationPane", "request close callback");
   m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
   GuiReader guiReader(context());

@@ -5,6 +5,7 @@
 #include "StarTilesetDatabase.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -200,7 +201,7 @@ namespace Dungeon {
 
   class TMXPartReader : public PartReader {
   public:
-    explicit TMXPartReader(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_assets(std::move(assets)), m_tilesetDatabase(std::move(tilesetDatabase)) {}
+    explicit TMXPartReader(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "TMXPartReader", "assets")), m_tilesetDatabase(requireServiceValueAs<DungeonException>(std::move(tilesetDatabase), "TMXPartReader", "tileset database")) {}
 
     virtual void readAsset(String const& asset) override;
 

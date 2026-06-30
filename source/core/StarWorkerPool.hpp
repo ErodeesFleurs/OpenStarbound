@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAlgorithm.hpp"
 #include "StarThread.hpp"
 
 namespace Star {
@@ -201,10 +202,12 @@ WorkerPoolPromise<ResultType>::WorkerPoolPromise(shared_ptr<Impl> impl)
 
 template <typename ResultType>
 WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> producer) {
+  producer = requireDependencyValueAs<WorkerPoolException>(std::move(producer), "WorkerPool", "producer");
+
   // Construct a worker pool promise and wrap the producer to signal the
   // promise when finished.
   auto workerPoolPromiseImpl = make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
-  queueWork([workerPoolPromiseImpl, producer]() {
+  queueWork([workerPoolPromiseImpl, producer = std::move(producer)]() {
     try {
       auto result = producer();
       MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);

@@ -1,10 +1,11 @@
 #include "StarDrawablePainter.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup) {
-  m_renderer = std::move(renderer);
-  m_textureGroup = std::move(textureGroup);
+  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "DrawablePainter", "renderer");
+  m_textureGroup = requireServiceValueAs<StarException>(std::move(textureGroup), "DrawablePainter", "texture group");
 }
 
 void DrawablePainter::drawDrawable(Drawable const& drawable) {

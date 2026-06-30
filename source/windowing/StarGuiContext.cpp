@@ -9,8 +9,8 @@
 namespace Star {
 
 GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services) {
-  m_mixer = std::move(mixer);
-  m_applicationController = std::move(appController);
+  m_mixer = requireServiceValueAs<GuiContextException>(std::move(mixer), "GuiContext", "mixer");
+  m_applicationController = requireServiceValueAs<GuiContextException>(std::move(appController), "GuiContext", "application controller");
   m_assets = requireServiceValueAs<GuiContextException>(std::move(services.assets), "GuiContext", "assets");
   m_configuration = requireServiceValueAs<GuiContextException>(std::move(services.configuration), "GuiContext", "configuration");
   m_imageMetadata = requireServiceValueAs<GuiContextException>(std::move(services.imageMetadata), "GuiContext", "image metadata");
@@ -28,7 +28,7 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, G
 GuiContext::~GuiContext() = default;
 
 void GuiContext::renderInit(RendererPtr renderer) {
-  m_renderer = std::move(renderer);
+  m_renderer = requireServiceValueAs<GuiContextException>(std::move(renderer), "GuiContext", "renderer");
   auto textureGroup = m_renderer->createTextureGroup();
   m_textureCollection = make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, m_textureCollection);

@@ -357,10 +357,14 @@ Maybe<Json> TechController::receiveMessage(String const& message, bool localMess
 
 TechController::TechAnimator::TechAnimator(Maybe<String> ac, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   animationConfig = std::move(ac);
-  this->assets = std::move(assets);
-  this->particleDatabase = std::move(particleDatabase);
-  this->imageMetadataDatabase = std::move(imageMetadataDatabase);
-  animator = animationConfig ? NetworkedAnimator(*animationConfig, String(), this->assets, this->imageMetadataDatabase, this->particleDatabase) : NetworkedAnimator();
+  if (animationConfig) {
+    this->assets = requireServiceValueAs<StarException>(std::move(assets), "TechAnimator", "assets");
+    this->particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "TechAnimator", "particle database");
+    this->imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "TechAnimator", "image metadata database");
+    animator = NetworkedAnimator(*animationConfig, String(), this->assets, this->imageMetadataDatabase, this->particleDatabase);
+  } else {
+    animator = NetworkedAnimator();
+  }
   netGroup.addNetElement(&animator);
   netGroup.addNetElement(&visible);
 }

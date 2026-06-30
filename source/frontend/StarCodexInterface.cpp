@@ -13,8 +13,9 @@
 
 namespace Star {
 
-CodexInterface::CodexInterface(PlayerPtr player, Services services) : Pane(services.guiContext) {
-  m_player = player;
+CodexInterface::CodexInterface(PlayerPtr player, Services services)
+  : Pane(services.guiContext),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "CodexInterface", "player")) {
   auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "CodexInterface", "assets");
 
   GuiReader reader(context());

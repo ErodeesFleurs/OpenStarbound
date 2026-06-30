@@ -6,7 +6,7 @@
 namespace Star {
 
 CodexDatabase::CodexDatabase(AssetsConstPtr assets) {
-  requireServiceAs<CodexDatabaseException>(assets, "CodexDatabase", "assets");
+  assets = requireServiceValueAs<CodexDatabaseException>(std::move(assets), "CodexDatabase", "assets");
   auto& files = assets->scanExtension("codex");
   auto codexConfig = assets->json("/codex.config");
   assets->queueJsons(files);

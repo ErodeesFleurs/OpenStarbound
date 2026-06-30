@@ -1,4 +1,6 @@
 #include "StarFontTextureGroup.hpp"
+#include "StarAlgorithm.hpp"
+#include "StarException.hpp"
 #include "StarTime.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
@@ -6,7 +8,7 @@
 namespace Star {
 
 FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {}
+  : m_textureGroup(requireServiceValueAs<StarException>(std::move(textureGroup), "FontTextureGroup", "texture group")) {}
 
 void FontTextureGroup::cleanup(int64_t timeout) {
   int64_t currentTime = Time::monotonicMilliseconds();

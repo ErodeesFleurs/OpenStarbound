@@ -8,7 +8,7 @@ namespace Star {
 
 BlueprintItem::BlueprintItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data)
   : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config) {
-  requireServiceAs<ItemException>(assets, "BlueprintItem", "assets");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "BlueprintItem", "assets");
 
   setWindupTime(0.2f);
   setCooldownTime(0.1f);

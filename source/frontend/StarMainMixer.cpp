@@ -23,7 +23,7 @@ void MainMixer::setUniverseClient(UniverseClientPtr universeClient) {
 }
 
 void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
-  m_worldPainter = std::move(worldPainter);
+  m_worldPainter = requireServiceValueAs<StarException>(std::move(worldPainter), "MainMixer", "world painter");
 }
 
 void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {

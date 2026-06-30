@@ -30,8 +30,8 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   GuiReader reader(context());
 
-  m_okCallback = std::move(okCallback);
-  m_cancelCallback = std::move(cancelCallback);
+  m_okCallback = requireServiceValueAs<StarException>(std::move(okCallback), "ConfirmationDialog", "ok callback");
+  m_cancelCallback = requireServiceValueAs<StarException>(std::move(cancelCallback), "ConfirmationDialog", "cancel callback");
 
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("cancel", [this](Widget*) { dismiss(); });

@@ -20,14 +20,14 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json) {
 }
 
 UniverseSettings::UniverseSettings(AssetsConstPtr assets) {
-  loadFlagActions(std::move(assets));
+  loadFlagActions(requireServiceValueAs<StarException>(std::move(assets), "UniverseSettings", "assets"));
 }
 
 UniverseSettings::UniverseSettings(AssetsConstPtr assets, Json const& json) {
   m_uuid = Uuid(json.getString("uuid"));
   m_flags = jsonToStringSet(json.get("flags"));
 
-  loadFlagActions(std::move(assets));
+  loadFlagActions(requireServiceValueAs<StarException>(std::move(assets), "UniverseSettings", "assets"));
 }
 
 Json UniverseSettings::toJson() const {

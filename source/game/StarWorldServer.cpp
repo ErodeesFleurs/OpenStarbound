@@ -42,7 +42,7 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate,
     : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WorldServer", "assets")),
       m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
   setServices(std::move(services));
-  m_worldTemplate = worldTemplate;
+  m_worldTemplate = requireServiceValueAs<StarException>(worldTemplate, "WorldServer", "world template");
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_spawnFinder.m_adjustPlayerStart = true;
   m_spawnFinder.m_respawnInWorld = false;
@@ -98,7 +98,7 @@ WorldServer::WorldServer(WorldChunks const& chunks,
 
 void WorldServer::setServices(WorldServerServices services) {
   m_configuration = requireServiceValueAs<StarException>(std::move(services.configuration), "WorldServer", "configuration");
-  m_luaRootServices = std::move(services.luaRootServices);
+  m_luaRootServices = requireLuaRootServices(std::move(services.luaRootServices), "WorldServer");
   m_materialDatabase = requireServiceValueAs<StarException>(std::move(services.materialDatabase), "WorldServer", "materialDatabase");
   m_itemDatabase = requireServiceValueAs<StarException>(std::move(services.itemDatabase), "WorldServer", "itemDatabase");
   m_objectDatabase = requireServiceValueAs<StarException>(std::move(services.objectDatabase), "WorldServer", "objectDatabase");
@@ -145,7 +145,7 @@ String const& WorldServer::worldId() const {
 }
 
 void WorldServer::setUniverseSettings(UniverseSettingsPtr universeSettings) {
-  m_universeSettings = std::move(universeSettings);
+  m_universeSettings = requireServiceValueAs<StarException>(std::move(universeSettings), "WorldServer", "universe settings");
 }
 
 UniverseSettingsPtr WorldServer::universeSettings() const {
@@ -2572,7 +2572,7 @@ bool WorldServer::isVisibleToPlayer(RectF const& region) const {
 }
 
 WorldServer::ClientInfo::ClientInfo(AssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit)
-    : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), clientState(std::move(assets)), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
+    : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), clientState(requireServiceValueAs<StarException>(std::move(assets), "WorldServer::ClientInfo", "assets")), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
 List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
   return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {
@@ -2658,7 +2658,7 @@ void WorldServer::setupForceRegions() {
 }
 
 void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
-  m_worldTemplate = std::move(newTemplate);
+  m_worldTemplate = requireServiceValueAs<StarException>(std::move(newTemplate), "WorldServer", "world template");
   for (auto& client : clientIds()) {
     auto& info = m_clientInfo.get(client);
     bool local = info->local;

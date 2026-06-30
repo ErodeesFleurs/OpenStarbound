@@ -9,20 +9,16 @@
 
 namespace Star {
 
-namespace {
-
-LuaRootServices requireLuaRootServices(LuaRootServices services) {
-  services.assets = requireServiceValueAs<StarException>(std::move(services.assets), "LuaRoot", "assets");
-  services.configuration = requireServiceValueAs<StarException>(std::move(services.configuration), "LuaRoot", "configuration");
-  services.root = requireServiceValueAs<StarException>(services.root, "LuaRoot", "root");
-  services.storageDirectory = requireNonEmptyServiceValue(std::move(services.storageDirectory), "LuaRoot", "storage directory");
+LuaRootServices requireLuaRootServices(LuaRootServices services, char const* context) {
+  services.assets = requireServiceValueAs<StarException>(std::move(services.assets), context, "assets");
+  services.configuration = requireServiceValueAs<StarException>(std::move(services.configuration), context, "configuration");
+  services.root = requireServiceValueAs<StarException>(services.root, context, "root");
+  services.storageDirectory = requireNonEmptyServiceValue(std::move(services.storageDirectory), context, "storage directory");
   return services;
 }
 
-}
-
 LuaRoot::LuaRoot(LuaRootServices services) {
-  m_services = requireLuaRootServices(std::move(services));
+  m_services = requireLuaRootServices(std::move(services), "LuaRoot");
   m_assets = m_services.assets;
   m_scriptCache = make_shared<ScriptCache>(m_assets);
   addCallbacks("root", LuaBindings::makeRootCallbacks(*m_services.root));
@@ -184,7 +180,8 @@ LuaEngine& LuaRoot::luaEngine() const {
   return *m_luaEngine;
 }
 
-LuaRoot::ScriptCache::ScriptCache(AssetsConstPtr assets) : m_assets(std::move(assets)) {}
+LuaRoot::ScriptCache::ScriptCache(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "LuaRoot::ScriptCache", "assets")) {}
 
 void LuaRoot::ScriptCache::loadScript(LuaEngine& engine, String const& assetPath) {
   RecursiveMutexLocker locker(mutex);

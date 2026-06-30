@@ -1,13 +1,14 @@
 #include "StarItemBag.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
 ItemBag::ItemBag(ItemDatabaseConstPtr itemDatabase)
-  : m_itemDatabase(std::move(itemDatabase)) {}
+  : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ItemBag", "item database")) {}
 
 ItemBag::ItemBag(size_t size, ItemDatabaseConstPtr itemDatabase)
-  : ItemBag(std::move(itemDatabase)) {
+  : ItemBag(requireServiceValueAs<StarException>(std::move(itemDatabase), "ItemBag", "item database")) {
   m_items.resize(size);
 }
 

@@ -49,6 +49,7 @@ CommandProcessor::CommandProcessor(UniverseServer& universe,
     m_stagehandDatabase(requireServiceValueAs<StarException>(std::move(stagehandDatabase), "CommandProcessor", "stagehand database")),
     m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "CommandProcessor", "liquids database")),
     m_reloadRoot(requireServiceValueAs<StarException>(std::move(reloadRoot), "CommandProcessor", "root reload")) {
+  luaRoot = requireServiceValueAs<StarException>(std::move(luaRoot), "CommandProcessor", "lua root");
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(m_assets->json("/universe_server.config:commandProcessorScripts")));

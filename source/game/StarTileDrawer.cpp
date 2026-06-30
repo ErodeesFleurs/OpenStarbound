@@ -29,7 +29,7 @@ RenderTile TileDrawer::DefaultRenderTile{
 
 TileDrawer::TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase)
   : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TileDrawer", "assets")),
-    m_materialDatabase(std::move(materialDatabase)) {
+    m_materialDatabase(requireServiceValueAs<StarException>(std::move(materialDatabase), "TileDrawer", "material database")) {
   m_backgroundLayerColor = jsonToColor(m_assets->json("/rendering.config:backgroundLayerColor")).toRgba();
   m_foregroundLayerColor = jsonToColor(m_assets->json("/rendering.config:foregroundLayerColor")).toRgba();
   m_liquidDrawLevels = jsonToVec2F(m_assets->json("/rendering.config:liquidDrawLevels"));

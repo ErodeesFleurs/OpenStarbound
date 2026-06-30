@@ -495,8 +495,9 @@ ByteArray WorldStorage::tileSectorKey(Sector const& sector) {
 }
 
 WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data, AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase) {
-  auto matDatabase = std::move(materialDatabase);
-  auto liqDatabase = std::move(liquidsDatabase);
+  assets = requireServiceValueAs<StarException>(std::move(assets), "WorldStorage::readTileSector", "assets");
+  auto matDatabase = requireServiceValueAs<StarException>(std::move(materialDatabase), "WorldStorage::readTileSector", "material database");
+  auto liqDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "WorldStorage::readTileSector", "liquids database");
   auto storageConfig = assets->json("/worldstorage.config");
 
   DataStreamBuffer ds(uncompressData(data));

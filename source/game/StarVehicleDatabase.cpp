@@ -13,7 +13,7 @@ VehicleDatabase::VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr
     : m_assets(requireServiceValueAs<VehicleDatabaseException>(std::move(assets), "VehicleDatabase", "assets")),
       m_particleDatabase(requireServiceValueAs<VehicleDatabaseException>(std::move(particleDatabase), "VehicleDatabase", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<VehicleDatabaseException>(std::move(imageMetadataDatabase), "VehicleDatabase", "image metadata database")),
-      m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle", std::move(luaRootServices))) {
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle", requireLuaRootServices(std::move(luaRootServices), "VehicleDatabase"))) {
   auto& files = m_assets->scanExtension("vehicle");
   m_assets->queueJsons(files);
   for (String file : files) {

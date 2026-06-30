@@ -588,8 +588,8 @@ void WorldTemplate::determineWorldName() {
   if (m_celestialParameters)
     m_worldName = m_celestialParameters->name();
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
-    requireDependencyAs<StarException>(m_dungeonDefinitions, "WorldTemplate", "dungeon definitions service for floating dungeon world name");
-    m_worldName = m_dungeonDefinitions->get(floatingDungeonParameters->primaryDungeon)->displayName();
+    auto dungeonDefinitions = requireDependencyValueAs<StarException>(m_dungeonDefinitions, "WorldTemplate", "dungeon definitions service for floating dungeon world name");
+    m_worldName = dungeonDefinitions->get(floatingDungeonParameters->primaryDungeon)->displayName();
   } else
     m_worldName = "";
 }

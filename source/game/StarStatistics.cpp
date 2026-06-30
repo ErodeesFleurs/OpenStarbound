@@ -17,7 +17,7 @@ Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPt
   m_storageDirectory = storageDirectory;
   readStatistics();
 
-  m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
+  m_luaRoot = make_shared<LuaRoot>(requireLuaRootServices(std::move(luaRootServices), "Statistics"));
 }
 
 void Statistics::writeStatistics() {

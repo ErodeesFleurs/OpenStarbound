@@ -235,8 +235,7 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
 }
 
 void Input::BindEntry::updated() {
-  auto config = category->configuration;
-  requireServiceAs<InputException>(config, "BindEntry", "configuration");
+  auto config = requireServiceValueAs<InputException>(category->configuration, "BindEntry", "configuration");
 
   JsonArray array;
   array.reserve(customBinds.size());
@@ -257,7 +256,6 @@ void Input::BindEntry::updated() {
     config->setPath(path, array);
   }
 
-  requireDependencyAs<InputException>(category->rebuildMappings, "BindEntry", "mapping rebuild callback");
   category->rebuildMappings();
 }
 
@@ -280,7 +278,8 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
 }
 
 Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig, ConfigurationPtr configuration, function<void()> rebuildMappings)
-  : configuration(requireServiceValueAs<InputException>(std::move(configuration), "BindCategory", "configuration")), rebuildMappings(std::move(rebuildMappings)) {
+  : configuration(requireServiceValueAs<InputException>(std::move(configuration), "BindCategory", "configuration")),
+    rebuildMappings(requireDependencyValueAs<InputException>(std::move(rebuildMappings), "BindCategory", "mapping rebuild callback")) {
   id = categoryId;
   config = categoryConfig;
   name = config.getString("name", id);
@@ -359,7 +358,7 @@ Input::InputState& Input::addBindState(BindEntry const& bindEntry) {
 Input::Input(InputServices services)
   : m_assets(requireServiceValueAs<InputException>(std::move(services.assets), "Input", "assets")),
     m_configuration(requireServiceValueAs<InputException>(std::move(services.configuration), "Input", "configuration")) {
-  requireDependencyAs<InputException>(services.registerReloadListener, "Input", "reload listener registrar");
+  auto registerReloadListener = requireDependencyValueAs<InputException>(std::move(services.registerReloadListener), "Input", "reload listener registrar");
 
   m_pressedMods = KeyMod::NoMod;
 
@@ -369,7 +368,7 @@ Input::Input(InputServices services)
     reload();
   });
 
-  services.registerReloadListener(m_rootReloadListener);
+  registerReloadListener(m_rootReloadListener);
 }
 
 Input::~Input() = default;

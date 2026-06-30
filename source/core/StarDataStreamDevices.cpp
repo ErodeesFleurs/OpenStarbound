@@ -1,4 +1,5 @@
 #include "StarDataStreamDevices.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -18,7 +19,7 @@ void DataStreamFunctions::writeData(char const* data, size_t len) {
 }
 
 DataStreamIODevice::DataStreamIODevice(IODevicePtr device)
-  : m_device(std::move(device)) {}
+  : m_device(requireDependencyValueAs<DataStreamException>(std::move(device), "DataStreamIODevice", "device")) {}
 
 IODevicePtr const& DataStreamIODevice::device() const {
   return m_device;

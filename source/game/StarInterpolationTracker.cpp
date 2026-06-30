@@ -12,7 +12,7 @@ InterpolationTracker::InterpolationTracker(AssetsConstPtr assets, Json config) {
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {
-    requireDependencyAs<StarException>(assets, "InterpolationTracker", "assets service to load config path");
+    assets = requireDependencyValueAs<StarException>(std::move(assets), "InterpolationTracker", "assets service to load config path");
 
     config = assets->json(config.toString());
   }

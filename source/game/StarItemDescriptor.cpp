@@ -43,7 +43,7 @@ ItemDescriptor::ItemDescriptor(Json const& spec) {
 }
 
 ItemDescriptor ItemDescriptor::loadStore(Json const& spec, VersioningDatabaseConstPtr versioningDatabase) {
-  requireServiceAs<ItemException>(versioningDatabase, "ItemDescriptor::loadStore", "versioning database");
+  versioningDatabase = requireServiceValueAs<ItemException>(std::move(versioningDatabase), "ItemDescriptor::loadStore", "versioning database");
   return ItemDescriptor{versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
 }
 
@@ -104,7 +104,7 @@ bool ItemDescriptor::matches(ItemConstPtr const& other, bool exactMatch) const {
 }
 
 Json ItemDescriptor::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
-  requireServiceAs<ItemException>(versioningDatabase, "ItemDescriptor::diskStore", "versioning database");
+  versioningDatabase = requireServiceValueAs<ItemException>(std::move(versioningDatabase), "ItemDescriptor::diskStore", "versioning database");
   auto res = JsonObject{
     {"name", m_name},
     {"count", m_count},

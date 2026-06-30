@@ -15,7 +15,7 @@ namespace Star {
 
 StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
   : Pane(services.guiContext),
-    m_client(std::move(client)),
+    m_client(requireServiceValueAs<StarException>(std::move(client), "StatusPane", "universe client")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "StatusPane", "assets")),
     m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "StatusPane", "image metadata")),
     m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "StatusPane", "status effect database")),

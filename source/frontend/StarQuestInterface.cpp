@@ -23,10 +23,10 @@ namespace Star {
 
 QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services)
   : Pane(services.guiContext),
-    m_manager(std::move(manager)),
-    m_player(std::move(player)),
+    m_manager(requireServiceValueAs<StarException>(std::move(manager), "QuestLogInterface", "quest manager")),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "QuestLogInterface", "player")),
     m_cinematic(std::move(cinematic)),
-    m_client(std::move(client)),
+    m_client(requireServiceValueAs<StarException>(std::move(client), "QuestLogInterface", "universe client")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestLogInterface", "assets")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "QuestLogInterface", "object database")),
     m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "QuestLogInterface", "status effect database")) {
@@ -291,8 +291,8 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
 
 QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
   : Pane(services.guiContext),
-    m_quest(quest),
-    m_player(std::move(player)),
+    m_quest(requireServiceValueAs<StarException>(quest, "QuestPane", "quest")),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "QuestPane", "player")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestPane", "assets")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "QuestPane", "object database")),
     m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "QuestPane", "status effect database")) {
@@ -361,7 +361,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
 }
 
 NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
-  : QuestPane(quest, std::move(player), std::move(services)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
+  : QuestPane(quest, std::move(player), std::move(services)), m_manager(requireServiceValueAs<StarException>(manager, "NewQuestInterface", "quest manager")), m_decision(QuestDecision::Cancelled) {
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
   bool shortDialog = objectivePortrait.size() == 0;
 

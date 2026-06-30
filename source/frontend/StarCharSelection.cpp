@@ -15,15 +15,15 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     DeleteCharacterCallback deleteCallback,
     CharSelectionServices services)
   : Pane(services.guiContext),
-    m_playerStorage(playerStorage),
+    m_playerStorage(requireDependencyValueAs<StarException>(std::move(playerStorage), "CharSelectionPane", "player storage")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "CharSelectionPane", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "CharSelectionPane", "configuration")),
     m_downScroll(0),
     m_search(""),
     m_filteredList({}),
-    m_createCallback(createCallback),
-    m_selectCallback(selectCallback),
-    m_deleteCallback(deleteCallback) {
+    m_createCallback(requireDependencyValueAs<StarException>(std::move(createCallback), "CharSelectionPane", "create callback")),
+    m_selectCallback(requireDependencyValueAs<StarException>(std::move(selectCallback), "CharSelectionPane", "select callback")),
+    m_deleteCallback(requireDependencyValueAs<StarException>(std::move(deleteCallback), "CharSelectionPane", "delete callback")) {
   GuiReader guiReader(context());
 
   guiReader.registerCallback("playerUpButton", [=, this](Widget*) { shiftCharacters(-1); });

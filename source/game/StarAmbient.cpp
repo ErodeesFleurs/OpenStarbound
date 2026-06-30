@@ -46,7 +46,7 @@ AmbientManager::~AmbientManager() {
 }
 
 void AmbientManager::setAssets(AssetsConstPtr assets) {
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "AmbientManager", "assets");
 }
 
 void AmbientManager::setTrackSwitchGrace(float grace) {

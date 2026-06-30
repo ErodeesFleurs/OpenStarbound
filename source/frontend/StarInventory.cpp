@@ -28,8 +28,8 @@ namespace Star {
 InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services)
   : Pane(services.guiContext),
     m_parent(parent),
-    m_player(std::move(player)),
-    m_containerInteractor(std::move(containerInteractor)),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "InventoryPane", "player")),
+    m_containerInteractor(requireServiceValueAs<StarException>(std::move(containerInteractor), "InventoryPane", "container interactor")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "InventoryPane", "assets")),
     m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "InventoryPane", "tech database")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "InventoryPane", "object database")),

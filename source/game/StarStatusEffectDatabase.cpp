@@ -6,7 +6,7 @@
 namespace Star {
 
 StatusEffectDatabase::StatusEffectDatabase(AssetsConstPtr assets) {
-  requireServiceAs<StatusEffectDatabaseException>(assets, "StatusEffectDatabase", "assets");
+  assets = requireServiceValueAs<StatusEffectDatabaseException>(std::move(assets), "StatusEffectDatabase", "assets");
   auto& files = assets->scanExtension("statuseffect");
   assets->queueJsons(files);
   for (auto& file : files) {

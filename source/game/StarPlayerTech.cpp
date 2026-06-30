@@ -9,7 +9,7 @@ PlayerTech::PlayerTech(TechDatabaseConstPtr techDatabase)
   : m_techDatabase(requireServiceValueAs<PlayerTechException>(std::move(techDatabase), "PlayerTech", "tech database")) {}
 
 PlayerTech::PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase)
-  : PlayerTech(std::move(techDatabase)) {
+  : PlayerTech(requireServiceValueAs<PlayerTechException>(std::move(techDatabase), "PlayerTech", "tech database")) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
   for (auto& p : json.getObject("equippedTechs")) {

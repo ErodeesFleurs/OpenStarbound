@@ -1,4 +1,5 @@
 #include "StarP2PNetworkingService_pc.hpp"
+#include "StarException.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarEither.hpp"
 #include "StarLogging.hpp"
@@ -19,9 +20,9 @@ PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
   : m_callbackConnectionFailure(this, &PcP2PNetworkingService::steamOnConnectionFailure),
     m_callbackJoinRequested(this, &PcP2PNetworkingService::steamOnJoinRequested),
     m_callbackSessionRequest(this, &PcP2PNetworkingService::steamOnSessionRequest),
-    m_state(std::move(state)) {
+    m_state(requireServiceValueAs<StarException>(std::move(state), "PcP2PNetworkingService", "platform state")) {
 #else
-  : m_state(std::move(state)) {
+  : m_state(requireServiceValueAs<StarException>(std::move(state), "PcP2PNetworkingService", "platform state")) {
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION

@@ -24,9 +24,9 @@ namespace Star {
 
 ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services)
   : Pane(services.guiContext),
-    m_worldClient(std::move(worldClient)),
-    m_player(std::move(player)),
-    m_containerInteractor(std::move(containerInteractor)),
+    m_worldClient(requireServiceValueAs<StarException>(std::move(worldClient), "ContainerPane", "world client")),
+    m_player(requireServiceValueAs<StarException>(std::move(player), "ContainerPane", "player")),
+    m_containerInteractor(requireServiceValueAs<StarException>(std::move(containerInteractor), "ContainerPane", "container interactor")),
     m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "ContainerPane", "item database")),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ContainerPane", "assets")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "ContainerPane", "object database")),

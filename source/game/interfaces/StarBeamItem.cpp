@@ -11,7 +11,7 @@ namespace Star {
 
 BeamItem::BeamItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config)
   : m_beamImageMetadataDatabase(requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "BeamItem", "image metadata database")) {
-  requireServiceAs<ItemException>(assets, "BeamItem", "assets");
+  assets = requireServiceValueAs<ItemException>(std::move(assets), "BeamItem", "assets");
 
   config = assets->json("/player.config:beamGunConfig").setAll(config.toObject());
 

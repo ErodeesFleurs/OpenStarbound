@@ -75,7 +75,7 @@ pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel,
 }
 
 MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath) {
-  requireServiceAs<MaterialRenderProfileException>(imageMetadataDatabase, "Material render profile", "image metadata database");
+  imageMetadataDatabase = requireServiceValueAs<MaterialRenderProfileException>(std::move(imageMetadataDatabase), "Material render profile", "image metadata database");
 
   MaterialRenderProfile profile;
 

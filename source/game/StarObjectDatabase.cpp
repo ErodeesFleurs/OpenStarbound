@@ -49,18 +49,18 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
 
   if (anchors.size() == 0)
     return true;
-  requireServiceAs<ObjectException>(materialDatabase, "ObjectOrientation", "material database");
+  auto checkedMaterialDatabase = requireServiceValueAs<ObjectException>(materialDatabase, "ObjectOrientation", "material database");
 
   auto anchorValid = [&](Anchor const& anchor) -> bool {
     auto space = position + anchor.position;
     if (!world->isTileConnectable(space, anchor.layer))
       return false;
     if (anchor.tilled) {
-      if (!materialDatabase->isTilledMod(world->mod(space, anchor.layer)))
+      if (!checkedMaterialDatabase->isTilledMod(world->mod(space, anchor.layer)))
         return false;
     }
     if (anchor.soil) {
-      if (!materialDatabase->isSoil(world->material(space, anchor.layer)))
+      if (!checkedMaterialDatabase->isSoil(world->material(space, anchor.layer)))
         return false;
     }
     if (anchor.material) {
@@ -104,7 +104,7 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
 }
 
 Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& config) {
-  requireServiceAs<ObjectException>(assets, "ObjectDatabase::parseTouchDamage", "assets");
+  assets = requireServiceValueAs<ObjectException>(std::move(assets), "ObjectDatabase::parseTouchDamage", "assets");
 
   auto touchDamage = config.get("touchDamage", {});
   if (touchDamage.isType(Json::Type::String)) {
@@ -116,9 +116,9 @@ Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path,
 
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
   AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
-  requireServiceAs<ObjectException>(assets, "ObjectDatabase::parseOrientations", "assets");
-  requireServiceAs<ObjectException>(materialDatabase, "ObjectDatabase::parseOrientations", "material database");
-  requireServiceAs<ObjectException>(imageMetadataDatabase, "ObjectDatabase::parseOrientations", "image metadata database");
+  assets = requireServiceValueAs<ObjectException>(std::move(assets), "ObjectDatabase::parseOrientations", "assets");
+  materialDatabase = requireServiceValueAs<ObjectException>(std::move(materialDatabase), "ObjectDatabase::parseOrientations", "material database");
+  imageMetadataDatabase = requireServiceValueAs<ObjectException>(std::move(imageMetadataDatabase), "ObjectDatabase::parseOrientations", "image metadata database");
 
   List<ObjectOrientationPtr> res;
   JsonArray configs = configList.toArray();
@@ -326,7 +326,7 @@ ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr m
       m_imageMetadataDatabase(requireServiceValueAs<ObjectException>(std::move(imageMetadataDatabase), "ObjectDatabase", "image metadata database")),
       m_particleDatabase(requireServiceValueAs<ObjectException>(std::move(particleDatabase), "ObjectDatabase", "particle database")),
       m_itemDatabase(requireDependencyValueAs<ObjectException>(std::move(itemDatabase), "ObjectDatabase", "item database provider")),
-      m_rebuilder(make_shared<Rebuilder>(m_assets, "object", std::move(luaRootServices))) {
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "object", requireLuaRootServices(std::move(luaRootServices), "ObjectDatabase"))) {
   auto& files = m_assets->scanExtension("object");
   m_assets->queueJsons(files);
   for (auto& file : files) {
