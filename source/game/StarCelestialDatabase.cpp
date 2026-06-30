@@ -9,6 +9,7 @@
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
 #include "StarVersioningDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -54,16 +55,9 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
 }
 
 CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile) {
-  if (!assets)
-    throw CelestialException("CelestialMasterDatabase requires assets service");
-  if (!liquidsDatabase)
-    throw CelestialException("CelestialMasterDatabase requires liquids database service");
-  if (!biomeDatabase)
-    throw CelestialException("CelestialMasterDatabase requires biome database service");
-
-  m_assets = std::move(assets);
-  m_liquidsDatabase = std::move(liquidsDatabase);
-  m_biomeDatabase = std::move(biomeDatabase);
+  m_assets = requireServiceValueAs<CelestialException>(std::move(assets), "CelestialMasterDatabase", "assets");
+  m_liquidsDatabase = requireServiceValueAs<CelestialException>(std::move(liquidsDatabase), "CelestialMasterDatabase", "liquids database");
+  m_biomeDatabase = requireServiceValueAs<CelestialException>(std::move(biomeDatabase), "CelestialMasterDatabase", "biome database");
   if (versioningDatabase)
     m_versioningDatabase = std::move(*versioningDatabase);
   auto config = m_assets->json("/celestial.config");
@@ -647,8 +641,7 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
 }
 
 CelestialSlaveDatabase::CelestialSlaveDatabase(AssetsConstPtr assets, CelestialBaseInformation baseInformation) {
-  if (!assets)
-    throw CelestialException("CelestialSlaveDatabase requires assets service");
+  requireServiceAs<CelestialException>(assets, "CelestialSlaveDatabase", "assets");
 
   auto config = assets->json("/celestial.config");
 

@@ -10,9 +10,8 @@ SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWo
   , m_systemLocation(location)
   , m_systemWorld(std::move(systemWorld))
   , m_storageFile(storageFile)
-  , m_versioningDatabase(std::move(versioningDatabase))
+  , m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "SystemWorldServerThread", "versioning database"))
 {
-  requireNotNull(m_versioningDatabase, "SystemWorldServerThread", "versioning database");
 }
 
 SystemWorldServerThread::~SystemWorldServerThread() {

@@ -18,13 +18,11 @@ namespace Star {
 namespace {
 
 AssetsConstPtr itemDropAssets(AssetsConstPtr assets) {
-  requireNotNull(assets, "ItemDrop", "assets");
-  return assets;
+  return requireServiceValueAs<StarException>(std::move(assets), "ItemDrop", "assets");
 }
 
 ItemDatabaseConstPtr itemDropItemDatabase(ItemDatabaseConstPtr itemDatabase) {
-  requireNotNull(itemDatabase, "ItemDrop", "item database");
-  return itemDatabase;
+  return requireServiceValueAs<StarException>(std::move(itemDatabase), "ItemDrop", "item database");
 }
 
 }

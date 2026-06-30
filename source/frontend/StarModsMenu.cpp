@@ -11,9 +11,7 @@ namespace Star {
 
 ModsMenu::ModsMenu(Services services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "ModsMenu", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ModsMenu", "assets")) {
   GuiReader reader(context());
   reader.registerCallback("linkbutton", [this](Widget*) { openLink(); });
   reader.registerCallback("workshopbutton", [this](Widget*) { openWorkshop(); });

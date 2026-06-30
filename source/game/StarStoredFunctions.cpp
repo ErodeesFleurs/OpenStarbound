@@ -1,4 +1,5 @@
 #include "StarStoredFunctions.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -117,8 +118,7 @@ Json StoredConfigFunction::get(double value) const {
 }
 
 FunctionDatabase::FunctionDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StoredFunctionException("FunctionDatabase requires assets service");
+  requireServiceAs<StoredFunctionException>(assets, "FunctionDatabase", "assets");
 
   auto& functions = assets->scanExtension("functions");
   auto& sndFunctions = assets->scanExtension("2functions");

@@ -4,12 +4,12 @@
 #include "StarWorld.hpp"
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 MovementParameters MovementParameters::sensibleDefaults(AssetsConstPtr assets) {
-  if (!assets)
-    throw MovementControllerException("MovementParameters requires assets service");
+  requireServiceAs<MovementControllerException>(assets, "MovementParameters", "assets");
   return MovementParameters(assets->json("/default_movement.config").toObject());
 }
 
@@ -169,9 +169,7 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
 }
 
 MovementController::MovementController(MovementParameters const& parameters, AssetsConstPtr assets) {
-  m_assets = std::move(assets);
-  if (!m_assets)
-    throw MovementControllerException("MovementController requires assets service");
+  m_assets = requireServiceValueAs<MovementControllerException>(std::move(assets), "MovementController", "assets");
 
   m_resting = false;
 

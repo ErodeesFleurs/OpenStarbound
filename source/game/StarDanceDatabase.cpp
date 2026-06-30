@@ -6,7 +6,7 @@
 namespace Star {
 
 DanceDatabase::DanceDatabase(AssetsConstPtr assets) {
-  requireNotNull(assets, "DanceDatabase", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "DanceDatabase", "assets");
   auto& files = assets->scanExtension("dance");
   for (auto& file : files) {
     try {

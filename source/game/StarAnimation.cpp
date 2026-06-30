@@ -25,9 +25,8 @@ Animation::Animation() {
 }
 
 Animation::Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+  : m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Animation", "image metadata database")) {
   m_directory = directory;
-  requireNotNull(m_imageMetadataDatabase, "Animation", "image metadata database");
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
       m_directory = AssetPath::directory(config.toString());

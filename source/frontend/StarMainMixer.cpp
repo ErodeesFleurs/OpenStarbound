@@ -13,11 +13,8 @@ namespace Star {
 
 MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Voice& voice, Services services)
   : m_voice(voice),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)) {
-  requireNotNull(m_assets, "MainMixer", "assets");
-  requireNotNull(m_configuration, "MainMixer", "configuration");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "MainMixer", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "MainMixer", "configuration")) {
   m_mixer = make_shared<Mixer>(sampleRate, channels);
 }
 

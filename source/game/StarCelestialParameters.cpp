@@ -13,9 +13,9 @@ CelestialParameters::CelestialParameters() : m_seed(0) {}
 
 CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase)
     : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
-  requireNotNull(assets, "CelestialParameters", "assets");
-  requireNotNull(liquidsDatabase, "CelestialParameters", "liquids database");
-  requireNotNull(biomeDatabase, "CelestialParameters", "biome database");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "CelestialParameters", "assets");
+  liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "CelestialParameters", "liquids database");
+  biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "CelestialParameters", "biome database");
 
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {

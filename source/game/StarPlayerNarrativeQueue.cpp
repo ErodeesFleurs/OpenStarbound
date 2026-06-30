@@ -13,13 +13,10 @@ namespace Star {
 
 PlayerNarrativeQueue::PlayerNarrativeQueue(Player& player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase)
   : m_player(player),
-    m_radioMessageDatabase(std::move(radioMessageDatabase)),
-    m_configuration(std::move(configuration)),
-    m_aiDatabase(std::move(aiDatabase)),
+    m_radioMessageDatabase(requireServiceValueAs<StarException>(std::move(radioMessageDatabase), "PlayerNarrativeQueue", "radio message database")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(configuration), "PlayerNarrativeQueue", "configuration")),
+    m_aiDatabase(requireServiceValueAs<StarException>(std::move(aiDatabase), "PlayerNarrativeQueue", "ai database")),
     m_interruptRadioMessage(false) {
-  requireNotNull(m_radioMessageDatabase, "PlayerNarrativeQueue", "radio message database");
-  requireNotNull(m_configuration, "PlayerNarrativeQueue", "configuration");
-  requireNotNull(m_aiDatabase, "PlayerNarrativeQueue", "ai database");
 }
 
 void PlayerNarrativeQueue::init(List<PersistentStatusEffect> inCinematicStatusEffects) {

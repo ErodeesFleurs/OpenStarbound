@@ -31,17 +31,8 @@
 
 namespace Star {
 
-namespace {
-
-AssetsConstPtr requireNpcAssets(AssetsConstPtr assets) {
-  requireNotNull(assets, "Npc", "assets");
-  return assets;
-}
-
-}// namespace
-
 Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase)
-    : m_scriptedAnimator(requireNpcAssets(assets)) {
+    : m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Npc", "assets")) {
   m_assets = std::move(assets);
   m_npcDatabase = std::move(npcDatabase);
   m_imageMetadataDatabase = std::move(imageMetadataDatabase);
@@ -53,7 +44,7 @@ Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDa
   m_liquidsDatabase = std::move(liquidsDatabase);
   m_statusEffectDatabase = std::move(statusEffectDatabase);
   m_particleDatabase = std::move(particleDatabase);
-  requireNotNull(m_imageMetadataDatabase, "Npc", "image metadata database");
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(m_imageMetadataDatabase), "Npc", "image metadata database");
   m_netHumanoid.setElementFactory([this]() {
     return make_shared<NetHumanoid>(HumanoidIdentity(), JsonObject(), Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   });

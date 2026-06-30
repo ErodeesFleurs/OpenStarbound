@@ -32,15 +32,12 @@ EnumMap<TechController::ParentState> const TechController::ParentStateNames{
   {TechController::ParentState::SwimIdle, "SwimIdle"}};
 
 TechController::TechController(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-    : m_assets(std::move(assets)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+    : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TechController", "assets")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "TechController", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "TechController", "image metadata database")) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
-  requireNotNull(m_assets, "TechController", "assets");
-  requireNotNull(m_particleDatabase, "TechController", "particle database");
-  requireNotNull(m_imageMetadataDatabase, "TechController", "image metadata database");
 
   m_moveRun = false;
   m_movePrimaryFire = false;

@@ -23,11 +23,9 @@ TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Service
   : Pane(services.guiContext),
     m_mainInterface(mainInterface),
     m_client(std::move(client)),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "TeamBar", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "TeamBar", "configuration")),
     m_guiContext(services.guiContext) {
-  requireNotNull(m_assets, "TeamBar", "assets");
-  requireNotNull(m_configuration, "TeamBar", "configuration");
   m_teamInvite = make_shared<TeamInvite>(*this);
   m_teamInvitation = make_shared<TeamInvitation>(*this);
   m_teamMemberMenu = make_shared<TeamMemberMenu>(*this);

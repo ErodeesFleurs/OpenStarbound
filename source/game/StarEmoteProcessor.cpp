@@ -5,7 +5,7 @@
 namespace Star {
 
 EmoteProcessor::EmoteProcessor(AssetsConstPtr assets) {
-  requireNotNull(assets, "EmoteProcessor", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "EmoteProcessor", "assets");
 
   m_emoteBindings.clear();
   auto cfg = assets->json("/emotes.config");

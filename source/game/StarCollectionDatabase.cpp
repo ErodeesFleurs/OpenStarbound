@@ -1,6 +1,7 @@
 #include "StarCollectionDatabase.hpp"
 #include "StarMonsterDatabase.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -20,13 +21,9 @@ Collectable::Collectable(String const& name, int order, String const& title, Str
   : name(name), order(order), title(title), description(description), icon(icon) {};
 
 CollectionDatabase::CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, ItemDatabaseConstPtr itemDatabase)
-  : m_monsterDatabase(std::move(monsterDatabase)), m_itemDatabase(std::move(itemDatabase)) {
-  if (!assets)
-    throw CollectionDatabaseException("CollectionDatabase requires assets service");
-  if (!m_monsterDatabase)
-    throw CollectionDatabaseException("CollectionDatabase requires monster database");
-  if (!m_itemDatabase)
-    throw CollectionDatabaseException("CollectionDatabase requires item database");
+  : m_monsterDatabase(requireDependencyValueAs<CollectionDatabaseException>(std::move(monsterDatabase), "CollectionDatabase", "monster database")),
+    m_itemDatabase(requireDependencyValueAs<CollectionDatabaseException>(std::move(itemDatabase), "CollectionDatabase", "item database")) {
+  requireServiceAs<CollectionDatabaseException>(assets, "CollectionDatabase", "assets");
 
   auto& files = assets->scanExtension("collection");
   assets->queueJsons(files);

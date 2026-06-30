@@ -1,5 +1,6 @@
 #include "StarItemDatabase.hpp"
 #include "StarActiveItem.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
 #include "StarAugmentItem.hpp"
@@ -141,34 +142,17 @@ ItemDatabase::ItemDatabase(AssetsConstPtr assets,
                            ParticleDatabaseConstPtr particleDatabase,
                            ImageMetadataDatabaseConstPtr imageMetadataDatabase,
                            LuaRootServices luaRootServices)
-    : m_assets(std::move(assets)),
-      m_objectDatabase(std::move(objectDatabase)),
-      m_liquidsDatabase(std::move(liquidsDatabase)),
-      m_functionDatabase(std::move(functionDatabase)),
-      m_codexDatabase(std::move(codexDatabase)),
+    : m_assets(requireServiceValueAs<ItemException>(std::move(assets), "ItemDatabase", "assets")),
+      m_objectDatabase(requireDependencyValueAs<ItemException>(std::move(objectDatabase), "ItemDatabase", "object database provider")),
+      m_liquidsDatabase(requireServiceValueAs<ItemException>(std::move(liquidsDatabase), "ItemDatabase", "liquids database")),
+      m_functionDatabase(requireServiceValueAs<ItemException>(std::move(functionDatabase), "ItemDatabase", "function database")),
+      m_codexDatabase(requireServiceValueAs<ItemException>(std::move(codexDatabase), "ItemDatabase", "codex database")),
       m_materialDatabase(std::move(materialDatabase)),
-      m_versioningDatabase(std::move(versioningDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_versioningDatabase(requireServiceValueAs<ItemException>(std::move(versioningDatabase), "ItemDatabase", "versioning database")),
+      m_particleDatabase(requireServiceValueAs<ItemException>(std::move(particleDatabase), "ItemDatabase", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "ItemDatabase", "image metadata database")),
       m_luaRoot(make_shared<LuaRoot>(luaRootServices)),
       m_rebuilder(make_shared<Rebuilder>(m_assets, "item", std::move(luaRootServices))) {
-  if (!m_assets)
-    throw ItemException("ItemDatabase requires assets service");
-  if (!m_objectDatabase)
-    throw ItemException("ItemDatabase requires object database provider");
-  if (!m_liquidsDatabase)
-    throw ItemException("ItemDatabase requires liquids database service");
-  if (!m_functionDatabase)
-    throw ItemException("ItemDatabase requires function database service");
-  if (!m_codexDatabase)
-    throw ItemException("ItemDatabase requires codex database service");
-  if (!m_versioningDatabase)
-    throw ItemException("ItemDatabase requires versioning database service");
-  if (!m_particleDatabase)
-    throw ItemException("ItemDatabase requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw ItemException("ItemDatabase requires image metadata database service");
-
   scanItems();
   addObjectItems();
   addCodexes();

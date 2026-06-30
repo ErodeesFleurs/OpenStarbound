@@ -1,6 +1,7 @@
 #include "StarTechDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -11,8 +12,7 @@ EnumMap<TechType> const TechTypeNames{
 };
 
 TechDatabase::TechDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw TechDatabaseException("TechDatabase requires assets service");
+  requireServiceAs<TechDatabaseException>(assets, "TechDatabase", "assets");
   auto& files = assets->scanExtension("tech");
   assets->queueJsons(files);
   for (auto& file : files) {

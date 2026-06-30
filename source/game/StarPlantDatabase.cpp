@@ -1,6 +1,7 @@
 #include "StarPlantDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -100,12 +101,8 @@ Json BushVariant::toJson() const {
 }
 
 PlantDatabase::PlantDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_assets(std::move(assets)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!m_assets)
-    throw PlantDatabaseException("PlantDatabase requires assets service");
-  if (!m_imageMetadataDatabase)
-    throw PlantDatabaseException("PlantDatabase requires image metadata database service");
-
+  : m_assets(requireServiceValueAs<PlantDatabaseException>(std::move(assets), "PlantDatabase", "assets")),
+    m_imageMetadataDatabase(requireServiceValueAs<PlantDatabaseException>(std::move(imageMetadataDatabase), "PlantDatabase", "image metadata database")) {
   auto& stems = m_assets->scanExtension("modularstem");
   auto& foliages = m_assets->scanExtension("modularfoliage");
   auto& grasses = m_assets->scanExtension("grass");

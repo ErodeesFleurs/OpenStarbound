@@ -3,6 +3,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -74,8 +75,7 @@ pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel,
 }
 
 MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath) {
-  if (!imageMetadataDatabase)
-    throw MaterialRenderProfileException("Material render profile requires image metadata database service");
+  requireServiceAs<MaterialRenderProfileException>(imageMetadataDatabase, "Material render profile", "image metadata database");
 
   MaterialRenderProfile profile;
 

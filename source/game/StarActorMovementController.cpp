@@ -4,6 +4,7 @@
 #include "StarAssets.hpp"
 #include "StarPlatformerAStar.hpp"
 #include "StarObject.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -80,8 +81,7 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 }
 
 ActorMovementParameters ActorMovementParameters::sensibleDefaults(AssetsConstPtr assets) {
-  if (!assets)
-    throw ActorMovementControllerException("ActorMovementParameters requires assets service");
+  requireServiceAs<ActorMovementControllerException>(assets, "ActorMovementParameters", "assets");
   return ActorMovementParameters(assets->json("/default_actor_movement.config").toObject());
 }
 
@@ -422,11 +422,7 @@ DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementMod
 }
 
 ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters, AssetsConstPtr assets)
-  : MovementController(MovementParameters(), assets) {
-  m_assets = std::move(assets);
-  if (!m_assets)
-    throw ActorMovementControllerException("ActorMovementController requires assets service");
-
+  : MovementController(MovementParameters(), assets), m_assets(requireServiceValueAs<ActorMovementControllerException>(std::move(assets), "ActorMovementController", "assets")) {
   m_controlRotationRate = 0.0f;
   m_controlRun = false;
   m_controlCrouch = false;

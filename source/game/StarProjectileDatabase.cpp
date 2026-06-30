@@ -2,13 +2,12 @@
 #include "StarProjectile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
-ProjectileDatabase::ProjectileDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ProjectileDatabaseException("ProjectileDatabase requires assets service");
-
+ProjectileDatabase::ProjectileDatabase(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<ProjectileDatabaseException>(std::move(assets), "ProjectileDatabase", "assets")) {
   auto& files = m_assets->scanExtension("projectile");
   m_assets->queueJsons(files);
   for (auto& file : files) {

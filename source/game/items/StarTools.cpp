@@ -7,14 +7,12 @@
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 MiningTool::MiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("MiningTool requires assets service");
-
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "MiningTool", "assets")) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
@@ -144,8 +142,7 @@ void MiningTool::changeDurability(float amount) {
 
 HarvestingTool::HarvestingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config) {
-  if (!assets)
-    throw ItemException("HarvestingTool requires assets service");
+  requireServiceAs<ItemException>(assets, "HarvestingTool", "assets");
 
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
@@ -246,10 +243,7 @@ List<LightSource> Flashlight::lightSources() const {
 }
 
 WireTool::WireTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("WireTool requires assets service");
-
+  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "WireTool", "assets")) {
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
   m_toolVolume = m_assets->json("/sfx.config:miningToolVolume").toFloat();
@@ -322,10 +316,7 @@ void WireTool::setConnector(WireConnector* connector) {
 }
 
 BeamMiningTool::BeamMiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("BeamMiningTool requires assets service");
-
+  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "BeamMiningTool", "assets")) {
   m_blockRadius = instanceValue("blockRadius").toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius").toFloat();
   m_tileDamage = instanceValue("tileDamage", 1.0f).toFloat();
@@ -497,10 +488,7 @@ float BeamMiningTool::getAngle(float angle) {
 }
 
 TillingTool::TillingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("TillingTool requires assets service");
-
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "TillingTool", "assets")) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
@@ -595,8 +583,7 @@ float TillingTool::getAngle(float aimAngle) {
 
 PaintingBeamTool::PaintingBeamTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
-  if (!assets)
-    throw ItemException("PaintingBeamTool requires assets service");
+  requireServiceAs<ItemException>(assets, "PaintingBeamTool", "assets");
 
   m_blockRadius = instanceValue("blockRadius").toFloat();
   m_altBlockRadius = instanceValue("altBlockRadius").toFloat();

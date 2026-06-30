@@ -17,10 +17,8 @@
 namespace Star {
 
 ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
-    : m_itemDatabase(std::move(itemDatabase)),
+    : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ArmorWearer", "item database")),
       m_lastNude(true) {
-  requireNotNull(m_itemDatabase, "ArmorWearer", "item database");
-
   for (size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     armor.isCosmetic = i >= 4;

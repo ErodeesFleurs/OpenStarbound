@@ -1,4 +1,5 @@
 #include "StarPlayer.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
@@ -65,69 +66,28 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}};
 
 Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-    : m_scriptedAnimator(assets) {
-
-  m_config = config;
-  m_assets = std::move(assets);
-  m_configuration = std::move(configuration);
-  m_materialDatabase = std::move(materialDatabase);
-  m_itemDatabase = std::move(itemDatabase);
-  m_objectDatabase = std::move(objectDatabase);
-  m_questTemplateDatabase = std::move(questTemplateDatabase);
-  m_versioningDatabase = std::move(versioningDatabase);
-  m_codexDatabase = std::move(codexDatabase);
-  m_danceDatabase = std::move(danceDatabase);
-  m_emoteProcessor = std::move(emoteProcessor);
-  m_radioMessageDatabase = std::move(radioMessageDatabase);
-  m_aiDatabase = std::move(aiDatabase);
-  m_collectionDatabase = std::move(collectionDatabase);
-  m_speciesDatabase = std::move(speciesDatabase);
-  m_entityFactory = std::move(entityFactory);
-  m_liquidsDatabase = std::move(liquidsDatabase);
-  m_techDatabase = std::move(techDatabase);
-  m_statusEffectDatabase = std::move(statusEffectDatabase);
-  m_particleDatabase = std::move(particleDatabase);
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
-  if (!m_assets)
-    throw PlayerException("Player requires assets service");
-  if (!m_configuration)
-    throw PlayerException("Player requires configuration service");
-  if (!m_materialDatabase)
-    throw PlayerException("Player requires material database service");
-  if (!m_itemDatabase)
-    throw PlayerException("Player requires item database service");
-  if (!m_objectDatabase)
-    throw PlayerException("Player requires object database service");
-  if (!m_questTemplateDatabase)
-    throw PlayerException("Player requires quest template database service");
-  if (!m_versioningDatabase)
-    throw PlayerException("Player requires versioning database service");
-  if (!m_codexDatabase)
-    throw PlayerException("Player requires codex database service");
-  if (!m_danceDatabase)
-    throw PlayerException("Player requires dance database service");
-  if (!m_emoteProcessor)
-    throw PlayerException("Player requires emote processor service");
-  if (!m_radioMessageDatabase)
-    throw PlayerException("Player requires radio message database service");
-  if (!m_aiDatabase)
-    throw PlayerException("Player requires ai database service");
-  if (!m_collectionDatabase)
-    throw PlayerException("Player requires collection database service");
-  if (!m_speciesDatabase)
-    throw PlayerException("Player requires species database service");
-  if (!m_entityFactory)
-    throw PlayerException("Player requires entity factory service");
-  if (!m_liquidsDatabase)
-    throw PlayerException("Player requires liquids database service");
-  if (!m_techDatabase)
-    throw PlayerException("Player requires tech database service");
-  if (!m_statusEffectDatabase)
-    throw PlayerException("Player requires status effect database service");
-  if (!m_particleDatabase)
-    throw PlayerException("Player requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw PlayerException("Player requires image metadata database service");
+    : m_config(std::move(config)),
+      m_assets(requireServiceValueAs<PlayerException>(std::move(assets), "Player", "assets")),
+      m_configuration(requireServiceValueAs<PlayerException>(std::move(configuration), "Player", "configuration")),
+      m_materialDatabase(requireServiceValueAs<PlayerException>(std::move(materialDatabase), "Player", "material database")),
+      m_itemDatabase(requireServiceValueAs<PlayerException>(std::move(itemDatabase), "Player", "item database")),
+      m_objectDatabase(requireServiceValueAs<PlayerException>(std::move(objectDatabase), "Player", "object database")),
+      m_questTemplateDatabase(requireServiceValueAs<PlayerException>(std::move(questTemplateDatabase), "Player", "quest template database")),
+      m_versioningDatabase(requireServiceValueAs<PlayerException>(std::move(versioningDatabase), "Player", "versioning database")),
+      m_codexDatabase(requireServiceValueAs<PlayerException>(std::move(codexDatabase), "Player", "codex database")),
+      m_danceDatabase(requireServiceValueAs<PlayerException>(std::move(danceDatabase), "Player", "dance database")),
+      m_emoteProcessor(requireServiceValueAs<PlayerException>(std::move(emoteProcessor), "Player", "emote processor")),
+      m_radioMessageDatabase(requireServiceValueAs<PlayerException>(std::move(radioMessageDatabase), "Player", "radio message database")),
+      m_aiDatabase(requireServiceValueAs<PlayerException>(std::move(aiDatabase), "Player", "ai database")),
+      m_collectionDatabase(requireServiceValueAs<PlayerException>(std::move(collectionDatabase), "Player", "collection database")),
+      m_speciesDatabase(requireServiceValueAs<PlayerException>(std::move(speciesDatabase), "Player", "species database")),
+      m_entityFactory(requireServiceValueAs<PlayerException>(std::move(entityFactory), "Player", "entity factory")),
+      m_liquidsDatabase(requireServiceValueAs<PlayerException>(std::move(liquidsDatabase), "Player", "liquids database")),
+      m_techDatabase(requireServiceValueAs<PlayerException>(std::move(techDatabase), "Player", "tech database")),
+      m_statusEffectDatabase(requireServiceValueAs<PlayerException>(std::move(statusEffectDatabase), "Player", "status effect database")),
+      m_particleDatabase(requireServiceValueAs<PlayerException>(std::move(particleDatabase), "Player", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<PlayerException>(std::move(imageMetadataDatabase), "Player", "image metadata database")),
+      m_scriptedAnimator(m_assets) {
   m_client = nullptr;
 
   m_state = State::Idle;

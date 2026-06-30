@@ -8,16 +8,13 @@
 #include "StarAssets.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarText.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 PlayerStorage::PlayerStorage(String const& storageDir, ConfigurationPtr configuration, EntityFactoryConstPtr entityFactory)
-  : m_configuration(std::move(configuration)), m_entityFactory(std::move(entityFactory)) {
-  if (!m_configuration)
-    throw PlayerException("PlayerStorage requires configuration service");
-  if (!m_entityFactory)
-    throw PlayerException("PlayerStorage requires entity factory service");
-
+  : m_configuration(requireServiceValueAs<PlayerException>(std::move(configuration), "PlayerStorage", "configuration")),
+    m_entityFactory(requireServiceValueAs<PlayerException>(std::move(entityFactory), "PlayerStorage", "entity factory")) {
   m_storageDirectory = storageDir;
   m_backupDirectory = File::relativeTo(m_storageDirectory, "backup");
   if (!File::isDirectory(m_storageDirectory)) {

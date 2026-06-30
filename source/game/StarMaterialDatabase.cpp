@@ -3,16 +3,14 @@
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  if (!assets)
-    throw MaterialException("MaterialDatabase requires assets service");
-  if (!particleDatabase)
-    throw MaterialException("MaterialDatabase requires particle database");
-  if (!imageMetadataDatabase)
-    throw MaterialException("MaterialDatabase requires image metadata database");
+  requireServiceAs<MaterialException>(assets, "MaterialDatabase", "assets");
+  requireDependencyAs<MaterialException>(particleDatabase, "MaterialDatabase", "particle database");
+  requireDependencyAs<MaterialException>(imageMetadataDatabase, "MaterialDatabase", "image metadata database");
 
   m_metaModIndex = {
       {"metamod:none", NoModId},

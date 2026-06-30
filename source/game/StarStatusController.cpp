@@ -17,18 +17,13 @@ namespace Star {
 
 StatusController::StatusController(Json const& config, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
     : m_statCollection(config),
-      m_assets(std::move(assets)),
-      m_liquidsDatabase(std::move(liquidsDatabase)),
-      m_statusEffectDatabase(std::move(statusEffectDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+      m_assets(requireServiceValueAs<StarException>(std::move(assets), "StatusController", "assets")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "StatusController", "liquids database")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "StatusController", "status effect database")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "StatusController", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "StatusController", "image metadata database")) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
-  requireNotNull(m_assets, "StatusController", "assets");
-  requireNotNull(m_liquidsDatabase, "StatusController", "liquids database");
-  requireNotNull(m_statusEffectDatabase, "StatusController", "status effect database");
-  requireNotNull(m_particleDatabase, "StatusController", "particle database");
-  requireNotNull(m_imageMetadataDatabase, "StatusController", "image metadata database");
 
   m_statusProperties.reset(config.getObject("statusProperties", {}));
   m_statusProperties.setOverrides(

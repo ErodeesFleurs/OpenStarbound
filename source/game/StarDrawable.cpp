@@ -11,8 +11,7 @@
 namespace Star {
 
 static ImageMetadataDatabaseConstPtr resolveImageMetadata(ImageMetadataDatabaseConstPtr const& ptr) {
-  requireNotNull(ptr, "Drawable operation", "image metadata database");
-  return ptr;
+  return requireServiceValueAs<StarException>(ptr, "Drawable operation", "image metadata database");
 }
 
 Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition, ImageMetadataDatabaseConstPtr imageMetadata) {

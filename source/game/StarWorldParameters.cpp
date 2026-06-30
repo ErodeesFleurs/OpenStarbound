@@ -461,9 +461,9 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
 }
 
 TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed) {
-  requireNotNull(assets, "generateTerrestrialWorldParameters", "assets");
-  requireNotNull(liquidsDatabase, "generateTerrestrialWorldParameters", "liquids database");
-  requireNotNull(biomeDatabase, "generateTerrestrialWorldParameters", "biome database");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "generateTerrestrialWorldParameters", "assets");
+  liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "generateTerrestrialWorldParameters", "liquids database");
+  biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "generateTerrestrialWorldParameters", "biome database");
 
   auto terrestrialConfig = assets->json("/terrestrial_worlds.config");
 
@@ -636,7 +636,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr 
 }
 
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed) {
-  requireNotNull(assets, "generateAsteroidsWorldParameters", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "generateAsteroidsWorldParameters", "assets");
 
   auto parameters = make_shared<AsteroidsWorldParameters>();
 
@@ -666,7 +666,7 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr asse
 }
 
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName) {
-  requireNotNull(assets, "generateFloatingDungeonWorldParameters", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "generateFloatingDungeonWorldParameters", "assets");
 
   auto worldConfig = assets->json("/dungeon_worlds.config:" + dungeonWorldName);
 

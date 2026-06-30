@@ -24,21 +24,15 @@ namespace Star {
 
 ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services)
   : Pane(services.guiContext),
+    m_worldClient(std::move(worldClient)),
+    m_player(std::move(player)),
+    m_containerInteractor(std::move(containerInteractor)),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "ContainerPane", "item database")),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ContainerPane", "assets")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "ContainerPane", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "ContainerPane", "status effect database")),
+    m_takeAllPressed(requireServiceValueAs<StarException>(std::move(services.takeAllPressed), "ContainerPane", "take all input")),
     m_reader(services.guiContext) {
-  m_worldClient = worldClient;
-  m_player = player;
-  m_containerInteractor = std::move(containerInteractor);
-  m_itemDatabase = std::move(services.itemDatabase);
-  m_assets = std::move(services.assets);
-  m_objectDatabase = std::move(services.objectDatabase);
-  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  m_takeAllPressed = std::move(services.takeAllPressed);
-  requireNotNull(m_itemDatabase, "ContainerPane", "item database");
-  requireNotNull(m_assets, "ContainerPane", "assets");
-  requireNotNull(m_objectDatabase, "ContainerPane", "object database");
-  requireNotNull(m_statusEffectDatabase, "ContainerPane", "status effect database");
-  requireService(m_takeAllPressed, "ContainerPane", "take all input");
-
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();
 

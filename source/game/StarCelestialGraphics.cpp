@@ -13,20 +13,6 @@
 
 namespace Star {
 
-namespace {
-
-AssetsConstPtr requireCelestialGraphicsAssets(AssetsConstPtr assets) {
-  requireNotNull(assets, "CelestialGraphics", "assets");
-  return assets;
-}
-
-LiquidsDatabaseConstPtr requireCelestialGraphicsLiquidsDatabase(LiquidsDatabaseConstPtr liquidsDatabase) {
-  requireNotNull(liquidsDatabase, "CelestialGraphics", "liquids database");
-  return liquidsDatabase;
-}
-
-}// namespace
-
 List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialParameters const& parameters) {
   return {{parameters.getParameter("smallImage").toString(), parameters.getParameter("smallImageScale").toFloat()}};
 }
@@ -37,8 +23,8 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialPara
 
 List<pair<String, float>> CelestialGraphics::drawWorld(
   CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
-  assets = requireCelestialGraphicsAssets(std::move(assets));
-  liquidsDatabase = requireCelestialGraphicsLiquidsDatabase(std::move(liquidsDatabase));
+  assets = requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets");
+  liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "CelestialGraphics", "liquids database");
 
   CelestialParameters shadowParameters = overrideShadowParameters.value(celestialParameters);
 
@@ -147,8 +133,8 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
 }
 
 List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
-  assets = requireCelestialGraphicsAssets(std::move(assets));
-  liquidsDatabase = requireCelestialGraphicsLiquidsDatabase(std::move(liquidsDatabase));
+  assets = requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets");
+  liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "CelestialGraphics", "liquids database");
 
   auto getLR = [](String const& base) -> pair<String, String> {
     return pair<String, String>(base.replace("<selector>", "l"), base.replace("<selector>", "r"));
@@ -236,11 +222,11 @@ int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters
 }
 
 int CelestialGraphics::planetRadialPositions(AssetsConstPtr assets) {
-  return requireCelestialGraphicsAssets(std::move(assets))->json("/celestial.config:planetRadialSlots").toInt();
+  return requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets")->json("/celestial.config:planetRadialSlots").toInt();
 }
 
 int CelestialGraphics::satelliteRadialPositions(AssetsConstPtr assets) {
-  return requireCelestialGraphicsAssets(std::move(assets))->json("/celestial.config:satelliteRadialSlots").toInt();
+  return requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets")->json("/celestial.config:satelliteRadialSlots").toInt();
 }
 
 List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double time, AssetsConstPtr assets) {
@@ -248,7 +234,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
   if (!parameters)
     return {};
 
-  assets = requireCelestialGraphicsAssets(std::move(assets));
+  assets = requireServiceValueAs<StarException>(std::move(assets), "CelestialGraphics", "assets");
 
   int twinkleFrameCount = assets->json("/celestial.config:twinkleFrames").toInt();
   float twinkleScale = assets->json("/celestial.config:twinkleScale").toFloat();

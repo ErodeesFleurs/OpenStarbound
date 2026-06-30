@@ -11,9 +11,7 @@
 namespace Star {
 
 TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
-  requireNotNull(assets, "TeamClient", "assets");
-
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "TeamClient", "assets");
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
 

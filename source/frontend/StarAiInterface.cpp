@@ -39,17 +39,13 @@ AiInterface::AiInterface(UniverseClientPtr client,
     MainInterfacePaneManager& paneManager,
     AiInterfaceServices services)
   : Pane(services.guiContext),
-    m_paneManager(paneManager) {
-  m_client = client;
-  m_cinematic = cinematic;
-  m_assets = std::move(services.assets);
-  requireNotNull(m_assets, "AiInterface", "assets");
-
+    m_client(std::move(client)),
+    m_cinematic(std::move(cinematic)),
+    m_paneManager(paneManager),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "AiInterface", "assets")),
+    m_aiDatabase(requireServiceValueAs<StarException>(std::move(services.aiDatabase), "AiInterface", "ai database")) {
   m_textLength = 0.0;
   m_textMaxLength = 0.0;
-
-  m_aiDatabase = std::move(services.aiDatabase);
-  requireNotNull(m_aiDatabase, "AiInterface", "ai database");
 
   GuiReader reader(context());
   reader.registerCallback("close", [this](Widget*) { dismiss(); });

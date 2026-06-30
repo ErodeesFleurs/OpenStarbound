@@ -15,7 +15,7 @@ ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPo
     m_queryServer(bindAddress),
     m_stop(true),
     m_lastChallengeCheck(Time::monotonicMilliseconds()) {
-  requireNotNull(configuration, "ServerQueryThread", "configuration");
+  configuration = requireServiceValueAs<StarException>(std::move(configuration), "ServerQueryThread", "configuration");
 
   m_playersResponse.resize(A2S_PACKET_SIZE);
   m_playersResponse.setByteOrder(ByteOrder::LittleEndian);

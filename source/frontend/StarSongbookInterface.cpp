@@ -12,13 +12,10 @@ namespace Star {
 String const SongPathPrefix = "/songs/";
 
 SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services)
-  : Pane(services.guiContext) {
-  m_player = std::move(player);
-  m_assets = std::move(services.assets);
-  m_registerReloadListener = std::move(services.registerReloadListener);
-  requireNotNull(m_assets, "SongbookInterface", "assets");
-  requireService(m_registerReloadListener, "SongbookInterface", "reload listener");
-
+  : Pane(services.guiContext),
+    m_player(std::move(player)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "SongbookInterface", "assets")),
+    m_registerReloadListener(requireServiceValueAs<StarException>(std::move(services.registerReloadListener), "SongbookInterface", "reload listener")) {
   GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });

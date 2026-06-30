@@ -22,6 +22,7 @@
 #include "StarFlowLayout.hpp"
 #include "StarVerticalLayout.hpp"
 #include "StarTabSet.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -53,8 +54,7 @@ GuiContext& WidgetParser::guiContext() const {
 }
 
 void WidgetParser::construct(Json const& config, Widget* widget) {
-  if (!widget)
-    throw WidgetParserException("WidgetParser requires target widget");
+  requireDependencyAs<WidgetParserException>(widget, "WidgetParser", "target widget");
 
   m_pane = dynamic_cast<Pane*>(widget);
   constructImpl(config, widget);

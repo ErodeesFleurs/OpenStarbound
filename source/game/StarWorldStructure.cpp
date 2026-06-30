@@ -4,16 +4,15 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarImage.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 WorldStructure::WorldStructure() {}
 
 WorldStructure::WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath) {
-  if (!materialDatabase)
-    throw WorldStructureException("WorldStructure requires material database service");
-  if (!imageMetadataDatabase)
-    throw WorldStructureException("WorldStructure requires image metadata database service");
+  requireServiceAs<WorldStructureException>(materialDatabase, "WorldStructure", "material database");
+  requireServiceAs<WorldStructureException>(imageMetadataDatabase, "WorldStructure", "image metadata database");
 
   auto settings = assets->json(configPath);
 

@@ -9,8 +9,7 @@
 namespace Star {
 
 NameplatePainter::NameplatePainter(Services services) : m_guiContext(services.guiContext) {
-  auto assets = std::move(services.assets);
-  requireNotNull(assets, "NameplatePainter", "assets");
+  auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "NameplatePainter", "assets");
 
   Json nametagConfig = assets->json("/interface.config:nametag");
   m_showMasterNames = nametagConfig.getBool("showMasterNames");

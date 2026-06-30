@@ -38,15 +38,12 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
 
 TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_renderer(renderer),
-    m_assets(std::move(assets)),
-    m_registerReloadListener(std::move(registerReloadListener)),
+    m_assets(requireServiceValueAs<StarException>(std::move(assets), "TextPainter", "assets")),
+    m_registerReloadListener(requireServiceValueAs<StarException>(std::move(registerReloadListener), "TextPainter", "reload listener registrar")),
     m_fontTextureGroup(textureGroup),
     m_defaultRenderSettings(),
     m_renderSettings(),
     m_savedRenderSettings() {
-  requireNotNull(m_assets, "TextPainter", "assets");
-  requireService(m_registerReloadListener, "TextPainter", "reload listener registrar");
-
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();
   m_registerReloadListener(m_reloadTracker);

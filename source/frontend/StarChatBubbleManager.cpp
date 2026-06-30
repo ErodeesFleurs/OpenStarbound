@@ -13,17 +13,13 @@
 namespace Star {
 
 ChatBubbleManager::ChatBubbleManager(ChatBubbleManagerServices services)
-  : m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)),
-    m_functionDatabase(std::move(services.functionDatabase)),
-    m_imageMetadata(std::move(services.imageMetadata)),
+  : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ChatBubbleManager", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "ChatBubbleManager", "configuration")),
+    m_functionDatabase(requireServiceValueAs<StarException>(std::move(services.functionDatabase), "ChatBubbleManager", "function database")),
+    m_imageMetadata(requireServiceValueAs<StarException>(std::move(services.imageMetadata), "ChatBubbleManager", "image metadata")),
     m_guiContext(services.guiContext),
     m_textTemplate(Vec2F()),
     m_portraitTextTemplate(Vec2F()) {
-  requireNotNull(m_assets, "ChatBubbleManager", "assets");
-  requireNotNull(m_configuration, "ChatBubbleManager", "configuration");
-  requireNotNull(m_functionDatabase, "ChatBubbleManager", "function database");
-  requireNotNull(m_imageMetadata, "ChatBubbleManager", "image metadata");
   m_cachedInterfaceScale = m_guiContext.interfaceScale();
 
   auto jsonData = m_assets->json("/interface/windowconfig/chatbubbles.config");

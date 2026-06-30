@@ -1,4 +1,5 @@
 #include "StarItem.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
@@ -8,14 +9,11 @@
 namespace Star {
 
 Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters) {
-  if (!assets)
-    throw ItemException("Item requires assets service");
-  if (!imageMetadataDatabase)
-    throw ItemException("Item requires image metadata database service");
+  requireServiceAs<ItemException>(assets, "Item", "assets");
 
   m_config = std::move(config);
   m_directory = std::move(directory);
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
+  m_imageMetadataDatabase = requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "Item", "image metadata database");
   m_parameters = std::move(parameters);
   m_name = m_config.getString("itemName");
   m_count = 1;

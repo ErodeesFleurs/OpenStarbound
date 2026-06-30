@@ -9,7 +9,7 @@
 namespace Star {
 
 EffectSourceDatabase::EffectSourceDatabase(AssetsConstPtr assets) {
-  requireNotNull(assets, "EffectSourceDatabase", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "EffectSourceDatabase", "assets");
 
   auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
@@ -31,9 +31,7 @@ EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kin
 }
 
 EffectSourceConfig::EffectSourceConfig(AssetsConstPtr assets, Json const& config)
-  : m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "EffectSourceConfig", "assets");
-
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "EffectSourceConfig", "assets")) {
   m_kind = config.getString("kind");
   m_config = config;
 }
@@ -47,9 +45,7 @@ EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocatio
 }
 
 EffectSource::EffectSource(AssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition)
-  : m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "EffectSource", "assets");
-
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "EffectSource", "assets")) {
   m_kind = kind;
   m_config = definition;
   m_expired = false;
@@ -138,7 +134,7 @@ String EffectSource::suggestedSpawnLocation() const {
 }
 
 List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase) {
-  requireNotNull(particleDatabase, "particlesFromDefinition", "particle database");
+  particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "particlesFromDefinition", "particle database");
 
   Json particles;
   if (config.type() == Json::Type::Array)
@@ -164,7 +160,7 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
 }
 
 List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position) {
-  requireNotNull(assets, "soundsFromDefinition", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "soundsFromDefinition", "assets");
 
   Json sound;
   if (config.type() == Json::Type::Array)

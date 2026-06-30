@@ -2,15 +2,14 @@
 #include "StarJson.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarWorld.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 LiquidItem::LiquidItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase)
   : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
-  if (!assets)
-    throw ItemException("LiquidItem requires assets service");
-  if (!liquidsDatabase)
-    throw ItemException("LiquidItem requires liquids database service");
+  requireServiceAs<ItemException>(assets, "LiquidItem", "assets");
+  requireServiceAs<ItemException>(liquidsDatabase, "LiquidItem", "liquids database");
 
   m_liquidId = liquidsDatabase->liquidId(config.getString("liquid"));
 

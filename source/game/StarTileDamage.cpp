@@ -1,6 +1,7 @@
 #include "StarTileDamage.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -71,8 +72,7 @@ TileDamageParameters::TileDamageParameters(Json config, Maybe<float> healthOverr
 
 TileDamageParameters::TileDamageParameters(AssetsConstPtr assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
   if (config.type() == Json::Type::String) {
-    if (!assets)
-      throw TileDamageException("TileDamageParameters requires assets service to load config path");
+    requireDependencyAs<TileDamageException>(assets, "TileDamageParameters", "assets service to load config path");
 
     config = assets->json(config.toString());
   }

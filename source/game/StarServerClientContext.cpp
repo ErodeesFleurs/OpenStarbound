@@ -18,10 +18,8 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
     m_playerName(playerName),
     m_shipSpecies(shipSpecies),
     m_canBecomeAdmin(canBecomeAdmin),
-    m_itemDatabase(std::move(itemDatabase)),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ServerClientContext", "item database")),
     m_shipChunks(std::move(initialShipChunks)) {
-  requireNotNull(m_itemDatabase, "ServerClientContext", "item database");
-
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);
       setShipUpgrades(shipUpgrades().apply(args));

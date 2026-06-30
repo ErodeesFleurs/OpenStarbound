@@ -11,6 +11,7 @@
 #include "StarStoredFunctions.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarWorldLuaBindings.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -122,16 +123,11 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
 }
 
 VersioningDatabase::VersioningDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, function<String(String const&)> toStoragePath, LuaRootServices luaRootServices)
-    : m_luaRoot(std::move(luaRootServices)), m_assets(std::move(assets)), m_liquidsDatabase(std::move(liquidsDatabase)), m_biomeDatabase(std::move(biomeDatabase)), m_toStoragePath(std::move(toStoragePath)) {
-  if (!m_assets)
-    throw VersioningDatabaseException("VersioningDatabase requires assets service");
-  if (!m_liquidsDatabase)
-    throw VersioningDatabaseException("VersioningDatabase requires liquids database service");
-  if (!m_biomeDatabase)
-    throw VersioningDatabaseException("VersioningDatabase requires biome database service");
-  if (!m_toStoragePath)
-    throw VersioningDatabaseException("VersioningDatabase requires storage path service");
-
+    : m_luaRoot(std::move(luaRootServices)),
+      m_assets(requireServiceValueAs<VersioningDatabaseException>(std::move(assets), "VersioningDatabase", "assets")),
+      m_liquidsDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(liquidsDatabase), "VersioningDatabase", "liquids database")),
+      m_biomeDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(biomeDatabase), "VersioningDatabase", "biome database")),
+      m_toStoragePath(requireServiceValueAs<VersioningDatabaseException>(std::move(toStoragePath), "VersioningDatabase", "storage path")) {
   for (auto const& pair : m_assets->json("/versioning.config").iterateObject())
     m_currentVersions[pair.first] = pair.second.toUInt();
 

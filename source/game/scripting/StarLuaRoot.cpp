@@ -12,11 +12,10 @@ namespace Star {
 namespace {
 
 LuaRootServices requireLuaRootServices(LuaRootServices services) {
-  requireNotNull(services.assets, "LuaRoot", "assets");
-  requireNotNull(services.configuration, "LuaRoot", "configuration");
-  if (!services.root)
-    throw StarException("LuaRoot requires root service");
-  requireNonEmptyService(services.storageDirectory, "LuaRoot", "storage directory");
+  services.assets = requireServiceValueAs<StarException>(std::move(services.assets), "LuaRoot", "assets");
+  services.configuration = requireServiceValueAs<StarException>(std::move(services.configuration), "LuaRoot", "configuration");
+  services.root = requireServiceValueAs<StarException>(services.root, "LuaRoot", "root");
+  services.storageDirectory = requireNonEmptyServiceValue(std::move(services.storageDirectory), "LuaRoot", "storage directory");
   return services;
 }
 

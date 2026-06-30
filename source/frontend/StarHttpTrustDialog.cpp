@@ -10,11 +10,9 @@ namespace Star {
 
 HttpTrustDialog::HttpTrustDialog(Services services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "HttpTrustDialog", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "HttpTrustDialog", "configuration")),
     m_confirmed(false) {
-  requireNotNull(m_assets, "HttpTrustDialog", "assets");
-  requireNotNull(m_configuration, "HttpTrustDialog", "configuration");
 }
 
 void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {

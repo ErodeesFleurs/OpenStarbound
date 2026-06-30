@@ -5,15 +5,13 @@
 #include "StarItem.hpp"
 #include "StarToolUserEntity.hpp"
 #include "StarWorld.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 BeamItem::BeamItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config)
-  : m_beamImageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!assets)
-    throw ItemException("BeamItem requires assets service");
-  if (!m_beamImageMetadataDatabase)
-    throw ItemException("BeamItem requires image metadata database service");
+  : m_beamImageMetadataDatabase(requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "BeamItem", "image metadata database")) {
+  requireServiceAs<ItemException>(assets, "BeamItem", "assets");
 
   config = assets->json("/player.config:beamGunConfig").setAll(config.toObject());
 

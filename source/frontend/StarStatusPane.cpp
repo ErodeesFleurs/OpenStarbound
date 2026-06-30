@@ -16,13 +16,10 @@ namespace Star {
 StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
   : Pane(services.guiContext),
     m_client(std::move(client)),
-    m_assets(std::move(services.assets)),
-    m_imageMetadataDatabase(std::move(services.imageMetadataDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "StatusPane", "assets")),
+    m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "StatusPane", "image metadata")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "StatusPane", "status effect database")),
     m_guiContext(services.guiContext) {
-  requireNotNull(m_assets, "StatusPane", "assets");
-  requireNotNull(m_imageMetadataDatabase, "StatusPane", "image metadata");
-  requireNotNull(m_statusEffectDatabase, "StatusPane", "status effect database");
   m_player = m_client->mainPlayer();
 
   GuiReader reader(m_guiContext);

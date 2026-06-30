@@ -10,6 +10,7 @@
 #include "StarLiquidsDatabase.hpp"
 #include "StarDungeonImagePart.hpp"
 #include "StarDungeonTMXPart.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -955,15 +956,10 @@ namespace Dungeon {
 
   DungeonGeneratorWriter::DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
     : m_facade(facade),
-      m_materialDatabase(m_facade->materialDatabase()),
-      m_liquidsDatabase(m_facade->liquidsDatabase()),
+      m_materialDatabase(requireServiceValueAs<DungeonException>(m_facade->materialDatabase(), "DungeonGeneratorWriter", "material database")),
+      m_liquidsDatabase(requireServiceValueAs<DungeonException>(m_facade->liquidsDatabase(), "DungeonGeneratorWriter", "liquids database")),
       m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel),
       m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
-    if (!m_materialDatabase)
-      throw DungeonException("DungeonGeneratorWriter requires material database service");
-    if (!m_liquidsDatabase)
-      throw DungeonException("DungeonGeneratorWriter requires liquids database service");
-
     m_currentBounds.setMin(Vec2I{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
     m_currentBounds.setMax(Vec2I{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min()});
   }
@@ -1325,10 +1321,7 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_paths(), m_assets(std::move(assets)), m_tilesetDatabase(std::move(tilesetDatabase)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
-  if (!m_assets)
-    throw DungeonException("DungeonDefinitions requires assets service");
-
+DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_paths(), m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "DungeonDefinitions", "assets")), m_tilesetDatabase(std::move(tilesetDatabase)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
   for (auto& file : m_assets->scan(".dungeon")) {
     Json dungeon = m_assets->json(file);
     m_paths.insert(dungeon.get("metadata").getString("name"), file);

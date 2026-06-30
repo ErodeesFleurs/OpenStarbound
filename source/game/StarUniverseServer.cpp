@@ -1,4 +1,5 @@
 #include "StarUniverseServer.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
@@ -60,86 +61,36 @@ UniverseServer::UniverseServer(String const& storageDir,
     : Thread("UniverseServer"),
       m_workerPool("UniverseServerWorkerPool"),
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
-  m_assets = std::move(_assets);
-  if (!m_assets)
-    throw UniverseServerException("UniverseServer requires assets service");
-  m_configuration = std::move(_configuration);
-  if (!m_configuration)
-    throw UniverseServerException("UniverseServer requires configuration service");
+  m_assets = requireServiceValueAs<UniverseServerException>(std::move(_assets), "UniverseServer", "assets");
+  m_configuration = requireServiceValueAs<UniverseServerException>(std::move(_configuration), "UniverseServer", "configuration");
   m_luaRootServices = std::move(luaRootServices);
-  m_materialDatabase = std::move(materialDatabase);
-  if (!m_materialDatabase)
-    throw UniverseServerException("UniverseServer requires material database service");
-  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
-  if (!m_imageMetadataDatabase)
-    throw UniverseServerException("UniverseServer requires image metadata database service");
-  m_itemDatabase = std::move(itemDatabase);
-  if (!m_itemDatabase)
-    throw UniverseServerException("UniverseServer requires item database service");
-  m_objectDatabase = std::move(objectDatabase);
-  if (!m_objectDatabase)
-    throw UniverseServerException("UniverseServer requires object database service");
-  m_projectileDatabase = std::move(projectileDatabase);
-  if (!m_projectileDatabase)
-    throw UniverseServerException("UniverseServer requires projectile database service");
-  m_plantDatabase = std::move(plantDatabase);
-  if (!m_plantDatabase)
-    throw UniverseServerException("UniverseServer requires plant database service");
-  m_treasureDatabase = std::move(treasureDatabase);
-  if (!m_treasureDatabase)
-    throw UniverseServerException("UniverseServer requires treasure database service");
-  m_npcDatabase = std::move(npcDatabase);
-  if (!m_npcDatabase)
-    throw UniverseServerException("UniverseServer requires npc database service");
-  m_monsterDatabase = std::move(monsterDatabase);
-  if (!m_monsterDatabase)
-    throw UniverseServerException("UniverseServer requires monster database service");
-  m_spawnTypeDatabase = std::move(spawnTypeDatabase);
-  if (!m_spawnTypeDatabase)
-    throw UniverseServerException("UniverseServer requires spawn type database service");
-  m_stagehandDatabase = std::move(stagehandDatabase);
-  if (!m_stagehandDatabase)
-    throw UniverseServerException("UniverseServer requires stagehand database service");
-  m_vehicleDatabase = std::move(vehicleDatabase);
-  if (!m_vehicleDatabase)
-    throw UniverseServerException("UniverseServer requires vehicle database service");
-  m_speciesDatabase = std::move(speciesDatabase);
-  if (!m_speciesDatabase)
-    throw UniverseServerException("UniverseServer requires species database service");
-  m_entityFactory = std::move(entityFactory);
-  if (!m_entityFactory)
-    throw UniverseServerException("UniverseServer requires entity factory service");
-  m_liquidsDatabase = std::move(liquidsDatabase);
-  if (!m_liquidsDatabase)
-    throw UniverseServerException("UniverseServer requires liquids database service");
-  m_terrainDatabase = std::move(terrainDatabase);
-  if (!m_terrainDatabase)
-    throw UniverseServerException("UniverseServer requires terrain database service");
-  m_biomeDatabase = std::move(biomeDatabase);
-  if (!m_biomeDatabase)
-    throw UniverseServerException("UniverseServer requires biome database service");
-  m_nameGenerator = std::move(nameGenerator);
-  if (!m_nameGenerator)
-    throw UniverseServerException("UniverseServer requires name generator service");
-  m_versioningDatabase = std::move(versioningDatabase);
-  if (!m_versioningDatabase)
-    throw UniverseServerException("UniverseServer requires versioning database service");
-  m_functionDatabase = std::move(functionDatabase);
-  if (!m_functionDatabase)
-    throw UniverseServerException("UniverseServer requires function database service");
+  m_materialDatabase = requireServiceValueAs<UniverseServerException>(std::move(materialDatabase), "UniverseServer", "material database");
+  m_imageMetadataDatabase = requireServiceValueAs<UniverseServerException>(std::move(imageMetadataDatabase), "UniverseServer", "image metadata database");
+  m_itemDatabase = requireServiceValueAs<UniverseServerException>(std::move(itemDatabase), "UniverseServer", "item database");
+  m_objectDatabase = requireServiceValueAs<UniverseServerException>(std::move(objectDatabase), "UniverseServer", "object database");
+  m_projectileDatabase = requireServiceValueAs<UniverseServerException>(std::move(projectileDatabase), "UniverseServer", "projectile database");
+  m_plantDatabase = requireServiceValueAs<UniverseServerException>(std::move(plantDatabase), "UniverseServer", "plant database");
+  m_treasureDatabase = requireServiceValueAs<UniverseServerException>(std::move(treasureDatabase), "UniverseServer", "treasure database");
+  m_npcDatabase = requireServiceValueAs<UniverseServerException>(std::move(npcDatabase), "UniverseServer", "npc database");
+  m_monsterDatabase = requireServiceValueAs<UniverseServerException>(std::move(monsterDatabase), "UniverseServer", "monster database");
+  m_spawnTypeDatabase = requireServiceValueAs<UniverseServerException>(std::move(spawnTypeDatabase), "UniverseServer", "spawn type database");
+  m_stagehandDatabase = requireServiceValueAs<UniverseServerException>(std::move(stagehandDatabase), "UniverseServer", "stagehand database");
+  m_vehicleDatabase = requireServiceValueAs<UniverseServerException>(std::move(vehicleDatabase), "UniverseServer", "vehicle database");
+  m_speciesDatabase = requireServiceValueAs<UniverseServerException>(std::move(speciesDatabase), "UniverseServer", "species database");
+  m_entityFactory = requireServiceValueAs<UniverseServerException>(std::move(entityFactory), "UniverseServer", "entity factory");
+  m_liquidsDatabase = requireServiceValueAs<UniverseServerException>(std::move(liquidsDatabase), "UniverseServer", "liquids database");
+  m_terrainDatabase = requireServiceValueAs<UniverseServerException>(std::move(terrainDatabase), "UniverseServer", "terrain database");
+  m_biomeDatabase = requireServiceValueAs<UniverseServerException>(std::move(biomeDatabase), "UniverseServer", "biome database");
+  m_nameGenerator = requireServiceValueAs<UniverseServerException>(std::move(nameGenerator), "UniverseServer", "name generator");
+  m_versioningDatabase = requireServiceValueAs<UniverseServerException>(std::move(versioningDatabase), "UniverseServer", "versioning database");
+  m_functionDatabase = requireServiceValueAs<UniverseServerException>(std::move(functionDatabase), "UniverseServer", "function database");
   m_effectSourceDatabase = std::move(effectSourceDatabase);
   m_particleDatabase = std::move(particleDatabase);
   m_techDatabase = std::move(techDatabase);
   m_statusEffectDatabase = std::move(statusEffectDatabase);
-  m_dungeonDefinitions = std::move(dungeonDefinitions);
-  if (!m_dungeonDefinitions)
-    throw UniverseServerException("UniverseServer requires dungeon definitions service");
-  m_behaviorDatabase = std::move(behaviorDatabase);
-  if (!m_behaviorDatabase)
-    throw UniverseServerException("UniverseServer requires behavior database service");
-  m_reloadRoot = std::move(reloadRoot);
-  if (!m_reloadRoot)
-    throw UniverseServerException("UniverseServer requires root reload service");
+  m_dungeonDefinitions = requireServiceValueAs<UniverseServerException>(std::move(dungeonDefinitions), "UniverseServer", "dungeon definitions");
+  m_behaviorDatabase = requireServiceValueAs<UniverseServerException>(std::move(behaviorDatabase), "UniverseServer", "behavior database");
+  m_reloadRoot = requireServiceValueAs<UniverseServerException>(std::move(reloadRoot), "UniverseServer", "root reload");
   String const LockFile = "universe.lock";
 
   m_storageDirectory = storageDir;

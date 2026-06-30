@@ -30,15 +30,10 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
     m_parent(parent),
     m_player(std::move(player)),
     m_containerInteractor(std::move(containerInteractor)),
-    m_assets(std::move(services.assets)),
-    m_techDatabase(std::move(services.techDatabase)),
-    m_objectDatabase(std::move(services.objectDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  requireNotNull(m_assets, "InventoryPane", "assets");
-  requireNotNull(m_techDatabase, "InventoryPane", "tech database");
-  requireNotNull(m_objectDatabase, "InventoryPane", "object database");
-  requireNotNull(m_statusEffectDatabase, "InventoryPane", "status effect database");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "InventoryPane", "assets")),
+    m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "InventoryPane", "tech database")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "InventoryPane", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "InventoryPane", "status effect database")) {
   GuiReader invWindowReader(context());
   m_config = m_assets->json("/interface/windowconfig/playerinventory.config");
 

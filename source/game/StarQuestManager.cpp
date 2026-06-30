@@ -12,12 +12,11 @@
 namespace Star {
 
 QuestManager::QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  requireNotNull(m_assets, "QuestManager", "assets");
-  requireNotNull(m_objectDatabase, "QuestManager", "object database");
-  requireNotNull(m_questTemplateDatabase, "QuestManager", "quest template database");
-  requireNotNull(m_versioningDatabase, "QuestManager", "versioning database");
-
+    : m_assets(requireServiceValueAs<StarException>(std::move(assets), "QuestManager", "assets")),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "QuestManager", "object database")),
+      m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "QuestManager", "quest template database")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "QuestManager", "versioning database")) {
   m_player = &player;
   m_world = nullptr;
   m_trackOnWorldQuests = false;

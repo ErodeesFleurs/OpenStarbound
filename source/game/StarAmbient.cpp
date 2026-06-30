@@ -58,7 +58,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
 }
 
 AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
-  requireNotNull(m_assets, "AmbientManager", "assets");
+  auto assets = requireServiceValueAs<StarException>(m_assets, "AmbientManager", "assets");
 
   if (m_currentTrack) {
     if (m_currentTrack->finished())
@@ -91,7 +91,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
       }
     }
     if (!m_currentTrackName.empty()) {
-      if (auto audio = m_assets->tryAudio(m_currentTrackName)) {
+      if (auto audio = assets->tryAudio(m_currentTrackName)) {
         m_recentTracks.append(m_currentTrackName);
         m_currentTrack = make_shared<AudioInstance>(*audio);
         m_currentTrack->setLoops(current ? current->trackLoops : -1);
@@ -120,7 +120,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
 }
 
 AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
-  requireNotNull(m_assets, "AmbientManager", "assets");
+  auto assets = requireServiceValueAs<StarException>(m_assets, "AmbientManager", "assets");
 
   if (m_weatherTrack) {
     if (m_weatherTrack->finished())
@@ -141,7 +141,7 @@ AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr curre
   if (!m_weatherTrack) {
     m_weatherTrackName = Random::randValueFrom(tracks);
     if (!m_weatherTrackName.empty()) {
-      if (auto audio = m_assets->tryAudio(m_weatherTrackName)) {
+      if (auto audio = assets->tryAudio(m_weatherTrackName)) {
         m_weatherTrack = make_shared<AudioInstance>(*audio);
         m_weatherTrack->setLoops(-1);
         m_weatherTrack->setVolume(0.0f);

@@ -7,6 +7,7 @@
 #include "StarWorldTemplate.hpp"
 #include "StarTileDrawer.hpp"
 #include "StarPlayer.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -17,15 +18,10 @@ const String CollisionOverridePropertyKey = "building.collisionOverride";
 const String BlockSwapPropertyKey = "building.blockSwap";
 
 MaterialItem::MaterialItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase)
-  : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("MaterialItem requires assets service");
-  if (!materialDatabase)
-    throw ItemException("MaterialItem requires material database service");
-
+  : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "MaterialItem", "assets")) {
   m_material = config.getInt("materialId");
   m_materialHueShift = materialHueFromDegrees(instanceValue("materialHueShift", 0).toFloat());
-  auto materialDatabasePtr = std::move(materialDatabase);
+  auto materialDatabasePtr = requireServiceValueAs<ItemException>(std::move(materialDatabase), "MaterialItem", "material database");
 
   if (materialHueShift() != MaterialHue()) {
     auto drawables = iconDrawables();

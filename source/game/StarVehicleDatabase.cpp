@@ -5,20 +5,15 @@
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarVehicle.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 VehicleDatabase::VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)
-    : m_assets(std::move(assets)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+    : m_assets(requireServiceValueAs<VehicleDatabaseException>(std::move(assets), "VehicleDatabase", "assets")),
+      m_particleDatabase(requireServiceValueAs<VehicleDatabaseException>(std::move(particleDatabase), "VehicleDatabase", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<VehicleDatabaseException>(std::move(imageMetadataDatabase), "VehicleDatabase", "image metadata database")),
       m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle", std::move(luaRootServices))) {
-  if (!m_assets)
-    throw VehicleDatabaseException("VehicleDatabase requires assets service");
-  if (!m_particleDatabase)
-    throw VehicleDatabaseException("VehicleDatabase requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw VehicleDatabaseException("VehicleDatabase requires image metadata database service");
   auto& files = m_assets->scanExtension("vehicle");
   m_assets->queueJsons(files);
   for (String file : files) {

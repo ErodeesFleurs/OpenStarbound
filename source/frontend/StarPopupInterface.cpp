@@ -9,9 +9,7 @@ namespace Star {
 
 PopupInterface::PopupInterface(Services services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "PopupInterface", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "PopupInterface", "assets")) {
   GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });

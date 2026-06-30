@@ -1,4 +1,5 @@
 #include "StarWorldClient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAggressiveEntity.hpp"
 #include "StarBiome.hpp"
 #include "StarCurve25519.hpp"
@@ -59,61 +60,30 @@ WorldClient::WorldClient(PlayerPtr mainPlayer,
                          ImageMetadataDatabaseConstPtr imageMetadataDatabase,
                          DungeonDefinitionsConstPtr dungeonDefinitions)
     : m_luaRoot(std::move(luaRoot)),
-      m_assets(std::move(assets)),
+      m_assets(requireServiceValueAs<WorldClientException>(std::move(assets), "WorldClient", "assets")),
       m_clientState(m_assets),
       m_mainPlayer(std::move(mainPlayer)),
-      m_configuration(std::move(configuration)),
-      m_materialDatabase(std::move(materialDatabase)),
-      m_itemDatabase(std::move(itemDatabase)),
-      m_objectDatabase(std::move(objectDatabase)),
-      m_speciesDatabase(std::move(speciesDatabase)),
-      m_entityFactory(std::move(entityFactory)),
-      m_liquidsDatabase(std::move(liquidsDatabase)),
-      m_terrainDatabase(std::move(terrainDatabase)),
-      m_biomeDatabase(std::move(biomeDatabase)),
-      m_functionDatabase(std::move(functionDatabase)),
+      m_configuration(requireServiceValueAs<WorldClientException>(std::move(configuration), "WorldClient", "configuration")),
+      m_materialDatabase(requireServiceValueAs<WorldClientException>(std::move(materialDatabase), "WorldClient", "material database")),
+      m_itemDatabase(requireServiceValueAs<WorldClientException>(std::move(itemDatabase), "WorldClient", "item database")),
+      m_objectDatabase(requireServiceValueAs<WorldClientException>(std::move(objectDatabase), "WorldClient", "object database")),
+      m_speciesDatabase(requireServiceValueAs<WorldClientException>(std::move(speciesDatabase), "WorldClient", "species database")),
+      m_entityFactory(requireServiceValueAs<WorldClientException>(std::move(entityFactory), "WorldClient", "entity factory")),
+      m_liquidsDatabase(requireServiceValueAs<WorldClientException>(std::move(liquidsDatabase), "WorldClient", "liquids database")),
+      m_terrainDatabase(requireServiceValueAs<WorldClientException>(std::move(terrainDatabase), "WorldClient", "terrain database")),
+      m_biomeDatabase(requireServiceValueAs<WorldClientException>(std::move(biomeDatabase), "WorldClient", "biome database")),
+      m_functionDatabase(requireServiceValueAs<WorldClientException>(std::move(functionDatabase), "WorldClient", "function database")),
       m_behaviorDatabase(std::move(behaviorDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_projectileDatabase(std::move(projectileDatabase)),
-      m_damageDatabase(std::move(damageDatabase)),
+      m_particleDatabase(requireServiceValueAs<WorldClientException>(std::move(particleDatabase), "WorldClient", "particle database")),
+      m_projectileDatabase(requireServiceValueAs<WorldClientException>(std::move(projectileDatabase), "WorldClient", "projectile database")),
+      m_damageDatabase(requireServiceValueAs<WorldClientException>(std::move(damageDatabase), "WorldClient", "damage database")),
       m_effectSourceDatabase(std::move(effectSourceDatabase)),
       m_techDatabase(std::move(techDatabase)),
       m_statusEffectDatabase(std::move(statusEffectDatabase)),
       m_plantDatabase(std::move(plantDatabase)),
       m_treasureDatabase(std::move(treasureDatabase)),
       m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
-      m_dungeonDefinitions(std::move(dungeonDefinitions)) {
-  if (!m_assets)
-    throw WorldClientException("WorldClient requires assets service");
-  if (!m_configuration)
-    throw WorldClientException("WorldClient requires configuration service");
-  if (!m_materialDatabase)
-    throw WorldClientException("WorldClient requires material database service");
-  if (!m_itemDatabase)
-    throw WorldClientException("WorldClient requires item database service");
-  if (!m_objectDatabase)
-    throw WorldClientException("WorldClient requires object database service");
-  if (!m_speciesDatabase)
-    throw WorldClientException("WorldClient requires species database service");
-  if (!m_entityFactory)
-    throw WorldClientException("WorldClient requires entity factory service");
-  if (!m_liquidsDatabase)
-    throw WorldClientException("WorldClient requires liquids database service");
-  if (!m_terrainDatabase)
-    throw WorldClientException("WorldClient requires terrain database service");
-  if (!m_biomeDatabase)
-    throw WorldClientException("WorldClient requires biome database service");
-  if (!m_dungeonDefinitions)
-    throw WorldClientException("WorldClient requires dungeon definitions service");
-  if (!m_functionDatabase)
-    throw WorldClientException("WorldClient requires function database service");
-  if (!m_particleDatabase)
-    throw WorldClientException("WorldClient requires particle database service");
-  if (!m_projectileDatabase)
-    throw WorldClientException("WorldClient requires projectile database service");
-  if (!m_damageDatabase)
-    throw WorldClientException("WorldClient requires damage database service");
-
+      m_dungeonDefinitions(requireServiceValueAs<WorldClientException>(std::move(dungeonDefinitions), "WorldClient", "dungeon definitions")) {
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
   m_audio.m_ambientSounds.setAssets(m_assets);

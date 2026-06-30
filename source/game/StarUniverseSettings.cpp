@@ -92,7 +92,7 @@ void UniverseSettings::resetFlags() {
 }
 
 void UniverseSettings::loadFlagActions(AssetsConstPtr assets) {
-  requireNotNull(assets, "UniverseSettings", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "UniverseSettings", "assets");
 
   m_flagActions.clear();
 

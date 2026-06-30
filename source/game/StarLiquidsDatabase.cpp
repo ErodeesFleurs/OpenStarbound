@@ -2,16 +2,15 @@
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 LiquidSettings::LiquidSettings() : id(EmptyLiquidId) {}
 
 LiquidsDatabase::LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase) {
-  if (!assets)
-    throw LiquidException("LiquidsDatabase requires assets service");
-  if (!materialDatabase)
-    throw LiquidException("LiquidsDatabase requires material database");
+  requireServiceAs<LiquidException>(assets, "LiquidsDatabase", "assets");
+  requireDependencyAs<LiquidException>(materialDatabase, "LiquidsDatabase", "material database");
 
   auto config = assets->json("/liquids.config");
 

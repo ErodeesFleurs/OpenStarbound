@@ -7,6 +7,7 @@
 #include "StarImage.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -562,12 +563,8 @@ Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataD
 }
 
 Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_assets(std::move(assets)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!m_assets)
-    throw PlantException("Plant requires assets service");
-  if (!m_imageMetadataDatabase)
-    throw PlantException("Plant requires image metadata database service");
-
+  : m_assets(requireServiceValueAs<PlantException>(std::move(assets), "Plant", "assets")),
+    m_imageMetadataDatabase(requireServiceValueAs<PlantException>(std::move(imageMetadataDatabase), "Plant", "image metadata database")) {
   m_ephemeral = false;
   m_piecesUpdated = true;
   m_ceiling = false;

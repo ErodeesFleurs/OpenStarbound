@@ -1,14 +1,12 @@
 #include "StarPlayerTech.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 PlayerTech::PlayerTech(TechDatabaseConstPtr techDatabase)
-  : m_techDatabase(std::move(techDatabase)) {
-  if (!m_techDatabase)
-    throw PlayerTechException("PlayerTech requires tech database service");
-}
+  : m_techDatabase(requireServiceValueAs<PlayerTechException>(std::move(techDatabase), "PlayerTech", "tech database")) {}
 
 PlayerTech::PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase)
   : PlayerTech(std::move(techDatabase)) {

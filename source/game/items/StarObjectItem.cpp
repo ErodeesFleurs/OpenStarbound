@@ -4,14 +4,12 @@
 #include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 ObjectItem::ObjectItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
-  : Item(assets, imageMetadataDatabase, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), std::move(imageMetadataDatabase), config), m_objectDatabase(std::move(objectDatabase)) {
-  if (!m_objectDatabase)
-    throw ItemException("ObjectItem requires object database service");
-
+  : Item(assets, imageMetadataDatabase, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), std::move(imageMetadataDatabase), config), m_objectDatabase(requireServiceValueAs<ItemException>(std::move(objectDatabase), "ObjectItem", "object database")) {
   setTwoHanded(config.getBool("twoHanded", true));
 
   // Make sure that all script objects that have retainObjectParametersInItem

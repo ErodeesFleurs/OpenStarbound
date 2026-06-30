@@ -1,4 +1,5 @@
 #include "StarInterpolationTracker.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -11,8 +12,7 @@ InterpolationTracker::InterpolationTracker(AssetsConstPtr assets, Json config) {
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {
-    if (!assets)
-      throw StarException("InterpolationTracker requires assets service to load config path");
+    requireDependencyAs<StarException>(assets, "InterpolationTracker", "assets service to load config path");
 
     config = assets->json(config.toString());
   }

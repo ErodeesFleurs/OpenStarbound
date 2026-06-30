@@ -14,6 +14,7 @@
 #include "StarIslandSurfaceSelector.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -53,8 +54,7 @@ TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParame
 TerrainSelector::~TerrainSelector() {}
 
 TerrainDatabase::TerrainDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw TerrainException("TerrainDatabase requires assets service");
+  requireServiceAs<TerrainException>(assets, "TerrainDatabase", "assets");
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [this, assets](String const& type) {

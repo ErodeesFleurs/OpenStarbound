@@ -15,9 +15,7 @@ namespace Star {
 
 RadioMessagePopup::RadioMessagePopup(Services services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "RadioMessagePopup", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "RadioMessagePopup", "assets")) {
   auto config = m_assets->json("/interface/radiomessage/radiomessage.config");
 
   GuiReader reader(context());

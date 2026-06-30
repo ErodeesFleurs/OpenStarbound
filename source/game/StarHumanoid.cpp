@@ -199,7 +199,7 @@ Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
 }
 
 Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(AssetsConstPtr assets) {
-  requireNotNull(assets, "HumanoidTiming", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "HumanoidTiming", "assets");
   return HumanoidTiming(assets->json("/humanoid.config:humanoidTiming"));
 }
 
@@ -260,20 +260,9 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
   {Humanoid::State::Lay, "lay"},
 };
 
-namespace {
-
-template <typename ServicePtr>
-ServicePtr requireHumanoidService(ServicePtr service, char const* name) {
-  if (!service)
-    throw StarException::format("Humanoid requires {} service", name);
-  return service;
-}
-
-}// namespace
-
 Humanoid::Humanoid(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = requireHumanoidService(std::move(assets), "assets");
-  m_imageMetadataDatabase = requireHumanoidService(std::move(imageMetadataDatabase), "image metadata database");
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets");
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database");
   m_speciesDatabase = std::move(speciesDatabase);
   m_danceDatabase = std::move(danceDatabase);
   m_particleDatabase = std::move(particleDatabase);
@@ -308,7 +297,7 @@ Humanoid::Humanoid(Json const& config, AssetsConstPtr assets, ImageMetadataDatab
 Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
     : Humanoid(std::move(assets), std::move(imageMetadataDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
   m_identity = identity;
-  m_baseConfig = requireHumanoidService(m_speciesDatabase, "species database")->humanoidConfig(identity, parameters, config);
+  m_baseConfig = requireServiceValueAs<StarException>(m_speciesDatabase, "Humanoid", "species database")->humanoidConfig(identity, parameters, config);
   loadConfig(JsonObject());
   loadAnimation();
   setIdentity(identity);
@@ -857,7 +846,7 @@ bool Humanoid::danceCyclicOrEnded() const {
   if (!m_dance)
     return false;
 
-  auto danceDatabase = requireHumanoidService(m_danceDatabase, "dance database");
+  auto danceDatabase = requireServiceValueAs<StarException>(m_danceDatabase, "Humanoid", "dance database");
   auto dance = danceDatabase->getDance(*m_dance);
   return dance->cyclic || m_danceTimer > dance->duration;
 }
@@ -1497,7 +1486,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
-      auto personality = requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->personalities()[0];
+      auto personality = requireServiceValueAs<StarException>(m_speciesDatabase, "Humanoid", "species database")->species(m_identity.species)->personalities()[0];
       portraitAnimator.setLocalTag("personalityIdle", personality.idle);
       portraitAnimator.setLocalTag("personalityArmIdle", personality.armIdle);
       portraitAnimator.resetLocalTransformationGroup("personalityHeadOffset");
@@ -1549,7 +1538,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
     auto personality = m_identity.personality;
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
-      personality = requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->personalities()[0];
+      personality = requireServiceValueAs<StarException>(m_speciesDatabase, "Humanoid", "species database")->species(m_identity.species)->personalities()[0];
 
     if (mode != PortraitMode::Head) {
       if (!m_backArmFrameset.empty()) {
@@ -1703,11 +1692,11 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
 List<Drawable> Humanoid::renderSkull() const {
   return {Drawable::makeImage(
-    requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->skull(), 1.0f, true, Vec2F(), m_imageMetadataDatabase)};
+    requireServiceValueAs<StarException>(m_speciesDatabase, "Humanoid", "species database")->species(m_identity.species)->skull(), 1.0f, true, Vec2F(), m_imageMetadataDatabase)};
 }
 
 HumanoidPtr Humanoid::makeDummy(Gender, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  assets = requireHumanoidService(std::move(assets), "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets");
   HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"), assets, std::move(imageMetadataDatabase));
 
   humanoid->m_headFrameset = assets->json("/humanoid/any/dummy.config:head").toString();
@@ -2124,7 +2113,7 @@ Maybe<DancePtr> Humanoid::getDance() const {
   if (m_dance.isNothing())
     return {};
 
-  auto danceDatabase = requireHumanoidService(m_danceDatabase, "dance database");
+  auto danceDatabase = requireServiceValueAs<StarException>(m_danceDatabase, "Humanoid", "dance database");
   return danceDatabase->getDance(*m_dance);
 }
 
@@ -2245,7 +2234,7 @@ String Humanoid::defaultDeathParticles() const {
 }
 
 List<Particle> Humanoid::particles(String const& name) const {
-  auto particleDatabase = requireHumanoidService(m_particleDatabase, "particle database");
+  auto particleDatabase = requireServiceValueAs<StarException>(m_particleDatabase, "Humanoid", "particle database");
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
   res.reserve(particles.size());
@@ -2319,8 +2308,8 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
 }
 
 NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = requireHumanoidService(std::move(assets), "assets");
-  m_imageMetadataDatabase = requireHumanoidService(std::move(imageMetadataDatabase), "image metadata database");
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets");
+  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database");
   m_speciesDatabase = std::move(speciesDatabase);
   m_danceDatabase = std::move(danceDatabase);
   m_particleDatabase = std::move(particleDatabase);

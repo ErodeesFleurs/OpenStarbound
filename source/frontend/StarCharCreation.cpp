@@ -24,17 +24,11 @@ namespace Star {
 CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc,
     CharCreationServices services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)),
-    m_playerFactory(std::move(services.playerFactory)),
-    m_speciesDatabase(std::move(services.speciesDatabase)),
-    m_nameGenerator(std::move(services.nameGenerator)),
-    m_itemDatabase(std::move(services.itemDatabase)) {
-  requireNotNull(m_assets, "CharCreationPane", "assets");
-  requireNotNull(m_playerFactory, "CharCreationPane", "player factory");
-  requireNotNull(m_speciesDatabase, "CharCreationPane", "species database");
-  requireNotNull(m_nameGenerator, "CharCreationPane", "name generator");
-  requireNotNull(m_itemDatabase, "CharCreationPane", "item database");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "CharCreationPane", "assets")),
+    m_playerFactory(requireServiceValueAs<StarException>(std::move(services.playerFactory), "CharCreationPane", "player factory")),
+    m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "CharCreationPane", "species database")),
+    m_nameGenerator(requireServiceValueAs<StarException>(std::move(services.nameGenerator), "CharCreationPane", "name generator")),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CharCreationPane", "item database")) {
   m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
   GuiReader guiReader(context());

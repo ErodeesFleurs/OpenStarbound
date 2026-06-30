@@ -18,14 +18,11 @@ OptionsMenu::OptionsMenu(PaneManager& manager, UniverseClientPtr client, Options
     m_sfxRange(0, 100),
     m_musicRange(0, 100),
     m_paneManager(manager),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "OptionsMenu", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "OptionsMenu", "configuration")),
     m_luaRootServices(std::move(services.luaRootServices)),
     m_voice(services.voice),
     m_input(services.input) {
-  requireNotNull(m_assets, "OptionsMenu", "assets");
-  requireNotNull(m_configuration, "OptionsMenu", "configuration");
-
   GuiReader reader(context());
 
   reader.registerCallback("instrumentSlider", [=, this](Widget*) {

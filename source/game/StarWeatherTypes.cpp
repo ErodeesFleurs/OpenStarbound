@@ -1,6 +1,7 @@
 #include "StarWeatherTypes.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -10,8 +11,7 @@ WeatherType::WeatherType() {
 
 WeatherType::WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path) {
   if (config.isType(Json::Type::String)) {
-    if (!assets)
-      throw StarException("WeatherType requires assets service to load config path");
+    requireDependencyAs<StarException>(assets, "WeatherType", "assets service to load config path");
 
     path = config.toString();
     config = assets->json(path);

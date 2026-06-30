@@ -4,6 +4,7 @@
 #include "StarProjectileDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldServer.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -38,8 +39,7 @@ void ThrownItem::fireTriggered() {
 
     if (consume(m_ammoUsage)) {
       auto worldServer = as<WorldServer>(world());
-      if (!worldServer)
-        throw ItemException("Thrown item requires server world projectile database");
+      requireDependencyAs<ItemException>(worldServer, "Thrown item", "server world projectile database");
       auto projectileDb = worldServer->projectileDatabase();
       auto projectile = projectileDb->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);

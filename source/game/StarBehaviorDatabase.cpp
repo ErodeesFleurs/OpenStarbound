@@ -148,7 +148,7 @@ BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject con
   : name(name), scripts(scripts), parameters(parameters) { }
 
 BehaviorDatabase::BehaviorDatabase(AssetsConstPtr assets) {
-  requireNotNull(assets, "BehaviorDatabase", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "BehaviorDatabase", "assets");
 
   auto& nodeFiles = assets->scanExtension("nodes");
   assets->queueJsons(nodeFiles);

@@ -4,6 +4,7 @@
 #include "StarIdMap.hpp"
 #include "StarNetElement.hpp"
 #include "StarStrongTypedef.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -89,8 +90,7 @@ private:
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::setElementFactory(function<ElementPtr()> elementFactory) {
-  if (!elementFactory)
-    throw StarException("NetElementDynamicGroup requires element factory");
+  requireDependency(elementFactory, "NetElementDynamicGroup", "element factory");
   m_elementFactory = std::move(elementFactory);
 }
 

@@ -5,15 +5,14 @@
 #include "StarWorld.hpp"
 #include "StarContainerObject.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)) {
-  if (!assets)
-    throw TreasureException("TreasureDatabase requires assets service");
-  if (!m_objectDatabase)
-    throw TreasureException("TreasureDatabase requires object database service");
+  : m_itemDatabase(std::move(itemDatabase)),
+    m_objectDatabase(requireServiceValueAs<TreasureException>(std::move(objectDatabase), "TreasureDatabase", "object database")) {
+  requireServiceAs<TreasureException>(assets, "TreasureDatabase", "assets");
 
   auto& treasurePools = assets->scanExtension("treasurepools");
   auto& treasureChests = assets->scanExtension("treasurechests");

@@ -24,30 +24,19 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
   MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager),
-  m_assets(std::move(services.assets)),
-  m_configuration(std::move(services.configuration)),
-  m_itemDatabase(std::move(services.itemDatabase)),
-  m_objectDatabase(std::move(services.objectDatabase)),
-  m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
-  m_imageFrames(std::move(services.imageFrames)),
-  m_outputDirectory(std::move(services.outputDirectory)),
-  m_reloadRoot(std::move(services.reloadRoot)),
-  m_hotReloadRoot(std::move(services.hotReloadRoot)),
+  m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ClientCommandProcessor", "assets")),
+  m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "ClientCommandProcessor", "configuration")),
+  m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "ClientCommandProcessor", "item database")),
+  m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "ClientCommandProcessor", "object database")),
+  m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "ClientCommandProcessor", "status effect database")),
+  m_imageFrames(requireServiceValueAs<StarException>(std::move(services.imageFrames), "ClientCommandProcessor", "image frames")),
+  m_outputDirectory(requireNonEmptyServiceValue(std::move(services.outputDirectory), "ClientCommandProcessor", "output directory")),
+  m_reloadRoot(requireServiceValueAs<StarException>(std::move(services.reloadRoot), "ClientCommandProcessor", "reload root")),
+  m_hotReloadRoot(requireServiceValueAs<StarException>(std::move(services.hotReloadRoot), "ClientCommandProcessor", "hot reload root")),
   m_guiContext(services.guiContext),
   m_input(services.input),
-  m_setClipboardImage(std::move(services.setClipboardImage)),
+  m_setClipboardImage(requireServiceValueAs<StarException>(std::move(services.setClipboardImage), "ClientCommandProcessor", "clipboard image")),
   m_macroCommands(std::move(macroCommands)) {
-  requireNotNull(m_assets, "ClientCommandProcessor", "assets");
-  requireNotNull(m_configuration, "ClientCommandProcessor", "configuration");
-  requireNotNull(m_itemDatabase, "ClientCommandProcessor", "item database");
-  requireNotNull(m_objectDatabase, "ClientCommandProcessor", "object database");
-  requireNotNull(m_statusEffectDatabase, "ClientCommandProcessor", "status effect database");
-  requireService(m_imageFrames, "ClientCommandProcessor", "image frames");
-  requireNonEmptyService(m_outputDirectory, "ClientCommandProcessor", "output directory");
-  requireService(m_reloadRoot, "ClientCommandProcessor", "reload root");
-  requireService(m_hotReloadRoot, "ClientCommandProcessor", "hot reload root");
-  requireService(m_setClipboardImage, "ClientCommandProcessor", "clipboard image");
-
   m_builtinCommands = {
     {"reload", [this](String const&) { return reload(); }},
     {"hotReload", [this](String const&) { return hotReload(); }},

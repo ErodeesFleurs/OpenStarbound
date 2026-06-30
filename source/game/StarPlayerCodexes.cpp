@@ -8,10 +8,8 @@
 namespace Star {
 
 PlayerCodexes::PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& variant)
-  : m_assets(std::move(assets)), m_codexDatabase(std::move(codexDatabase)) {
-  requireNotNull(m_assets, "PlayerCodexes", "assets");
-  requireNotNull(m_codexDatabase, "PlayerCodexes", "codex database");
-
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "PlayerCodexes", "assets")),
+    m_codexDatabase(requireServiceValueAs<StarException>(std::move(codexDatabase), "PlayerCodexes", "codex database")) {
   if (variant) {
     auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
     for (auto pair : codexData) {

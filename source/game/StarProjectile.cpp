@@ -505,7 +505,7 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
 }
 
 List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource) {
-  requireNotNull(assets, "Projectile::sparkBlock", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Projectile::sparkBlock", "assets");
 
   auto materialDatabase = world.materialDatabase();
 
@@ -802,8 +802,7 @@ void Projectile::processAction(Json const& action) {
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
       auto worldServer = as<WorldServer>(world());
-      if (!worldServer)
-        throw StarException("Projectile action requires server world monster database");
+      requireDependencyAs<StarException>(worldServer, "Projectile action", "server world monster database");
       auto monsterDatabase = worldServer->monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 

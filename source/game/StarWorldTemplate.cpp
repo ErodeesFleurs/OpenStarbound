@@ -571,11 +571,10 @@ uint64_t WorldTemplate::seedFor(int x, int y) const {
 }
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
-    : m_assets(std::move(assets)), m_terrainDatabase(std::move(terrainDatabase)), m_biomeDatabase(std::move(biomeDatabase)), m_dungeonDefinitions(std::move(dungeonDefinitions)) {
-  requireNotNull(m_assets, "WorldTemplate", "assets");
-  requireNotNull(m_terrainDatabase, "WorldTemplate", "terrain database");
-  requireNotNull(m_biomeDatabase, "WorldTemplate", "biome database");
-
+    : m_assets(requireServiceValueAs<StarException>(std::move(assets), "WorldTemplate", "assets")),
+      m_terrainDatabase(requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldTemplate", "terrain database")),
+      m_biomeDatabase(requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldTemplate", "biome database")),
+      m_dungeonDefinitions(std::move(dungeonDefinitions)) {
   m_templateConfig = m_assets->json("/world_template.config");
   m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");
   m_customTerrainBlendWeight = m_templateConfig.getFloat("customTerrainBlendWeight");
@@ -589,8 +588,7 @@ void WorldTemplate::determineWorldName() {
   if (m_celestialParameters)
     m_worldName = m_celestialParameters->name();
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
-    if (!m_dungeonDefinitions)
-      throw StarException("WorldTemplate requires dungeon definitions service for floating dungeon world name");
+    requireDependencyAs<StarException>(m_dungeonDefinitions, "WorldTemplate", "dungeon definitions service for floating dungeon world name");
     m_worldName = m_dungeonDefinitions->get(floatingDungeonParameters->primaryDungeon)->displayName();
   } else
     m_worldName = "";

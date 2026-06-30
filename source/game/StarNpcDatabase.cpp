@@ -1,4 +1,5 @@
 #include "StarNpcDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarEncode.hpp"
 #include "StarItemDatabase.hpp"
@@ -28,43 +29,20 @@ NpcDatabase::NpcDatabase(AssetsConstPtr assets,
                          ParticleDatabaseConstPtr particleDatabase,
                          ImageMetadataDatabaseConstPtr imageMetadataDatabase,
                          LuaRootServices luaRootServices)
-    : m_rebuilder(make_shared<Rebuilder>(assets, "npc", std::move(luaRootServices))),
+    : m_rebuilder(make_shared<Rebuilder>(requireServiceValueAs<NpcException>(assets, "NpcDatabase", "assets"), "npc", std::move(luaRootServices))),
       m_assets(std::move(assets)),
-      m_itemDatabase(std::move(itemDatabase)),
-      m_objectDatabase(std::move(objectDatabase)),
-      m_speciesDatabase(std::move(speciesDatabase)),
-      m_nameGenerator(std::move(nameGenerator)),
-      m_functionDatabase(std::move(functionDatabase)),
+      m_itemDatabase(requireServiceValueAs<NpcException>(std::move(itemDatabase), "NpcDatabase", "item database")),
+      m_objectDatabase(requireServiceValueAs<NpcException>(std::move(objectDatabase), "NpcDatabase", "object database")),
+      m_speciesDatabase(requireServiceValueAs<NpcException>(std::move(speciesDatabase), "NpcDatabase", "species database")),
+      m_nameGenerator(requireServiceValueAs<NpcException>(std::move(nameGenerator), "NpcDatabase", "name generator")),
+      m_functionDatabase(requireServiceValueAs<NpcException>(std::move(functionDatabase), "NpcDatabase", "function database")),
       m_danceDatabase(std::move(danceDatabase)),
       m_emoteProcessor(std::move(emoteProcessor)),
-      m_versioningDatabase(std::move(versioningDatabase)),
-      m_liquidsDatabase(std::move(liquidsDatabase)),
-      m_statusEffectDatabase(std::move(statusEffectDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!m_assets)
-    throw NpcException("NpcDatabase requires assets service");
-  if (!m_itemDatabase)
-    throw NpcException("NpcDatabase requires item database service");
-  if (!m_objectDatabase)
-    throw NpcException("NpcDatabase requires object database service");
-  if (!m_speciesDatabase)
-    throw NpcException("NpcDatabase requires species database service");
-  if (!m_nameGenerator)
-    throw NpcException("NpcDatabase requires name generator service");
-  if (!m_functionDatabase)
-    throw NpcException("NpcDatabase requires function database service");
-  if (!m_versioningDatabase)
-    throw NpcException("NpcDatabase requires versioning database service");
-  if (!m_liquidsDatabase)
-    throw NpcException("NpcDatabase requires liquids database service");
-  if (!m_statusEffectDatabase)
-    throw NpcException("NpcDatabase requires status effect database service");
-  if (!m_particleDatabase)
-    throw NpcException("NpcDatabase requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw NpcException("NpcDatabase requires image metadata database service");
-
+      m_versioningDatabase(requireServiceValueAs<NpcException>(std::move(versioningDatabase), "NpcDatabase", "versioning database")),
+      m_liquidsDatabase(requireServiceValueAs<NpcException>(std::move(liquidsDatabase), "NpcDatabase", "liquids database")),
+      m_statusEffectDatabase(requireServiceValueAs<NpcException>(std::move(statusEffectDatabase), "NpcDatabase", "status effect database")),
+      m_particleDatabase(requireServiceValueAs<NpcException>(std::move(particleDatabase), "NpcDatabase", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<NpcException>(std::move(imageMetadataDatabase), "NpcDatabase", "image metadata database")) {
   auto& files = m_assets->scanExtension("npctype");
   m_assets->queueJsons(files);
   for (auto& file : files) {

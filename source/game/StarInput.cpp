@@ -2,6 +2,7 @@
 #include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -235,8 +236,7 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
 
 void Input::BindEntry::updated() {
   auto config = category->configuration;
-  if (!config)
-    throw InputException("BindEntry requires configuration service");
+  requireServiceAs<InputException>(config, "BindEntry", "configuration");
 
   JsonArray array;
   array.reserve(customBinds.size());
@@ -257,8 +257,7 @@ void Input::BindEntry::updated() {
     config->setPath(path, array);
   }
 
-  if (!category->rebuildMappings)
-    throw InputException("BindEntry requires mapping rebuild callback");
+  requireDependencyAs<InputException>(category->rebuildMappings, "BindEntry", "mapping rebuild callback");
   category->rebuildMappings();
 }
 
@@ -281,13 +280,10 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
 }
 
 Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig, ConfigurationPtr configuration, function<void()> rebuildMappings)
-  : configuration(std::move(configuration)), rebuildMappings(std::move(rebuildMappings)) {
+  : configuration(requireServiceValueAs<InputException>(std::move(configuration), "BindCategory", "configuration")), rebuildMappings(std::move(rebuildMappings)) {
   id = categoryId;
   config = categoryConfig;
   name = config.getString("name", id);
-
-  if (!this->configuration)
-    throw InputException("BindCategory requires configuration service");
 
   auto userBindings = this->configuration->get(InputBindingConfigRoot);
 
@@ -361,13 +357,9 @@ Input::InputState& Input::addBindState(BindEntry const& bindEntry) {
 }
 
 Input::Input(InputServices services)
-  : m_assets(std::move(services.assets)), m_configuration(std::move(services.configuration)) {
-  if (!m_assets)
-    throw InputException("Input requires assets service");
-  if (!m_configuration)
-    throw InputException("Input requires configuration service");
-  if (!services.registerReloadListener)
-    throw InputException("Input requires reload listener registrar");
+  : m_assets(requireServiceValueAs<InputException>(std::move(services.assets), "Input", "assets")),
+    m_configuration(requireServiceValueAs<InputException>(std::move(services.configuration), "Input", "configuration")) {
+  requireDependencyAs<InputException>(services.registerReloadListener, "Input", "reload listener registrar");
 
   m_pressedMods = KeyMod::NoMod;
 

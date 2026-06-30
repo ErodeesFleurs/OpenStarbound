@@ -12,7 +12,7 @@ constexpr int MaxPvpTeamAssignmentAttempts = 256;
 namespace Star {
 
 TeamManager::TeamManager(ConfigurationPtr configuration) {
-  requireNotNull(configuration, "TeamManager", "configuration");
+  configuration = requireServiceValueAs<StarException>(std::move(configuration), "TeamManager", "configuration");
   m_pvpTeamCounter = 1;
   m_maxTeamSize = configuration->get("maxTeamSize").toUInt();
   m_polledInvitationTimeout = configuration->getPath("teamInvitationTimeout", Json(600.0)).toDouble();

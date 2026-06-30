@@ -9,9 +9,8 @@
 
 namespace Star {
 
-ImageMetadataDatabase::ImageMetadataDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "ImageMetadataDatabase", "assets");
-
+ImageMetadataDatabase::ImageMetadataDatabase(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "ImageMetadataDatabase", "assets")) {
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;
   int64_t timeToLive = 60000;

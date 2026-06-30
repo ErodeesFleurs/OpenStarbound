@@ -33,21 +33,15 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     Json const& settings,
     EntityId sourceEntityId,
     CraftingPaneServices services)
-  : Pane(services.guiContext) {
-  m_worldClient = std::move(worldClient);
-  m_player = std::move(player);
-  m_blueprints = m_player->blueprints();
-  m_assets = std::move(services.assets);
-  m_configuration = std::move(services.configuration);
-  m_itemDatabase = std::move(services.itemDatabase);
-  m_objectDatabase = std::move(services.objectDatabase);
-  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  requireNotNull(m_assets, "CraftingPane", "assets");
-  requireNotNull(m_configuration, "CraftingPane", "configuration");
-  requireNotNull(m_itemDatabase, "CraftingPane", "item database");
-  requireNotNull(m_objectDatabase, "CraftingPane", "object database");
-  requireNotNull(m_statusEffectDatabase, "CraftingPane", "status effect database");
-
+  : Pane(services.guiContext),
+    m_worldClient(std::move(worldClient)),
+    m_player(std::move(player)),
+    m_blueprints(m_player->blueprints()),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "CraftingPane", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "CraftingPane", "configuration")),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CraftingPane", "item database")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "CraftingPane", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "CraftingPane", "status effect database")) {
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;
 

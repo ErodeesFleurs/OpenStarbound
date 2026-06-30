@@ -16,9 +16,7 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
     m_worldClient(std::move(worldClient)),
     m_player(std::move(player)),
     m_worldPainter(std::move(worldPainter)),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "WirePane", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WirePane", "assets")) {
   m_connecting = false;
 
   GuiReader reader(context());

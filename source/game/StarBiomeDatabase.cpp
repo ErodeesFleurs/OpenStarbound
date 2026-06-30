@@ -6,19 +6,16 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarSpawnTypeDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, PlantDatabaseConstPtr plantDatabase)
-  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)), m_plantDatabase(std::move(plantDatabase)) {
-  if (!m_assets)
-    throw BiomeException("BiomeDatabase requires assets service");
-  if (!m_materialDatabase)
-    throw BiomeException("BiomeDatabase requires material database service");
-  if (!m_functionDatabase)
-    throw BiomeException("BiomeDatabase requires function database service");
-  if (!m_plantDatabase)
-    throw BiomeException("BiomeDatabase requires plant database service");
+  : m_assets(requireServiceValueAs<BiomeException>(std::move(assets), "BiomeDatabase", "assets")),
+    m_materialDatabase(requireServiceValueAs<BiomeException>(std::move(materialDatabase), "BiomeDatabase", "material database")),
+    m_functionDatabase(requireServiceValueAs<BiomeException>(std::move(functionDatabase), "BiomeDatabase", "function database")),
+    m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+    m_plantDatabase(requireServiceValueAs<BiomeException>(std::move(plantDatabase), "BiomeDatabase", "plant database")) {
 
   m_spawnGroups = m_assets->json("/spawning.config:spawnGroups");
 

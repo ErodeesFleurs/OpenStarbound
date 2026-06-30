@@ -27,10 +27,9 @@ SpeciesOption::SpeciesOption()
     hairColorDirectives() {}
 
 SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices)
-  : m_nameGenerator(std::move(nameGenerator)), m_luaRoot(make_shared<LuaRoot>(std::move(luaRootServices))) {
-  requireNotNull(assets, "SpeciesDatabase", "assets");
-  requireNotNull(m_nameGenerator, "SpeciesDatabase", "name generator");
-
+  : m_nameGenerator(requireServiceValueAs<StarException>(std::move(nameGenerator), "SpeciesDatabase", "name generator")),
+    m_luaRoot(make_shared<LuaRoot>(std::move(luaRootServices))) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "SpeciesDatabase", "assets");
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -216,9 +215,8 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
   );
 }
 
-SpeciesDefinition::SpeciesDefinition(Json const& config, AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "SpeciesDefinition", "assets");
-
+SpeciesDefinition::SpeciesDefinition(Json const& config, AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "SpeciesDefinition", "assets")) {
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");

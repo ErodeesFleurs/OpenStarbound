@@ -11,8 +11,7 @@ namespace Star {
 
 ConfirmationDialog::ConfirmationDialog(Services services)
   : Pane(services.guiContext),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "ConfirmationDialog", "assets");
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ConfirmationDialog", "assets")) {
 }
 
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {

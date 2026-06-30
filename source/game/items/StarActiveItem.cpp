@@ -11,16 +11,15 @@
 #include "StarPlayerLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 ActiveItem::ActiveItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, Json const& config, String const& directory, Json const& parameters)
-    : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), m_assets(std::move(assets)), m_particleDatabase(std::move(particleDatabase)), m_scriptedAnimator(m_assets) {
-  if (!m_assets)
-    throw ItemException("ActiveItem requires assets service");
-  if (!m_particleDatabase)
-    throw ItemException("ActiveItem requires particle database service");
-
+    : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters),
+      m_assets(requireServiceValueAs<ItemException>(std::move(assets), "ActiveItem", "assets")),
+      m_particleDatabase(requireServiceValueAs<ItemException>(std::move(particleDatabase), "ActiveItem", "particle database")),
+      m_scriptedAnimator(m_assets) {
   auto animationConfig = m_assets->fetchJson(instanceValue("animation"), directory);
   if (auto customConfig = instanceValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);

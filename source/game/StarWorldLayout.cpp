@@ -9,16 +9,6 @@
 
 namespace Star {
 
-TerrainDatabaseConstPtr requireTerrainDatabase(TerrainDatabaseConstPtr terrainDatabase) {
-  requireNotNull(terrainDatabase, "WorldLayout", "terrain database");
-  return terrainDatabase;
-}
-
-BiomeDatabaseConstPtr requireBiomeDatabase(BiomeDatabaseConstPtr biomeDatabase) {
-  requireNotNull(biomeDatabase, "WorldLayout", "biome database");
-  return biomeDatabase;
-}
-
 WorldRegion::WorldRegion()
     : terrainSelectorIndex(NullTerrainSelectorIndex),
       foregroundCaveSelectorIndex(NullTerrainSelectorIndex),
@@ -112,8 +102,8 @@ Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize)
 }
 
 WorldLayout WorldLayout::buildTerrestrialLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
-  auto terrainDb = requireTerrainDatabase(std::move(terrainDatabase));
-  auto biomeDb = requireBiomeDatabase(std::move(biomeDatabase));
+  auto terrainDb = requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database");
+  auto biomeDb = requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database");
   bool useSecondaryEnvironmentBiomeIndex = assets->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool();
   int playerStartSearchYRange = assets->json("/world_template.config:playerStartSearchYRange").toInt();
 
@@ -238,8 +228,8 @@ WorldLayout WorldLayout::buildTerrestrialLayout(AssetsConstPtr assets, TerrainDa
 }
 
 WorldLayout WorldLayout::buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
-  auto terrainDb = requireTerrainDatabase(std::move(terrainDatabase));
-  auto biomeDb = requireBiomeDatabase(std::move(biomeDatabase));
+  auto terrainDb = requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database");
+  auto biomeDb = requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database");
 
   RandomSource randSource(seed);
 
@@ -291,13 +281,13 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AssetsConstPtr assets, TerrainData
 }
 
 WorldLayout WorldLayout::buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
-  auto biomeDb = requireBiomeDatabase(std::move(biomeDatabase));
+  auto biomeDb = requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database");
 
   RandomSource randSource(seed);
 
   WorldLayout layout;
   layout.m_worldSize = floatingDungeonParameters.worldSize;
-  layout.m_terrainDatabase = requireTerrainDatabase(std::move(terrainDatabase));
+  layout.m_terrainDatabase = requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database");
   layout.m_biomeDatabase = biomeDb;
 
   RegionParams biomeRegion{
@@ -324,9 +314,9 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(AssetsConstPtr assets, Terra
 WorldLayout::WorldLayout() : m_regionBlending(0.0f) {}
 
 WorldLayout::WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase) : WorldLayout() {
-  auto terrainDb = requireTerrainDatabase(std::move(terrainDatabase));
+  auto terrainDb = requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database");
   m_terrainDatabase = terrainDb;
-  m_biomeDatabase = requireBiomeDatabase(std::move(biomeDatabase));
+  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database");
 
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 

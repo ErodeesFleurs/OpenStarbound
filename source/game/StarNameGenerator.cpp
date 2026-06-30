@@ -1,12 +1,11 @@
 #include "StarNameGenerator.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
-PatternedNameGenerator::PatternedNameGenerator(AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw NameGeneratorException("PatternedNameGenerator requires assets service");
-
+PatternedNameGenerator::PatternedNameGenerator(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<NameGeneratorException>(std::move(assets), "PatternedNameGenerator", "assets")) {
   auto &files = m_assets->scanExtension("namesource");
   m_assets->queueJsons(files);
   for (auto& file : files) {

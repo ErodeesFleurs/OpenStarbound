@@ -2,13 +2,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerBlueprints.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 BlueprintItem::BlueprintItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data)
   : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config) {
-  if (!assets)
-    throw ItemException("BlueprintItem requires assets service");
+  requireServiceAs<ItemException>(assets, "BlueprintItem", "assets");
 
   setWindupTime(0.2f);
   setCooldownTime(0.1f);

@@ -8,7 +8,7 @@
 namespace Star {
 
 Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices) {
-  requireNotNull(assets, "Rebuilder", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Rebuilder", "assets");
 
   m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
   m_contexts = make_shared<List<LuaContext>>();

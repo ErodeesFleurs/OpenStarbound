@@ -16,10 +16,8 @@ TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDa
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
   m_assets = std::move(assets);
-  m_materialDatabase = std::move(materialDatabase);
-  auto liquidDatabase = std::move(liquidsDatabase);
-  requireNotNull(m_materialDatabase, "TilePainter", "material database");
-  requireNotNull(liquidDatabase, "TilePainter", "liquids database");
+  m_materialDatabase = requireServiceValueAs<StarException>(std::move(materialDatabase), "TilePainter", "material database");
+  auto liquidDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "TilePainter", "liquids database");
 
   m_terrainChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());
   m_terrainChunkCache.setTimeSmear(m_terrainChunkCache.timeToLive() / 4);

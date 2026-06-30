@@ -6,7 +6,7 @@
 namespace Star {
 
 DamageDatabase::DamageDatabase(AssetsConstPtr assets) {
-  requireNotNull(assets, "DamageDatabase", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "DamageDatabase", "assets");
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
   for (auto p : elementalConfig.iterateObject()) {
     ElementalType type;

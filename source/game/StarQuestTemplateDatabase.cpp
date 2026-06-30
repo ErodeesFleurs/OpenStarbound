@@ -59,7 +59,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
 }
 
 QuestTemplateDatabase::QuestTemplateDatabase(AssetsConstPtr assets) {
-  requireNotNull(assets, "QuestTemplateDatabase", "assets");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "QuestTemplateDatabase", "assets");
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {

@@ -14,8 +14,7 @@
 namespace Star {
 
 QuestTrackerPane::QuestTrackerPane(Services services) : Pane(services.guiContext) {
-  auto assets = std::move(services.assets);
-  requireNotNull(assets, "QuestTrackerPane", "assets");
+  auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "QuestTrackerPane", "assets");
 
   auto config = assets->json("/interface/questtracker/questtracker.config");
 

@@ -22,9 +22,8 @@ PlantDrop::PlantDropPiece::PlantDropPiece() {
 
 PlantDrop::PlantDrop(AssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
     bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random)
-  : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "PlantDrop", "assets");
-
+  : m_movementController(MovementParameters(), requireServiceValueAs<StarException>(assets, "PlantDrop", "assets")),
+    m_assets(std::move(assets)) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -90,9 +89,8 @@ PlantDrop::PlantDrop(AssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2
 }
 
 PlantDrop::PlantDrop(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
-  : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
-  requireNotNull(m_assets, "PlantDrop", "assets");
-
+  : m_movementController(MovementParameters(), requireServiceValueAs<StarException>(assets, "PlantDrop", "assets")),
+    m_assets(std::move(assets)) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 

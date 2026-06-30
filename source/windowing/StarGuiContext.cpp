@@ -4,29 +4,19 @@
 #include "StarMixer.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
-
-namespace {
-
-template <typename Service>
-Service requireGuiContextService(Service service, char const* name) {
-  if (!service)
-    throw GuiContextException(strf("GuiContext requires {} service", name));
-  return service;
-}
-
-}
 
 GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services) {
   m_mixer = std::move(mixer);
   m_applicationController = std::move(appController);
-  m_assets = requireGuiContextService(std::move(services.assets), "assets");
-  m_configuration = requireGuiContextService(std::move(services.configuration), "configuration");
-  m_imageMetadata = requireGuiContextService(std::move(services.imageMetadata), "image metadata");
-  m_itemDatabase = requireGuiContextService(std::move(services.itemDatabase), "item database");
-  m_registerReloadListener = requireGuiContextService(std::move(services.registerReloadListener), "reload listener registrar");
-  m_withClipboardUnlock = requireGuiContextService(std::move(services.withClipboardUnlock), "clipboard unlock");
+  m_assets = requireServiceValueAs<GuiContextException>(std::move(services.assets), "GuiContext", "assets");
+  m_configuration = requireServiceValueAs<GuiContextException>(std::move(services.configuration), "GuiContext", "configuration");
+  m_imageMetadata = requireServiceValueAs<GuiContextException>(std::move(services.imageMetadata), "GuiContext", "image metadata");
+  m_itemDatabase = requireServiceValueAs<GuiContextException>(std::move(services.itemDatabase), "GuiContext", "item database");
+  m_registerReloadListener = requireServiceValueAs<GuiContextException>(std::move(services.registerReloadListener), "GuiContext", "reload listener registrar");
+  m_withClipboardUnlock = requireServiceValueAs<GuiContextException>(std::move(services.withClipboardUnlock), "GuiContext", "clipboard unlock");
 
   m_interfaceScale = 1;
 

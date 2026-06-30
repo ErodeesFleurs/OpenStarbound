@@ -3,14 +3,12 @@
 #include "StarAssetPath.hpp"
 #include "StarClientContext.hpp"
 #include "StarPlayerBlueprints.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 UnlockItem::UnlockItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(assets, std::move(imageMetadataDatabase), config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("UnlockItem requires assets service");
-
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, itemParameters), SwingableItem(config), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "UnlockItem", "assets")) {
   m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
   m_unlockMessage = instanceValue("unlockMessage").optString().value();

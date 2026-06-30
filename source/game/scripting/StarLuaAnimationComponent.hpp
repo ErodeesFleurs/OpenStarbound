@@ -11,6 +11,7 @@
 #include "StarParticle.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarWorld.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -52,8 +53,7 @@ private:
 
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
-  if (!assets)
-    throw LuaAnimationComponentException("LuaAnimationComponent requires assets service");
+  requireServiceAs<LuaAnimationComponentException>(assets, "LuaAnimationComponent", "assets");
   m_assets = std::move(assets);
 
   LuaCallbacks animationCallbacks;
@@ -65,8 +65,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
     m_activeAudio.append(audio);
   });
   animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
-    if (!m_particleDatabase)
-      throw LuaAnimationComponentException("LuaAnimationComponent requires initialized particle database service");
+    requireServiceAs<LuaAnimationComponentException>(m_particleDatabase, "LuaAnimationComponent", "initialized particle database");
     auto particle = m_particleDatabase->particle(particleConfig);
     particle.translate(position.value());
     m_pendingParticles.append(particle);

@@ -1,6 +1,7 @@
 #include "StarTenantDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -13,10 +14,8 @@ bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   return true;
 }
 
-TenantDatabase::TenantDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw TenantException("TenantDatabase requires assets service");
-
+TenantDatabase::TenantDatabase(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<TenantException>(std::move(assets), "TenantDatabase", "assets")) {
   auto& files = m_assets->scanExtension("tenant");
   m_assets->queueJsons(files);
   for (auto& file : files) {

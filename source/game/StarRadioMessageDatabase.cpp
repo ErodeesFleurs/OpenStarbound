@@ -1,5 +1,6 @@
 #include "StarRadioMessageDatabase.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -11,8 +12,7 @@ EnumMap<RadioMessageType> const RadioMessageTypeNames{
 };
 
 RadioMessageDatabase::RadioMessageDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw RadioMessageDatabaseException("RadioMessageDatabase requires assets service");
+  requireServiceAs<RadioMessageDatabaseException>(assets, "RadioMessageDatabase", "assets");
   m_messageDefaults = assets->json("/radiomessages.config:messageDefaults");
   auto& files = assets->scanExtension("radiomessages");
   for (auto& file : files) {

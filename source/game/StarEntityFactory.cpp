@@ -13,6 +13,7 @@
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -49,10 +50,7 @@ EntityFactory::EntityFactory(
   , m_versioningDatabase(std::move(versioningDatabase))
   , m_assets(std::move(assets))
   , m_itemDatabase(std::move(itemDatabase))
-  , m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!m_imageMetadataDatabase)
-    throw EntityFactoryException("EntityFactory requires image metadata database service");
-}
+  , m_imageMetadataDatabase(requireServiceValueAs<EntityFactoryException>(std::move(imageMetadataDatabase), "EntityFactory", "image metadata database")) {}
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
   RecursiveMutexLocker locker(m_mutex);

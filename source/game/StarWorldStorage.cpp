@@ -9,6 +9,7 @@
 #include "StarEntityFactory.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -600,19 +601,10 @@ void WorldStorage::openDatabase(BTreeDatabase& db, IODevicePtr device) {
 }
 
 WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory)
-  : m_assets(std::move(assets)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_entityFactory(std::move(entityFactory)) {
-  if (!m_assets)
-    throw WorldStorageException("WorldStorage requires assets service");
-  if (!m_materialDatabase)
-    throw WorldStorageException("WorldStorage requires material database service");
-  if (!m_liquidsDatabase)
-    throw WorldStorageException("WorldStorage requires liquids database service");
-  if (!m_entityFactory)
-    throw WorldStorageException("WorldStorage requires entity factory service");
-
+  : m_assets(requireServiceValueAs<WorldStorageException>(std::move(assets), "WorldStorage", "assets")),
+    m_materialDatabase(requireServiceValueAs<WorldStorageException>(std::move(materialDatabase), "WorldStorage", "material database")),
+    m_liquidsDatabase(requireServiceValueAs<WorldStorageException>(std::move(liquidsDatabase), "WorldStorage", "liquids database")),
+    m_entityFactory(requireServiceValueAs<WorldStorageException>(std::move(entityFactory), "WorldStorage", "entity factory")) {
   auto storageConfig = m_assets->json("/worldstorage.config");
   m_sectorTimeToLive = jsonToVec2F(storageConfig.get("sectorTimeToLive"));
   m_generationQueueTimeToLive = storageConfig.getFloat("generationQueueTimeToLive");

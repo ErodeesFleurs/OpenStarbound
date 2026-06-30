@@ -29,13 +29,9 @@ ServerWeather::ServerWeather() {
 
 void ServerWeather::setup(AssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
     WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase, ProjectileDatabaseConstPtr projectileDatabase) {
-  requireNotNull(assets, "ServerWeather", "assets");
-  requireNotNull(biomeDatabase, "ServerWeather", "biome database");
-  requireNotNull(projectileDatabase, "ServerWeather", "projectile database");
-
-  m_assets = std::move(assets);
-  m_biomeDatabase = std::move(biomeDatabase);
-  m_projectileDatabase = std::move(projectileDatabase);
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "ServerWeather", "assets");
+  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "ServerWeather", "biome database");
+  m_projectileDatabase = requireServiceValueAs<StarException>(std::move(projectileDatabase), "ServerWeather", "projectile database");
   m_weatherPool = weatherPool;
   m_undergroundLevel = undergroundLevel;
 
@@ -317,9 +313,7 @@ ClientWeather::ClientWeather() {
 }
 
 void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase) {
-  requireNotNull(biomeDatabase, "ClientWeather", "biome database");
-
-  m_biomeDatabase = std::move(biomeDatabase);
+  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "ClientWeather", "biome database");
   m_worldGeometry = worldGeometry;
   m_weatherEffectsActiveQuery = weatherEffectsActiveQuery;
   m_currentTime = 0.0;

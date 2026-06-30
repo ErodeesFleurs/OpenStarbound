@@ -4,24 +4,19 @@
 #include "StarLogging.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId, AssetsConstPtr assets, ConfigurationPtr configuration)
   : Thread("WorldServerThread: " + printWorldId(worldId)),
-    m_worldServer(std::move(server)),
+    m_worldServer(requireDependencyValueAs<WorldServerException>(std::move(server), "WorldServerThread", "world server")),
     m_worldId(std::move(worldId)),
-    m_assets(std::move(assets)),
-    m_configuration(std::move(configuration)),
+    m_assets(requireServiceValueAs<WorldServerException>(std::move(assets), "WorldServerThread", "assets")),
+    m_configuration(requireServiceValueAs<WorldServerException>(std::move(configuration), "WorldServerThread", "configuration")),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
-  if (!m_worldServer)
-    throw WorldServerException("WorldServerThread requires world server");
-  if (!m_assets)
-    throw WorldServerException("WorldServerThread requires assets service");
-  if (!m_configuration)
-    throw WorldServerException("WorldServerThread requires configuration service");
   if (m_worldServer)
     m_worldServer->setWorldId(printWorldId(m_worldId));
 }

@@ -10,14 +10,12 @@
 #include "StarMixer.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarAugmentItem.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters, ItemDatabaseConstPtr itemDatabase)
-  : Object(config, parameters), m_itemDatabase(std::move(itemDatabase)) {
-  if (!m_itemDatabase)
-    throw ObjectException("ContainerObject requires item database service");
-
+  : Object(config, parameters), m_itemDatabase(requireServiceValueAs<ObjectException>(std::move(itemDatabase), "ContainerObject", "item database")) {
   m_opened.set(0);
   m_count = 0;
   m_currentState = 0;

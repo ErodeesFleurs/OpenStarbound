@@ -5,9 +5,8 @@
 
 namespace Star {
 
-StatisticsDatabase::StatisticsDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_eventCache() {
-  requireNotNull(m_assets, "StatisticsDatabase", "assets");
-
+StatisticsDatabase::StatisticsDatabase(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "StatisticsDatabase", "assets")), m_cacheMutex(), m_eventCache() {
   auto& eventFiles = m_assets->scanExtension("event");
   m_assets->queueJsons(eventFiles);
   auto& achievementFiles = m_assets->scanExtension("achievement");

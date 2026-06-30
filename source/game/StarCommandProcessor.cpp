@@ -39,27 +39,16 @@ CommandProcessor::CommandProcessor(UniverseServer& universe,
     LiquidsDatabaseConstPtr liquidsDatabase,
     function<void()> reloadRoot)
   : m_universe(universe),
-    m_assets(std::move(assets)),
-    m_configuration(std::move(configuration)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_treasureDatabase(std::move(treasureDatabase)),
-    m_monsterDatabase(std::move(monsterDatabase)),
-    m_npcDatabase(std::move(npcDatabase)),
-    m_vehicleDatabase(std::move(vehicleDatabase)),
-    m_stagehandDatabase(std::move(stagehandDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_reloadRoot(std::move(reloadRoot)) {
-  requireNotNull(m_assets, "CommandProcessor", "assets");
-  requireNotNull(m_configuration, "CommandProcessor", "configuration");
-  requireNotNull(m_itemDatabase, "CommandProcessor", "item database");
-  requireNotNull(m_treasureDatabase, "CommandProcessor", "treasure database");
-  requireNotNull(m_monsterDatabase, "CommandProcessor", "monster database");
-  requireNotNull(m_npcDatabase, "CommandProcessor", "npc database");
-  requireNotNull(m_vehicleDatabase, "CommandProcessor", "vehicle database");
-  requireNotNull(m_stagehandDatabase, "CommandProcessor", "stagehand database");
-  requireNotNull(m_liquidsDatabase, "CommandProcessor", "liquids database");
-  requireService(m_reloadRoot, "CommandProcessor", "root reload");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(assets), "CommandProcessor", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(configuration), "CommandProcessor", "configuration")),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "CommandProcessor", "item database")),
+    m_treasureDatabase(requireServiceValueAs<StarException>(std::move(treasureDatabase), "CommandProcessor", "treasure database")),
+    m_monsterDatabase(requireServiceValueAs<StarException>(std::move(monsterDatabase), "CommandProcessor", "monster database")),
+    m_npcDatabase(requireServiceValueAs<StarException>(std::move(npcDatabase), "CommandProcessor", "npc database")),
+    m_vehicleDatabase(requireServiceValueAs<StarException>(std::move(vehicleDatabase), "CommandProcessor", "vehicle database")),
+    m_stagehandDatabase(requireServiceValueAs<StarException>(std::move(stagehandDatabase), "CommandProcessor", "stagehand database")),
+    m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "CommandProcessor", "liquids database")),
+    m_reloadRoot(requireServiceValueAs<StarException>(std::move(reloadRoot), "CommandProcessor", "root reload")) {
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(m_assets->json("/universe_server.config:commandProcessorScripts")));

@@ -23,15 +23,10 @@ ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, Ac
   : Pane(services.guiContext),
     m_paneManager(paneManager),
     m_player(std::move(player)),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)),
-    m_objectDatabase(std::move(services.objectDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  requireNotNull(m_assets, "ActionBar", "assets");
-  requireNotNull(m_configuration, "ActionBar", "configuration");
-  requireNotNull(m_objectDatabase, "ActionBar", "object database");
-  requireNotNull(m_statusEffectDatabase, "ActionBar", "status effect database");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ActionBar", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "ActionBar", "configuration")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "ActionBar", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "ActionBar", "status effect database")) {
   m_config = m_assets->json("/interface/windowconfig/actionbar.config");
 
   m_actionBarSelectOffset = jsonToVec2I(m_config.get("actionBarSelectOffset"));

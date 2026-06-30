@@ -1,12 +1,12 @@
 #include "StarStatusEffectDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 StatusEffectDatabase::StatusEffectDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StatusEffectDatabaseException("StatusEffectDatabase requires assets service");
+  requireServiceAs<StatusEffectDatabaseException>(assets, "StatusEffectDatabase", "assets");
   auto& files = assets->scanExtension("statuseffect");
   assets->queueJsons(files);
   for (auto& file : files) {

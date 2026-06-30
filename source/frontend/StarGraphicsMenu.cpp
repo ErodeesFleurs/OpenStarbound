@@ -16,11 +16,8 @@ namespace Star {
 GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, GraphicsMenuServices services)
   : Pane(services.guiContext),
     m_paneManager(manager),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)) {
-  requireNotNull(m_assets, "GraphicsMenu", "assets");
-  requireNotNull(m_configuration, "GraphicsMenu", "configuration");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "GraphicsMenu", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "GraphicsMenu", "configuration")) {
   GuiReader reader(context());
   reader.registerCallback("cancel",
       [&](Widget*) {

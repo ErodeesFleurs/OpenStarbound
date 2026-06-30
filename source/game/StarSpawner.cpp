@@ -11,10 +11,9 @@
 namespace Star {
 
 Spawner::Spawner(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, SpawnTypeDatabaseConstPtr spawnTypeDatabase)
-  : m_monsterDatabase(std::move(monsterDatabase)), m_spawnTypeDatabase(std::move(spawnTypeDatabase)) {
-  requireNotNull(assets, "Spawner", "assets");
-  requireNotNull(m_monsterDatabase, "Spawner", "monster database");
-  requireNotNull(m_spawnTypeDatabase, "Spawner", "spawn type database");
+  : m_monsterDatabase(requireServiceValueAs<StarException>(std::move(monsterDatabase), "Spawner", "monster database")),
+    m_spawnTypeDatabase(requireServiceValueAs<StarException>(std::move(spawnTypeDatabase), "Spawner", "spawn type database")) {
+  assets = requireServiceValueAs<StarException>(std::move(assets), "Spawner", "assets");
 
   auto config = assets->json("/spawning.config");
 

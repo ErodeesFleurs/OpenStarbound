@@ -10,6 +10,7 @@
 #include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -39,16 +40,9 @@ bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot 
 }
 
 PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ConfigurationPtr configuration)
-  : m_assets(std::move(assets)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_configuration(std::move(configuration)) {
-  if (!m_assets)
-    throw InventoryException("PlayerInventory requires assets service");
-  if (!m_itemDatabase)
-    throw InventoryException("PlayerInventory requires item database service");
-  if (!m_configuration)
-    throw InventoryException("PlayerInventory requires configuration service");
-
+  : m_assets(requireServiceValueAs<InventoryException>(std::move(assets), "PlayerInventory", "assets")),
+    m_itemDatabase(requireServiceValueAs<InventoryException>(std::move(itemDatabase), "PlayerInventory", "item database")),
+    m_configuration(requireServiceValueAs<InventoryException>(std::move(configuration), "PlayerInventory", "configuration")) {
   auto config = m_assets->json("/player.config:inventory");
 
   auto bags = config.get("itemBags");

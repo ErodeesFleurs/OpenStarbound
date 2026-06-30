@@ -15,11 +15,8 @@ namespace Star {
 KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
   : Pane(services.guiContext),
     m_activeKeybinding(nullptr),
-    m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)) {
-  requireNotNull(m_assets, "KeybindingsMenu", "assets");
-  requireNotNull(m_configuration, "KeybindingsMenu", "configuration");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "KeybindingsMenu", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "KeybindingsMenu", "configuration")) {
   GuiReader reader(context());
   reader.registerCallback("cancel",
       [&](Widget*) {

@@ -10,10 +10,8 @@ namespace Star {
 
 Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, LuaRootServices luaRootServices, StatisticsServicePtr service) {
   m_service = std::move(service);
-  m_versioningDatabase = std::move(versioningDatabase);
-  m_statisticsDatabase = std::move(statisticsDatabase);
-  requireNotNull(m_versioningDatabase, "Statistics", "versioning database");
-  requireNotNull(m_statisticsDatabase, "Statistics", "statistics database");
+  m_versioningDatabase = requireServiceValueAs<StarException>(std::move(versioningDatabase), "Statistics", "versioning database");
+  m_statisticsDatabase = requireServiceValueAs<StarException>(std::move(statisticsDatabase), "Statistics", "statistics database");
 
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;

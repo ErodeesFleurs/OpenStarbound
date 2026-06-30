@@ -323,9 +323,8 @@ namespace Tiled {
   }
 }
 
-TilesetDatabase::TilesetDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_tilesetCache() {
-  requireNotNull(m_assets, "TilesetDatabase", "assets");
-}
+TilesetDatabase::TilesetDatabase(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TilesetDatabase", "assets")), m_cacheMutex(), m_tilesetCache() {}
 
 Tiled::TilesetConstPtr TilesetDatabase::get(String const& path) const {
   MutexLocker locker(m_cacheMutex);

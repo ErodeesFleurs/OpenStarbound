@@ -3,14 +3,12 @@
 #include "StarPlayer.hpp"
 #include "StarClientContext.hpp"
 #include "StarCodex.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 CodexItem::CodexItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data)
-  : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config), m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw ItemException("CodexItem requires assets service");
-
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config), m_assets(requireServiceValueAs<ItemException>(std::move(assets), "CodexItem", "assets")) {
   setWindupTime(0.2f);
   setCooldownTime(0.5f);
   m_requireEdgeTrigger = true;

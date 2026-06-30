@@ -1,4 +1,5 @@
 #include "StarTitleScreen.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarCanvasWidget.hpp"
@@ -7,7 +8,6 @@
 #include "StarCharSelection.hpp"
 #include "StarEncode.hpp"
 #include "StarEnvironmentPainter.hpp"
-#include "StarException.hpp"
 #include "StarGuiContext.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
@@ -22,13 +22,6 @@
 
 namespace Star {
 
-template <typename T>
-T requireTitleScreenService(T service, char const* message) {
-  if (!service)
-    throw StarException(message);
-  return service;
-}
-
 TitleScreenServices::TitleScreenServices(GuiContext& guiContext, Voice& voice, Input& input)
   : guiContext(guiContext), voice(voice), input(input) {}
 
@@ -41,16 +34,16 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
       m_voice(services.voice),
       m_input(services.input),
       m_paneManager(m_guiContext),
-      m_assets(requireTitleScreenService(std::move(services.assets), "TitleScreen requires assets service")),
-      m_configuration(requireTitleScreenService(std::move(services.configuration), "TitleScreen requires configuration service")),
-      m_playerFactory(requireTitleScreenService(std::move(services.playerFactory), "TitleScreen requires player factory service")),
-      m_speciesDatabase(requireTitleScreenService(std::move(services.speciesDatabase), "TitleScreen requires species database service")),
-      m_nameGenerator(requireTitleScreenService(std::move(services.nameGenerator), "TitleScreen requires name generator service")),
-      m_itemDatabase(requireTitleScreenService(std::move(services.itemDatabase), "TitleScreen requires item database service")),
-      m_liquidsDatabase(requireTitleScreenService(std::move(services.liquidsDatabase), "TitleScreen requires liquids database service")),
-      m_biomeDatabase(requireTitleScreenService(std::move(services.biomeDatabase), "TitleScreen requires biome database service")),
-      m_imageMetadata(requireTitleScreenService(std::move(services.imageMetadata), "TitleScreen requires image metadata service")),
-      m_versioningDatabase(requireTitleScreenService(std::move(services.versioningDatabase), "TitleScreen requires versioning database service")),
+      m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "TitleScreen", "assets")),
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "TitleScreen", "configuration")),
+      m_playerFactory(requireServiceValueAs<StarException>(std::move(services.playerFactory), "TitleScreen", "player factory")),
+      m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "TitleScreen", "species database")),
+      m_nameGenerator(requireServiceValueAs<StarException>(std::move(services.nameGenerator), "TitleScreen", "name generator")),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "TitleScreen", "item database")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(services.liquidsDatabase), "TitleScreen", "liquids database")),
+      m_biomeDatabase(requireServiceValueAs<StarException>(std::move(services.biomeDatabase), "TitleScreen", "biome database")),
+      m_imageMetadata(requireServiceValueAs<StarException>(std::move(services.imageMetadata), "TitleScreen", "image metadata")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(services.versioningDatabase), "TitleScreen", "versioning database")),
       m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}),
       m_playerStorage(playerStorage),
       m_skipMultiPlayerConnection(false),

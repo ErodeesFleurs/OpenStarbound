@@ -35,8 +35,7 @@ EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
 };
 
 MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices services) {
-  auto assets = std::move(services.assets);
-  requireNotNull(assets, "MainInterfaceConfig", "assets");
+  auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "MainInterfaceConfig", "assets");
 
   auto config = make_shared<MainInterfaceConfig>();
 

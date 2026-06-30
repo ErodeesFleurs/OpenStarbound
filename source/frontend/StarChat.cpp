@@ -25,9 +25,7 @@ namespace Star {
 Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices services)
   : BaseScriptPane(baseConfig, false, BaseScriptPaneServices{services.assets, {}, {}, {}, {}, services.guiContext}),
     m_client(std::move(client)),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "Chat", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "Chat", "assets")) {
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
   m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)m_client->worldClient().get()));

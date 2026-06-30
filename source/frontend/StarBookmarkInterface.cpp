@@ -12,9 +12,7 @@ namespace Star {
 EditBookmarkDialog::EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services)
   : Pane(services.guiContext),
     m_playerUniverseMap(std::move(playerUniverseMap)),
-    m_assets(std::move(services.assets)) {
-  requireNotNull(m_assets, "EditBookmarkDialog", "assets");
-
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "EditBookmarkDialog", "assets")) {
   GuiReader reader(context());
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("remove", [this](Widget*) { remove(); });

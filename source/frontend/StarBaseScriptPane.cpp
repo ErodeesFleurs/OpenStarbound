@@ -17,13 +17,11 @@ namespace Star {
 BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services)
   : Pane(services.guiContext),
     m_rawConfig(config),
-    m_assets(std::move(services.assets)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "BaseScriptPane", "assets")),
     m_itemDatabase(std::move(services.itemDatabase)),
     m_objectDatabase(std::move(services.objectDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
     m_luaRootServices(std::move(services.luaRootServices)) {
-  requireNotNull(m_assets, "BaseScriptPane", "assets");
-
   if (config.type() == Json::Type::Object && config.contains("baseConfig")) {
     auto baseConfig = m_assets->fetchJson(config.getString("baseConfig"));
     m_config = jsonMerge(baseConfig, config);
@@ -141,13 +139,13 @@ Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
     return {};
 
   if (result->type() == Json::Type::Bool) {
-    requireNotNull(m_itemDatabase, "BaseScriptPane", "item database");
+    requireService(m_itemDatabase, "BaseScriptPane", "item database");
     if (result->toBool())
       return m_itemDatabase->item({});
     return {};
   }
 
-  requireNotNull(m_itemDatabase, "BaseScriptPane", "item database");
+  requireService(m_itemDatabase, "BaseScriptPane", "item database");
   return m_itemDatabase->item(ItemDescriptor(result.value()));
 }
 

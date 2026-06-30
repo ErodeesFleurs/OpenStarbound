@@ -24,18 +24,15 @@ namespace Star {
 
 namespace {
 AssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
-  requireNotNull(services.assets, "ItemTooltipBuilder", "assets");
-  return services.assets;
+  return requireServiceValueAs<StarException>(services.assets, "ItemTooltipBuilder", "assets");
 }
 
 ObjectDatabaseConstPtr tooltipObjectDatabase(ItemTooltipBuilder::Services const& services) {
-  requireNotNull(services.objectDatabase, "ItemTooltipBuilder", "object database");
-  return services.objectDatabase;
+  return requireServiceValueAs<StarException>(services.objectDatabase, "ItemTooltipBuilder", "object database");
 }
 
 StatusEffectDatabaseConstPtr tooltipStatusEffectDatabase(ItemTooltipBuilder::Services const& services) {
-  requireNotNull(services.statusEffectDatabase, "ItemTooltipBuilder", "status effect database");
-  return services.statusEffectDatabase;
+  return requireServiceValueAs<StarException>(services.statusEffectDatabase, "ItemTooltipBuilder", "status effect database");
 }
 
 String categoryDisplayName(String const& category, ItemTooltipBuilder::Services const& services) {

@@ -27,20 +27,14 @@ MerchantPane::MerchantPane(
     Json const& settings,
     EntityId sourceEntityId,
     MerchantPaneServices services)
-  : Pane(services.guiContext) {
-  m_worldClient = std::move(worldClient);
-  m_player = std::move(player);
-  m_assets = std::move(services.assets);
-  m_itemDatabase = std::move(services.itemDatabase);
-  m_objectDatabase = std::move(services.objectDatabase);
-  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  requireNotNull(m_assets, "MerchantPane", "assets");
-  requireNotNull(m_itemDatabase, "MerchantPane", "item database");
-  requireNotNull(m_objectDatabase, "MerchantPane", "object database");
-  requireNotNull(m_statusEffectDatabase, "MerchantPane", "status effect database");
-
-  m_sourceEntityId = sourceEntityId;
-
+  : Pane(services.guiContext),
+    m_worldClient(std::move(worldClient)),
+    m_player(std::move(player)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "MerchantPane", "assets")),
+    m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "MerchantPane", "item database")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "MerchantPane", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "MerchantPane", "status effect database")),
+    m_sourceEntityId(sourceEntityId) {
   auto baseConfig = settings.get("config", "/interface/windowconfig/merchant.config");
   m_settings = jsonMerge(m_assets->fetchJson(baseConfig), settings);
 

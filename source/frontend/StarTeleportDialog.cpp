@@ -27,10 +27,8 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     m_sourceEntityId(sourceEntityId),
     m_client(std::move(client)),
     m_paneManager(paneManager),
-    m_assets(std::move(services.assets)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "TeleportDialog", "assets")),
     m_currentLocation(std::move(currentLocation)) {
-  requireNotNull(m_assets, "TeleportDialog", "assets");
-
   GuiReader reader(context());
 
   reader.registerCallback("dismiss", [this](Widget*) { Pane::dismiss(); });

@@ -7,8 +7,7 @@
 namespace Star {
 
 PanePtr SimpleTooltipBuilder::buildTooltip(String const& text, SimpleTooltipServices services) {
-  auto assets = std::move(services.assets);
-  requireNotNull(assets, "SimpleTooltipBuilder", "assets");
+  auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "SimpleTooltipBuilder", "assets");
 
   PanePtr tooltip = make_shared<Pane>(services.guiContext);
   tooltip->removeAllChildren();

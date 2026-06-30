@@ -1,6 +1,7 @@
 #include "StarBiomePlacement.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -60,8 +61,7 @@ bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
 }
 
 Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDatabase, Json const& config, RandomSource& rand, float biomeHueShift) {
-  if (!plantDatabase)
-    throw BiomeException("BiomeItemDistribution requires plant database service");
+  requireServiceAs<BiomeException>(plantDatabase, "BiomeItemDistribution", "plant database");
 
   auto type = config.getString("type");
   if (type.equalsIgnoreCase("grass")) {
@@ -154,8 +154,7 @@ BiomeItemDistribution::BiomeItemDistribution() {
 }
 
 BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift) {
-  if (!plantDatabase)
-    throw BiomeException("BiomeItemDistribution requires plant database service");
+  requireServiceAs<BiomeException>(plantDatabase, "BiomeItemDistribution", "plant database");
 
   RandomSource rand(seed);
 

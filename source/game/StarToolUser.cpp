@@ -20,12 +20,12 @@ namespace Star {
 
 ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
     : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
-      m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ToolUser", "item database")),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "ToolUser", "object database")),
+      m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
       m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
       m_suppress() {
-  requireNotNull(assets, "ToolUser", "assets");
-  requireNotNull(m_itemDatabase, "ToolUser", "item database");
-  requireNotNull(m_objectDatabase, "ToolUser", "object database");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "ToolUser", "assets");
 
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();
   m_beamGunGlowBorder = assets->json("/player.config:previewGlowBorder").toInt();

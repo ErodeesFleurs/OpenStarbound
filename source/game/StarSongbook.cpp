@@ -14,9 +14,7 @@ Mutex Songbook::s_timeSourcesMutex;
 StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
 Songbook::Songbook(AssetsConstPtr assets, String const& species) {
-  requireNotNull(assets, "Songbook", "assets");
-
-  m_assets = std::move(assets);
+  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Songbook", "assets");
   m_activeCooldown = 0;
   m_dataUpdated = false;
   m_dataChanged = false;

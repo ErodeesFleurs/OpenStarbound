@@ -2,6 +2,7 @@
 #include "StarDataStream.hpp"
 #include "StarItem.hpp"
 #include "StarVersioningDatabase.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -42,8 +43,7 @@ ItemDescriptor::ItemDescriptor(Json const& spec) {
 }
 
 ItemDescriptor ItemDescriptor::loadStore(Json const& spec, VersioningDatabaseConstPtr versioningDatabase) {
-  if (!versioningDatabase)
-    throw ItemException("ItemDescriptor::loadStore requires versioning database service");
+  requireServiceAs<ItemException>(versioningDatabase, "ItemDescriptor::loadStore", "versioning database");
   return ItemDescriptor{versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
 }
 
@@ -104,8 +104,7 @@ bool ItemDescriptor::matches(ItemConstPtr const& other, bool exactMatch) const {
 }
 
 Json ItemDescriptor::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
-  if (!versioningDatabase)
-    throw ItemException("ItemDescriptor::diskStore requires versioning database service");
+  requireServiceAs<ItemException>(versioningDatabase, "ItemDescriptor::diskStore", "versioning database");
   auto res = JsonObject{
     {"name", m_name},
     {"count", m_count},

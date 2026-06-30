@@ -6,27 +6,17 @@
 #include "StarRebuilder.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 MonsterDatabase::MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)
-    : m_assets(std::move(assets)),
-      m_liquidsDatabase(std::move(liquidsDatabase)),
-      m_statusEffectDatabase(std::move(statusEffectDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+    : m_assets(requireServiceValueAs<MonsterException>(std::move(assets), "MonsterDatabase", "assets")),
+      m_liquidsDatabase(requireServiceValueAs<MonsterException>(std::move(liquidsDatabase), "MonsterDatabase", "liquids database")),
+      m_statusEffectDatabase(requireServiceValueAs<MonsterException>(std::move(statusEffectDatabase), "MonsterDatabase", "status effect database")),
+      m_particleDatabase(requireServiceValueAs<MonsterException>(std::move(particleDatabase), "MonsterDatabase", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<MonsterException>(std::move(imageMetadataDatabase), "MonsterDatabase", "image metadata database")),
       m_rebuilder(make_shared<Rebuilder>(m_assets, "monster", std::move(luaRootServices))) {
-  if (!m_assets)
-    throw MonsterException("MonsterDatabase requires assets service");
-  if (!m_liquidsDatabase)
-    throw MonsterException("MonsterDatabase requires liquids database service");
-  if (!m_statusEffectDatabase)
-    throw MonsterException("MonsterDatabase requires status effect database service");
-  if (!m_particleDatabase)
-    throw MonsterException("MonsterDatabase requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw MonsterException("MonsterDatabase requires image metadata database service");
-
   auto& monsterTypes = m_assets->scanExtension("monstertype");
   auto& monsterParts = m_assets->scanExtension("monsterpart");
   auto& monsterSkills = m_assets->scanExtension("monsterskill");

@@ -7,8 +7,8 @@
 namespace Star {
 
 AiDatabase::AiDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  requireNotNull(assets, "AiDatabase", "assets");
-  requireNotNull(imageMetadataDatabase, "AiDatabase", "image metadata database");
+  assets = requireServiceValueAs<StarException>(std::move(assets), "AiDatabase", "assets");
+  imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "AiDatabase", "image metadata database");
   auto config = assets->json("/ai/ai.config");
 
   auto& missions = assets->scanExtension("aimission");

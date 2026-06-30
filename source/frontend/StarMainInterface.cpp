@@ -65,27 +65,6 @@
 
 namespace Star {
 
-namespace {
-
-template <typename Service>
-Service requireMainInterfaceSharedService(Service service, char const* name) {
-  requireNotNull(service, "MainInterface", name);
-  return service;
-}
-
-template <typename Service>
-Service requireMainInterfaceService(Service service, char const* name) {
-  requireService(service, "MainInterface", name);
-  return service;
-}
-
-String requireMainInterfaceOutputDirectory(String outputDirectory) {
-  requireNonEmptyService(outputDirectory, "MainInterface", "output directory");
-  return outputDirectory;
-}
-
-}
-
 GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
@@ -101,21 +80,21 @@ MainInterface::MainInterface(UniverseClientPtr client,
   : m_guiContext(services.guiContext)
   , m_input(services.input)
   , m_voice(services.voice)
-  , m_assets(requireMainInterfaceSharedService(std::move(services.assets), "assets"))
-  , m_configuration(requireMainInterfaceSharedService(std::move(services.configuration), "configuration"))
-  , m_imageMetadata(requireMainInterfaceSharedService(std::move(services.imageMetadata), "image metadata"))
-  , m_functionDatabase(requireMainInterfaceSharedService(std::move(services.functionDatabase), "function database"))
-  , m_itemDatabase(requireMainInterfaceSharedService(std::move(services.itemDatabase), "item database"))
-  , m_objectDatabase(requireMainInterfaceSharedService(std::move(services.objectDatabase), "object database"))
-  , m_aiDatabase(requireMainInterfaceSharedService(std::move(services.aiDatabase), "AI database"))
-  , m_techDatabase(requireMainInterfaceSharedService(std::move(services.techDatabase), "tech database"))
-  , m_statusEffectDatabase(requireMainInterfaceSharedService(std::move(services.statusEffectDatabase), "status effect database"))
-  , m_imageFrames(requireMainInterfaceService(std::move(services.imageFrames), "image frames"))
-  , m_registerReloadListener(requireMainInterfaceService(std::move(services.registerReloadListener), "reload listener registrar"))
-  , m_reloadRoot(requireMainInterfaceService(std::move(services.reloadRoot), "root reload callback"))
-  , m_reloadRootForCommand(requireMainInterfaceService(std::move(services.reloadRootForCommand), "command root reload callback"))
-  , m_hotReloadRoot(requireMainInterfaceService(std::move(services.hotReloadRoot), "hot reload callback"))
-  , m_outputDirectory(requireMainInterfaceOutputDirectory(std::move(services.outputDirectory)))
+  , m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "MainInterface", "assets"))
+  , m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "MainInterface", "configuration"))
+  , m_imageMetadata(requireServiceValueAs<StarException>(std::move(services.imageMetadata), "MainInterface", "image metadata"))
+  , m_functionDatabase(requireServiceValueAs<StarException>(std::move(services.functionDatabase), "MainInterface", "function database"))
+  , m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "MainInterface", "item database"))
+  , m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "MainInterface", "object database"))
+  , m_aiDatabase(requireServiceValueAs<StarException>(std::move(services.aiDatabase), "MainInterface", "AI database"))
+  , m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "MainInterface", "tech database"))
+  , m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "MainInterface", "status effect database"))
+  , m_imageFrames(requireServiceValueAs<StarException>(std::move(services.imageFrames), "MainInterface", "image frames"))
+  , m_registerReloadListener(requireServiceValueAs<StarException>(std::move(services.registerReloadListener), "MainInterface", "reload listener registrar"))
+  , m_reloadRoot(requireServiceValueAs<StarException>(std::move(services.reloadRoot), "MainInterface", "root reload callback"))
+  , m_reloadRootForCommand(requireServiceValueAs<StarException>(std::move(services.reloadRootForCommand), "MainInterface", "command root reload callback"))
+  , m_hotReloadRoot(requireServiceValueAs<StarException>(std::move(services.hotReloadRoot), "MainInterface", "hot reload callback"))
+  , m_outputDirectory(requireNonEmptyServiceValue(std::move(services.outputDirectory), "MainInterface", "output directory"))
   , m_config(MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices{m_assets}))
   , m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata})
   , m_client(std::move(client))

@@ -7,19 +7,9 @@
 #include "StarLexicalCast.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarRandom.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
-
-namespace {
-
-template <typename ServicePtr>
-ServicePtr requireNetworkedAnimatorService(ServicePtr service, char const* name) {
-  if (!service)
-    throw NetworkedAnimatorException::format("NetworkedAnimator requires {} service", name);
-  return service;
-}
-
-}// namespace
 
 NetworkedAnimator::DynamicTarget::~DynamicTarget() {
   stopAudio();
@@ -89,9 +79,9 @@ NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ParticleDatabaseCons
 
 NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase)
     : NetworkedAnimator() {
-  m_assets = requireNetworkedAnimatorService(std::move(assets), "assets");
-  m_imageMetadataDatabase = requireNetworkedAnimatorService(std::move(imageMetadataDatabase), "image metadata database");
-  m_particleDatabase = requireNetworkedAnimatorService(std::move(particleDatabase), "particle database");
+  m_assets = requireServiceValueAs<NetworkedAnimatorException>(std::move(assets), "NetworkedAnimator", "assets");
+  m_imageMetadataDatabase = requireServiceValueAs<NetworkedAnimatorException>(std::move(imageMetadataDatabase), "NetworkedAnimator", "image metadata database");
+  m_particleDatabase = requireServiceValueAs<NetworkedAnimatorException>(std::move(particleDatabase), "NetworkedAnimator", "particle database");
 }
 
 NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase)

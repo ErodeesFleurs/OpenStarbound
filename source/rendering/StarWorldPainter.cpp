@@ -10,19 +10,12 @@
 namespace Star {
 
 WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_assets(std::move(assets)),
-    m_configuration(std::move(configuration)),
-    m_registerReloadListener(std::move(registerReloadListener)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  requireNotNull(m_assets, "WorldPainter", "assets");
-  requireNotNull(m_configuration, "WorldPainter", "configuration");
-  requireService(m_registerReloadListener, "WorldPainter", "reload listener registrar");
-  requireNotNull(m_materialDatabase, "WorldPainter", "material database");
-  requireNotNull(m_liquidsDatabase, "WorldPainter", "liquids database");
-  requireNotNull(m_imageMetadataDatabase, "WorldPainter", "image metadata database");
-
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "WorldPainter", "assets")),
+    m_configuration(requireServiceValueAs<StarException>(std::move(configuration), "WorldPainter", "configuration")),
+    m_registerReloadListener(requireServiceValueAs<StarException>(std::move(registerReloadListener), "WorldPainter", "reload listener registrar")),
+    m_materialDatabase(requireServiceValueAs<StarException>(std::move(materialDatabase), "WorldPainter", "material database")),
+    m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "WorldPainter", "liquids database")),
+    m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "WorldPainter", "image metadata database")) {
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());
   m_camera.setPixelRatio(m_configuration->get("zoomLevel").toFloat());

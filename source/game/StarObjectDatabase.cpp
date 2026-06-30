@@ -15,6 +15,7 @@
 #include "StarTeleporterObject.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarWorld.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -48,8 +49,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
 
   if (anchors.size() == 0)
     return true;
-  if (!materialDatabase)
-    throw ObjectException("ObjectOrientation requires material database service");
+  requireServiceAs<ObjectException>(materialDatabase, "ObjectOrientation", "material database");
 
   auto anchorValid = [&](Anchor const& anchor) -> bool {
     auto space = position + anchor.position;
@@ -104,8 +104,7 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
 }
 
 Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& config) {
-  if (!assets)
-    throw ObjectException("ObjectDatabase::parseTouchDamage requires assets service");
+  requireServiceAs<ObjectException>(assets, "ObjectDatabase::parseTouchDamage", "assets");
 
   auto touchDamage = config.get("touchDamage", {});
   if (touchDamage.isType(Json::Type::String)) {
@@ -117,12 +116,9 @@ Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path,
 
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
   AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
-  if (!assets)
-    throw ObjectException("ObjectDatabase::parseOrientations requires assets service");
-  if (!materialDatabase)
-    throw ObjectException("ObjectDatabase::parseOrientations requires material database service");
-  if (!imageMetadataDatabase)
-    throw ObjectException("ObjectDatabase::parseOrientations requires image metadata database service");
+  requireServiceAs<ObjectException>(assets, "ObjectDatabase::parseOrientations", "assets");
+  requireServiceAs<ObjectException>(materialDatabase, "ObjectDatabase::parseOrientations", "material database");
+  requireServiceAs<ObjectException>(imageMetadataDatabase, "ObjectDatabase::parseOrientations", "image metadata database");
 
   List<ObjectOrientationPtr> res;
   JsonArray configs = configList.toArray();
@@ -325,23 +321,12 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
 }
 
 ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, function<ItemDatabaseConstPtr()> itemDatabase, LuaRootServices luaRootServices)
-    : m_assets(std::move(assets)),
-      m_materialDatabase(std::move(materialDatabase)),
-      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
-      m_particleDatabase(std::move(particleDatabase)),
-      m_itemDatabase(std::move(itemDatabase)),
+    : m_assets(requireServiceValueAs<ObjectException>(std::move(assets), "ObjectDatabase", "assets")),
+      m_materialDatabase(requireServiceValueAs<ObjectException>(std::move(materialDatabase), "ObjectDatabase", "material database")),
+      m_imageMetadataDatabase(requireServiceValueAs<ObjectException>(std::move(imageMetadataDatabase), "ObjectDatabase", "image metadata database")),
+      m_particleDatabase(requireServiceValueAs<ObjectException>(std::move(particleDatabase), "ObjectDatabase", "particle database")),
+      m_itemDatabase(requireDependencyValueAs<ObjectException>(std::move(itemDatabase), "ObjectDatabase", "item database provider")),
       m_rebuilder(make_shared<Rebuilder>(m_assets, "object", std::move(luaRootServices))) {
-  if (!m_assets)
-    throw ObjectException("ObjectDatabase requires assets service");
-  if (!m_materialDatabase)
-    throw ObjectException("ObjectDatabase requires material database service");
-  if (!m_imageMetadataDatabase)
-    throw ObjectException("ObjectDatabase requires image metadata database service");
-  if (!m_particleDatabase)
-    throw ObjectException("ObjectDatabase requires particle database service");
-  if (!m_itemDatabase)
-    throw ObjectException("ObjectDatabase requires item database provider");
-
   auto& files = m_assets->scanExtension("object");
   m_assets->queueJsons(files);
   for (auto& file : files) {

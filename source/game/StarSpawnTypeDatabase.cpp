@@ -1,5 +1,6 @@
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -109,8 +110,7 @@ SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups,
 }
 
 SpawnTypeDatabase::SpawnTypeDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw SpawnTypeDatabaseException("SpawnTypeDatabase requires assets service");
+  requireServiceAs<SpawnTypeDatabaseException>(assets, "SpawnTypeDatabase", "assets");
 
   auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);

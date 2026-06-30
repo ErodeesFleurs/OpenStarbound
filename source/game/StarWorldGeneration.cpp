@@ -187,25 +187,16 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
 
 DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer& worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation)
   : m_worldServer(worldServer),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_materialDatabase(worldServer.materialDatabase()),
-    m_liquidsDatabase(worldServer.liquidsDatabase()),
-    m_plantDatabase(worldServer.plantDatabase()),
-    m_treasureDatabase(worldServer.treasureDatabase()),
-    m_npcDatabase(worldServer.npcDatabase()),
-    m_monsterDatabase(worldServer.monsterDatabase()),
-    m_stagehandDatabase(worldServer.stagehandDatabase()),
-    m_vehicleDatabase(worldServer.vehicleDatabase()),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "DungeonGeneratorWorld", "object database")),
+    m_materialDatabase(requireServiceValueAs<StarException>(worldServer.materialDatabase(), "DungeonGeneratorWorld", "material database")),
+    m_liquidsDatabase(requireServiceValueAs<StarException>(worldServer.liquidsDatabase(), "DungeonGeneratorWorld", "liquids database")),
+    m_plantDatabase(requireServiceValueAs<StarException>(worldServer.plantDatabase(), "DungeonGeneratorWorld", "plant database")),
+    m_treasureDatabase(requireServiceValueAs<StarException>(worldServer.treasureDatabase(), "DungeonGeneratorWorld", "treasure database")),
+    m_npcDatabase(requireServiceValueAs<StarException>(worldServer.npcDatabase(), "DungeonGeneratorWorld", "npc database")),
+    m_monsterDatabase(requireServiceValueAs<StarException>(worldServer.monsterDatabase(), "DungeonGeneratorWorld", "monster database")),
+    m_stagehandDatabase(requireServiceValueAs<StarException>(worldServer.stagehandDatabase(), "DungeonGeneratorWorld", "stagehand database")),
+    m_vehicleDatabase(requireServiceValueAs<StarException>(worldServer.vehicleDatabase(), "DungeonGeneratorWorld", "vehicle database")),
     m_markForActivation(markForActivation) {
-  requireNotNull(m_objectDatabase, "DungeonGeneratorWorld", "object database");
-  requireNotNull(m_materialDatabase, "DungeonGeneratorWorld", "material database");
-  requireNotNull(m_liquidsDatabase, "DungeonGeneratorWorld", "liquids database");
-  requireNotNull(m_plantDatabase, "DungeonGeneratorWorld", "plant database");
-  requireNotNull(m_treasureDatabase, "DungeonGeneratorWorld", "treasure database");
-  requireNotNull(m_npcDatabase, "DungeonGeneratorWorld", "npc database");
-  requireNotNull(m_monsterDatabase, "DungeonGeneratorWorld", "monster database");
-  requireNotNull(m_stagehandDatabase, "DungeonGeneratorWorld", "stagehand database");
-  requireNotNull(m_vehicleDatabase, "DungeonGeneratorWorld", "vehicle database");
 }
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
@@ -669,23 +660,14 @@ EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
 
 WorldGenerator::WorldGenerator(WorldServer& server, ObjectDatabaseConstPtr objectDatabase)
   : m_worldServer(server),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_materialDatabase(server.materialDatabase()),
-    m_plantDatabase(server.plantDatabase()),
-    m_treasureDatabase(server.treasureDatabase()),
-    m_npcDatabase(server.npcDatabase()),
-    m_monsterDatabase(server.monsterDatabase()),
-    m_stagehandDatabase(server.stagehandDatabase()),
-    m_vehicleDatabase(server.vehicleDatabase()) {
-  requireNotNull(m_objectDatabase, "WorldGenerator", "object database");
-  requireNotNull(m_materialDatabase, "WorldGenerator", "material database");
-  requireNotNull(m_plantDatabase, "WorldGenerator", "plant database");
-  requireNotNull(m_treasureDatabase, "WorldGenerator", "treasure database");
-  requireNotNull(m_npcDatabase, "WorldGenerator", "npc database");
-  requireNotNull(m_monsterDatabase, "WorldGenerator", "monster database");
-  requireNotNull(m_stagehandDatabase, "WorldGenerator", "stagehand database");
-  requireNotNull(m_vehicleDatabase, "WorldGenerator", "vehicle database");
-
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "WorldGenerator", "object database")),
+    m_materialDatabase(requireServiceValueAs<StarException>(server.materialDatabase(), "WorldGenerator", "material database")),
+    m_plantDatabase(requireServiceValueAs<StarException>(server.plantDatabase(), "WorldGenerator", "plant database")),
+    m_treasureDatabase(requireServiceValueAs<StarException>(server.treasureDatabase(), "WorldGenerator", "treasure database")),
+    m_npcDatabase(requireServiceValueAs<StarException>(server.npcDatabase(), "WorldGenerator", "npc database")),
+    m_monsterDatabase(requireServiceValueAs<StarException>(server.monsterDatabase(), "WorldGenerator", "monster database")),
+    m_stagehandDatabase(requireServiceValueAs<StarException>(server.stagehandDatabase(), "WorldGenerator", "stagehand database")),
+    m_vehicleDatabase(requireServiceValueAs<StarException>(server.vehicleDatabase(), "WorldGenerator", "vehicle database")) {
   m_microDungeonFactory = make_shared<MicroDungeonFactory>();
 }
 

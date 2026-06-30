@@ -11,11 +11,9 @@ namespace Star {
 
 ErrorScreen::ErrorScreen(ErrorScreenServices services)
   : m_guiContext(services.guiContext),
-    m_assets(std::move(services.assets)),
-    m_imageMetadata(std::move(services.imageMetadata)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "ErrorScreen", "assets")),
+    m_imageMetadata(requireServiceValueAs<StarException>(std::move(services.imageMetadata), "ErrorScreen", "image metadata")),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
-  requireNotNull(m_assets, "ErrorScreen", "assets");
-  requireNotNull(m_imageMetadata, "ErrorScreen", "image metadata");
   m_paneManager = make_shared<PaneManager>(m_guiContext);
 
   m_accepted = true;

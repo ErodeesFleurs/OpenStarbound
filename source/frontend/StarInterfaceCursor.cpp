@@ -6,11 +6,8 @@
 namespace Star {
 
 InterfaceCursor::InterfaceCursor(InterfaceCursorServices services)
-  : m_assets(std::move(services.assets)),
-    m_imageMetadata(std::move(services.imageMetadata)) {
-  requireNotNull(m_assets, "InterfaceCursor", "assets");
-  requireNotNull(m_imageMetadata, "InterfaceCursor", "image metadata");
-
+  : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "InterfaceCursor", "assets")),
+    m_imageMetadata(requireServiceValueAs<StarException>(std::move(services.imageMetadata), "InterfaceCursor", "image metadata")) {
   resetCursor();
 }
 

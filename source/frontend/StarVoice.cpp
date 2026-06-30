@@ -6,6 +6,7 @@
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarAudio.hpp"
+#include "StarAlgorithm.hpp"
 #include "opus/opus.h"
 
 #include "SDL3/SDL.h"
@@ -124,8 +125,7 @@ Json Voice::Speaker::toJson() const {
 }
 
 Voice::Voice(ApplicationControllerPtr appController, VoiceServices services) : m_encoder(nullptr, opus_encoder_destroy) {
-  if (!services.configuration)
-    throw VoiceException("Voice requires configuration service");
+  requireServiceAs<VoiceException>(services.configuration, "Voice", "configuration");
 
   m_clientSpeaker = make_shared<Speaker>(m_speakerId);
   m_inputMode = VoiceInputMode::PushToTalk;

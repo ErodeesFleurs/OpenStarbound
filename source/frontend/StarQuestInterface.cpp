@@ -22,18 +22,14 @@
 namespace Star {
 
 QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services)
-  : Pane(services.guiContext) {
-  m_manager = manager;
-  m_player = player;
-  m_cinematic = cinematic;
-  m_client = client;
-  m_assets = std::move(services.assets);
-  m_objectDatabase = std::move(services.objectDatabase);
-  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  requireNotNull(m_assets, "QuestLogInterface", "assets");
-  requireNotNull(m_objectDatabase, "QuestLogInterface", "object database");
-  requireNotNull(m_statusEffectDatabase, "QuestLogInterface", "status effect database");
-
+  : Pane(services.guiContext),
+    m_manager(std::move(manager)),
+    m_player(std::move(player)),
+    m_cinematic(std::move(cinematic)),
+    m_client(std::move(client)),
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestLogInterface", "assets")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "QuestLogInterface", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "QuestLogInterface", "status effect database")) {
   auto config = m_assets->json("/interface/windowconfig/questlog.config");
 
   m_trackLabel = config.getString("trackLabel");
@@ -297,12 +293,9 @@ QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServ
   : Pane(services.guiContext),
     m_quest(quest),
     m_player(std::move(player)),
-    m_assets(std::move(services.assets)),
-    m_objectDatabase(std::move(services.objectDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  requireNotNull(m_assets, "QuestPane", "assets");
-  requireNotNull(m_objectDatabase, "QuestPane", "object database");
-  requireNotNull(m_statusEffectDatabase, "QuestPane", "status effect database");
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "QuestPane", "assets")),
+    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "QuestPane", "object database")),
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "QuestPane", "status effect database")) {
 }
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {

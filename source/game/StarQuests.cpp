@@ -33,12 +33,11 @@ EnumMap<QuestState> const QuestStateNames{
   {QuestState::Failed, "Failed"}};
 
 Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  requireNotNull(m_assets, "Quest", "assets");
-  requireNotNull(m_objectDatabase, "Quest", "object database");
-  requireNotNull(m_questTemplateDatabase, "Quest", "quest template database");
-  requireNotNull(m_versioningDatabase, "Quest", "versioning database");
-
+    : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Quest", "assets")),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "Quest", "object database")),
+      m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "Quest", "quest template database")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "Quest", "versioning database")) {
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
@@ -94,12 +93,11 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
 }
 
 Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  requireNotNull(m_assets, "Quest", "assets");
-  requireNotNull(m_objectDatabase, "Quest", "object database");
-  requireNotNull(m_questTemplateDatabase, "Quest", "quest template database");
-  requireNotNull(m_versioningDatabase, "Quest", "versioning database");
-
+    : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Quest", "assets")),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "Quest", "object database")),
+      m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "Quest", "quest template database")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "Quest", "versioning database")) {
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
 

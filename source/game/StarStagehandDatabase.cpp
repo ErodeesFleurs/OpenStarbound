@@ -2,12 +2,12 @@
 #include "StarStagehand.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
+#include "StarAlgorithm.hpp"
 
 namespace Star {
 
 StagehandDatabase::StagehandDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StagehandDatabaseException("StagehandDatabase requires assets service");
+  requireServiceAs<StagehandDatabaseException>(assets, "StagehandDatabase", "assets");
   auto& files = assets->scanExtension("stagehand");
   assets->queueJsons(files);
   for (auto& file : files) {
