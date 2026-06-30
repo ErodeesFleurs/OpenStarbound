@@ -168,9 +168,8 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
   return ds;
 }
 
-MovementController::MovementController(MovementParameters const& parameters, AssetsConstPtr assets) {
-  m_assets = requireServiceValueAs<MovementControllerException>(std::move(assets), "MovementController", "assets");
-
+MovementController::MovementController(MovementParameters const& parameters, AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<MovementControllerException>(std::move(assets), "MovementController", "assets")) {
   m_resting = false;
 
   m_timeStep = GlobalTimestep;

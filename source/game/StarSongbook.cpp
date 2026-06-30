@@ -13,15 +13,15 @@ namespace Star {
 Mutex Songbook::s_timeSourcesMutex;
 StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
-Songbook::Songbook(AssetsConstPtr assets, String const& species) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Songbook", "assets");
+Songbook::Songbook(AssetsConstPtr assets, String const& species)
+  : m_species(species)
+  , m_assets(requireServiceValueAs<StarException>(std::move(assets), "Songbook", "assets")) {
   m_activeCooldown = 0;
   m_dataUpdated = false;
   m_dataChanged = false;
   m_timeSourceEpoch = 0;
   m_epochUpdated = false;
   m_globalNowDelta = 0;
-  m_species = species;
   m_stopped = true;
   m_serverMode = true;
 

@@ -6,19 +6,6 @@
 namespace Star {
 
 ButtonWidget::ButtonWidget(GuiContext& context) : Widget(context) {
-  m_hovered = false;
-  m_pressed = false;
-  m_checkable = false;
-  m_checked = false;
-  m_disabled = false;
-  m_highlighted = false;
-  m_hasCheckedImages = false;
-  m_sustain = false;
-  m_invisible = false;
-  m_hTextAnchor = HorizontalAnchor::HMidAnchor;
-  m_fontColor = Color::White;
-  m_fontColorDisabled = Color::Gray;
-
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();
 

@@ -26,9 +26,9 @@ float const EnvironmentPainter::RayUnscaledAlphaVariance = 2.0943f;
 float const EnvironmentPainter::RayMinUnscaledAlpha = 1;
 Vec3B const EnvironmentPainter::RayColor = Vec3B(255, 255, 200);
 
-EnvironmentPainter::EnvironmentPainter(RendererPtr renderer, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener) {
-  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "EnvironmentPainter", "renderer");
-  m_textureGroup = make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large), std::move(assets), std::move(registerReloadListener));
+EnvironmentPainter::EnvironmentPainter(RendererPtr renderer, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
+  : m_renderer(requireServiceValueAs<StarException>(std::move(renderer), "EnvironmentPainter", "renderer"))
+  , m_textureGroup(make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large), std::move(assets), std::move(registerReloadListener))) {
   m_timer = 0;
   m_rayPerlin = PerlinF(1, RayPerlinFrequency, RayPerlinAmplitude, 0, 2.0f, 2.0f, Random::randu64());
 }

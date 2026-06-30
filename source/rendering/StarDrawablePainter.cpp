@@ -3,10 +3,9 @@
 
 namespace Star {
 
-DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup) {
-  m_renderer = requireServiceValueAs<StarException>(std::move(renderer), "DrawablePainter", "renderer");
-  m_textureGroup = requireServiceValueAs<StarException>(std::move(textureGroup), "DrawablePainter", "texture group");
-}
+DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup)
+  : m_renderer(requireServiceValueAs<StarException>(std::move(renderer), "DrawablePainter", "renderer"))
+  , m_textureGroup(requireServiceValueAs<StarException>(std::move(textureGroup), "DrawablePainter", "texture group")) {}
 
 void DrawablePainter::drawDrawable(Drawable const& drawable) {
   Vec4B color = drawable.color.toRgba();

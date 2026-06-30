@@ -40,8 +40,34 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate,
                          IODevicePtr storage,
                          WorldServerServices services)
     : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WorldServer", "assets")),
-      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
-  setServices(std::move(services));
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "WorldServer", "configuration")),
+      m_luaRootServices(requireLuaRootServices(std::move(services.luaRootServices), "WorldServer")),
+      m_materialDatabase(requireServiceValueAs<StarException>(std::move(services.materialDatabase), "WorldServer", "materialDatabase")),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "WorldServer", "itemDatabase")),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "WorldServer", "objectDatabase")),
+      m_projectileDatabase(requireServiceValueAs<StarException>(std::move(services.projectileDatabase), "WorldServer", "projectileDatabase")),
+      m_plantDatabase(requireServiceValueAs<StarException>(std::move(services.plantDatabase), "WorldServer", "plantDatabase")),
+      m_treasureDatabase(requireServiceValueAs<StarException>(std::move(services.treasureDatabase), "WorldServer", "treasureDatabase")),
+      m_npcDatabase(requireServiceValueAs<StarException>(std::move(services.npcDatabase), "WorldServer", "npcDatabase")),
+      m_monsterDatabase(requireServiceValueAs<StarException>(std::move(services.monsterDatabase), "WorldServer", "monsterDatabase")),
+      m_spawnTypeDatabase(requireServiceValueAs<StarException>(std::move(services.spawnTypeDatabase), "WorldServer", "spawnTypeDatabase")),
+      m_stagehandDatabase(requireServiceValueAs<StarException>(std::move(services.stagehandDatabase), "WorldServer", "stagehandDatabase")),
+      m_vehicleDatabase(requireServiceValueAs<StarException>(std::move(services.vehicleDatabase), "WorldServer", "vehicleDatabase")),
+      m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "WorldServer", "speciesDatabase")),
+      m_entityFactory(requireServiceValueAs<StarException>(std::move(services.entityFactory), "WorldServer", "entityFactory")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(services.liquidsDatabase), "WorldServer", "liquidsDatabase")),
+      m_terrainDatabase(requireServiceValueAs<StarException>(std::move(services.terrainDatabase), "WorldServer", "terrainDatabase")),
+      m_biomeDatabase(requireServiceValueAs<StarException>(std::move(services.biomeDatabase), "WorldServer", "biomeDatabase")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(services.versioningDatabase), "WorldServer", "versioningDatabase")),
+      m_functionDatabase(requireServiceValueAs<StarException>(std::move(services.functionDatabase), "WorldServer", "functionDatabase")),
+      m_behaviorDatabase(requireServiceValueAs<StarException>(std::move(services.behaviorDatabase), "WorldServer", "behaviorDatabase")),
+      m_effectSourceDatabase(requireServiceValueAs<StarException>(std::move(services.effectSourceDatabase), "WorldServer", "effectSourceDatabase")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(services.particleDatabase), "WorldServer", "particleDatabase")),
+      m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "WorldServer", "techDatabase")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "WorldServer", "statusEffectDatabase")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "WorldServer", "imageMetadataDatabase")),
+      m_dungeonDefinitions(requireServiceValueAs<StarException>(std::move(services.dungeonDefinitions), "WorldServer", "dungeonDefinitions")),
+      m_spawner(m_assets, m_monsterDatabase, m_spawnTypeDatabase) {
   m_worldTemplate = requireServiceValueAs<StarException>(worldTemplate, "WorldServer", "world template");
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_spawnFinder.m_adjustPlayerStart = true;
@@ -63,8 +89,34 @@ WorldServer::WorldServer(Vec2U const& size,
 WorldServer::WorldServer(IODevicePtr const& storage,
                          WorldServerServices services)
     : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WorldServer", "assets")),
-      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
-  setServices(std::move(services));
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "WorldServer", "configuration")),
+      m_luaRootServices(requireLuaRootServices(std::move(services.luaRootServices), "WorldServer")),
+      m_materialDatabase(requireServiceValueAs<StarException>(std::move(services.materialDatabase), "WorldServer", "materialDatabase")),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "WorldServer", "itemDatabase")),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "WorldServer", "objectDatabase")),
+      m_projectileDatabase(requireServiceValueAs<StarException>(std::move(services.projectileDatabase), "WorldServer", "projectileDatabase")),
+      m_plantDatabase(requireServiceValueAs<StarException>(std::move(services.plantDatabase), "WorldServer", "plantDatabase")),
+      m_treasureDatabase(requireServiceValueAs<StarException>(std::move(services.treasureDatabase), "WorldServer", "treasureDatabase")),
+      m_npcDatabase(requireServiceValueAs<StarException>(std::move(services.npcDatabase), "WorldServer", "npcDatabase")),
+      m_monsterDatabase(requireServiceValueAs<StarException>(std::move(services.monsterDatabase), "WorldServer", "monsterDatabase")),
+      m_spawnTypeDatabase(requireServiceValueAs<StarException>(std::move(services.spawnTypeDatabase), "WorldServer", "spawnTypeDatabase")),
+      m_stagehandDatabase(requireServiceValueAs<StarException>(std::move(services.stagehandDatabase), "WorldServer", "stagehandDatabase")),
+      m_vehicleDatabase(requireServiceValueAs<StarException>(std::move(services.vehicleDatabase), "WorldServer", "vehicleDatabase")),
+      m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "WorldServer", "speciesDatabase")),
+      m_entityFactory(requireServiceValueAs<StarException>(std::move(services.entityFactory), "WorldServer", "entityFactory")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(services.liquidsDatabase), "WorldServer", "liquidsDatabase")),
+      m_terrainDatabase(requireServiceValueAs<StarException>(std::move(services.terrainDatabase), "WorldServer", "terrainDatabase")),
+      m_biomeDatabase(requireServiceValueAs<StarException>(std::move(services.biomeDatabase), "WorldServer", "biomeDatabase")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(services.versioningDatabase), "WorldServer", "versioningDatabase")),
+      m_functionDatabase(requireServiceValueAs<StarException>(std::move(services.functionDatabase), "WorldServer", "functionDatabase")),
+      m_behaviorDatabase(requireServiceValueAs<StarException>(std::move(services.behaviorDatabase), "WorldServer", "behaviorDatabase")),
+      m_effectSourceDatabase(requireServiceValueAs<StarException>(std::move(services.effectSourceDatabase), "WorldServer", "effectSourceDatabase")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(services.particleDatabase), "WorldServer", "particleDatabase")),
+      m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "WorldServer", "techDatabase")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "WorldServer", "statusEffectDatabase")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "WorldServer", "imageMetadataDatabase")),
+      m_dungeonDefinitions(requireServiceValueAs<StarException>(std::move(services.dungeonDefinitions), "WorldServer", "dungeonDefinitions")),
+      m_spawner(m_assets, m_monsterDatabase, m_spawnTypeDatabase) {
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, storage, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
     for (auto const& pair : m_clientInfo)
@@ -81,8 +133,34 @@ WorldServer::WorldServer(IODevicePtr const& storage,
 WorldServer::WorldServer(WorldChunks const& chunks,
                          WorldServerServices services)
     : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "WorldServer", "assets")),
-      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
-  setServices(std::move(services));
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "WorldServer", "configuration")),
+      m_luaRootServices(requireLuaRootServices(std::move(services.luaRootServices), "WorldServer")),
+      m_materialDatabase(requireServiceValueAs<StarException>(std::move(services.materialDatabase), "WorldServer", "materialDatabase")),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "WorldServer", "itemDatabase")),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "WorldServer", "objectDatabase")),
+      m_projectileDatabase(requireServiceValueAs<StarException>(std::move(services.projectileDatabase), "WorldServer", "projectileDatabase")),
+      m_plantDatabase(requireServiceValueAs<StarException>(std::move(services.plantDatabase), "WorldServer", "plantDatabase")),
+      m_treasureDatabase(requireServiceValueAs<StarException>(std::move(services.treasureDatabase), "WorldServer", "treasureDatabase")),
+      m_npcDatabase(requireServiceValueAs<StarException>(std::move(services.npcDatabase), "WorldServer", "npcDatabase")),
+      m_monsterDatabase(requireServiceValueAs<StarException>(std::move(services.monsterDatabase), "WorldServer", "monsterDatabase")),
+      m_spawnTypeDatabase(requireServiceValueAs<StarException>(std::move(services.spawnTypeDatabase), "WorldServer", "spawnTypeDatabase")),
+      m_stagehandDatabase(requireServiceValueAs<StarException>(std::move(services.stagehandDatabase), "WorldServer", "stagehandDatabase")),
+      m_vehicleDatabase(requireServiceValueAs<StarException>(std::move(services.vehicleDatabase), "WorldServer", "vehicleDatabase")),
+      m_speciesDatabase(requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "WorldServer", "speciesDatabase")),
+      m_entityFactory(requireServiceValueAs<StarException>(std::move(services.entityFactory), "WorldServer", "entityFactory")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(services.liquidsDatabase), "WorldServer", "liquidsDatabase")),
+      m_terrainDatabase(requireServiceValueAs<StarException>(std::move(services.terrainDatabase), "WorldServer", "terrainDatabase")),
+      m_biomeDatabase(requireServiceValueAs<StarException>(std::move(services.biomeDatabase), "WorldServer", "biomeDatabase")),
+      m_versioningDatabase(requireServiceValueAs<StarException>(std::move(services.versioningDatabase), "WorldServer", "versioningDatabase")),
+      m_functionDatabase(requireServiceValueAs<StarException>(std::move(services.functionDatabase), "WorldServer", "functionDatabase")),
+      m_behaviorDatabase(requireServiceValueAs<StarException>(std::move(services.behaviorDatabase), "WorldServer", "behaviorDatabase")),
+      m_effectSourceDatabase(requireServiceValueAs<StarException>(std::move(services.effectSourceDatabase), "WorldServer", "effectSourceDatabase")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(services.particleDatabase), "WorldServer", "particleDatabase")),
+      m_techDatabase(requireServiceValueAs<StarException>(std::move(services.techDatabase), "WorldServer", "techDatabase")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "WorldServer", "statusEffectDatabase")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "WorldServer", "imageMetadataDatabase")),
+      m_dungeonDefinitions(requireServiceValueAs<StarException>(std::move(services.dungeonDefinitions), "WorldServer", "dungeonDefinitions")),
+      m_spawner(m_assets, m_monsterDatabase, m_spawnTypeDatabase) {
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, chunks, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
     for (auto const& pair : m_clientInfo)
@@ -94,36 +172,6 @@ WorldServer::WorldServer(WorldChunks const& chunks,
 
   readMetadata();
   init(false);
-}
-
-void WorldServer::setServices(WorldServerServices services) {
-  m_configuration = requireServiceValueAs<StarException>(std::move(services.configuration), "WorldServer", "configuration");
-  m_luaRootServices = requireLuaRootServices(std::move(services.luaRootServices), "WorldServer");
-  m_materialDatabase = requireServiceValueAs<StarException>(std::move(services.materialDatabase), "WorldServer", "materialDatabase");
-  m_itemDatabase = requireServiceValueAs<StarException>(std::move(services.itemDatabase), "WorldServer", "itemDatabase");
-  m_objectDatabase = requireServiceValueAs<StarException>(std::move(services.objectDatabase), "WorldServer", "objectDatabase");
-  m_projectileDatabase = requireServiceValueAs<StarException>(std::move(services.projectileDatabase), "WorldServer", "projectileDatabase");
-  m_plantDatabase = requireServiceValueAs<StarException>(std::move(services.plantDatabase), "WorldServer", "plantDatabase");
-  m_treasureDatabase = requireServiceValueAs<StarException>(std::move(services.treasureDatabase), "WorldServer", "treasureDatabase");
-  m_npcDatabase = requireServiceValueAs<StarException>(std::move(services.npcDatabase), "WorldServer", "npcDatabase");
-  m_monsterDatabase = requireServiceValueAs<StarException>(std::move(services.monsterDatabase), "WorldServer", "monsterDatabase");
-  m_spawnTypeDatabase = requireServiceValueAs<StarException>(std::move(services.spawnTypeDatabase), "WorldServer", "spawnTypeDatabase");
-  m_stagehandDatabase = requireServiceValueAs<StarException>(std::move(services.stagehandDatabase), "WorldServer", "stagehandDatabase");
-  m_vehicleDatabase = requireServiceValueAs<StarException>(std::move(services.vehicleDatabase), "WorldServer", "vehicleDatabase");
-  m_speciesDatabase = requireServiceValueAs<StarException>(std::move(services.speciesDatabase), "WorldServer", "speciesDatabase");
-  m_entityFactory = requireServiceValueAs<StarException>(std::move(services.entityFactory), "WorldServer", "entityFactory");
-  m_liquidsDatabase = requireServiceValueAs<StarException>(std::move(services.liquidsDatabase), "WorldServer", "liquidsDatabase");
-  m_terrainDatabase = requireServiceValueAs<StarException>(std::move(services.terrainDatabase), "WorldServer", "terrainDatabase");
-  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(services.biomeDatabase), "WorldServer", "biomeDatabase");
-  m_versioningDatabase = requireServiceValueAs<StarException>(std::move(services.versioningDatabase), "WorldServer", "versioningDatabase");
-  m_functionDatabase = requireServiceValueAs<StarException>(std::move(services.functionDatabase), "WorldServer", "functionDatabase");
-  m_behaviorDatabase = requireServiceValueAs<StarException>(std::move(services.behaviorDatabase), "WorldServer", "behaviorDatabase");
-  m_effectSourceDatabase = requireServiceValueAs<StarException>(std::move(services.effectSourceDatabase), "WorldServer", "effectSourceDatabase");
-  m_particleDatabase = requireServiceValueAs<StarException>(std::move(services.particleDatabase), "WorldServer", "particleDatabase");
-  m_techDatabase = requireServiceValueAs<StarException>(std::move(services.techDatabase), "WorldServer", "techDatabase");
-  m_statusEffectDatabase = requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "WorldServer", "statusEffectDatabase");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(services.imageMetadataDatabase), "WorldServer", "imageMetadataDatabase");
-  m_dungeonDefinitions = requireServiceValueAs<StarException>(std::move(services.dungeonDefinitions), "WorldServer", "dungeonDefinitions");
 }
 
 WorldServer::~WorldServer() {

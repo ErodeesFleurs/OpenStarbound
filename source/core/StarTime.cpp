@@ -80,8 +80,6 @@ int64_t Time::microsecondsToTicks(int64_t microseconds, int64_t tickFrequency) {
 }
 
 Clock::Clock(bool start) {
-  m_elapsedTicks = 0;
-  m_running = false;
   if (start)
     Clock::start();
 }

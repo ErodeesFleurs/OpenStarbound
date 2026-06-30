@@ -23,14 +23,15 @@
 namespace Star {
 
 Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& monsterVariant, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Maybe<float> level)
-    : m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Monster", "assets")) {
+    : m_monsterVariant(monsterVariant),
+      m_monsterDatabase(requireServiceValueAs<StarException>(std::move(monsterDatabase), "Monster", "monster database")),
+      m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "Monster", "liquids database")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "Monster", "status effect database")),
+      m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "Monster", "particle database")),
+      m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Monster", "image metadata database")),
+      m_monsterLevel(level),
+      m_scriptedAnimator(requireServiceValueAs<StarException>(assets, "Monster", "assets")) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "Monster", "assets");
-  m_monsterDatabase = requireServiceValueAs<StarException>(std::move(monsterDatabase), "Monster", "monster database");
-  m_liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "Monster", "liquids database");
-  m_statusEffectDatabase = requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "Monster", "status effect database");
-  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "Monster", "particle database");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Monster", "image metadata database");
-  m_monsterLevel = level;
 
   m_damageOnTouch = false;
   m_aggressive = false;
@@ -39,8 +40,6 @@ Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
   m_knockoutTimer = 0.0;
 
   m_dropPool = monsterVariant.dropPoolConfig;
-
-  m_monsterVariant = monsterVariant;
 
   m_questIndicatorOffset = jsonToVec2F(assets->json("/quests/quests.config:defaultIndicatorOffset"));
 

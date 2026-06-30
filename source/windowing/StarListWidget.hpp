@@ -51,7 +51,7 @@ private:
   GuiReaderPtr m_reader;
 
   Set<size_t> m_disabledItems;
-  size_t m_selectedItem;
+  size_t m_selectedItem = NPos;
   WidgetCallbackFunc m_callback;
 
   String m_selectedBG;
@@ -60,8 +60,8 @@ private:
   String m_disabledBG;
   Vec2I m_spacing;
 
-  bool m_fillDown;
-  uint64_t m_columns;
+  bool m_fillDown = false;
+  uint64_t m_columns = 1;
 };
 
 }

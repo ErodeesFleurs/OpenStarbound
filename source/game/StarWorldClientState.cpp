@@ -13,8 +13,6 @@ WorldClientState::WorldClientState(AssetsConstPtr assets) {
 
   m_playerId.set(NullEntityId);
 
-  m_netVersion = 0;
-
   m_netGroup.addNetElement(&m_windowXMin);
   m_netGroup.addNetElement(&m_windowYMin);
   m_netGroup.addNetElement(&m_windowWidth);

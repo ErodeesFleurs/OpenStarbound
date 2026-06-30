@@ -392,8 +392,6 @@ public:
   Maybe<pair<String, String>> pullNewPlanetType();
 
 private:
-  void setServices(WorldServerServices services);
-
   struct ClientInfo {
     ClientInfo(AssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit);
 

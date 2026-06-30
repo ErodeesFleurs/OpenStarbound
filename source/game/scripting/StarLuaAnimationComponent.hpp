@@ -52,9 +52,8 @@ private:
 };
 
 template <typename Base>
-LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
-  m_assets = requireServiceValueAs<LuaAnimationComponentException>(std::move(assets), "LuaAnimationComponent", "assets");
-
+LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<LuaAnimationComponentException>(std::move(assets), "LuaAnimationComponent", "assets")) {
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
     auto audio = make_shared<AudioInstance>(*m_assets->audio(sound));

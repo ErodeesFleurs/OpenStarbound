@@ -12,8 +12,8 @@
 
 namespace Star {
 
-Sky::Sky(AssetsConstPtr assets) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Sky", "assets");
+Sky::Sky(AssetsConstPtr assets)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Sky", "assets")) {
   skyParametersUpdated();
 
   m_netInit = false;

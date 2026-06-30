@@ -25,10 +25,10 @@ protected:
   virtual void renderImpl() override;
   RectI shift(float begin, float end, RectI templ);
 
-  float m_progressLevel;
-  float m_maxLevel;
+  float m_progressLevel = 0.0f;
+  float m_maxLevel = 1.0f;
 
-  Color m_color;
+  Color m_color = Color::White;
 
   String m_background;
   String m_overlay;

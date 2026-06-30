@@ -18,23 +18,7 @@ namespace {
 }
 
 AudioInstance::AudioInstance(Audio const& audio)
-  : m_audio(audio) {
-  m_mixerGroup = MixerGroup::Effects;
-
-  m_volume = {1.0f, 1.0f, 0};
-
-  m_pitchMultiplier = 1.0f;
-  m_pitchMultiplierTarget = 1.0f;
-  m_pitchMultiplierVelocity = 0;
-
-  m_loops = 0;
-  m_stopping = false;
-  m_finished = false;
-
-  m_rangeMultiplier = 1.0f;
-
-  m_clockStopFadeOut = 0.0f;
-}
+  : m_audio(audio) {}
 
 Maybe<Vec2F> AudioInstance::position() const {
   MutexLocker locker(m_mutex);

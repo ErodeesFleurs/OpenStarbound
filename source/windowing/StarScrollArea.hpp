@@ -40,8 +40,8 @@ private:
   ImageStretchSet m_hoverThumb;
   ImageStretchSet m_pressedThumb;
 
-  bool m_hovered;
-  bool m_pressed;
+  bool m_hovered = false;
+  bool m_pressed = false;
 };
 using ScrollThumbPtr = shared_ptr<ScrollThumb>;
 
@@ -116,7 +116,7 @@ private:
   Vec2I m_lastMaxScroll;
   Vec2I m_contentSize;
 
-  bool m_dragActive;
+  bool m_dragActive = false;
   GuiDirection m_dragDirection;
   Vec2I m_dragOffset;
 
@@ -124,10 +124,10 @@ private:
   ScrollBarPtr m_hBar;
   ImageWidgetPtr m_cornerBlock;
 
-  bool m_horizontalScroll;
-  bool m_verticalScroll;
+  bool m_horizontalScroll = false;
+  bool m_verticalScroll = true;
 
-  bool m_updatesChildren;
+  bool m_updatesChildren = false;
 };
 using ScrollAreaPtr = shared_ptr<ScrollArea>;
 }

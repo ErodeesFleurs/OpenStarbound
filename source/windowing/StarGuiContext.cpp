@@ -8,16 +8,15 @@
 
 namespace Star {
 
-GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services) {
-  m_mixer = requireServiceValueAs<GuiContextException>(std::move(mixer), "GuiContext", "mixer");
-  m_applicationController = requireServiceValueAs<GuiContextException>(std::move(appController), "GuiContext", "application controller");
-  m_assets = requireServiceValueAs<GuiContextException>(std::move(services.assets), "GuiContext", "assets");
-  m_configuration = requireServiceValueAs<GuiContextException>(std::move(services.configuration), "GuiContext", "configuration");
-  m_imageMetadata = requireServiceValueAs<GuiContextException>(std::move(services.imageMetadata), "GuiContext", "image metadata");
-  m_itemDatabase = requireServiceValueAs<GuiContextException>(std::move(services.itemDatabase), "GuiContext", "item database");
-  m_registerReloadListener = requireServiceValueAs<GuiContextException>(std::move(services.registerReloadListener), "GuiContext", "reload listener registrar");
-  m_withClipboardUnlock = requireServiceValueAs<GuiContextException>(std::move(services.withClipboardUnlock), "GuiContext", "clipboard unlock");
-
+GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services)
+  : m_mixer(requireServiceValueAs<GuiContextException>(std::move(mixer), "GuiContext", "mixer"))
+  , m_applicationController(requireServiceValueAs<GuiContextException>(std::move(appController), "GuiContext", "application controller"))
+  , m_assets(requireServiceValueAs<GuiContextException>(std::move(services.assets), "GuiContext", "assets"))
+  , m_configuration(requireServiceValueAs<GuiContextException>(std::move(services.configuration), "GuiContext", "configuration"))
+  , m_imageMetadata(requireServiceValueAs<GuiContextException>(std::move(services.imageMetadata), "GuiContext", "image metadata"))
+  , m_itemDatabase(requireServiceValueAs<GuiContextException>(std::move(services.itemDatabase), "GuiContext", "item database"))
+  , m_registerReloadListener(requireServiceValueAs<GuiContextException>(std::move(services.registerReloadListener), "GuiContext", "reload listener registrar"))
+  , m_withClipboardUnlock(requireServiceValueAs<GuiContextException>(std::move(services.withClipboardUnlock), "GuiContext", "clipboard unlock")) {
   m_interfaceScale = 1;
 
   m_shiftHeld = false;

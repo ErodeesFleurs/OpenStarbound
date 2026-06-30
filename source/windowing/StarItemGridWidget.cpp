@@ -9,14 +9,6 @@ ItemGridWidget::ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I c
 
 ItemGridWidget::ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
   : Widget(context), m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
-  m_selectedIndex = 0;
-  m_progress = 1;
-
-  m_drawBackingImageWhenFull = false;
-  m_drawBackingImageWhenEmpty = true;
-  m_showDurability = false;
-  m_highlightEmpty = false;
-
   setItemBag(bag);
 
   auto& guiContext = this->context();

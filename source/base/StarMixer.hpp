@@ -74,24 +74,24 @@ private:
 
   Audio m_audio;
 
-  MixerGroup m_mixerGroup;
+  MixerGroup m_mixerGroup = MixerGroup::Effects;
 
-  RampedValue m_volume;
+  RampedValue m_volume = {1.0f, 1.0f, 0};
 
-  float m_pitchMultiplier;
-  float m_pitchMultiplierTarget;
-  float m_pitchMultiplierVelocity;
+  float m_pitchMultiplier = 1.0f;
+  float m_pitchMultiplierTarget = 1.0f;
+  float m_pitchMultiplierVelocity = 0.0f;
 
-  int m_loops;
-  bool m_stopping;
-  bool m_finished;
+  int m_loops = 0;
+  bool m_stopping = false;
+  bool m_finished = false;
 
   Maybe<Vec2F> m_position;
-  float m_rangeMultiplier;
+  float m_rangeMultiplier = 1.0f;
 
   Maybe<int64_t> m_clockStart;
   Maybe<int64_t> m_clockStop;
-  int64_t m_clockStopFadeOut;
+  int64_t m_clockStopFadeOut = 0;
 };
 
 // Thread safe mixer class with basic effects support.

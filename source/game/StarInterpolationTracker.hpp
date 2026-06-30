@@ -33,7 +33,7 @@ private:
   double m_timeTrackFactor;
   double m_timeMaxDistance;
 
-  double m_currentTime;
+  double m_currentTime = 0.0;
   Maybe<double> m_lastTimeUpdate;
   Maybe<double> m_predictedTime;
 };

@@ -21,10 +21,9 @@
 namespace Star {
 
 ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId, BaseScriptPaneServices services)
-  : BaseScriptPane(config, true, std::move(services)) {
-  m_client = requireServiceValueAs<StarException>(std::move(client), "ScriptPane", "universe client");
-  m_sourceEntityId = sourceEntityId;
-
+  : BaseScriptPane(config, true, std::move(services))
+  , m_client(requireServiceValueAs<StarException>(std::move(client), "ScriptPane", "universe client"))
+  , m_sourceEntityId(sourceEntityId) {
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(*m_client->mainPlayer()));
   m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_client->mainPlayer()->statusController()));
   m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));

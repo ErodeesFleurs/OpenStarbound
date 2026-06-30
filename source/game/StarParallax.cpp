@@ -134,14 +134,14 @@ Parallax::Parallax(AssetsConstPtr assets,
     uint64_t seed,
     float verticalOrigin,
     float hueShift,
-    Maybe<TreeVariant> parallaxTreeVariant) {
+    Maybe<TreeVariant> parallaxTreeVariant)
+  : m_seed(seed)
+  , m_verticalOrigin(verticalOrigin)
+  , m_parallaxTreeVariant(parallaxTreeVariant)
+  , m_hueShift(hueShift)
+  , m_imageDirectory("/parallax/images/")
+  , m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Parallax", "image metadata database")) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "Parallax", "assets");
-  m_seed = seed;
-  m_verticalOrigin = verticalOrigin;
-  m_parallaxTreeVariant = parallaxTreeVariant;
-  m_hueShift = hueShift;
-  m_imageDirectory = "/parallax/images/";
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Parallax", "image metadata database");
 
   Json config = assets->json(assetFile);
 

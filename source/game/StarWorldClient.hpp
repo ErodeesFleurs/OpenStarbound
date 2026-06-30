@@ -324,8 +324,8 @@ private:
   LuaRootPtr m_luaRoot;
 
   WorldGeometry m_geometry;
-  uint64_t m_currentStep;
-  double m_currentTime;
+  uint64_t m_currentStep = 0;
+  double m_currentTime = 0.0;
 
   List<PreviewTile> m_previewTiles;
 
@@ -362,7 +362,7 @@ private:
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   DungeonDefinitionsConstPtr m_dungeonDefinitions;
 
-  bool m_collisionDebug;
+  bool m_collisionDebug = false;
   float m_interactivePulseAmount;
   float m_interactivePulseRate;
   float m_inspectionFlickerAmount;
@@ -370,10 +370,10 @@ private:
   // Client side entity updates are not done until m_inWorld is true, which is
   // set to true after we have entered a world *and* the first batch of updates
   // are received.
-  bool m_inWorld;
+  bool m_inWorld = false;
 
   GameTimer m_worldDimTimer;
-  float m_worldDimLevel;
+  float m_worldDimLevel = 0.0f;
   Vec3B m_worldDimColor;
 
   GameTimer m_parallaxFadeTimer;
@@ -395,7 +395,7 @@ private:
 
   List<PacketPtr> m_outgoingPackets;
   Maybe<int64_t> m_pingTime;
-  int64_t m_latency;
+  int64_t m_latency = 0;
 
   Set<EntityId> m_requestedDrops;
 

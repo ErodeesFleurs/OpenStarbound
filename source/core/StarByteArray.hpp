@@ -119,8 +119,8 @@ public:
 
 private:
   std::unique_ptr<char[], ByteArrayDeleter> m_data;
-  size_t m_capacity;
-  size_t m_size;
+  size_t m_capacity = 0;
+  size_t m_size = 0;
 };
 
 template <>

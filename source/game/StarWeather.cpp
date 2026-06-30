@@ -10,16 +10,6 @@
 namespace Star {
 
 ServerWeather::ServerWeather() {
-  m_undergroundLevel = 0.0f;
-  m_currentWeatherIndex = NPos;
-  m_currentWeatherIntensity = 0.0f;
-  m_currentWind = 0.0f;
-  m_forceWeather = false;
-
-  m_currentTime = 0.0;
-  m_lastWeatherChangeTime = 0.0;
-  m_nextWeatherChangeTime = 0.0;
-
   m_netGroup.addNetElement(&m_weatherPoolNetState);
   m_netGroup.addNetElement(&m_undergroundLevelNetState);
   m_netGroup.addNetElement(&m_currentWeatherIndexNetState);
@@ -299,12 +289,6 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
 }
 
 ClientWeather::ClientWeather() {
-  m_undergroundLevel = 0.0f;
-  m_currentWeatherIndex = NPos;
-  m_currentWeatherIntensity = 0.0f;
-  m_currentWind = 0.0f;
-  m_currentTime = 0.0;
-
   m_netGroup.addNetElement(&m_weatherPoolNetState);
   m_netGroup.addNetElement(&m_undergroundLevelNetState);
   m_netGroup.addNetElement(&m_currentWeatherIndexNetState);

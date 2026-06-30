@@ -52,35 +52,33 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage,
                                TreasureDatabaseConstPtr treasureDatabase,
                                ImageMetadataDatabaseConstPtr imageMetadataDatabase,
                                DungeonDefinitionsConstPtr dungeonDefinitions,
-                               LuaRootServices luaRootServices) {
-  m_storageTriggerDeadline = 0;
-  m_playerStorage = requireServiceValueAs<StarException>(std::move(playerStorage), "UniverseClient", "player storage");
-  m_statistics = requireServiceValueAs<StarException>(std::move(statistics), "UniverseClient", "statistics");
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "UniverseClient", "assets");
-  m_configuration = requireServiceValueAs<StarException>(std::move(configuration), "UniverseClient", "configuration");
-  m_luaRootServices = requireLuaRootServices(std::move(luaRootServices), "UniverseClient");
-  m_materialDatabase = requireServiceValueAs<StarException>(std::move(materialDatabase), "UniverseClient", "material database");
-  m_itemDatabase = requireServiceValueAs<StarException>(std::move(itemDatabase), "UniverseClient", "item database");
-  m_objectDatabase = requireServiceValueAs<StarException>(std::move(objectDatabase), "UniverseClient", "object database");
-  m_speciesDatabase = requireServiceValueAs<StarException>(std::move(speciesDatabase), "UniverseClient", "species database");
-  m_entityFactory = requireServiceValueAs<StarException>(std::move(entityFactory), "UniverseClient", "entity factory");
-  m_liquidsDatabase = requireServiceValueAs<StarException>(std::move(liquidsDatabase), "UniverseClient", "liquids database");
-  m_terrainDatabase = requireServiceValueAs<StarException>(std::move(terrainDatabase), "UniverseClient", "terrain database");
-  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "UniverseClient", "biome database");
-  m_nameGenerator = requireServiceValueAs<StarException>(std::move(nameGenerator), "UniverseClient", "name generator");
-  m_functionDatabase = requireServiceValueAs<StarException>(std::move(functionDatabase), "UniverseClient", "function database");
-  m_behaviorDatabase = requireServiceValueAs<StarException>(std::move(behaviorDatabase), "UniverseClient", "behavior database");
-  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "UniverseClient", "particle database");
-  m_damageDatabase = requireServiceValueAs<StarException>(std::move(damageDatabase), "UniverseClient", "damage database");
-  m_projectileDatabase = requireServiceValueAs<StarException>(std::move(projectileDatabase), "UniverseClient", "projectile database");
-  m_effectSourceDatabase = requireServiceValueAs<StarException>(std::move(effectSourceDatabase), "UniverseClient", "effect source database");
-  m_techDatabase = requireServiceValueAs<StarException>(std::move(techDatabase), "UniverseClient", "tech database");
-  m_statusEffectDatabase = requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "UniverseClient", "status effect database");
-  m_plantDatabase = requireServiceValueAs<StarException>(std::move(plantDatabase), "UniverseClient", "plant database");
-  m_treasureDatabase = requireServiceValueAs<StarException>(std::move(treasureDatabase), "UniverseClient", "treasure database");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "UniverseClient", "image metadata database");
-  m_dungeonDefinitions = requireServiceValueAs<StarException>(std::move(dungeonDefinitions), "UniverseClient", "dungeon definitions");
-  m_pause = false;
+                               LuaRootServices luaRootServices)
+  : m_playerStorage(requireServiceValueAs<StarException>(std::move(playerStorage), "UniverseClient", "player storage"))
+  , m_statistics(requireServiceValueAs<StarException>(std::move(statistics), "UniverseClient", "statistics"))
+  , m_assets(requireServiceValueAs<StarException>(std::move(assets), "UniverseClient", "assets"))
+  , m_configuration(requireServiceValueAs<StarException>(std::move(configuration), "UniverseClient", "configuration"))
+  , m_luaRootServices(requireLuaRootServices(std::move(luaRootServices), "UniverseClient"))
+  , m_materialDatabase(requireServiceValueAs<StarException>(std::move(materialDatabase), "UniverseClient", "material database"))
+  , m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "UniverseClient", "item database"))
+  , m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "UniverseClient", "object database"))
+  , m_speciesDatabase(requireServiceValueAs<StarException>(std::move(speciesDatabase), "UniverseClient", "species database"))
+  , m_entityFactory(requireServiceValueAs<StarException>(std::move(entityFactory), "UniverseClient", "entity factory"))
+  , m_liquidsDatabase(requireServiceValueAs<StarException>(std::move(liquidsDatabase), "UniverseClient", "liquids database"))
+  , m_terrainDatabase(requireServiceValueAs<StarException>(std::move(terrainDatabase), "UniverseClient", "terrain database"))
+  , m_biomeDatabase(requireServiceValueAs<StarException>(std::move(biomeDatabase), "UniverseClient", "biome database"))
+  , m_nameGenerator(requireServiceValueAs<StarException>(std::move(nameGenerator), "UniverseClient", "name generator"))
+  , m_functionDatabase(requireServiceValueAs<StarException>(std::move(functionDatabase), "UniverseClient", "function database"))
+  , m_behaviorDatabase(requireServiceValueAs<StarException>(std::move(behaviorDatabase), "UniverseClient", "behavior database"))
+  , m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "UniverseClient", "particle database"))
+  , m_damageDatabase(requireServiceValueAs<StarException>(std::move(damageDatabase), "UniverseClient", "damage database"))
+  , m_projectileDatabase(requireServiceValueAs<StarException>(std::move(projectileDatabase), "UniverseClient", "projectile database"))
+  , m_effectSourceDatabase(requireServiceValueAs<StarException>(std::move(effectSourceDatabase), "UniverseClient", "effect source database"))
+  , m_techDatabase(requireServiceValueAs<StarException>(std::move(techDatabase), "UniverseClient", "tech database"))
+  , m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "UniverseClient", "status effect database"))
+  , m_plantDatabase(requireServiceValueAs<StarException>(std::move(plantDatabase), "UniverseClient", "plant database"))
+  , m_treasureDatabase(requireServiceValueAs<StarException>(std::move(treasureDatabase), "UniverseClient", "treasure database"))
+  , m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "UniverseClient", "image metadata database"))
+  , m_dungeonDefinitions(requireServiceValueAs<StarException>(std::move(dungeonDefinitions), "UniverseClient", "dungeon definitions")) {
   m_luaRoot = make_shared<LuaRoot>(m_luaRootServices);
   reset();
 }

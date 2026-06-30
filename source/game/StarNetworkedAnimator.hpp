@@ -363,6 +363,11 @@ private:
     NetElementBool reverse;
   };
 
+  struct InitializeServicesTag {};
+
+  NetworkedAnimator(InitializeServicesTag, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase);
+
+  void initializeNetStateDefaults();
   void setupNetStates();
 
   void netElementsNeedLoad(bool full) override;

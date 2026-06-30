@@ -17,10 +17,10 @@ LuaRootServices requireLuaRootServices(LuaRootServices services, char const* con
   return services;
 }
 
-LuaRoot::LuaRoot(LuaRootServices services) {
-  m_services = requireLuaRootServices(std::move(services), "LuaRoot");
-  m_assets = m_services.assets;
-  m_scriptCache = make_shared<ScriptCache>(m_assets);
+LuaRoot::LuaRoot(LuaRootServices services)
+  : m_services(requireLuaRootServices(std::move(services), "LuaRoot")),
+    m_assets(m_services.assets),
+    m_scriptCache(make_shared<ScriptCache>(m_assets)) {
   addCallbacks("root", LuaBindings::makeRootCallbacks(*m_services.root));
 
   restart();

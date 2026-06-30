@@ -4,9 +4,8 @@
 namespace Star {
 
 ShadersMenu::ShadersMenu(Json const& config, UniverseClientPtr client, BaseScriptPaneServices services)
-  : BaseScriptPane(config, true, std::move(services)) {
-  m_client = requireServiceValueAs<StarException>(std::move(client), "ShadersMenu", "universe client");
-}
+  : BaseScriptPane(config, true, std::move(services))
+  , m_client(requireServiceValueAs<StarException>(std::move(client), "ShadersMenu", "universe client")) {}
 
 void ShadersMenu::show() {
   BaseScriptPane::show();

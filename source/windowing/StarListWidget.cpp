@@ -8,15 +8,11 @@
 namespace Star {
 
 ListWidget::ListWidget(GuiContext& context, Json const& schema) : Widget(context), m_schema(schema) {
-  m_selectedItem = NPos;
-  m_columns = 1;
   setSchema(m_schema);
   updateSizeAndPosition();
 }
 
 ListWidget::ListWidget(GuiContext& context) : Widget(context) {
-  m_selectedItem = NPos;
-  m_columns = 1;
   updateSizeAndPosition();
 }
 

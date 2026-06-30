@@ -226,7 +226,7 @@ private:
   DungeonDefinitionsConstPtr m_dungeonDefinitions;
   PlayerPtr m_mainPlayer;
 
-  bool m_pause;
+  bool m_pause = false;
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;
   SystemWorldClientPtr m_systemWorldClient;
@@ -244,10 +244,10 @@ private:
   Maybe<GameTimer> m_warpCinemaCancelTimer;
 
   Maybe<WarpAction> m_warping;
-  bool m_respawning;
+  bool m_respawning = false;
   GameTimer m_respawnTimer;
 
-  int64_t m_storageTriggerDeadline;
+  int64_t m_storageTriggerDeadline = 0;
 
   List<ChatReceivedMessage> m_pendingMessages;
 

@@ -3,14 +3,7 @@
 
 namespace Star {
 
-PlayerLog::PlayerLog() {
-  m_deathCount = 0;
-  m_playTime = 0;
-  m_introComplete = false;
-  m_scannedObjects = StringSet();
-  m_radioMessages = StringSet();
-  m_cinematics = StringSet();
-}
+PlayerLog::PlayerLog() = default;
 
 PlayerLog::PlayerLog(Json const& json) {
   m_deathCount = json.getInt("deathCount");

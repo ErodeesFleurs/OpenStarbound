@@ -37,13 +37,13 @@ private:
 
   List<Drawable> m_baseDrawables;
   List<Drawable> m_drawables;
-  bool m_centered;
-  bool m_trim;
-  float m_scale;
-  float m_rotation;
-  Vec2I m_offset;
-  Vec2I m_maxSize;
-  Vec2I m_minSize;
+  bool m_centered = false;
+  bool m_trim = false;
+  float m_scale = 1.0f;
+  float m_rotation = 0.0f;
+  Vec2I m_offset = {0, 0};
+  Vec2I m_maxSize = {4096, 4096};
+  Vec2I m_minSize = {0, 0};
 };
 
 }

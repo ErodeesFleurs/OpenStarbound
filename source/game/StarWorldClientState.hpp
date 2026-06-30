@@ -47,7 +47,7 @@ private:
   int m_presenceEntityMonitoringBorder;
 
   NetElementTopGroup m_netGroup;
-  uint64_t m_netVersion;
+  uint64_t m_netVersion = 0;
 
   NetElementInt m_windowXMin;
   NetElementInt m_windowYMin;

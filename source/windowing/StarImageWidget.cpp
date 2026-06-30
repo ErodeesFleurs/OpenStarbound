@@ -3,13 +3,6 @@
 namespace Star {
 
 ImageWidget::ImageWidget(GuiContext& context, String const& image) : Widget(context) {
-  m_centered = false;
-  m_trim = false;
-  m_scale = 1;
-  m_rotation = 0;
-  m_maxSize = Vec2I{4096, 4096};
-  m_minSize = Vec2I{0, 0};
-  m_offset = Vec2I{0, 0};
   setImage(image);
 }
 

@@ -260,12 +260,12 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
   {Humanoid::State::Lay, "lay"},
 };
 
-Humanoid::Humanoid(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database");
-  m_speciesDatabase = requireServiceValueAs<StarException>(std::move(speciesDatabase), "Humanoid", "species database");
-  m_danceDatabase = requireServiceValueAs<StarException>(std::move(danceDatabase), "Humanoid", "dance database");
-  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "Humanoid", "particle database");
+Humanoid::Humanoid(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets"))
+  , m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database"))
+  , m_speciesDatabase(requireServiceValueAs<StarException>(std::move(speciesDatabase), "Humanoid", "species database"))
+  , m_danceDatabase(requireServiceValueAs<StarException>(std::move(danceDatabase), "Humanoid", "dance database"))
+  , m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "Humanoid", "particle database")) {
   m_fashion = std::make_shared<Fashion>();
 
   m_twoHanded = false;
@@ -2307,13 +2307,13 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
   return m_baseConfig;
 }
 
-NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database");
-  m_speciesDatabase = requireServiceValueAs<StarException>(std::move(speciesDatabase), "NetHumanoid", "species database");
-  m_danceDatabase = requireServiceValueAs<StarException>(std::move(danceDatabase), "NetHumanoid", "dance database");
-  m_particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "NetHumanoid", "particle database");
-  m_config = config;
+NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+  : m_config(config)
+  , m_assets(requireServiceValueAs<StarException>(std::move(assets), "Humanoid", "assets"))
+  , m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Humanoid", "image metadata database"))
+  , m_speciesDatabase(requireServiceValueAs<StarException>(std::move(speciesDatabase), "NetHumanoid", "species database"))
+  , m_danceDatabase(requireServiceValueAs<StarException>(std::move(danceDatabase), "NetHumanoid", "dance database"))
+  , m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "NetHumanoid", "particle database")) {
   m_humanoidParameters.reset(parameters);
   m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   setupNetElements();

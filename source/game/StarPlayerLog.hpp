@@ -43,9 +43,9 @@ public:
   void clearCollectables(String const& collection);
 
 private:
-  int m_deathCount;
-  double m_playTime;
-  bool m_introComplete;
+  int m_deathCount = 0;
+  double m_playTime = 0.0;
+  bool m_introComplete = false;
   StringSet m_scannedObjects;
   StringSet m_radioMessages;
   StringSet m_cinematics;

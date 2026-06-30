@@ -54,10 +54,10 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
   return RectI(chunkIndex * m_baseInformation.chunkSize, (chunkIndex + Vec2I(1, 1)) * m_baseInformation.chunkSize);
 }
 
-CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile) {
-  m_assets = requireServiceValueAs<CelestialException>(std::move(assets), "CelestialMasterDatabase", "assets");
-  m_liquidsDatabase = requireServiceValueAs<CelestialException>(std::move(liquidsDatabase), "CelestialMasterDatabase", "liquids database");
-  m_biomeDatabase = requireServiceValueAs<CelestialException>(std::move(biomeDatabase), "CelestialMasterDatabase", "biome database");
+CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile)
+  : m_assets(requireServiceValueAs<CelestialException>(std::move(assets), "CelestialMasterDatabase", "assets"))
+  , m_liquidsDatabase(requireServiceValueAs<CelestialException>(std::move(liquidsDatabase), "CelestialMasterDatabase", "liquids database"))
+  , m_biomeDatabase(requireServiceValueAs<CelestialException>(std::move(biomeDatabase), "CelestialMasterDatabase", "biome database")) {
   if (versioningDatabase)
     m_versioningDatabase = std::move(*versioningDatabase);
   auto config = m_assets->json("/celestial.config");

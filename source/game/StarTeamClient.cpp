@@ -10,11 +10,10 @@
 
 namespace Star {
 
-TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "TeamClient", "assets");
-  m_mainPlayer = mainPlayer;
-  m_clientContext = clientContext;
-
+TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext)
+  : m_mainPlayer(requireServiceValueAs<StarException>(std::move(mainPlayer), "TeamClient", "main player"))
+  , m_clientContext(requireServiceValueAs<StarException>(std::move(clientContext), "TeamClient", "client context"))
+  , m_assets(requireServiceValueAs<StarException>(std::move(assets), "TeamClient", "assets")) {
   m_hasPendingInvitation = false;
   m_pollInvitationsTimer = 0;
 

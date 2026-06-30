@@ -331,17 +331,17 @@ private:
   function<void()> m_reloadRoot;
   WorkerPool m_workerPool;
 
-  int64_t m_storageTriggerDeadline;
-  int64_t m_clearBrokenWorldsDeadline;
-  int64_t m_lastClockUpdateSent;
-  atomic<bool> m_stop;
-  atomic<TcpState> m_tcpState;
+  int64_t m_storageTriggerDeadline = 0;
+  int64_t m_clearBrokenWorldsDeadline = 0;
+  int64_t m_lastClockUpdateSent = 0;
+  atomic<bool> m_stop = false;
+  atomic<TcpState> m_tcpState = TcpState::No;
 
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
-  shared_ptr<atomic<bool>> m_pause;
+  shared_ptr<atomic<bool>> m_pause = make_shared<atomic<bool>>(false);
   bool m_secureWarps;
   Map<WorldId, Maybe<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;

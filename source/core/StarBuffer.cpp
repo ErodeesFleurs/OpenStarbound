@@ -6,8 +6,7 @@
 
 namespace Star {
 
-Buffer::Buffer()
-  : m_pos(0) {
+Buffer::Buffer() {
   setMode(IOMode::ReadWrite);
 }
 
@@ -194,8 +193,7 @@ size_t Buffer::doWrite(size_t pos, char const* data, size_t len) {
   return len;
 }
 
-ExternalBuffer::ExternalBuffer()
-  : m_pos(0), m_bytes(nullptr), m_size(0) {
+ExternalBuffer::ExternalBuffer() {
   setMode(IOMode::Read);
 }
 

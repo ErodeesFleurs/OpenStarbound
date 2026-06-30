@@ -9,19 +9,7 @@ TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, St
     m_text(startingText), m_hint(hint), m_callback(callback) {
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();
-  m_textHidden = false;
-  m_regex = ".*";
-  m_repeatKeyThreshold = 0;
-  m_repeatCode = SpecialRepeatKeyCodes::None;
-  m_isPressed = false;
-  m_isHover = false;
   m_cursorOffset = startingText.size();
-  m_hAnchor = HorizontalAnchor::LeftAnchor;
-  m_vAnchor = VerticalAnchor::BottomAnchor;
-  m_drawBorder = false;
-  m_cursorHoriz = Vec2I();
-  m_cursorVert = Vec2I();
-  m_overfillMode = true;
 
   m_maxWidth = assets->json("/interface.config:textBoxDefaultWidth").toInt();
   auto fontConfig = assets->json("/interface.config:textBoxTextStyle");

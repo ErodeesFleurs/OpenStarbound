@@ -50,10 +50,6 @@ static String formatShortSize(uint64_t n) {
 
 ItemSlotWidget::ItemSlotWidget(GuiContext& context, ItemPtr const& item, String const& backingImage)
   : Widget(context), m_item(item), m_backingImage(backingImage) {
-  m_drawBackingImageWhenFull = false;
-  m_drawBackingImageWhenEmpty = true;
-  m_progress = 1;
-
   auto& guiContext = this->context();
 
   auto const& assets = guiContext.assets();
@@ -72,7 +68,6 @@ ItemSlotWidget::ItemSlotWidget(GuiContext& context, ItemPtr const& item, String 
 
   Json highlightAnimationConfig = interfaceConfig.get("highlightAnimation");
   m_highlightAnimation = Animation(highlightAnimationConfig, {}, assets, imageMetadata);
-  m_highlightEnabled = false;
 
   Vec2I backingImageSize;
   if (m_backingImage.size()) {
@@ -85,11 +80,6 @@ ItemSlotWidget::ItemSlotWidget(GuiContext& context, ItemPtr const& item, String 
   parser.construct(assets->json("/interface/itemSlot.config").get("config"), this);
   m_durabilityBar = fetchChild<ProgressWidget>("durabilityBar");
   m_durabilityBar->hide();
-  m_showDurability = false;
-  m_showCount = true;
-  m_showRarity = true;
-  m_showLinkIndicator = false;
-  m_showSecondaryIcon = false;
   disableScissoring();
 }
 

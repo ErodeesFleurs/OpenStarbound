@@ -36,7 +36,7 @@ private:
 
   PortraitWidgetPtr m_portrait;
   Vec2I m_portraitOffset;
-  float m_portraitScale;
+  float m_portraitScale = 0.0f;
 
   String m_playerPlateHover;
   String m_noPlayerPlate;

@@ -7,15 +7,13 @@
 
 namespace Star {
 
-Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices) {
-  assets = requireServiceValueAs<StarException>(std::move(assets), "Rebuilder", "assets");
-  luaRootServices = requireLuaRootServices(std::move(luaRootServices), "Rebuilder");
+Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices)
+  : m_luaRoot(make_shared<LuaRoot>(requireLuaRootServices(std::move(luaRootServices), "Rebuilder"))),
+    m_contexts(make_shared<List<LuaContext>>()) {
+  auto checkedAssets = requireServiceValueAs<StarException>(std::move(assets), "Rebuilder", "assets");
 
-  m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
-  m_contexts = make_shared<List<LuaContext>>();
-
-  for (auto& path : assets->assetSources()) {
-    auto metadata = assets->assetSourceMetadata(path);
+  for (auto& path : checkedAssets->assetSources()) {
+    auto metadata = checkedAssets->assetSourceMetadata(path);
     if (auto scripts = metadata.maybe("errorHandlers")) {
       if (auto scriptPaths = scripts.value().optArray(id)) {
         for (auto& scriptPath : *scriptPaths) {

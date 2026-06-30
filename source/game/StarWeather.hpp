@@ -65,25 +65,25 @@ private:
   AssetsConstPtr m_assets;
   BiomeDatabaseConstPtr m_biomeDatabase;
   ProjectileDatabaseConstPtr m_projectileDatabase;
-  float m_undergroundLevel;
+  float m_undergroundLevel = 0.0f;
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
   List<RectI> m_clientVisibleRegions;
 
-  size_t m_currentWeatherIndex;
+  size_t m_currentWeatherIndex = NPos;
   Maybe<WeatherType> m_currentWeatherType;
-  float m_currentWeatherIntensity;
-  float m_currentWind;
+  float m_currentWeatherIntensity = 0.0f;
+  float m_currentWind = 0.0f;
 
-  bool m_forceWeather;
+  bool m_forceWeather = false;
 
   ClockConstPtr m_referenceClock;
   Maybe<double> m_clockTrackingTime;
 
-  double m_currentTime;
-  double m_lastWeatherChangeTime;
-  double m_nextWeatherChangeTime;
+  double m_currentTime = 0.0;
+  double m_lastWeatherChangeTime = 0.0;
+  double m_nextWeatherChangeTime = 0.0;
 
   List<ProjectilePtr> m_newProjectiles;
 
@@ -122,16 +122,16 @@ private:
 
   WeatherPool m_weatherPool;
   BiomeDatabaseConstPtr m_biomeDatabase;
-  float m_undergroundLevel;
+  float m_undergroundLevel = 0.0f;
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
-  size_t m_currentWeatherIndex;
+  size_t m_currentWeatherIndex = NPos;
   Maybe<WeatherType> m_currentWeatherType;
-  float m_currentWeatherIntensity;
-  float m_currentWind;
+  float m_currentWeatherIntensity = 0.0f;
+  float m_currentWind = 0.0f;
 
-  double m_currentTime;
+  double m_currentTime = 0.0;
   RectI m_visibleRegion;
 
   List<Particle> m_particles;

@@ -15,15 +15,10 @@ ProgressWidget::ProgressWidget(GuiContext& context,
     m_bar(progressSet),
     m_direction(direction) {
 
-  m_progressLevel = 0;
-  m_maxLevel = 1;
-
   if (!m_background.empty())
     setSize(Vec2I(this->context().textureSize(m_background)));
   else if (!m_overlay.empty())
     setSize(Vec2I(this->context().textureSize(m_overlay)));
-
-  m_color = Color::White;
 }
 
 void ProgressWidget::renderImpl() {

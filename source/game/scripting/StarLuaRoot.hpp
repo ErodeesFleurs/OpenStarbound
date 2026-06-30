@@ -78,8 +78,8 @@ private:
     StringMap<ByteArray> scripts;
   };
 
-  AssetsConstPtr m_assets;
   LuaRootServices m_services;
+  AssetsConstPtr m_assets;
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
   SharedPtr<ScriptCache> m_scriptCache;

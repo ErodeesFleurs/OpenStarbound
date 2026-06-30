@@ -8,15 +8,14 @@
 
 namespace Star {
 
-Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters) {
+Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters)
+  : m_config(std::move(config))
+  , m_directory(std::move(directory))
+  , m_imageMetadataDatabase(requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "Item", "image metadata database"))
+  , m_name(m_config.getString("itemName"))
+  , m_count(1)
+  , m_parameters(std::move(parameters)) {
   assets = requireServiceValueAs<ItemException>(std::move(assets), "Item", "assets");
-
-  m_config = std::move(config);
-  m_directory = std::move(directory);
-  m_imageMetadataDatabase = requireServiceValueAs<ItemException>(std::move(imageMetadataDatabase), "Item", "image metadata database");
-  m_parameters = std::move(parameters);
-  m_name = m_config.getString("itemName");
-  m_count = 1;
 
   m_maxStack = instanceValue("maxStack", assets->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
   m_shortDescription = instanceValue("shortdescription", "").toString();

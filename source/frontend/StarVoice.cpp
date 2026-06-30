@@ -125,14 +125,13 @@ Json Voice::Speaker::toJson() const {
 }
 
 Voice::Voice(ApplicationControllerPtr appController, VoiceServices services)
-  : m_encoder(nullptr, opus_encoder_destroy)
-  , m_applicationController(requireServiceValueAs<VoiceException>(std::move(appController), "Voice", "application controller")) {
-  m_clientSpeaker = make_shared<Speaker>(m_speakerId);
-  m_inputMode = VoiceInputMode::PushToTalk;
-  m_channelMode = VoiceChannelMode::Mono;
-  m_configuration = requireServiceValueAs<VoiceException>(std::move(services.configuration), "Voice", "configuration");
-
-  m_stopThread = false;
+  : m_clientSpeaker(make_shared<Speaker>(m_speakerId))
+  , m_encoder(nullptr, opus_encoder_destroy)
+  , m_inputMode(VoiceInputMode::PushToTalk)
+  , m_channelMode(VoiceChannelMode::Mono)
+  , m_stopThread(false)
+  , m_applicationController(requireServiceValueAs<VoiceException>(std::move(appController), "Voice", "application controller"))
+  , m_configuration(requireServiceValueAs<VoiceException>(std::move(services.configuration), "Voice", "configuration")) {
   m_thread = Thread::invoke("Voice::thread", mem_fn(&Voice::thread), this);
 }
 

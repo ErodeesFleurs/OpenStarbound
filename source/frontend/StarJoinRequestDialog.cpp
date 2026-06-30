@@ -11,7 +11,7 @@ namespace Star {
 
 JoinRequestDialog::JoinRequestDialog(Services services)
   : Pane(services.guiContext),
-    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "JoinRequestDialog", "assets")), m_confirmed(false) {
+    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "JoinRequestDialog", "assets")) {
 }
 
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {

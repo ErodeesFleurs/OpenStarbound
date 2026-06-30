@@ -112,7 +112,6 @@ protected:
   void close() override;
 
 private:
-  PlayerPtr m_player;
   CinematicPtr m_cinematic;
 };
 

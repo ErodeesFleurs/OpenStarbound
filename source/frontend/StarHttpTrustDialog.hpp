@@ -33,7 +33,7 @@ private:
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   String m_domain;
-  bool m_confirmed;
+  bool m_confirmed = false;
   function<void(HttpTrustReply, bool)> m_callback;
 };
 

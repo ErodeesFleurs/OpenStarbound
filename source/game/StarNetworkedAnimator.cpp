@@ -65,7 +65,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
   });
 }
 
-NetworkedAnimator::NetworkedAnimator() {
+void NetworkedAnimator::initializeNetStateDefaults() {
   m_zoom.set(1.0f);
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
@@ -74,14 +74,21 @@ NetworkedAnimator::NetworkedAnimator() {
   setupNetStates();
 }
 
+NetworkedAnimator::NetworkedAnimator() {
+  initializeNetStateDefaults();
+}
+
 NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase)
     : NetworkedAnimator(std::move(assets), {}, std::move(particleDatabase)) {}
 
 NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase)
-    : NetworkedAnimator() {
-  m_assets = requireServiceValueAs<NetworkedAnimatorException>(std::move(assets), "NetworkedAnimator", "assets");
-  m_imageMetadataDatabase = requireServiceValueAs<NetworkedAnimatorException>(std::move(imageMetadataDatabase), "NetworkedAnimator", "image metadata database");
-  m_particleDatabase = requireServiceValueAs<NetworkedAnimatorException>(std::move(particleDatabase), "NetworkedAnimator", "particle database");
+    : NetworkedAnimator(InitializeServicesTag{}, std::move(assets), std::move(imageMetadataDatabase), std::move(particleDatabase)) {}
+
+NetworkedAnimator::NetworkedAnimator(InitializeServicesTag, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : m_assets(requireServiceValueAs<NetworkedAnimatorException>(std::move(assets), "NetworkedAnimator", "assets")),
+      m_imageMetadataDatabase(requireServiceValueAs<NetworkedAnimatorException>(std::move(imageMetadataDatabase), "NetworkedAnimator", "image metadata database")),
+      m_particleDatabase(requireServiceValueAs<NetworkedAnimatorException>(std::move(particleDatabase), "NetworkedAnimator", "particle database")) {
+  initializeNetStateDefaults();
 }
 
 NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase)

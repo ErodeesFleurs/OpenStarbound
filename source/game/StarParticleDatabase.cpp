@@ -21,9 +21,9 @@ Particle ParticleConfig::instance() {
   return particle;
 }
 
-ParticleDatabase::ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "ParticleDatabase", "assets");
-  m_imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "ParticleDatabase", "image metadata database");
+ParticleDatabase::ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "ParticleDatabase", "assets"))
+  , m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "ParticleDatabase", "image metadata database")) {
   auto& files = m_assets->scanExtension("particle");
   m_assets->queueJsons(files);
   for (auto& file : files) {

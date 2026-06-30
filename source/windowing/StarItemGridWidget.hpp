@@ -84,15 +84,15 @@ private:
   RectI m_itemDraggableArea;
 
   String m_backingImage;
-  bool m_drawBackingImageWhenFull;
-  bool m_drawBackingImageWhenEmpty;
-  bool m_showDurability;
+  bool m_drawBackingImageWhenFull = false;
+  bool m_drawBackingImageWhenEmpty = true;
+  bool m_showDurability = false;
 
-  float m_progress;
+  float m_progress = 1.0f;
 
-  bool m_highlightEmpty;
+  bool m_highlightEmpty = false;
 
-  unsigned m_selectedIndex;
+  unsigned m_selectedIndex = 0;
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_rightClickCallback;
   WidgetCallbackFunc m_middleClickCallback;

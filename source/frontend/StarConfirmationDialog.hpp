@@ -32,7 +32,7 @@ private:
 
   WidgetCallbackFunc m_okCallback;
   WidgetCallbackFunc m_cancelCallback;
-  bool m_confirmed;
+  bool m_confirmed = false;
 
   Maybe<EntityId> m_sourceEntityId;
 

@@ -21,17 +21,16 @@
 
 namespace Star {
 
-Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets");
-  m_config = requireServiceValueAs<StarException>(config, "Projectile", "config");
-  m_parameters = parameters;
-
+Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets"))
+  , m_config(requireServiceValueAs<StarException>(config, "Projectile", "config"))
+  , m_parameters(parameters) {
   setup();
 }
 
-Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
-  m_assets = requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets");
-  m_config = requireServiceValueAs<StarException>(config, "Projectile", "config");
+Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules)
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "Projectile", "assets"))
+  , m_config(requireServiceValueAs<StarException>(config, "Projectile", "config")) {
   data.read(m_parameters);
   setup();
 

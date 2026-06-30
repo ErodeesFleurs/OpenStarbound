@@ -69,29 +69,29 @@ private:
   bool modText(String const& text);
   bool newTextValid(String const& text) const;
 
-  bool m_textHidden;
+  bool m_textHidden = false;
   String m_text;
   String m_hint;
-  String m_regex;
-  HorizontalAnchor m_hAnchor;
-  VerticalAnchor m_vAnchor;
+  String m_regex = ".*";
+  HorizontalAnchor m_hAnchor = HorizontalAnchor::LeftAnchor;
+  VerticalAnchor m_vAnchor = VerticalAnchor::BottomAnchor;
   TextStyle m_textStyle;
   int m_maxWidth;
   int m_cursorOffset;
-  bool m_isHover;
-  bool m_isPressed;
-  SpecialRepeatKeyCodes m_repeatCode;
-  int64_t m_repeatKeyThreshold;
+  bool m_isHover = false;
+  bool m_isPressed = false;
+  SpecialRepeatKeyCodes m_repeatCode = SpecialRepeatKeyCodes::None;
+  int64_t m_repeatKeyThreshold = 0;
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_onBlur;
   WidgetCallbackFunc m_onEnterKey;
   WidgetCallbackFunc m_onEscapeKey;
   Maybe<String> m_nextFocus;
   Maybe<String> m_prevFocus;
-  bool m_drawBorder;
+  bool m_drawBorder = false;
   Vec2I m_cursorHoriz;
   Vec2I m_cursorVert;
-  bool m_overfillMode;
+  bool m_overfillMode = true;
 };
 
 }

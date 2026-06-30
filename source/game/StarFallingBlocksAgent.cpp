@@ -3,12 +3,18 @@
 
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(AssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
-  : m_facade(requireServiceValueAs<StarException>(std::move(worldFacade), "FallingBlocksAgent", "world facade")) {
-  assets = requireServiceValueAs<StarException>(std::move(assets), "FallingBlocksAgent", "assets");
+namespace {
 
-  m_immediateUpwardPropagateProbability = assets->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
+float fallingBlocksImmediateUpwardPropagateProbability(AssetsConstPtr assets) {
+  auto checkedAssets = requireServiceValueAs<StarException>(std::move(assets), "FallingBlocksAgent", "assets");
+  return checkedAssets->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
+
+}
+
+FallingBlocksAgent::FallingBlocksAgent(AssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
+  : m_facade(requireServiceValueAs<StarException>(std::move(worldFacade), "FallingBlocksAgent", "world facade")),
+    m_immediateUpwardPropagateProbability(fallingBlocksImmediateUpwardPropagateProbability(std::move(assets))) {}
 
 void FallingBlocksAgent::update() {
   HashSet<Vec2I> processing = take(m_pending);

@@ -97,20 +97,20 @@ protected:
   WidgetCallbackFunc m_callback;
   ButtonGroupPtr m_buttonGroup;
 
-  bool m_hovered;
-  bool m_pressed;
-  bool m_checkable;
-  bool m_checked;
+  bool m_hovered = false;
+  bool m_pressed = false;
+  bool m_checkable = false;
+  bool m_checked = false;
 
-  bool m_disabled;
-  bool m_highlighted;
+  bool m_disabled = false;
+  bool m_highlighted = false;
 
   String m_baseImage;
   String m_hoverImage;
   String m_pressedImage;
   String m_disabledImage;
 
-  bool m_hasCheckedImages;
+  bool m_hasCheckedImages = false;
   String m_baseImageChecked;
   String m_hoverImageChecked;
   String m_pressedImageChecked;
@@ -118,7 +118,7 @@ protected:
 
   String m_overlayImage;
 
-  bool m_invisible;
+  bool m_invisible = false;
 
   Vec2I m_pressedOffset;
   Vec2U m_buttonBoundSize;
@@ -132,12 +132,12 @@ protected:
   StringList m_hoverSounds;
   StringList m_hoverOffSounds;
 
-  bool m_sustain;
+  bool m_sustain = false;
 
 private:
-  HorizontalAnchor m_hTextAnchor;
-  Color m_fontColor;
-  Color m_fontColorDisabled;
+  HorizontalAnchor m_hTextAnchor = HorizontalAnchor::HMidAnchor;
+  Color m_fontColor = Color::White;
+  Color m_fontColorDisabled = Color::Gray;
   Maybe<Color> m_fontColorChecked;
 };
 

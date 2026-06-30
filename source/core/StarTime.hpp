@@ -73,9 +73,9 @@ private:
   void updateElapsed() const;
 
   mutable RecursiveMutex m_mutex;
-  mutable int64_t m_elapsedTicks;
+  mutable int64_t m_elapsedTicks = 0;
   mutable Maybe<int64_t> m_lastTicks;
-  bool m_running;
+  bool m_running = false;
 };
 
 // An instance of Clock that counts down a given amount of time

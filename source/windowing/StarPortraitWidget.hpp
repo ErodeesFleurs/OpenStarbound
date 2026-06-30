@@ -32,13 +32,13 @@ private:
   void updateSize();
 
   PortraitEntityPtr m_entity;
-  PortraitMode m_portraitMode;
+  PortraitMode m_portraitMode = PortraitMode::Full;
   AssetPath m_noEntityImageFull;
   AssetPath m_noEntityImagePart;
-  float m_scale;
+  float m_scale = 1.0f;
 
-  bool m_renderHumanoid;
-  bool m_iconMode;
+  bool m_renderHumanoid = false;
+  bool m_iconMode = false;
   AssetPath m_iconImage;
   Vec2I m_iconOffset;
 };

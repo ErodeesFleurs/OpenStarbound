@@ -313,19 +313,18 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(AssetsConstPtr assets, Terra
 
 WorldLayout::WorldLayout() : m_regionBlending(0.0f) {}
 
-WorldLayout::WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase) : WorldLayout() {
-  auto terrainDb = requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database");
-  m_terrainDatabase = terrainDb;
-  m_biomeDatabase = requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database");
-
+WorldLayout::WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase)
+  : m_regionBlending(0.0f)
+  , m_terrainDatabase(requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database"))
+  , m_biomeDatabase(requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database")) {
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 
   m_biomes = store.getArray("biomes").transformed([](Json const& json) {
     return BiomeConstPtr(make_shared<Biome>(json));
   });
 
-  m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDb](Json const& v) {
-    return TerrainSelectorConstPtr(terrainDb->loadSelector(v));
+  m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDatabase = m_terrainDatabase](Json const& v) {
+    return TerrainSelectorConstPtr(terrainDatabase->loadSelector(v));
   });
 
   m_layers = store.getArray("layers").transformed([](Json const& l) {

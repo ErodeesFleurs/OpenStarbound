@@ -59,38 +59,38 @@ UniverseServer::UniverseServer(String const& storageDir,
                                LuaRootServices luaRootServices,
                                function<void()> reloadRoot)
     : Thread("UniverseServer"),
+      m_assets(requireServiceValueAs<UniverseServerException>(std::move(_assets), "UniverseServer", "assets")),
+      m_configuration(requireServiceValueAs<UniverseServerException>(std::move(_configuration), "UniverseServer", "configuration")),
+      m_luaRootServices(requireLuaRootServices(std::move(luaRootServices), "UniverseServer")),
+      m_materialDatabase(requireServiceValueAs<UniverseServerException>(std::move(materialDatabase), "UniverseServer", "material database")),
+      m_imageMetadataDatabase(requireServiceValueAs<UniverseServerException>(std::move(imageMetadataDatabase), "UniverseServer", "image metadata database")),
+      m_effectSourceDatabase(requireServiceValueAs<UniverseServerException>(std::move(effectSourceDatabase), "UniverseServer", "effect source database")),
+      m_particleDatabase(requireServiceValueAs<UniverseServerException>(std::move(particleDatabase), "UniverseServer", "particle database")),
+      m_techDatabase(requireServiceValueAs<UniverseServerException>(std::move(techDatabase), "UniverseServer", "tech database")),
+      m_statusEffectDatabase(requireServiceValueAs<UniverseServerException>(std::move(statusEffectDatabase), "UniverseServer", "status effect database")),
+      m_dungeonDefinitions(requireServiceValueAs<UniverseServerException>(std::move(dungeonDefinitions), "UniverseServer", "dungeon definitions")),
+      m_behaviorDatabase(requireServiceValueAs<UniverseServerException>(std::move(behaviorDatabase), "UniverseServer", "behavior database")),
+      m_itemDatabase(requireServiceValueAs<UniverseServerException>(std::move(itemDatabase), "UniverseServer", "item database")),
+      m_objectDatabase(requireServiceValueAs<UniverseServerException>(std::move(objectDatabase), "UniverseServer", "object database")),
+      m_projectileDatabase(requireServiceValueAs<UniverseServerException>(std::move(projectileDatabase), "UniverseServer", "projectile database")),
+      m_plantDatabase(requireServiceValueAs<UniverseServerException>(std::move(plantDatabase), "UniverseServer", "plant database")),
+      m_treasureDatabase(requireServiceValueAs<UniverseServerException>(std::move(treasureDatabase), "UniverseServer", "treasure database")),
+      m_npcDatabase(requireServiceValueAs<UniverseServerException>(std::move(npcDatabase), "UniverseServer", "npc database")),
+      m_monsterDatabase(requireServiceValueAs<UniverseServerException>(std::move(monsterDatabase), "UniverseServer", "monster database")),
+      m_spawnTypeDatabase(requireServiceValueAs<UniverseServerException>(std::move(spawnTypeDatabase), "UniverseServer", "spawn type database")),
+      m_stagehandDatabase(requireServiceValueAs<UniverseServerException>(std::move(stagehandDatabase), "UniverseServer", "stagehand database")),
+      m_vehicleDatabase(requireServiceValueAs<UniverseServerException>(std::move(vehicleDatabase), "UniverseServer", "vehicle database")),
+      m_speciesDatabase(requireServiceValueAs<UniverseServerException>(std::move(speciesDatabase), "UniverseServer", "species database")),
+      m_entityFactory(requireServiceValueAs<UniverseServerException>(std::move(entityFactory), "UniverseServer", "entity factory")),
+      m_liquidsDatabase(requireServiceValueAs<UniverseServerException>(std::move(liquidsDatabase), "UniverseServer", "liquids database")),
+      m_terrainDatabase(requireServiceValueAs<UniverseServerException>(std::move(terrainDatabase), "UniverseServer", "terrain database")),
+      m_biomeDatabase(requireServiceValueAs<UniverseServerException>(std::move(biomeDatabase), "UniverseServer", "biome database")),
+      m_nameGenerator(requireServiceValueAs<UniverseServerException>(std::move(nameGenerator), "UniverseServer", "name generator")),
+      m_versioningDatabase(requireServiceValueAs<UniverseServerException>(std::move(versioningDatabase), "UniverseServer", "versioning database")),
+      m_functionDatabase(requireServiceValueAs<UniverseServerException>(std::move(functionDatabase), "UniverseServer", "function database")),
+      m_reloadRoot(requireServiceValueAs<UniverseServerException>(std::move(reloadRoot), "UniverseServer", "root reload")),
       m_workerPool("UniverseServerWorkerPool"),
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
-  m_assets = requireServiceValueAs<UniverseServerException>(std::move(_assets), "UniverseServer", "assets");
-  m_configuration = requireServiceValueAs<UniverseServerException>(std::move(_configuration), "UniverseServer", "configuration");
-  m_luaRootServices = requireLuaRootServices(std::move(luaRootServices), "UniverseServer");
-  m_materialDatabase = requireServiceValueAs<UniverseServerException>(std::move(materialDatabase), "UniverseServer", "material database");
-  m_imageMetadataDatabase = requireServiceValueAs<UniverseServerException>(std::move(imageMetadataDatabase), "UniverseServer", "image metadata database");
-  m_itemDatabase = requireServiceValueAs<UniverseServerException>(std::move(itemDatabase), "UniverseServer", "item database");
-  m_objectDatabase = requireServiceValueAs<UniverseServerException>(std::move(objectDatabase), "UniverseServer", "object database");
-  m_projectileDatabase = requireServiceValueAs<UniverseServerException>(std::move(projectileDatabase), "UniverseServer", "projectile database");
-  m_plantDatabase = requireServiceValueAs<UniverseServerException>(std::move(plantDatabase), "UniverseServer", "plant database");
-  m_treasureDatabase = requireServiceValueAs<UniverseServerException>(std::move(treasureDatabase), "UniverseServer", "treasure database");
-  m_npcDatabase = requireServiceValueAs<UniverseServerException>(std::move(npcDatabase), "UniverseServer", "npc database");
-  m_monsterDatabase = requireServiceValueAs<UniverseServerException>(std::move(monsterDatabase), "UniverseServer", "monster database");
-  m_spawnTypeDatabase = requireServiceValueAs<UniverseServerException>(std::move(spawnTypeDatabase), "UniverseServer", "spawn type database");
-  m_stagehandDatabase = requireServiceValueAs<UniverseServerException>(std::move(stagehandDatabase), "UniverseServer", "stagehand database");
-  m_vehicleDatabase = requireServiceValueAs<UniverseServerException>(std::move(vehicleDatabase), "UniverseServer", "vehicle database");
-  m_speciesDatabase = requireServiceValueAs<UniverseServerException>(std::move(speciesDatabase), "UniverseServer", "species database");
-  m_entityFactory = requireServiceValueAs<UniverseServerException>(std::move(entityFactory), "UniverseServer", "entity factory");
-  m_liquidsDatabase = requireServiceValueAs<UniverseServerException>(std::move(liquidsDatabase), "UniverseServer", "liquids database");
-  m_terrainDatabase = requireServiceValueAs<UniverseServerException>(std::move(terrainDatabase), "UniverseServer", "terrain database");
-  m_biomeDatabase = requireServiceValueAs<UniverseServerException>(std::move(biomeDatabase), "UniverseServer", "biome database");
-  m_nameGenerator = requireServiceValueAs<UniverseServerException>(std::move(nameGenerator), "UniverseServer", "name generator");
-  m_versioningDatabase = requireServiceValueAs<UniverseServerException>(std::move(versioningDatabase), "UniverseServer", "versioning database");
-  m_functionDatabase = requireServiceValueAs<UniverseServerException>(std::move(functionDatabase), "UniverseServer", "function database");
-  m_effectSourceDatabase = requireServiceValueAs<UniverseServerException>(std::move(effectSourceDatabase), "UniverseServer", "effect source database");
-  m_particleDatabase = requireServiceValueAs<UniverseServerException>(std::move(particleDatabase), "UniverseServer", "particle database");
-  m_techDatabase = requireServiceValueAs<UniverseServerException>(std::move(techDatabase), "UniverseServer", "tech database");
-  m_statusEffectDatabase = requireServiceValueAs<UniverseServerException>(std::move(statusEffectDatabase), "UniverseServer", "status effect database");
-  m_dungeonDefinitions = requireServiceValueAs<UniverseServerException>(std::move(dungeonDefinitions), "UniverseServer", "dungeon definitions");
-  m_behaviorDatabase = requireServiceValueAs<UniverseServerException>(std::move(behaviorDatabase), "UniverseServer", "behavior database");
-  m_reloadRoot = requireServiceValueAs<UniverseServerException>(std::move(reloadRoot), "UniverseServer", "root reload");
   String const LockFile = "universe.lock";
 
   m_storageDirectory = storageDir;
@@ -134,11 +134,6 @@ UniverseServer::UniverseServer(String const& storageDir,
   Logger::info("UniverseServer: Loading settings");
   loadSettings();
   loadTempWorldIndex();
-  m_lastClockUpdateSent = 0.0;
-  m_stop = false;
-  m_tcpState = TcpState::No;
-  m_storageTriggerDeadline = 0;
-  m_clearBrokenWorldsDeadline = 0;
 
   m_maxPlayers = configuration->get("maxPlayers").toUInt();
 
@@ -154,8 +149,6 @@ UniverseServer::UniverseServer(String const& storageDir,
   m_connectionServer = make_shared<UniverseConnectionServer>(
     [this](UniverseConnectionServer* connectionServer, ConnectionId clientId, List<PacketPtr> packets) { return packetsReceived(connectionServer, clientId, std::move(packets)); },
     networkWorkerThreads);
-
-  m_pause = make_shared<atomic<bool>>(false);
 
   m_secureWarps = m_configuration->getPath("security.secureWarps").optBool().value(true);
 }

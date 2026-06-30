@@ -7,8 +7,6 @@ namespace Star {
 
 LargeCharPlateWidget::LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, PlayerPtr player)
   : ButtonWidget(context), m_player(std::move(player)) {
-  m_portraitScale = 0;
-
   setSize(ButtonWidget::size());
 
   auto& guiContext = this->context();

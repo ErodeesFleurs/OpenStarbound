@@ -69,7 +69,7 @@ private:
   size_t doRead(size_t pos, char* data, size_t len);
   size_t doWrite(size_t pos, char const* data, size_t len);
 
-  size_t m_pos;
+  size_t m_pos = 0;
   ByteArray m_bytes;
 };
 
@@ -118,9 +118,9 @@ public:
 private:
   size_t doRead(size_t pos, char* data, size_t len);
 
-  size_t m_pos;
-  char const* m_bytes;
-  size_t m_size;
+  size_t m_pos = 0;
+  char const* m_bytes = nullptr;
+  size_t m_size = 0;
 };
 
 }

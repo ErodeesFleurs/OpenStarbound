@@ -12,12 +12,6 @@ FuelWidget::FuelWidget(GuiContext& context) : Widget(context) {
   m_textStyle.fontSize = assets->json("/interface.config:font.buttonSize").toInt();
   m_textStyle.loadJson(assets->json("/interface.config:textStyle"));
 
-  m_fuelLevel = 0;
-  m_maxLevel = 0;
-  m_potential = 0;
-  m_requested = 0;
-
-  m_pingTimeout = 0;
   disableScissoring();
 }
 

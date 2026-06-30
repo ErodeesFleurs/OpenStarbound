@@ -7,20 +7,10 @@ namespace Star {
 
 PortraitWidget::PortraitWidget(GuiContext& context, PortraitEntityPtr entity, PortraitMode mode)
   : Widget(context), m_entity(entity), m_portraitMode(mode) {
-  m_scale = 1;
-  m_renderHumanoid = false;
-  m_iconMode = false;
-
   init();
 }
 
 PortraitWidget::PortraitWidget(GuiContext& context) : Widget(context) {
-  m_entity = {};
-  m_portraitMode = PortraitMode::Full;
-  m_scale = 1;
-  m_renderHumanoid = false;
-  m_iconMode = false;
-
   init();
 }
 

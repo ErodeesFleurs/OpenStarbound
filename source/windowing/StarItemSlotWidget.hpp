@@ -46,13 +46,13 @@ private:
   ItemPtr m_item;
 
   String m_backingImage;
-  bool m_drawBackingImageWhenFull;
-  bool m_drawBackingImageWhenEmpty;
-  bool m_showDurability;
-  bool m_showCount;
-  bool m_showRarity;
-  bool m_showLinkIndicator;
-  bool m_showSecondaryIcon;
+  bool m_drawBackingImageWhenFull = false;
+  bool m_drawBackingImageWhenEmpty = true;
+  bool m_showDurability = false;
+  bool m_showCount = true;
+  bool m_showRarity = true;
+  bool m_showLinkIndicator = false;
+  bool m_showSecondaryIcon = false;
 
   TextPositioning m_countPosition;
   FontMode m_countFontMode;
@@ -65,13 +65,13 @@ private:
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_rightClickCallback;
   WidgetCallbackFunc m_middleClickCallback;
-  float m_progress;
+  float m_progress = 1.0f;
 
   ProgressWidgetPtr m_durabilityBar;
 
   Animation m_newItemIndicator;
 
-  bool m_highlightEnabled;
+  bool m_highlightEnabled = false;
   Animation m_highlightAnimation;
 };
 

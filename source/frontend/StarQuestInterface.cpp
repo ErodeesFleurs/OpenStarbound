@@ -432,8 +432,7 @@ QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr 
   String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(m_assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
   Json config = m_assets->json(configFile);
 
-  m_player = player;
-  m_cinematic = cinematic;
+  m_cinematic = std::move(cinematic);
 
   commonSetup(config, m_quest->completionText(), "QuestComplete");
 

@@ -12,8 +12,6 @@ static int const ScrollBarTrackOverhead = ScrollButtonStackSize + ScrollButtonSt
 static int64_t const ScrollAdvanceTimer = 100;
 
 ScrollThumb::ScrollThumb(GuiContext& context, GuiDirection direction) : Widget(context) {
-  m_hovered = false;
-  m_pressed = false;
   m_direction = direction;
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();
@@ -260,13 +258,8 @@ ScrollArea::ScrollArea(GuiContext& context) : Widget(context) {
   m_vBar = make_shared<ScrollBar>(guiContext, GuiDirection::Vertical, vAdvance, vRetreat);
   m_hBar = make_shared<ScrollBar>(guiContext, GuiDirection::Horizontal, hAdvance, hRetreat);
 
-  m_dragActive = false;
-
   addChild("vScrollBar", m_vBar);
   addChild("hScrollBar", m_hBar);
-
-  m_horizontalScroll = false;
-  m_verticalScroll = true;
 }
 
 void ScrollArea::setButtonImages(Json const& images) {

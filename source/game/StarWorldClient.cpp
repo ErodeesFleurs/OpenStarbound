@@ -90,22 +90,17 @@ WorldClient::WorldClient(PlayerPtr mainPlayer,
   m_audio.m_musicTrack.setAssets(m_assets);
   m_audio.m_altMusicTrack.setAssets(m_assets);
 
-  m_currentStep = 0;
-  m_currentTime = 0;
   m_lighting.m_fullBright = false;
   m_lighting.m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
-  m_worldDimLevel = 0.0f;
 
   m_parallaxFadeTimer = GameTimer(m_clientConfig.getFloat("parallaxFadeTime"));
   m_parallaxFadeTimer.setDone();
 
-  m_collisionDebug = false;
   m_interactivePulseAmount = m_assets->json("/highlights.config:interactivePulseAmount").toFloat();
   m_interactivePulseRate = m_assets->json("/highlights.config:interactivePulseRate").toFloat();
   m_inspectionFlickerAmount = m_assets->json("/highlights.config:inspectionFlickerAmount").toFloat();
-  m_inWorld = false;
 
   centerClientWindowOnPlayer(Vec2U(DefaultClientWindowTiles, DefaultClientWindowTiles));
 
@@ -120,8 +115,6 @@ WorldClient::WorldClient(PlayerPtr mainPlayer,
   });
 
   m_tilePrediction.m_modifiedTilePredictionTimeout = static_cast<int>(round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep));
-
-  m_latency = 0.0;
 
   m_damageFX.m_blockDamageParticle = Particle(m_clientConfig.getObject("blockDamageParticle"), "/", m_assets);
   m_damageFX.m_blockDamageParticleVariance = Particle(m_clientConfig.getObject("blockDamageParticleVariance"), "/", m_assets);

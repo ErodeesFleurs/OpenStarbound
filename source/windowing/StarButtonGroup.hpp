@@ -54,7 +54,7 @@ private:
   WidgetCallbackFunc m_callback;
   Map<int, ButtonWidget*> m_buttons;
   Map<ButtonWidget*, int> m_buttonIds;
-  bool m_toggle;
+  bool m_toggle = false;
 };
 
 class ButtonGroupWidget : public ButtonGroup, public Widget {

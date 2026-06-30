@@ -29,7 +29,7 @@ private:
 
   AssetsConstPtr m_assets;
   function<void(P2PJoinRequestReply)> m_callback;
-  bool m_confirmed;
+  bool m_confirmed = false;
 };
 
 }

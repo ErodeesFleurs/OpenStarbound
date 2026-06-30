@@ -23,8 +23,6 @@ InterpolationTracker::InterpolationTracker(AssetsConstPtr assets, Json config) {
   m_extrapolationHint = config.getUInt("extrapolationHint", 0);
   m_timeTrackFactor = config.getDouble("stepTrackFactor", 1.0);
   m_timeMaxDistance = config.getDouble("stepMaxDistance", 0.0) / VanillaStepsPerSecond;
-
-  m_currentTime = 0.0;
 }
 
 bool InterpolationTracker::interpolationEnabled() const {

@@ -24,12 +24,12 @@ public:
 protected:
   virtual void renderImpl() override;
 
-  float m_fuelLevel;
-  float m_maxLevel;
-  float m_potential;
-  float m_requested;
+  float m_fuelLevel = 0.0f;
+  float m_maxLevel = 0.0f;
+  float m_potential = 0.0f;
+  float m_requested = 0.0f;
 
-  float m_pingTimeout;
+  float m_pingTimeout = 0.0f;
 
   TextStyle m_textStyle;
 
