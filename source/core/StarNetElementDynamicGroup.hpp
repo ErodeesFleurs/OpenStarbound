@@ -15,8 +15,8 @@ namespace Star {
 template <typename Element>
 class NetElementDynamicGroup : public NetElement {
 public:
-  typedef shared_ptr<Element> ElementPtr;
-  typedef uint32_t ElementId;
+  using ElementPtr = shared_ptr<Element>;
+  using ElementId = uint32_t;
   static ElementId const NullElementId = 0;
 
   NetElementDynamicGroup() = default;
@@ -57,16 +57,16 @@ private:
   // will fall back to a full serialization of the entire state.
   static int64_t const MaxChangeDataVersions = 100;
 
-  typedef ElementId ElementRemovalType;
-  typedef pair<ElementId, ByteArray> ElementAdditionType;
+  using ElementRemovalType = ElementId;
+  using ElementAdditionType = pair<ElementId, ByteArray>;
 
   strong_typedef(Empty, ElementReset);
   strong_typedef_builtin(ElementRemovalType, ElementRemoval);
   strong_typedef(ElementAdditionType, ElementAddition);
 
-  typedef Variant<ElementReset, ElementRemoval, ElementAddition> ElementChange;
+  using ElementChange = Variant<ElementReset, ElementRemoval, ElementAddition>;
 
-  typedef IdMap<ElementId, ElementPtr> ElementMap;
+  using ElementMap = IdMap<ElementId, ElementPtr>;
 
   void addChangeData(ElementChange change);
 

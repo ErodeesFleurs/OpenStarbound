@@ -16,7 +16,7 @@ STAR_CLASS(ClientWeather);
 // the given tile location.  Other checks that enable / disable weather such as
 // whether or not the region is below the underground level are performed
 // separately of this, this is just to check the actual tile data.
-typedef function<bool(Vec2I)> WeatherEffectsActiveQuery;
+using WeatherEffectsActiveQuery = function<bool(Vec2I)>;
 
 class ServerWeather {
 public:

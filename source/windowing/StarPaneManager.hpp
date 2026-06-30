@@ -34,7 +34,7 @@ extern EnumMap<PaneLayer> const PaneLayerNames;
 // layer contains a z-ordered list of panes to display.
 class PaneManager {
 public:
-  typedef function<void(PanePtr const&)> DismissCallback;
+  using DismissCallback = function<void(PanePtr const&)>;
 
   PaneManager();
 

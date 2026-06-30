@@ -14,8 +14,8 @@ STAR_EXCEPTION(IteratorException, StarException);
 template <typename Container>
 class SIterator {
 public:
-  typedef typename Container::const_iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::const_iterator;
+  using value_ref = decltype(*iterator());
 
   SIterator(Container const& c) : cont(c) {
     toFront();
@@ -109,9 +109,9 @@ SIterator<Container> makeSIterator(Container const& c) {
 template <typename Container>
 class SMutableIterator {
 public:
-  typedef typename Container::value_type value_type;
-  typedef typename Container::iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using value_type = typename Container::value_type;
+  using iterator = typename Container::iterator;
+  using value_ref = decltype(*iterator());
 
   SMutableIterator(Container& c) : cont(c) {
     toFront();
@@ -233,11 +233,11 @@ SMutableIterator<Container> makeSMutableIterator(Container& c) {
 template <typename Container>
 class SMapIterator {
 public:
-  typedef typename Container::key_type key_type;
-  typedef typename Container::mapped_type mapped_type;
+  using key_type = typename Container::key_type;
+  using mapped_type = typename Container::mapped_type;
 
-  typedef typename Container::const_iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::const_iterator;
+  using value_ref = decltype(*iterator());
 
   SMapIterator(Container const& c) : cont(c) {
     toFront();
@@ -317,11 +317,11 @@ SMapIterator<Container> makeSMapIterator(Container const& c) {
 template <typename Container>
 class SMutableMapIterator {
 public:
-  typedef typename Container::key_type key_type;
-  typedef typename Container::mapped_type mapped_type;
+  using key_type = typename Container::key_type;
+  using mapped_type = typename Container::mapped_type;
 
-  typedef typename Container::iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::iterator;
+  using value_ref = decltype(*iterator());
 
   SMutableMapIterator(Container& c) : cont(c) {
     toFront();

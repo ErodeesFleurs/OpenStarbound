@@ -2,8 +2,8 @@
 
 namespace Star {
 
-typedef uint16_t MaterialId;
-typedef uint8_t MaterialHue;
+using MaterialId = uint16_t;
+using MaterialHue = uint8_t;
 
 // Empty and non-colliding.
 MaterialId const EmptyMaterialId = 65535;
@@ -38,11 +38,11 @@ MaterialId const FirstEngineMetaMaterialId = 65500;
 // to be used by tile entities or scripts
 MaterialId const FirstMetaMaterialId = 65000;
 
-typedef uint8_t MaterialColorVariant;
+using MaterialColorVariant = uint8_t;
 MaterialColorVariant const DefaultMaterialColorVariant = 0;
 MaterialColorVariant const MaxMaterialColorVariant = 8;
 
-typedef uint16_t ModId;
+using ModId = uint16_t;
 
 // Tile has no tilemod
 ModId const NoModId = 65535;

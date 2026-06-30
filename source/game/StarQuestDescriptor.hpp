@@ -67,9 +67,9 @@ struct QuestCoordinate {
   CelestialCoordinate coordinate;
 };
 
-typedef Json QuestJson;
+using QuestJson = Json;
 
-typedef MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson> QuestParamDetail;
+using QuestParamDetail = MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson>;
 
 struct QuestParam {
   static QuestParam fromJson(Json const& json);

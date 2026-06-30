@@ -12,18 +12,18 @@ namespace Star {
 template <typename ElementT, size_t SizeN>
 class Array : public std::array<ElementT, SizeN> {
 public:
-  typedef std::array<ElementT, SizeN> Base;
+  using Base = std::array<ElementT, SizeN>;
 
-  typedef ElementT Element;
+  using Element = ElementT;
   static size_t const ArraySize = SizeN;
 
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
-  typedef Element value_type;
+  using value_type = Element;
 
   static Array filled(Element const& e);
 
@@ -76,23 +76,23 @@ struct hash<Array<DataT, SizeT>> {
   Star::hash<DataT> dataHasher;
 };
 
-typedef Array<int, 2> Array2I;
-typedef Array<size_t, 2> Array2S;
-typedef Array<unsigned, 2> Array2U;
-typedef Array<float, 2> Array2F;
-typedef Array<double, 2> Array2D;
+using Array2I = Array<int, 2>;
+using Array2S = Array<size_t, 2>;
+using Array2U = Array<unsigned, 2>;
+using Array2F = Array<float, 2>;
+using Array2D = Array<double, 2>;
 
-typedef Array<int, 3> Array3I;
-typedef Array<size_t, 3> Array3S;
-typedef Array<unsigned, 3> Array3U;
-typedef Array<float, 3> Array3F;
-typedef Array<double, 3> Array3D;
+using Array3I = Array<int, 3>;
+using Array3S = Array<size_t, 3>;
+using Array3U = Array<unsigned, 3>;
+using Array3F = Array<float, 3>;
+using Array3D = Array<double, 3>;
 
-typedef Array<int, 4> Array4I;
-typedef Array<size_t, 4> Array4S;
-typedef Array<unsigned, 4> Array4U;
-typedef Array<float, 4> Array4F;
-typedef Array<double, 4> Array4D;
+using Array4I = Array<int, 4>;
+using Array4S = Array<size_t, 4>;
+using Array4U = Array<unsigned, 4>;
+using Array4F = Array<float, 4>;
+using Array4D = Array<double, 4>;
 
 template <typename Element, size_t Size>
 Array<Element, Size> Array<Element, Size>::filled(Element const& e) {

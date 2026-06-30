@@ -28,7 +28,7 @@ public:
     virtual bool expired() const = 0;
   };
 
-  typedef shared_ptr<Texture> TextureHandle;
+  using TextureHandle = shared_ptr<Texture>;
 
   TextureAtlasSet(unsigned cellSize, unsigned atlasNumCells);
 

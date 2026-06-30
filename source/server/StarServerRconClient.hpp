@@ -44,5 +44,5 @@ private:
   bool m_authed;
   String m_rconPassword;
 };
-typedef shared_ptr<ServerRconClient> ServerRconClientPtr;
+using ServerRconClientPtr = shared_ptr<ServerRconClient>;
 }

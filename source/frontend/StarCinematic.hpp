@@ -68,7 +68,7 @@ private:
     float endTime;
     float loopTime;
   };
-  typedef shared_ptr<Panel> PanelPtr;
+  using PanelPtr = shared_ptr<Panel>;
 
   struct PanelValues {
     float zoom;

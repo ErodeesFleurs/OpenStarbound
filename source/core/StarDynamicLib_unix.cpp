@@ -32,13 +32,13 @@ String DynamicLib::libraryExtension() {
 
 DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
-  if (handle == NULL)
+  if (handle == nullptr)
     return {};
   return make_unique<PrivateDynLib>(handle);
 }
 
 DynamicLibUPtr DynamicLib::currentExecutable() {
-  void* handle = dlopen(NULL, 0);
+  void* handle = dlopen(nullptr, 0);
   starAssert(handle);
   return make_unique<PrivateDynLib>(handle);
 }

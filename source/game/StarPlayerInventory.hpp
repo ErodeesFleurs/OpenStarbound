@@ -202,7 +202,7 @@ public:
   bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
 
 private:
-  typedef pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
+  using CustomBarLink = pair<Maybe<InventorySlot>, Maybe<InventorySlot>>;
 
   static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
 

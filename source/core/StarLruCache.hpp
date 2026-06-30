@@ -8,10 +8,10 @@ namespace Star {
 template <typename OrderedMapType>
 class LruCacheBase {
 public:
-  typedef typename OrderedMapType::key_type Key;
-  typedef typename OrderedMapType::mapped_type Value;
+  using Key = typename OrderedMapType::key_type;
+  using Value = typename OrderedMapType::mapped_type;
 
-  typedef function<Value(Key const&)> ProducerFunction;
+  using ProducerFunction = function<Value(Key const&)>;
 
   LruCacheBase(size_t maxSize = 256);
 

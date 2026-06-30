@@ -15,8 +15,8 @@ namespace Star {
 template <typename ElementT, size_t SectorSize>
 class SectorArray2D {
 public:
-  typedef ElementT Element;
-  typedef Vec2S Sector;
+  using Element = ElementT;
+  using Sector = Vec2S;
 
   struct SectorRange {
     // Lower left sector
@@ -34,9 +34,9 @@ public:
 
     Element elements[SectorSize * SectorSize];
   };
-  typedef unique_ptr<Array> ArrayPtr;
+  using ArrayPtr = unique_ptr<Array>;
 
-  typedef MultiArray<Element, 2> DynamicArray;
+  using DynamicArray = MultiArray<Element, 2>;
 
   SectorArray2D();
   SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh);
@@ -104,7 +104,7 @@ public:
   bool evalColumnsParallel(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
 
 private:
-  typedef MultiArray<ArrayPtr, 2> SectorArray;
+  using SectorArray = MultiArray<ArrayPtr, 2>;
 
   template <typename Function>
   bool evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);

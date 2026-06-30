@@ -131,7 +131,7 @@ public:
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
-  typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
+  using StatScript = LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>;
 
   struct EffectAnimator : public NetElement {
     EffectAnimator(Maybe<String> animationConfig = {});
@@ -153,7 +153,7 @@ private:
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
   };
-  typedef NetElementDynamicGroup<EffectAnimator> EffectAnimatorGroup;
+  using EffectAnimatorGroup = NetElementDynamicGroup<EffectAnimator>;
 
   struct UniqueEffectMetadata : public NetElementSyncGroup {
     UniqueEffectMetadata();
@@ -171,7 +171,7 @@ private:
     // the unique effect was the owning entity.
     NetElementData<Maybe<EntityId>> sourceEntityId;
   };
-  typedef NetElementDynamicGroup<UniqueEffectMetadata> UniqueEffectMetadataGroup;
+  using UniqueEffectMetadataGroup = NetElementDynamicGroup<UniqueEffectMetadata>;
 
   struct PersistentEffectCategory {
     Maybe<StatModifierGroupId> modifierEffectsGroupId;

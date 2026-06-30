@@ -38,7 +38,7 @@ struct ParallaxLayer {
   bool lightMapped;
   float fadePercent;
 };
-typedef List<ParallaxLayer> ParallaxLayers;
+using ParallaxLayers = List<ParallaxLayer>;
 
 DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
 DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);

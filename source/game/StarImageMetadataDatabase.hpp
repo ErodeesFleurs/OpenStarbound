@@ -30,7 +30,7 @@ private:
   Vec2U calculateImageSize(AssetPath const& path) const;
 
   // Path, position, fillLimit, and flip
-  typedef tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
+  using SpacesEntry = tuple<AssetPath, Vec2I, float, bool>;
 
   mutable Mutex m_mutex;
   mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;

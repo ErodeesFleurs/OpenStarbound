@@ -120,11 +120,11 @@ typename Container::value_type staticRandomValueFrom(Container const& container,
 template <typename T>
 class URBG {
 public:
-  typedef function <T()> Function;
+  using Function = function<T()>;
 
   URBG(Function func) : m_func(func) {};
 
-  typedef T result_type;
+  using result_type = T;
   static constexpr T min() { return std::numeric_limits<T>::min(); };
   static constexpr T max() { return std::numeric_limits<T>::max(); };
   T operator()() { return m_func(); };

@@ -65,7 +65,7 @@ struct ThreadImpl {
 
     stopped = false;
     joined = false;
-    int ret = pthread_create(&pthread, NULL, &runThread, (void*)this);
+    int ret = pthread_create(&pthread, nullptr, &runThread, (void*)this);
     if (ret != 0) {
       stopped = true;
       joined = true;
@@ -90,7 +90,7 @@ struct ThreadImpl {
     MutexLocker mutexLocker(mutex);
     if (joined)
       return false;
-    int ret = pthread_join(pthread, NULL);
+    int ret = pthread_join(pthread, nullptr);
     if (ret != 0)
       throw StarException(strf("Failed to join thread, error {}", ret));
     joined = true;
@@ -166,7 +166,7 @@ struct MutexImpl {
 
 struct ConditionVariableImpl {
   ConditionVariableImpl() {
-    pthread_cond_init(&condition, NULL);
+    pthread_cond_init(&condition, nullptr);
   }
 
   ~ConditionVariableImpl() {

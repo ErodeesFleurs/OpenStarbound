@@ -68,7 +68,7 @@ private:
     String description;
   };
 
-  typedef Variant<Switch, Parameter> Option;
+  using Option = Variant<Switch, Parameter>;
 
   String m_commandName;
   String m_summary;

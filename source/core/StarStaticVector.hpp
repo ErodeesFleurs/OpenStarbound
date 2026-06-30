@@ -3,6 +3,7 @@
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Star {
@@ -16,22 +17,22 @@ STAR_EXCEPTION(StaticVectorSizeException, StarException);
 template <typename Element, size_t MaxSize>
 class StaticVector {
 public:
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
   static constexpr size_t MaximumSize = MaxSize;
 
   StaticVector();
   StaticVector(StaticVector const& other);
-  StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   template <typename OtherElement, size_t OtherMaxSize>
   StaticVector(StaticVector<OtherElement, OtherMaxSize> const& other);
   template <class Iterator>
@@ -41,7 +42,7 @@ public:
   ~StaticVector();
 
   StaticVector& operator=(StaticVector const& other);
-  StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   StaticVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -95,7 +96,7 @@ public:
 
 private:
   size_t m_size;
-  typename std::aligned_storage<MaxSize * sizeof(Element), alignof(Element)>::type m_elements;
+  alignas(Element) unsigned char m_elements[(MaxSize != 0 ? MaxSize : 1) * sizeof(Element)];
 };
 
 template <typename Element, size_t MaxSize>
@@ -115,7 +116,7 @@ StaticVector<Element, MaxSize>::StaticVector(StaticVector const& other)
 
 template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector&& other)
-  noexcept(std::is_nothrow_move_constructible<Element>::value)
+  noexcept(std::is_nothrow_move_constructible_v<Element>)
   : StaticVector() {
   for (auto& e : other)
     emplace_back(std::move(e));
@@ -164,7 +165,7 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector const& other) -> Sta
 
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other)
-    noexcept(std::is_nothrow_move_constructible<Element>::value) -> StaticVector& {
+    noexcept(std::is_nothrow_move_constructible_v<Element>) -> StaticVector& {
   if (this == &other)
     return *this;
 
@@ -273,12 +274,12 @@ auto StaticVector<Element, MaxSize>::rend() -> reverse_iterator {
 
 template <typename Element, size_t MaxSize>
 Element const* StaticVector<Element, MaxSize>::ptr() const {
-  return (Element const*)&m_elements;
+  return std::launder(reinterpret_cast<Element const*>(m_elements));
 }
 
 template <typename Element, size_t MaxSize>
 Element* StaticVector<Element, MaxSize>::ptr() {
-  return (Element*)&m_elements;
+  return std::launder(reinterpret_cast<Element*>(m_elements));
 }
 
 template <typename Element, size_t MaxSize>
@@ -291,7 +292,7 @@ void StaticVector<Element, MaxSize>::pop_back() {
   if (m_size == 0)
     throw OutOfRangeException("StaticVector::pop_back called on empty StaticVector");
   --m_size;
-  (ptr() + m_size)->~Element();
+  std::destroy_at(ptr() + m_size);
 }
 
 template <typename Element, size_t MaxSize>
@@ -341,7 +342,7 @@ void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
     throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
 
   m_size += 1;
-  new (ptr() + m_size - 1) Element(std::forward<Args>(args)...);
+  std::construct_at(ptr() + m_size - 1, std::forward<Args>(args)...);
 }
 
 template <typename Element, size_t MaxSize>

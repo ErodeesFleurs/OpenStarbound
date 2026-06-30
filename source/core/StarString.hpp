@@ -28,15 +28,15 @@ STAR_EXCEPTION(StringException, StarException);
 // not for general strings.
 class String {
 public:
-  typedef Utf32Type Char;
+  using Char = Utf32Type;
 
   // std::basic_string equivalent that guarantees const access time for
   // operator[], etc
-  typedef std::basic_string<Char> WideString;
+  using WideString = std::basic_string<Char>;
 
-  typedef U8ToU32Iterator<std::string::const_iterator> const_iterator;
-  typedef Char value_type;
-  typedef value_type const& const_reference;
+  using const_iterator = U8ToU32Iterator<std::string::const_iterator>;
+  using value_type = Char;
+  using const_reference = value_type const&;
 
   enum CaseSensitivity {
     CaseSensitive,
@@ -296,13 +296,13 @@ private:
 
 class StringList : public List<String> {
 public:
-  typedef List<String> Base;
+  using Base = List<String>;
 
-  typedef Base::iterator iterator;
-  typedef Base::const_iterator const_iterator;
-  typedef Base::value_type value_type;
-  typedef Base::reference reference;
-  typedef Base::const_reference const_reference;
+  using iterator = Base::iterator;
+  using const_iterator = Base::const_iterator;
+  using value_type = Base::value_type;
+  using reference = Base::reference;
+  using const_reference = Base::const_reference;
 
   template <typename Container>
   static StringList from(Container const& m);
@@ -357,9 +357,9 @@ struct CaseInsensitiveStringCompare {
   bool operator()(String const& lhs, String const& rhs) const;
 };
 
-typedef HashSet<String> StringSet;
+using StringSet = HashSet<String>;
 
-typedef HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
+using CaseInsensitiveStringSet = HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>;
 
 template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<String>>
 using StringMap = HashMap<String, MappedT, HashT, ComparatorT>;

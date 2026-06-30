@@ -103,8 +103,8 @@ public:
   String toString() const;
   void addToString(String& string) const;
 
-  typedef function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
-  typedef function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
+  using DirectivesCallback = function<void(Directives::Entry const&, Directives const&)>;
+  using AbortableDirectivesCallback = function<bool(Directives::Entry const&, Directives const&)>;
 
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
@@ -132,7 +132,7 @@ struct hash<DirectivesGroup> {
   size_t operator()(DirectivesGroup const& s) const;
 };
 
-typedef DirectivesGroup ImageDirectives;
+using ImageDirectives = DirectivesGroup;
 
 inline Directives::Shared const& Directives::operator*() const {
   return *m_shared;

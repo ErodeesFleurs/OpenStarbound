@@ -101,12 +101,12 @@ namespace Star {
 template <typename Base>
 class BTreeMixin : public Base {
 public:
-  typedef typename Base::Key Key;
-  typedef typename Base::Data Data;
-  typedef typename Base::Pointer Pointer;
+  using Key = typename Base::Key;
+  using Data = typename Base::Data;
+  using Pointer = typename Base::Pointer;
 
-  typedef typename Base::Index Index;
-  typedef typename Base::Leaf Leaf;
+  using Index = typename Base::Index;
+  using Leaf = typename Base::Leaf;
 
   bool contains(Key const& k);
 
@@ -158,7 +158,7 @@ private:
     Key key;
     Data data;
   };
-  typedef List<DataElement> DataList;
+  using DataList = List<DataElement>;
 
   struct DataCollector {
     void operator()(Key const& k, Data const& d);

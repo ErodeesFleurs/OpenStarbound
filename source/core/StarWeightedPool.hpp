@@ -7,8 +7,8 @@ namespace Star {
 template <typename Item>
 struct WeightedPool {
 public:
-  typedef pair<double, Item> ItemsType;
-  typedef List<ItemsType> ItemsList;
+  using ItemsType = pair<double, Item>;
+  using ItemsList = List<ItemsType>;
 
   WeightedPool();
 

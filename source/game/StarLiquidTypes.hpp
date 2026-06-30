@@ -4,7 +4,7 @@
 
 namespace Star {
 
-typedef uint8_t LiquidId;
+using LiquidId = uint8_t;
 LiquidId const EmptyLiquidId = 0;
 
 struct LiquidLevel {

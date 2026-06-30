@@ -10,7 +10,7 @@ namespace Star {
 STAR_CLASS(Input);
 STAR_EXCEPTION(InputException, StarException);
 
-typedef Variant<Key, MouseButton, ControllerButton> InputVariant;
+using InputVariant = Variant<Key, MouseButton, ControllerButton>;
 
 template <>
 struct hash<InputVariant> {
@@ -47,7 +47,7 @@ public:
     ControllerButton button = ControllerButton::Invalid;
   };
 
-  typedef MVariant<KeyBind, MouseBind, ControllerBind> Bind;
+  using Bind = MVariant<KeyBind, MouseBind, ControllerBind>;
 
   static Bind bindFromJson(Json const& json);
   static Json bindToJson(Bind const& bind);
@@ -127,7 +127,7 @@ public:
     List<Vec2F> releasePositions;
   };
 
-  typedef InputState ControllerInputState;
+  using ControllerInputState = InputState;
 
   // Get pointer to the singleton Input instance, if it exists.  Otherwise,
   // returns nullptr.

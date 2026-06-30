@@ -11,10 +11,10 @@ constexpr size_t SecretKeySize = 32;
 constexpr size_t PrivateKeySize = 64;
 constexpr size_t SignatureSize = 64;
 
-typedef Array<uint8_t, PublicKeySize> PublicKey;
-typedef Array<uint8_t, SecretKeySize> SecretKey;
-typedef Array<uint8_t, PrivateKeySize> PrivateKey;
-typedef Array<uint8_t, SignatureSize> Signature;
+using PublicKey = Array<uint8_t, PublicKeySize>;
+using SecretKey = Array<uint8_t, SecretKeySize>;
+using PrivateKey = Array<uint8_t, PrivateKeySize>;
+using Signature = Array<uint8_t, SignatureSize>;
 
 PublicKey const& publicKey();
 Signature sign(void* data, size_t len);

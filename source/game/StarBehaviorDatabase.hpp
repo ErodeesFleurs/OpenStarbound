@@ -15,10 +15,10 @@ STAR_STRUCT(DynamicNode);
 STAR_STRUCT(RandomizeNode);
 STAR_STRUCT(BehaviorTree);
 
-typedef Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode> CompositeNode;
+using CompositeNode = Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode>;
 
-typedef Variant<ActionNode, DecoratorNode, CompositeNode, BehaviorTreeConstPtr> BehaviorNode;
-typedef std::shared_ptr<const BehaviorNode> BehaviorNodeConstPtr;
+using BehaviorNode = Variant<ActionNode, DecoratorNode, CompositeNode, BehaviorTreeConstPtr>;
+using BehaviorNodeConstPtr = std::shared_ptr<const BehaviorNode>;
 
 enum class NodeParameterType : uint8_t {
   Json,
@@ -33,9 +33,9 @@ enum class NodeParameterType : uint8_t {
 };
 extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
 
-typedef Variant<String, Json> NodeParameterValue;
-typedef pair<NodeParameterType, NodeParameterValue> NodeParameter;
-typedef pair<NodeParameterType, pair<Maybe<String>, bool>> NodeOutput;
+using NodeParameterValue = Variant<String, Json>;
+using NodeParameter = pair<NodeParameterType, NodeParameterValue>;
+using NodeOutput = pair<NodeParameterType, pair<Maybe<String>, bool>>;
 
 NodeParameterValue nodeParameterValueFromJson(Json const& json);
 
@@ -125,8 +125,6 @@ struct BehaviorTree {
 
   BehaviorNodeConstPtr root;
 };
-
-typedef std::shared_ptr<const BehaviorNode> BehaviorNodeConstPtr;
 
 class BehaviorDatabase {
 public:

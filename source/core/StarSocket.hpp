@@ -35,8 +35,8 @@ struct SocketPollResultEntry {
   bool exception;
 };
 
-typedef Map<SocketPtr, SocketPollQueryEntry> SocketPollQuery;
-typedef Map<SocketPtr, SocketPollResultEntry> SocketPollResult;
+using SocketPollQuery = Map<SocketPtr, SocketPollQueryEntry>;
+using SocketPollResult = Map<SocketPtr, SocketPollResultEntry>;
 
 class Socket {
 public:

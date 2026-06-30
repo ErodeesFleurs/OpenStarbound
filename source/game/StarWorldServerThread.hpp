@@ -19,7 +19,7 @@ public:
     RpcThreadPromiseKeeper<Json> promise;
   };
 
-  typedef function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
+  using WorldServerAction = function<void(WorldServerThread*, WorldServer*)>;
 
   WorldServerThread(WorldServerPtr server, WorldId worldId);
   ~WorldServerThread();

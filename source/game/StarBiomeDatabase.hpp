@@ -36,7 +36,7 @@ private:
     Json parameters;
     Json toJson() const;
   };
-  typedef StringMap<Config> ConfigMap;
+  using ConfigMap = StringMap<Config>;
 
   static float pickHueShiftFromJson(Json source, uint64_t seed, String const& key);
 

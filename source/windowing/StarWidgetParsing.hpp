@@ -18,7 +18,7 @@ struct WidgetConstructResult {
   float zlevel;
 };
 
-typedef std::function<WidgetConstructResult(String const& name, Json const& config)> ConstuctorFunc;
+using ConstuctorFunc = std::function<WidgetConstructResult(String const& name, Json const& config)>;
 
 class WidgetParser {
 public:

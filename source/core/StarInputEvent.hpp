@@ -190,7 +190,7 @@ enum class MouseWheel : uint8_t {
 };
 extern EnumMap<MouseWheel> const MouseWheelNames;
 
-typedef uint32_t ControllerId;
+using ControllerId = uint32_t;
 
 enum class ControllerAxis : uint8_t {
   LeftX,
@@ -278,7 +278,7 @@ struct ControllerButtonUpEvent {
   ControllerButton controllerButton;
 };
 
-typedef Variant<
+using InputEvent = Variant<
     KeyDownEvent,
     KeyUpEvent,
     TextInputEvent,
@@ -288,15 +288,14 @@ typedef Variant<
     MouseWheelEvent,
     ControllerAxisEvent,
     ControllerButtonDownEvent,
-    ControllerButtonUpEvent>
-    InputEvent;
+    ControllerButtonUpEvent>;
 
 inline KeyMod operator|(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a | (uint16_t)b);
+  return static_cast<KeyMod>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b));
 }
 
 inline KeyMod operator&(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a & (uint16_t)b);
+  return static_cast<KeyMod>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b));
 }
 
 inline KeyMod operator~(KeyMod a) {

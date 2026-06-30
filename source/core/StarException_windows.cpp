@@ -167,7 +167,7 @@ StarException::StarException(std::exception const& cause) noexcept
 StarException::StarException(std::string message, std::exception const& cause) noexcept
     : StarException("StarException", std::move(message), cause) {}
 
-const char* StarException::what() const throw() {
+char const* StarException::what() const noexcept {
   if (m_whatBuffer.empty()) {
     std::ostringstream os;
     m_printException(os, false);

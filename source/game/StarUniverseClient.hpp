@@ -97,8 +97,8 @@ public:
   bool switchPlayer(size_t index);
   bool switchPlayer(String const& name);
 
-  typedef std::function<void()> Callback;
-  typedef std::function<void(bool)> ReloadPlayerCallback;
+  using Callback = std::function<void()>;
+  using ReloadPlayerCallback = std::function<void(bool)>;
   ReloadPlayerCallback& playerReloadPreCallback();
   ReloadPlayerCallback& playerReloadCallback();
 
@@ -157,8 +157,8 @@ private:
 
   LuaRootPtr m_luaRoot;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
+  using ScriptComponentPtr = shared_ptr<ScriptComponent>;
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   ReloadPlayerCallback m_playerReloadPreCallback;

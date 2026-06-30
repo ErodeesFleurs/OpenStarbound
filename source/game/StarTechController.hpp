@@ -112,7 +112,7 @@ private:
     NetElementGroup netGroup;
   };
 
-  typedef NetElementDynamicGroup<TechAnimator> TechAnimatorGroup;
+  using TechAnimatorGroup = NetElementDynamicGroup<TechAnimator>;
 
   struct TechModule {
     TechConfig config;

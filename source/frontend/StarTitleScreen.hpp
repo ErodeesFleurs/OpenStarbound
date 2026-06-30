@@ -52,7 +52,7 @@ public:
 
   bool textInputActive() const;
 
-  typedef RegisteredPaneManager<String> TitlePaneManager;
+  using TitlePaneManager = RegisteredPaneManager<String>;
   TitlePaneManager* paneManager();
 
   TitleState currentState() const;
@@ -102,7 +102,7 @@ private:
   unsigned windowHeight() const;
   unsigned windowWidth() const;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
+  using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
   shared_ptr<ScriptComponent> m_scriptComponent;
 
   GuiContext* m_guiContext;

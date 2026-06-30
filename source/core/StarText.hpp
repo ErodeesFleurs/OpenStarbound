@@ -36,8 +36,8 @@ namespace Text {
   String stripEscapeCodes(String const& s);
   inline bool isEscapeCode(Utf32Type c) { return c == CmdEsc || c == StartEsc; }
 
-  typedef function<bool(StringView text)> TextCallback;
-  typedef function<bool(StringView commands)> CommandsCallback;
+  using TextCallback = function<bool(StringView text)>;
+  using CommandsCallback = function<bool(StringView commands)>;
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
   String preprocessEscapeCodes(String const& s);
   String extractCodes(String const& s);

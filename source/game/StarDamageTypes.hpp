@@ -35,7 +35,7 @@ enum class TeamType : uint8_t {
 };
 extern EnumMap<TeamType> const TeamTypeNames;
 
-typedef uint16_t TeamNumber;
+using TeamNumber = uint16_t;
 
 struct EntityDamageTeam {
   EntityDamageTeam();

@@ -8,7 +8,7 @@ namespace Star {
 
 STAR_CLASS(SystemWorldServerThread);
 
-typedef function<void(SystemClientShip*)> ClientShipAction;
+using ClientShipAction = function<void(SystemClientShip*)>;
 
 class SystemWorldServerThread : public Thread {
 public:

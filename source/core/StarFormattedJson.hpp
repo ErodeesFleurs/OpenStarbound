@@ -15,7 +15,7 @@ struct WhitespaceElement;
 struct ColonElement;
 struct CommaElement;
 
-typedef Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement> JsonElement;
+using JsonElement = Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement>;
 
 struct ValueElement {
   ValueElement(FormattedJson const& json);
@@ -50,8 +50,8 @@ std::ostream& operator<<(std::ostream& os, JsonElement const& elem);
 // Class representing formatted JSON data. Preserves whitespace and comments.
 class FormattedJson {
 public:
-  typedef List<JsonElement> ElementList;
-  typedef size_t ElementLocation;
+  using ElementList = List<JsonElement>;
+  using ElementLocation = size_t;
 
   static FormattedJson parse(String const& string);
   static FormattedJson parseJson(String const& string);

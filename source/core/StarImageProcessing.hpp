@@ -68,7 +68,7 @@ struct SetColorImageOperation {
   Vec3B color;
 };
 
-typedef HashMap<Vec4B, Vec4B> ColorReplaceMap;
+using ColorReplaceMap = HashMap<Vec4B, Vec4B>;
 
 struct ColorReplaceImageOperation {
   ColorReplaceMap colorReplaceMap;
@@ -132,9 +132,9 @@ struct FlipImageOperation {
   Mode mode;
 };
 
-typedef Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
+using ImageOperation = Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
-  MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation> ImageOperation;
+  MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation>;
 
 ImageOperation imageOperationFromString(StringView string);
 String imageOperationToString(ImageOperation const& operation);
@@ -152,7 +152,7 @@ void addImageOperationReferences(ImageOperation const& operation, StringList& ou
 
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
-typedef function<Image const*(String const& refName)> ImageReferenceCallback;
+using ImageReferenceCallback = function<Image const*(String const& refName)>;
 
 void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 

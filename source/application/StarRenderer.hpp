@@ -12,7 +12,7 @@ namespace Star {
 STAR_EXCEPTION(RendererException, StarException);
 
 class Texture;
-typedef RefPtr<Texture> TexturePtr;
+using TexturePtr = RefPtr<Texture>;
 
 STAR_CLASS(TextureGroup);
 STAR_CLASS(RenderBuffer);
@@ -87,7 +87,7 @@ RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec
 RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f);
 RenderPoly renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f);
 
-typedef Variant<RenderTriangle, RenderQuad, RenderPoly> RenderPrimitive;
+using RenderPrimitive = Variant<RenderTriangle, RenderQuad, RenderPoly>;
 
 class Texture : public RefCounter {
 public:
@@ -120,7 +120,7 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
+using RenderEffectParameter = Variant<float, int, Vec4F, Vec3F, Vec2F, bool>;
 
 class Renderer {
 public:

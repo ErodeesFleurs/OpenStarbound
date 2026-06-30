@@ -47,23 +47,23 @@ struct StatEffectiveMultiplier {
 DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier);
 DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& effectiveMultiplier);
 
-typedef MVariant<StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier> StatModifier;
+using StatModifier = MVariant<StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier>;
 
 StatModifier jsonToStatModifier(Json const& config);
 Json jsonFromStatModifier(StatModifier const& modifier);
 
-typedef uint32_t StatModifierGroupId;
-typedef IdMap<StatModifierGroupId, List<StatModifier>> StatModifierGroupMap;
+using StatModifierGroupId = uint32_t;
+using StatModifierGroupMap = IdMap<StatModifierGroupId, List<StatModifier>>;
 
 // Unique stat effects are identified uniquely by name.
-typedef String UniqueStatusEffect;
+using UniqueStatusEffect = String;
 
 // Second element here is *percentage* of duration remaining, based on the
 // highest duration that the effect has had
-typedef List<pair<UniqueStatusEffect, Maybe<float>>> ActiveUniqueStatusEffectSummary;
+using ActiveUniqueStatusEffectSummary = List<pair<UniqueStatusEffect, Maybe<float>>>;
 
 // Persistent status effects can either be a modifier effect or unique effect
-typedef MVariant<StatModifier, UniqueStatusEffect> PersistentStatusEffect;
+using PersistentStatusEffect = MVariant<StatModifier, UniqueStatusEffect>;
 
 // Reads either a name of a unique stat effect or a stat modifier object
 PersistentStatusEffect jsonToPersistentStatusEffect(Json const& config);

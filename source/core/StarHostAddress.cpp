@@ -118,8 +118,8 @@ void HostAddress::set(String const& address) {
     memset(inaddr_any, 0, sizeof(inaddr_any));
     set(NetworkMode::IPv6, inaddr_any);
   } else {
-    struct addrinfo* result = NULL;
-    struct addrinfo* ptr = NULL;
+    struct addrinfo* result = nullptr;
+    struct addrinfo* ptr = nullptr;
     struct addrinfo hints;
 
     memset(&hints, 0, sizeof(hints));
@@ -132,10 +132,10 @@ void HostAddress::set(String const& address) {
     // Request only usable addresses e.g. IPv6 only if IPv6 is available
     hints.ai_flags = AI_ADDRCONFIG;
 
-    if (::getaddrinfo(address.utf8Ptr(), NULL, &hints, &result) != 0)
+    if (::getaddrinfo(address.utf8Ptr(), nullptr, &hints, &result) != 0)
       throw NetworkException(strf("Failed to determine address for '{}' ({})", address, netErrorString()));
 
-    for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+    for (ptr = result; ptr != nullptr; ptr = ptr->ai_next) {
       NetworkMode mode;
       switch (ptr->ai_family) {
         case AF_INET:

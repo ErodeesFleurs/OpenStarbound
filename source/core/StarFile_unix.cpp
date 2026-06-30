@@ -38,7 +38,7 @@ String File::convertDirSeparators(String const& path) {
 
 String File::currentDirectory() {
   char buffer[PATH_MAX];
-  if (::getcwd(buffer, PATH_MAX) == NULL)
+  if (::getcwd(buffer, PATH_MAX) == nullptr)
     throw IOException("getcwd failed");
 
   return String(buffer);
@@ -57,10 +57,10 @@ void File::makeDirectory(String const& dirName) {
 List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   List<std::pair<String, bool>> fileList;
   DIR* directory = ::opendir(dirName.utf8Ptr());
-  if (directory == NULL)
+  if (directory == nullptr)
     throw IOException::format("dirList failed on dir: '{}'", dirName);
 
-  for (dirent* entry = ::readdir(directory); entry != NULL; entry = ::readdir(directory)) {
+  for (dirent* entry = ::readdir(directory); entry != nullptr; entry = ::readdir(directory)) {
     String entryString = entry->d_name;
     if (!skipDots || (entryString != "." && entryString != "..")) {
       bool isDirectory = false;
@@ -116,7 +116,7 @@ String File::relativeTo(String const& relativeTo, String const& path) {
 String File::fullPath(const String& fileName) {
   char buffer[PATH_MAX];
 
-  if (::realpath(fileName.utf8Ptr(), buffer) == NULL)
+  if (::realpath(fileName.utf8Ptr(), buffer) == nullptr)
     throw IOException::format("realpath failed on file: '{}' problem path was: '{}'", fileName, buffer);
 
   return String(buffer);

@@ -77,7 +77,7 @@ public:
   }
 
 private:
-  typedef std::basic_string<char32_t> CharArray;
+  using CharArray = std::basic_string<char32_t>;
 
   // Thrown internally to abort parsing.
   class ParsingException {};

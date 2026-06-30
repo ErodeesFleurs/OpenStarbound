@@ -180,7 +180,7 @@ public:
   // Must have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   struct WornBack : WornAny {};
 
-  typedef MVariant<WornHead, WornChest, WornLegs, WornBack> Wearable;
+  using Wearable = MVariant<WornHead, WornChest, WornLegs, WornBack>;
 
   struct Fashion {
     // 8 vanilla + 12 extra slots

@@ -32,11 +32,11 @@ namespace AStar {
   template <class Edge, class Node>
   class Search {
   public:
-    typedef function<double(Node, Node)> HeuristicFunction;
-    typedef function<void(Node, List<Edge>& neighbors)> NeighborFunction;
-    typedef function<bool(Node)> GoalFunction;
-    typedef function<bool(Node, Node)> CompareFunction;
-    typedef function<bool(Edge)> ValidateEndFunction;
+    using HeuristicFunction = function<double(Node, Node)>;
+    using NeighborFunction = function<void(Node, List<Edge>& neighbors)>;
+    using GoalFunction = function<bool(Node)>;
+    using CompareFunction = function<bool(Node, Node)>;
+    using ValidateEndFunction = function<bool(Edge)>;
 
     Search(HeuristicFunction heuristicCost,
         NeighborFunction getAdjacent,

@@ -247,7 +247,7 @@ public:
 
   bool open() {
     #ifdef STAR_STREAM_AUDIO
-    int result = ov_open_callbacks(&m_deviceCallbacks, &m_vorbisFile, NULL, 0, m_callbacks);
+    int result = ov_open_callbacks(&m_deviceCallbacks, &m_vorbisFile, nullptr, 0, m_callbacks);
     if (result < 0) {
       Logger::error("Failed to open ogg stream: error code {}", result);
       return false;
@@ -256,9 +256,9 @@ public:
     m_callbacks.read_func = readFunc;
     m_callbacks.seek_func = seekFunc;
     m_callbacks.tell_func = tellFunc;
-    m_callbacks.close_func = NULL;
+    m_callbacks.close_func = nullptr;
 
-    if (ov_open_callbacks(&m_memoryFile, &m_vorbisFile, NULL, 0, m_callbacks) < 0)
+    if (ov_open_callbacks(&m_memoryFile, &m_vorbisFile, nullptr, 0, m_callbacks) < 0)
       return false;
     #endif
 

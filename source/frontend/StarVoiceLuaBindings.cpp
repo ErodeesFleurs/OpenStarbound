@@ -5,7 +5,7 @@
 
 namespace Star {
 
-typedef Voice::SpeakerId SpeakerId;
+using SpeakerId = Voice::SpeakerId;
 LuaCallbacks LuaBindings::makeVoiceCallbacks() {
   LuaCallbacks callbacks;
 

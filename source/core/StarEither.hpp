@@ -76,8 +76,8 @@ public:
   Right* rightPtr();
 
 private:
-  typedef EitherLeftValue<Left> LeftType;
-  typedef EitherRightValue<Right> RightType;
+  using LeftType = EitherLeftValue<Left>;
+  using RightType = EitherRightValue<Right>;
 
   Variant<LeftType, RightType> m_value;
 };

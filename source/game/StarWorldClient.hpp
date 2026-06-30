@@ -178,7 +178,7 @@ public:
 
   bool waitForLighting(WorldRenderData* renderData = nullptr);
 
-  typedef std::function<bool(PlayerPtr, StringView)> BroadcastCallback;
+  using BroadcastCallback = std::function<bool(PlayerPtr, StringView)>;
   BroadcastCallback& broadcastCallback();
 
 
@@ -216,7 +216,7 @@ private:
     bool operator<(DamageNumberKey const& other) const;
   };
 
-  typedef function<ClientTile const& (Vec2I)> ClientTileGetter;
+  using ClientTileGetter = function<ClientTile const& (Vec2I)>;
 
   void lightingTileGather();
   void lightingCalc();

@@ -16,7 +16,7 @@ STAR_CLASS(EntityMap);
 STAR_STRUCT(WorldGeneratorFacade);
 STAR_CLASS(WorldStorage);
 
-typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
+using WorldChunks = HashMap<ByteArray, Maybe<ByteArray>>;
 
 enum class SectorLoadLevel : uint8_t {
   None = 0,
@@ -39,7 +39,7 @@ enum class SectorGenerationLevel : uint8_t {
 };
 
 struct WorldGeneratorFacade {
-  typedef ServerTileSectorArray::Sector Sector;
+  using Sector = ServerTileSectorArray::Sector;
 
   WorldGeneratorFacade() {}
   virtual ~WorldGeneratorFacade() {}
@@ -86,9 +86,9 @@ struct WorldGeneratorFacade {
 // destructed without error, or a manual call to sync().
 class WorldStorage {
 public:
-  typedef ServerTileSectorArray::Sector Sector;
-  typedef ServerTileSectorArray::Array TileArray;
-  typedef ServerTileSectorArray::ArrayPtr TileArrayPtr;
+  using Sector = ServerTileSectorArray::Sector;
+  using TileArray = ServerTileSectorArray::Array;
+  using TileArrayPtr = ServerTileSectorArray::ArrayPtr;
 
   static WorldChunks getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks);
   static void applyWorldChunksUpdateToFile(String const& file, WorldChunks const& update);
@@ -189,18 +189,18 @@ private:
     SectorUniques = 4
   };
 
-  typedef pair<Sector, Vec2F> SectorAndPosition;
+  using SectorAndPosition = pair<Sector, Vec2F>;
 
   struct WorldMetadataStore {
     Vec2U worldSize;
     VersionedJson userMetadata;
   };
 
-  typedef List<VersionedJson> EntitySectorStore;
+  using EntitySectorStore = List<VersionedJson>;
   // Map of uuid to entity's position and sector they were stored in.
-  typedef HashMap<String, SectorAndPosition> UniqueIndexStore;
+  using UniqueIndexStore = HashMap<String, SectorAndPosition>;
   // Set of unique ids that are stored in a given sector
-  typedef HashSet<String> SectorUniqueStore;
+  using SectorUniqueStore = HashSet<String>;
 
   struct TileSectorStore {
     TileSectorStore();

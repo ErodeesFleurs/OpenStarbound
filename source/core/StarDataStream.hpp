@@ -96,10 +96,10 @@ public:
 
   // All enum types are automatically serializable
 
-  template <typename EnumType, typename = typename std::enable_if<std::is_enum<EnumType>::value>::type>
+  template <typename EnumType, typename = std::enable_if_t<std::is_enum<EnumType>::value>>
   DataStream& operator<<(EnumType const& e);
 
-  template <typename EnumType, typename = typename std::enable_if<std::is_enum<EnumType>::value>::type>
+  template <typename EnumType, typename = std::enable_if_t<std::is_enum<EnumType>::value>>
   DataStream& operator>>(EnumType& e);
 
   // Convenience method to avoid temporary.
@@ -203,13 +203,13 @@ private:
 
 template <typename EnumType, typename>
 DataStream& DataStream::operator<<(EnumType const& e) {
-  *this << (typename std::underlying_type<EnumType>::type)e;
+  *this << (std::underlying_type_t<EnumType>)e;
   return *this;
 }
 
 template <typename EnumType, typename>
 DataStream& DataStream::operator>>(EnumType& e) {
-  typename std::underlying_type<EnumType>::type i;
+  std::underlying_type_t<EnumType> i;
   *this >> i;
   e = (EnumType)i;
   return *this;
@@ -293,7 +293,7 @@ template <typename PointerType, typename ReadFunction>
 void DataStream::pread(PointerType& pointer, ReadFunction readFunction) {
   bool initialized = read<bool>();
   if (initialized) {
-    auto element = make_unique<typename std::decay<typename PointerType::element_type>::type>();
+    auto element = make_unique<std::decay_t<typename PointerType::element_type>>();
     readFunction(*this, *element);
     pointer.reset(element.release());
   } else {
@@ -313,14 +313,14 @@ void DataStream::pwrite(PointerType const& pointer, WriteFunction writeFunction)
 
 template <typename PointerType>
 void DataStream::pread(PointerType& pointer) {
-  return pread(pointer, [](DataStream& ds, typename std::decay<typename PointerType::element_type>::type& value) {
+  return pread(pointer, [](DataStream& ds, std::decay_t<typename PointerType::element_type>& value) {
       ds.read(value);
     });
 }
 
 template <typename PointerType>
 void DataStream::pwrite(PointerType const& pointer) {
-  return pwrite(pointer, [](DataStream& ds, typename std::decay<typename PointerType::element_type>::type const& value) {
+  return pwrite(pointer, [](DataStream& ds, std::decay_t<typename PointerType::element_type> const& value) {
       ds.write(value);
     });
 }

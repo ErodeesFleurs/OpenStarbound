@@ -116,7 +116,7 @@ public:
   List<shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
 
 private:
-  typedef SpatialHash2D<EntityId, float, EntityPtr> SpatialMap;
+  using SpatialMap = SpatialHash2D<EntityId, float, EntityPtr>;
 
   WorldGeometry m_geometry;
 

@@ -184,7 +184,7 @@ private:
   LuaRootPtr m_luaRoot;
   RebuilderPtr m_rebuilder;
 
-  typedef tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>> ItemCacheEntry;
+  using ItemCacheEntry = tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>>;
 
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;

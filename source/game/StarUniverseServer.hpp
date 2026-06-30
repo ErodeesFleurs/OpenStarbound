@@ -268,8 +268,8 @@ private:
 
   LuaRootPtr m_luaRoot;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
+  using ScriptComponentPtr = shared_ptr<ScriptComponent>;
   StringMap<ScriptComponentPtr> m_scriptContexts;
 };
 

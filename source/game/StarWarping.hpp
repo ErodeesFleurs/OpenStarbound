@@ -37,7 +37,7 @@ DataStream& operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
 
 strong_typedef(CelestialCoordinate, CelestialWorldId);
 strong_typedef(Uuid, ClientShipWorldId);
-typedef MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId> WorldId;
+using WorldId = MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId>;
 
 String printWorldId(WorldId const& worldId);
 WorldId parseWorldId(String const& printedId);
@@ -51,7 +51,7 @@ std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 strong_typedef(String, SpawnTargetUniqueEntity);
 strong_typedef(Vec2F, SpawnTargetPosition);
 strong_typedef_builtin(float, SpawnTargetX);
-typedef MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
+using SpawnTarget = MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX>;
 
 Json spawnTargetToJson(SpawnTarget spawnTarget);
 SpawnTarget spawnTargetFromJson(Json v);
@@ -80,7 +80,7 @@ enum class WarpAlias {
   OwnShip
 };
 
-typedef MVariant<WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
+using WarpAction = MVariant<WarpToWorld, WarpToPlayer, WarpAlias>;
 
 WarpAction parseWarpAction(String const& warpString);
 String printWarpAction(WarpAction const& warpAction);

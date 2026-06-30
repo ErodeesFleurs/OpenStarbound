@@ -90,17 +90,17 @@ private:
   List<ClickEvent> m_clickEvents;
   List<KeyEvent> m_keyEvents;
 
-  typedef tuple<RectF, Vec4B> RectOp;
-  typedef tuple<String, Vec2F, float, Vec4B, bool> ImageOp;
-  typedef tuple<String, RectF, RectF, Vec4B> ImageRectOp;
-  typedef tuple<Drawable, Vec2F> DrawableOp;
-  typedef tuple<String, float, Vec2D, RectF, Vec4B> TiledImageOp;
-  typedef tuple<Vec2F, Vec2F, Vec4B, float> LineOp;
-  typedef tuple<PolyF, Vec4B, float> PolyOp;
-  typedef tuple<List<tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
-  typedef tuple<String, TextPositioning, TextStyle> TextOp;
+  using RectOp = tuple<RectF, Vec4B>;
+  using ImageOp = tuple<String, Vec2F, float, Vec4B, bool>;
+  using ImageRectOp = tuple<String, RectF, RectF, Vec4B>;
+  using DrawableOp = tuple<Drawable, Vec2F>;
+  using TiledImageOp = tuple<String, float, Vec2D, RectF, Vec4B>;
+  using LineOp = tuple<Vec2F, Vec2F, Vec4B, float>;
+  using PolyOp = tuple<PolyF, Vec4B, float>;
+  using TrianglesOp = tuple<List<tuple<Vec2F, Vec2F, Vec2F>>, Vec4B>;
+  using TextOp = tuple<String, TextPositioning, TextStyle>;
 
-  typedef MVariant<RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
+  using RenderOp = MVariant<RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp>;
   List<RenderOp> m_renderOps;
 };
 

@@ -59,8 +59,8 @@ private:
   Maybe<Deque<pair<float, T>>> m_interpolationDataPoints;
 };
 
-typedef NetElementFloating<float> NetElementFloat;
-typedef NetElementFloating<double> NetElementDouble;
+using NetElementFloat = NetElementFloating<float>;
+using NetElementDouble = NetElementFloating<double>;
 
 template <typename T>
 T NetElementFloating<T>::get() const {

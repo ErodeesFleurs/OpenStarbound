@@ -118,7 +118,7 @@ struct Particle {
 DataStream& operator<<(DataStream& ds, Particle const& particle);
 DataStream& operator>>(DataStream& ds, Particle& particle);
 
-typedef function<Particle()> ParticleVariantCreator;
+using ParticleVariantCreator = function<Particle()>;
 ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
 
 }

@@ -65,8 +65,8 @@ protected:
   void writeData(DataStream& ds, T const& v) const override;
 };
 
-typedef NetElementIntegral<int64_t> NetElementInt;
-typedef NetElementIntegral<uint64_t> NetElementUInt;
+using NetElementInt = NetElementIntegral<int64_t>;
+using NetElementUInt = NetElementIntegral<uint64_t>;
 
 // Properly encodes NPos no matter the platform width of size_t NetElement
 // size_t values are NOT clamped when setting.
@@ -138,8 +138,8 @@ private:
   function<void(DataStream&, T const&)> m_writer;
 };
 
-typedef NetElementData<String> NetElementString;
-typedef NetElementData<ByteArray> NetElementBytes;
+using NetElementString = NetElementData<String>;
+using NetElementBytes = NetElementData<ByteArray>;
 
 template <typename T>
 T const& NetElementBasicField<T>::get() const {

@@ -13,9 +13,9 @@ STAR_CLASS(ByteArray);
 // ByteArray grows.
 class ByteArray {
 public:
-  typedef char value_type;
-  typedef char* iterator;
-  typedef char const* const_iterator;
+  using value_type = char;
+  using iterator = char*;
+  using const_iterator = char const*;
 
   // Constructs a byte array from a given c string WITHOUT including the
   // trailing '\0'

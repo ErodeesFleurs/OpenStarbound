@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+#include <new>
 #include <vector>
 
 #include "StarConfig.hpp"
@@ -123,21 +125,21 @@ FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket() {
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::~Bucket() {
   if (auto s = valuePtr())
-    s->~Value();
+    std::destroy_at(s);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket const& rhs) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
-    new (&this->value) Value(*o);
+    std::construct_at(&this->value, *o);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::Bucket(Bucket&& rhs) {
   this->hash = rhs.hash;
   if (auto o = rhs.valuePtr())
-    new (&this->value) Value(std::move(*o));
+    std::construct_at(&this->value, std::move(*o));
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
@@ -146,10 +148,10 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
     if (auto s = valuePtr())
       *s = *o;
     else
-      new (&this->value) Value(*o);
+      std::construct_at(&this->value, *o);
   } else {
     if (auto s = valuePtr())
-      s->~Value();
+      std::destroy_at(s);
   }
   this->hash = rhs.hash;
   return *this;
@@ -161,10 +163,10 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
     if (auto s = valuePtr())
       *s = std::move(*o);
     else
-      new (&this->value) Value(std::move(*o));
+      std::construct_at(&this->value, std::move(*o));
   } else {
     if (auto s = valuePtr())
-      s->~Value();
+      std::destroy_at(s);
   }
   this->hash = rhs.hash;
   return *this;
@@ -175,35 +177,35 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setFill
   if (auto s = valuePtr())
     *s = std::move(value);
   else
-    new (&this->value) Value(std::move(value));
+    std::construct_at(&this->value, std::move(value));
   this->hash = hash | FilledHashBit;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setEmpty() {
   if (auto s = valuePtr())
-    s->~Value();
+    std::destroy_at(s);
   this->hash = EmptyHashValue;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setEnd() {
   if (auto s = valuePtr())
-    s->~Value();
+    std::destroy_at(s);
   this->hash = EndHashValue;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 Value const* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() const {
   if (hash & FilledHashBit)
-    return &this->value;
+    return std::launder(&this->value);
   return nullptr;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 Value* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() {
   if (hash & FilledHashBit)
-    return &this->value;
+    return std::launder(&this->value);
   return nullptr;
 }
 

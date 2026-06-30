@@ -30,14 +30,14 @@ enum class EquipmentSlot : uint8_t {
 };
 extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
-typedef pair<String, uint8_t> BagSlot;
+using BagSlot = pair<String, uint8_t>;
 
 strong_typedef(Empty, SwapSlot);
 strong_typedef(Empty, TrashSlot);
 
 // Any manageable location in the player inventory can be pointed to by an
 // InventorySlot
-typedef Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
+using InventorySlot = Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot>;
 
 InventorySlot jsonToInventorySlot(Json const& json);
 Json jsonFromInventorySlot(InventorySlot const& slot);
@@ -57,8 +57,8 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 // hard coded shortcuts to the essential items.  There is one location selected
 // at a time, which is either an entry on the custom bar, or one of the
 // essential items, or nothing.
-typedef uint8_t CustomBarIndex;
-typedef MVariant<CustomBarIndex, EssentialItem> SelectedActionBarLocation;
+using CustomBarIndex = uint8_t;
+using SelectedActionBarLocation = MVariant<CustomBarIndex, EssentialItem>;
 
 SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);

@@ -38,7 +38,7 @@ struct WeatherType {
   StringList weatherNoises;
 };
 
-typedef WeightedPool<String> WeatherPool;
+using WeatherPool = WeightedPool<String>;
 
 DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
 DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);

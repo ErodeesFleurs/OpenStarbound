@@ -535,7 +535,7 @@ namespace Dungeon {
     Part* m_part;
   };
 
-  typedef function<bool(Vec2I, Tile const&)> TileCallback;
+  using TileCallback = function<bool(Vec2I, Tile const&)>;
 
   class PartReader {
   public:

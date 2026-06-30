@@ -12,7 +12,7 @@ public:
   Rebuilder(String const& id);
   ~Rebuilder() = default;
 
-  typedef function<String(Json const&)> AttemptCallback;
+  using AttemptCallback = function<String(Json const&)>;
   bool rebuild(Json store, String last_error, AttemptCallback attempt) const;
 
 private:

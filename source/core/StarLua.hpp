@@ -59,7 +59,7 @@ public:
 // Unpack a container and apply each of the arguments separately to a lua
 // function, similar to lua's unpack.
 template <typename Container>
-LuaVariadic<typename std::decay<Container>::type::value_type> luaUnpack(Container&& c);
+LuaVariadic<typename std::decay_t<Container>::value_type> luaUnpack(Container&& c);
 
 // Similar to LuaVariadic, but a tuple type so automatic per-entry type
 // conversion is done.  This can only be used as the return value of a wrapped
@@ -95,7 +95,7 @@ LuaTupleReturn<Types&...> luaTie(Types&... args);
 
 // Constructs a LuaTupleReturn from the given arguments similar to make_tuple
 template <typename... Types>
-LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... args);
+LuaTupleReturn<std::decay_t<Types>...> luaTupleReturn(Types&&... args);
 
 namespace LuaDetail {
   struct LuaHandle {
@@ -1308,7 +1308,7 @@ namespace LuaDetail {
 
   template <typename Return, typename... Args, typename Function>
   LuaWrappedFunction wrapFunctionWithSignature(Function&& func) {
-    return FunctionWrapper<Return, typename std::decay<Args>::type...>::wrap(std::forward<Function>(func));
+    return FunctionWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(func));
   }
 
   template <typename Return, typename Function, typename... Args>
@@ -1397,7 +1397,7 @@ namespace LuaDetail {
 
   template <typename Return, typename... Args, typename Function>
   LuaWrappedFunction wrapMethodWithSignature(Function&& func) {
-    return MethodWrapper<Return, typename std::decay<Args>::type...>::wrap(std::forward<Function>(func));
+    return MethodWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(func));
   }
 
   template <typename Return, typename Function, typename... Args>
@@ -1458,7 +1458,7 @@ namespace LuaDetail {
 
   template <typename Return, typename... Args, typename Function>
   function<bool(LuaValue, LuaValue)> wrapTableIteratorWithSignature(LuaEngine& engine, Function&& func) {
-    return TableIteratorWrapper<Return, typename std::decay<Args>::type...>::wrap(engine, std::forward<Function>(func));
+    return TableIteratorWrapper<Return, std::decay_t<Args>...>::wrap(engine, std::forward<Function>(func));
   }
 
   template <typename Return, typename Function, typename... Args>
@@ -1535,8 +1535,8 @@ namespace LuaDetail {
 }
 
 template <typename Container>
-LuaVariadic<typename std::decay<Container>::type::value_type> luaUnpack(Container&& c) {
-  LuaVariadic<typename std::decay<Container>::type::value_type> ret;
+LuaVariadic<typename std::decay_t<Container>::value_type> luaUnpack(Container&& c) {
+  LuaVariadic<typename std::decay_t<Container>::value_type> ret;
   if (std::is_rvalue_reference<Container&&>::value) {
     for (auto& e : c)
       ret.append(std::move(e));
@@ -1611,8 +1611,8 @@ LuaTupleReturn<Types&...> luaTie(Types&... args) {
 }
 
 template <typename... Types>
-LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... args) {
-  return LuaTupleReturn<typename std::decay<Types>::type...>(std::forward<Types>(args)...);
+LuaTupleReturn<std::decay_t<Types>...> luaTupleReturn(Types&&... args) {
+  return LuaTupleReturn<std::decay_t<Types>...>(std::forward<Types>(args)...);
 }
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
@@ -1927,7 +1927,7 @@ Maybe<T> LuaUserDataConverter<T>::to(LuaEngine&, LuaValue const& v) {
 
 template <typename T>
 LuaValue LuaEngine::luaFrom(T&& t) {
-  return LuaConverter<typename std::decay<T>::type>::from(*this, std::forward<T>(t));
+  return LuaConverter<std::decay_t<T>>::from(*this, std::forward<T>(t));
 }
 
 template <typename T>

@@ -2,6 +2,7 @@
 
 #include "StarAlgorithm.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Star {
@@ -12,20 +13,20 @@ namespace Star {
 template <typename Element, size_t MaxStackSize>
 class SmallVector {
 public:
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
   SmallVector();
   SmallVector(SmallVector const& other);
-  SmallVector(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  SmallVector(SmallVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   template <typename OtherElement, size_t OtherMaxStackSize>
   SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other);
   template <class Iterator>
@@ -35,7 +36,7 @@ public:
   ~SmallVector();
 
   SmallVector& operator=(SmallVector const& other);
-  SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   SmallVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -89,9 +90,11 @@ public:
   bool operator<(SmallVector const& other) const;
 
 private:
-  typename std::aligned_storage<MaxStackSize * sizeof(Element), alignof(Element)>::type m_stackElements;
+  alignas(Element) unsigned char m_stackElements[(MaxStackSize != 0 ? MaxStackSize : 1) * sizeof(Element)];
 
   bool isHeapAllocated() const;
+  Element const* stackElements() const;
+  Element* stackElements();
 
   Element* m_begin;
   Element* m_end;
@@ -100,7 +103,7 @@ private:
 
 template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector() {
-  m_begin = (Element*)&m_stackElements;
+  m_begin = stackElements();
   m_end = m_begin;
   m_capacity = m_begin + MaxStackSize;
 }
@@ -121,14 +124,14 @@ SmallVector<Element, MaxStackSize>::SmallVector(SmallVector const& other)
 
 template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
-  noexcept(std::is_nothrow_move_constructible<Element>::value)
+  noexcept(std::is_nothrow_move_constructible_v<Element>)
   : SmallVector() {
   if (other.isHeapAllocated()) {
     m_begin = other.m_begin;
     m_end = other.m_end;
     m_capacity = other.m_capacity;
 
-    other.m_begin = (Element*)&other.m_stackElements;
+    other.m_begin = other.stackElements();
     other.m_end = other.m_begin;
     other.m_capacity = other.m_begin + MaxStackSize;
     return;
@@ -186,14 +189,14 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> 
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other)
-    noexcept(std::is_nothrow_move_constructible<Element>::value) -> SmallVector& {
+    noexcept(std::is_nothrow_move_constructible_v<Element>) -> SmallVector& {
   if (this == &other)
     return *this;
 
   clear();
   if (isHeapAllocated()) {
     free(m_begin, (m_capacity - m_begin) * sizeof(Element));
-    m_begin = (Element*)&m_stackElements;
+    m_begin = stackElements();
     m_end = m_begin;
     m_capacity = m_begin + MaxStackSize;
   }
@@ -203,7 +206,7 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other)
     m_end = other.m_end;
     m_capacity = other.m_capacity;
 
-    other.m_begin = (Element*)&other.m_stackElements;
+    other.m_begin = other.stackElements();
     other.m_end = other.m_begin;
     other.m_capacity = other.m_begin + MaxStackSize;
   } else {
@@ -258,7 +261,7 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
 
     // We assume that move constructors can never throw.
     for (size_t i = 0; i < size; ++i) {
-      new (&newMem[i]) Element(std::move(oldMem[i]));
+      std::construct_at(&newMem[i], std::move(oldMem[i]));
     }
 
     m_begin = newMem;
@@ -271,7 +274,7 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
     });
 
     for (size_t i = 0; i < size; ++i) {
-      oldMem[i].~Element();
+      std::destroy_at(&oldMem[i]);
     }
   }
 }
@@ -362,7 +365,7 @@ void SmallVector<Element, MaxStackSize>::pop_back() {
   if (m_begin == m_end)
     throw OutOfRangeException("SmallVector::pop_back called on empty SmallVector");
   --m_end;
-  m_end->~Element();
+  std::destroy_at(m_end);
 }
 
 template <typename Element, size_t MaxStackSize>
@@ -410,7 +413,7 @@ template <typename... Args>
 void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
   if (m_end == m_capacity)
     reserve(size() + 1);
-  new (m_end) Element(std::forward<Args>(args)...);
+  std::construct_at(m_end, std::forward<Args>(args)...);
   ++m_end;
 }
 
@@ -480,7 +483,17 @@ bool SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) con
 
 template <typename Element, size_t MaxStackSize>
 bool SmallVector<Element, MaxStackSize>::isHeapAllocated() const {
-  return m_begin != (Element*)&m_stackElements;
+  return m_begin != stackElements();
+}
+
+template <typename Element, size_t MaxStackSize>
+Element const* SmallVector<Element, MaxStackSize>::stackElements() const {
+  return std::launder(reinterpret_cast<Element const*>(m_stackElements));
+}
+
+template <typename Element, size_t MaxStackSize>
+Element* SmallVector<Element, MaxStackSize>::stackElements() {
+  return std::launder(reinterpret_cast<Element*>(m_stackElements));
 }
 
 }
