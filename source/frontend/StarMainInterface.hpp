@@ -1,22 +1,20 @@
 #pragma once
 
-#include "StarInventory.hpp"
-#include "StarInteractionTypes.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarGameTypes.hpp"
-#include "StarInterfaceCursor.hpp"
-#include "StarListener.hpp"
-#include "StarMainInterfaceTypes.hpp"
-#include "StarWarping.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarMaterialDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarGameTypes.hpp"
+#include "StarInteractionTypes.hpp"
+#include "StarInterfaceCursor.hpp"
+#include "StarInventory.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarListener.hpp"
+#include "StarMainInterfaceTypes.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarWarping.hpp"
 
 namespace Star {
 
@@ -137,9 +135,9 @@ public:
   };
 
   MainInterface(UniverseClientPtr client,
-      WorldPainterPtr painter,
-      CinematicPtr cinematicOverlay,
-      MainInterfaceServices services);
+                WorldPainterPtr painter,
+                CinematicPtr cinematicOverlay,
+                MainInterfaceServices services);
 
   ~MainInterface();
 
@@ -211,6 +209,7 @@ public:
   void takeScriptPanes(List<ScriptPaneInfo>& out);
   void reviveScriptPanes(List<ScriptPaneInfo>& panes);
   void displayDefaultPanes();
+
 private:
   [[nodiscard]] UniquePtr<Pane> createEscapeDialog();
   void initHttpTrustDialog();
@@ -341,4 +340,4 @@ private:
   LiquidsDatabaseConstPtr m_liquidsDatabase;
 };
 
-}
+}// namespace Star

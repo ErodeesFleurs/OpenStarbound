@@ -39,6 +39,14 @@ String categoryDisplayName(String const& category, ItemTooltipBuilder::Services 
   Json categories = tooltipAssets(services)->json("/items/categories.config:labels");
   return categories.getString(category, category);
 }
+
+String itemTooltipPath(String tooltipKind, String const& suffix, String const& directory) {
+  if (tooltipKind.empty())
+    tooltipKind = "base";
+  if (!tooltipKind.endsWith(suffix))
+    tooltipKind = directory + tooltipKind + suffix;
+  return tooltipKind;
+}
 }
 
 UniquePtr<Pane> ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services) {
@@ -51,12 +59,7 @@ UniquePtr<Pane> ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, Player
     String title;
     String subTitle;
 
-    String tooltipKind = item->tooltipKind();
-
-    if (tooltipKind.empty())
-      tooltipKind = "base";
-    if (!tooltipKind.endsWith(".tooltip"))
-      tooltipKind = "/interface/tooltips/" + tooltipKind + ".tooltip";
+    String tooltipKind = itemTooltipPath(item->tooltipKind(), ".tooltip", "/interface/tooltips/");
 
     buildItemDescriptionInner(tooltip.get(), item, tooltipKind, title, subTitle, viewer, services);
 
@@ -70,12 +73,7 @@ UniquePtr<Pane> ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, Player
 }
 
 void ItemTooltipBuilder::buildItemDescription(Widget* container, ItemPtr const& item, Services services) {
-  String tooltipKind = item->tooltipKind();
-
-  if (tooltipKind.empty())
-    tooltipKind = "base";
-  if (!tooltipKind.endsWith(".itemdescription"))
-    tooltipKind = "/interface/itemdescriptions/" + tooltipKind + ".itemdescription";
+  String tooltipKind = itemTooltipPath(item->tooltipKind(), ".itemdescription", "/interface/itemdescriptions/");
 
   String title;
   String subTitle;

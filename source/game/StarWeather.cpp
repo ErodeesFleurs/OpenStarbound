@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "StarWeather.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarIterator.hpp"
@@ -272,15 +274,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
         if (position[1] > m_undergroundLevel && (!m_weatherEffectsActiveQuery || m_weatherEffectsActiveQuery(Vec2I::floor(position)))) {
           // Make sure not to spawn projectiles if they intersect any client
           // visible region.
-          bool intersectsVisibleRegion = false;
-          for (auto const& visibleRegion : m_clientVisibleRegions) {
-            if (RectF(visibleRegion).contains(position)) {
-              intersectsVisibleRegion = true;
-              break;
-            }
-          }
-
-          if (!intersectsVisibleRegion) {
+          if (!std::ranges::any_of(m_clientVisibleRegions, [&](auto const& visibleRegion) { return RectF(visibleRegion).contains(position); })) {
             auto newProjectile = m_projectileDatabase->createProjectile(projectileConfig.projectile, projectileConfig.parameters);
             newProjectile->setInitialPosition(position);
             newProjectile->setInitialVelocity(projectileConfig.velocity + Vec2F(projectileConfig.windAffectAmount * wind(), 0));

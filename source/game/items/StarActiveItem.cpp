@@ -487,31 +487,11 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   callbacks.registerCallback("setInventoryIcon", [this](Json inventoryIcon) {
     setInstanceValue("inventoryIcon", inventoryIcon);
 
-    if (inventoryIcon.type() == Json::Type::Array) {
-      setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
-        if (auto image = config.optString("image"))
-          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)), m_imageMetadataDatabase);
-        return Drawable(config, m_imageMetadataDatabase);
-      }));
-    } else {
-      auto image = AssetPath::relativeTo(directory(), inventoryIcon.toString());
-      setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)});
-    }
+    setIconDrawables(iconDrawablesFromJson(inventoryIcon));
   });
   callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) {
     setInstanceValue("secondaryIcon", secondaryIcon);
-    if (secondaryIcon.type() == Json::Type::Array) {
-      setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
-        if (auto image = config.optString("image"))
-          return Drawable(config.set("image", AssetPath::relativeTo(directory(), *image)), m_imageMetadataDatabase);
-        return Drawable(config, m_imageMetadataDatabase);
-      }));
-    } else if (secondaryIcon.type() == Json::Type::String) {
-      auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
-      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)}));
-    } else {
-      setSecondaryIconDrawables(Maybe<List<Drawable>>());
-    }
+    setSecondaryIconDrawables(secondaryIconDrawablesFromJson(secondaryIcon));
   });
 
   callbacks.registerCallback("setInstanceValue", [this](String name, Json val) {

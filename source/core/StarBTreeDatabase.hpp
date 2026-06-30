@@ -103,7 +103,6 @@ private:
   static char const* const FreeIndexMagic;
   static char const* const IndexMagic;
   static char const* const LeafMagic;
-  // static uint32_t const BlockMagicSize = 2;
   static constexpr size_t BTreeRootSelectorBit = 32;
   static constexpr size_t BTreeRootInfoStart = 33;
   static constexpr size_t BTreeRootInfoSize = 17;

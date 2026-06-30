@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarAlgorithm.hpp"
-
+#include <algorithm>
+#include <functional>
 #include <iterator>
 
 namespace Star {
@@ -10,18 +10,12 @@ namespace Star {
 
 template <typename Iterator, typename Functor>
 bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
-  for (; iterBegin != iterEnd; iterBegin++)
-    if (f(*iterBegin))
-      return true;
-  return false;
+  return std::any_of(iterBegin, iterEnd, std::ref(f));
 }
 
 template <typename Iterator>
 bool any(Iterator const& iterBegin, Iterator const& iterEnd) {
-  for (auto iter = iterBegin; iter != iterEnd; ++iter)
-    if (static_cast<bool>(*iter))
-      return true;
-  return false;
+  return std::any_of(iterBegin, iterEnd, [](auto const& value) { return static_cast<bool>(value); });
 }
 
 template <typename Iterable, typename Functor>
@@ -36,18 +30,12 @@ bool any(Iterable const& iter) {
 
 template <typename Iterator, typename Functor>
 bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
-  for (; iterBegin != iterEnd; iterBegin++)
-    if (!f(*iterBegin))
-      return false;
-  return true;
+  return std::all_of(iterBegin, iterEnd, std::ref(f));
 }
 
 template <typename Iterator>
 bool all(Iterator const& iterBegin, Iterator const& iterEnd) {
-  for (auto iter = iterBegin; iter != iterEnd; ++iter)
-    if (!static_cast<bool>(*iter))
-      return false;
-  return true;
+  return std::all_of(iterBegin, iterEnd, [](auto const& value) { return static_cast<bool>(value); });
 }
 
 template <typename Iterable, typename Functor>
@@ -218,7 +206,7 @@ public:
   ZipTupleIterator() = default;
 
   ZipTupleIterator(TailIterator tailIterator, HeadIterator headIterator)
-    : tailIterator(tailIterator), headIterator(headIterator) {
+      : tailIterator(tailIterator), headIterator(headIterator) {
     atEnd = tailIterator == TailIterator() || headIterator == HeadIterator();
   }
 
@@ -238,7 +226,7 @@ public:
 
   bool operator==(ZipTupleIterator const& rhs) const {
     return (atEnd && rhs.atEnd)
-        || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
+      || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
   }
 
   bool operator!=(ZipTupleIterator const& rhs) const {
@@ -294,16 +282,18 @@ zipIteratorReturn_t<Container, Rest...> zipIterator(Container& container, Rest&.
 
 namespace RangeHelper {
 
-  template <typename Diff>
-  bool checkIfDiffLessThanZero(Diff diff) {
-    if constexpr (std::is_unsigned_v<Diff>)
-      return false;
-    else
-      return diff < 0;
-  }
+template <typename Diff>
+bool checkIfDiffLessThanZero(Diff diff) {
+  if constexpr (std::is_unsigned_v<Diff>)
+    return false;
+  else
+    return diff < 0;
 }
+}// namespace RangeHelper
 
-struct RangeExceptionTag { static constexpr char const* typeName = "RangeException"; };
+struct RangeExceptionTag {
+  static constexpr char const* typeName = "RangeException";
+};
 using RangeException = TypedException<StarException, RangeExceptionTag>;
 
 template <typename Value, typename Diff = int>
@@ -318,7 +308,7 @@ public:
   RangeIterator() = default;
 
   RangeIterator(Value min, Value max, Diff diff)
-    : m_start(min), m_end(max), m_diff(diff), m_current(min), m_stop(false) {
+      : m_start(min), m_end(max), m_diff(diff), m_current(min), m_stop(false) {
     sanity();
   }
 
@@ -604,4 +594,4 @@ ResultContainer enumerateConstruct(Iterable&& list) {
   return res;
 }
 
-}
+}// namespace Star

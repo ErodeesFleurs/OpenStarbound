@@ -6,6 +6,8 @@
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 
+#include <algorithm>
+
 namespace Star {
 
 HttpTrustDialog::HttpTrustDialog(Services services)
@@ -52,14 +54,7 @@ void HttpTrustDialog::reply(const HttpTrustReply replyType) {
     if (auto existing = m_configuration->getPath("safe.luaHttp.trustedSites").optArray())
       trustedSites = *existing;
 
-    // Check if already exists
-    bool exists = false;
-    for (auto const& site : trustedSites) {
-      if (site.toString() == m_domain) {
-        exists = true;
-        break;
-      }
-    }
+    bool exists = std::ranges::any_of(trustedSites, [&](auto const& site) { return site.toString() == m_domain; });
 
     if (!exists) {
       trustedSites.append(m_domain);

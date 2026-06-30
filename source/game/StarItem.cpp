@@ -23,30 +23,8 @@ Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDat
 
   m_rarity = RarityNames.getLeft(instanceValue("rarity").toString());
 
-  auto inventoryIcon = instanceValue("inventoryIcon", assets->json("/items/defaultParameters.config:missingIcon"));
-  if (inventoryIcon.type() == Json::Type::Array) {
-    setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
-      if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)), m_imageMetadataDatabase);
-      return Drawable(config, m_imageMetadataDatabase);
-    }));
-  } else {
-    auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
-    setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)});
-  }
-  auto secondaryIcon = instanceValue("secondaryIcon", Json());
-  if (secondaryIcon.type() == Json::Type::Array) {
-    setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
-      if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)), m_imageMetadataDatabase);
-      return Drawable(config, m_imageMetadataDatabase);
-    }));
-  } else if (secondaryIcon.type() == Json::Type::String) {
-    auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)}));
-  } else {
-    setSecondaryIconDrawables(Maybe<List<Drawable>>());
-  }
+  setIconDrawables(iconDrawablesFromJson(instanceValue("inventoryIcon", assets->json("/items/defaultParameters.config:missingIcon"))));
+  setSecondaryIconDrawables(secondaryIconDrawablesFromJson(instanceValue("secondaryIcon", Json())));
 
   m_twoHanded = instanceValue("twoHanded", false).toBool();
   m_price = instanceValue("price", assets->json("/items/defaultParameters.config:defaultPrice")).toInt();
@@ -70,6 +48,40 @@ Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDat
 }
 
 Item::~Item() = default;
+
+List<Drawable> Item::iconDrawablesFromJson(Json const& icon) const {
+  if (icon.type() == Json::Type::Array) {
+    return icon.toArray().transformed([&](Json config) -> Drawable {
+      if (auto image = config.optString("image"))
+        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)), m_imageMetadataDatabase);
+      return Drawable(config, m_imageMetadataDatabase);
+    });
+  }
+
+  auto image = AssetPath::relativeTo(m_directory, icon.toString());
+  return {Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)};
+}
+
+Maybe<List<Drawable>> Item::secondaryIconDrawablesFromJson(Json const& icon) const {
+  if (icon.type() == Json::Type::Array || icon.type() == Json::Type::String)
+    return iconDrawablesFromJson(icon);
+  return Maybe<List<Drawable>>();
+}
+
+void Item::normalizeIconDrawables(List<Drawable>& drawables) {
+  auto boundBox = Drawable::boundBoxAll(drawables, true, m_imageMetadataDatabase);
+  if (!boundBox.isEmpty()) {
+    for (auto& drawable : drawables)
+      drawable.translate(-boundBox.center());
+    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
+    // be configurable?
+    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
+    if (zoom < 1) {
+      for (auto& drawable : drawables)
+        drawable.scale(zoom);
+    }
+  }
+}
 
 [[nodiscard]] String Item::name() const {
   return m_name;
@@ -235,18 +247,7 @@ void Item::setPrice(uint64_t price) {
 
 void Item::setIconDrawables(List<Drawable> drawables) {
   m_iconDrawables = std::move(drawables);
-  auto boundBox = Drawable::boundBoxAll(m_iconDrawables, true, m_imageMetadataDatabase);
-  if (!boundBox.isEmpty()) {
-    for (auto& drawable : m_iconDrawables)
-      drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
-    if (zoom < 1) {
-      for (auto& drawable : m_iconDrawables)
-        drawable.scale(zoom);
-    }
-  }
+  normalizeIconDrawables(m_iconDrawables);
 }
 
 void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
@@ -254,18 +255,7 @@ void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
   if (m_secondaryIconDrawables.isNothing())
     return;
 
-  auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true, m_imageMetadataDatabase);
-  if (!boundBox.isEmpty()) {
-    for (auto& drawable : *m_secondaryIconDrawables)
-      drawable.translate(-boundBox.center());
-    // TODO: Why 16?  Is this the size of the icon container?  Shouldn't this
-    // be configurable?
-    float zoom = 16.0f / std::max(boundBox.width(), boundBox.height());
-    if (zoom < 1) {
-      for (auto& drawable : *m_secondaryIconDrawables)
-        drawable.scale(zoom);
-    }
-  }
+  normalizeIconDrawables(*m_secondaryIconDrawables);
 }
 
 void Item::setTwoHanded(bool twoHanded) {

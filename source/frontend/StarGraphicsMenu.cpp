@@ -1,91 +1,91 @@
 #include "StarGraphicsMenu.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
+#include "StarButtonWidget.hpp"
 #include "StarConfiguration.hpp"
 #include "StarGuiReader.hpp"
-#include "StarListWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarSliderBar.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarOrderedSet.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLabelWidget.hpp"
+#include "StarListWidget.hpp"
+#include "StarOrderedSet.hpp"
 #include "StarShadersMenu.hpp"
+#include "StarSliderBar.hpp"
 
 namespace Star {
 
 GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, GraphicsMenuServices services)
-  : Pane(services.guiContext),
-    m_paneManager(manager),
-    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "GraphicsMenu", "assets")),
-    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "GraphicsMenu", "configuration")) {
+    : Pane(services.guiContext),
+      m_paneManager(manager),
+      m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "GraphicsMenu", "assets")),
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "GraphicsMenu", "configuration")) {
   client = requireServiceValueAs<StarException>(std::move(client), "GraphicsMenu", "universe client");
 
   GuiReader reader(context());
   reader.registerCallback("cancel",
-      [&](Widget*) {
-        dismiss();
-      });
+                          [&](Widget*) {
+                            dismiss();
+                          });
   reader.registerCallback("accept",
-      [&](Widget*) {
-        apply();
-        applyWindowSettings();
-      });
+                          [&](Widget*) {
+                            apply();
+                            applyWindowSettings();
+                          });
   reader.registerCallback("resSlider", [=, this](Widget*) {
-      Vec2U res = m_resList[fetchChild<SliderBarWidget>("resSlider")->val()];
-      m_localChanges.set("fullscreenResolution", jsonFromVec2U(res));
-      syncGui();
-    });
+    Vec2U res = m_resList[fetchChild<SliderBarWidget>("resSlider")->val()];
+    m_localChanges.set("fullscreenResolution", jsonFromVec2U(res));
+    syncGui();
+  });
   reader.registerCallback("interfaceScaleSlider", [=, this](Widget*) {
-      auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
-      m_localChanges.set("interfaceScale", m_interfaceScaleList[interfaceScaleSlider->val()]);
-      syncGui();
-    });
+    auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
+    m_localChanges.set("interfaceScale", m_interfaceScaleList[interfaceScaleSlider->val()]);
+    syncGui();
+  });
   reader.registerCallback("zoomSlider", [=, this](Widget*) {
-      auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
-      m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
-      m_configuration->set("zoomLevel", m_zoomList[zoomSlider->val()]);
-      syncGui();
-    });
+    auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
+    m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
+    m_configuration->set("zoomLevel", m_zoomList[zoomSlider->val()]);
+    syncGui();
+  });
   reader.registerCallback("cameraSpeedSlider", [=, this](Widget*) {
-      auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
-      m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
-      m_configuration->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
-      syncGui();
-    });
+    auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
+    m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
+    m_configuration->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
+    syncGui();
+  });
   reader.registerCallback("speechBubbleCheckbox", [=, this](Widget*) {
-      auto button = fetchChild<ButtonWidget>("speechBubbleCheckbox");
-      m_localChanges.set("speechBubbles", button->isChecked());
-      m_configuration->set("speechBubbles", button->isChecked());
-      syncGui();
-    });
+    auto button = fetchChild<ButtonWidget>("speechBubbleCheckbox");
+    m_localChanges.set("speechBubbles", button->isChecked());
+    m_configuration->set("speechBubbles", button->isChecked());
+    syncGui();
+  });
   reader.registerCallback("interactiveHighlightCheckbox", [=, this](Widget*) {
-      auto button = fetchChild<ButtonWidget>("interactiveHighlightCheckbox");
-      m_localChanges.set("interactiveHighlight", button->isChecked());
-      m_configuration->set("interactiveHighlight", button->isChecked());
-      syncGui();
-    });
+    auto button = fetchChild<ButtonWidget>("interactiveHighlightCheckbox");
+    m_localChanges.set("interactiveHighlight", button->isChecked());
+    m_configuration->set("interactiveHighlight", button->isChecked());
+    syncGui();
+  });
   reader.registerCallback("fullscreenCheckbox", [=, this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("fullscreenCheckbox")->isChecked();
-      m_localChanges.set("fullscreen", checked);
-      if (checked)
-        m_localChanges.set("borderless", !checked);
-      syncGui();
-    });
+    bool checked = fetchChild<ButtonWidget>("fullscreenCheckbox")->isChecked();
+    m_localChanges.set("fullscreen", checked);
+    if (checked)
+      m_localChanges.set("borderless", !checked);
+    syncGui();
+  });
   reader.registerCallback("borderlessCheckbox", [=, this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("borderlessCheckbox")->isChecked();
-      m_localChanges.set("borderless", checked);
-      if (checked)
-        m_localChanges.set("fullscreen", !checked);
-      syncGui();
-    });
+    bool checked = fetchChild<ButtonWidget>("borderlessCheckbox")->isChecked();
+    m_localChanges.set("borderless", checked);
+    if (checked)
+      m_localChanges.set("fullscreen", !checked);
+    syncGui();
+  });
   reader.registerCallback("textureLimitCheckbox", [=, this](Widget*) {
-      m_localChanges.set("limitTextureAtlasSize", fetchChild<ButtonWidget>("textureLimitCheckbox")->isChecked());
-      syncGui();
-    });
+    m_localChanges.set("limitTextureAtlasSize", fetchChild<ButtonWidget>("textureLimitCheckbox")->isChecked());
+    syncGui();
+  });
   reader.registerCallback("multiTextureCheckbox", [=, this](Widget*) {
-      m_localChanges.set("useMultiTexturing", fetchChild<ButtonWidget>("multiTextureCheckbox")->isChecked());
-      syncGui();
-    });
+    m_localChanges.set("useMultiTexturing", fetchChild<ButtonWidget>("multiTextureCheckbox")->isChecked());
+    syncGui();
+  });
   reader.registerCallback("antiAliasingCheckbox", [=, this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("antiAliasingCheckbox")->isChecked();
     m_localChanges.set("antiAliasing", checked);
@@ -99,11 +99,11 @@ GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, Graph
     context().applicationController()->setCursorHardware(checked);
   });
   reader.registerCallback("monochromeCheckbox", [=, this](Widget*) {
-      bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
-      m_localChanges.set("monochromeLighting", checked);
-      m_configuration->set("monochromeLighting", checked);
-      syncGui();
-    });
+    bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
+    m_localChanges.set("monochromeLighting", checked);
+    m_configuration->set("monochromeLighting", checked);
+    syncGui();
+  });
   reader.registerCallback("newLightingCheckbox", [=, this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("newLightingCheckbox")->isChecked();
     m_localChanges.set("newLighting", checked);
@@ -111,8 +111,8 @@ GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, Graph
     syncGui();
   });
   reader.registerCallback("showShadersMenu", [=, this](Widget*) {
-      displayShaders();
-    });
+    displayShaders();
+  });
 
   auto config = m_assets->json("/interface/windowconfig/graphicsmenu.config");
   Json paneLayout = config.get("paneLayout");
@@ -131,7 +131,7 @@ GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, Graph
 
   initConfig();
   syncGui();
-  
+
   m_shadersMenu = make_shared<ShadersMenu>(m_assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client, BaseScriptPaneServices{m_assets, {}, {}, {}, {}, context()});
 }
 
@@ -141,11 +141,7 @@ void GraphicsMenu::show() {
   syncGui();
 }
 
-void GraphicsMenu::dismissed() {
-  Pane::dismissed();
-}
-
-void GraphicsMenu::toggleFullscreen() {  
+void GraphicsMenu::toggleFullscreen() {
   bool fullscreen = m_localChanges.get("fullscreen").toBool();
   bool borderless = m_localChanges.get("borderless").toBool();
 
@@ -173,8 +169,7 @@ StringList const GraphicsMenu::ConfigKeys = {
   "antiAliasing",
   "hardwareCursor",
   "monochromeLighting",
-  "newLighting"
-};
+  "newLighting"};
 
 void GraphicsMenu::initConfig() {
   for (auto key : ConfigKeys) {
@@ -186,8 +181,8 @@ void GraphicsMenu::syncGui() {
   Vec2U res = jsonToVec2U(m_localChanges.get("fullscreenResolution"));
   auto resSlider = fetchChild<SliderBarWidget>("resSlider");
   auto resIt = std::lower_bound(m_resList.begin(), m_resList.end(), res, [&](Vec2U const& a, Vec2U const& b) {
-      return a[0] * a[1] < b[0] * b[1]; // sort by number of pixels
-    });
+    return a[0] * a[1] < b[0] * b[1];// sort by number of pixels
+  });
   if (resIt != m_resList.end()) {
     size_t resIndex = resIt - m_resList.begin();
     resIndex = std::min(resIndex, m_resList.size() - 1);
@@ -264,4 +259,4 @@ void GraphicsMenu::applyWindowSettings() {
     appController->setNormalWindow(jsonToVec2U(m_configuration->get("windowedResolution")));
 }
 
-}
+}// namespace Star

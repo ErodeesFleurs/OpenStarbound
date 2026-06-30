@@ -94,6 +94,13 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
   return m_index.keys();
 }
 
+pair<uint64_t, uint64_t> const& PackedAssetSource::indexEntry(String const& path) const {
+  auto indexEntry = m_index.ptr(path);
+  if (!indexEntry)
+    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
+  return *indexEntry;
+}
+
 [[nodiscard]] IODevicePtr PackedAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
     AssetReader(FilePtr file, String path, StreamOffset offset, StreamOffset size)
@@ -150,20 +157,14 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
     StreamOffset assetPos;
   };
 
-  auto indexEntry = m_index.ptr(path);
-  if (!indexEntry)
-    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
-
-  return make_shared<AssetReader>(m_packedFile, path, indexEntry->first, indexEntry->second);
+  auto const& indexEntry = this->indexEntry(path);
+  return make_shared<AssetReader>(m_packedFile, path, indexEntry.first, indexEntry.second);
 }
 
 [[nodiscard]] ByteArray PackedAssetSource::read(String const& path) {
-  auto indexEntry = m_index.ptr(path);
-  if (!indexEntry)
-    throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
-
-  ByteArray data(indexEntry->second, 0);
-  m_packedFile->readFullAbsolute(indexEntry->first, data.ptr(), indexEntry->second);
+  auto const& indexEntry = this->indexEntry(path);
+  ByteArray data(indexEntry.second, 0);
+  m_packedFile->readFullAbsolute(indexEntry.first, data.ptr(), indexEntry.second);
   return data;
 }
 

@@ -22,6 +22,9 @@
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarString.hpp"
 
+#include <algorithm>
+#include <functional>
+
 constexpr float MaxWarpSearchRadius = 1024;
 
 namespace Star {
@@ -88,7 +91,7 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
 
   auto commandDescriptions = [&](Json const& commandConfig) {
       StringList commandList = commandConfig.toObject().keys();
-      sort(commandList);
+      std::ranges::sort(commandList, std::less<String>{});
       return "/" + commandList.join(", /");
     };
 

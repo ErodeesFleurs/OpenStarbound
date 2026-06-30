@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "StarParallax.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
@@ -145,7 +147,7 @@ Parallax::Parallax(AssetsConstPtr assets,
   }
 
   // sort with highest Z level first
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  std::ranges::stable_sort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
 }
 
 Parallax::Parallax(Json const& store) {
@@ -157,7 +159,7 @@ Parallax::Parallax(Json const& store) {
   m_imageDirectory = store.getString("imageDirectory");
   m_layers = store.getArray("layers").transformed(construct<ParallaxLayer>());
 
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  std::ranges::stable_sort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
 }
 
 Json Parallax::store() const {

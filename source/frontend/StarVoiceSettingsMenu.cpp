@@ -9,16 +9,5 @@ VoiceSettingsMenu::VoiceSettingsMenu(Json const& config, BaseScriptPaneServices 
   m_script.addCallbacks("voice", LuaBindings::makeVoiceCallbacks(voice));
 }
 
-void VoiceSettingsMenu::show() {
-  BaseScriptPane::show();
-}
-
-void VoiceSettingsMenu::displayed() {
-  BaseScriptPane::displayed();
-}
-
-void VoiceSettingsMenu::dismissed() {
-  BaseScriptPane::dismissed();
-}
 
 }

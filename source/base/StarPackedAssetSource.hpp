@@ -32,6 +32,7 @@ public:
   [[nodiscard]] ByteArray read(String const& path) override;
 
 private:
+  [[nodiscard]] pair<uint64_t, uint64_t> const& indexEntry(String const& path) const;
   FilePtr m_packedFile;
   JsonObject m_metadata;
   OrderedHashMap<String, pair<uint64_t, uint64_t>> m_index;

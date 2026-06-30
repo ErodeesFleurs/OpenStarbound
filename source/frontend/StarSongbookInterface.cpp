@@ -8,6 +8,8 @@
 #include "StarPlayer.hpp"
 #include "StarPythonic.hpp"
 
+#include <algorithm>
+
 namespace Star {
 
 String const SongPathPrefix = "/songs/";
@@ -63,14 +65,14 @@ bool SongbookInterface::play() {
 void SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
     m_files = m_assets->scan(".abc");
-    eraseWhere(m_files, [](String& song) {
+    std::erase_if(m_files, [](String& song) {
       if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
         Logger::warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);
         return true;
       }
       return false;
     });
-    sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
+    std::ranges::sort(m_files, [](String const& a, String const& b) -> bool { return b.compare(a, String::CaseInsensitive) > 0; });
   }
   auto& search = fetchChild<TextBoxWidget>("search")->getText();
   if (m_lastSearch != search || reloadFiles) {

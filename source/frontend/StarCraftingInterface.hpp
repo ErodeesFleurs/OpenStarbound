@@ -1,15 +1,15 @@
 #pragma once
 
-#include "StarObserverPtr.hpp"
-#include "StarWorldPainter.hpp"
-#include "StarWorldClient.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarPane.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarObjectDatabase.hpp"
+#include "StarObserverPtr.hpp"
+#include "StarPane.hpp"
 #include "StarStatusEffectDatabase.hpp"
+#include "StarWorldClient.hpp"
+#include "StarWorldPainter.hpp"
 
 namespace Star {
 
@@ -43,11 +43,11 @@ struct CraftingPaneServices {
 class CraftingPane : public Pane {
 public:
   CraftingPane(
-      WorldClientPtr worldClient,
-      PlayerPtr player,
-      Json const& settings,
-      EntityId sourceEntityId,
-      CraftingPaneServices services);
+    WorldClientPtr worldClient,
+    PlayerPtr player,
+    Json const& settings,
+    EntityId sourceEntityId,
+    CraftingPaneServices services);
 
   void displayed() override;
   void dismissed() override;
@@ -74,8 +74,6 @@ private:
   void setupWidget(WidgetRef<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
 
   [[nodiscard]] UniquePtr<Pane> setupTooltip(ItemRecipe const& recipe);
-
-  [[nodiscard]] size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
 
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
@@ -111,4 +109,4 @@ private:
   Maybe<ItemRecipe> m_upgradeRecipe;
 };
 
-}
+}// namespace Star

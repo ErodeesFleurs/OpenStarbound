@@ -12,12 +12,10 @@ class ShadersMenu : public BaseScriptPane {
 public:
   ShadersMenu(Json const& config, UniverseClientPtr client, BaseScriptPaneServices services);
 
-  void show() override;
   void displayed() override;
-  void dismissed() override;
 
 private:
   UniverseClientPtr m_client;
 };
 
-}
+}// namespace Star

@@ -2,9 +2,9 @@
 #include "StarFormat.hpp"
 #include "StarLexicalCast.hpp"
 
-#include <zlib.h>
 #include <errno.h>
 #include <string.h>
+#include <zlib.h>
 
 namespace Star {
 
@@ -82,7 +82,6 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
       if (limit && out.size() >= limit) {
         inflateEnd(&strm);
         throw IOException(strf("hit uncompressData limit of {} bytes", limit));
-        break;
       }
     } else if (inflate_res == Z_BUF_ERROR) {
       break;
@@ -117,10 +116,10 @@ CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, Comp
 }
 
 CompressedFile::CompressedFile()
-  : IODevice(IOMode::Closed) {}
+    : IODevice(IOMode::Closed) {}
 
 CompressedFile::CompressedFile(String filename)
-  : IODevice(IOMode::Closed) {
+    : IODevice(IOMode::Closed) {
   setFilename(std::move(filename));
 }
 
@@ -149,7 +148,7 @@ void CompressedFile::seek(StreamOffset offset, IOSeek seekMode) {
   if (retCode < 0) {
     throw IOException::format("Seek error: {}", gzerror(static_cast<gzFile>(m_file), 0));
   } else if ((seekMode == IOSeek::Relative && begPos + offset != endPos)
-      || (seekMode == IOSeek::Absolute && offset != endPos)) {
+             || (seekMode == IOSeek::Absolute && offset != endPos)) {
     throw EofException("Error, unexpected end of file found");
   }
 }
@@ -245,4 +244,4 @@ IODevicePtr CompressedFile::clone() {
   return cloned;
 }
 
-}
+}// namespace Star

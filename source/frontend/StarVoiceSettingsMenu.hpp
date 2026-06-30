@@ -12,12 +12,6 @@ class VoiceSettingsMenu : public BaseScriptPane {
 public:
   VoiceSettingsMenu(Json const& config, BaseScriptPaneServices services, Voice& voice);
 
-  void show() override;
-  void displayed() override;
-  void dismissed() override;
-
-private:
-
 };
 
 }

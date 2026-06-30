@@ -2,6 +2,8 @@
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 
+#include <algorithm>
+
 namespace Star {
 
 ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray)
@@ -34,15 +36,8 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
   auto cullRects = m_worldGeometry.splitRect(cullRegion);
 
   for (auto& particle : m_particles) {
-    bool inRegion = false;
     Vec2F worldPos = m_worldGeometry.xwrap(particle.position);
-    for (auto cullRect : cullRects) {
-      if (cullRect.contains(worldPos)) {
-        inRegion = true;
-        break;
-      }
-    }
-    if (!inRegion)
+    if (!std::ranges::any_of(cullRects, [&](auto const& cullRect) { return cullRect.contains(worldPos); }))
       continue;
 
     particle.update(dt, Vec2F(wind, 0));

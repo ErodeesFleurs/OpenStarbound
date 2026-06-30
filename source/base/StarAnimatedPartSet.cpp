@@ -7,8 +7,11 @@ namespace Star {
 
 AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   m_animatorVersion = animatorVersion;
+  auto skipMergedRemoval = [this](Json const& value) {
+    return version() > 0 && !value.isType(Json::Type::Object);
+  };
   for (auto const& [stateTypeName, stateTypeConfig] : config.get("stateTypes", JsonObject()).iterateObject()) {
-    if ((version() > 0) && !stateTypeConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+    if (skipMergedRemoval(stateTypeConfig))
       continue;
 
     StateType newStateType;
@@ -18,7 +21,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
     newStateType.stateTypeProperties = stateTypeConfig.getObject("properties", {});
 
     for (auto const& [stateName, stateConfig] : stateTypeConfig.get("states", JsonObject()).iterateObject()) {
-      if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+      if (skipMergedRemoval(stateConfig))
         continue;
 
       auto newState = make_shared<State>();
@@ -51,7 +54,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
     });
 
   for (auto const& [partName, partConfig] : config.get("parts", JsonObject()).iterateObject()) {
-    if ((version() > 0) && !partConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+    if (skipMergedRemoval(partConfig))
       continue;
 
     Part newPart;
@@ -64,7 +67,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
         if ((version() > 0) && stateConfig.isType(Json::Type::String))
           stateConfig = partStateTypeConfig.get(stateConfig.toString());
 
-        if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
+        if (skipMergedRemoval(stateConfig))
           continue;
 
         PartState partState = {stateConfig.getObject("properties", {}), stateConfig.getObject("frameProperties", {})};

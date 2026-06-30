@@ -43,9 +43,6 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServic
     this->construct(m_assets->fetchJson(m_config.get("gui")));
 }
 
-void BaseScriptPane::show() {
-  Pane::show();
-}
 
 void BaseScriptPane::displayed() {
   Pane::displayed();

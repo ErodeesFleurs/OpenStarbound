@@ -310,16 +310,10 @@ void BTreeDatabase::close(bool closeDevice) {
     m_device->close();
 }
 
-BTreeDatabase::BlockIndex const BTreeDatabase::InvalidBlockIndex;
-uint32_t const BTreeDatabase::HeaderSize;
 char const* const BTreeDatabase::VersionMagic = "BTreeDB5";
-uint32_t const BTreeDatabase::VersionMagicSize;
 char const* const BTreeDatabase::IndexMagic = "II";
 char const* const BTreeDatabase::LeafMagic = "LL";
 char const* const BTreeDatabase::FreeIndexMagic = "FF";
-size_t const BTreeDatabase::BTreeRootSelectorBit;
-size_t const BTreeDatabase::BTreeRootInfoStart;
-size_t const BTreeDatabase::BTreeRootInfoSize;
 
 size_t BTreeDatabase::IndexNode::pointerCount() const {
   // If no begin pointer is set then the index is simply uninitialized.

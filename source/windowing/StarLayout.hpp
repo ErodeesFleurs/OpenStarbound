@@ -8,7 +8,6 @@ namespace Star {
 class Layout : public Widget {
 public:
   explicit Layout(GuiContext& context);
-  void update(float dt) override;
 };
 
 }

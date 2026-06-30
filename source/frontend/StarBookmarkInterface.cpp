@@ -71,10 +71,5 @@ void EditBookmarkDialog::close() {
   dismiss();
 }
 
-void setupBookmarkEntry(WidgetRef<Widget> const& entry, TeleportBookmark const& bookmark) {
-  entry->fetchChild<LabelWidget>("name")->setText(bookmark.bookmarkName);
-  entry->fetchChild<LabelWidget>("planetName")->setText(bookmark.targetName);
-  entry->fetchChild<ImageWidget>("icon")->setImage(strf("/interface/bookmarks/icons/{}.png", bookmark.icon));
-}
 
 }

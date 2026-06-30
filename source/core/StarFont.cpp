@@ -125,17 +125,15 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     for (unsigned y = 0; y != height; ++y) {
       uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
       for (unsigned x = 0; x != width; ++x) {
-        if (x < width && y < height) {
-          white[3] = m_alphaThreshold
-            ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
-            :  *(p + x);
-          image.set(x + 1, height - y, white);
-        }
+        white[3] = m_alphaThreshold
+          ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
+          : *(p + x);
+        image.set(x + 1, height - y, white);
       }
     }
   } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
-    uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp);// offset by 1 pixel as it's padded
     for (size_t y = 0; y != height; ++y) {
       memcpy(data - (y * image.width() * bpp),
              slot->bitmap.buffer + y * slot->bitmap.pitch,
@@ -165,4 +163,4 @@ bool Font::exists(String::Char c) {
   return FT_Get_Char_Index(m_fontImpl->face, c);
 }
 
-}
+}// namespace Star

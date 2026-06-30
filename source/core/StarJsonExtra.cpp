@@ -212,7 +212,7 @@ Json jsonFromRectU(RectU const& rect) {
 
 Color jsonToColor(Json const& v) {
   if (v.type() == Json::Type::Array) {
-    if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
+    if (v.size() != 3 && v.size() != 4)
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
     Color c = Color::rgba(0, 0, 0, 255);
     c.setRed(v.getInt(0));

@@ -134,6 +134,8 @@ protected:
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
   void setSecondaryIconDrawables(Maybe<List<Drawable>> drawables);
+  [[nodiscard]] List<Drawable> iconDrawablesFromJson(Json const& icon) const;
+  [[nodiscard]] Maybe<List<Drawable>> secondaryIconDrawablesFromJson(Json const& icon) const;
   void setTwoHanded(bool twoHanded);
   void setTimeToLive(float timeToLive);
 
@@ -142,6 +144,8 @@ protected:
   [[nodiscard]] String const& directory() const;
 
 private:
+  void normalizeIconDrawables(List<Drawable>& drawables);
+
   Json m_config;
   String m_directory;
 protected:

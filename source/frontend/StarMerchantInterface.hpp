@@ -50,7 +50,6 @@ public:
       EntityId sourceEntityId,
       MerchantPaneServices services);
 
-  void displayed() override;
   void dismissed() override;
   [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 

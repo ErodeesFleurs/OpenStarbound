@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "StarClientApplication.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
@@ -387,7 +389,7 @@ void ClientApplication::processInput(InputEvent const& event) {
     m_heldKeyEvents.append(*keyDown);
     m_edgeKeyEvents.append(*keyDown);
   } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
-    eraseWhere(m_heldKeyEvents, [&](auto& keyEvent) {
+    std::erase_if(m_heldKeyEvents, [&](auto const& keyEvent) {
       return keyEvent.key == keyUp->key;
     });
 

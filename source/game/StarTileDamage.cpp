@@ -3,6 +3,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarAlgorithm.hpp"
 
+#include <algorithm>
+
 namespace Star {
 
 List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool squareMode) {
@@ -22,11 +24,11 @@ List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool squareMod
       }
     }
   }
-  sort(result, [](Vec2I const& a, Vec2I const& b) {
-      auto ams = a.magnitudeSquared();
-      auto bms = b.magnitudeSquared();
-      return std::tie(ams, a) < std::tie(bms, b);
-    });
+  std::ranges::sort(result, [](Vec2I const& a, Vec2I const& b) {
+    auto ams = a.magnitudeSquared();
+    auto bms = b.magnitudeSquared();
+    return std::tie(ams, a) < std::tie(bms, b);
+  });
 
   return result;
 }

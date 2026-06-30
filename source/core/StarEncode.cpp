@@ -4,6 +4,16 @@
 
 namespace Star {
 
+uint8_t decodeHexNibble(char c) {
+  if (c >= '0' && c <= '9')
+    return c - '0';
+  if (c >= 'A' && c <= 'F')
+    return c - 'A' + 10;
+  if (c >= 'a' && c <= 'f')
+    return c - 'a' + 10;
+  return 0;
+}
+
 [[nodiscard]] size_t hexEncode(char const* data, size_t len, char* output, size_t outLen) {
   static char const hex[] = "0123456789abcdef";
 
@@ -21,23 +31,8 @@ namespace Star {
     if (i >= outLen)
       return i;
 
-    uint8_t b1 = 0;
-    char c1 = src[i * 2];
-    if (c1 >= '0' && c1 <= '9')
-      b1 = c1 - '0';
-    else if (c1 >= 'A' && c1 <= 'F')
-      b1 = c1 - 'A' + 10;
-    else if (c1 >= 'a' && c1 <= 'f')
-      b1 = c1 - 'a' + 10;
-
-    uint8_t b2 = 0;
-    char c2 = src[i * 2 + 1];
-    if (c2 >= '0' && c2 <= '9')
-      b2 = c2 - '0';
-    else if (c2 >= 'A' && c2 <= 'F')
-      b2 = c2 - 'A' + 10;
-    else if (c2 >= 'a' && c2 <= 'f')
-      b2 = c2 - 'a' + 10;
+    uint8_t b1 = decodeHexNibble(src[i * 2]);
+    uint8_t b2 = decodeHexNibble(src[i * 2 + 1]);
 
     *output++ = (b1 << 4) | b2;
   }
@@ -50,14 +45,7 @@ namespace Star {
     if (i >= outLen)
       return i;
 
-    uint8_t b = 0;
-    char c = src[i];
-    if (c >= '0' && c <= '9')
-      b = c - '0';
-    else if (c >= 'A' && c <= 'F')
-      b = c - 'A' + 10;
-    else if (c >= 'a' && c <= 'f')
-      b = c - 'a' + 10;
+    uint8_t b = decodeHexNibble(src[i]);
 
     *output++ = b;
   }

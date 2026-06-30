@@ -34,7 +34,6 @@ class BaseScriptPane : public Pane {
 public:
   BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services);
 
-  void show() override;
   void displayed() override;
   void dismissed() override;
 

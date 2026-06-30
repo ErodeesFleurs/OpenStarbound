@@ -118,9 +118,6 @@ MerchantPane::MerchantPane(
   updateSellTotal();
 }
 
-void MerchantPane::displayed() {
-  Pane::displayed();
-}
 
 void MerchantPane::dismissed() {
   Pane::dismissed();

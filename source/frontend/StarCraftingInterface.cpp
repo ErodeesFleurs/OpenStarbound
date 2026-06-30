@@ -1,72 +1,72 @@
 #include "StarCraftingInterface.hpp"
 #include "StarAlgorithm.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarGuiReader.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarItemTooltip.hpp"
-#include "StarPlayer.hpp"
-#include "StarContainerEntity.hpp"
-#include "StarWorldClient.hpp"
-#include "StarPlayerBlueprints.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarPaneManager.hpp"
-#include "StarPortraitWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarTextBoxWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarListWidget.hpp"
-#include "StarImageStretchWidget.hpp"
-#include "StarItemSlotWidget.hpp"
-#include "StarConfiguration.hpp"
-#include "StarObjectItem.hpp"
 #include "StarAssets.hpp"
+#include "StarButtonWidget.hpp"
+#include "StarConfiguration.hpp"
+#include "StarContainerEntity.hpp"
+#include "StarGuiReader.hpp"
+#include "StarImageStretchWidget.hpp"
+#include "StarImageWidget.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarItemSlotWidget.hpp"
+#include "StarItemTooltip.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLabelWidget.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarListWidget.hpp"
+#include "StarMixer.hpp"
 #include "StarObjectDatabase.hpp"
+#include "StarObjectItem.hpp"
+#include "StarPaneManager.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerBlueprints.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarMixer.hpp"
+#include "StarPortraitWidget.hpp"
+#include "StarTextBoxWidget.hpp"
+#include "StarWorldClient.hpp"
 
 namespace Star {
 
 CraftingPane::CraftingPane(WorldClientPtr worldClient,
-    PlayerPtr player,
-    Json const& settings,
-    EntityId sourceEntityId,
-    CraftingPaneServices services)
-  : Pane(services.guiContext),
-    m_worldClient(requireServiceValueAs<StarException>(std::move(worldClient), "CraftingPane", "world client")),
-    m_player(requireServiceValueAs<StarException>(std::move(player), "CraftingPane", "player")),
-    m_blueprints(m_player->blueprints()),
-    m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "CraftingPane", "assets")),
-    m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "CraftingPane", "configuration")),
-    m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CraftingPane", "item database")),
-    m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "CraftingPane", "object database")),
-    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "CraftingPane", "status effect database")),
-    m_sourceEntityId(sourceEntityId) {
+                           PlayerPtr player,
+                           Json const& settings,
+                           EntityId sourceEntityId,
+                           CraftingPaneServices services)
+    : Pane(services.guiContext),
+      m_worldClient(requireServiceValueAs<StarException>(std::move(worldClient), "CraftingPane", "world client")),
+      m_player(requireServiceValueAs<StarException>(std::move(player), "CraftingPane", "player")),
+      m_blueprints(m_player->blueprints()),
+      m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "CraftingPane", "assets")),
+      m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "CraftingPane", "configuration")),
+      m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CraftingPane", "item database")),
+      m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "CraftingPane", "object database")),
+      m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "CraftingPane", "status effect database")),
+      m_sourceEntityId(sourceEntityId) {
   // get the config data for this crafting pane, default to "bare hands" crafting
   auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
   m_settings = jsonMerge(m_assets->json("/interface/windowconfig/crafting.config:default"),
-               jsonMerge(m_assets->fetchJson(baseConfig), settings));
+                         jsonMerge(m_assets->fetchJson(baseConfig), settings));
 
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
   m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
 
   GuiReader reader(context());
   reader.registerCallback("spinCount.up", [=, this](Widget*) {
-      if (m_count < maxCraft())
-        m_count++;
-      else
-        m_count = 1;
-      countChanged();
-    });
+    if (m_count < maxCraft())
+      m_count++;
+    else
+      m_count = 1;
+    countChanged();
+  });
 
   reader.registerCallback("spinCount.down", [=, this](Widget*) {
-      if (m_count > 1)
-        m_count--;
-      else
-        m_count = std::max(maxCraft(), 1);
-      countChanged();
-    });
+    if (m_count > 1)
+      m_count--;
+    else
+      m_count = std::max(maxCraft(), 1);
+    countChanged();
+  });
 
   reader.registerCallback("tbSpinCount", [=, this](Widget*) { countTextChanged(); });
 
@@ -76,9 +76,9 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
   reader.registerCallback("btnStopCraft", [=, this](Widget*) { toggleCraft(); });
 
   reader.registerCallback("btnFilterHaveMaterials", [=, this](Widget*) {
-      m_configuration->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
-      updateAvailableRecipes();
-    });
+    m_configuration->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
+    updateAvailableRecipes();
+  });
 
   reader.registerCallback("filter", [=, this](Widget*) { updateAvailableRecipes(); });
 
@@ -229,10 +229,6 @@ void CraftingPane::upgradeTable() {
   }
 }
 
-size_t CraftingPane::itemCount(List<ItemPtr> const& store, ItemDescriptor const& item) {
-  return m_itemDatabase->getCountOfItem(store, item);
-}
-
 void CraftingPane::update(float dt) {
   // shut down if we can't reach the table anymore.
   if (m_sourceEntityId != NullEntityId) {
@@ -253,7 +249,7 @@ void CraftingPane::update(float dt) {
   bool changedHighlight = (m_displayedRecipe != m_guiList->selectedItem());
 
   if (changedHighlight) {
-    stopCrafting(); // TODO: allow viewing other recipes without interrupting crafting
+    stopCrafting();// TODO: allow viewing other recipes without interrupting crafting
 
     m_displayedRecipe = m_guiList->selectedItem();
     countTextChanged();
@@ -453,17 +449,17 @@ UniquePtr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   auto normalizedBag = m_player->inventory()->availableItems();
 
   auto addIngredient = [guiList](ItemPtr const& item, size_t availableCount, size_t requiredCount) {
-      auto widget = guiList->addItem();
-      widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
-      auto countWidget = widget->fetchChild<LabelWidget>("count");
-      countWidget->setText(strf("{}/{}", availableCount, requiredCount));
-      if (availableCount < requiredCount)
-        countWidget->setColor(Color::Red);
-      else
-        countWidget->setColor(Color::Green);
-      widget->fetchChild<ItemSlotWidget>("itemIcon")->setItem(item);
-      widget->show();
-    };
+    auto widget = guiList->addItem();
+    widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
+    auto countWidget = widget->fetchChild<LabelWidget>("count");
+    countWidget->setText(strf("{}/{}", availableCount, requiredCount));
+    if (availableCount < requiredCount)
+      countWidget->setColor(Color::Red);
+    else
+      countWidget->setColor(Color::Green);
+    widget->fetchChild<ItemSlotWidget>("itemIcon")->setItem(item);
+    widget->show();
+  };
 
   auto currenciesConfig = m_assets->json("/currencies.config");
   for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
@@ -587,10 +583,11 @@ void CraftingPane::countTextChanged() {
   if (m_textBox) {
     int appropriateDefaultCount = 1;
     try {
-      if (!m_textBox->getText().replace("x", "").size()) {
+      auto countString = m_textBox->getText().replace("x", "");
+      if (!countString.size()) {
         m_count = appropriateDefaultCount;
       } else {
-        m_count = clamp<int>(lexicalCast<int>(m_textBox->getText().replace("x", "")), appropriateDefaultCount, maxCraft());
+        m_count = clamp<int>(lexicalCast<int>(countString), appropriateDefaultCount, maxCraft());
         countChanged();
       }
     } catch (BadLexicalCast const&) {
@@ -642,12 +639,12 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
       itemList = StringList::from(m_player->log()->scannedObjects());
 
     filter(itemList, [objectDatabase = m_objectDatabase, itemDatabase = m_itemDatabase](String const& itemName) {
-        if (objectDatabase->isObject(itemName)) {
-          if (auto objectConfig = objectDatabase->getConfig(itemName))
-            return objectConfig->printable && itemDatabase->hasItem(itemName);
-        }
-        return false;
-      });
+      if (objectDatabase->isObject(itemName)) {
+        if (auto objectConfig = objectDatabase->getConfig(itemName))
+          return objectConfig->printable && itemDatabase->hasItem(itemName);
+      }
+      return false;
+    });
 
     float printTime = m_settings.getFloat("printTime", 0);
     float printFactor = m_settings.getFloat("printCostFactor", 1.0);
@@ -726,8 +723,8 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
 
   List<ItemRecipe> sortedRecipes = recipes.values();
   sortByComputedValue(sortedRecipes, [itemDatabase = m_itemDatabase](ItemRecipe const& recipe) {
-      return tuple<String, String>{itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name()};
-    });
+    return tuple<String, String>{itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name()};
+  });
 
   return sortedRecipes;
 }
@@ -752,4 +749,4 @@ ItemRecipe CraftingPane::recipeFromSelectedWidget() const {
   return ItemRecipe();
 }
 
-}
+}// namespace Star
