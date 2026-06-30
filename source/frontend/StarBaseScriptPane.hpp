@@ -47,7 +47,7 @@ public:
 
   [[nodiscard]] bool interactive() const override;
 
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
   [[nodiscard]] Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
   [[nodiscard]] Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
 

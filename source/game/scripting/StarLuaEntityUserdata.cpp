@@ -37,7 +37,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("canDamage",
     [&](EntityPtr const& entity, EntityId const& otherId) -> bool {
         if (entity->inWorld()) {
-            auto other = entity->world()->entity(otherId);
+            auto other = entity->world().entity(otherId);
             
             if (!other || !entity->getTeam().canDamage(other->getTeam(), false))
             return false;
@@ -152,7 +152,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("sendMessage",
     [&](EntityPtr const& entity, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json> {
         if (entity->inWorld()) {
-            return entity->world()->sendEntityMessage(entity->entityId(), message, JsonArray::from(std::move(args)));
+            return entity->world().sendEntityMessage(entity->entityId(), message, JsonArray::from(std::move(args)));
         }
         return RpcPromise<Json>::createFailed("Entity not in world");
     });
@@ -714,7 +714,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemsCanFit",
     [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto itemBag = container->itemBag();
             auto toSearch = itemDb->item(ItemDescriptor(items));
             return itemBag->itemsCanFit(toSearch);
@@ -726,7 +726,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemsFitWhere",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto itemBag = container->itemBag();
             auto toSearch = itemDb->item(ItemDescriptor(items));
             auto res = itemBag->itemsFitWhere(toSearch);
@@ -742,7 +742,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerAddItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto toInsert = itemDb->item(ItemDescriptor(items));
             if (auto res = container->addItems(toInsert).result())
                 return itemSafeDescriptor(*res).toJson();
@@ -754,7 +754,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerStackItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto toInsert = itemDb->item(ItemDescriptor(items));
             if (auto res = container->addItems(toInsert).result())
                 return itemSafeDescriptor(*res).toJson();
@@ -766,7 +766,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerPutItemsAt",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto toInsert = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->putItems(offset, toInsert).result())
@@ -780,7 +780,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerSwapItems",
     [&](EntityPtr const& entity, Json const& items, size_t offset, bool noCombine) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto toSwap = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, !noCombine).result())
@@ -794,7 +794,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemApply",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = entity->world()->itemDatabase();
+            auto itemDb = entity->world().itemDatabase();
             auto toSwap = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, false).result())

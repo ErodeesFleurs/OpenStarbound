@@ -221,7 +221,7 @@ void Projectile::destroy(RenderCallback* renderCallback) {
                             m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
   };
 
-  Vec2F positionDelta = world()->geometry().diff(m_travelLine.min(), m_travelLine.max());
+  Vec2F positionDelta = world().geometry().diff(m_travelLine.min(), m_travelLine.max());
   static float const MinimumDamageLineDelta = 0.1f;
   bool useDamageLine = positionDelta.magnitudeSquared() >= square(MinimumDamageLineDelta);
   if (useDamageLine)
@@ -247,11 +247,11 @@ void Projectile::destroy(RenderCallback* renderCallback) {
 
 void Projectile::hitOther(EntityId entity, DamageRequest const&) {
   if (!m_parameters.getBool("piercing", m_config->piercing)) {
-    auto victimEntity = world()->entity(entity);
+    auto victimEntity = world().entity(entity);
     if (!victimEntity || (victimEntity->getTeam().type != TeamType::Passive && victimEntity->getTeam().type != TeamType::Environment)) {
       if (victimEntity) {
         if (auto hitPoly = victimEntity->hitPoly()) {
-          auto geometry = world()->geometry();
+          auto geometry = world().geometry();
           Vec2F checkVec = m_movementController->velocity().normalized() * 5;
           Vec2F nearMin = geometry.nearestTo(hitPoly->center(), m_movementController->position() - checkVec);
           if (auto intersection = hitPoly->lineIntersection(Line2F(nearMin, nearMin + checkVec * 2)))
@@ -292,7 +292,7 @@ void Projectile::update(float dt, uint64_t) {
     tickShared(dt);
 
     if (m_trackSourceEntity) {
-      if (auto sourceEntity = world()->entity(m_sourceEntity)) {
+      if (auto sourceEntity = world().entity(m_sourceEntity)) {
         Vec2F newEntityPosition = sourceEntity->position();
         m_movementController->translate(newEntityPosition - m_lastEntityPosition);
         m_lastEntityPosition = newEntityPosition;
@@ -334,7 +334,7 @@ void Projectile::update(float dt, uint64_t) {
         m_lastNonCollidingTile = Vec2I::floor(m_movementController->position());
         for (float i = 0; i < 1.51f; i += 0.5f) {
           auto pos = Vec2I::floor(m_movementController->position() + m_travelLine.direction() * -i);
-          if (world()->material(pos, TileLayer::Foreground) == EmptyMaterialId) {
+          if (world().material(pos, TileLayer::Foreground) == EmptyMaterialId) {
             m_lastNonCollidingTile = pos;
             break;
           }
@@ -343,7 +343,7 @@ void Projectile::update(float dt, uint64_t) {
     }
 
     if (!m_collision && m_hydrophobic) {
-      auto liquid = world()->liquidLevel(Vec2I::floor(position()));
+      auto liquid = world().liquidLevel(Vec2I::floor(position()));
       if (liquid.level > 0.5f) {
         m_collision = true;
         m_timeToLive = 0.0f;
@@ -362,7 +362,7 @@ void Projectile::update(float dt, uint64_t) {
     tickShared(dt);
   }
 
-  if (world()->isClient())
+  if (world().isClient())
     SpatialLogger::logPoly("world", m_movementController->collisionBody(), Color::Red.toRgba());
 }
 
@@ -372,11 +372,11 @@ void Projectile::render(RenderCallback* renderCallback) {
   if (m_persistentAudio)
     m_persistentAudio->setPosition(position());
 
-  m_effectEmitter->render(renderCallback, world()->particleDatabase());
+  m_effectEmitter->render(renderCallback, world().particleDatabase());
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), world()->imageMetadataDatabase());
-  drawable.imagePart().addDirectives(m_imageDirectives, true, world()->imageMetadataDatabase());
+  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), world().imageMetadataDatabase());
+  drawable.imagePart().addDirectives(m_imageDirectives, true, world().imageMetadataDatabase());
   if (m_config->flippable) {
     auto [angle, facingDirection] = getAngleSide(m_movementController->rotation(), true);
     if (facingDirection == Direction::Left)
@@ -399,7 +399,7 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
 }
 
 Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
+  return m_scriptComponent.handleMessage(message, sendingConnection == world().connection(), args);
 }
 
 Maybe<LuaValue> Projectile::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
@@ -447,7 +447,7 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   m_sourceEntity = source;
   m_trackSourceEntity = trackSource;
   if (inWorld()) {
-    if (auto sourceEntity = world()->entity(source)) {
+    if (auto sourceEntity = world().entity(source)) {
       m_lastEntityPosition = sourceEntity->position();
       if (!m_damageTeam)
         setTeam(sourceEntity->getTeam());
@@ -586,16 +586,16 @@ void Projectile::processAction(Json const& action) {
 
   auto doWithDelay = [this](int stepsDelay, WorldAction function) {
     if (stepsDelay == 0)
-      function(world());
+      function(&world());
     else
-      world()->timer(static_cast<float>(stepsDelay) / 60.f, function);
+      world().timer(static_cast<float>(stepsDelay) / 60.f, function);
   };
 
   if (command == "tile") {
     if (isSlave())
       return;
 
-    auto materialDatabase = world()->materialDatabase();
+    auto materialDatabase = world().materialDatabase();
     List<MaterialId> tileDrops;
     unsigned totalDrops = 0;
     for (auto sets : parameters.getArray("materials")) {
@@ -607,7 +607,7 @@ void Projectile::processAction(Json const& action) {
       totalDrops += numDrops;
     }
 
-    List<Vec2I> openSpaces = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 2), totalDrops);
+    List<Vec2I> openSpaces = world().findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 2), totalDrops);
     if (openSpaces.size() < totalDrops)
       Logger::debug("Couldn't find a place for all the tile drops. {} drops requested, {} spaces found.", totalDrops, openSpaces.size());
 
@@ -616,9 +616,9 @@ void Projectile::processAction(Json const& action) {
     Random::shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
       auto [tilePos, tileMat] = tile;
-      if (!world()->modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos), false, m_assets, world()->itemDatabase());
-        world()->addEntity(itemDrop);
+      if (!world().modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos), false, m_assets, world().itemDatabase());
+        world().addEntity(itemDrop);
       }
     }
 
@@ -626,7 +626,7 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    auto materialDatabase = world()->materialDatabase();
+    auto materialDatabase = world().materialDatabase();
     Maybe<ModId> previousMod =
       parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
@@ -643,14 +643,14 @@ void Projectile::processAction(Json const& action) {
       // Go in vertical lines for each column, stop at the first non-emppty
       // material in each column.
       for (int x = m_collisionTile[0] - radius; x <= m_collisionTile[0] + radius; ++x) {
-        if (world()->material({x, m_collisionTile[1] + radius + 1}, layer) == EmptyMaterialId) {
+        if (world().material({x, m_collisionTile[1] + radius + 1}, layer) == EmptyMaterialId) {
           for (int y = m_collisionTile[1] + radius; y >= m_collisionTile[1] - radius; --y) {
-            auto mat = world()->material({x, y}, layer);
+            auto mat = world().material({x, y}, layer);
             if (Random::randf() <= chance) {
               if (isRealMaterial(mat)) {
-                auto mod = world()->mod({x, y}, layer);
+                auto mod = world().mod({x, y}, layer);
                 if (!previousMod || *previousMod == mod)
-                  world()->modifyTile({x, y}, PlaceMod{layer, newMod, {}}, true);
+                  world().modifyTile({x, y}, PlaceMod{layer, newMod, {}}, true);
               }
             }
             if (mat != EmptyMaterialId)
@@ -665,15 +665,15 @@ void Projectile::processAction(Json const& action) {
       return;
 
     float waterAmount = parameters.getFloat("quantity", 1.0f);
-    LiquidId liquid = world()->liquidsDatabase()->liquidId(parameters.getString("liquid"));
-    auto empty = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 5), 50);
+    LiquidId liquid = world().liquidsDatabase()->liquidId(parameters.getString("liquid"));
+    auto empty = world().findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 5), 50);
     for (Vec2I pos : empty) {
-      if (world()->lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile)))
+      if (world().lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile)))
         continue;
 
-      auto liquidLevel = world()->liquidLevel(pos);
+      auto liquidLevel = world().liquidLevel(pos);
       if (liquidLevel.liquid == EmptyLiquidId || liquidLevel.liquid == liquid) {
-        world()->modifyTile(pos, PlaceLiquid{liquid, waterAmount}, true);
+        world().modifyTile(pos, PlaceLiquid{liquid, waterAmount}, true);
         break;
       }
     }
@@ -693,7 +693,7 @@ void Projectile::processAction(Json const& action) {
     if (parameters.contains("inheritSpeedFactor"))
       projectileParameters = projectileParameters.set("speed", (m_movementController->velocity() - m_referenceVelocity.value()).magnitude() * parameters.getFloat("inheritSpeedFactor"));
 
-    auto projectile = world()->projectileDatabase()->createProjectile(type, projectileParameters);
+    auto projectile = world().projectileDatabase()->createProjectile(type, projectileParameters);
     Vec2F offset;
     if (parameters.contains("offset")) {
       offset = jsonToVec2F(parameters.getArray("offset", {0.0f, 0.0f}));
@@ -730,20 +730,20 @@ void Projectile::processAction(Json const& action) {
     projectile->setPowerMultiplier(m_powerMultiplier);
 
     // if the entity no longer exists and no explicit damage team is set, inherit damage team
-    if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
+    if (!projectile->m_damageTeam && !world().entity(m_sourceEntity))
       projectile->setTeam(getTeam());
 
     doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) { world->addEntity(projectile); });
 
   } else if (command == "spark") {
-    if (!world()->isClient())
+    if (!world().isClient())
       return;
 
-    auto collisionMaterial = world()->material(m_collisionTile, TileLayer::Foreground);
+    auto collisionMaterial = world().material(m_collisionTile, TileLayer::Foreground);
     if (!m_collision || collisionMaterial == EmptyMaterialId)
       return;
 
-    for (auto& particle : sparkBlock(m_assets, *world(), m_collisionTile, position())) {
+    for (auto& particle : sparkBlock(m_assets, world(), m_collisionTile, position())) {
       // enable trails and such
       particle.approach += Vec2F(0.0f, 5.0f);
       particle.velocity += Vec2F(Random::randf() - 0.5f, 5.0f + Random::randf());
@@ -755,10 +755,10 @@ void Projectile::processAction(Json const& action) {
     }
 
   } else if (command == "particle") {
-    if (!world()->isClient())
+    if (!world().isClient())
       return;
 
-    Particle particle = world()->particleDatabase()->particle(parameters.get("specification"));
+    Particle particle = world().particleDatabase()->particle(parameters.get("specification"));
     particle.position = particle.position.rotate(m_movementController->rotation());
     if (parameters.getBool("rotate", false)) {
       particle.rotation = m_movementController->rotation();
@@ -800,7 +800,7 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto worldServer = requireDependencyValueAs<StarException>(as<WorldServer>(world()), "Projectile action", "server world monster database");
+      auto worldServer = requireDependencyValueAs<StarException>(as<WorldServer>(&world()), "Projectile action", "server world monster database");
       auto monsterDatabase = worldServer->monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 
@@ -808,10 +808,10 @@ void Projectile::processAction(Json const& action) {
       if (parameters.contains("offset"))
         spawnPosition += jsonToVec2F(parameters.get("offset"));
       monster->setPosition(spawnPosition);
-      world()->addEntity(monster);
+      world().addEntity(monster);
     }
 
-    if (world()->isClient() && parameters.contains("particle")) {
+    if (world().isClient() && parameters.contains("particle")) {
       Particle particle(parameters.getObject("particle"));
       particle.translate(position());
       particle.velocity += m_referenceVelocity.value();
@@ -826,11 +826,11 @@ void Projectile::processAction(Json const& action) {
     size_t count = parameters.getInt("count", 1);
     JsonObject data = parameters.getObject("data", JsonObject{});
 
-    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position(), false, m_assets, world()->itemDatabase());
-    world()->addEntity(itemDrop);
+    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position(), false, m_assets, world().itemDatabase());
+    world().addEntity(itemDrop);
 
   } else if (command == "sound") {
-    if (!world()->isClient())
+    if (!world().isClient())
       return;
 
     AudioInstancePtr sound = make_shared<AudioInstance>(*m_assets->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
@@ -840,7 +840,7 @@ void Projectile::processAction(Json const& action) {
     m_pendingRenderables.append(std::move(sound));
 
   } else if (command == "light") {
-    if (!world()->isClient())
+    if (!world().isClient())
       return;
 
     m_pendingRenderables.append(LightSource{
@@ -891,7 +891,7 @@ void Projectile::tickShared(float dt) {
   m_effectEmitter->setSourcePosition("normal", position());
   auto [_, facingDirection] = getAngleSide(m_movementController->rotation(), true);
   m_effectEmitter->setDirection(facingDirection);
-  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
+  m_effectEmitter->tick(dt, *entityMode(), world().effectSourceDatabase());
 
   if (m_collisionEvent.pullOccurred()) {
     for (auto const& action : m_parameters.getArray("actionOnCollide", m_config->actionOnCollide))

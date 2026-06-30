@@ -249,7 +249,7 @@ void GraphicsMenu::apply() {
 }
 
 void GraphicsMenu::displayShaders() {
-  m_paneManager.displayPane(PaneLayer::ModalWindow, m_shadersMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, *m_shadersMenu);
 }
 
 void GraphicsMenu::applyWindowSettings() {

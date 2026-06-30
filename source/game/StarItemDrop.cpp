@@ -236,7 +236,7 @@ void ItemDrop::disableInterpolation() {
 }
 
 void ItemDrop::update(float dt, uint64_t) {
-  m_dropAge.update(world()->epochTime());
+  m_dropAge.update(world().epochTime());
 
   if (isMaster()) {
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
@@ -246,7 +246,7 @@ void ItemDrop::update(float dt, uint64_t) {
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
       if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
-        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](EntityPtr const& entity) {
+        world().findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](EntityPtr const& entity) {
             if (auto closeDrop = as<ItemDrop>(entity)) {
               // Make sure not to try to merge with ourselves here.
               if (closeDrop.get() != this && closeDrop->canTake()
@@ -259,7 +259,7 @@ void ItemDrop::update(float dt, uint64_t) {
                   // Average the position and velocity of the drop we merged
                   // with
                   m_movementController.setPosition(m_movementController.position()
-                      + world()->geometry().diff(closeDrop->position(), m_movementController.position()) / 2.0f);
+                      + world().geometry().diff(closeDrop->position(), m_movementController.position()) / 2.0f);
                   m_movementController.setVelocity((m_movementController.velocity() + closeDrop->velocity()) / 2.0f);
                   return true;
                 }
@@ -277,7 +277,7 @@ void ItemDrop::update(float dt, uint64_t) {
     m_movementController.tickMaster(dt);
 
     m_intangibleTimer.tick(dt);
-    m_ageItemsTimer.update(world()->epochTime());
+    m_ageItemsTimer.update(world().epochTime());
 
     if ((m_mode.get() == Mode::Intangible || m_mode.get() == Mode::Available) && m_movementController.atWorldLimit())
       m_mode.set(Mode::Dead);
@@ -322,7 +322,7 @@ void ItemDrop::update(float dt, uint64_t) {
     }
   }
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     SpatialLogger::logPoly("world",
       m_movementController.collisionBody(),
       (canTake() ? Color::Green : Color::Red).toRgba());
@@ -373,7 +373,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     if (Directives dropDirectives = m_config.getString("directives", "")) {
       for (auto& drawable : *m_drawables) {
         if (drawable.isImage())
-          drawable.imagePart().addDirectives(dropDirectives, true, world()->imageMetadataDatabase());
+          drawable.imagePart().addDirectives(dropDirectives, true, world().imageMetadataDatabase());
       }
     }
   }
@@ -519,7 +519,7 @@ void ItemDrop::updateCollisionPoly() {
 
 
 void ItemDrop::updateTaken(bool master) {
-  if (auto owningEntity = world()->entity(m_owningEntity.get())) {
+  if (auto owningEntity = world().entity(m_owningEntity.get())) {
     Vec2F position = m_movementController.position();
     bool overhead = m_dropAge.elapsedTime() < m_overheadTime;
     Vec2F targetPosition = owningEntity->position();
@@ -531,7 +531,7 @@ void ItemDrop::updateTaken(bool master) {
       else
         targetPosition[1] += 1.5f;
     }
-    Vec2F diff = world()->geometry().diff(targetPosition, position);
+    Vec2F diff = world().geometry().diff(targetPosition, position);
     float magnitude = diff.magnitude();
     Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
     if (auto playerEntity = as<Player>(owningEntity))

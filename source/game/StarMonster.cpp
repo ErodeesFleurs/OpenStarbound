@@ -183,7 +183,7 @@ void Monster::uninit() {
     m_scriptComponent.removeCallbacks("status");
     m_scriptComponent.removeActorMovementCallbacks();
   }
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("config");
     m_scriptedAnimator.removeCallbacks("entity");
@@ -245,7 +245,7 @@ void Monster::disableInterpolation() {
   if (!inWorld() || m_knockedOut || m_statusController->statPositive("invulnerable"))
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world().geometry(), hitPoly().get()))
     return HitType::Hit;
 
   return {};
@@ -285,7 +285,7 @@ List<DamageNotification> Monster::selfDamageNotifications() {
 [[nodiscard]] List<DamageSource> Monster::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
 
-  float levelPowerMultiplier = world()->functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
+  float levelPowerMultiplier = world().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
@@ -324,7 +324,7 @@ List<DamageNotification> Monster::selfDamageNotifications() {
         float length = worldLine.length();
 
         auto bounces = partConfig.getInt("bounces", 0);
-        while (auto collision = world()->lineTileCollisionPoint(worldLine.min(), worldLine.max())) {
+        while (auto collision = world().lineTileCollisionPoint(worldLine.min(), worldLine.max())) {
           worldLine = Line2F(worldLine.min(), collision.value().first);
           ds.damageArea = worldLine.translated(-position());
           length = length - worldLine.length();
@@ -388,7 +388,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("die");
 
   if (isMaster() && !m_dropPool.isNull()) {
-    auto treasureDatabase = world()->treasureDatabase();
+    auto treasureDatabase = world().treasureDatabase();
 
     String treasurePool;
     if (m_dropPool.isType(Json::Type::String)) {
@@ -408,7 +408,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
     }
 
     for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
+      world().addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world().assets(), world().itemDatabase()));
   }
 
   if (renderCallback) {
@@ -480,7 +480,7 @@ void Monster::update(float dt, uint64_t) {
     m_movementController->tickSlave(dt);
   }
 
-  if (world()->isServer()) {
+  if (world().isServer()) {
     m_networkedAnimator.update(dt, nullptr);
   } else {
     m_networkedAnimator.update(dt, &m_networkedAnimatorDynamicTarget);
@@ -506,7 +506,7 @@ void Monster::render(RenderCallback* renderCallback) {
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
-  m_effectEmitter.render(renderCallback, world()->particleDatabase());
+  m_effectEmitter.render(renderCallback, world().particleDatabase());
 
   for (auto const& [drawable, maybeRenderLayer] : m_scriptedAnimator.drawables())
     renderCallback->addDrawable(drawable, maybeRenderLayer.value(m_monsterVariant.renderLayer));
@@ -525,9 +525,9 @@ void Monster::setPosition(Vec2F const& pos) {
 }
 
 Maybe<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+  Maybe<Json> result = m_scriptComponent.handleMessage(message, world().connection() == sendingConnection, args);
   if (!result)
-    result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
+    result = m_statusController->receiveMessage(message, world().connection() == sendingConnection, args);
   return result;
 }
 
@@ -556,7 +556,7 @@ void Monster::updateStatus(float dt) {
   m_effectEmitter.setSourcePosition("mouth", position() + mouthOffset());
   m_effectEmitter.setSourcePosition("feet", position() + feetOffset());
   m_effectEmitter.setDirection(m_movementController->facingDirection());
-  m_effectEmitter.tick(dt, *entityMode(), world()->effectSourceDatabase());
+  m_effectEmitter.tick(dt, *entityMode(), world().effectSourceDatabase());
 }
 
 LuaCallbacks Monster::makeMonsterCallbacks() {
@@ -614,7 +614,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
   // makeActorMovementControllerCallbacks
   // because it requires access to world
   callbacks.registerCallback("flyTo", [this](Vec2F const& arg1) {
-    m_movementController->controlFly(world()->geometry().diff(arg1, position()));
+    m_movementController->controlFly(world().geometry().diff(arg1, position()));
   });
 
   callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& arg1) {

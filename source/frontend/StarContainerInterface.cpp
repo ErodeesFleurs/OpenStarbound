@@ -149,11 +149,11 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
 
   if (container->iconItem()) {
     auto iconItem = m_itemDatabase->itemShared(container->iconItem());
-    auto icon = make_shared<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
+    auto icon = make_unique<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);
     icon->setBackingImageAffinity(true, true);
-    setTitle(icon, container->containerDescription(), container->containerSubTitle());
+    setTitle(std::move(icon), container->containerDescription(), container->containerSubTitle());
   }
 
   if (containsChild("objectImage"))
@@ -213,7 +213,7 @@ bool ContainerPane::giveContainerResult(ContainerResult result) {
   return true;
 }
 
-PanePtr ContainerPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> ContainerPane::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))

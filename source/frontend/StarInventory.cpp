@@ -54,7 +54,7 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
         } else {
-          for (PanePtr& pane : m_parent.paneManager().getAllPanes()) {
+          for (observer_ptr<Pane> pane : m_parent.paneManager().getAllPanes()) {
             auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
             if (remainder.isValid()) {
               inventory->setItem(inventorySlot, remainder.value());
@@ -213,9 +213,9 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
   auto centralPortrait = fetchChild<PortraitWidget>("portrait");
   centralPortrait->setEntity(m_player);
 
-  auto portrait = make_shared<PortraitWidget>(context(), m_player, PortraitMode::Bust);
+  auto portrait = make_unique<PortraitWidget>(context(), m_player, PortraitMode::Bust);
   portrait->setIconMode();
-  setTitle(portrait, m_player->name(), m_config.getString("subtitle"));
+  setTitle(std::move(portrait), m_player->name(), m_config.getString("subtitle"));
 
   if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = m_config.getBool("alwaysDisplayCosmetics", false))) {
     for (auto const& [equipmentSlot, widgetName] : EquipmentSlotNames) {
@@ -245,7 +245,7 @@ void InventoryPane::displayed() {
   m_itemGrids[m_selectedTab]->indicateChangedSlots();
 }
 
-PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> InventoryPane::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child)) {
@@ -540,7 +540,7 @@ void InventoryPane::selectTab(String const& selected) {
   auto tabs = fetchChild<ButtonGroupWidget>("gridModeSelector");
   for (auto button : tabs->buttons())
     if (button->data().toString().equalsIgnoreCase(m_tabButtonData[selected]))
-      tabs->select(tabs->id(button));
+      tabs->select(tabs->id(button.get()));
 }
 
 }

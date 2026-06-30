@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarItem.hpp"
 #include "StarBeamItem.hpp"
 #include "StarSwingableItem.hpp"
@@ -140,7 +141,7 @@ private:
   StringList m_strikeSounds;
   float m_toolVolume;
 
-  WireConnector* m_wireConnector;
+  observer_ptr<WireConnector> m_wireConnector;
 };
 
 class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool, public PointableItem, public BeamItem {

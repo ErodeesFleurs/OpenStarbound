@@ -209,7 +209,7 @@ MovementController::MovementController(MovementParameters const& parameters, Ass
   addNetElement(&m_xRelativeSurfaceMovingCollisionPosition);
   addNetElement(&m_yRelativeSurfaceMovingCollisionPosition);
 
-  m_world = nullptr;
+  m_world.reset();
 
   resetParameters(parameters);
 }
@@ -466,13 +466,13 @@ void MovementController::approachYVelocity(float targetYVelocity, float maxContr
 }
 
 void MovementController::init(World& world) {
-  m_world = &world;
+  m_world.reset(&world);
   setPosition(position());
   updatePositionInterpolators();
 }
 
 void MovementController::uninit() {
-  m_world = nullptr;
+  m_world.reset();
   updatePositionInterpolators();
 }
 
@@ -845,7 +845,7 @@ Vec2F MovementController::surfaceVelocity() const {
 World* MovementController::world() {
   if (!m_world)
     throw MovementControllerException("MovementController not initialized!");
-  return m_world;
+  return m_world.get();
 }
 
 CollisionKind MovementController::maxOrNullCollision(CollisionKind a, CollisionKind b) {

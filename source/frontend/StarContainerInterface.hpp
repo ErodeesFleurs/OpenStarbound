@@ -38,7 +38,7 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   [[nodiscard]] bool giveContainerResult(ContainerResult result);
 

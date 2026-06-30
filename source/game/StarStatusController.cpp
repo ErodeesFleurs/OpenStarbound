@@ -22,8 +22,8 @@ StatusController::StatusController(Json const& config, AssetsConstPtr assets, Li
       m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(statusEffectDatabase), "StatusController", "status effect database")),
       m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "StatusController", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "StatusController", "image metadata database")) {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
+  m_parentEntity.reset();
+  m_movementController.reset();
 
   m_statusProperties.reset(config.getObject("statusProperties", {}));
   m_statusProperties.setOverrides(
@@ -431,8 +431,8 @@ void StatusController::applySelfDamageRequest(DamageRequest dr) {
 void StatusController::init(Entity& parentEntity, ActorMovementController& movementController) {
   uninit();
 
-  m_parentEntity = &parentEntity;
-  m_movementController = &movementController;
+  m_parentEntity = observer_ptr<Entity>(&parentEntity);
+  m_movementController = observer_ptr<ActorMovementController>(&movementController);
 
   if (m_parentEntity->isMaster()) {
     initPrimaryScript();
@@ -445,8 +445,8 @@ void StatusController::init(Entity& parentEntity, ActorMovementController& movem
 }
 
 void StatusController::uninit() {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
+  m_parentEntity.reset();
+  m_movementController.reset();
 
   for (auto& effectKey : m_uniqueEffects.keys())
     if (auto effect = m_uniqueEffects.ptr(effectKey))
@@ -458,7 +458,7 @@ void StatusController::uninit() {
   m_recentDamageTaken.reset();
 }
 
-void StatusController::initNetVersion(NetElementVersion const* version) {
+void StatusController::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netGroup.initNetVersion(version);
 }
 
@@ -523,12 +523,12 @@ void StatusController::tickMaster(float dt) {
     PolyF collisionBody = m_movementController->collisionBody();
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
-      m_parentEntity->world()->forEachEntity(collisionBody.boundBox(),
+      m_parentEntity->world().forEachEntity(collisionBody.boundBox(),
                                              [this, collisionBody, &entityEffects](EntityPtr const& e) {
                                                if (auto entity = as<StatusEffectEntity>(e)) {
                                                  auto statusEffectArea = entity->statusEffectArea();
                                                  statusEffectArea.translate(entity->position());
-                                                 if (m_parentEntity->world()->geometry().polyIntersectsPoly(statusEffectArea, collisionBody))
+                                                 if (m_parentEntity->world().geometry().polyIntersectsPoly(statusEffectArea, collisionBody))
                                                    entityEffects.appendAll(entity->statusEffects());
                                                }
                                              });
@@ -536,10 +536,10 @@ void StatusController::tickMaster(float dt) {
     setPersistentEffects("entities", entityEffects);
 
     if (!statusImmune && m_appliesEnvironmentStatusEffects)
-      setPersistentEffects("environment", m_parentEntity->world()->environmentStatusEffects(m_parentEntity->position()).transformed(jsonToPersistentStatusEffect));
+      setPersistentEffects("environment", m_parentEntity->world().environmentStatusEffects(m_parentEntity->position()).transformed(jsonToPersistentStatusEffect));
 
     if (!statusImmune && m_appliesWeatherStatusEffects)
-      addEphemeralEffects(m_parentEntity->world()->weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect));
+      addEphemeralEffects(m_parentEntity->world().weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect));
   }
 
   m_primaryScript.update(m_primaryScript.updateDt(dt));
@@ -638,7 +638,7 @@ StatusController::EffectAnimator::EffectAnimator(Maybe<String> config, AssetsCon
   }
 }
 
-void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* version) {
+void StatusController::EffectAnimator::initNetVersion(observer_ptr<NetElementVersion const> version) {
   animator.initNetVersion(version);
 }
 
@@ -707,7 +707,7 @@ void StatusController::UniqueEffectMetadata::netElementsNeedStore() {
 
 void StatusController::updateAnimators(float dt) {
   for (auto const& animator : m_effectAnimators.netElements()) {
-    if (m_parentEntity->world()->isServer()) {
+    if (m_parentEntity->world().isServer()) {
       animator->animator.update(dt, nullptr);
     } else {
       animator->animator.update(dt, &animator->dynamicTarget);
@@ -808,8 +808,8 @@ void StatusController::initPrimaryScript() {
     auto animator = m_effectAnimators.getNetElement(m_primaryAnimatorId);
     m_primaryScript.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(animator->animator));
   }
-  m_primaryScript.addActorMovementCallbacks(m_movementController);
-  m_primaryScript.init(*m_parentEntity->world());
+  m_primaryScript.addActorMovementCallbacks(m_movementController.get());
+  m_primaryScript.init(m_parentEntity->world());
 }
 
 void StatusController::uninitPrimaryScript() {
@@ -831,8 +831,8 @@ void StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
     uniqueEffect.script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(animator->animator));
   }
-  uniqueEffect.script.addActorMovementCallbacks(m_movementController);
-  uniqueEffect.script.init(*m_parentEntity->world());
+  uniqueEffect.script.addActorMovementCallbacks(m_movementController.get());
+  uniqueEffect.script.init(m_parentEntity->world());
 }
 
 void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {

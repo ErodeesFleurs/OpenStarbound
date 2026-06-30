@@ -27,7 +27,7 @@ StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
   disableScissoring();
 }
 
-PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> StatusPane::createTooltip(Vec2I const& screenPosition) {
   auto interfaceScale = m_guiContext.interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {

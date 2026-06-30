@@ -253,8 +253,8 @@ namespace Dungeon {
 
       size_t firstGid = tilesetJson.getUInt("firstgid");
       for (size_t i = 0; i < tileset->size(); ++i) {
-        m_foregroundTilesByGid.set(firstGid + i, tileset->getTile(i, TileLayer::Foreground).get());
-        m_backgroundTilesByGid.set(firstGid + i, tileset->getTile(i, TileLayer::Background).get());
+        m_foregroundTilesByGid.set(firstGid + i, observer_ptr<Tiled::Tile const>(tileset->getTile(i, TileLayer::Foreground).get()));
+        m_backgroundTilesByGid.set(firstGid + i, observer_ptr<Tiled::Tile const>(tileset->getTile(i, TileLayer::Background).get()));
       }
     }
 
@@ -266,7 +266,7 @@ namespace Dungeon {
   }
 
   Tiled::Tile const& TMXTilesets::getTile(unsigned gid, TileLayer layer) const {
-    Tiled::Tile const* tilePtr;
+    observer_ptr<Tiled::Tile const> tilePtr;
     if (layer == TileLayer::Foreground)
       tilePtr = m_foregroundTilesByGid[gid];
     else

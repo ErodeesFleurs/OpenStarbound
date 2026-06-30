@@ -41,11 +41,11 @@ String categoryDisplayName(String const& category, ItemTooltipBuilder::Services 
 }
 }
 
-PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services) {
+UniquePtr<Pane> ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services) {
   if (!item) {
     return {};
   } else {
-    PanePtr tooltip = make_shared<Pane>(services.guiContext);
+    auto tooltip = make_unique<Pane>(services.guiContext);
     tooltip->removeAllChildren();
 
     String title;
@@ -60,10 +60,10 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
 
     buildItemDescriptionInner(tooltip.get(), item, tooltipKind, title, subTitle, viewer, services);
 
-    auto titleIcon = make_shared<ItemSlotWidget>(services.guiContext, item, "/interface/inventory/portrait.png");
+    auto titleIcon = make_unique<ItemSlotWidget>(services.guiContext, item, "/interface/inventory/portrait.png");
     titleIcon->setBackingImageAffinity(true, true);
     titleIcon->showRarity(false);
-    tooltip->setTitle(titleIcon, title, subTitle);
+    tooltip->setTitle(std::move(titleIcon), title, subTitle);
 
     return tooltip;
   }

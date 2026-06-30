@@ -979,7 +979,7 @@ void PlayerInventory::cleanup() {
 }
 
 void PlayerInventory::setPlayer(Player& player) {
-  m_player = &player;
+  m_player = observer_ptr<Player>(&player);
 }
 
 [[nodiscard]] PlayerInventory const& PlayerInventory::blankInventory() const {

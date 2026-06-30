@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarWorld.hpp"
@@ -35,7 +36,7 @@ public:
 
   void renderLightSources(RenderCallback* renderCallback);
 private:
-  World* m_world;
+  observer_ptr<World> m_world;
   Json m_config;
 
   bool m_deploying;

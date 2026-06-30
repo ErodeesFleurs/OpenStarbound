@@ -95,7 +95,7 @@ void Stagehand::update(float dt, uint64_t) {
   if (isMaster() && m_scripted)
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     auto boundBox = metaBoundBox().translated(position());
     SpatialLogger::logPoly("world", PolyF(boundBox), { 0, 255, 255, 255 });
     SpatialLogger::logLine("world", boundBox.min(), boundBox.max(), {0, 255, 255, 255});
@@ -202,7 +202,7 @@ ClientEntityMode Stagehand::clientEntityMode() const {
 }
 
 Maybe<Json> Stagehand::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
+  return m_scriptComponent.handleMessage(message, sendingConnection == world().connection(), args);
 }
 
 }

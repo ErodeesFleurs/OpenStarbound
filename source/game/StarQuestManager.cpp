@@ -17,8 +17,7 @@ QuestManager::QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseCo
       m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "QuestManager", "object database")),
       m_questTemplateDatabase(requireServiceValueAs<StarException>(std::move(questTemplateDatabase), "QuestManager", "quest template database")),
       m_versioningDatabase(requireServiceValueAs<StarException>(std::move(versioningDatabase), "QuestManager", "versioning database")) {
-  m_player = &player;
-  m_world = nullptr;
+  m_player = observer_ptr<Player>(&player);
   m_trackOnWorldQuests = false;
 }
 
@@ -70,7 +69,7 @@ Json QuestManager::diskStore() {
     {"currentQuest", jsonFromMaybe(m_trackedQuestId)}};
 }
 
-void QuestManager::setUniverseClient(UniverseClient* client) {
+void QuestManager::setUniverseClient(observer_ptr<UniverseClient> client) {
   m_client = client;
 }
 
@@ -95,7 +94,7 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
 }
 
 void QuestManager::init(World& world) {
-  m_world = &world;
+  m_world = observer_ptr<World>(&world);
   for (auto& [_, quest] : m_quests) {
     if (!questValidOnServer(quest))
       continue;
@@ -116,7 +115,7 @@ void QuestManager::init(World& world) {
 void QuestManager::uninit() {
   for (auto const& [_, quest] : m_quests)
     quest->uninit();
-  m_world = nullptr;
+  m_world.reset();
 }
 
 [[nodiscard]] bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {

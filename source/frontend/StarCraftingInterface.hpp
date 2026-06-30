@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarWorldPainter.hpp"
 #include "StarWorldClient.hpp"
 #include "StarItemRecipe.hpp"
@@ -50,7 +51,7 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   [[nodiscard]] EntityId sourceEntityId() const;
 
@@ -72,7 +73,7 @@ private:
   [[nodiscard]] ItemRecipe recipeFromSelectedWidget() const;
   void setupWidget(WidgetRef<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
 
-  [[nodiscard]] PanePtr setupTooltip(ItemRecipe const& recipe);
+  [[nodiscard]] UniquePtr<Pane> setupTooltip(ItemRecipe const& recipe);
 
   [[nodiscard]] size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
 
@@ -91,9 +92,9 @@ private:
   int m_count;
   List<ItemRecipe> m_recipes;
 
-  ListWidget* m_guiList;
-  TextBoxWidget* m_textBox;
-  ButtonWidget* m_filterHaveMaterials;
+  observer_ptr<ListWidget> m_guiList;
+  observer_ptr<TextBoxWidget> m_textBox;
+  observer_ptr<ButtonWidget> m_filterHaveMaterials;
   size_t m_displayedRecipe;
 
   StringSet m_filter;

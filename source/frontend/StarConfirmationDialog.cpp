@@ -43,11 +43,11 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
       config.optString("paneLayout").value("/interface/windowconfig/confirmation.config:paneLayout");
   reader.construct(m_assets->json(paneLayoutPath), this);
 
-  ImageWidgetPtr titleIcon = {};
+  UniquePtr<Widget> titleIcon;
   if (config.contains("icon"))
-    titleIcon = make_shared<ImageWidget>(context(), config.getString("icon"));
+    titleIcon = make_unique<ImageWidget>(context(), config.getString("icon"));
 
-  setTitle(titleIcon, config.getString("title", ""), config.getString("subtitle", ""));
+  setTitle(std::move(titleIcon), config.getString("title", ""), config.getString("subtitle", ""));
   fetchChild<LabelWidget>("message")->setText(config.getString("message"));
 
   if (config.contains("okCaption"))

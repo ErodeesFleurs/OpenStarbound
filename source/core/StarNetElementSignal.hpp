@@ -14,7 +14,7 @@ class NetElementSignal : public NetElement {
 public:
   NetElementSignal(size_t maxSignalQueue = 32);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -41,7 +41,7 @@ private:
   };
 
   size_t m_maxSignalQueue;
-  NetElementVersion const* m_netVersion = nullptr;
+  observer_ptr<NetElementVersion const> m_netVersion = nullptr;
   bool m_netInterpolationEnabled = false;
   Deque<SignalEntry> m_signals;
   Deque<PendingSignal> m_pendingSignals;
@@ -53,7 +53,7 @@ NetElementSignal<Signal>::NetElementSignal(size_t maxSignalQueue) {
 }
 
 template <typename Signal>
-void NetElementSignal<Signal>::initNetVersion(NetElementVersion const* version) {
+void NetElementSignal<Signal>::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
   m_signals.clear();
 }

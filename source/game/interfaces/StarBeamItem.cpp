@@ -66,14 +66,14 @@ void BeamItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&)
   if (!initialized())
     throw ItemException("BeamItem::update: Beam Gun not init'd properly, or user not recognized as Tool User.");
 
-  m_beamCurve.origin() = owner()->handPosition(hand(), (m_firePosition - m_handPosition) / TilePixels);
+  m_beamCurve.origin() = owner().handPosition(hand(), (m_firePosition - m_handPosition) / TilePixels);
 
   if (m_endType == EndType::TileGroup)
-    m_beamCurve.dest() = world()->geometry().diff(owner()->aimPosition().round(), owner()->position());
+    m_beamCurve.dest() = world()->geometry().diff(owner().aimPosition().round(), owner().position());
   else if (m_endType == EndType::Wire)
-    m_beamCurve.dest() = world()->geometry().diff(owner()->aimPosition(), owner()->position());
+    m_beamCurve.dest() = world()->geometry().diff(owner().aimPosition(), owner().position());
   else
-    m_beamCurve.dest() = world()->geometry().diff(centerOfTile(owner()->aimPosition()), owner()->position());
+    m_beamCurve.dest() = world()->geometry().diff(centerOfTile(owner().aimPosition()), owner().position());
 
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared())
     m_beamCurve[2] = m_beamCurve.dest();
@@ -84,7 +84,7 @@ void BeamItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&)
 
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared())
     m_beamCurve[1] = m_beamCurve.origin();
-  else if (auto [_, facingDirection] = getAngleSide(m_beamCurve[1].angle()); owner()->facingDirection() != facingDirection)
+  else if (auto [_, facingDirection] = getAngleSide(m_beamCurve[1].angle()); owner().facingDirection() != facingDirection)
     m_beamCurve[1] = desiredNearControlPoint;
   else
     m_beamCurve[1] = m_beamCurve[1] + (desiredNearControlPoint - m_beamCurve[1]) * m_nearControlPointElasticity;
@@ -154,13 +154,13 @@ void BeamItem::setEnd(EndType type) {
   if (initialized()) {
     Vec2F endPoint;
     if (m_endType == EndType::TileGroup)
-      endPoint = owner()->aimPosition().round();
+      endPoint = owner().aimPosition().round();
     else if (m_endType == EndType::Wire)
-      endPoint = owner()->aimPosition();
+      endPoint = owner().aimPosition();
     else
-      endPoint = centerOfTile(owner()->aimPosition());
+      endPoint = centerOfTile(owner().aimPosition());
 
-    if ((endPoint - owner()->position()).magnitude() <= m_range && curveLen <= m_range) {
+    if ((endPoint - owner().position()).magnitude() <= m_range && curveLen <= m_range) {
       m_inRangeLastUpdate = true;
       int numLines = projectOntoRange(m_minBeamLines, m_maxBeamLines);
       Color mainColor = m_color;
@@ -261,7 +261,7 @@ void BeamItem::setEnd(EndType type) {
           beamLeftovers.append(beamParticle);
         }
 
-        owner()->addParticles(beamLeftovers);
+        owner().addParticles(beamLeftovers);
       }
     }
   }

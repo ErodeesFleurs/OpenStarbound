@@ -264,7 +264,7 @@ void FireableItem::fireTriggered() {
   if (!initialized())
     throw StarException("FireableItem uninitialized in ownerFirePosition");
 
-  return owner()->handPosition(hand(), (this->firePosition() - handPosition()) / TilePixels);
+  return owner().handPosition(hand(), (this->firePosition() - handPosition()) / TilePixels);
 }
 
 [[nodiscard]] float FireableItem::windupTime() const {

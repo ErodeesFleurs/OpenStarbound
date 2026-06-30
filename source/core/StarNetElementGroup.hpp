@@ -22,7 +22,7 @@ public:
   // Removes all previously added elements
   void clearNetElements();
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -35,7 +35,7 @@ public:
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
-  [[nodiscard]] NetElementVersion const* netVersion() const;
+  [[nodiscard]] observer_ptr<NetElementVersion const> netVersion() const;
   [[nodiscard]] bool netInterpolationEnabled() const;
   [[nodiscard]] float netExtrapolationHint() const;
 
@@ -45,7 +45,7 @@ private:
     bool propagateInterpolation;
   };
   List<GroupElement> m_elements;
-  NetElementVersion const* m_version = nullptr;
+  observer_ptr<NetElementVersion const> m_version = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
@@ -54,7 +54,7 @@ private:
   mutable DataStreamBuffer m_buffer;
 };
 
-[[nodiscard]] inline NetElementVersion const* NetElementGroup::netVersion() const {
+[[nodiscard]] inline observer_ptr<NetElementVersion const> NetElementGroup::netVersion() const {
   return m_version;
 }
 

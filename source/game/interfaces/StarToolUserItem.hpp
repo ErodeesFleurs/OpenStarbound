@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarToolUserEntity.hpp"
 #include "StarPhysicsEntity.hpp"
 
@@ -34,13 +35,13 @@ public:
 
   // owner, entityMode, hand, and world throw ToolUserException if
   // initialized() is false
-  [[nodiscard]] ToolUserEntity* owner() const;
+  [[nodiscard]] ToolUserEntity& owner() const;
   [[nodiscard]] EntityMode entityMode() const;
   [[nodiscard]] ToolHand hand() const;
   [[nodiscard]] World* world() const;
 
 private:
-  ToolUserEntity* m_owner = nullptr;
+  observer_ptr<ToolUserEntity> m_owner;
   Maybe<ToolHand> m_hand;
 };
 

@@ -35,9 +35,9 @@ TechController::TechController(AssetsConstPtr assets, ParticleDatabaseConstPtr p
     : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TechController", "assets")),
       m_particleDatabase(requireServiceValueAs<StarException>(std::move(particleDatabase), "TechController", "particle database")),
       m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "TechController", "image metadata database")) {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
-  m_statusController = nullptr;
+  m_parentEntity.reset();
+  m_movementController.reset();
+  m_statusController.reset();
 
   m_moveRun = false;
   m_movePrimaryFire = false;
@@ -95,9 +95,9 @@ void TechController::diskLoad(Json const& store) {
 }
 
 void TechController::init(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController) {
-  m_parentEntity = &parentEntity;
-  m_movementController = &movementController;
-  m_statusController = &statusController;
+  m_parentEntity = observer_ptr<Entity>(&parentEntity);
+  m_movementController = observer_ptr<ActorMovementController>(&movementController);
+  m_statusController = observer_ptr<StatusController>(&statusController);
 
   m_moveRun = false;
   m_movePrimaryFire = false;
@@ -109,9 +109,9 @@ void TechController::init(Entity& parentEntity, ActorMovementController& movemen
 }
 
 void TechController::uninit() {
-  m_parentEntity = nullptr;
-  m_movementController = nullptr;
-  m_statusController = nullptr;
+  m_parentEntity.reset();
+  m_movementController.reset();
+  m_statusController.reset();
 
   for (auto& module : m_techModules)
     unloadModule(module);
@@ -372,7 +372,7 @@ TechController::TechAnimator::TechAnimator(Maybe<String> ac, AssetsConstPtr asse
   netGroup.addNetElement(&visible);
 }
 
-void TechController::TechAnimator::initNetVersion(NetElementVersion const* version) {
+void TechController::TechAnimator::initNetVersion(observer_ptr<NetElementVersion const> version) {
   netGroup.initNetVersion(version);
 }
 
@@ -432,7 +432,7 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
   m_techModules.clear();
   m_techAnimators.clearNetElements();
 
-  auto techDatabase = m_parentEntity->world()->techDatabase();
+  auto techDatabase = m_parentEntity->world().techDatabase();
 
   for (auto const& [techName, scriptStorage] : moduleInits) {
     if (techDatabase->contains(techName)) {
@@ -479,9 +479,9 @@ void TechController::initializeModules() {
     module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
     if (auto player = as<Player>(m_parentEntity))
       module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(*player));
-    module.scriptComponent.addActorMovementCallbacks(m_movementController);
+    module.scriptComponent.addActorMovementCallbacks(m_movementController.get());
 
-    module.scriptComponent.init(*m_parentEntity->world());
+    module.scriptComponent.init(m_parentEntity->world());
   }
 }
 
@@ -502,7 +502,7 @@ void TechController::updateAnimators(float dt) {
     m_techAnimators.getNetElement(module.animatorId)->setVisible(module.visible);
 
   for (auto const& animator : m_techAnimators.netElements()) {
-    if (m_parentEntity->world()->isServer() || !animator->isVisible()) {
+    if (m_parentEntity->world().isServer() || !animator->isVisible()) {
       animator->animator.update(dt, nullptr);
     } else {
       animator->animator.update(dt, &animator->dynamicTarget);

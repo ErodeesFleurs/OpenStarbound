@@ -24,7 +24,7 @@ void NetElementGroup::clearNetElements() {
   m_elements.clear();
 }
 
-void NetElementGroup::initNetVersion(NetElementVersion const* version) {
+void NetElementGroup::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_version = version;
   for (auto& groupElement : m_elements)
     groupElement.element->initNetVersion(m_version);

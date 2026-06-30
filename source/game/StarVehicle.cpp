@@ -169,7 +169,7 @@ ClientEntityMode Vehicle::clientEntityMode() const {
 }
 
 Maybe<HitType> Vehicle::queryHit(DamageSource const& source) const {
-  if (source.intersectsWithPoly(world()->geometry(), m_movementController.collisionBody()))
+  if (source.intersectsWithPoly(world().geometry(), m_movementController.collisionBody()))
     return HitType::Hit;
 
   return {};
@@ -228,7 +228,7 @@ void Vehicle::uninit() {
   m_scriptComponent.removeCallbacks("animator");
   m_movementController.uninit();
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("config");
     m_scriptedAnimator.removeCallbacks("entity");
@@ -272,7 +272,7 @@ void Vehicle::disableInterpolation() {
 void Vehicle::update(float dt, uint64_t) {
   setTeam(m_damageTeam.get());
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_networkedAnimator.update(dt, &m_networkedAnimatorDynamicTarget);
     m_networkedAnimatorDynamicTarget.updatePosition(position());
   } else {
@@ -311,32 +311,32 @@ void Vehicle::update(float dt, uint64_t) {
             continue;
           allControlsHeld.append(LoungeControlNames.getRight(control));
         }
-        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(loungePositionId), std::move(allControlsHeld)});
+        world().sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(loungePositionId), std::move(allControlsHeld)});
       } else {
         for (auto control : loungePosition.slaveNewControls.difference(loungePosition.slaveOldControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
+          world().sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
         }
         for (auto control : loungePosition.slaveOldControls.difference(loungePosition.slaveNewControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
+          world().sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
         }
       }
 
       if (loungePosition.slaveOldAimPosition != loungePosition.slaveNewAimPosition)
-        world()->sendEntityMessage(entityId(), "aim", {*m_loungePositions.indexOf(loungePositionId), loungePosition.slaveNewAimPosition[0], loungePosition.slaveNewAimPosition[1]});
+        world().sendEntityMessage(entityId(), "aim", {*m_loungePositions.indexOf(loungePositionId), loungePosition.slaveNewAimPosition[0], loungePosition.slaveNewAimPosition[1]});
 
       loungePosition.slaveOldControls = take(loungePosition.slaveNewControls);
       loungePosition.slaveOldAimPosition = loungePosition.slaveNewAimPosition;
     }
   }
 
-  if (world()->isClient())
+  if (world().isClient())
     m_scriptedAnimator.update();
 
-  if (world()->isClient())
+  if (world().isClient())
     SpatialLogger::logPoly("world", m_movementController.collisionBody(), {255, 255, 0, 255});
 }
 
@@ -407,7 +407,7 @@ Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& mes
     loungePosition.masterAimPosition = {args.at(1).toFloat(), args.at(2).toFloat()};
     return Json();
   } else {
-    return m_scriptComponent.handleMessage(message, connectionId == world()->connection(), args);
+    return m_scriptComponent.handleMessage(message, connectionId == world().connection(), args);
   }
 }
 
@@ -595,7 +595,7 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
       return true;
     else {
       for (EntityId entity : entitiesLoungingIn(*m_loungePositions.indexOf(loungeName))) {
-        if (auto player = world()->get<Player>(entity))
+        if (auto player = world().get<Player>(entity))
           return player->shifting();
       }
     }

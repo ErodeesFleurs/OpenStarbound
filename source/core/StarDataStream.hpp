@@ -18,6 +18,9 @@ concept Streamable = requires(DataStream& ds, T& value) {
 template <typename T>
 concept Integral = std::is_integral_v<T>;
 
+template <typename T>
+concept TriviallyCopyable = std::is_trivially_copyable_v<T>;
+
 struct DataStreamExceptionTag { static constexpr char const* typeName = "DataStreamException"; };
 using DataStreamException = TypedException<IOException, DataStreamExceptionTag>;
 extern unsigned const CurrentStreamVersion;
@@ -50,6 +53,21 @@ public:
   // std::span convenience overloads (delegate to virtual methods)
   void readData(std::span<char> data) { readData(data.data(), data.size()); }
   void writeData(std::span<char const> data) { writeData(data.data(), data.size()); }
+
+  // Type-safe helpers for trivially copyable types, avoiding reinterpret_cast.
+  template <TriviallyCopyable T>
+  void writeTriviallyCopyable(T const& value) {
+    std::array<char, sizeof(T)> buf;
+    std::memcpy(buf.data(), &value, sizeof(T));
+    writeData(buf);
+  }
+
+  template <TriviallyCopyable T>
+  void readTriviallyCopyable(T& value) {
+    std::array<char, sizeof(T)> buf;
+    readData(buf);
+    std::memcpy(&value, buf.data(), sizeof(T));
+  }
 
   // These do not read / write sizes, they simply read / write directly.
   [[nodiscard]] ByteArray readBytes(size_t len);

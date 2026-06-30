@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
@@ -33,7 +34,7 @@ private:
   void performControls();
   void clearControls();
 
-  ActorMovementController* m_movementController = nullptr;
+  observer_ptr<ActorMovementController> m_movementController;
   bool m_autoClearControls = true;
 
   float m_controlRotation = 0.0f;
@@ -66,7 +67,7 @@ private:
 
 template <typename Base>
 void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* actorMovementController) {
-  m_movementController = actorMovementController;
+  m_movementController.reset(actorMovementController);
   if (m_movementController) {
     // inherit base mcontroller callbacks so that we have some consistency and don't need to have duplicate definitions here
     LuaCallbacks callbacks = LuaBindings::makeMovementControllerCallbacks(*m_movementController);

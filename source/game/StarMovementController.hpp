@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
@@ -261,7 +262,7 @@ private:
 
   MovementParameters m_parameters;
 
-  World* m_world;
+  observer_ptr<World> m_world;
 
   Set<EntityId> m_ignorePhysicsEntities;
 

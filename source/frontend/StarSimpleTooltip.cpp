@@ -6,10 +6,10 @@
 
 namespace Star {
 
-PanePtr SimpleTooltipBuilder::buildTooltip(String const& text, SimpleTooltipServices services) {
+UniquePtr<Pane> SimpleTooltipBuilder::buildTooltip(String const& text, SimpleTooltipServices services) {
   auto assets = requireServiceValueAs<StarException>(std::move(services.assets), "SimpleTooltipBuilder", "assets");
 
-  PanePtr tooltip = make_shared<Pane>(services.guiContext);
+  auto tooltip = make_unique<Pane>(services.guiContext);
   tooltip->removeAllChildren();
   GuiReader reader(services.guiContext);
   reader.construct(assets->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());

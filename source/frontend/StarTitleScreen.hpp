@@ -155,8 +155,8 @@ private:
   RendererPtr m_renderer;
   EnvironmentPainterPtr m_environmentPainter;
 
-  PanePtr m_multiPlayerMenu;
-  PanePtr m_serverSelectPane;
+  UniquePtr<Pane> m_multiPlayerMenu;
+  UniquePtr<Pane> m_serverSelectPane;
   Json m_serverList;
 
   TitlePaneManager m_paneManager;
@@ -175,8 +175,8 @@ private:
   InterfaceCursor m_cursor;
   TitleState m_titleState;
 
-  PanePtr m_mainMenu;
-  PanePtr m_backgroundMenu;
+  observer_ptr<Pane> m_mainMenu;
+  UniquePtr<Pane> m_backgroundMenu;
 
   struct RightAnchoredButton {
     ButtonWidget* button;

@@ -98,7 +98,7 @@ void ToolUser::diskLoad(Json const& diskStore) {
 }
 
 void ToolUser::init(ToolUserEntity& user) {
-  m_user = &user;
+  m_user.reset(&user);
 
   initPrimaryHandItem();
   if (!itemSafeTwoHanded(m_primaryHandItem.get()))
@@ -106,7 +106,7 @@ void ToolUser::init(ToolUserEntity& user) {
 }
 
 void ToolUser::uninit() {
-  m_user = nullptr;
+  m_user.reset();
   if (m_primaryHandItemInitialized)
     uninitItem(m_primaryHandItem.get());
   if (m_altHandItemInitialized)
@@ -182,13 +182,13 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
     if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
       return m_cachedObjectPreview;
 
-    auto drawables = m_objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
+    auto drawables = m_objectDatabase->cursorHintDrawables(&m_user->world(), item->objectName(),
                                                            aimPos, walkingDirection, item->objectParameters());
 
     Color opacityMask = Color::White;
     opacityMask.setAlphaF(item->getAppropriateOpacity());
     Color favoriteColorTrans = favoriteColor;
-    if (!inToolRange || !m_objectDatabase->canPlaceObject(*m_user->world(), aimPos, item->objectName()))
+    if (!inToolRange || !m_objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName()))
       favoriteColorTrans.setHue(favoriteColor.hue() + 120);
 
     favoriteColorTrans.setAlphaF(m_objectPreviewOuterAlpha);
@@ -200,7 +200,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
 
     for (Drawable& drawable : drawables) {
       if (drawable.isImage())
-        drawable.imagePart().addDirectives(imageOperationToString(op), true, m_user->world()->imageMetadataDatabase());
+        drawable.imagePart().addDirectives(imageOperationToString(op), true, m_user->world().imageMetadataDatabase());
       drawable.color = opacityMask;
     }
     m_cachedObjectPreview = drawables;
@@ -235,7 +235,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
 
     ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
 
-    auto [aimAngle, facingDirection] = getAngleSide(m_user->world()->geometry().diff(aimPosition, position).angle());
+    auto [aimAngle, facingDirection] = getAngleSide(m_user->world().geometry().diff(aimPosition, position).angle());
 
     if (auto swingItem = as<SwingableItem>(handItem)) {
       float angle = swingItem->getAngleDir(aimAngle, facingDirection);
@@ -369,7 +369,7 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
     if (auto tool = as<ToolUserItem>(item))
       for (auto poly : tool->shieldPolys()) {
         poly.translate(m_user->position());
-        if (source.intersectsWithPoly(m_user->world()->geometry(), poly))
+        if (source.intersectsWithPoly(m_user->world().geometry(), poly))
           return true;
       }
   }
@@ -623,7 +623,7 @@ Maybe<Json> ToolUser::receiveMessage(String const& message, bool localMessage, J
 ToolUser::NetItem::NetItem(ItemDatabaseConstPtr itemDatabase)
     : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ToolUser::NetItem", "item database")) {}
 
-void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
+void ToolUser::NetItem::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
   m_itemDescriptor.initNetVersion(m_netVersion);
   if (auto netItem = as<NetElement>(m_item.get()))

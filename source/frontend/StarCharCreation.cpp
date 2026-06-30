@@ -344,7 +344,7 @@ void CharCreationPane::nameBoxCallback(Widget* object) {
     throw GuiException("Invalid object type, expected TextBoxWidget.");
 }
 
-PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> CharCreationPane::createTooltip(Vec2I const& screenPosition) {
   // what's under my cursor
   if (auto child = getChildAt(screenPosition)) {
     // is it a species button ?
@@ -360,7 +360,7 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       Star::SpeciesDefinitionPtr speciesDefinition = m_speciesDatabase->species(speciesName);
 
       // make a tooltip from the config file
-      PanePtr tooltip = make_shared<Pane>(context());
+      auto tooltip = make_unique<Pane>(context());
       tooltip->removeAllChildren();
       GuiReader reader(context());
       String tooltipKind = "/interface/tooltips/species.tooltip";
@@ -369,12 +369,12 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
       // makes an icon out of the default gendered character image
-      WidgetPtr titleIcon = make_shared<ImageWidget>(context(), genderOption.characterImage);
+      auto titleIcon = make_unique<ImageWidget>(context(), genderOption.characterImage);
 
       // read the description out of the already loaded species database.
       String title = speciesDefinition->tooltip().title;
       String subTitle = speciesDefinition->tooltip().subTitle;
-      tooltip->setTitle(titleIcon, title, subTitle);
+      tooltip->setTitle(std::move(titleIcon), title, subTitle);
 
       tooltip->setLabel("descriptionLabel", speciesDefinition->tooltip().description);
 

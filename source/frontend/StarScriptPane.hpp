@@ -20,7 +20,7 @@ public:
 
   void tick(float dt) override;
 
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   [[nodiscard]] bool openWithInventory() const;
   [[nodiscard]] bool closeWithInventory() const;

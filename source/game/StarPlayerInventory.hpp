@@ -256,7 +256,7 @@ private:
   List<ItemPtr> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 
-  Player* m_player;
+  observer_ptr<Player> m_player;
 };
 
 }

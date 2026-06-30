@@ -37,7 +37,7 @@ List<Drawable> BlueprintItem::drawables() const {
 
 void BlueprintItem::fireTriggered() {
   if (count())
-    if (auto player = as<Player>(owner()))
+    if (auto player = as<Player>(&owner()))
       if (player->addBlueprint(m_recipe, true))
         setCount(count() - 1);
 }

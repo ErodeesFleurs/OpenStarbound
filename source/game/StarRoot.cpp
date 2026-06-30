@@ -747,7 +747,7 @@ void Root::writeConfig() {
 
 LuaRootServices Root::luaRootServices() {
   return LuaRootServices{
-    this,
+    observer_ptr<Root>(this),
     assets(),
     configuration(),
     [this](ListenerWeakPtr reloadListener) { registerReloadListener(std::move(reloadListener)); },

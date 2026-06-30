@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QScrollBar>
+#include <QTextDocument>
 #include <QTextEdit>
 
 #include "json_tool.hpp"
@@ -34,7 +35,7 @@ private:
   QLabel* m_pathLabel;
   QLabel* m_imageLabel;
   QTextEdit* m_jsonPreview;
-  QTextDocument* m_jsonDocument;
+  UniquePtr<QTextDocument> m_jsonDocument;
   QLineEdit* m_valueEditor;
   QErrorMessage* m_errorDialog;
   QPushButton* m_backButton;

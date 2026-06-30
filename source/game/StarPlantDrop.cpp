@@ -185,7 +185,7 @@ void PlantDrop::update(float dt, uint64_t) {
       m_firstTick = false;
 
     // think up a better curve then sin
-    auto rotationAcceleration = 0.01f * world()->gravity(position()) * copysign(1.0f, m_rotationRate) * dt;
+    auto rotationAcceleration = 0.01f * world().gravity(position()) * copysign(1.0f, m_rotationRate) * dt;
     if (abs(m_movementController.rotation()) > m_rotationCap)
       m_rotationRate -= rotationAcceleration;
     else if (std::fabs(m_movementController.rotation()) < m_rotationFallThreshold)
@@ -206,9 +206,9 @@ void PlantDrop::update(float dt, uint64_t) {
         m_time = 0;
     }
 
-    auto imgMetadata = world()->imageMetadataDatabase();
+    auto imgMetadata = world().imageMetadataDatabase();
 
-    if ((m_time <= 0 || world()->gravity(position()) == 0) && !m_spawnedDrops.get()) {
+    if ((m_time <= 0 || world().gravity(position()) == 0) && !m_spawnedDrops.get()) {
       m_spawnedDrops.set(true);
       for (auto& plantPiece : m_pieces) {
         JsonArray dropOptions;
@@ -223,11 +223,11 @@ void PlantDrop::update(float dt, uint64_t) {
             Vec2F pos = Vec2F(plantPiece.offset + Vec2F(size) * .5f / TilePixels).rotate(m_movementController.rotation())
                 + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
-              world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", static_cast<size_t>(drop.getInt("count", 1)), m_saplingConfig), position() + pos, false, world()->assets(), world()->itemDatabase()));
+              world().addEntity(ItemDrop::createRandomizedDrop(
+                  ItemDescriptor("sapling", static_cast<size_t>(drop.getInt("count", 1)), m_saplingConfig), position() + pos, false, world().assets(), world().itemDatabase()));
             else
-              world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), static_cast<size_t>(drop.getInt("count", 1))}, position() + pos, false, world()->assets(), world()->itemDatabase()));
+              world().addEntity(ItemDrop::createRandomizedDrop(
+                  {drop.getString("item"), static_cast<size_t>(drop.getInt("count", 1))}, position() + pos, false, world().assets(), world().itemDatabase()));
           }
         }
       }
@@ -258,7 +258,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
   Particle particle;
 
-  auto imgMetadata = world()->imageMetadataDatabase();
+  auto imgMetadata = world().imageMetadataDatabase();
 
   Vec2F imageSize = Vec2F(imgMetadata->imageSize(piece.image)) / TilePixels;
   float density = (imageSize.x() * imageSize.y()) / particleConfig.getFloat("density", 1);
@@ -275,7 +275,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
     auto config = Random::randValueFrom(particleOptions, {});
 
-    particle = world()->particleDatabase()->particle(config);
+    particle = world().particleDatabase()->particle(config);
     particle.color.hueShift(mainConfig.getFloat("hueshift", 0) / 360.0f);
     for (Directives const& directives : piece.image.directives.list())
       particle.directives.append(directives);

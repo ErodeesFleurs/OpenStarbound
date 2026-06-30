@@ -7,7 +7,7 @@
 namespace Star {
 
 Widget::Widget(GuiContext& context) {
-  m_context = &context;
+  m_context.reset(&context);
 }
 
 Widget::~Widget() {
@@ -24,7 +24,7 @@ GuiContext& Widget::context() const {
 }
 
 void Widget::setContext(GuiContext& context) {
-  m_context = &context;
+  m_context.reset(&context);
   for (auto& child : m_members)
     child->setContext(context);
 }
@@ -213,11 +213,11 @@ bool Widget::mouseTransparent() {
   return m_mouseTransparent;
 }
 
-Widget* Widget::parent() const {
+observer_ptr<Widget> Widget::parent() const {
   return m_parent;
 }
 
-void Widget::setParent(Widget* parent) {
+void Widget::setParent(observer_ptr<Widget> parent) {
   m_parent = parent;
 }
 
@@ -298,7 +298,7 @@ void Widget::addChild(String const& name, UniquePtr<Widget> member) {
   size_t index = m_members.size();
   m_members.push_back(std::move(member));
   m_memberHash[name] = index;
-  m_members[index]->setParent(this);
+  m_members[index]->setParent(observer_ptr<Widget>(this));
 }
 
 void Widget::addChildAt(String const& name, UniquePtr<Widget> member, size_t at) {
@@ -308,7 +308,7 @@ void Widget::addChildAt(String const& name, UniquePtr<Widget> member, size_t at)
   m_members.insert(m_members.begin() + at, std::move(member));
   m_members[at]->setName(name);
   m_members[at]->setContext(*m_context);
-  m_members[at]->setParent(this);
+  m_members[at]->setParent(observer_ptr<Widget>(this));
   // Rebuild hash from the insertion point
   for (size_t i = at; i < m_members.size(); ++i)
     m_memberHash[m_members[i]->name()] = i;

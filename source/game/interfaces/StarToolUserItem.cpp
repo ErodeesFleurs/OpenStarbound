@@ -3,12 +3,12 @@
 namespace Star {
 
 void ToolUserItem::init(ToolUserEntity& owner, ToolHand hand) {
-  m_owner = &owner;
+  m_owner.reset(&owner);
   m_hand = hand;
 }
 
 void ToolUserItem::uninit() {
-  m_owner = nullptr;
+  m_owner.reset();
   m_hand = {};
 }
 
@@ -18,10 +18,10 @@ void ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&
   return static_cast<bool>(m_owner);
 }
 
-[[nodiscard]] ToolUserEntity* ToolUserItem::owner() const {
+[[nodiscard]] ToolUserEntity& ToolUserItem::owner() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::owner");
-  return m_owner;
+  return *m_owner;
 }
 
 [[nodiscard]] EntityMode ToolUserItem::entityMode() const {
@@ -39,7 +39,7 @@ void ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&
 [[nodiscard]] World* ToolUserItem::world() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::world");
-  return m_owner->world();
+  return &m_owner->world();
 }
 
 [[nodiscard]] List<DamageSource> ToolUserItem::damageSources() const {

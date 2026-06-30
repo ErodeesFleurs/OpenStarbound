@@ -31,12 +31,12 @@ void FarmableObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     if (m_nextStageTime == 0) {
-      m_nextStageTime = world()->epochTime();
+      m_nextStageTime = world().epochTime();
       enterStage(m_stage);
     }
 
 
-    while (!m_finalStage && world()->epochTime() >= m_nextStageTime) {
+    while (!m_finalStage && world().epochTime() >= m_nextStageTime) {
       int lastStage = m_stage;
       enterStage(m_stage + 1);
       if (m_stage == lastStage)
@@ -64,11 +64,11 @@ InteractAction FarmableObject::interact(InteractRequest const&) {
 
 bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
-    for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
+    for (auto const& treasureItem : world().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world().threatLevel()))
+      world().addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world().assets(), world().itemDatabase()));
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
-      m_nextStageTime = world()->epochTime();
+      m_nextStageTime = world().epochTime();
       enterStage(m_stages.get(m_stage).getInt("resetToStage"));
     } else
       breakObject(true);
@@ -88,18 +88,18 @@ void FarmableObject::enterStage(int newStage) {
   // attempt to consume water from the soil if needed
   if (m_consumeSoilMoisture && newStage > m_stage) {
     if (auto orientation = currentOrientation()) {
-      auto materialDatabase = world()->materialDatabase();
+      auto materialDatabase = world().materialDatabase();
       auto wetToDryMods = config()->assets->json("/farming.config:wetToDryMods");
 
       // try to transform all anchor spaces, back out and reset stage time if
       // they're not wet
       for (auto anchor : orientation->anchors) {
         auto pos = tilePosition() + anchor.position;
-        if (auto newMod = wetToDryMods.optString(materialDatabase->modName(world()->mod(pos, anchor.layer)))) {
-          world()->modifyTile(pos, PlaceMod{anchor.layer, materialDatabase->modId(*newMod), MaterialHue()}, true);
+        if (auto newMod = wetToDryMods.optString(materialDatabase->modName(world().mod(pos, anchor.layer)))) {
+          world().modifyTile(pos, PlaceMod{anchor.layer, materialDatabase->modId(*newMod), MaterialHue()}, true);
         } else {
           Vec2F durationRange = jsonToVec2F(m_stages.get(m_stage).get("duration", JsonArray({0, 0})));
-          m_nextStageTime = world()->epochTime() + Random::randf(durationRange[0], durationRange[1]);
+          m_nextStageTime = world().epochTime() + Random::randf(durationRange[0], durationRange[1]);
 
           return;
         }
@@ -116,7 +116,7 @@ void FarmableObject::enterStage(int newStage) {
     Vec2I position = tilePosition();
 
     TreeVariant tv;
-    auto plantDatabase = world()->plantDatabase();
+    auto plantDatabase = world().plantDatabase();
     if (!foliageName.empty())
       tv = plantDatabase->buildTreeVariant(stemName, stemHueShift, foliageName, foliageHueShift);
     else
@@ -128,7 +128,7 @@ void FarmableObject::enterStage(int newStage) {
     if (anySpacesOccupied(plant->spaces()) || !allSpacesOccupied(plant->roots())) {
       newStage = 0;
     } else {
-      world()->timer(2.f / 60.f, [plant](World* world) {
+      world().timer(2.f / 60.f, [plant](World* world) {
         world->addEntity(plant);
       });
 

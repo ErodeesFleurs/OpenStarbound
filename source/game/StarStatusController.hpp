@@ -114,7 +114,7 @@ public:
   void init(Entity& parentEntity, ActorMovementController& movementController);
   void uninit();
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -148,7 +148,7 @@ private:
   struct EffectAnimator : public NetElement {
     EffectAnimator(Maybe<String> animationConfig = {}, AssetsConstPtr assets = {}, ParticleDatabaseConstPtr particleDatabase = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
     void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -228,8 +228,8 @@ private:
   UniqueEffectMetadataGroup m_uniqueEffectMetadata;
   EffectAnimatorGroup m_effectAnimators;
 
-  Entity* m_parentEntity;
-  ActorMovementController* m_movementController;
+  observer_ptr<Entity> m_parentEntity;
+  observer_ptr<ActorMovementController> m_movementController;
   AssetsConstPtr m_assets;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;

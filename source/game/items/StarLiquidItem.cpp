@@ -47,7 +47,7 @@ void LiquidItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
 }
 
 void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
-  if (!initialized() || !ready() || !owner()->inToolRange())
+  if (!initialized() || !ready() || !owner().inToolRange())
     return;
 
   PlaceLiquid placeLiquid{liquidId(), liquidQuantity()};
@@ -63,7 +63,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!multiplaceEnabled())
     radius = 1;
 
-  for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+  for (auto pos : tileAreaBrush(radius, owner().aimPosition(), true)) {
     if (canPlaceAtTile(pos))
       modifications.append({pos, placeLiquid});
   }
@@ -102,7 +102,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
     size_t c = 0;
 
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+    for (auto pos : tileAreaBrush(radius, owner().aimPosition(), true)) {
       if (c >= count())
         break;
       if (canPlaceAtTile(pos))
@@ -124,7 +124,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     if (!multiplaceEnabled())
       radius = 1;
 
-    for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
+    for (auto pos : tileAreaBrush(radius, owner().aimPosition(), true)) {
       if (canPlaceAtTile(pos))
         return true;
     }

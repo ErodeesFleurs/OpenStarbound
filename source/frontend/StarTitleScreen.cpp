@@ -245,8 +245,8 @@ void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
 }
 
 void TitleScreen::initMainMenu() {
-  m_mainMenu = make_shared<Pane>(m_guiContext);
-  auto backMenu = make_shared<Pane>(m_guiContext);
+  auto mainMenu = make_unique<Pane>(m_guiContext);
+  auto backMenu = make_unique<Pane>(m_guiContext);
 
   auto config = m_assets->json("/interface/windowconfig/title.config");
 
@@ -276,44 +276,50 @@ void TitleScreen::initMainMenu() {
     if (key == "back")
       backMenu->addChild(key, std::move(button));
     else
-      m_mainMenu->addChild(key, std::move(button));
+      mainMenu->addChild(key, std::move(button));
   }
 
-  m_mainMenu->setAnchor(PaneAnchor::BottomLeft);
-  m_mainMenu->lockPosition();
+  mainMenu->setAnchor(PaneAnchor::BottomLeft);
+  mainMenu->lockPosition();
 
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
 
-  m_backgroundMenu = make_shared<Pane>(m_guiContext);
+  auto rawMainMenu = mainMenu.get();
+
+  m_paneManager.registerPane("mainMenu", PaneLayer::Hud, std::move(mainMenu));
+  m_paneManager.registerPane("backMenu", PaneLayer::Hud, std::move(backMenu));
+  m_mainMenu = m_paneManager.registeredPane("mainMenu");
+
+  m_backgroundMenu = make_unique<Pane>(m_guiContext);
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
   m_backgroundMenu->addChild("canvas", make_unique<CanvasWidget>(m_guiContext));
   m_backgroundMenu->show();
 
-  m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
-  m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
-
   m_scriptComponent = make_shared<ScriptComponent>();
   m_scriptComponent->setLuaRoot(make_shared<LuaRoot>(m_luaRootServices));
   m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(*m_backgroundMenu));
-  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*m_mainMenu));
+  m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*rawMainMenu));
   m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
   m_scriptComponent->init();
+
+  m_mainMenu = observer_ptr<Pane>(rawMainMenu);
 }
 
 void TitleScreen::initCharSelectionMenu() {
-  auto deleteDialog = make_shared<Pane>(m_guiContext);
+  auto deleteDialog = make_unique<Pane>(m_guiContext);
+  auto deleteDialogRaw = deleteDialog.get();
 
   GuiReader reader(m_guiContext);
 
-  reader.registerCallback("delete", [=](Widget*) { deleteDialog->dismiss(); });
-  reader.registerCallback("cancel", [=](Widget*) { deleteDialog->dismiss(); });
+  reader.registerCallback("delete", [deleteDialogRaw](Widget*) { deleteDialogRaw->dismiss(); });
+  reader.registerCallback("cancel", [deleteDialogRaw](Widget*) { deleteDialogRaw->dismiss(); });
 
-  reader.construct(m_assets->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
+  reader.construct(m_assets->json("/interface/windowconfig/deletedialog.config"), deleteDialogRaw);
 
-  auto charSelectionMenu = make_shared<CharSelectionPane>(m_playerStorage, [=, this]() {
+  auto charSelectionMenu = make_unique<CharSelectionPane>(m_playerStorage, [=, this]() {
       if (m_titleState == TitleState::SinglePlayerSelectCharacter)
         switchState(TitleState::SinglePlayerCreateCharacter);
       else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
@@ -334,17 +340,18 @@ void TitleScreen::initCharSelectionMenu() {
         deleteDialog->dismiss();
       });
       m_paneManager.displayRegisteredPane("deleteDialog"); }, CharSelectionServices{m_assets, m_configuration, m_guiContext});
+  auto charSelectionMenuRaw = charSelectionMenu.get();
   charSelectionMenu->setAnchor(PaneAnchor::Center);
   charSelectionMenu->lockPosition();
 
-  m_paneManager.registerPane("deleteDialog", PaneLayer::ModalWindow, deleteDialog, [=](PanePtr const&) {
-    charSelectionMenu->updateCharacterPlates();
+  m_paneManager.registerPane("deleteDialog", PaneLayer::ModalWindow, std::move(deleteDialog), [charSelectionMenuRaw](observer_ptr<Pane>) {
+    charSelectionMenuRaw->updateCharacterPlates();
   });
-  m_paneManager.registerPane("charSelectionMenu", PaneLayer::Hud, charSelectionMenu);
+  m_paneManager.registerPane("charSelectionMenu", PaneLayer::Hud, std::move(charSelectionMenu));
 }
 
 void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = make_shared<CharCreationPane>([=, this](PlayerPtr newPlayer) {
+  auto charCreationMenu = make_unique<CharCreationPane>([=, this](PlayerPtr newPlayer) {
     if (newPlayer) {
       m_mainAppPlayer = newPlayer;
       m_playerStorage->savePlayer(m_mainAppPlayer);
@@ -356,7 +363,7 @@ void TitleScreen::initCharCreationMenu() {
   charCreationMenu->setAnchor(PaneAnchor::Center);
   charCreationMenu->lockPosition();
 
-  m_paneManager.registerPane("charCreationMenu", PaneLayer::Hud, charCreationMenu);
+  m_paneManager.registerPane("charCreationMenu", PaneLayer::Hud, std::move(charCreationMenu));
 }
 
 void TitleScreen::populateServerList(WidgetRef<ListWidget> list) {
@@ -372,8 +379,8 @@ void TitleScreen::populateServerList(WidgetRef<ListWidget> list) {
 };
 
 void TitleScreen::initMultiPlayerMenu() {
-  m_multiPlayerMenu = make_shared<Pane>(m_guiContext);
-  m_serverSelectPane = make_shared<Pane>(m_guiContext);
+  m_multiPlayerMenu = make_unique<Pane>(m_guiContext);
+  m_serverSelectPane = make_unique<Pane>(m_guiContext);
 
   GuiReader readerConnect(m_guiContext);
   GuiReader readerServer(m_guiContext);
@@ -458,28 +465,28 @@ void TitleScreen::initMultiPlayerMenu() {
 
   populateServerList(serverList);
 
-  m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu);
-  m_paneManager.registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane, [=](PanePtr const&) {
+  m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, std::move(m_multiPlayerMenu));
+  m_paneManager.registerPane("serverSelect", PaneLayer::Hud, std::move(m_serverSelectPane), [=](observer_ptr<Pane>) {
     serverList->clearSelected();
   });
 }
 
 void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
-  auto optionsMenu = make_shared<OptionsMenu>(m_paneManager, client, OptionsMenuServices{m_assets, m_configuration, m_luaRootServices, m_voice, m_input, m_guiContext});
+  auto optionsMenu = make_unique<OptionsMenu>(m_paneManager, client, OptionsMenuServices{m_assets, m_configuration, m_luaRootServices, m_voice, m_input, m_guiContext});
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
-  m_paneManager.registerPane("optionsMenu", PaneLayer::Hud, optionsMenu, [this](PanePtr const&) {
+  m_paneManager.registerPane("optionsMenu", PaneLayer::Hud, std::move(optionsMenu), [this](observer_ptr<Pane>) {
     back();
   });
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = make_shared<ModsMenu>(ModsMenu::Services{m_assets, m_guiContext});
+  auto modsMenu = make_unique<ModsMenu>(ModsMenu::Services{m_assets, m_guiContext});
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 
-  m_paneManager.registerPane("modsMenu", PaneLayer::Hud, modsMenu, [this](PanePtr const&) {
+  m_paneManager.registerPane("modsMenu", PaneLayer::Hud, std::move(modsMenu), [this](observer_ptr<Pane>) {
     back();
   });
 }

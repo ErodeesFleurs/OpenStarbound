@@ -60,7 +60,7 @@ void ObjectItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   Json objectParameters = parameters().opt().value(JsonObject{});
   if (!initialized())
     return objectParameters;
-  return objectParameters.set("owner", jsonFromMaybe(owner()->uniqueId()));
+  return objectParameters.set("owner", jsonFromMaybe(owner().uniqueId()));
 }
 
 bool ObjectItem::placeInWorld(FireMode, bool shifting) {
@@ -73,9 +73,9 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
   if (!canPlace(shifting))
     return false;
 
-  auto pos = Vec2I(owner()->aimPosition().floor());
+  auto pos = Vec2I(owner().aimPosition().floor());
   try {
-    if (auto object = m_objectDatabase->createForPlacement(*world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
+    if (auto object = m_objectDatabase->createForPlacement(*world(), objectName(), pos, owner().walkingDirection(), objectParameters())) {
       if (consume(1)) {
         world()->addEntity(object);
         return true;
@@ -94,8 +94,8 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
 
 [[nodiscard]] bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
-    if (owner()->isAdmin() || owner()->inToolRange()) {
-      auto pos = Vec2I(owner()->aimPosition().floor());
+    if (owner().isAdmin() || owner().inToolRange()) {
+      auto pos = Vec2I(owner().aimPosition().floor());
       return m_objectDatabase->canPlaceObject(*world(), pos, objectName());
     }
   }

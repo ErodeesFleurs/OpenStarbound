@@ -341,12 +341,12 @@ void Player::setStatistics(StatisticsPtr statistics) {
   m_statistics = statistics;
 }
 
-void Player::setUniverseClient(UniverseClient* client) {
+void Player::setUniverseClient(observer_ptr<UniverseClient> client) {
   m_client = client;
   m_questManager->setUniverseClient(client);
 }
 
-UniverseClient* Player::universeClient() const {
+observer_ptr<UniverseClient> Player::universeClient() const {
   return m_client;
 }
 
@@ -433,7 +433,7 @@ void Player::uninit() {
         scriptContext->removeCallbacks("celestial");
     }
   }
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("entity");
@@ -495,7 +495,7 @@ void Player::uninit() {
 
 List<Particle> Player::particles() {
   List<Particle> particles;
-  particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), *world()));
+  particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
   particles.appendAll(take(m_callbackParticles));
   particles.appendAll(m_appearance.humanoidDynamicTarget().pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
@@ -605,7 +605,7 @@ void Player::destroy(RenderCallback* renderCallback) {
   if (isMaster()) {
     m_log->addDeathCount(1);
 
-    if (!world()->disableDeathDrops()) {
+    if (!world().disableDeathDrops()) {
       if (auto dropString = modeConfig().deathDropItemTypes.maybeLeft()) {
         if (*dropString == "all")
           dropEverything();
@@ -635,7 +635,7 @@ bool Player::lounge(EntityId loungeableEntityId, size_t anchorIndex) {
   if (!canUseTool())
     return false;
 
-  auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
+  auto loungeableEntity = world().get<LoungeableEntity>(loungeableEntityId);
   if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
       || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
       || !loungeableEntity->loungeAnchor(anchorIndex))
@@ -719,7 +719,7 @@ void Player::special(int specialKey) {
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   if (loungeAnchor && loungeAnchor->controllable) {
     auto anchorState = m_movementController->anchorState();
-    if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId)) {
+    if (auto loungeableEntity = world().get<LoungeableEntity>(anchorState->entityId)) {
       if (specialKey == 1)
         loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Special1);
       else if (specialKey == 2)
@@ -768,16 +768,14 @@ void Player::jump() {
 }
 
 void Player::dropItem() {
-  if (!world())
-    return;
   if (!canUseTool())
     return;
 
-  Vec2F throwDirection = world()->geometry().diff(aimPosition(), position());
+  Vec2F throwDirection = world().geometry().diff(aimPosition(), position());
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection, false, m_assets, m_itemDatabase));
+        world().addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection, false, m_assets, m_itemDatabase));
         break;
       }
     }
@@ -785,7 +783,7 @@ void Player::dropItem() {
 }
 
 Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
-  bool localMessage = fromConnection == world()->connection();
+  bool localMessage = fromConnection == world().connection();
   if (message == "queueRadioMessage" && !args.empty()) {
     float delay = 0;
     if (args.size() > 1 && args.get(1).canConvert(Json::Type::Float))
@@ -924,7 +922,7 @@ void Player::update(float dt, uint64_t) {
 
       m_tools->effects(*m_effectEmitter);
 
-      auto aimRelative = world()->geometry().diff(m_aimPosition, position());// dumb, but due to how things are ordered
+      auto aimRelative = world().geometry().diff(m_aimPosition, position());// dumb, but due to how things are ordered
       m_movementController->tickMaster(dt);
       m_aimPosition = position() + aimRelative;// it's gonna have to be like this for now
 
@@ -990,7 +988,7 @@ void Player::update(float dt, uint64_t) {
             m_log->addScannedObject(*ir.objectName);
           }
 
-          addChatMessage(ir.message, JsonObject{{"message", JsonObject{{"context", JsonObject{{"mode", "RadioMessage"}}}, {"fromConnection", world()->connection()}, {"text", ir.message}}}});
+          addChatMessage(ir.message, JsonObject{{"message", JsonObject{{"context", JsonObject{{"mode", "RadioMessage"}}}, {"fromConnection", world().connection()}, {"text", ir.message}}}});
         }
       }
     }
@@ -1017,7 +1015,7 @@ void Player::update(float dt, uint64_t) {
              || humanoid()->danceCyclicOrEnded() || m_movementController->running()) {
     humanoid()->setDance({});
   }
-  bool isClient = world()->isClient();
+  bool isClient = world().isClient();
 
   m_tools->suppressItems(suppressedItems);
   m_tools->tick(dt, m_shifting, m_pendingMoves);
@@ -1055,7 +1053,7 @@ void Player::update(float dt, uint64_t) {
 
   m_damagePipeline->tickBuildSources();
 
-  m_songbook->update(*entityMode(), *world());
+  m_songbook->update(*entityMode(), world());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setSourcePosition("mouth", mouthOffset() + position());
@@ -1070,7 +1068,7 @@ void Player::update(float dt, uint64_t) {
 
   m_effectEmitter->setDirection(facingDirection);
 
-  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
+  m_effectEmitter->tick(dt, *entityMode(), world().effectSourceDatabase());
 
   if (isClient) {
     bool headRotationEnabled = m_configuration->get("humanoidHeadRotation").optBool().value(true);
@@ -1094,7 +1092,7 @@ void Player::update(float dt, uint64_t) {
         if (!(statusFlag.isType(Json::Type::Bool) && statusFlag.toBool())
             && !(primary && primary->instanceValue(disableFlag))
             && !(alt && alt->instanceValue(disableFlag))) {
-          auto diff = world()->geometry().diff(aimPosition(), mouthPosition());
+          auto diff = world().geometry().diff(aimPosition(), mouthPosition());
           diff.setX(fabsf(diff.x()));
           headRotation = diff.angle() * .25f * numericalDirection(humanoid()->facingDirection());
         }
@@ -1186,7 +1184,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   m_tools->render(renderCallback, inToolRange(), m_shifting, renderLayer);
 
-  m_effectEmitter->render(renderCallback, world()->particleDatabase());
+  m_effectEmitter->render(renderCallback, world().particleDatabase());
   m_songbook->render(renderCallback);
 
   if (isMaster())
@@ -1238,7 +1236,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
 
 void Player::giveItem(ItemPtr const& item) {
   if (auto spill = pickupItems(item))
-    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position(), false, m_assets, m_itemDatabase));
+    world().addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position(), false, m_assets, m_itemDatabase));
 }
 
 void Player::triggerPickupEvents(ItemPtr const& item) {
@@ -1422,7 +1420,7 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
     return {};
 
   InteractiveEntityPtr interactiveEntity;
-  if (auto entity = world()->getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius)) {
+  if (auto entity = world().getInteractiveInRange(m_aimPosition, isAdmin() ? m_aimPosition : position(), m_interactRadius)) {
     interactiveEntity = entity;
   } else if (includeNearby) {
     Vec2F interactBias = m_walkIntoInteractBias;
@@ -1430,11 +1428,11 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
       interactBias[0] *= -1;
     Vec2F pos = position() + interactBias;
 
-    if (auto nearbyEntity = world()->getInteractiveInRange(pos, position(), m_interactRadius))
+    if (auto nearbyEntity = world().getInteractiveInRange(pos, position(), m_interactRadius))
       interactiveEntity = nearbyEntity;
   }
 
-  if (interactiveEntity && (isAdmin() || world()->canReachEntity(position(), interactRadius(), interactiveEntity->entityId())))
+  if (interactiveEntity && (isAdmin() || world().canReachEntity(position(), interactRadius(), interactiveEntity->entityId())))
     return interactiveEntity;
   return {};
 }
@@ -1473,7 +1471,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
     }
   }
 
-  m_pendingInteractActions.append(world()->interact(InteractRequest{
+  m_pendingInteractActions.append(world().interact(InteractRequest{
     entityId(), position(), entity->entityId(), aimPosition()}));
 }
 
@@ -1728,7 +1726,7 @@ void Player::processControls() {
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
   if (loungeAnchor && loungeAnchor->controllable) {
     auto anchorState = m_movementController->anchorState();
-    if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId)) {
+    if (auto loungeableEntity = world().get<LoungeableEntity>(anchorState->entityId)) {
       for (auto movement : m_pendingMoves) {
         if (movement == MoveControlType::Up)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Up);
@@ -1839,7 +1837,7 @@ void Player::processStateChanges(float dt) {
       }
     }
   }
-  if (world()->isClient()) {
+  if (world().isClient()) {
     humanoid()->animate(dt, &m_appearance.humanoidDynamicTarget());
     m_appearance.humanoidDynamicTarget().updatePosition(position() + (m_techController->parentOffset()));
   } else {
@@ -1905,8 +1903,8 @@ void Player::processStateChanges(float dt) {
   String fallback = materialDatabase->defaultFootstepSound();
   List<Vec2I> scanOrder{{0, 0}, {0, -1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}};
   for (auto const& subSensor : scanOrder) {
-    String footstepSound = materialDatabase->footstepSound(world()->material(sensor + subSensor, TileLayer::Foreground),
-                                                           world()->mod(sensor + subSensor, TileLayer::Foreground));
+    String footstepSound = materialDatabase->footstepSound(world().material(sensor + subSensor, TileLayer::Foreground),
+                                                           world().mod(sensor + subSensor, TileLayer::Foreground));
     if (!footstepSound.empty()) {
       if (footstepSound != fallback) {
         return footstepSound;
@@ -1921,7 +1919,7 @@ void Player::processStateChanges(float dt) {
 }
 
 [[nodiscard]] bool Player::inInteractionRange(Vec2F aimPos) const {
-  return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < interactRadius();
+  return isAdmin() || world().geometry().diff(aimPos, position()).magnitude() < interactRadius();
 }
 
 [[nodiscard]] bool Player::inToolRange() const {
@@ -1929,7 +1927,7 @@ void Player::processStateChanges(float dt) {
 }
 
 [[nodiscard]] bool Player::inToolRange(Vec2F const& aimPos) const {
-  return isAdmin() || world()->geometry().diff(aimPos, position()).magnitude() < toolRadius();
+  return isAdmin() || world().geometry().diff(aimPos, position()).magnitude() < toolRadius();
 }
 
 void Player::getNetStates(bool initial) {
@@ -2491,17 +2489,14 @@ void Player::animatePortrait(float dt) {
 bool Player::isOutside() {
   if (!inWorld())
     return false;
-  return !world()->isUnderground(position())
-    && !world()->tileIsOccupied(Vec2I::floor(mouthPosition()), TileLayer::Background);
+  return !world().isUnderground(position())
+    && !world().tileIsOccupied(Vec2I::floor(mouthPosition()), TileLayer::Background);
 }
 
 void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
-  if (!world())
-    return;
-
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
     if (item && (!filter || filter(item)))
-      world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets, m_itemDatabase));
+      world().addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets, m_itemDatabase));
   });
 }
 
@@ -2604,13 +2599,13 @@ Vec2F Player::cameraPosition() {
   if (inWorld()) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
       if (loungeAnchor->cameraFocus) {
-        if (auto anchoredEntity = world()->entity(m_movementController->anchorState()->entityId))
+        if (auto anchoredEntity = world().entity(m_movementController->anchorState()->entityId))
           return anchoredEntity->position();
       }
     }
 
     if (m_cameraFocusEntity) {
-      if (auto focusedEntity = world()->entity(*m_cameraFocusEntity))
+      if (auto focusedEntity = world().entity(*m_cameraFocusEntity))
         return focusedEntity->position();
       else
         m_cameraFocusEntity = {};

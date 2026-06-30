@@ -32,9 +32,9 @@ List<Drawable> ThrownItem::preview(PlayerPtr const&) const {
 
 void ThrownItem::fireTriggered() {
   if (initialized()) {
-    Vec2F direction = world()->geometry().diff(owner()->aimPosition(), owner()->position()).normalized();
-    Vec2F firePosition = owner()->position() + ownerFirePosition();
-    if (world()->lineTileCollision(owner()->position(), firePosition))
+    Vec2F direction = world()->geometry().diff(owner().aimPosition(), owner().position()).normalized();
+    Vec2F firePosition = owner().position() + ownerFirePosition();
+    if (world()->lineTileCollision(owner().position(), firePosition))
       return;
 
     if (consume(m_ammoUsage)) {
@@ -43,8 +43,8 @@ void ThrownItem::fireTriggered() {
       auto projectile = projectileDb->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);
       projectile->setInitialDirection(direction);
-      projectile->setSourceEntity(owner()->entityId(), false);
-      projectile->setPowerMultiplier(owner()->powerMultiplier());
+      projectile->setSourceEntity(owner().entityId(), false);
+      projectile->setPowerMultiplier(owner().powerMultiplier());
       world()->addEntity(projectile);
     }
 

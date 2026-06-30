@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
 
@@ -131,7 +132,7 @@ private:
   EntityId m_beginIdSpace;
   EntityId m_endIdSpace;
 
-  List<SpatialMap::Entry const*> m_entrySortBuffer;
+  List<observer_ptr<SpatialMap::Entry const>> m_entrySortBuffer;
   mutable List<EntityPtr const*> m_forAllBuffer;
 };
 

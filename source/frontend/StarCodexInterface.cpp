@@ -98,7 +98,7 @@ bool CodexInterface::showNewCodex() {
   if (auto newCodex = m_player->codexes()->firstNewCodex()) {
     for (auto button : m_speciesTabs->buttons()) {
       if (button->data().getString("species") == newCodex->species()) {
-        m_speciesTabs->select(m_speciesTabs->id(button));
+        m_speciesTabs->select(m_speciesTabs->id(button.get()));
         break;
       }
     }

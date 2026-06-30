@@ -54,7 +54,7 @@ GuiContext& WidgetParser::guiContext() const {
 void WidgetParser::construct(Json const& config, Widget* widget) {
   widget = requireDependencyValueAs<WidgetParserException>(widget, "WidgetParser", "target widget");
 
-  m_pane = dynamic_cast<Pane*>(widget);
+  m_pane.reset(dynamic_cast<Pane*>(widget));
   constructImpl(config, widget);
 }
 
@@ -333,7 +333,7 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
       auto id = btnConfig.getInt("id", ButtonGroup::NoButton);
 
       auto button = make_unique<ButtonWidget>(guiContext());
-      button->setButtonGroup(buttonGroup.get(), id);
+      button->setButtonGroup(observer_ptr<ButtonGroup>(buttonGroup.get()), id);
 
       button->setImages(btnConfig.getString("baseImage", baseImage),
           btnConfig.getString("hoverImage", hoverImage),

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarThread.hpp"
 #include "StarLua.hpp"
 #include "StarAssets.hpp"
@@ -13,7 +14,7 @@ using LuaRootPtr = SharedPtr<LuaRoot>;
 class Root;
 
 struct LuaRootServices {
-  Root* root = nullptr;
+  observer_ptr<Root> root;
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
   function<void(ListenerWeakPtr)> registerReloadListener;

@@ -127,7 +127,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
   // list, so that it is safe to call addEntity from the callback.
   m_entrySortBuffer.clear();
   for (auto const& [_, entry] : m_spatialMap.entries())
-    m_entrySortBuffer.append(&entry);
+    m_entrySortBuffer.append(observer_ptr<SpatialMap::Entry const>(&entry));
 
   if (sortOrder) {
     m_entrySortBuffer.sort([&sortOrder](auto a, auto b) {

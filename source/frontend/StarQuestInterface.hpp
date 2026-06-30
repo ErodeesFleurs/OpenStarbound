@@ -37,7 +37,7 @@ public:
 
   void displayed() override;
   void tick(float dt) override;
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   void fetchData();
 
@@ -74,7 +74,7 @@ protected:
   virtual void close();
   virtual void decline();
   virtual void accept();
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   QuestPtr m_quest;
   PlayerPtr m_player;

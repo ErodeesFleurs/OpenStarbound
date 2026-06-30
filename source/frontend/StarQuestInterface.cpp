@@ -76,16 +76,16 @@ void QuestLogInterface::pollDialog(PaneManager& paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
+    auto qfi = make_unique<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     (*failableQuest)->setDialogShown();
-    paneManager.displayPane(PaneLayer::ModalWindow, qfi);
+    paneManager.displayPane(PaneLayer::ModalWindow, std::move(qfi));
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
+    auto qci = make_unique<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     (*completableQuest)->setDialogShown();
-    paneManager.displayPane(PaneLayer::ModalWindow, qci);
+    paneManager.displayPane(PaneLayer::ModalWindow, std::move(qci));
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
-    paneManager.displayPane(PaneLayer::ModalWindow, nqd);
+    auto nqd = make_unique<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
+    paneManager.displayPane(PaneLayer::ModalWindow, std::move(nqd));
   }
 }
 
@@ -171,7 +171,7 @@ void QuestLogInterface::tick(float dt) {
   }
 }
 
-PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))
@@ -344,7 +344,7 @@ void QuestPane::accept() {
   close();
 }
 
-PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> QuestPane::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
   if (auto child = getChildAt(screenPosition)) {
     if (auto itemSlot = as<ItemSlotWidget>(child))

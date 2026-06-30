@@ -74,12 +74,12 @@ public:
   void lockPosition();
   void unlockPosition();
 
-  void setTitle(WidgetPtr icon, String const& title, String const& subTitle);
+  void setTitle(UniquePtr<Widget> icon, String const& title, String const& subTitle);
   void setTitleString(String const& title, String const& subTitle);
-  void setTitleIcon(WidgetPtr icon);
+  void setTitleIcon(UniquePtr<Widget> icon);
   [[nodiscard]] String title() const;
   [[nodiscard]] String subTitle() const;
-  [[nodiscard]] WidgetPtr titleIcon() const;
+  [[nodiscard]] observer_ptr<Widget> titleIcon() const;
 
   [[nodiscard]] Pane* window() override;
   [[nodiscard]] Pane const* window() const override;
@@ -92,7 +92,7 @@ public:
 
   // If a tooltip popup should be created at the given mouse position, return a
   // new pane to be used as the tooltip.
-  [[nodiscard]] virtual PanePtr createTooltip(Vec2I const& screenPosition);
+  [[nodiscard]] virtual UniquePtr<Pane> createTooltip(Vec2I const& screenPosition);
   [[nodiscard]] virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
   [[nodiscard]] virtual Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input);
 
@@ -119,7 +119,7 @@ protected:
   WidgetRef<Widget> m_clickDown;
   WidgetRef<Widget> m_focusWidget;
 
-  WidgetPtr m_icon;
+  UniquePtr<Widget> m_icon;
   String m_title;
   String m_subTitle;
   TextStyle m_textStyle;

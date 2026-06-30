@@ -204,19 +204,19 @@ void OptionsMenu::syncGuiToConf() {
 }
 
 void OptionsMenu::displayControls() {
-  m_paneManager.displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, *m_keybindingsMenu);
 }
 
 void OptionsMenu::displayVoiceSettings() {
-  m_paneManager.displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, *m_voiceSettingsMenu);
 }
 
 void OptionsMenu::displayModBindings() {
-  m_paneManager.displayPane(PaneLayer::ModalWindow, m_modBindingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, *m_modBindingsMenu);
 }
 
 void OptionsMenu::displayGraphics() {
-  m_paneManager.displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, *m_graphicsMenu);
 }
 
 }

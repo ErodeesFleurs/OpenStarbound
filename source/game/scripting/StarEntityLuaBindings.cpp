@@ -42,7 +42,7 @@ LuaTable LuaBindings::EntityCallbacks::damageTeam(Entity const& entity, LuaEngin
 }
 
 bool LuaBindings::EntityCallbacks::isValidTarget(Entity const& entity, EntityId entityId) {
-  auto target = entity.world()->entity(entityId);
+  auto target = entity.world().entity(entityId);
 
   if (!target || !entity.getTeam().canDamage(target->getTeam(), false))
     return false;
@@ -61,15 +61,15 @@ bool LuaBindings::EntityCallbacks::isValidTarget(Entity const& entity, EntityId 
 
 Vec2F LuaBindings::EntityCallbacks::distanceToEntity(Entity const& entity, EntityId entityId) {
   Vec2F dist;
-  if (auto target = entity.world()->entity(entityId))
-    dist = entity.world()->geometry().diff(target->position(), entity.position());
+  if (auto target = entity.world().entity(entityId))
+    dist = entity.world().geometry().diff(target->position(), entity.position());
 
   return dist;
 }
 
 bool LuaBindings::EntityCallbacks::entityInSight(Entity const& entity, EntityId entityId) {
-  if (auto target = entity.world()->entity(entityId))
-    return !entity.world()->lineTileCollision(target->position(), entity.position());
+  if (auto target = entity.world().entity(entityId))
+    return !entity.world().lineTileCollision(target->position(), entity.position());
   else
     return false;
 }

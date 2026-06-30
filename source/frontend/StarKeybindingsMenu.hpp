@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 #include "StarPane.hpp"
@@ -40,7 +41,7 @@ private:
   void revert();
   void resetDefaults();
 
-  Widget* m_activeKeybinding = nullptr;
+  observer_ptr<Widget> m_activeKeybinding;
 
   Map<Widget*, InterfaceAction> m_childToAction;
   TabSetWidgetPtr m_tabSet;

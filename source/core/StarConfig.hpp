@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarPch.hpp"
+#include "StarObserverPtr.hpp"
 
 namespace Star {
 

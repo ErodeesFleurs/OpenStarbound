@@ -4,69 +4,62 @@
 
 namespace Star {
 
-// This class inherits PaneManager to allow for registered panes that are kept
-// internally by the class even when dismissed.  They can be displayed,
-// dismissed, and toggled between the two without being lost.
 template <typename KeyT>
 class RegisteredPaneManager : public PaneManager {
 public:
   using Key = KeyT;
   using PaneManager::PaneManager;
 
-  void registerPane(KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss = {});
+  void registerPane(KeyT paneId, PaneLayer paneLayer, UniquePtr<Pane> pane, DismissCallback onDismiss = {});
   [[nodiscard]] PanePtr deregisterPane(KeyT const& paneId);
   void deregisterAllPanes();
 
   template <typename T = Pane>
-  [[nodiscard]] shared_ptr<T> registeredPane(KeyT const& paneId) const;
+  [[nodiscard]] observer_ptr<T> registeredPane(KeyT const& paneId) const;
   template <typename T = Pane>
-  [[nodiscard]] shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
+  [[nodiscard]] observer_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
 
-  // Displays a registred pane if it is not already displayed.  Returns true
-  // if it is newly displayed.
   [[nodiscard]] bool displayRegisteredPane(KeyT const& paneId);
   [[nodiscard]] bool registeredPaneIsDisplayed(KeyT const& paneId) const;
 
-  // Dismisses a registred pane if it is displayed.  Returns true if it
-  // has been dismissed.
   [[nodiscard]] bool dismissRegisteredPane(KeyT const& paneId);
 
-  // Returns whether the pane is now displayed.
   [[nodiscard]] bool toggleRegisteredPane(KeyT const& paneId);
 
 private:
   struct PaneInfo {
     PaneLayer layer;
-    PanePtr pane;
+    SharedPtr<Pane> pane;
     DismissCallback dismissCallback;
   };
 
   [[nodiscard]] PaneInfo const& getRegisteredPaneInfo(KeyT const& paneId) const;
 
-  // Map of registered panes by name.
   HashMap<KeyT, PaneInfo> m_registeredPanes;
 };
 
 template <typename KeyT>
 template <typename T>
-shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
+observer_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
-    return convert<T>(v->pane);
+    return observer_ptr<T>(dynamic_cast<T*>(v->pane.get()));
   throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager", outputAny(paneId)));
 }
 
 template <typename KeyT>
 template <typename T>
-shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
+observer_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
-    return convert<T>(v->pane);
+    return observer_ptr<T>(dynamic_cast<T*>(v->pane.get()));
   return {};
 }
 
 template <typename KeyT>
 void RegisteredPaneManager<KeyT>::registerPane(
-    KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss) {
-  auto [paneIt, inserted] = m_registeredPanes.insert(std::move(paneId), {std::move(paneLayer), std::move(pane), std::move(onDismiss)});
+    KeyT paneId, PaneLayer paneLayer, UniquePtr<Pane> pane, DismissCallback onDismiss) {
+  auto sharedPane = SharedPtr<Pane>(std::move(pane));
+  auto [paneIt, inserted] = m_registeredPanes.insert(std::move(paneId),
+      {std::move(paneLayer), std::move(sharedPane), std::move(onDismiss)});
   if (!inserted)
     throw GuiException(
         strf("Registered pane with name '{}' registered a second time in RegisteredPaneManager::registerPane",
@@ -76,9 +69,9 @@ void RegisteredPaneManager<KeyT>::registerPane(
 template <typename KeyT>
 PanePtr RegisteredPaneManager<KeyT>::deregisterPane(KeyT const& paneId) {
   if (auto v = m_registeredPanes.maybeTake(paneId)) {
-    if (isDisplayed(v->pane))
-      dismissPane(v->pane);
-    return v->pane;
+    if (isDisplayed(observer_ptr<Pane>(v->pane.get())))
+      dismissPane(observer_ptr<Pane>(v->pane.get()));
+    return std::move(v->pane);
   }
   throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager::deregisterPane", outputAny(paneId)));
 }
@@ -92,8 +85,8 @@ void RegisteredPaneManager<KeyT>::deregisterAllPanes() {
 template <typename KeyT>
 bool RegisteredPaneManager<KeyT>::displayRegisteredPane(KeyT const& paneId) {
   auto const& paneInfo = getRegisteredPaneInfo(paneId);
-  if (!isDisplayed(paneInfo.pane)) {
-    displayPane(paneInfo.layer, paneInfo.pane, paneInfo.dismissCallback);
+  if (!isDisplayed(observer_ptr<Pane>(paneInfo.pane.get()))) {
+    displayPane(paneInfo.layer, *paneInfo.pane, paneInfo.dismissCallback);
     return true;
   }
   return false;
@@ -101,14 +94,15 @@ bool RegisteredPaneManager<KeyT>::displayRegisteredPane(KeyT const& paneId) {
 
 template <typename KeyT>
 bool RegisteredPaneManager<KeyT>::registeredPaneIsDisplayed(KeyT const& paneId) const {
-  return isDisplayed(getRegisteredPaneInfo(paneId).pane);
+  auto const& paneInfo = getRegisteredPaneInfo(paneId);
+  return isDisplayed(observer_ptr<Pane>(paneInfo.pane.get()));
 }
 
 template <typename KeyT>
 bool RegisteredPaneManager<KeyT>::dismissRegisteredPane(KeyT const& paneId) {
   auto const& paneInfo = getRegisteredPaneInfo(paneId);
-  if (isDisplayed(paneInfo.pane)) {
-    dismissPane(paneInfo.pane);
+  if (isDisplayed(observer_ptr<Pane>(paneInfo.pane.get()))) {
+    dismissPane(observer_ptr<Pane>(paneInfo.pane.get()));
     return true;
   }
   return false;
@@ -132,4 +126,6 @@ typename RegisteredPaneManager<KeyT>::PaneInfo const& RegisteredPaneManager<KeyT
     return *paneInfo;
   throw GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId)));
 }
+
 }
+

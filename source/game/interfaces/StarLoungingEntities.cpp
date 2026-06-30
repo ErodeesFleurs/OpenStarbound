@@ -40,7 +40,7 @@ void LoungeableEntity::loungeAim(size_t, Vec2F const&) {}
 
 [[nodiscard]] Set<pair<EntityId, size_t>> LoungeableEntity::entitiesLounging() const {
   Set<pair<EntityId, size_t>> loungingInEntities;
-  world()->forEachEntity(metaBoundBox().translated(position()),
+  world().forEachEntity(metaBoundBox().translated(position()),
       [&](EntityPtr const& entity) {
         if (auto lounger = as<LoungingEntity>(entity)) {
           if (auto anchorStatus = lounger->loungingIn()) {
@@ -54,7 +54,7 @@ void LoungeableEntity::loungeAim(size_t, Vec2F const&) {}
 
 [[nodiscard]] bool LoungingEntity::inConflictingLoungeAnchor() const {
   if (auto loungeAnchorState = loungingIn()) {
-    if (auto loungeableEntity = world()->get<LoungeableEntity>(loungeAnchorState->entityId)) {
+    if (auto loungeableEntity = world().get<LoungeableEntity>(loungeAnchorState->entityId)) {
       auto entitiesLoungingIn = loungeableEntity->entitiesLoungingIn(loungeAnchorState->positionIndex);
       return entitiesLoungingIn.size() > 1 || !entitiesLoungingIn.contains(entityId());
     }

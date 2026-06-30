@@ -25,7 +25,7 @@ LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem& fireableItem) 
   callbacks.registerCallbackWithSignature<bool>("ownerEnergyLocked", [&fireableItem]() { return FireableItemCallbacks::ownerEnergyLocked(fireableItem); });
   callbacks.registerCallbackWithSignature<bool, float>("ownerConsumeEnergy", [&fireableItem](float energy) { return FireableItemCallbacks::ownerConsumeEnergy(fireableItem, energy); });
   callbacks.registerCallbackWithSignature<Vec2F>("ownerAimPosition", [&fireableItem]() {
-      return fireableItem.owner()->aimPosition();
+      return fireableItem.owner().aimPosition();
     });
 
   return callbacks;
@@ -140,21 +140,21 @@ bool LuaBindings::FireableItemCallbacks::coolingDown(FireableItem& fireableItem)
 //
 // @return true if the owner's energy is full
 bool LuaBindings::FireableItemCallbacks::ownerFullEnergy(FireableItem& fireableItem) {
-  return fireableItem.owner()->fullEnergy();
+  return fireableItem.owner().fullEnergy();
 }
 
 // Determine the amount of energy that the item's owner currently has
 //
 // @return the owner's current energy
 bool LuaBindings::FireableItemCallbacks::ownerEnergy(FireableItem& fireableItem) {
-  return fireableItem.owner()->energy();
+  return fireableItem.owner().energy();
 }
 
 // Determine whether the item's owner's energy pool is currently locked
 //
 // @return true if the owner's energy pool is currently locked
 bool LuaBindings::FireableItemCallbacks::ownerEnergyLocked(FireableItem& fireableItem) {
-  return fireableItem.owner()->energyLocked();
+  return fireableItem.owner().energyLocked();
 }
 
 // Attempt to consume the specified amount of the owner's energy
@@ -162,7 +162,7 @@ bool LuaBindings::FireableItemCallbacks::ownerEnergyLocked(FireableItem& fireabl
 // @param amount the amount of energy to consume
 // @return true if the energy was consumed successfully
 bool LuaBindings::FireableItemCallbacks::ownerConsumeEnergy(FireableItem& fireableItem, float energy) {
-  return fireableItem.owner()->consumeEnergy(energy);
+  return fireableItem.owner().consumeEnergy(energy);
 }
 
 }

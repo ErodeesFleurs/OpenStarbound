@@ -7,11 +7,11 @@ void ButtonGroup::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-ButtonWidget* ButtonGroup::button(int id) const {
+observer_ptr<ButtonWidget> ButtonGroup::button(int id) const {
   return m_buttons.value(id);
 }
 
-List<ButtonWidget*> ButtonGroup::buttons() const {
+List<observer_ptr<ButtonWidget>> ButtonGroup::buttons() const {
   return m_buttons.values();
 }
 
@@ -32,7 +32,7 @@ int ButtonGroup::addButton(ButtonWidget* button, int id) {
   while (m_buttons.contains(id))
     ++id;
 
-  m_buttons[id] = button;
+  m_buttons[id] = observer_ptr<ButtonWidget>(button);
   m_buttonIds[button] = id;
   return id;
 }
@@ -51,7 +51,7 @@ int ButtonGroup::id(ButtonWidget* button) const {
     return NoButton;
 }
 
-ButtonWidget* ButtonGroup::checkedButton() const {
+observer_ptr<ButtonWidget> ButtonGroup::checkedButton() const {
   for (auto const& button : m_buttons.values()) {
     if (button->isChecked())
       return button;
@@ -60,7 +60,7 @@ ButtonWidget* ButtonGroup::checkedButton() const {
 }
 
 int ButtonGroup::checkedId() const {
-  return id(checkedButton());
+  return id(checkedButton().get());
 }
 
 void ButtonGroup::select(int id) {
@@ -71,7 +71,7 @@ void ButtonGroup::select(int id) {
 
 void ButtonGroup::wasChecked(ButtonWidget* self) {
   for (auto const& button : m_buttons.values()) {
-    if (button != self)
+    if (button.get() != self)
       button->setChecked(false);
   }
 

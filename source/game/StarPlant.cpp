@@ -710,7 +710,7 @@ void Plant::calcBoundBox() {
 void Plant::update(float dt, uint64_t) {
   m_windTime += dt;
   m_windTime = std::fmod(m_windTime, 628.32f);
-  m_windLevel = world()->windLevel(Vec2F(m_tilePosition));
+  m_windLevel = world().windLevel(Vec2F(m_tilePosition));
 
   if (isMaster()) {
     if (m_tileDamageStatus.damaged())
@@ -761,7 +761,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto config = Random::randValueFrom(particleOptions, {});
         if (config.isNull() || config.size() == 0)
           continue;
-        auto particle = world()->particleDatabase()->particle(config);
+        auto particle = world().particleDatabase()->particle(config);
         particle.color.hueShift(hueshift);
         if (!particle.string.empty()) {
           particle.string = strf("{}?hueshift={}", particle.string, hueshift);
@@ -903,7 +903,7 @@ void Plant::setNetStates() {
 bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage) {
   auto position = baseDamagePosition(positions);
 
-  auto geometry = world()->geometry();
+  auto geometry = world().geometry();
 
   m_tileDamageStatus.damage(m_tileDamageParameters, tileDamage);
   m_tileDamageX = geometry.diff(position[0], tilePosition()[0]);
@@ -926,7 +926,7 @@ bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePositio
 }
 
 void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) {
-  auto geometry = world()->geometry();
+  auto geometry = world().geometry();
   Vec2I internalPos = geometry.diff(position, tilePosition());
   size_t idx = highest<size_t>();
   int segmentIdx = highest<int>();
@@ -1013,7 +1013,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   bool first = true;
   for (auto segIdx : segmentOrder) {
     auto segment = segments[segIdx];
-    world()->addEntity(make_shared<PlantDrop>(m_assets,
+    world().addEntity(make_shared<PlantDrop>(m_assets,
         segment,
         worldSpaceBreakPoint,
         fallVector,
@@ -1040,7 +1040,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
     if (piece.structuralSegment) {
       for (auto space : piece.spaces) {
         for (auto position : positions) {
-          if (world()->geometry().equal(m_tilePosition + space, position)) {
+          if (world().geometry().equal(m_tilePosition + space, position)) {
             // if this space is a "better match" for the root of the plant
             if ((res[1] < position[1]) == m_ceiling) {
               res = position;

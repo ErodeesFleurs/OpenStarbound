@@ -86,8 +86,8 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
     setEnd(BeamItem::EndType::TileGroup);
   m_shifting = shifting;
 
-  if (Player* player = as<Player>(owner())) {
-    if (owner()->isMaster()) {
+  if (Player* player = as<Player>(&owner())) {
+    if (owner().isMaster()) {
       if (auto presses = player->buildToolControlPresses("materialCollisionCycle")) {
         CollisionKind baseKind = world()->materialDatabase()->materialCollisionKind(m_material);
         for (size_t i = 0; i != *presses; ++i) {
@@ -99,26 +99,26 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
           }
           player->setSecretProperty(CollisionOverridePropertyKey, TileCollisionOverrideNames.getRight(m_collisionOverride));
         }
-        owner()->addSound("/sfx/tools/cyclematcollision.ogg", 1.0f, Random::randf(0.9f, 1.1f));
+        owner().addSound("/sfx/tools/cyclematcollision.ogg", 1.0f, Random::randf(0.9f, 1.1f));
       }
 
       if (auto presses = player->buildToolControlPresses("buildingRadiusGrow")) {
         m_blockRadius = min(BlockRadiusLimit, int(m_blockRadius + *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
-        owner()->addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
+        owner().addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
 
       if (auto presses = player->buildToolControlPresses("buildingRadiusShrink")) {
         m_blockRadius = max(1, int(m_blockRadius - *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
-        owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
+        owner().addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
 
       if (auto presses = player->buildToolControlPresses("blockSwapToggle")) {
         if (*presses % 2 != 0)
           m_blockSwap = !m_blockSwap;
         player->setSecretProperty(BlockSwapPropertyKey, m_blockSwap);
-        owner()->addSound(m_blockSwap ? "/sfx/interface/button/click.wav" : "/sfx/interface/button/release.wav", 1.0f, Random::randf(0.9f, 1.1f));
+        owner().addSound(m_blockSwap ? "/sfx/interface/button/click.wav" : "/sfx/interface/button/release.wav", 1.0f, Random::randf(0.9f, 1.1f));
       }
     }
     else
@@ -131,7 +131,7 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
     float pulse = static_cast<float>(sin(2 * Constants::pi * 4.0 * Time::monotonicTime()));
     float pulseA = 0.85 - pulse * 0.15f;
     float pulseB = 0.85 + pulse * 0.15f;
-    Color color = owner()->favoriteColor().mix(Color::White);
+    Color color = owner().favoriteColor().mix(Color::White);
     float alpha = color.alphaF();
     color.setAlphaF(alpha * pulseA * 0.95f);
     auto addIndicator = [&](String const& path) {
@@ -139,7 +139,7 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
       auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition, Color::White, m_imageMetadataDatabase);
       indicator.fullbright = true;
       indicator.color = color;
-      for (auto& tilePos : tileArea(calcRadius(m_shifting), owner()->aimPosition())) {
+      for (auto& tilePos : tileArea(calcRadius(m_shifting), owner().aimPosition())) {
         indicator.position = basePosition + Vec2F(tilePos);
         renderCallback->addDrawable(indicator, RenderLayerForegroundTile);
       }
@@ -184,7 +184,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   float radius = calcRadius(shifting);
 
   auto geo = world()->geometry();
-  auto aimPosition = owner()->aimPosition();
+  auto aimPosition = owner().aimPosition();
 
   if (!m_lastAimPosition)
     m_lastAimPosition = aimPosition;
@@ -209,12 +209,12 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   size_t total = 0;
 
-  if (m_blockSwap && owner()->inToolRange(aimPosition))
+  if (m_blockSwap && owner().inToolRange(aimPosition))
     total += blockSwap(radius, layer);
   
   for (unsigned i = 0; i != steps; ++i) {
     auto placementOrigin = aimPosition + diff * (1.0f - (static_cast<float>(i) / steps));
-    if (!owner()->inToolRange(placementOrigin))
+    if (!owner().inToolRange(placementOrigin))
       continue;
 
     for (Vec2I& pos : tileArea(radius, placementOrigin))
@@ -233,7 +233,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   if (total) {
     float intensity = clamp(sqrt(static_cast<float>(total)) / 16, 0.0f, 1.0f);
-    owner()->addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
+    owner().addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     FireableItem::fire(mode, shifting, edgeTriggered);
   }
 
@@ -245,7 +245,7 @@ void MaterialItem::endFire(FireMode, bool) {
 }
 
 size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
-  Player* player = as<Player>(owner());
+  Player* player = as<Player>(&owner());
   if (!player)
     return 0;
   
@@ -256,7 +256,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   Item* beamAxe = beamAxePtr.get();
 
   List<Vec2I> swapPositions;
-  for (Vec2I& pos : tileArea(radius, owner()->aimPosition())) {
+  for (Vec2I& pos : tileArea(radius, owner().aimPosition())) {
     if (!world()->isTileConnectable(pos, layer, true))
       continue;
     if (world()->isTileProtected(pos))
@@ -296,7 +296,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     for (auto [position, material] : toSwap)
       toDamage.append(position);
     
-    world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
+    world()->damageTiles(toDamage, layer, owner().position(), damage, owner().entityId());
   }
 
   if (willDamage.empty())
@@ -320,11 +320,11 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     }
   }
 
-  owner()->addSound(blockSound, m_assets->json("/sfx.config:miningBlockVolume").toFloat());
+  owner().addSound(blockSound, m_assets->json("/sfx.config:miningBlockVolume").toFloat());
 
   auto strikeSounds = beamAxe->instanceValue("strikeSounds");
   if (!strikeSounds.isNull()) {
-    owner()->addSound(
+    owner().addSound(
         Random::randValueFrom(jsonToStringList(strikeSounds)),
         m_assets->json("/sfx.config:miningToolVolume").toFloat()
     );
@@ -422,7 +422,7 @@ void MaterialItem::updatePropertiesFromPlayer(Player& player) {
 
     float radius = calcRadius(shifting);
 
-    for (auto& pos : tileArea(radius, owner()->aimPosition())) {
+    for (auto& pos : tileArea(radius, owner().aimPosition())) {
       MaterialHue hueShift = placementHueShift(pos);
       if (world()->canModifyTile(pos, PlaceMaterial{TileLayer::Foreground, material, hueShift}, false)
           || world()->canModifyTile(pos, PlaceMaterial{TileLayer::Background, material, hueShift}, false))
@@ -451,14 +451,14 @@ TileCollisionOverride& MaterialItem::collisionOverride() {
 [[nodiscard]] List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
   List<PreviewTile> result;
   if (initialized()) {
-    Color lightColor = owner()->favoriteColor();
+    Color lightColor = owner().favoriteColor();
     Vec3B light = lightColor.toRgb();
 
     auto material = materialId();
     auto color = DefaultMaterialColorVariant;
 
     size_t c = 0;
-    for (auto& pos : tileArea(calcRadius(shifting), owner()->aimPosition())) {
+    for (auto& pos : tileArea(calcRadius(shifting), owner().aimPosition())) {
       MaterialHue hueShift = placementHueShift(pos);
       if (c >= count())
         break;

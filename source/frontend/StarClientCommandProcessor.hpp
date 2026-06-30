@@ -54,7 +54,7 @@ public:
 
 private:
   [[nodiscard]] bool adminCommandAllowed() const;
-  [[nodiscard]] String previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane);
+  [[nodiscard]] String previewQuestPane(StringList const& arguments, function<UniquePtr<Pane>(QuestPtr)> createPane);
 
   [[nodiscard]] String reload();
   [[nodiscard]] String hotReload();

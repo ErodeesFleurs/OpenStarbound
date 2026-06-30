@@ -144,8 +144,8 @@ public:
   [[nodiscard]] StatisticsPtr statistics() const;
   void setStatistics(StatisticsPtr statistics);
 
-  void setUniverseClient(UniverseClient* universeClient);
-  [[nodiscard]] UniverseClient* universeClient() const;
+  void setUniverseClient(observer_ptr<UniverseClient> universeClient);
+  [[nodiscard]] observer_ptr<UniverseClient> universeClient() const;
 
   [[nodiscard]] QuestManagerPtr questManager() const;
   [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const;
@@ -646,7 +646,7 @@ private:
   PlayerDeploymentPtr m_deployment;
   PlayerLogPtr m_log;
 
-  UniverseClient* m_client;// required for celestial callbacks in scripts
+  observer_ptr<UniverseClient> m_client;// required for celestial callbacks in scripts
   StringMap<GenericScriptComponentPtr> m_genericScriptContexts;
   JsonObject m_genericProperties;
 

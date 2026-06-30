@@ -28,8 +28,8 @@ void ErrorScreen::setMessage(String const& errorMessage) {
   m_errorPane->fetchChild<LabelWidget>("labelError")->setText(errorMessage);
   m_accepted = false;
 
-  if (!m_paneManager->isDisplayed(m_errorPane)) {
-    m_paneManager->displayPane(PaneLayer::Window, m_errorPane, [this](PanePtr) {
+  if (!m_paneManager->isDisplayed(observer_ptr<Pane>(m_errorPane.get()))) {
+    m_paneManager->displayPane(PaneLayer::Window, *m_errorPane, [this](observer_ptr<Pane>) {
       m_accepted = true;
     });
   }

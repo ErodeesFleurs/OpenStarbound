@@ -62,8 +62,8 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     List<Particle> miningParticles;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    if (owner()->isAdmin() || owner()->inToolRange()) {
-      brushArea = tileAreaBrush(radius, owner()->aimPosition(), true);
+    if (owner().isAdmin() || owner().inToolRange()) {
+      brushArea = tileAreaBrush(radius, owner().aimPosition(), true);
       for (auto const& pos : brushArea) {
         auto [mat, modId] = world()->materialAndMod(pos, layer);
         if (auto sound = materialDatabase->miningSound(mat, modId); !sound.empty()) {
@@ -90,11 +90,11 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
       damage.harvestLevel = instanceValue("harvestLevel", 1).toUInt();
 
-      auto damageResult = world()->damageTiles(brushArea, layer, owner()->position(), damage, owner()->entityId());
+      auto damageResult = world()->damageTiles(brushArea, layer, owner().position(), damage, owner().entityId());
 
       if (damageResult != TileDamageResult::None) {
         used = true;
-        if (!owner()->isAdmin())
+        if (!owner().isAdmin())
           changeDurability(instanceValue("durabilityPerUse", 1.0f).toFloat());
       }
 
@@ -104,9 +104,9 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
-      owner()->addSound(blockSound, m_blockVolume);
-      owner()->addParticles(miningParticles);
+      owner().addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      owner().addSound(blockSound, m_blockVolume);
+      owner().addParticles(miningParticles);
       SwingableItem::fire(mode, shifting, edgeTriggered);
     }
   }
@@ -135,7 +135,7 @@ float MiningTool::getAngle(float aimAngle) {
 void MiningTool::changeDurability(float amount) {
   setInstanceValue("durabilityHit", clamp(instanceValue("durabilityHit", 0.0f).toFloat() + amount, 0.0f, instanceValue("durability").toFloat()));
   if (durabilityStatus() == 0.0f && !instanceValue("canBeRepaired", false).toBool()) {
-    owner()->addSound(m_breakSound);
+    owner().addSound(m_breakSound);
     consume(1);
   }
 }
@@ -179,16 +179,16 @@ void HarvestingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  if (owner()) {
+  {
     bool used = false;
 
-    if (owner()->isAdmin() || owner()->inToolRange()) {
+    if (owner().isAdmin() || owner().inToolRange()) {
       auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-      used = world()->damageTile(Vec2I::floor(owner()->aimPosition()), layer, owner()->position(), {TileDamageType::Plantish, m_harvestPower}) != TileDamageResult::None;
+      used = world()->damageTile(Vec2I::floor(owner().aimPosition()), layer, owner().position(), {TileDamageType::Plantish, m_harvestPower}) != TileDamageResult::None;
     }
 
     if (used) {
-      owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      owner().addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
       SwingableItem::fire(mode, shifting, edgeTriggered);
     }
   }
@@ -231,10 +231,10 @@ ItemPtr Flashlight::clone() const {
   if (!initialized())
     return {};
 
-  float angle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
+  float angle = world()->geometry().diff(owner().aimPosition(), owner().position()).angle();
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = owner()->position() + owner()->handPosition(hand(), (m_lightPosition - m_handPosition) / TilePixels);
+  lightSource.position = owner().position() + owner().handPosition(hand(), (m_lightPosition - m_handPosition) / TilePixels);
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
@@ -247,7 +247,7 @@ WireTool::WireTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMet
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_strikeSounds = jsonToStringList(instanceValue("strikeSounds"));
   m_toolVolume = m_assets->json("/sfx.config:miningToolVolume").toFloat();
-  m_wireConnector = 0;
+  m_wireConnector.reset();
   m_endType = EndType::Wire;
 }
 
@@ -258,7 +258,7 @@ ItemPtr WireTool::clone() const {
 void WireTool::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
-  m_wireConnector = 0;
+  m_wireConnector.reset();
 }
 
 void WireTool::update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) {
@@ -288,19 +288,19 @@ void WireTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto ownerp = owner();
+  auto& ownerp = owner();
   auto worldp = world();
 
-  if (ownerp && worldp && m_wireConnector) {
-    Vec2F pos(ownerp->aimPosition());
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
+  if (worldp && m_wireConnector) {
+    Vec2F pos(ownerp.aimPosition());
+    if (ownerp.isAdmin() || ownerp.inToolRange()) {
       auto swingResult = m_wireConnector->swing(worldp->geometry(), pos, mode);
       if (swingResult == WireConnector::Connect) {
-        ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+        ownerp.addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       } else if (swingResult == WireConnector::Mismatch || swingResult == WireConnector::Protected) {
         auto wireErrorSound = m_assets->json("/client.config:wireFailSound").toString();
-        ownerp->addSound(wireErrorSound, m_toolVolume);
+        ownerp.addSound(wireErrorSound, m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       }
     }
@@ -312,7 +312,7 @@ float WireTool::getAngle(float aimAngle) {
 }
 
 void WireTool::setConnector(WireConnector* connector) {
-  m_wireConnector = connector;
+  m_wireConnector.reset(connector);
 }
 
 BeamMiningTool::BeamMiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
@@ -352,17 +352,17 @@ void BeamMiningTool::setEnd(EndType) {
 
 [[nodiscard]] List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
-  auto ownerp = owner();
+  auto& ownerp = owner();
   auto worldp = world();
 
-  if (ownerp && worldp) {
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      Color lightColor = ownerp->favoriteColor();
+  if (worldp) {
+    if (ownerp.isAdmin() || ownerp.inToolRange()) {
+      Color lightColor = ownerp.favoriteColor();
       if (!ready())
         lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
       Vec3B light = lightColor.toRgb();
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-      for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      for (auto const& pos : tileAreaBrush(radius, ownerp.aimPosition(), true)) {
         if (worldp->tileIsOccupied(pos, TileLayer::Foreground, true)) {
           result.append({pos, true, light, true});
         } else if (worldp->tileIsOccupied(pos, TileLayer::Background, true)) {
@@ -401,17 +401,17 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   auto materialDatabase = world()->materialDatabase();
 
   auto worldp = world();
-  auto ownerp = owner();
-  if (ownerp && worldp) {
+  auto& ownerp = owner();
+  if (worldp) {
     bool used = false;
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
-      brushArea = tileAreaBrush(radius, ownerp->aimPosition(), true);
-      auto aimPosition = Vec2I(ownerp->aimPosition());
+    if (ownerp.isAdmin() || ownerp.inToolRange()) {
+      brushArea = tileAreaBrush(radius, ownerp.aimPosition(), true);
+      auto aimPosition = Vec2I(ownerp.aimPosition());
 
       for (auto const& pos : brushArea) {
         blockSound = materialDatabase->miningSound(worldp->material(pos, layer), worldp->mod(pos, layer));
@@ -427,7 +427,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         }
       }
 
-      auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp->position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp->entityId());
+      auto damageResult = worldp->damageTiles(List<Vec2I>{brushArea}, layer, ownerp.position(), {TileDamageType::Beamish, m_tileDamage, m_harvestLevel}, ownerp.entityId());
       used = damageResult != TileDamageResult::None;
 
       if (damageResult == TileDamageResult::Protected) {
@@ -467,8 +467,8 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
-      ownerp->addSound(blockSound, m_blockVolume);
+      ownerp.addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+      ownerp.addSound(blockSound, m_blockVolume);
       List<Particle> miningParticles;
       for (auto const& pos : brushArea) {
         if (auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer))) {
@@ -477,7 +477,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           miningParticles.append(miningParticle);
         }
       }
-      ownerp->addParticles(miningParticles);
+      ownerp.addParticles(miningParticles);
       FireableItem::fire(mode, shifting, edgeTriggered);
     }
   }
@@ -525,9 +525,9 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   auto strikeSound = Random::randValueFrom(m_strikeSounds);
 
-  if (owner() && world()) {
+  if (world()) {
     auto materialDatabase = world()->materialDatabase();
-    Vec2I pos(owner()->aimPosition().floor());
+    Vec2I pos(owner().aimPosition().floor());
 
     if (world()->material(pos + Vec2I(0, 1), TileLayer::Foreground) != EmptyMaterialId)
       return;
@@ -541,7 +541,7 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           && world()->material(pos + Vec2I(0, 1), TileLayer::Background) != EmptyMaterialId)
         continue;
 
-      if (owner()->isAdmin() || owner()->inToolRange()) {
+      if (owner().isAdmin() || owner().inToolRange()) {
         auto currentMod = world()->mod(pos, layer);
         auto material = world()->material(pos, layer);
         auto tilledMod = materialDatabase->tilledModFor(material);
@@ -550,7 +550,7 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
           if (world()->modifyTile(pos, PlaceMod{layer, tilledMod, MaterialHue()}, true))
             used = true;
         } else if (currentMod != tilledMod) {
-          auto damageResult = world()->damageTile(pos, layer, owner()->position(), {TileDamageType::Tilling, 1.0f});
+          auto damageResult = world()->damageTile(pos, layer, owner().position(), {TileDamageType::Tilling, 1.0f});
           used = damageResult != TileDamageResult::None;
           if (damageResult == TileDamageResult::Protected) {
             strikeSound = m_assets->json("/client.config:defaultDingSound").toString();
@@ -560,7 +560,7 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     }
 
     if (used) {
-      owner()->addSound(strikeSound, m_toolVolume);
+      owner().addSound(strikeSound, m_toolVolume);
       SwingableItem::fire(mode, shifting, edgeTriggered);
     }
   }
@@ -636,15 +636,15 @@ void PaintingBeamTool::update(float dt, FireMode fireMode, bool shifting, HashSe
 
 [[nodiscard]] List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
   List<PreviewTile> result;
-  auto ownerp = owner();
+  auto& ownerp = owner();
   auto worldp = world();
-  if (ownerp && worldp) {
+  if (worldp) {
     Vec3B light = Color::White.toRgb();
 
-    if (ownerp->isAdmin() || ownerp->inToolRange()) {
+    if (ownerp.isAdmin() || ownerp.inToolRange()) {
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
-      for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      for (auto const& pos : tileAreaBrush(radius, ownerp.aimPosition(), true)) {
         if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
           result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, static_cast<MaterialColorVariant>(m_colorIndex)});
         } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
@@ -686,13 +686,13 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   if (mode == FireMode::Primary) {
     auto worldp = world();
-    auto ownerp = owner();
-    if (ownerp && worldp) {
+    auto& ownerp = owner();
+    if (worldp) {
       bool used = false;
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
-      if (ownerp->isAdmin() || ownerp->inToolRange()) {
-        for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      if (ownerp.isAdmin() || ownerp.inToolRange()) {
+        for (auto const& pos : tileAreaBrush(radius, ownerp.aimPosition(), true)) {
           TileModificationList modifications = {
             {pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}},
             {pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}}
@@ -704,7 +704,7 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       }
 
       if (used) {
-        ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
+        ownerp.addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
         FireableItem::fire(mode, shifting, edgeTriggered);
       }
     }

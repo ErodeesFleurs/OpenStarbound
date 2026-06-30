@@ -102,7 +102,7 @@ void UniverseClient::setMainPlayer(PlayerPtr player) {
   if (m_mainPlayer) {
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_mainPlayer->setUniverseClient(this);
+    m_mainPlayer->setUniverseClient(observer_ptr<UniverseClient>(this));
     m_playerStorage->backupCycle(m_mainPlayer->uuid());
     m_playerStorage->savePlayer(m_mainPlayer);
     m_playerStorage->moveToFront(m_mainPlayer->uuid());
@@ -627,7 +627,7 @@ LuaRootPtr UniverseClient::luaRoot() {
 bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInterfaces, bool showIndicator) {
   auto player = mainPlayer();
   bool playerInWorld = player->inWorld();
-  auto world = as<WorldClient>(player->world());
+  auto world = as<WorldClient>(&player->world());
 
   EntityId entityId = (playerInWorld || !world->inWorld())
     ? player->entityId()
@@ -790,7 +790,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         if (playerIsOriginal()) {
           m_mainPlayer->setShipUpgrades(m_clientContext->shipUpgrades());
           if (playerOnOwnShip() && m_mainPlayer->inWorld()) {
-            auto shipSpecies = m_mainPlayer->world()->getProperty("ship.species");
+            auto shipSpecies = m_mainPlayer->world().getProperty("ship.species");
             if (shipSpecies.isType(Json::Type::String))
               m_mainPlayer->setShipSpecies(shipSpecies.toString());
           }

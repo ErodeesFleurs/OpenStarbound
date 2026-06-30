@@ -39,7 +39,7 @@ WidgetConstructResult GuiReader::titleHandler(String const&, Json const& config)
         auto icon = m_constructors.get(type)("icon", iconConfig);
         if (!icon.obj)
           throw WidgetParserException(strf("Title specified incompatible icon type: {}", type));
-        m_pane->setTitle(WidgetPtr(std::move(icon.obj)), title, subtitle);
+        m_pane->setTitle(std::move(icon.obj), title, subtitle);
       } catch (JsonException const& e) {
         throw WidgetParserException(strf("Malformed icon configuration data in title. {}", outputException(e, false)));
       }

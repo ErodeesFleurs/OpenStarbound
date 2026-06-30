@@ -147,9 +147,9 @@ void KeybindingsMenu::buildListsFromConfig() {
 bool KeybindingsMenu::activateBinding(Widget* widget) {
   exitActiveMode();
 
-  m_activeKeybinding = widget;
+  m_activeKeybinding.reset(widget);
   m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->show();
-  convert<ButtonWidget>(m_activeKeybinding)->setHighlighted(true);
+  convert<ButtonWidget>(m_activeKeybinding.get())->setHighlighted(true);
 
   return false;
 }
@@ -162,7 +162,7 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   auto base = m_configuration->get("bindings");
 
-  auto action = m_childToAction.get(m_activeKeybinding);
+  auto action = m_childToAction.get(m_activeKeybinding.get());
   auto key = InterfaceActionNames.getRight(action);
 
   auto bindings = OrderedHashSet<Json>::from(base.get(key).toArray());
@@ -190,7 +190,7 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
     }
   }
 
-  convert<ButtonWidget>(m_activeKeybinding)->setText(buttonText.join(", "));
+  convert<ButtonWidget>(m_activeKeybinding.get())->setText(buttonText.join(", "));
 
   apply();
   exitActiveMode();
@@ -202,13 +202,13 @@ void KeybindingsMenu::clearActive() {
 
   auto base = m_configuration->get("bindings").toObject();
 
-  auto action = m_childToAction.get(m_activeKeybinding);
+  auto action = m_childToAction.get(m_activeKeybinding.get());
   auto key = InterfaceActionNames.getRight(action);
 
   base[key] = JsonArray{};
   m_configuration->set("bindings", base);
 
-  convert<ButtonWidget>(m_activeKeybinding)->setText("<Unbound>");
+  convert<ButtonWidget>(m_activeKeybinding.get())->setText("<Unbound>");
 
   apply();
   exitActiveMode();
@@ -219,7 +219,7 @@ void KeybindingsMenu::exitActiveMode() {
     return;
 
   m_activeKeybinding->parent()->fetchChild<ButtonWidget>("deleteBinding")->hide();
-  convert<ButtonWidget>(m_activeKeybinding)->setHighlighted(false);
+  convert<ButtonWidget>(m_activeKeybinding.get())->setHighlighted(false);
   m_activeKeybinding = nullptr;
   m_currentMods = KeyMod::NoMod;
 }

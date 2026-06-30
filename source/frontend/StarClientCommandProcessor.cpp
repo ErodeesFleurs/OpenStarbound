@@ -83,12 +83,12 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
     m_universeClient->mainPlayer()->isAdmin();
 }
 
-String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane) {
+String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<UniquePtr<Pane>(QuestPtr)> createPane) {
   Maybe<String> templateId = {};
   templateId = arguments[0];
   if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), *m_universeClient->mainPlayer())) {
     auto pane = createPane(quest);
-    m_paneManager.displayPane(PaneLayer::ModalWindow, pane);
+    m_paneManager.displayPane(PaneLayer::ModalWindow, std::move(pane));
     return "Previewed quest";
   }
   return "No such quest";
@@ -292,7 +292,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    return make_unique<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 
@@ -302,7 +302,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    return make_unique<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 
@@ -312,7 +312,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    return make_unique<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 

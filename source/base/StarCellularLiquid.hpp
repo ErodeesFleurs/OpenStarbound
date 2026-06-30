@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarBlockAllocator.hpp"
 #include "StarMap.hpp"
 #include "StarMultiArray.hpp"
@@ -151,7 +152,7 @@ private:
   uint64_t m_step = 0;
 
   BAHashMap<Vec2I, Maybe<WorkingCell>> m_workingCells;
-  List<WorkingCell*> m_currentActiveCells;
+  List<observer_ptr<WorkingCell>> m_currentActiveCells;
   BAHashSet<Vec2I> m_nextActiveCells;
   BAHashSet<tuple<Vec2I, LiquidId, Vec2I, LiquidId>> m_liquidInteractions;
   BAHashSet<tuple<Vec2I, LiquidId, Vec2I>> m_liquidCollisions;
@@ -290,13 +291,13 @@ void LiquidCellEngine<LiquidId>::setup() {
       if (!cell || cell->liquid != liquid) {
         activeCells.remove(pos);
       } else {
-        m_currentActiveCells.append(cell);
+        m_currentActiveCells.append(observer_ptr<WorkingCell>(cell));
         activeCells.remove(pos);
       }
     }
   }
 
-  sort(m_currentActiveCells, [](WorkingCell* lhs, WorkingCell* rhs) {
+  sort(m_currentActiveCells, [](observer_ptr<WorkingCell> const& lhs, observer_ptr<WorkingCell> const& rhs) {
     return lhs->position[1] < rhs->position[1];
   });
 }
@@ -307,7 +308,7 @@ void LiquidCellEngine<LiquidId>::applyPressure() {
     if (!selfCell->liquid || selfCell->sourceCell)
       continue;
 
-    auto topCell = adjacentCell(selfCell, Adjacency::Top);
+    auto topCell = adjacentCell(selfCell.get(), Adjacency::Top);
     if (topCell && selfCell->liquid == topCell->liquid)
       setPressure(max(selfCell->pressure, topCell->pressure + min(topCell->level, 1.0f)), *selfCell);
   }
@@ -320,7 +321,7 @@ void LiquidCellEngine<LiquidId>::spreadPressure() {
       continue;
 
     auto spreadPressure = [&](Adjacency adjacency, float bias) {
-      auto targetCell = adjacentCell(selfCell, adjacency);
+      auto targetCell = adjacentCell(selfCell.get(), adjacency);
       if (targetCell && !targetCell->sourceCell)
         transferPressure((selfCell->pressure + bias - targetCell->pressure) * m_engineParameters.pressureEqualizeFactor, *selfCell, *targetCell, true);
     };
@@ -342,7 +343,7 @@ template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::limitPressure() {
   for (auto const& selfCell : m_currentActiveCells) {
     float level = min(selfCell->level, 1.0f);
-    auto topCell = adjacentCell(selfCell, Adjacency::Top);
+    auto topCell = adjacentCell(selfCell.get(), Adjacency::Top);
 
     // Force the pressure to the cell level if there is empty space above,
     // otherwise simply make sure the pressure is at least the level
@@ -360,7 +361,7 @@ void LiquidCellEngine<LiquidId>::pressureMove() {
       continue;
 
     auto pressureMove = [&](Adjacency adjacency) {
-      auto targetCell = adjacentCell(selfCell, adjacency);
+      auto targetCell = adjacentCell(selfCell.get(), adjacency);
       if (targetCell && !targetCell->sourceCell && targetCell->level >= selfCell->level) {
         float amount = (selfCell->pressure - targetCell->pressure) * m_engineParameters.pressureMoveFactor;
         amount = min(amount, selfCell->level - (1.0f - m_engineParameters.maximumPressureLevelImbalance));
@@ -388,7 +389,7 @@ void LiquidCellEngine<LiquidId>::spreadOverfill() {
     auto spreadOverfill = [&](Adjacency adjacency, float factor) {
       float overfill = selfCell->level - 1.0f;
       if (overfill > 0.0f) {
-        auto targetCell = adjacentCell(selfCell, adjacency);
+        auto targetCell = adjacentCell(selfCell.get(), adjacency);
         if (targetCell)
           transferLevel(min(overfill, (selfCell->level - targetCell->level)) * factor, *selfCell, *targetCell, false);
       }
@@ -414,14 +415,14 @@ void LiquidCellEngine<LiquidId>::levelMove() {
     if (!selfCell->liquid)
       continue;
 
-    auto belowCell = adjacentCell(selfCell, Adjacency::Bottom);
+    auto belowCell = adjacentCell(selfCell.get(), Adjacency::Bottom);
     if (belowCell)
       transferLevel(min(1.0f - belowCell->level, selfCell->level), *selfCell, *belowCell, false);
 
     setLevel(selfCell->level * (1.0f - m_cellWorld->drainLevel(selfCell->position)), *selfCell);
 
     auto lateralMove = [&](Adjacency adjacency) {
-      auto targetCell = adjacentCell(selfCell, adjacency);
+      auto targetCell = adjacentCell(selfCell.get(), adjacency);
       if (targetCell)
         transferLevel((selfCell->level - targetCell->level) * m_engineParameters.lateralMoveFactor, *selfCell, *targetCell, false);
     };
@@ -443,7 +444,7 @@ void LiquidCellEngine<LiquidId>::findInteractions() {
       continue;
 
     for (auto adjacency : {Adjacency::Bottom, Adjacency::Top, Adjacency::Left, Adjacency::Right}) {
-      auto targetCell = adjacentCell(selfCell, adjacency);
+      auto targetCell = adjacentCell(selfCell.get(), adjacency);
       if (!targetCell) {
         Vec2I adjacentPos = selfCell->position;
         if (adjacency == Adjacency::Left)

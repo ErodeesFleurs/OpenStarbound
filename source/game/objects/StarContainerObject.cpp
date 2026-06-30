@@ -70,7 +70,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets(), m_itemDatabase));
+      world().addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world().assets(), m_itemDatabase));
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -88,7 +88,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
       }
     }
 
-    m_ageItemsTimer.update(world()->epochTime());
+    m_ageItemsTimer.update(world().epochTime());
     if (m_ageItemsTimer.elapsedTime() > configValue("ageItemsEvery", 10).toDouble()) {
       double elapsedTime = m_ageItemsTimer.elapsedTime() * configValue("itemAgeMultiplier", 1.0f).toDouble();
       for (auto& item : m_items->items()) {
@@ -150,7 +150,7 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets(), m_itemDatabase));
+      world().addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world().assets(), m_itemDatabase));
   }
 }
 
@@ -244,7 +244,7 @@ void ContainerObject::containerClose() {
 RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
   if (isSlave()) {
     auto itemDatabase = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
+    return world().sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
         return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
@@ -255,7 +255,7 @@ RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
 RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) {
   if (isSlave()) {
     auto itemDatabase = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
+    return world().sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
         return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
@@ -266,7 +266,7 @@ RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) 
 RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
   if (isSlave()) {
     auto itemDatabase = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([itemDatabase](Json res) {
+    return world().sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([itemDatabase](Json res) {
         return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
@@ -277,7 +277,7 @@ RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
 RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items, bool tryCombine) {
   if (isSlave()) {
     auto itemDatabase = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([itemDatabase](Json res) {
+    return world().sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([itemDatabase](Json res) {
         return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
@@ -288,7 +288,7 @@ RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items
 RpcPromise<ItemPtr> ContainerObject::applyAugment(size_t slot, ItemPtr const& augment) {
   if (isSlave()) {
     auto itemDatabase = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([itemDatabase](Json res) {
+    return world().sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([itemDatabase](Json res) {
         return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
@@ -298,7 +298,7 @@ RpcPromise<ItemPtr> ContainerObject::applyAugment(size_t slot, ItemPtr const& au
 
 RpcPromise<bool> ContainerObject::consumeItems(ItemDescriptor const& descriptor) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "consumeItems", {descriptor.toJson()}).wrap([](Json res) {
+    return world().sendEntityMessage(entityId(), "consumeItems", {descriptor.toJson()}).wrap([](Json res) {
         return res.toBool();
       });
   } else {
@@ -308,7 +308,7 @@ RpcPromise<bool> ContainerObject::consumeItems(ItemDescriptor const& descriptor)
 
 RpcPromise<bool> ContainerObject::consumeItems(size_t pos, size_t count) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "consumeItemsAt", {pos, count}).wrap([](Json res) {
+    return world().sendEntityMessage(entityId(), "consumeItemsAt", {pos, count}).wrap([](Json res) {
         return res.toBool();
       });
   } else {
@@ -319,7 +319,7 @@ RpcPromise<bool> ContainerObject::consumeItems(size_t pos, size_t count) {
 RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
   if (isSlave()) {
     auto itemDb = m_itemDatabase;
-    return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([itemDb](Json res) {
+    return world().sendEntityMessage(entityId(), "clearContainer", {}).wrap([itemDb](Json res) {
         return res.toArray().transformed([itemDb](Json const& item) {
             return itemDb->item(ItemDescriptor(item));
           });
@@ -335,7 +335,7 @@ RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
 
 void ContainerObject::startCrafting() {
   if (isSlave()) {
-    world()->sendEntityMessage(entityId(), "startCrafting");
+    world().sendEntityMessage(entityId(), "startCrafting");
   } else {
     if (m_crafting.get())
       return;
@@ -350,7 +350,7 @@ void ContainerObject::startCrafting() {
 
 void ContainerObject::stopCrafting() {
   if (isSlave()) {
-    world()->sendEntityMessage(entityId(), "stopCrafting");
+    world().sendEntityMessage(entityId(), "stopCrafting");
   } else {
     if (!m_crafting.get())
       return;
@@ -368,11 +368,11 @@ void ContainerObject::stopCrafting() {
 
 void ContainerObject::burnContainerContents() {
   if (isSlave()) {
-    world()->sendEntityMessage(entityId(), "burnContainerContents");
+    world().sendEntityMessage(entityId(), "burnContainerContents");
   } else {
     stopCrafting();
-    auto level = world()->getProperty("ship.fuel", 0).toUInt();
-    auto maxLevel = world()->getProperty("ship.maxFuel", 0).toUInt();
+    auto level = world().getProperty("ship.fuel", 0).toUInt();
+    auto maxLevel = world().getProperty("ship.maxFuel", 0).toUInt();
     for (auto& item : m_items->items()) {
       if (level > maxLevel)
         level = maxLevel;
@@ -392,7 +392,7 @@ void ContainerObject::burnContainerContents() {
       }
     }
     itemsUpdated();
-    world()->setProperty("ship.fuel", level);
+    world().setProperty("ship.fuel", level);
   }
 }
 
@@ -490,7 +490,7 @@ void ContainerObject::tickCrafting(float dt) {
     }
     ItemPtr overflow = m_items->putItems(m_items->size() - 1, m_itemDatabase->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position(), false, world()->assets(), m_itemDatabase));
+      world().addEntity(ItemDrop::createRandomizedDrop(overflow, position(), false, world().assets(), m_itemDatabase));
     itemsUpdated();
   }
 }

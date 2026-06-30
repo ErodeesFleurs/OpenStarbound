@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarTextureAtlas.hpp"
 #include "StarRenderer.hpp"
 
@@ -240,7 +241,7 @@ private:
   Json m_config;
 
   StringMap<Effect> m_effects;
-  Effect* m_currentEffect;
+  observer_ptr<Effect> m_currentEffect;
 
   StringMap<RefPtr<GlFrameBuffer>> m_frameBuffers;
   RefPtr<GlFrameBuffer> m_currentFrameBuffer;

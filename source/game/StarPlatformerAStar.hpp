@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarWorld.hpp"
@@ -64,7 +65,7 @@ namespace PlatformerAStar {
     [[nodiscard]] Vec2F roundToNode(Vec2F pos) const;
     [[nodiscard]] float distance(Vec2F a, Vec2F b) const;
 
-    World* m_world;
+    observer_ptr<World> m_world;
     Vec2F m_searchFrom;
     Vec2F m_searchTo;
     ActorMovementParameters m_movementParams;

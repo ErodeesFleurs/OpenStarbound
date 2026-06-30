@@ -20,7 +20,7 @@ Maybe<HitType> PlayerDamagePipeline::queryHit(DamageSource const& source) const 
   if (m_player.m_tools->queryShieldHit(source))
     return HitType::ShieldHit;
 
-  if (source.intersectsWithPoly(m_player.world()->geometry(), m_player.movementController()->collisionBody()))
+  if (source.intersectsWithPoly(m_player.world().geometry(), m_player.movementController()->collisionBody()))
     return HitType::Hit;
 
   return {};
@@ -46,7 +46,7 @@ void PlayerDamagePipeline::hitOther(EntityId targetEntityId, DamageRequest const
     return;
 
   m_player.statusController()->hitOther(targetEntityId, damageRequest);
-  if (as<DamageBarEntity>(m_player.world()->entity(targetEntityId))) {
+  if (as<DamageBarEntity>(m_player.world().entity(targetEntityId))) {
     m_lastDamagedOtherTimer = 0;
     m_lastDamagedTarget = targetEntityId;
   }

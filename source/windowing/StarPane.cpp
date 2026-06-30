@@ -282,12 +282,12 @@ void Pane::unlockPosition() {
   m_lockPosition = false;
 }
 
-void Pane::setTitle(WidgetPtr icon, String const& title, String const& subTitle) {
-  m_icon = icon;
+void Pane::setTitle(UniquePtr<Widget> icon, String const& title, String const& subTitle) {
+  m_icon = std::move(icon);
   m_title = title;
   m_subTitle = subTitle;
   if (m_icon) {
-    m_icon->setParent(this);
+    m_icon->setParent(observer_ptr<Widget>(this));
     m_icon->show();
   }
 }
@@ -297,10 +297,10 @@ void Pane::setTitleString(String const& title, String const& subTitle) {
   m_subTitle = subTitle;
 }
 
-void Pane::setTitleIcon(WidgetPtr icon) {
-  m_icon = icon;
+void Pane::setTitleIcon(UniquePtr<Widget> icon) {
+  m_icon = std::move(icon);
   if (m_icon) {
-    m_icon->setParent(this);
+    m_icon->setParent(observer_ptr<Widget>(this));
     m_icon->show();
   }
 }
@@ -313,8 +313,8 @@ String Pane::subTitle() const {
   return m_subTitle;
 }
 
-WidgetPtr Pane::titleIcon() const {
-  return m_icon;
+observer_ptr<Widget> Pane::titleIcon() const {
+  return observer_ptr<Widget>(m_icon.get());
 }
 
 PaneAnchor Pane::anchor() {
@@ -337,7 +337,7 @@ bool Pane::hasDisplayed() const {
   return m_hasDisplayed;
 }
 
-PanePtr Pane::createTooltip(Vec2I const&) {
+UniquePtr<Pane> Pane::createTooltip(Vec2I const&) {
   return {};
 }
 
@@ -383,8 +383,11 @@ LuaCallbacks Pane::makePaneCallbacks() {
     });
 
   callbacks.registerCallback("setTitleIcon", [this](String const& image) {
-      if (auto icon = as<ImageWidget>(titleIcon()))
-        icon->setImage(image);
+      auto iconPtr = titleIcon();
+      if (iconPtr) {
+        if (auto icon = as<ImageWidget>(WidgetRef<Widget>(*iconPtr)))
+          icon->setImage(image);
+      }
     });
 
   callbacks.registerCallback("getPosition", [this]() -> Vec2I          { return relativePosition(); });

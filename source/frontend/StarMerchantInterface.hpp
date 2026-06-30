@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarWorldClient.hpp"
 #include "StarPane.hpp"
 #include "StarAssets.hpp"
@@ -51,7 +52,7 @@ public:
 
   void displayed() override;
   void dismissed() override;
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
 
   [[nodiscard]] EntityId sourceEntityId() const;
 
@@ -97,15 +98,15 @@ private:
   float m_sellFactor;
   int m_sellTotal;
 
-  TabSetWidget* m_tabSet;
-  ListWidget* m_itemGuiList;
-  TextBoxWidget* m_countTextBox;
-  LabelWidget* m_buyTotalLabel;
-  ButtonWidget* m_buyButton;
-  LabelWidget* m_sellTotalLabel;
-  ButtonWidget* m_sellButton;
+  observer_ptr<TabSetWidget> m_tabSet;
+  observer_ptr<ListWidget> m_itemGuiList;
+  observer_ptr<TextBoxWidget> m_countTextBox;
+  observer_ptr<LabelWidget> m_buyTotalLabel;
+  observer_ptr<ButtonWidget> m_buyButton;
+  observer_ptr<LabelWidget> m_sellTotalLabel;
+  observer_ptr<ButtonWidget> m_sellButton;
 
-  ItemGridWidget* m_itemGrid;
+  observer_ptr<ItemGridWidget> m_itemGrid;
   ItemBagPtr m_itemBag;
 
   int m_buyCount;

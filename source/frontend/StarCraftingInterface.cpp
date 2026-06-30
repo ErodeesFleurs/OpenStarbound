@@ -111,10 +111,10 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     }
   }
 
-  m_guiList = fetchChild<ListWidget>("scrollArea.itemList").get();
-  m_textBox = fetchChild<TextBoxWidget>("tbSpinCount").get();
+  m_guiList.reset(fetchChild<ListWidget>("scrollArea.itemList").get());
+  m_textBox.reset(fetchChild<TextBoxWidget>("tbSpinCount").get());
 
-  m_filterHaveMaterials = fetchChild<ButtonWidget>("btnFilterHaveMaterials").get();
+  m_filterHaveMaterials.reset(fetchChild<ButtonWidget>("btnFilterHaveMaterials").get());
   if (m_filterHaveMaterials)
     m_filterHaveMaterials->setChecked(m_configuration->getPath("crafting.filterHaveMaterials").toBool());
 
@@ -137,7 +137,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     if (auto container = as<ContainerEntity>(entity)) {
       if (container->iconItem()) {
         auto iconItem = m_itemDatabase->itemShared(container->iconItem());
-        auto icon = make_shared<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
+        auto icon = make_unique<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
         String title = this->title();
         if (title.empty())
           title = container->containerDescription();
@@ -145,17 +145,17 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
         if (subTitle.empty())
           subTitle = container->containerSubTitle();
         icon->showRarity(false);
-        setTitle(icon, title, subTitle);
+        setTitle(std::move(icon), title, subTitle);
       }
     }
     if (auto portaitEntity = as<PortraitEntity>(entity)) {
-      auto portrait = make_shared<PortraitWidget>(context(), portaitEntity, PortraitMode::Bust);
+      auto portrait = make_unique<PortraitWidget>(context(), portaitEntity, PortraitMode::Bust);
       portrait->setIconMode();
       String title = this->title();
       if (title.empty())
         title = portaitEntity->name();
       String subTitle = this->subTitle();
-      setTitle(portrait, title, subTitle);
+      setTitle(std::move(portrait), title, subTitle);
     }
   }
 }
@@ -183,7 +183,7 @@ void CraftingPane::dismissed() {
   m_itemCache.clear();
 }
 
-PanePtr CraftingPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> CraftingPane::createTooltip(Vec2I const& screenPosition) {
   for (size_t i = 0; i < m_guiList->numChildren(); ++i) {
     auto entry = m_guiList->itemAt(i);
     if (entry->getChildAt(screenPosition)) {
@@ -442,8 +442,8 @@ void CraftingPane::setupWidget(WidgetRef<Widget> const& widget, ItemRecipe const
   widget->show();
 }
 
-PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
-  auto tooltip = make_shared<Pane>(context());
+UniquePtr<Pane> CraftingPane::setupTooltip(ItemRecipe const& recipe) {
+  auto tooltip = make_unique<Pane>(context());
   GuiReader reader(context());
   reader.construct(m_assets->json("/interface/craftingtooltip/craftingtooltip.config"), tooltip.get());
 

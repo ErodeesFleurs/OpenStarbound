@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarHumanoid.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
@@ -87,7 +88,7 @@ private:
   public:
     NetItem(ItemDatabaseConstPtr itemDatabase = {});
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
     void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -111,7 +112,7 @@ private:
     NetElementData<ItemDescriptor> m_itemDescriptor;
     ItemPtr m_item;
     ItemDatabaseConstPtr m_itemDatabase;
-    NetElementVersion const* m_netVersion = nullptr;
+    observer_ptr<NetElementVersion const> m_netVersion = nullptr;
     bool m_netInterpolationEnabled = false;
     float m_netExtrapolationHint = 0;
     bool m_newItem = false;
@@ -130,7 +131,7 @@ private:
   float m_objectPreviewInnerAlpha = 0;
   float m_objectPreviewOuterAlpha = 0;
 
-  ToolUserEntity* m_user = nullptr;
+  observer_ptr<ToolUserEntity> m_user;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
 

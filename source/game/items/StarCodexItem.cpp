@@ -27,7 +27,7 @@ List<Drawable> CodexItem::drawables() const {
 }
 
 void CodexItem::fireTriggered() {
-  if (auto player = as<Player>(owner())) {
+  if (auto player = as<Player>(&owner())) {
     auto codexLearned = player->codexes()->learnCodex(m_codexId);
     if (codexLearned) {
       player->queueUIMessage(m_assets->json("/codex.config:messages.learned").toString());

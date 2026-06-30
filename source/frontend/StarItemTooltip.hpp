@@ -39,7 +39,7 @@ namespace ItemTooltipBuilder {
     GuiContext& guiContext;
   };
 
-  [[nodiscard]] PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services);
+  [[nodiscard]] UniquePtr<Pane> buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services);
 
   void buildItemDescription(Widget* container, ItemPtr const& item, Services services);
   void buildItemDescriptionInner(

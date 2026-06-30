@@ -70,7 +70,7 @@ protected:
   [[nodiscard]] GuiContext& guiContext() const;
 
   GuiContext& m_context;
-  Pane* m_pane = nullptr;
+  observer_ptr<Pane> m_pane;
   StringMap<ConstuctorFunc> m_constructors;
   StringMap<WidgetCallbackFunc> m_callbacks;
 };

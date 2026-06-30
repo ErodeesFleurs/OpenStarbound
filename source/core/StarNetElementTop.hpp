@@ -39,7 +39,7 @@ private:
 
 template <typename BaseNetElement>
 NetElementTop<BaseNetElement>::NetElementTop() {
-  BaseNetElement::initNetVersion(&m_netVersion);
+  BaseNetElement::initNetVersion(observer_ptr<NetElementVersion const>(&m_netVersion));
 }
 
 template <typename BaseNetElement>

@@ -42,7 +42,7 @@ public:
   InventoryPane(MainInterface& parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services);
 
   void displayed() override;
-  [[nodiscard]] PanePtr createTooltip(Vec2I const& screenPosition) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const& screenPosition) override;
   [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
   [[nodiscard]] bool giveContainerResult(ContainerResult result);

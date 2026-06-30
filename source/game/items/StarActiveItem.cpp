@@ -148,12 +148,12 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
 
   eraseWhere(m_activeAudio, [this](auto const& activeAudio) {
     auto const& [audioInstance, handPositionOffset] = activeAudio;
-    audioInstance->setPosition(owner()->position() + handPosition(handPositionOffset));
+    audioInstance->setPosition(owner().position() + handPosition(handPositionOffset));
     return audioInstance->finished();
   });
 
   for (auto shieldPoly : shieldPolys()) {
-    shieldPoly.translate(owner()->position());
+    shieldPoly.translate(owner().position());
     if (isClient)
       SpatialLogger::logPoly("world", shieldPoly, {255, 255, 0, 255});
   }
@@ -174,13 +174,13 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
     if (ds.damageArea.is<PolyF>()) {
       auto& poly = ds.damageArea.get<PolyF>();
       poly.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      if (owner().facingDirection() == Direction::Left)
         poly.flipHorizontal(0.0f);
       poly.translate(handPosition(Vec2F()));
     } else if (ds.damageArea.is<Line2F>()) {
       auto& line = ds.damageArea.get<Line2F>();
       line.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      if (owner().facingDirection() == Direction::Left)
         line.flipHorizontal(0.0f);
       line.translate(handPosition(Vec2F()));
     }
@@ -193,7 +193,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   List<PolyF> shieldPolys = m_shieldPolys.get();
   for (auto sp : m_itemShieldPolys.get()) {
     sp.rotate(m_armAngle.get());
-    if (owner()->facingDirection() == Direction::Left)
+    if (owner().facingDirection() == Direction::Left)
       sp.flipHorizontal(0.0f);
     sp.translate(handPosition(Vec2F()));
     shieldPolys.append(std::move(sp));
@@ -206,14 +206,14 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   for (auto fr : m_itemForceRegions.get()) {
     if (auto dfr = fr.ptr<DirectionalForceRegion>()) {
       dfr->region.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      if (owner().facingDirection() == Direction::Left)
         dfr->region.flipHorizontal(0.0f);
-      dfr->region.translate(owner()->position() + handPosition(Vec2F()));
+      dfr->region.translate(owner().position() + handPosition(Vec2F()));
     } else if (auto rfr = fr.ptr<RadialForceRegion>()) {
       rfr->center = rfr->center.rotate(m_armAngle.get());
-      if (owner()->facingDirection() == Direction::Left)
+      if (owner().facingDirection() == Direction::Left)
         rfr->center[0] *= -1;
-      rfr->center += owner()->position() + handPosition(Vec2F());
+      rfr->center += owner().position() + handPosition(Vec2F());
     }
     forceRegions.append(std::move(fr));
   }
@@ -270,9 +270,9 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   // Same as pullNewAudios, we translate and flip ourselves.
   List<LightSource> result;
   for (auto& light : m_itemAnimator.lightSources()) {
-    light.position = owner()->position() + handPosition(light.position);
+    light.position = owner().position() + handPosition(light.position);
     light.beamAngle += m_armAngle.get();
-    if (owner()->facingDirection() == Direction::Left) {
+    if (owner().facingDirection() == Direction::Left) {
       if (light.beamAngle > 0)
         light.beamAngle = Constants::pi / 2 + constrainAngle(Constants::pi / 2 - light.beamAngle);
       else
@@ -295,7 +295,7 @@ List<AudioInstancePtr> ActiveItem::pullNewAudios() {
   List<AudioInstancePtr> result;
   for (auto& audio : m_itemAnimatorDynamicTarget.pullNewAudios()) {
     m_activeAudio[audio] = *audio->position();
-    audio->setPosition(owner()->position() + handPosition(*audio->position()));
+    audio->setPosition(owner().position() + handPosition(*audio->position()));
     result.append(std::move(audio));
   }
   result.appendAll(m_scriptedAnimator.pullNewAudios());
@@ -306,9 +306,9 @@ List<Particle> ActiveItem::pullNewParticles() {
   // Same as pullNewAudios, we translate, rotate, and flip ourselves
   List<Particle> result;
   for (auto& particle : m_itemAnimatorDynamicTarget.pullNewParticles()) {
-    particle.position = owner()->position() + handPosition(particle.position);
+    particle.position = owner().position() + handPosition(particle.position);
     particle.velocity = particle.velocity.rotate(m_armAngle.get());
-    if (owner()->facingDirection() == Direction::Left) {
+    if (owner().facingDirection() == Direction::Left) {
       particle.velocity[0] *= -1;
       particle.flip = !particle.flip;
     }
@@ -336,26 +336,26 @@ float ActiveItem::durabilityStatus() {
 }
 
 [[nodiscard]] Vec2F ActiveItem::armPosition(Vec2F const& offset) const {
-  return owner()->armPosition(hand(), owner()->facingDirection(), m_armAngle.get(), offset);
+  return owner().armPosition(hand(), owner().facingDirection(), m_armAngle.get(), offset);
 }
 
 [[nodiscard]] Vec2F ActiveItem::handPosition(Vec2F const& offset) const {
-  return armPosition(offset + owner()->handOffset(hand(), owner()->facingDirection()));
+  return armPosition(offset + owner().handOffset(hand(), owner().facingDirection()));
 }
 
 LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallback("ownerEntityId", [this]() {
-    return owner()->entityId();
+    return owner().entityId();
   });
   callbacks.registerCallback("ownerTeam", [this]() {
-    return owner()->getTeam().toJson();
+    return owner().getTeam().toJson();
   });
   callbacks.registerCallback("ownerAimPosition", [this]() {
-    return owner()->aimPosition();
+    return owner().aimPosition();
   });
   callbacks.registerCallback("ownerPowerMultiplier", [this]() {
-    return owner()->powerMultiplier();
+    return owner().powerMultiplier();
   });
   callbacks.registerCallback("fireMode", [this]() {
     return FireModeNames.getRight(m_currentFireMode);
@@ -375,14 +375,14 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     // rotation center, the target position, and the 90 deg vertical offset of
     // the "barrel".
 
-    Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
-    Vec2F ownerPosition = owner()->position();
+    Vec2F handRotationCenter = owner().armPosition(hand(), owner().facingDirection(), 0.0f, Vec2F());
+    Vec2F ownerPosition = owner().position();
 
     // Vector in owner entity space to target.
-    Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, ownerPosition);
+    Vec2F toTarget = owner().world().geometry().diff(targetPosition, ownerPosition);
     // Raptor - in retail if you have a hand rotation center that is to the right of the entity centerline, then any time the
     // aim position is behind it the character will repeatedly flip every single frame, we want to prevent this
-    auto dir = numericalDirection(owner()->facingDirection());
+    auto dir = numericalDirection(owner().facingDirection());
     // get local X coords by multiplying by our direction
     auto targetX = (toTarget[0] * dir);
     auto centerX = (handRotationCenter[0] * dir);
@@ -406,9 +406,9 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
 
   // Similar to aimAngleAndDirection, but only provides the offset-adjusted aimAngle for the current facing direction
   callbacks.registerCallback("aimAngle", [this](float aimVerticalOffset, Vec2F targetPosition) {
-    Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
-    Vec2F ownerPosition = owner()->position();
-    Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, (ownerPosition + handRotationCenter));
+    Vec2F handRotationCenter = owner().armPosition(hand(), owner().facingDirection(), 0.0f, Vec2F());
+    Vec2F ownerPosition = owner().position();
+    Vec2F toTarget = owner().world().geometry().diff(targetPosition, (ownerPosition + handRotationCenter));
     float toTargetDist = toTarget.magnitude();
     float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
     return toTarget.angle() + angleAdjust;
@@ -519,7 +519,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   });
 
   callbacks.registerCallback("callOtherHandScript", [this](String const& func, LuaVariadic<LuaValue> const& args) {
-    if (auto otherHandItem = owner()->handItem(hand() == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
+    if (auto otherHandItem = owner().handItem(hand() == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
       if (auto otherActiveItem = as<ActiveItem>(otherHandItem))
         return otherActiveItem->m_script.invoke(func, args).value();
     }
@@ -527,17 +527,17 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   });
 
   callbacks.registerCallback("interact", [this](String const& type, Json const& configData, Maybe<EntityId> const& sourceEntityId) {
-    owner()->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
+    owner().interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
   });
 
   callbacks.registerCallback("emote", [this](String const& emoteName) {
     auto emote = HumanoidEmoteNames.getLeft(emoteName);
-    if (auto entity = as<EmoteEntity>(owner()))
+    if (auto entity = as<EmoteEntity>(&owner()))
       entity->playEmote(emote);
   });
 
   callbacks.registerCallback("setCameraFocusEntity", [this](Maybe<EntityId> const& cameraFocusEntity) {
-    owner()->setCameraFocusEntity(cameraFocusEntity);
+    owner().setCameraFocusEntity(cameraFocusEntity);
   });
 
   callbacks.registerCallback("setDescription", [this](String const& description) {
@@ -555,16 +555,16 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
 LuaCallbacks ActiveItem::makeScriptedAnimationCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallback("ownerPosition", [this]() {
-    return owner()->position();
+    return owner().position();
   });
   callbacks.registerCallback("ownerAimPosition", [this]() {
-    return owner()->aimPosition();
+    return owner().aimPosition();
   });
   callbacks.registerCallback("ownerArmAngle", [this]() {
     return m_armAngle.get();
   });
   callbacks.registerCallback("ownerFacingDirection", [this]() {
-    return numericalDirection(owner()->facingDirection());
+    return numericalDirection(owner().facingDirection());
   });
   callbacks.registerCallback("handPosition", [this](Maybe<Vec2F> offset) {
     return handPosition(offset.value());

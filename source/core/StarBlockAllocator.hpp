@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include <array>
 #include <functional>
 #include <vector>
@@ -119,13 +120,13 @@ private:
   [[nodiscard]] static Data* getAllocatorData(BlockAllocatorFamily& family);
 
   shared_ptr<BlockAllocatorFamily> m_family;
-  Data* m_data;
+  observer_ptr<Data> m_data;
 };
 
 template <typename T, size_t BlockSize>
 BlockAllocator<T, BlockSize>::BlockAllocator() {
   m_family = make_shared<BlockAllocatorFamily>();
-  m_data = getAllocatorData(*m_family);
+  m_data.reset(getAllocatorData(*m_family));
   m_data->blocks.reserve(DefaultBlockPreallocation);
   m_data->unfilledBlock = nullptr;
 }
@@ -134,7 +135,7 @@ template <typename T, size_t BlockSize>
 template <class U>
 BlockAllocator<T, BlockSize>::BlockAllocator(BlockAllocator<U, BlockSize> const& other)
   : m_family(other.m_family) {
-  m_data = getAllocatorData(*m_family);
+  m_data.reset(getAllocatorData(*m_family));
 }
 
 template <typename T, size_t BlockSize>

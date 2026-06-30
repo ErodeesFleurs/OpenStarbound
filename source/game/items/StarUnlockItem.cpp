@@ -34,7 +34,7 @@ void UnlockItem::fireTriggered() {
 
   // Only the player can use an unlock item, for any other entity it should do
   // nothing.
-  if (auto player = as<Player>(owner())) {
+  if (auto player = as<Player>(&owner())) {
     if (instanceValue("consume", true).toBool() && !consume(1))
       return;
 
@@ -46,7 +46,7 @@ void UnlockItem::fireTriggered() {
     if (!m_unlockMessage.empty()) {
       JsonObject message;
       message["message"] = m_unlockMessage;
-      owner()->interact(InteractAction(InteractActionType::ShowPopup, owner()->entityId(), message));
+      owner().interact(InteractAction(InteractActionType::ShowPopup, owner().entityId(), message));
     }
 
     if (m_tierRecipesUnlock) {

@@ -235,7 +235,7 @@ void Npc::uninit() {
     m_scriptComponent.removeCallbacks("animator");
     m_scriptComponent.removeActorMovementCallbacks();
   }
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("config");
@@ -341,7 +341,7 @@ void Npc::readNetState(ByteArray data, float interpolationTime, NetCompatibility
   if (m_tools->queryShieldHit(source))
     return HitType::ShieldHit;
 
-  if (source.intersectsWithPoly(world()->geometry(), m_movementController->collisionBody()))
+  if (source.intersectsWithPoly(world().geometry(), m_movementController->collisionBody()))
     return HitType::Hit;
 
   return {};
@@ -386,10 +386,10 @@ void Npc::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("die");
 
   if (isMaster() && !m_dropPools.get().empty()) {
-    auto treasureDatabase = world()->treasureDatabase();
+    auto treasureDatabase = world().treasureDatabase();
     for (auto const& treasureItem :
          treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), m_itemDatabase));
+      world().addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world().assets(), m_itemDatabase));
   }
 
   if (renderCallback && m_deathParticleBurst.get())
@@ -503,7 +503,7 @@ void Npc::update(float dt, uint64_t) {
     tickShared(dt);
   }
 
-  if (world()->isClient())
+  if (world().isClient())
     SpatialLogger::logPoly("world", m_movementController->collisionBody(), {0, 255, 0, 255});
 }
 
@@ -537,13 +537,13 @@ void Npc::render(RenderCallback* renderCallback) {
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
-  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), *world()));
+  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
 
   m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
 
   renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
 
-  m_effectEmitter->render(renderCallback, world()->particleDatabase());
+  m_effectEmitter->render(renderCallback, world().particleDatabase());
   m_songbook->render(renderCallback);
 }
 
@@ -617,7 +617,7 @@ void Npc::tickShared(float dt) {
   if (m_hitDamageNotificationLimiter)
     m_hitDamageNotificationLimiter--;
 
-  m_songbook->update(*entityMode(), *world());
+  m_songbook->update(*entityMode(), world());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setSourcePosition("mouth", position() + mouthOffset());
@@ -628,7 +628,7 @@ void Npc::tickShared(float dt) {
   m_effectEmitter->setSourcePosition("backArmor", backArmorOffset() + position());
 
   m_effectEmitter->setDirection(humanoid()->facingDirection());
-  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
+  m_effectEmitter->tick(dt, *entityMode(), world().effectSourceDatabase());
 
   humanoid()->setMovingBackwards(m_movementController->movingDirection() != m_movementController->facingDirection());
   humanoid()->setFacingDirection(m_movementController->facingDirection());
@@ -661,7 +661,7 @@ void Npc::tickShared(float dt) {
   if (auto overrideDirection = m_tools->setupHumanoidHandItems(*humanoid(), position(), aimPosition()))
     m_movementController->controlFace(*overrideDirection);
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     humanoid()->animate(dt, &m_humanoidDynamicTarget);
     m_humanoidDynamicTarget.updatePosition(position());
   } else {
@@ -831,7 +831,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<size_t> maybeAnchorIndex) {
     size_t anchorIndex = maybeAnchorIndex.value(0);
-    auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
+    auto loungeableEntity = world().get<LoungeableEntity>(loungeableEntityId);
     if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
         || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
         || !loungeableEntity->loungeAnchor(anchorIndex))
@@ -890,7 +890,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("aimPosition", [this]() { return jsonFromVec2F(aimPosition()); });
 
   callbacks.registerCallback("setAimPosition", [this](Vec2F const& pos) {
-    auto aimPosition = world()->geometry().diff(pos, position());
+    auto aimPosition = world().geometry().diff(pos, position());
     m_xAimPosition.set(aimPosition[0]);
     m_yAimPosition.set(aimPosition[1]);
   });
@@ -1142,9 +1142,9 @@ void Npc::disableWornArmor(bool disable) {
 }
 
 Maybe<Json> Npc::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+  Maybe<Json> result = m_scriptComponent.handleMessage(message, world().connection() == sendingConnection, args);
   if (!result)
-    result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
+    result = m_statusController->receiveMessage(message, world().connection() == sendingConnection, args);
   return result;
 }
 
@@ -1175,7 +1175,7 @@ Maybe<Json> Npc::receiveMessage(ConnectionId sendingConnection, String const& me
 }
 
 [[nodiscard]] Vec2F Npc::aimPosition() const {
-  return world()->geometry().xwrap(Vec2F(m_xAimPosition.get(), m_yAimPosition.get()) + position());
+  return world().geometry().xwrap(Vec2F(m_xAimPosition.get(), m_yAimPosition.get()) + position());
 }
 
 [[nodiscard]] float Npc::interactRadius() const {
@@ -1502,7 +1502,7 @@ void Npc::refreshHumanoidParameters() {
         m_scriptComponent.invoke("refreshHumanoidParameters");
       }
     }
-    if (world()->isClient() && m_scriptedAnimator.initialized()) {
+    if (world().isClient() && m_scriptedAnimator.initialized()) {
       m_scriptedAnimator.uninit();
       m_scriptedAnimator.removeCallbacks("animationConfig");
       m_scriptedAnimator.removeCallbacks("config");
@@ -1515,7 +1515,7 @@ void Npc::refreshHumanoidParameters() {
       m_scriptedAnimator.addCallbacks("config",
                                       LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_npcVariant.scriptConfig.query(name, def); }));
       m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
-      m_scriptedAnimator.init(*world());
+      m_scriptedAnimator.init(world());
     }
   }
 }

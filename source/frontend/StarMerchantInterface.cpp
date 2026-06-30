@@ -92,7 +92,7 @@ MerchantPane::MerchantPane(
   paneLayout = jsonMerge(paneLayout, m_settings.get("paneLayoutOverride", {}));
   reader.construct(paneLayout, this);
 
-  m_tabSet = findChild<TabSetWidget>("buySellTabs").get();
+  m_tabSet.reset(findChild<TabSetWidget>("buySellTabs").get());
   m_tabSet->setCallback([this](Widget*) {
     auto bgResult = getBG();
     if (m_tabSet->selectedTab() == 0)
@@ -101,14 +101,14 @@ MerchantPane::MerchantPane(
       bgResult.body = m_settings.getString("sellBody");
     setBG(bgResult);
   });
-  m_itemGuiList = findChild<ListWidget>("itemList").get();
-  m_countTextBox = findChild<TextBoxWidget>("tbCount").get();
-  m_buyTotalLabel = findChild<LabelWidget>("lblBuyTotal").get();
-  m_buyButton = findChild<ButtonWidget>("btnBuy").get();
-  m_sellTotalLabel = findChild<LabelWidget>("lblSellTotal").get();
-  m_sellButton = findChild<ButtonWidget>("btnSell").get();
+  m_itemGuiList.reset(findChild<ListWidget>("itemList").get());
+  m_countTextBox.reset(findChild<TextBoxWidget>("tbCount").get());
+  m_buyTotalLabel.reset(findChild<LabelWidget>("lblBuyTotal").get());
+  m_buyButton.reset(findChild<ButtonWidget>("btnBuy").get());
+  m_sellTotalLabel.reset(findChild<LabelWidget>("lblSellTotal").get());
+  m_sellButton.reset(findChild<ButtonWidget>("btnSell").get());
 
-  m_itemGrid = findChild<ItemGridWidget>("itemGrid").get();
+  m_itemGrid.reset(findChild<ItemGridWidget>("itemGrid").get());
   m_itemGrid->setItemBag(m_itemBag);
 
   buildItemList();
@@ -132,7 +132,7 @@ void MerchantPane::dismissed() {
     m_worldClient->sendEntityMessage(m_sourceEntityId, "onMerchantClosed");
 }
 
-PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> MerchantPane::createTooltip(Vec2I const& screenPosition) {
   if (m_tabSet->selectedTab() == 0) {
     for (size_t i = 0; i < m_itemGuiList->numChildren(); ++i) {
       auto entry = m_itemGuiList->itemAt(i);

@@ -30,7 +30,7 @@ public:
   template <typename Mutator>
   void update(Mutator&& mutator);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -56,7 +56,7 @@ private:
     T value;
   };
 
-  NetElementVersion const* m_netVersion = nullptr;
+  observer_ptr<NetElementVersion const> m_netVersion;
   uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
@@ -183,7 +183,7 @@ void NetElementBasicField<T>::update(Mutator&& mutator) {
 }
 
 template <typename T>
-void NetElementBasicField<T>::initNetVersion(NetElementVersion const* version) {
+void NetElementBasicField<T>::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
   m_latestUpdateVersion = 0;
 }

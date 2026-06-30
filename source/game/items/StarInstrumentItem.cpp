@@ -46,16 +46,16 @@ void InstrumentItem::update(float, FireMode, bool, HashSet<MoveControlType> cons
   if (entityMode() == EntityMode::Master) {
     if (active()) {
       m_activeCooldown--;
-      owner()->addEffectEmitters({"music"});
+      owner().addEffectEmitters({"music"});
     }
   }
-  owner()->instrumentEquipped(m_kind);
+  owner().instrumentEquipped(m_kind);
 }
 
 bool InstrumentItem::active() const {
   if (!initialized())
     return false;
-  return (m_activeCooldown > 0) || owner()->instrumentPlaying();
+  return (m_activeCooldown > 0) || owner().instrumentPlaying();
 }
 
 void InstrumentItem::setActive(bool active) {
@@ -70,7 +70,7 @@ bool InstrumentItem::usable() const {
 }
 
 void InstrumentItem::activate() {
-  owner()->interact(InteractAction{InteractActionType::OpenSongbookInterface, owner()->entityId(), {}});
+  owner().interact(InteractAction{InteractActionType::OpenSongbookInterface, owner().entityId(), {}});
 }
 
 List<Drawable> InstrumentItem::drawables() const {

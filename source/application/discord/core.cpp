@@ -9,19 +9,15 @@
 
 namespace discord {
 
-Result Core::Create(ClientId clientId, std::uint64_t flags, Core** instance)
+std::unique_ptr<Core> Core::Create(ClientId clientId, std::uint64_t flags)
 {
-    if (!instance) {
-        return Result::InternalError;
-    }
-
-    (*instance) = new Core();
+    auto instance = std::unique_ptr<Core>(new Core());
     DiscordCreateParams params{};
     DiscordCreateParamsSetDefault(&params);
     params.client_id = clientId;
     params.flags = flags;
     params.events = nullptr;
-    params.event_data = *instance;
+    params.event_data = instance.get();
     params.user_events = &UserManager::events_;
     params.activity_events = &ActivityManager::events_;
     params.relationship_events = &RelationshipManager::events_;
@@ -31,13 +27,11 @@ Result Core::Create(ClientId clientId, std::uint64_t flags, Core** instance)
     params.store_events = &StoreManager::events_;
     params.voice_events = &VoiceManager::events_;
     params.achievement_events = &AchievementManager::events_;
-    auto result = DiscordCreate(DISCORD_VERSION, &params, &((*instance)->internal_));
-    if (result != DiscordResult_Ok || !(*instance)->internal_) {
-        delete (*instance);
-        (*instance) = nullptr;
-    }
+    auto result = DiscordCreate(DISCORD_VERSION, &params, &(instance->internal_));
+    if (result != DiscordResult_Ok || !instance->internal_)
+        return {};
 
-    return static_cast<Result>(result);
+    return instance;
 }
 
 Core::~Core()

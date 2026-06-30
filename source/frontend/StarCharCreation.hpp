@@ -44,7 +44,7 @@ public:
   void tick(float dt) override;
   [[nodiscard]] bool sendEvent(InputEvent const& event) override;
 
-  [[nodiscard]] PanePtr createTooltip(Vec2I const&) override;
+  [[nodiscard]] UniquePtr<Pane> createTooltip(Vec2I const&) override;
 
 private:
   void nameBoxCallback(Widget* object);

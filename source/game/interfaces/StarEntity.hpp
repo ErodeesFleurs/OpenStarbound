@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarCasting.hpp"
 #include "StarDamage.hpp"
 #include "StarLightSource.hpp"
@@ -171,7 +172,7 @@ public:
   [[nodiscard]] bool inWorld() const;
 
   // Throws an exception if not currently in a world.
-  [[nodiscard]] World* world() const;
+  [[nodiscard]] World& world() const;
   // Returns nullptr if not currently in a world.
   [[nodiscard]] World* worldPtr() const;
 
@@ -208,7 +209,7 @@ private:
   bool m_persistent;
   bool m_keepAlive;
   Maybe<String> m_uniqueId;
-  World* m_world;
+  observer_ptr<World> m_world;
   EntityDamageTeam m_team;
 };
 

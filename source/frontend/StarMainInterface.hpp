@@ -157,7 +157,7 @@ public:
 
   [[nodiscard]] bool windowsOpen() const;
 
-  [[nodiscard]] MerchantPanePtr activeMerchantPane() const;
+  [[nodiscard]] observer_ptr<MerchantPane> activeMerchantPane() const;
 
   // Return true if this event was consumed or should be handled elsewhere.
   [[nodiscard]] bool handleInputEvent(InputEvent const& event);
@@ -201,7 +201,7 @@ public:
   [[nodiscard]] ClientCommandProcessorPtr commandProcessor() const;
 
   struct ScriptPaneInfo {
-    ScriptPanePtr scriptPane;
+    observer_ptr<ScriptPane> scriptPane;
     Json config;
     EntityId sourceEntityId;
     bool visible;
@@ -212,7 +212,7 @@ public:
   void reviveScriptPanes(List<ScriptPaneInfo>& panes);
   void displayDefaultPanes();
 private:
-  [[nodiscard]] PanePtr createEscapeDialog();
+  [[nodiscard]] UniquePtr<Pane> createEscapeDialog();
   void initHttpTrustDialog();
 
   [[nodiscard]] unsigned windowHeight() const;
@@ -234,7 +234,7 @@ private:
 
   [[nodiscard]] bool overlayClick(Vec2F const& mousePos, MouseButton mouseButton);
 
-  void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
+  void displayScriptPane(ScriptPanePtr scriptPane, EntityId sourceEntity);
 
   GuiContext& m_guiContext;
   Input& m_input;
@@ -265,32 +265,32 @@ private:
 
   MainInterfacePaneManager m_paneManager;
 
-  QuestLogInterfacePtr m_questLogInterface;
+  observer_ptr<QuestLogInterface> m_questLogInterface;
 
-  InventoryPanePtr m_inventoryWindow;
-  CraftingPanePtr m_plainCraftingWindow;
-  CraftingPanePtr m_craftingWindow;
-  MerchantPanePtr m_merchantWindow;
-  CodexInterfacePtr m_codexInterface;
-  OptionsMenuPtr m_optionsMenu;
-  ContainerPanePtr m_containerPane;
-  PopupInterfacePtr m_popupInterface;
-  ConfirmationDialogPtr m_confirmationDialog;
-  JoinRequestDialogPtr m_joinRequestDialog;
-  TeleportDialogPtr m_teleportDialog;
-  QuestTrackerPanePtr m_questTracker;
-  ScriptPanePtr m_mmUpgrade;
-  ScriptPanePtr m_collections;
-  Map<EntityId, PanePtr> m_interactionScriptPanes;
+  observer_ptr<InventoryPane> m_inventoryWindow;
+  observer_ptr<CraftingPane> m_plainCraftingWindow;
+  observer_ptr<CraftingPane> m_craftingWindow;
+  observer_ptr<MerchantPane> m_merchantWindow;
+  observer_ptr<CodexInterface> m_codexInterface;
+  observer_ptr<OptionsMenu> m_optionsMenu;
+  observer_ptr<ContainerPane> m_containerPane;
+  observer_ptr<PopupInterface> m_popupInterface;
+  observer_ptr<ConfirmationDialog> m_confirmationDialog;
+  observer_ptr<JoinRequestDialog> m_joinRequestDialog;
+  observer_ptr<TeleportDialog> m_teleportDialog;
+  observer_ptr<QuestTrackerPane> m_questTracker;
+  observer_ptr<ScriptPane> m_mmUpgrade;
+  observer_ptr<ScriptPane> m_collections;
+  Map<EntityId, ScriptPanePtr> m_interactionScriptPanes;
 
   StringMap<CanvasWidgetPtr> m_canvases;
 
-  ChatPtr m_chat;
+  observer_ptr<Chat> m_chat;
   ClientCommandProcessorPtr m_clientCommandProcessor;
-  RadioMessagePopupPtr m_radioMessagePopup;
-  WirePanePtr m_wireInterface;
+  observer_ptr<RadioMessagePopup> m_radioMessagePopup;
+  observer_ptr<WirePane> m_wireInterface;
 
-  ActionBarPtr m_actionBar;
+  observer_ptr<ActionBar> m_actionBar;
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   ItemSlotWidgetPtr m_cursorItem;

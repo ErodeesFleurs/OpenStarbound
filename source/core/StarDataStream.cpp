@@ -63,66 +63,66 @@ DataStream& DataStream::operator<<(char c) {
 }
 
 DataStream& DataStream::operator<<(int8_t d) {
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint8_t d) {
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(int16_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint16_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(int32_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint32_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(int64_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint64_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(float d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator<<(double d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData(reinterpret_cast<char*>(&d), sizeof(d));
+  writeTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(bool& d) {
   uint8_t bu;
-  readData(reinterpret_cast<char*>(&bu), sizeof(bu));
+  readTriviallyCopyable(bu);
   d = static_cast<bool>(bu);
   return *this;
 }
@@ -133,59 +133,59 @@ DataStream& DataStream::operator>>(char& c) {
 }
 
 DataStream& DataStream::operator>>(int8_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint8_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(int16_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint16_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(int32_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint32_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(int64_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint64_t& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(float& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(double& d) {
-  readData(reinterpret_cast<char*>(&d), sizeof(d));
+  readTriviallyCopyable(d);
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }

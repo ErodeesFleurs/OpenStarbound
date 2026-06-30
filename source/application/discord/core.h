@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "types.h"
 #include "application_manager.h"
 #include "user_manager.h"
@@ -18,7 +20,7 @@ namespace discord {
 
 class Core final {
 public:
-    static Result Create(ClientId clientId, std::uint64_t flags, Core** instance);
+    static std::unique_ptr<Core> Create(ClientId clientId, std::uint64_t flags);
 
     ~Core();
 

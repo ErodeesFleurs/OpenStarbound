@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarPane.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTimers.hpp"
 
@@ -11,70 +10,45 @@ class PaneManager;
 using PaneManagerPtr = SharedPtr<PaneManager>;
 
 enum class PaneLayer {
-  // A special class of window only meant to be used by PaneManager to display
-  // tooltips given by Pane::createTooltip
   Tooltip,
-  // A special class of window that is displayed above all other windows and
-  // turns off input to other windows and the hud until it is dismissed.
   ModalWindow,
-  // Window layer for regular windows that are regularly displayed and
-  // dismissed and dragged around.
   Window,
-  // The bottom GUI layer, for persistent hud elements that are always or almost
-  // always shown.  Not key dismissable.
   Hud,
-  // Layer for interface elements which are logically part of the world but
-  // handled by GUI panes (such as wires)
   World
 };
 extern EnumMap<PaneLayer> const PaneLayerNames;
 
-
-// This class handles a set of panes to be drawn as a collective windowing
-// interface.  It is a set of panes on separate distinct layers, where each
-// layer contains a z-ordered list of panes to display.
 class PaneManager {
 public:
-  using DismissCallback = function<void(PanePtr const&)>;
+  using DismissCallback = function<void(observer_ptr<Pane>)>;
 
   explicit PaneManager(GuiContext& context);
 
-  // Display a pane on any given layer.  The pane lifetime in this class is
-  // only during display, once dismissed, the pane is forgotten completely.
-  void displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss = {});
+  void displayPane(PaneLayer paneLayer, UniquePtr<Pane> pane, DismissCallback onDismiss = {});
+  void displayPane(PaneLayer paneLayer, Pane& pane, DismissCallback onDismiss = {});
 
-  [[nodiscard]] bool isDisplayed(PanePtr const& pane) const;
+  [[nodiscard]] bool isDisplayed(observer_ptr<Pane> pane) const;
 
-  // Dismiss a given displayed pane.  Pane must already be displayed.
-  void dismissPane(PanePtr const& pane);
-
-  // Dismisses all panes in the given layers.
+  void dismissPane(observer_ptr<Pane> pane);
   void dismissAllPanes(Set<PaneLayer> const& paneLayers);
   void dismissAllPanes();
 
-  [[nodiscard]] PanePtr topPane(Set<PaneLayer> const& paneLayers) const;
-  [[nodiscard]] PanePtr topPane() const;
+  [[nodiscard]] observer_ptr<Pane> topPane(Set<PaneLayer> const& paneLayers) const;
+  [[nodiscard]] observer_ptr<Pane> topPane() const;
 
-  // Brign an already displayed pane to the top of its layer.
-  void bringToTop(PanePtr const& pane);
+  void bringToTop(observer_ptr<Pane> pane);
+  void bringPaneAdjacent(observer_ptr<Pane> anchor, observer_ptr<Pane> adjacent, int gap);
 
-  // Position a pane adjacent to an anchor pane in a direction where
-  // it will fit on the screen
-  void bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjacent, int gap);
+  [[nodiscard]] observer_ptr<Pane> getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
+  [[nodiscard]] observer_ptr<Pane> getPaneAt(Vec2I const& position) const;
+  [[nodiscard]] List<observer_ptr<Pane>> getAllPanes();
 
-  [[nodiscard]] PanePtr getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const;
-  [[nodiscard]] PanePtr getPaneAt(Vec2I const& position) const;
-  [[nodiscard]] List<PanePtr> getAllPanes();
+  void setBackgroundWidget(UniquePtr<Widget> bg);
 
-  void setBackgroundWidget(WidgetPtr bg);
+  void dismissWhere(function<bool(observer_ptr<Pane>)> func);
 
-  void dismissWhere(function<bool(PanePtr const&)> func);
-
-  // Returns the pane/widget that has captured the keyboard, if any.
-  [[nodiscard]] PanePtr keyboardCapturedPane() const;
+  [[nodiscard]] observer_ptr<Pane> keyboardCapturedPane() const;
   [[nodiscard]] Widget* keyboardCapturedWidget() const;
-  // Returns true if the current widget that has captured the keyboard is
-  // accepting text input.
   [[nodiscard]] bool keyboardCapturedForTextInput() const;
 
   [[nodiscard]] bool sendInputEvent(InputEvent const& event);
@@ -83,26 +57,32 @@ public:
   void update(float dt);
 
 private:
+  struct DisplayEntry {
+    observer_ptr<Pane> pane;
+    UniquePtr<Pane> ownedPane;
+    DismissCallback onDismiss;
+  };
+
   [[nodiscard]] Vec2I windowSize() const;
-  [[nodiscard]] Vec2I calculatePaneOffset(PanePtr const& pane) const;
-  [[nodiscard]] Vec2I calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const;
-  [[nodiscard]] bool dismiss(PanePtr const& pane);
+  [[nodiscard]] Vec2I calculatePaneOffset(observer_ptr<Pane> pane) const;
+  [[nodiscard]] Vec2I calculateNewInterfacePosition(observer_ptr<Pane> pane, float interfaceScaleRatio) const;
+  [[nodiscard]] bool dismiss(observer_ptr<Pane> pane);
 
   GuiContext& m_context;
   float m_prevInterfaceScale;
 
-  // Map of each pane layer, where the 0th pane is the topmost pane in each layer.
-  Map<PaneLayer, OrderedMap<PanePtr, DismissCallback>> m_displayedPanes;
+  Map<PaneLayer, List<DisplayEntry>> m_displayedPanes;
 
-  WidgetPtr m_backgroundWidget;
+  UniquePtr<Widget> m_backgroundWidget;
 
   float m_tooltipMouseoverRadius;
   Vec2I m_tooltipMouseOffset;
   GameTimer m_tooltipShowTimer;
   Vec2I m_tooltipLastMousePos;
   Vec2I m_tooltipInitialPosition;
-  PanePtr m_activeTooltip;
-  PanePtr m_tooltipParentPane;
+  UniquePtr<Pane> m_activeTooltip;
+  observer_ptr<Pane> m_tooltipParentPane;
 };
 
 }
+

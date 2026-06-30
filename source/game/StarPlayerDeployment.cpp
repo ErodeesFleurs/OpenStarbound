@@ -26,7 +26,7 @@ Json PlayerDeployment::diskStore() const {
 }
 
 void PlayerDeployment::init(Player& player, World& world) {
-  m_world = &world;
+  m_world.reset(&world);
 
   if (m_deploying) {
     m_deployed = true;
@@ -70,7 +70,7 @@ void PlayerDeployment::uninit() {
   m_scriptComponent.removeCallbacks("player");
   m_scriptComponent.removeCallbacks("status");
   m_scriptComponent.removeCallbacks("config");
-  m_world = nullptr;
+  m_world.reset();
 }
 
 void PlayerDeployment::teleportOut() {

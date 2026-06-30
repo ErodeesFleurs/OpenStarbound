@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
@@ -108,8 +109,8 @@ public:
   virtual void focus();
   virtual void blur();
 
-  [[nodiscard]] virtual Widget* parent() const;
-  virtual void setParent(Widget* parent);
+  [[nodiscard]] virtual observer_ptr<Widget> parent() const;
+  virtual void setParent(observer_ptr<Widget> parent);
 
   [[nodiscard]] virtual Pane const* window() const;
   [[nodiscard]] virtual Pane* window();
@@ -167,7 +168,7 @@ protected:
   [[nodiscard]] virtual RectI getScissorRect() const;
   [[nodiscard]] virtual RectI noScissor() const;
 
-  Widget* m_parent = nullptr;
+  observer_ptr<Widget> m_parent;
 
   bool m_visible = true;
   PolyF m_boundPoly;
@@ -188,7 +189,7 @@ protected:
   Json m_data;
 
 private:
-  GuiContext* m_context = nullptr;
+  observer_ptr<GuiContext> m_context;
 };
 
 std::ostream& operator<<(std::ostream& os, Widget const& widget);

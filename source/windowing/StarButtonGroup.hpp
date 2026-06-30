@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarWidget.hpp"
 
 namespace Star {
@@ -25,8 +26,8 @@ public:
   // its parameter is the button being checked.
   void setCallback(WidgetCallbackFunc callback);
 
-  [[nodiscard]] ButtonWidget* button(int id) const;
-  [[nodiscard]] List<ButtonWidget*> buttons() const;
+  [[nodiscard]] observer_ptr<ButtonWidget> button(int id) const;
+  [[nodiscard]] List<observer_ptr<ButtonWidget>> buttons() const;
   [[nodiscard]] size_t buttonCount() const;
 
   [[nodiscard]] int addButton(ButtonWidget* button, int id = NoButton);
@@ -37,7 +38,7 @@ public:
   void select(int id);
 
   // Will return null if no button is checked.
-  [[nodiscard]] ButtonWidget* checkedButton() const;
+  [[nodiscard]] observer_ptr<ButtonWidget> checkedButton() const;
   // Will return NoButton if no button is checked.
   [[nodiscard]] int checkedId() const;
 
@@ -52,7 +53,7 @@ protected:
 
 private:
   WidgetCallbackFunc m_callback;
-  Map<int, ButtonWidget*> m_buttons;
+  Map<int, observer_ptr<ButtonWidget>> m_buttons;
   Map<ButtonWidget*, int> m_buttonIds;
   bool m_toggle = false;
 };

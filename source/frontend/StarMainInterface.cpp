@@ -112,72 +112,109 @@ MainInterface::MainInterface(UniverseClientPtr client,
 
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
-  m_inventoryWindow = make_shared<InventoryPane>(*this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](PanePtr const&) {
-      if (auto player = m_client->mainPlayer())
-          player->clearSwap();
-      if (m_containerPane) {
-        m_containerPane->dismiss();
-        m_containerPane = {};
-        m_containerInteractor->closeContainer();
-      }
+  {
+    auto inventoryWindow = make_unique<InventoryPane>(*this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    m_inventoryWindow = observer_ptr<InventoryPane>(inventoryWindow.get());
+    m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, std::move(inventoryWindow), [this](observer_ptr<Pane>) {
+        if (auto player = m_client->mainPlayer())
+            player->clearSwap();
+        if (m_containerPane) {
+          m_containerPane->dismiss();
+          m_containerPane = {};
+          m_containerInteractor->closeContainer();
+        }
       for (EntityId id : m_interactionScriptPanes.keys()) {
-        if (m_paneManager.isDisplayed(m_interactionScriptPanes[id]) && as<ScriptPane>(m_interactionScriptPanes[id])->openWithInventory())
+        if (m_paneManager.isDisplayed(observer_ptr<Pane>(m_interactionScriptPanes[id].get())) && as<ScriptPane>(m_interactionScriptPanes[id])->openWithInventory())
           m_interactionScriptPanes[id]->dismiss();
       }
-    });
+      });
+  }
 
   m_overflowMessage = make_shared<GuiMessage>("", 0);
 
-  m_plainCraftingWindow = make_shared<CraftingPane>(m_client->worldClient(),
-      m_client->mainPlayer(),
-      JsonObject{{"filter", JsonArray{"plain"}}},
-      m_client->mainPlayer()->entityId(),
-      CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, m_plainCraftingWindow);
+  {
+    auto plainCraftingWindow = make_unique<CraftingPane>(m_client->worldClient(),
+        m_client->mainPlayer(),
+        JsonObject{{"filter", JsonArray{"plain"}}},
+        m_client->mainPlayer()->entityId(),
+        CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    m_plainCraftingWindow = observer_ptr<CraftingPane>(plainCraftingWindow.get());
+    m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, std::move(plainCraftingWindow));
+  }
 
   m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, createEscapeDialog());
 
-  auto songbookInterface = make_shared<SongbookInterface>(m_client->mainPlayer(), SongbookInterfaceServices{m_assets, m_registerReloadListener, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, songbookInterface);
+  m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, make_unique<SongbookInterface>(m_client->mainPlayer(), SongbookInterfaceServices{m_assets, m_registerReloadListener, m_guiContext}));
 
-  m_questLogInterface = make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::QuestLog, PaneLayer::Window, m_questLogInterface);
+  {
+    auto questLogInterface = make_unique<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    m_questLogInterface = observer_ptr<QuestLogInterface>(questLogInterface.get());
+    m_paneManager.registerPane(MainInterfacePanes::QuestLog, PaneLayer::Window, std::move(questLogInterface));
+  }
 
-  auto aiInterface = make_shared<AiInterface>(m_client, m_cinematicOverlay, m_paneManager, AiInterfaceServices{m_assets, m_aiDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, aiInterface);
+  m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, make_unique<AiInterface>(m_client, m_cinematicOverlay, m_paneManager, AiInterfaceServices{m_assets, m_aiDatabase, m_guiContext}));
 
-  m_codexInterface = make_shared<CodexInterface>(m_client->mainPlayer(), CodexInterface::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Codex, PaneLayer::Window, m_codexInterface);
+  {
+    auto codexInterface = make_unique<CodexInterface>(m_client->mainPlayer(), CodexInterface::Services{m_assets, m_guiContext});
+    m_codexInterface = observer_ptr<CodexInterface>(codexInterface.get());
+    m_paneManager.registerPane(MainInterfacePanes::Codex, PaneLayer::Window, std::move(codexInterface));
+  }
 
-  m_optionsMenu = make_shared<OptionsMenu>(m_paneManager, m_client, OptionsMenuServices{m_assets, m_configuration, m_client->luaRoot()->services(), m_voice, m_input, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Options, PaneLayer::ModalWindow, m_optionsMenu);
+  {
+    auto optionsMenu = make_unique<OptionsMenu>(m_paneManager, m_client, OptionsMenuServices{m_assets, m_configuration, m_client->luaRoot()->services(), m_voice, m_input, m_guiContext});
+    m_optionsMenu = observer_ptr<OptionsMenu>(optionsMenu.get());
+    m_paneManager.registerPane(MainInterfacePanes::Options, PaneLayer::ModalWindow, std::move(optionsMenu));
+  }
 
-  m_popupInterface = make_shared<PopupInterface>(PopupInterface::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Popup, PaneLayer::Window, m_popupInterface);
+  {
+    auto popupInterface = make_unique<PopupInterface>(PopupInterface::Services{m_assets, m_guiContext});
+    m_popupInterface = observer_ptr<PopupInterface>(popupInterface.get());
+    m_paneManager.registerPane(MainInterfacePanes::Popup, PaneLayer::Window, std::move(popupInterface));
+  }
 
-  m_confirmationDialog = make_shared<ConfirmationDialog>(ConfirmationDialog::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, m_confirmationDialog);
+  {
+    auto confirmationDialog = make_unique<ConfirmationDialog>(ConfirmationDialog::Services{m_assets, m_guiContext});
+    m_confirmationDialog = observer_ptr<ConfirmationDialog>(confirmationDialog.get());
+    m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, std::move(confirmationDialog));
+  }
 
   initHttpTrustDialog();
 
-  m_joinRequestDialog = make_shared<JoinRequestDialog>(JoinRequestDialog::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
+  {
+    auto joinRequestDialog = make_unique<JoinRequestDialog>(JoinRequestDialog::Services{m_assets, m_guiContext});
+    m_joinRequestDialog = observer_ptr<JoinRequestDialog>(joinRequestDialog.get());
+    m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, std::move(joinRequestDialog));
+  }
 
-  m_actionBar = make_shared<ActionBar>(m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::ActionBar, PaneLayer::Hud, m_actionBar);
+  {
+    auto actionBar = make_unique<ActionBar>(m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
+    m_actionBar = observer_ptr<ActionBar>(actionBar.get());
+    m_paneManager.registerPane(MainInterfacePanes::ActionBar, PaneLayer::Hud, std::move(actionBar));
+  }
 
-  m_questTracker = make_shared<QuestTrackerPane>(QuestTrackerPane::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
+  {
+    auto questTracker = make_unique<QuestTrackerPane>(QuestTrackerPane::Services{m_assets, m_guiContext});
+    m_questTracker = observer_ptr<QuestTrackerPane>(questTracker.get());
+    m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, std::move(questTracker));
+  }
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
+  {
+    auto mmUpgrade = make_unique<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
+    m_mmUpgrade = observer_ptr<ScriptPane>(mmUpgrade.get());
+    m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, std::move(mmUpgrade));
+  }
 
-  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
+  {
+    auto collections = make_unique<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
+    m_collections = observer_ptr<ScriptPane>(collections.get());
+    m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, std::move(collections));
+  }
 
-  m_chat = make_shared<Chat>(m_client, m_assets->json("/interface/chat/chat.config"), ChatServices{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, m_chat);
+  {
+    auto chat = make_unique<Chat>(m_client, m_assets->json("/interface/chat/chat.config"), ChatServices{m_assets, m_guiContext});
+    m_chat = observer_ptr<Chat>(chat.get());
+    m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, std::move(chat));
+  }
   ClientCommandProcessorServices commandServices(m_guiContext, m_input);
   commandServices.assets = m_assets;
   commandServices.configuration = m_configuration;
@@ -193,51 +230,58 @@ MainInterface::MainInterface(UniverseClientPtr client,
   };
   m_clientCommandProcessor = make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, m_paneManager, m_config->macroCommands, std::move(commandServices));
 
-  m_radioMessagePopup = make_shared<RadioMessagePopup>(RadioMessagePopup::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud, m_radioMessagePopup);
+  {
+    auto radioMessagePopup = make_unique<RadioMessagePopup>(RadioMessagePopup::Services{m_assets, m_guiContext});
+    m_radioMessagePopup = observer_ptr<RadioMessagePopup>(radioMessagePopup.get());
+    m_paneManager.registerPane(MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud, std::move(radioMessagePopup));
+  }
 
-  m_wireInterface = make_shared<WirePane>(m_client->worldClient(), m_client->mainPlayer(), m_worldPainter, WirePane::Services{m_assets, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::WireInterface, PaneLayer::World, m_wireInterface);
+  {
+    auto wireInterface = make_unique<WirePane>(m_client->worldClient(), m_client->mainPlayer(), m_worldPainter, WirePane::Services{m_assets, m_guiContext});
+    m_wireInterface = observer_ptr<WirePane>(wireInterface.get());
+    m_paneManager.registerPane(MainInterfacePanes::WireInterface, PaneLayer::World, std::move(wireInterface));
+  }
   m_client->mainPlayer()->setWireConnector(m_wireInterface.get());
 
-  auto teamBar = make_shared<TeamBar>(*this, m_client, TeamBar::Services{m_assets, m_configuration, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, teamBar);
+  m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, make_unique<TeamBar>(*this, m_client, TeamBar::Services{m_assets, m_configuration, m_guiContext}));
 
-  auto statusPane = make_shared<StatusPane>(m_client, StatusPaneServices{m_assets, m_imageMetadata, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, statusPane);
+  m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, make_unique<StatusPane>(m_client, StatusPaneServices{m_assets, m_imageMetadata, m_statusEffectDatabase, m_guiContext}));
 
-  auto planetName = make_shared<Pane>(m_guiContext);
-  auto planetText = make_unique<LabelWidget>(m_guiContext);
-  planetText->setTextStyle(m_config->planetNameTextStyle);
-  planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
-  m_planetText = WidgetRef<LabelWidget>(*planetText);
-  planetName->disableScissoring();
-  planetName->setPosition(m_config->planetNameOffset);
-  planetName->setAnchor(PaneAnchor::Center);
-  planetName->addChild("planetText", std::move(planetText));
-  m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
+  {
+    auto planetName = make_unique<Pane>(m_guiContext);
+    auto planetText = make_unique<LabelWidget>(m_guiContext);
+    planetText->setTextStyle(m_config->planetNameTextStyle);
+    planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
+    m_planetText = WidgetRef<LabelWidget>(*planetText);
+    planetName->disableScissoring();
+    planetName->setPosition(m_config->planetNameOffset);
+    planetName->setAnchor(PaneAnchor::Center);
+    planetName->addChild("planetText", std::move(planetText));
+    m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, std::move(planetName));
+  }
 
-  auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
-    [=, this](PlayerPtr mainPlayer) {
-      m_client->switchPlayer(mainPlayer->uuid());
-      auto configuration = m_configuration;
-      if (configuration->get("characterSwapMovesToFront", false).toBool())
-        m_client->playerStorage()->moveToFront(mainPlayer->uuid());
-      if (configuration->get("characterSwapDismisses", false).toBool())
-        m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap);
-    }, [=](Uuid) {}, CharSelectionServices{m_assets, m_configuration, m_guiContext});
-  charSelectionMenu->setReadOnly(true);
-  charSelectionMenu->setAnchor(PaneAnchor::Center);
-  charSelectionMenu->unlockPosition();
-  auto backgrounds = charSelectionMenu->getBG();
-  backgrounds.header = std::move(backgrounds.body);
-  charSelectionMenu->setBG(backgrounds);
-  charSelectionMenu->findChild("toggleDismissLabel")->setVisibility(true);
-  auto toggleDismiss = charSelectionMenu->findChild<ButtonWidget>("toggleDismissCheckbox");
-  toggleDismiss->setChecked(m_configuration->get("characterSwapDismisses", false).toBool());
-  toggleDismiss->setVisibility(true);
-
-  m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu);
+  {
+    auto charSelectionMenu = make_unique<CharSelectionPane>(m_client->playerStorage(), [=]() {},
+      [=, this](PlayerPtr mainPlayer) {
+        m_client->switchPlayer(mainPlayer->uuid());
+        auto configuration = m_configuration;
+        if (configuration->get("characterSwapMovesToFront", false).toBool())
+          m_client->playerStorage()->moveToFront(mainPlayer->uuid());
+        if (configuration->get("characterSwapDismisses", false).toBool())
+          m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap);
+      }, [=](Uuid) {}, CharSelectionServices{m_assets, m_configuration, m_guiContext});
+    charSelectionMenu->setReadOnly(true);
+    charSelectionMenu->setAnchor(PaneAnchor::Center);
+    charSelectionMenu->unlockPosition();
+    auto backgrounds = charSelectionMenu->getBG();
+    backgrounds.header = std::move(backgrounds.body);
+    charSelectionMenu->setBG(backgrounds);
+    charSelectionMenu->findChild("toggleDismissLabel")->setVisibility(true);
+    auto toggleDismiss = charSelectionMenu->findChild<ButtonWidget>("toggleDismissCheckbox");
+    toggleDismiss->setChecked(m_configuration->get("characterSwapDismisses", false).toBool());
+    toggleDismiss->setVisibility(true);
+    m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, std::move(charSelectionMenu));
+  }
 
   m_nameplatePainter = make_shared<NameplatePainter>(NameplatePainter::Services{m_assets, m_guiContext});
   m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client, QuestIndicatorPainter::Services{m_assets, m_guiContext});
@@ -261,36 +305,38 @@ bool MainInterface::escapeDialogOpen() const {
 }
 
 void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntityId) {
-  if (m_craftingWindow && m_paneManager.isDisplayed(m_craftingWindow)) {
-    m_paneManager.dismissPane(m_craftingWindow);
+  if (m_craftingWindow && m_paneManager.isDisplayed(observer_ptr<Pane>(m_craftingWindow.get()))) {
+    m_paneManager.dismissPane(observer_ptr<Pane>(m_craftingWindow.get()));
     if (sourceEntityId != NullEntityId && m_craftingWindow->sourceEntityId() == sourceEntityId) {
-      m_craftingWindow.reset();
+      m_craftingWindow = {};
       return;
     }
   }
 
-  m_craftingWindow = make_shared<CraftingPane>(
+  auto craftingWindow = make_unique<CraftingPane>(
       m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](PanePtr const&) {
+  m_craftingWindow = observer_ptr<CraftingPane>(craftingWindow.get());
+  m_paneManager.displayPane(PaneLayer::Window, std::move(craftingWindow), [this](observer_ptr<Pane>) {
     if (auto player = m_client->mainPlayer())
       player->clearSwap();
     });
 }
 
 void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntityId) {
-  if (m_merchantWindow && m_paneManager.isDisplayed(m_merchantWindow)) {
-    m_paneManager.dismissPane(m_merchantWindow);
+  if (m_merchantWindow && m_paneManager.isDisplayed(observer_ptr<Pane>(m_merchantWindow.get()))) {
+    m_paneManager.dismissPane(observer_ptr<Pane>(m_merchantWindow.get()));
     if (sourceEntityId != NullEntityId && m_merchantWindow->sourceEntityId() == sourceEntityId) {
-      m_merchantWindow.reset();
+      m_merchantWindow = {};
       return;
     }
   }
 
   bool openWithInventory = config.getBool("openWithInventory", true);
   bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
-  m_merchantWindow = make_shared<MerchantPane>(
+  auto merchantWindow = make_unique<MerchantPane>(
       m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, MerchantPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
-  m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](PanePtr const&) {
+  m_merchantWindow = observer_ptr<MerchantPane>(merchantWindow.get());
+  m_paneManager.displayPane(PaneLayer::Window, std::move(merchantWindow), [this, closeWithInventory](observer_ptr<Pane>) {
     if (closeWithInventory)
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
    });
@@ -298,15 +344,15 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
   m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-    m_merchantWindow, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
+    observer_ptr<Pane>(m_merchantWindow.get()), m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
 }
 
 void MainInterface::togglePlainCraftingWindow() {
   m_paneManager.toggleRegisteredPane(MainInterfacePanes::CraftingPlain);
 
   if (m_craftingWindow && m_craftingWindow->isDisplayed()
-      && m_craftingWindow != m_paneManager.registeredPane(MainInterfacePanes::CraftingPlain))
-    m_paneManager.dismissPane(m_craftingWindow);
+      && m_craftingWindow != m_paneManager.registeredPane<CraftingPane>(MainInterfacePanes::CraftingPlain))
+    m_paneManager.dismissPane(observer_ptr<Pane>(m_craftingWindow.get()));
 
   m_craftingWindow = m_plainCraftingWindow;
 }
@@ -315,8 +361,8 @@ bool MainInterface::windowsOpen() const {
   return static_cast<bool>(m_paneManager.topPane({PaneLayer::Window}));
 }
 
-MerchantPanePtr MainInterface::activeMerchantPane() const {
-  if (m_paneManager.isDisplayed(m_merchantWindow))
+observer_ptr<MerchantPane> MainInterface::activeMerchantPane() const {
+  if (m_paneManager.isDisplayed(observer_ptr<Pane>(m_merchantWindow.get())))
     return m_merchantWindow;
   else
     return {};
@@ -453,13 +499,13 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   if (interactAction.type == InteractActionType::OpenContainer) {
     // If we're currently displaying this container, close it.
     if (m_containerPane && m_containerInteractor->openContainerId() == interactAction.entityId) {
-      m_paneManager.dismissPane(m_containerPane);
+      m_paneManager.dismissPane(observer_ptr<Pane>(m_containerPane.get()));
       return;
     }
 
     // If we're currently displaying another container, close it before we open.
     if (m_containerPane)
-      m_paneManager.dismissPane(m_containerPane);
+      m_paneManager.dismissPane(observer_ptr<Pane>(m_containerPane.get()));
 
     auto containerEntity = world->get<ContainerEntity>(interactAction.entityId);
     if (!containerEntity)
@@ -470,20 +516,23 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     bool closeWithInventory = !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
-    m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets, m_objectDatabase, m_statusEffectDatabase, [this]() {
-        return static_cast<bool>(m_input.bindDown("opensb", "takeAll"));
-      }, m_guiContext});
-    m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](PanePtr const&) {
-      if (closeWithInventory)
-        m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
-      else {
-        m_containerInteractor->closeContainer();
-        m_containerPane = {};
-      }
-    });
+    {
+      auto containerPane = make_unique<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets, m_objectDatabase, m_statusEffectDatabase, [this]() {
+          return static_cast<bool>(m_input.bindDown("opensb", "takeAll"));
+        }, m_guiContext});
+      m_containerPane = observer_ptr<ContainerPane>(containerPane.get());
+      m_paneManager.displayPane(PaneLayer::Window, std::move(containerPane), [this, closeWithInventory](observer_ptr<Pane>) {
+        if (closeWithInventory)
+          m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
+        else {
+          m_containerInteractor->closeContainer();
+          m_containerPane = {};
+        }
+      });
+    }
 
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        m_containerPane, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        observer_ptr<Pane>(m_containerPane.get()), m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else if (interactAction.type == InteractActionType::SitDown) {
     m_client->mainPlayer()->lounge(interactAction.entityId, interactAction.data.toUInt());
   } else if (interactAction.type == InteractActionType::OpenCraftingInterface) {
@@ -544,9 +593,9 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           };
 
           if (!m_client->mainPlayer()->universeMap()->teleportBookmarks().contains(currentLocation) || !config.getBool("canTeleport", true)) {
-            auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, m_guiContext});
+            auto editBookmarkDialog = make_unique<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, m_guiContext});
             editBookmarkDialog->setBookmark(currentLocation);
-            m_paneManager.displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
+            m_paneManager.displayPane(PaneLayer::ModalWindow, std::move(editBookmarkDialog));
             return;
           }
         }
@@ -554,8 +603,11 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     }
 
     if (config.getBool("canTeleport", true)) {
-      m_teleportDialog = make_shared<TeleportDialog>(m_client, m_paneManager, interactAction.data, interactAction.entityId, currentLocation, TeleportDialog::Services{m_assets, m_guiContext});
-      m_paneManager.displayPane(PaneLayer::ModalWindow, m_teleportDialog);
+      {
+        auto teleportDialog = make_unique<TeleportDialog>(m_client, m_paneManager, interactAction.data, interactAction.entityId, currentLocation, TeleportDialog::Services{m_assets, m_guiContext});
+        m_teleportDialog = observer_ptr<TeleportDialog>(teleportDialog.get());
+        m_paneManager.displayPane(PaneLayer::ModalWindow, std::move(teleportDialog));
+      }
     }
   } else if (interactAction.type == InteractActionType::ShowPopup) {
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Popup);
@@ -563,11 +615,10 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
   } else if (interactAction.type == InteractActionType::ScriptPane) {
     auto sourceEntity = interactAction.entityId;
     // dismiss if there's already a scriptpane open for this source entity
-    if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
-      m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
+    if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(observer_ptr<Pane>(m_interactionScriptPanes[sourceEntity].get())))
+      m_paneManager.dismissPane(observer_ptr<Pane>(m_interactionScriptPanes[sourceEntity].get()));
 
-    ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
-    displayScriptPane(scriptPane, sourceEntity);
+    displayScriptPane(make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext}), sourceEntity);
 
   } else if (interactAction.type == InteractActionType::Message) {
     m_client->mainPlayer()->receiveMessage(connectionForEntity(interactAction.entityId),
@@ -748,7 +799,7 @@ void MainInterface::update(float dt) {
   }
 
   for (EntityId id : m_interactionScriptPanes.keys()) {
-    if (!m_paneManager.isDisplayed(m_interactionScriptPanes[id]))
+    if (!m_paneManager.isDisplayed(observer_ptr<Pane>(m_interactionScriptPanes[id].get())))
       m_interactionScriptPanes.remove(id);
   }
 
@@ -1046,7 +1097,7 @@ ClientCommandProcessorPtr MainInterface::commandProcessor() const {
 // For when the player swaps characters. We need to completely reload ScriptPanes,
 // because a lot of ScriptPanes do not expect the character to suddenly change and may break or spill data over.
 void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
-  m_paneManager.dismissWhere([&](PanePtr const& pane) {
+  m_paneManager.dismissWhere([&](observer_ptr<Pane> pane) {
     if (auto scriptPane = as<ScriptPane>(pane)) {
       if (scriptPane->isDismissed())
         return false;
@@ -1066,12 +1117,11 @@ void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
 }
 
 void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
-  for (auto& info : panes) { // this is evil and stupid
-    info.scriptPane->~ScriptPane();
-    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
-    info.scriptPane->setVisibility(info.visible);
-    displayScriptPane(info.scriptPane, info.sourceEntityId);
-    info.scriptPane->setPosition(info.position);
+  for (auto& info : panes) {
+    auto revived = make_shared<ScriptPane>(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
+    revived->setVisibility(info.visible);
+    revived->setPosition(info.position);
+    displayScriptPane(revived, info.sourceEntityId);
   }
 }
 
@@ -1082,10 +1132,10 @@ void MainInterface::displayDefaultPanes() {
   m_paneManager.displayRegisteredPane(MainInterfacePanes::StatusPane);
 }
 
-PanePtr MainInterface::createEscapeDialog() {
+UniquePtr<Pane> MainInterface::createEscapeDialog() {
   auto const& assets = m_assets;
 
-  auto escapeDialog = make_shared<Pane>(m_guiContext);
+  auto escapeDialog = make_unique<Pane>(m_guiContext);
   auto escapeDialogPtr = escapeDialog.get();
 
   GuiReader escapeDialogReader(m_guiContext);
@@ -1692,12 +1742,11 @@ bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
 }
 
 void MainInterface::initHttpTrustDialog() {
-  const auto httpTrustDialog = make_shared<HttpTrustDialog>(HttpTrustDialog::Services{m_assets, m_configuration, m_guiContext});
-  m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, httpTrustDialog);
+  m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, make_unique<HttpTrustDialog>(HttpTrustDialog::Services{m_assets, m_configuration, m_guiContext}));
 }
 
-void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity) {
- // keep any number of script panes open with null source entities
+void MainInterface::displayScriptPane(ScriptPanePtr scriptPane, EntityId sourceEntity) {
+  // keep any number of script panes open with null source entities
   if (sourceEntity != NullEntityId)
     m_interactionScriptPanes[sourceEntity] = scriptPane;
 
@@ -1707,15 +1756,15 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
 
   if (scriptPane->openWithInventory()) {
     bool closeWithInventory = scriptPane->closeWithInventory();
-    m_paneManager.displayPane(layer, scriptPane, [this, closeWithInventory](PanePtr const&) {
+    m_paneManager.displayPane(layer, *scriptPane, [this, closeWithInventory](observer_ptr<Pane>) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
     });
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        scriptPane, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        observer_ptr<Pane>(scriptPane.get()), m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else {
-    m_paneManager.displayPane(layer, scriptPane);
+    m_paneManager.displayPane(layer, *scriptPane);
   }
 }
 

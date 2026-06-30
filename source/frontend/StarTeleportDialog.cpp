@@ -162,9 +162,9 @@ void TeleportDialog::editBookmark() {
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
-      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, context()});
+      auto editBookmarkDialog = make_unique<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, context()});
       editBookmarkDialog->setBookmark(bookmarks[selectedItem]);
-      m_paneManager.displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
+      m_paneManager.displayPane(PaneLayer::ModalWindow, std::move(editBookmarkDialog));
     }
     dismiss();
   }

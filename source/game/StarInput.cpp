@@ -660,9 +660,9 @@ unsigned Input::getTag(String const& tagName) const {
 }
 
 Input::ClipboardUnlock::ClipboardUnlock(Input& input)
-    : m_input(&input) { ++m_input->m_clipboardAllowed; };
+    : m_input(observer_ptr<Input>(&input)) { ++m_input->m_clipboardAllowed; };
 
-Input::ClipboardUnlock::ClipboardUnlock(ClipboardUnlock&& other) { m_input = take(other.m_input); };
+Input::ClipboardUnlock::ClipboardUnlock(ClipboardUnlock&& other) { m_input.reset(take(other.m_input).get()); };
 
 Input::ClipboardUnlock::~ClipboardUnlock() {
   if (m_input)

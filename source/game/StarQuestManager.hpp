@@ -22,7 +22,7 @@ public:
   void diskLoad(Json const& quests);
   [[nodiscard]] Json diskStore();
 
-  void setUniverseClient(UniverseClient* client);
+  void setUniverseClient(observer_ptr<UniverseClient> client);
   [[nodiscard]] AssetsConstPtr assets() const;
   [[nodiscard]] ItemDatabaseConstPtr itemDatabase() const;
   [[nodiscard]] ObjectDatabaseConstPtr objectDatabase() const;
@@ -78,9 +78,9 @@ private:
   void setMostRecentQuestCurrent();
   [[nodiscard]] bool questValidOnServer(QuestPtr quest) const;
 
-  Player* m_player;
-  World* m_world;
-  UniverseClient* m_client;
+  observer_ptr<Player> m_player;
+  observer_ptr<World> m_world;
+  observer_ptr<UniverseClient> m_client;
   AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;

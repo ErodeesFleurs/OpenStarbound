@@ -40,7 +40,7 @@ void ConsumableItem::update(float dt, FireMode fireMode, bool shifting, HashSet<
 
   if (entityMode() == EntityMode::Master) {
     if (m_consuming)
-      owner()->addEffectEmitters(m_emitters);
+      owner().addEffectEmitters(m_emitters);
     if (ready())
       maybeConsume();
   }
@@ -67,7 +67,7 @@ void ConsumableItem::uninit() {
   if (!count() || m_consuming)
     return false;
 
-  for (auto [effectName, duration] : owner()->statusController()->activeUniqueStatusEffectSummary()) {
+  for (auto [effectName, duration] : owner().statusController()->activeUniqueStatusEffectSummary()) {
     if (m_blockingEffects.contains(effectName))
       return false;
   }
@@ -78,17 +78,17 @@ void ConsumableItem::triggerEffects() {
   auto options = instanceValue("effects", JsonArray()).toArray();
   if (options.size()) {
     auto option = Random::randFrom(options).toArray().transformed(jsonToEphemeralStatusEffect);
-    owner()->statusController()->addEphemeralEffects(option);
+    owner().statusController()->addEphemeralEffects(option);
   }
 
   if (m_foodValue) {
-    owner()->statusController()->giveResource("food", *m_foodValue);
-    if (owner()->statusController()->resourcePercentage("food") == 1.0f)
-      owner()->statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
+    owner().statusController()->giveResource("food", *m_foodValue);
+    if (owner().statusController()->resourcePercentage("food") == 1.0f)
+      owner().statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
   }
 
   if (!m_emote.empty())
-    owner()->requestEmote(m_emote);
+    owner().requestEmote(m_emote);
 
   m_consuming = true;
 }
@@ -97,7 +97,7 @@ void ConsumableItem::maybeConsume() {
   if (m_consuming) {
     m_consuming = false;
 
-    world()->sendEntityMessage(owner()->entityId(), "recordEvent", {"useItem", JsonObject {
+    world()->sendEntityMessage(owner().entityId(), "recordEvent", {"useItem", JsonObject {
       {"itemType", name()}
     }});
     if (count())

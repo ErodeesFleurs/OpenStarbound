@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarInputEvent.hpp"
 #include "StarJson.hpp"
 #include "StarListener.hpp"
@@ -195,7 +196,7 @@ public:
     ~ClipboardUnlock();
 
   private:
-    Input* m_input;
+    observer_ptr<Input> m_input;
   };
 
   [[nodiscard]] ClipboardUnlock unlockClipboard();

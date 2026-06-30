@@ -20,7 +20,7 @@ public:
   using mapped_type = typename BaseMap::mapped_type;
   using value_type = typename BaseMap::value_type;
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   void enableNetInterpolation(float extrapolationHint = 0.0f) override;
   void disableNetInterpolation() override;
@@ -115,7 +115,7 @@ private:
 
   Deque<VersionedElementChange> m_changeData;
   Deque<PendingElementChange> m_pendingChangeData;
-  NetElementVersion const* m_netVersion = nullptr;
+  observer_ptr<NetElementVersion const> m_netVersion = nullptr;
   uint64_t m_changeDataLastVersion = 0;
   bool m_updated = false;
   bool m_interpolationEnabled = false;
@@ -128,7 +128,7 @@ template <typename Key, typename Value>
 using NetElementHashMap = NetElementMapWrapper<HashMap<Key, Value>>;
 
 template <typename BaseMap>
-void NetElementMapWrapper<BaseMap>::initNetVersion(NetElementVersion const* version) {
+void NetElementMapWrapper<BaseMap>::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
 
   m_changeData.clear();

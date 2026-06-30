@@ -97,7 +97,7 @@ private:
   struct TechAnimator : public NetElement {
     TechAnimator(Maybe<String> animationConfig = {}, AssetsConstPtr assets = {}, ParticleDatabaseConstPtr particleDatabase = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
-    void initNetVersion(NetElementVersion const* version = nullptr) override;
+    void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
     void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
     void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -153,9 +153,9 @@ private:
   LinkedList<TechModule> m_techModules;
   TechAnimatorGroup m_techAnimators;
 
-  Entity* m_parentEntity;
-  ActorMovementController* m_movementController;
-  StatusController* m_statusController;
+  observer_ptr<Entity> m_parentEntity;
+  observer_ptr<ActorMovementController> m_movementController;
+  observer_ptr<StatusController> m_statusController;
   AssetsConstPtr m_assets;
   ParticleDatabaseConstPtr m_particleDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;

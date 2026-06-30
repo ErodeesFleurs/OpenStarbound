@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarRect.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarTilesetDatabase.hpp"
@@ -51,8 +52,8 @@ namespace Dungeon {
     Tiled::TileConstPtr m_nullTile;
 
     List<Tiled::TilesetConstPtr> m_tilesets;
-    List<Tiled::Tile const*> m_foregroundTilesByGid;
-    List<Tiled::Tile const*> m_backgroundTilesByGid;
+    List<observer_ptr<Tiled::Tile const>> m_foregroundTilesByGid;
+    List<observer_ptr<Tiled::Tile const>> m_backgroundTilesByGid;
   };
 
   class TMXTileLayer {

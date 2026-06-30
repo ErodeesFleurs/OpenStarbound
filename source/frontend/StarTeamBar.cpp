@@ -47,10 +47,10 @@ TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Service
 
   reader.construct(m_assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
 
-  m_healthBar = fetchChild<ProgressWidget>("healthBar").get();
-  m_energyBar = fetchChild<ProgressWidget>("energyBar").get();
-  m_foodBar = fetchChild<ProgressWidget>("foodBar").get();
-  m_nameLabel = fetchChild<LabelWidget>("name").get();
+  m_healthBar.reset(fetchChild<ProgressWidget>("healthBar").get());
+  m_energyBar.reset(fetchChild<ProgressWidget>("energyBar").get());
+  m_foodBar.reset(fetchChild<ProgressWidget>("foodBar").get());
+  m_nameLabel.reset(fetchChild<LabelWidget>("name").get());
 
   m_energyBarColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
   m_energyBarRegenMixColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
@@ -94,7 +94,7 @@ void TeamBar::update(float dt) {
       auto [inviterUuid, inviterName] = teamClient->pullInvitation();
       m_teamInvitation->open(inviterUuid, inviterName);
       if (!m_teamInvitation->isDisplayed())
-        m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamInvitation);
+        m_mainInterface.paneManager().displayPane(PaneLayer::Window, *m_teamInvitation);
     }
   }
 
@@ -139,7 +139,7 @@ void TeamBar::updatePlayerResources() {
 
 void TeamBar::inviteButton() {
   if (!m_teamInvite->isDisplayed())
-    m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamInvite);
+    m_mainInterface.paneManager().displayPane(PaneLayer::Window, *m_teamInvite);
 }
 
 void TeamBar::buildTeamBar() {
@@ -245,7 +245,7 @@ void TeamBar::buildTeamBar() {
 void TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
   m_teamMemberMenu->open(memberUuid, position);
   if (!m_teamMemberMenu->isDisplayed())
-    m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamMemberMenu);
+    m_mainInterface.paneManager().displayPane(PaneLayer::Window, *m_teamMemberMenu);
 }
 
 TeamInvite::TeamInvite(TeamBar& owner)

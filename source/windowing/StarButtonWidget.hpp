@@ -27,10 +27,10 @@ public:
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
 
-  [[nodiscard]] ButtonGroup* buttonGroup() const;
+  [[nodiscard]] observer_ptr<ButtonGroup> buttonGroup() const;
   // Sets the button group for this widget, and adds it to the button group if
   // it is not already added.  Additionally, sets the button as checkable.
-  void setButtonGroup(ButtonGroup* buttonGroup, int id = ButtonGroup::NoButton);
+  void setButtonGroup(observer_ptr<ButtonGroup> buttonGroup, int id = ButtonGroup::NoButton);
   // If a button group is set, returns this button's id in the button group.
   [[nodiscard]] int buttonGroupId();
 
@@ -95,7 +95,7 @@ protected:
   void updateSize();
 
   WidgetCallbackFunc m_callback;
-  ButtonGroup* m_buttonGroup = nullptr;
+  observer_ptr<ButtonGroup> m_buttonGroup;
 
   bool m_hovered = false;
   bool m_pressed = false;

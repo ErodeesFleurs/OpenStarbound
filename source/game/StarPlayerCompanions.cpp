@@ -78,7 +78,7 @@ List<CompanionPtr> PlayerCompanions::getCompanions(String const& category) const
 }
 
 void PlayerCompanions::init(Player& player, World& world) {
-  m_world = &world;
+  m_world.reset(&world);
 
   m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
@@ -103,7 +103,7 @@ void PlayerCompanions::uninit() {
   m_scriptComponent.removeCallbacks("status");
   m_scriptComponent.removeCallbacks("playerCompanions");
   m_scriptComponent.removeCallbacks("config");
-  m_world = nullptr;
+  m_world.reset();
 }
 
 void PlayerCompanions::dismissCompanion(String const& category, Uuid const& podUuid) {

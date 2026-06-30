@@ -74,7 +74,7 @@ InteractAction TileEntity::interact([[maybe_unused]] InteractRequest const& requ
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (isConnectableMaterial(world()->material(pos, TileLayer::Foreground)))
+    if (isConnectableMaterial(world().material(pos, TileLayer::Foreground)))
       return true;
   }
 
@@ -85,7 +85,7 @@ InteractAction TileEntity::interact([[maybe_unused]] InteractRequest const& requ
   Vec2I tp = tilePosition();
   for (auto pos : spaces) {
     pos += tp;
-    if (!isConnectableMaterial(world()->material(pos, TileLayer::Foreground)))
+    if (!isConnectableMaterial(world().material(pos, TileLayer::Foreground)))
       return false;
   }
 
@@ -96,7 +96,7 @@ InteractAction TileEntity::interact([[maybe_unused]] InteractRequest const& requ
   float total = 0.0f;
   for (auto pos : relativeSpaces) {
     pos += tilePosition();
-    total += world()->liquidLevel(pos).level;
+    total += world().liquidLevel(pos).level;
   }
   return total / relativeSpaces.size();
 }

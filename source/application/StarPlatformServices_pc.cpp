@@ -83,10 +83,8 @@ PcPlatformServicesState::PcPlatformServicesState()
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   static int64_t const DiscordEventSleep = 3;
 
-  discord::Core* discordCorePtr = nullptr;
-  discord::Result res = discord::Core::Create(DiscordClientId, DiscordCreateFlags_NoRequireDiscord, &discordCorePtr);
-  if (res == discord::Result::Ok && discordCorePtr) {
-    discordCore.reset(discordCorePtr);
+  discordCore = discord::Core::Create(DiscordClientId, DiscordCreateFlags_NoRequireDiscord);
+  if (discordCore) {
     discordAvailable = true;
 
     discordCore->UserManager().OnCurrentUserUpdate.Connect([this]() {
@@ -99,7 +97,7 @@ PcPlatformServicesState::PcPlatformServicesState()
     });
 
   } else {
-    Logger::error("Failed to instantiate Discord core (err {})", static_cast<int>(res));
+    Logger::error("Failed to instantiate Discord core");
   }
 
   if (discordAvailable) {

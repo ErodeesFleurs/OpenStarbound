@@ -33,13 +33,13 @@ void Entity::init(World* world, EntityId entityId, EntityMode mode) {
   if (m_world)
     throw EntityException("Entity::init called when already initialized");
 
-  m_world = world;
+  m_world = observer_ptr<World>(world);
   m_entityMode = mode;
   m_entityId = entityId;
 }
 
 void Entity::uninit() {
-  m_world = nullptr;
+  m_world = {};
   m_entityMode = {};
   m_entityId = NullEntityId;
 }
@@ -140,15 +140,15 @@ bool Entity::inWorld() const {
   }
 }
 
-World* Entity::world() const {
+World& Entity::world() const {
   if (!m_world)
     throw EntityException("world() called while uninitialized");
 
-  return m_world;
+  return *m_world;
 }
 
 World* Entity::worldPtr() const {
-  return m_world;
+  return m_world.get();
 }
 
 bool Entity::persistent() const {
@@ -176,7 +176,7 @@ bool Entity::isSlave() const {
 }
 
 Entity::Entity() {
-  m_world = nullptr;
+  m_world = {};
   m_entityId = NullEntityId;
   m_persistent = false;
   m_keepAlive = false;

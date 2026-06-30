@@ -148,7 +148,7 @@ void PlayerAppearance::refreshHumanoidParameters() {
         }
       }
     }
-    if (m_player.world()->isClient() && m_player.m_scriptedAnimator.initialized()) {
+    if (m_player.world().isClient() && m_player.m_scriptedAnimator.initialized()) {
       m_player.m_scriptedAnimator.uninit();
       m_player.m_scriptedAnimator.removeCallbacks("animationConfig");
       m_player.m_scriptedAnimator.removeCallbacks("entity");
@@ -158,7 +158,7 @@ void PlayerAppearance::refreshHumanoidParameters() {
                                                   return m_scriptedAnimationParameters.value(name, defaultValue);
                                                 }));
       m_player.m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_player));
-      m_player.m_scriptedAnimator.init(*m_player.world());
+      m_player.m_scriptedAnimator.init(m_player.world());
     }
   }
 }
@@ -270,7 +270,7 @@ bool PlayerAppearance::underwater() const {
   if (!m_player.inWorld())
     return false;
 
-  auto level = m_player.world()->liquidLevel(Vec2I(m_player.position() + m_player.m_config->underwaterSensor)).level;
+  auto level = m_player.world().liquidLevel(Vec2I(m_player.position() + m_player.m_config->underwaterSensor)).level;
   return level > 0.0f && (level > m_player.m_config->underwaterMinWaterLevel || !m_player.m_config->underwaterMinWaterLevel);
 }
 

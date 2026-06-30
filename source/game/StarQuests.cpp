@@ -87,8 +87,6 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
   m_state = QuestState::New;
   m_showDialog = false;
 
-  m_player = nullptr;
-  m_world = nullptr;
   m_inited = false;
 }
 
@@ -145,8 +143,6 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
   m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), mem_fn(&Json::toString));
   m_showDialog = diskStore.getBool("showDialog", false);
 
-  m_player = nullptr;
-  m_world = nullptr;
   m_inited = false;
 }
 
@@ -191,9 +187,9 @@ QuestTemplatePtr Quest::getTemplate() const {
   return m_questTemplateDatabase->questTemplate(templateId());
 }
 
-void Quest::init(Player& player, World& world, UniverseClient* client) {
-  m_player = &player;
-  m_world = &world;
+void Quest::init(Player& player, World& world, observer_ptr<UniverseClient> client) {
+  m_player = observer_ptr<Player>(&player);
+  m_world = observer_ptr<World>(&world);
   m_client = client;
 
   if (m_state == QuestState::Offer || m_state == QuestState::Active)
@@ -204,8 +200,9 @@ void Quest::uninit() {
   if (m_inited)
     uninitScript();
 
-  m_player = nullptr;
-  m_world = nullptr;
+  m_player.reset();
+  m_world.reset();
+  m_client.reset();
 }
 
 Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {

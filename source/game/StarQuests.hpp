@@ -51,7 +51,7 @@ public:
 
   [[nodiscard]] QuestTemplatePtr getTemplate() const;
 
-  void init(Player& player, World& world, UniverseClient* client);
+  void init(Player& player, World& world, observer_ptr<UniverseClient> client);
   void uninit();
 
   [[nodiscard]] Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
@@ -160,9 +160,9 @@ private:
 
   [[nodiscard]] String const& defaultCustomIndicator() const;
 
-  Player* m_player;
-  World* m_world;
-  UniverseClient* m_client;
+  observer_ptr<Player> m_player;
+  observer_ptr<World> m_world;
+  observer_ptr<UniverseClient> m_client;
 
   QuestState m_state;
   bool m_inited;

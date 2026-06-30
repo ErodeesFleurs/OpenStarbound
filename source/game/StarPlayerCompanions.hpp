@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarAiTypes.hpp"
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
@@ -55,7 +56,7 @@ public:
 private:
   [[nodiscard]] LuaCallbacks makeCompanionsCallbacks();
 
-  World* m_world;
+  observer_ptr<World> m_world;
   Json m_config;
   StringMap<List<CompanionPtr>> m_companions;
 

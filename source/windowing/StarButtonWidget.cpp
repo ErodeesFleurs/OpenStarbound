@@ -172,11 +172,11 @@ void ButtonWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-ButtonGroup* ButtonWidget::buttonGroup() const {
+observer_ptr<ButtonGroup> ButtonWidget::buttonGroup() const {
   return m_buttonGroup;
 }
 
-void ButtonWidget::setButtonGroup(ButtonGroup* newGroup, int id) {
+void ButtonWidget::setButtonGroup(observer_ptr<ButtonGroup> newGroup, int id) {
   if (m_buttonGroup != newGroup) {
     if (m_buttonGroup)
       m_buttonGroup->removeButton(this);

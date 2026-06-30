@@ -78,6 +78,16 @@ Type1 const& rconvert(Type2 const& r) {
   return *dynamic_cast<Type1 const*>(&r);
 }
 
+template <typename Type1, typename Type2>
+[[nodiscard]] bool is(observer_ptr<Type2> const& p) {
+  return dynamic_cast<Type1*>(p.get()) != nullptr;
+}
+
+template <typename Type1, typename Type2>
+[[nodiscard]] observer_ptr<Type1> as(observer_ptr<Type2> const& p) {
+  return observer_ptr<Type1>(dynamic_cast<Type1*>(p.get()));
+}
+
 template <typename Type>
 weak_ptr<Type> asWeak(shared_ptr<Type> const& p) {
   return weak_ptr<Type>(p);

@@ -39,7 +39,7 @@ public:
 
   [[nodiscard]] List<ElementPtr> netElements() const;
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -74,7 +74,7 @@ private:
 
   void readyElement(ElementPtr const& element);
 
-  NetElementVersion const* m_netVersion = nullptr;
+  observer_ptr<NetElementVersion const> m_netVersion = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
@@ -136,7 +136,7 @@ template <typename Element>
 }
 
 template <typename Element>
-void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* version) {
+void NetElementDynamicGroup<Element>::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
   m_changeData.clear();
   m_changeDataLastVersion = 0;

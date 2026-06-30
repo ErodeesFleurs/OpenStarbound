@@ -96,7 +96,7 @@ ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, Ac
   m_essentialSelectedWidget = fetchChild<ImageWidget>("essentialSelect");
 }
 
-PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> ActionBar::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
   auto tryItemWidget = [&](auto const& isw) {
     if (isw->screenBoundRect().contains(screenPosition))

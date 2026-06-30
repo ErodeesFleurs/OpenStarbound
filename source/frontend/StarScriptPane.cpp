@@ -50,13 +50,13 @@ void ScriptPane::tick(float dt) {
   BaseScriptPane::tick(dt);
 }
 
-PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
+UniquePtr<Pane> ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(result->toString(), SimpleTooltipServices{m_assets, context()});
     } else {
-      PanePtr tooltip = make_shared<Pane>(context());
+      auto tooltip = make_unique<Pane>(context());
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }

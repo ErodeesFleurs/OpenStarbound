@@ -42,13 +42,13 @@ ItemPtr InspectionTool::clone() const {
 }
 
 void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
-  m_currentAngle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
-  m_currentPosition = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
+  m_currentAngle = world()->geometry().diff(owner().aimPosition(), owner().position()).angle();
+  m_currentPosition = owner().position() + owner().handPosition(hand(), m_lightPosition - m_handPosition);
   SpatialLogger::logPoint("world", m_currentPosition, {0, 0, 255, 255});
 
   if (fireMode != m_lastFireMode) {
     if (fireMode != FireMode::None)
-      m_inspectionResults.append(inspect(owner()->aimPosition()));
+      m_inspectionResults.append(inspect(owner().aimPosition()));
   }
 
   m_lastFireMode = fireMode;
@@ -62,10 +62,10 @@ void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlT
   if (!initialized())
     return {};
 
-  float angle = world()->geometry().diff(owner()->aimPosition(), owner()->position()).angle();
+  float angle = world()->geometry().diff(owner().aimPosition(), owner().position()).angle();
   LightSource lightSource;
   lightSource.type = LightType::Point;
-  lightSource.position = owner()->position() + owner()->handPosition(hand(), m_lightPosition - m_handPosition);
+  lightSource.position = owner().position() + owner().handPosition(hand(), m_lightPosition - m_handPosition);
   lightSource.color = m_lightColor.toRgbF();
   lightSource.pointBeam = m_beamWidth;
   lightSource.beamAngle = angle;
@@ -130,7 +130,7 @@ List<InspectionTool::InspectionResult> InspectionTool::pullInspectionResults() {
 }
 
 [[nodiscard]] InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
-  auto species = owner()->species();
+  auto species = owner().species();
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold

@@ -29,7 +29,7 @@ public:
   // functions at all.
   void setInterpolator(function<T(T, T, T)> interpolator);
 
-  void initNetVersion(NetElementVersion const* version = nullptr) override;
+  void initNetVersion(observer_ptr<NetElementVersion const> version = nullptr) override;
 
   // Values are never interpolated, but they will be delayed for the given
   // interpolationTime.
@@ -56,7 +56,7 @@ private:
   [[nodiscard]] T interpolate() const;
 
   Maybe<T> m_fixedPointBase;
-  NetElementVersion const* m_netVersion = nullptr;
+  observer_ptr<NetElementVersion const> m_netVersion = nullptr;
   uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
@@ -101,7 +101,7 @@ void NetElementFloating<T>::setInterpolator(function<T(T, T, T)> interpolator) {
 }
 
 template <typename T>
-void NetElementFloating<T>::initNetVersion(NetElementVersion const* version) {
+void NetElementFloating<T>::initNetVersion(observer_ptr<NetElementVersion const> version) {
   m_netVersion = version;
   m_latestUpdateVersion = 0;
 }

@@ -23,7 +23,7 @@ JsonEditor::JsonEditor(JsonPath::PathPtr const& path, Options const& options, Li
   QFont font("Monospace");
   font.setStyleHint(QFont::StyleHint::Monospace);
 
-  m_jsonDocument = new QTextDocument("Hello world");
+  m_jsonDocument = make_unique<QTextDocument>("Hello world");
   m_jsonDocument->setDefaultFont(font);
 
   m_statusLabel = new QLabel(centralWidget());
@@ -31,7 +31,7 @@ JsonEditor::JsonEditor(JsonPath::PathPtr const& path, Options const& options, Li
 
   m_jsonPreview = new QTextEdit(this);
   m_jsonPreview->setReadOnly(true);
-  m_jsonPreview->setDocument(m_jsonDocument);
+  m_jsonPreview->setDocument(m_jsonDocument.get());
   layout->addWidget(m_jsonPreview, 1, 0, 1, 5);
 
   m_backButton = new QPushButton(centralWidget());

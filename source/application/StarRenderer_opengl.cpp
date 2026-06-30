@@ -283,7 +283,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   effect.program = m_program;
   effect.config = effectConfig;
   effect.includeVBTextures = effectConfig.getBool("includeVBTextures",true);
-  m_currentEffect = &effect;
+  m_currentEffect.reset(&effect);
   setupGlUniforms(effect, m_screenSize);
 
   for (auto const& [parameterName, parameterConfig] : effectConfig.getObject("effectParameters", {})) {
@@ -476,7 +476,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
     return false;
 
   Effect& effect = find->second;
-  if (m_currentEffect == &effect)
+  if (m_currentEffect.get() == &effect)
     return true;
 
   if (auto blitFrameBufferId = effect.config.optString("blitFrameBuffer"))
@@ -494,7 +494,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
 
   glUseProgram(m_program = effect.program);
   setupGlUniforms(effect, effectScreenSize);
-  m_currentEffect = &effect;
+  m_currentEffect.reset(&effect);
 
   setEffectParameter("vertexRounding", m_multiSampling > 0);
   if (auto fbts = effect.config.optArray("frameBufferTextures")) {

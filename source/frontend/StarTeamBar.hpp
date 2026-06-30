@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarObserverPtr.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 #include "StarPane.hpp"
@@ -112,11 +113,11 @@ private:
   TeamInvitationPtr m_teamInvitation;
   TeamMemberMenuPtr m_teamMemberMenu;
 
-  ProgressWidget* m_healthBar;
-  ProgressWidget* m_energyBar;
-  ProgressWidget* m_foodBar;
+  observer_ptr<ProgressWidget> m_healthBar;
+  observer_ptr<ProgressWidget> m_energyBar;
+  observer_ptr<ProgressWidget> m_foodBar;
 
-  LabelWidget* m_nameLabel;
+  observer_ptr<LabelWidget> m_nameLabel;
 
   Color m_energyBarColor;
   Color m_energyBarRegenMixColor;

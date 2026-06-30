@@ -269,7 +269,7 @@ void Object::uninit() {
     m_scriptComponent.removeCallbacks("animator");
   }
 
-  if (world()->isClient()) {
+  if (world().isClient()) {
     m_scriptedAnimator.uninit();
     m_scriptedAnimator.removeCallbacks("animationConfig");
     m_scriptedAnimator.removeCallbacks("objectAnimator");
@@ -351,7 +351,7 @@ void Object::setDirection(Direction direction) {
 }
 
 void Object::updateOrientation() {
-  setOrientationIndex(m_config->findValidOrientation(world(), tilePosition(), m_direction.get()));
+  setOrientationIndex(m_config->findValidOrientation(&world(), tilePosition(), m_direction.get()));
   if (auto orientation = currentOrientation()) {
     if (orientation->directionAffinity)
       m_direction.set(*orientation->directionAffinity);
@@ -430,7 +430,7 @@ void Object::update(float dt, uint64_t) {
   for (auto& timer : m_emissionTimers)
     timer.tick(dt);
 
-  if (world()->isClient())
+  if (world().isClient())
     m_scriptedAnimator.update();
 }
 
@@ -482,7 +482,7 @@ bool Object::checkBroken() {
   if (!m_broken && !m_unbreakable) {
     auto orientation = currentOrientation();
     if (orientation) {
-      if (!orientation->anchorsValid(world(), tilePosition()))
+      if (!orientation->anchorsValid(&world(), tilePosition()))
         m_broken = true;
     } else {
       m_broken = true;
@@ -505,24 +505,24 @@ void Object::destroy(RenderCallback* renderCallback) {
       if (doSmash) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
-          for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
+          for (auto const& treasureItem : world().treasureDatabase()->createTreasure(smashDropPool, world().threatLevel()))
+            world().addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world().assets(), world().itemDatabase()));
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets(), world()->itemDatabase()));
+            world().addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world().assets(), world().itemDatabase()));
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
-          for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
+          for (auto const& treasureItem : world().treasureDatabase()->createTreasure(breakDropPool, world().threatLevel()))
+            world().addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world().assets(), world().itemDatabase()));
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets(), world()->itemDatabase()));
+            world().addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world().assets(), world().itemDatabase()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -531,7 +531,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position(), false, world()->assets(), world()->itemDatabase()));
+          world().addEntity(ItemDrop::createRandomizedDrop(objectItem, position(), false, world().assets(), world().itemDatabase()));
         }
       }
     } catch (StarException const& e) {
@@ -547,7 +547,7 @@ void Object::destroy(RenderCallback* renderCallback) {
   if (renderCallback && doSmash && !m_config->smashParticles.empty()) {
     List<Particle> particles;
     for (auto const& config : m_config->smashParticles) {
-      auto creator = world()->particleDatabase()->particleCreator(config.get("particle"), m_config->path);
+      auto creator = world().particleDatabase()->particleCreator(config.get("particle"), m_config->path);
       unsigned count = config.getUInt("count", 1);
       Vec2F offset = jsonToVec2F(config.get("offset", JsonArray{0, 0}));
       bool flip = config.getBool("flip", false);
@@ -687,7 +687,7 @@ void Object::setNetStates() {
 }
 
 Maybe<Json> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
+  return m_scriptComponent.handleMessage(message, sendingConnection == world().connection(), args);
 }
 
 [[nodiscard]] Json Object::configValue(String const& name, Json const& def) const {
@@ -964,7 +964,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
   });
 
   callbacks.registerCallback("level", [this]() {
-    return configValue("level", this->world()->threatLevel());
+    return configValue("level", this->world().threatLevel());
   });
 
   callbacks.registerCallback("toAbsolutePosition", [this](Vec2F const& p) {
@@ -996,7 +996,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
   });
 
   callbacks.registerCallback("isTouching", [this](EntityId entityId) {
-    if (auto entity = this->world()->entity(entityId))
+    if (auto entity = this->world().entity(entityId))
       return !entity->collisionArea().overlap(volume().boundBox()).isEmpty();
     return false;
   });
@@ -1086,7 +1086,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
 
   callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
     List<MaterialSpace> materialSpaces;
-    auto materialDatabase = world()->materialDatabase();
+    auto materialDatabase = world().materialDatabase();
     for (auto space : newSpaces.value())
       materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
     m_materialSpaces.set(materialSpaces);
@@ -1157,7 +1157,7 @@ LuaCallbacks Object::makeAnimatorObjectCallbacks() {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f || m_unbreakable)
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world().geometry(), hitPoly().get()))
     return HitType::Hit;
 
   return {};
@@ -1212,7 +1212,7 @@ List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
 }
 
 InteractAction Object::interact(InteractRequest const& request) {
-  Vec2F diff = world()->geometry().diff(request.sourcePosition, position());
+  Vec2F diff = world().geometry().diff(request.sourcePosition, position());
   auto result = m_scriptComponent.invoke<Json>(
     "onInteraction", JsonObject{{"source", JsonArray{diff[0], diff[1]}}, {"sourceId", request.sourceId}});
 
