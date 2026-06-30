@@ -289,7 +289,7 @@ void Player::diskLoad(Json const& diskStore) {
   for (auto& script : m_genericScriptContexts)
     script.second->setScriptStorage({});
 
-  for (auto& p : diskStore.get("genericScriptStorage", JsonObject{}).toObject()) {
+  for (auto const& p : diskStore.get("genericScriptStorage", JsonObject{}).iterateObject()) {
     if (auto script = m_genericScriptContexts.maybe(p.first).value({})) {
       script->setScriptStorage(p.second.toObject());
     }

@@ -196,7 +196,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
       StringMap<String> imageKeys;
       imageKeys.set("color", orientationSettings.get("color", "default").toString().takeUtf8());
 
-      for (auto p : jsonMergeQueryDef("imageKeys", JsonObject(), baseConfig, orientation->config).toObject())
+      for (auto const& p : jsonMergeQueryDef("imageKeys", JsonObject(), baseConfig, orientation->config).iterateObject())
         imageKeys.set(p.first, p.second.toString());
 
       for (auto const& layer : orientation->imageLayers) {
@@ -632,7 +632,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
     StringMap<String> imageKeys;
     imageKeys.set("color", orientation->config.get("color", "default").toString().takeUtf8());
-    for (auto p : jsonMergeQueryDef("imageKeys", JsonObject(), config->config, orientation->config, parameters).toObject())
+    for (auto const& p : jsonMergeQueryDef("imageKeys", JsonObject(), config->config, orientation->config, parameters).iterateObject())
       imageKeys.set(p.first, p.second.toString());
 
     for (auto const& layer : orientation->imageLayers) {

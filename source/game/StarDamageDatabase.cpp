@@ -31,7 +31,7 @@ DamageDatabase::DamageDatabase() {
     for (auto effect : config.getObject("effects", JsonObject())) {
       TargetMaterial material = effect.first;
       kind.effects.set(material, {});
-      for (auto hit : effect.second.toObject()) {
+      for (auto const& hit : effect.second.iterateObject()) {
         DamageEffect effect = DamageEffect {
           hit.second.get("sounds", JsonArray()),
           hit.second.get("particles", JsonArray())

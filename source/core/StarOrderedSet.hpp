@@ -165,6 +165,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::operator=(OrderedSetWrap
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<value_type> {
   List<value_type> values;
+  values.reserve(size());
   for (auto p : *this)
     values.append(std::move(p));
   return values;

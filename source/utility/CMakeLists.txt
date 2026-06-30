@@ -6,24 +6,38 @@ INCLUDE_DIRECTORIES (
     ${STAR_GAME_INCLUDES}
   )
 
+FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
+  TARGET_COMPILE_FEATURES (${target} PRIVATE cxx_std_20)
+  TARGET_INCLUDE_DIRECTORIES (${target} PRIVATE
+      ${STAR_GAME_INCLUDES}
+      ${STAR_PLATFORM_INCLUDES}
+      ${STAR_BASE_INCLUDES}
+      ${STAR_CORE_INCLUDES}
+      ${STAR_EXTERN_INCLUDES})
+ENDFUNCTION ()
+
 ADD_EXECUTABLE (asset_packer
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_packer.cpp)
+STAR_CONFIGURE_UTILITY_TARGET (asset_packer)
 TARGET_LINK_LIBRARIES (asset_packer ${STAR_EXT_LIBS})
 
 ADD_EXECUTABLE (asset_unpacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_unpacker.cpp)
+STAR_CONFIGURE_UTILITY_TARGET (asset_unpacker)
 TARGET_LINK_LIBRARIES (asset_unpacker ${STAR_EXT_LIBS})
 
 ADD_EXECUTABLE (btree_repacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   btree_repacker.cpp)
+STAR_CONFIGURE_UTILITY_TARGET (btree_repacker)
 TARGET_LINK_LIBRARIES (btree_repacker ${STAR_EXT_LIBS})
 
 ADD_EXECUTABLE (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
+STAR_CONFIGURE_UTILITY_TARGET (dump_versioned_json)
 TARGET_LINK_LIBRARIES (dump_versioned_json ${STAR_EXT_LIBS})
 
 #ADD_EXECUTABLE (game_repl
@@ -34,6 +48,7 @@ TARGET_LINK_LIBRARIES (dump_versioned_json ${STAR_EXT_LIBS})
 ADD_EXECUTABLE (make_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   make_versioned_json.cpp)
+STAR_CONFIGURE_UTILITY_TARGET (make_versioned_json)
 TARGET_LINK_LIBRARIES (make_versioned_json ${STAR_EXT_LIBS})
 
 #ADD_EXECUTABLE (planet_mapgen

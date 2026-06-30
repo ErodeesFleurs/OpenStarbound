@@ -112,7 +112,11 @@ using StableHashSet = HashSetMixin<std::unordered_set<Value, Hash, Equals, Alloc
 
 template <typename BaseSet>
 auto SetMixin<BaseSet>::values() const -> List<value_type> {
-  return List<value_type>(Base::begin(), Base::end());
+  List<value_type> values;
+  values.reserve(Base::size());
+  for (auto const& value : *this)
+    values.append(value);
+  return values;
 }
 
 template <typename BaseSet>

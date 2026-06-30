@@ -254,7 +254,10 @@ Assets::Assets(Settings settings, StringList assetSources) {
   auto addSource = [&](String const& sourcePath, AssetSourcePtr source) {
     m_assetSourcePaths.add(sourcePath, source);
 
-    for (auto const& filename : source->assetPaths()) {
+    auto assetPaths = source->assetPaths();
+    m_files.reserve(m_files.size() + assetPaths.size());
+
+    for (auto const& filename : assetPaths) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
@@ -271,6 +274,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
               if (auto p = m_files.ptr(path.toString())) {
+                p->patchSources.reserve(p->patchSources.size() + patches.size());
                 for (size_t i = 0; i != patches.size(); ++i) {
                   auto& patch = patches[i];
                   if (patch.isType(Json::Type::String))
@@ -332,6 +336,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   };
 
   List<pair<String, AssetSourcePtr>> sources;
+  sources.reserve(m_assetSources.size());
 
   for (auto& sourcePath : m_assetSources) {
     Logger::info("Loading assets from: '{}'", sourcePath);
@@ -376,6 +381,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_digest = digest.compute();
 
   int workerPoolSize = m_settings.workerPoolSize;
+  m_workerThreads.reserve(workerPoolSize);
   for (int i = 0; i < workerPoolSize; i++)
     m_workerThreads.append(Thread::invoke("Assets::workerMain", mem_fn(&Assets::workerMain), this));
 
@@ -688,7 +694,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
   framesSpecification.framesFile = std::move(path);
 
   if (frameConfig.contains("frameList")) {
-    for (auto const& pair : frameConfig.get("frameList").toObject()) {
+    for (auto const& pair : frameConfig.get("frameList").iterateObject()) {
       String frameName = pair.first;
       RectU rect = RectU(jsonToRectI(pair.second));
       if (rect.isEmpty())
@@ -990,7 +996,7 @@ ImageConstPtr Assets::readImage(String const& path) const {
   throw AssetException(strf("No such asset '{}'", path));
 }
 
-ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
+ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
   RecursiveMutexLocker luaLocker(m_luaMutex);
   LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
   LuaValue result = luaEngine->createUserData(*image);
@@ -1026,7 +1032,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
+Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const& result, JsonArray const& patchData, Maybe<Json> const& external) const {
   auto externalRef = external.value();
   auto newResult = result;
   for (auto const& patch : patchData) {
@@ -1067,7 +1073,7 @@ Json Assets::readJson(String const& path) const {
   }
 }
 
-Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
+Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
   Json result = input;
   for (auto const& pair : patches) {
     auto patchAssetPath = AssetPath::split(pair.first);

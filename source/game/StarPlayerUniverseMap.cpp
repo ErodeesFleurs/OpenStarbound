@@ -217,6 +217,7 @@ Json PlayerUniverseMap::SystemMap::toJson() const {
   JsonObject json;
 
   JsonArray planets;
+  planets.reserve(mappedPlanets.size());
   for (auto m : mappedPlanets)
     planets.append(m.toJson());
   json.set("mappedPlanets", planets);
@@ -258,6 +259,7 @@ Json PlayerUniverseMap::UniverseMap::toJson() const {
   JsonObject json;
 
   JsonArray s;
+  s.reserve(systems.size());
   for (auto p : systems) {
     s.append(JsonArray{jsonFromVec3I(p.first), p.second.toJson()});
   }

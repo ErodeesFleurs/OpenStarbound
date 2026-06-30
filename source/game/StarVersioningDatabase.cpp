@@ -59,7 +59,7 @@ void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJs
   }
   if (extraVersioning == 1) {
     JsonObject source = ds.read<JsonObject>();
-    for (auto const& p : source.get("subVersions").toObject())
+    for (auto const& p : source.get("subVersions").iterateObject())
       versionedJson.subVersions[p.first] = p.second.toUInt();
   }
 }

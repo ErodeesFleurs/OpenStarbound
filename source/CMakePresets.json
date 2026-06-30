@@ -176,6 +176,28 @@
       }
     },
     {
+      "inherits": "linux-profile-clang",
+      "name": "linux-profile-clang-system-alloc",
+      "displayName": "Linux Clang x64 Profiling (system allocator)",
+      "binaryDir": "${sourceParentDir}/build/linux-profile-clang-system-alloc",
+      "cacheVariables": {
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": false,
+        "STAR_USE_RPMALLOC": false
+      }
+    },
+    {
+      "inherits": "linux-profile-clang",
+      "name": "linux-profile-clang-mimalloc",
+      "displayName": "Linux Clang x64 Profiling (mimalloc)",
+      "binaryDir": "${sourceParentDir}/build/linux-profile-clang-mimalloc",
+      "cacheVariables": {
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": true,
+        "STAR_USE_RPMALLOC": false
+      }
+    },
+    {
       "inherits": "linux-arm-release",
       "name": "linux-arm-release-clang",
       "displayName": "Linux Clang ARM",
@@ -263,6 +285,14 @@
       "configurePreset": "linux-profile-clang"
     },
     {
+      "name": "linux-profile-clang-system-alloc",
+      "configurePreset": "linux-profile-clang-system-alloc"
+    },
+    {
+      "name": "linux-profile-clang-mimalloc",
+      "configurePreset": "linux-profile-clang-mimalloc"
+    },
+    {
       "name": "linux-release-gcc",
       "configurePreset": "linux-release-gcc"
     },
@@ -333,6 +363,16 @@
       "inherits": "base",
       "name": "linux-profile-clang",
       "configurePreset": "linux-profile-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-profile-clang-system-alloc",
+      "configurePreset": "linux-profile-clang-system-alloc"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-profile-clang-mimalloc",
+      "configurePreset": "linux-profile-clang-mimalloc"
     },
     {
       "inherits": "base",

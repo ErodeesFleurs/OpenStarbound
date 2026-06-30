@@ -548,7 +548,7 @@ void UniverseClient::restartLua() {
 
 void UniverseClient::startLuaScripts() {
   auto assets = Root::singleton().assets();
-  for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
+  for (auto const& p : assets->json("/client.config:universeScriptContexts").iterateObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));

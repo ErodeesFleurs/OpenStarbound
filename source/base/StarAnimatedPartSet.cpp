@@ -66,7 +66,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
     for (auto const& partStateTypePair : partConfig.get("partStates", JsonObject()).iterateObject()) {
       auto const& stateTypeName = partStateTypePair.first;
 
-      for (auto const& partStatePair : partStateTypePair.second.toObject()) {
+      for (auto const& partStatePair : partStateTypePair.second.iterateObject()) {
         auto const& stateName = partStatePair.first;
         auto stateConfig = partStatePair.second;
         if ((version() > 0) && stateConfig.isType(Json::Type::String))

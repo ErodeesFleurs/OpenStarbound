@@ -97,7 +97,8 @@ inline bool operator==(Node const& a, Node const& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node) {
-  return os << strf("Node{position = {}, velocity = {}}", node.position, node.velocity);
+  format(os, "Node{position = {}, velocity = {}}", node.position, node.velocity);
+  return os;
 }
 
 inline std::ostream& operator<<(std::ostream& os, Action action) {
@@ -105,12 +106,13 @@ inline std::ostream& operator<<(std::ostream& os, Action action) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
-  return os << strf("Edge{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}",
+  format(os, "Edge{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}",
           edge.cost,
           edge.action,
           edge.jumpVelocity,
           edge.source,
           edge.target);
+  return os;
 }
 
 inline bool Node::operator<(Node const& other) const {

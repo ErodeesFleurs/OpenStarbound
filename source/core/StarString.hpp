@@ -66,13 +66,13 @@ public:
 
   String();
   String(String const& s);
-  String(String&& s);
+  String(String&& s) noexcept;
 
   // These assume utf8 input
   String(char const* s);
   String(char const* s, size_t n);
   String(std::string const& s);
-  String(std::string&& s);
+  String(std::string&& s) noexcept;
 
   String(std::wstring const& s);
   String(Char const* s);
@@ -227,7 +227,7 @@ public:
   String replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const;
 
   String& operator=(String const& s);
-  String& operator=(String&& s);
+  String& operator=(String&& s) noexcept;
 
   String& operator+=(String const& s);
   String& operator+=(std::string const& s);
@@ -309,9 +309,9 @@ public:
 
   StringList();
   StringList(Base const& l);
-  StringList(Base&& l);
+  StringList(Base&& l) noexcept;
   StringList(StringList const& l);
-  StringList(StringList&& l);
+  StringList(StringList&& l) noexcept;
   StringList(size_t len, String::Char const* const* list);
   StringList(size_t len, char const* const* list);
   explicit StringList(size_t len, String const& s1 = String());
@@ -322,9 +322,9 @@ public:
     : Base(beg, end) {}
 
   StringList& operator=(Base const& rhs);
-  StringList& operator=(Base&& rhs);
+  StringList& operator=(Base&& rhs) noexcept;
   StringList& operator=(StringList const& rhs);
-  StringList& operator=(StringList&& rhs);
+  StringList& operator=(StringList&& rhs) noexcept;
   StringList& operator=(initializer_list<String> list);
 
   bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;

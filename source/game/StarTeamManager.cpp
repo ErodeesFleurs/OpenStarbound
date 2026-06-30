@@ -219,6 +219,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
     result["teamUuid"] = teamUuid->hex();
     result["leader"] = team.leaderUuid.hex();
     JsonArray members;
+    members.reserve(team.members.size());
     for (auto const& m : team.members) {
       JsonObject member;
       auto const& mem = m.second;
