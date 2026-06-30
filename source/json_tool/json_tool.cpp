@@ -23,12 +23,12 @@ FormattedJson CommaSeparatedStrings::toJson(String const& input) const {
   if (input.trim() == "")
     return FormattedJson::ofType(Json::Type::Array);
   StringList strings = input.split(',');
-  JsonArray array = strings.transformed(bind(&String::trim, _1, "")).transformed(construct<Json>());
+  JsonArray array = strings.transformed([](String const& s) { return s.trim(""); }).transformed(construct<Json>());
   return Json(array);
 }
 
 String CommaSeparatedStrings::fromJson(FormattedJson const& json) const {
-  StringList strings = json.toJson().toArray().transformed(bind(&Json::toString, _1));
+  StringList strings = json.toJson().toArray().transformed([](Json const& j) { return j.toString(); });
   return strings.join(", ");
 }
 

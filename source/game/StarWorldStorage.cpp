@@ -506,7 +506,7 @@ WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data
   ds.vuread(store.generationLevel);
   ds.vuread(store.tileSerializationVersion);
 
-  store.tiles.reset(new TileArray());
+  store.tiles = make_unique<TileArray>();
   for (size_t y = 0; y < WorldSectorSize; ++y) {
     for (size_t x = 0; x < WorldSectorSize; ++x) {
       ServerTile tile;

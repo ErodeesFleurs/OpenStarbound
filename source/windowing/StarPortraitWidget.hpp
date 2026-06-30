@@ -14,18 +14,18 @@ class PortraitWidget : public Widget {
 public:
   PortraitWidget(PortraitEntityPtr entity, PortraitMode mode = PortraitMode::Full);
   PortraitWidget();
-  virtual ~PortraitWidget() {}
+  virtual ~PortraitWidget() = default;
 
   void setEntity(PortraitEntityPtr entity);
   void setMode(PortraitMode mode);
   void setScale(float scale);
   void setIconMode();
   void setRenderHumanoid(bool);
-  bool sendEvent(InputEvent const& event);
+  virtual bool sendEvent(InputEvent const& event) override;
 
 protected:
-  virtual RectI getScissorRect() const;
-  virtual void renderImpl();
+  virtual RectI getScissorRect() const override;
+  virtual void renderImpl() override;
 
 private:
   void init();

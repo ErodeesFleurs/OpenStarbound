@@ -347,7 +347,7 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType)));
     m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType)));
 
-    for (auto p : m_identityFramesetTags) {
+    for (auto const& p : m_identityFramesetTags) {
       m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", p.first), m_networkedAnimator.applyPartTags("anchor", p.second));
     }
   }
@@ -466,33 +466,33 @@ void Humanoid::loadAnimation() {
 
     m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
 
-    for (auto pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
+    for (auto const& pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
+      for (auto const& anim : pair.second.iterateObject()){
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_animationStates.set(StateNames.getLeft(pair.first), animations);
     }
-    for (auto pair : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
+    for (auto const& pair : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
+      for (auto const& anim : pair.second.iterateObject()){
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_animationStatesBackwards.set(StateNames.getLeft(pair.first), animations);
     }
-    for (auto pair : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
+    for (auto const& pair : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
+      for (auto const& anim : pair.second.iterateObject()){
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(pair.first), animations);
     }
-    for (auto pair : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
+    for (auto const& pair : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
       HashMap<String,AnimationStateArgs> animations;
-      for (auto anim : pair.second.iterateObject()){
+      for (auto const& anim : pair.second.iterateObject()){
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
@@ -507,7 +507,7 @@ void Humanoid::wearableRemoved(Wearable const& wearable) {
 
   auto setTags = [&](HashMap<String,String> tags) {
     if (m_useAnimation)
-      for (auto tag : tags) {
+      for (auto const& tag : tags) {
         m_networkedAnimator.setLocalTag(tag.first);
       }
   };
@@ -555,7 +555,7 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
   wornHead.animationTags.clear();
   wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot+1), wornHead.frameset);
   wornHead.animationTags.set(strf("headCosmetic{}Directives", slot+1), wornHead.directives.string());
-  for (auto tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornHead.animationTags.set(
       m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
       m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString())
@@ -583,7 +583,7 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
   wornChest.animationTags.set(strf("frontSleeve{}Frameset", slot+1), wornChest.frontSleeveFrameset);
   wornChest.animationTags.set(strf("backSleeve{}Frameset", slot+1), wornChest.backSleeveFrameset);
   wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot+1), wornChest.directives.string());
-  for (auto tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornChest.animationTags.set(
       m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
       m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString())
@@ -607,7 +607,7 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
   wornLegs.animationTags.clear();
   wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot+1), wornLegs.frameset);
   wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot+1), wornLegs.directives.string());
-  for (auto tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornLegs.animationTags.set(
       m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
       m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString())
@@ -632,7 +632,7 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   wornBack.animationTags.clear();
   wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot+1), wornBack.frameset);
   wornBack.animationTags.set(strf("backCosmetic{}Directives", slot+1), wornBack.directives.string());
-  for (auto tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornBack.animationTags.set(
       m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
       m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString())
@@ -640,7 +640,7 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   }
 }
 
-const uint8_t ChestLegsSortOrder[21] = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
+constexpr std::array<uint8_t, 21> ChestLegsSortOrder = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
 
 void Humanoid::refreshWearables(Fashion& fashion) {
   bool wornHeadsChanged = fashion.wornHeadsChanged;
@@ -661,7 +661,7 @@ void Humanoid::refreshWearables(Fashion& fashion) {
 
   auto setTags = [&](HashMap<String,String> tags) {
     if (m_useAnimation)
-      for (auto tag : tags) {
+      for (auto const& tag : tags) {
         m_networkedAnimator.setLocalTag(tag.first, tag.second);
       }
   };
@@ -789,7 +789,7 @@ void Humanoid::setEmoteState(HumanoidEmote state) {
     m_emoteAnimationTimer = 0.0f;
     if (m_useAnimation) {
       if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
-        for (auto args : *animationStates)
+        for (auto const& args : *animationStates)
           m_networkedAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
     }
   }
@@ -865,7 +865,7 @@ bool Humanoid::movingBackwards() const {
 
 void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
     bool recoil, bool outsideOfHand) {
-  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  auto& handInfo = getHand(hand);
   handInfo.holdingItem = holdingItem;
   handInfo.angle = angle;
   handInfo.itemAngle = itemAngle;
@@ -876,7 +876,7 @@ void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, f
 }
 
 void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView front) {
-  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  auto& handInfo = getHand(hand);
   // some users stick directives in these?? better make sure they don't break with custom clothing
   size_t  backEnd =  back.utf8().find('?');
   size_t frontEnd = front.utf8().find('?');
@@ -891,11 +891,11 @@ void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView 
 }
 
 void Humanoid::setHandDrawables(ToolHand hand, List<Drawable> drawables) {
-  const_cast<HandDrawingInfo&>(getHand(hand)).itemDrawables = std::move(drawables);
+  getHand(hand).itemDrawables = std::move(drawables);
 }
 
 void Humanoid::setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables) {
-  const_cast<HandDrawingInfo&>(getHand(hand)).nonRotatedDrawables = std::move(drawables);
+  getHand(hand).nonRotatedDrawables = std::move(drawables);
 }
 
 bool Humanoid::handHoldingItem(ToolHand hand) const {
@@ -922,7 +922,7 @@ void Humanoid::resetAnimation() {
     m_networkedAnimator.finishAnimations();
     // reset set all animations and force startnew
     if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
-      for (auto args : *animationStates)
+      for (auto const& args : *animationStates)
         m_networkedAnimator.setLocalState(args.first, args.second.state, true, args.second.reverse);
     refreshAnimationState(true);
   }
@@ -1484,7 +1484,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     portraitAnimator.setLocalState("backArm", "idle");
 
     if (auto animationStates = m_portraitAnimationStates.maybe(mode))
-      for (auto args : *animationStates)
+      for (auto const& args : *animationStates)
         portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
@@ -1500,7 +1500,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
       portraitAnimator.setLocalTag("helmetMaskDirectives");
       auto setTags = [&](HashMap<String,String> tags) {
       if (m_useAnimation)
-        for (auto tag : tags) {
+        for (auto const& tag : tags) {
           portraitAnimator.setLocalTag(tag.first);
         }
       };
@@ -1921,6 +1921,10 @@ Humanoid::HandDrawingInfo const& Humanoid::getHand(ToolHand hand) const {
   return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
 }
 
+Humanoid::HandDrawingInfo& Humanoid::getHand(ToolHand hand) {
+  return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
+}
+
 String Humanoid::frameBase(State state) const {
   switch (state) {
     case State::Idle:
@@ -2118,12 +2122,12 @@ Maybe<DancePtr> Humanoid::getDance() const {
 void Humanoid::refreshAnimationState(bool startNew) {
   if (m_movingBackwards)
     if (auto animationStates = m_animationStatesBackwards.maybe(m_state)) {
-      for (auto args : *animationStates)
+      for (auto const& args : *animationStates)
         m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
       return;
     }
   if (auto animationStates = m_animationStates.maybe(m_state))
-    for (auto args : *animationStates)
+    for (auto const& args : *animationStates)
       m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
 }
 
@@ -2235,6 +2239,7 @@ List<Particle> Humanoid::particles(String const& name) const {
   auto particleDatabase = Root::singleton().particleDatabase();
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
+  res.reserve(particles.size());
   for (auto& particle : particles.toArray()) {
     auto particleSpec = particle.get("particle", {});
     res.push_back(particleDatabase->particle(particleSpec));
@@ -2258,6 +2263,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   size_t toReserve = 0;
   Maybe<Vec2F> scale;
 
+  entries.reserve(directives->entries.size());
   for (auto& entry : directives->entries) {
     auto string = entry.string(*directives);
     const ScaleImageOperation* op = nullptr;

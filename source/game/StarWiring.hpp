@@ -2,9 +2,9 @@
 
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarDataStream.hpp"
 
 namespace Star {
+class DataStream;
 
 enum class WireDirection {
   Input,
@@ -42,7 +42,7 @@ DataStream& operator<<(DataStream& ds, WireConnection const& wireConnection);
 
 class WireCoordinator {
 public:
-  virtual ~WireCoordinator() {}
+  virtual ~WireCoordinator() = default;
 
   virtual bool readInputConnection(WireConnection const& connection) = 0;
 };
@@ -56,7 +56,7 @@ public:
     Nothing
   };
 
-  virtual ~WireConnector() {}
+  virtual ~WireConnector() = default;
 
   virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) = 0;
   virtual bool connecting() = 0;

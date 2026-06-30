@@ -17,9 +17,9 @@
 #include <errno.h>
 
 #ifdef MAXCOMLEN
-#define MAX_THREAD_NAMELEN MAXCOMLEN
+constexpr size_t MaxThreadNameLen = MAXCOMLEN;
 #else
-#define MAX_THREAD_NAMELEN 16
+constexpr size_t MaxThreadNameLen = 16;
 #endif
 
 #ifndef STAR_SYSTEM_MACOS
@@ -34,7 +34,7 @@ struct ThreadImpl {
     try {
 #ifdef STAR_SYSTEM_MACOS
       // ensure the name is under the max allowed
-      char tname[MAX_THREAD_NAMELEN];
+      char tname[MaxThreadNameLen];
       snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
 
       pthread_setname_np(tname);
@@ -73,7 +73,7 @@ struct ThreadImpl {
     }
 
     // ensure the name is under the max allowed
-    char tname[MAX_THREAD_NAMELEN];
+    char tname[MaxThreadNameLen];
     snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
 
 #ifdef STAR_SYSTEM_FREEBSD

@@ -121,9 +121,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
   auto makeBaseAssetCallbacks = [this]() {
     LuaCallbacks callbacks;
-    callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", bind(&Assets::scanExtension, this, _1));
-    callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
-    callbacks.registerCallbackWithSignature<bool, String>("exists", bind(&Assets::assetExists, this, _1));
+    callbacks.registerCallbackWithSignature<StringSet, String>("byExtension", [this](String const& extension) -> CaseInsensitiveStringSet const& { return scanExtension(extension); });
+    callbacks.registerCallbackWithSignature<Json, String>("json", [this](String const& path) { return json(path); });
+    callbacks.registerCallbackWithSignature<bool, String>("exists", [this](String const& path) { return assetExists(path); });
 
     callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, Maybe<bool> withMetaData) -> LuaTable {
       auto assetSources = this->assetSources();

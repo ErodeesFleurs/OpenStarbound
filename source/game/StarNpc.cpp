@@ -964,8 +964,8 @@ void Npc::setupNetStates() {
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
 
-  m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
+  m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
+  m_netGroup.setNeedsLoadCallback([this](bool initial) { return getNetStates(initial); });
 }
 
 void Npc::setNetStates() {

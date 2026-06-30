@@ -28,8 +28,8 @@ Sky::Sky() {
   m_netGroup.addNetElement(&m_warpPhaseNetState);
   m_netGroup.addNetElement(&m_flyingTimerNetState);
 
-  m_netGroup.setNeedsLoadCallback(bind(&Sky::readNetStates, this));
-  m_netGroup.setNeedsStoreCallback(bind(&Sky::writeNetStates, this));
+  m_netGroup.setNeedsLoadCallback([this](bool) { return readNetStates(); });
+  m_netGroup.setNeedsStoreCallback([this]() { return writeNetStates(); });
 }
 
 Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {

@@ -554,7 +554,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
       m_decodeBuffer.resize(samples * static_cast<size_t>(channels));
 
-      int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(int16_t), 0);
+      int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), static_cast<int>(m_decodeBuffer.size() * sizeof(int16_t)), 0);
       if (decodedSamples <= 0) {
         if (decodedSamples < 0)
           throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);

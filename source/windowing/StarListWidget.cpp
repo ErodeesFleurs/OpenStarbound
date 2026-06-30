@@ -103,7 +103,7 @@ WidgetPtr ListWidget::constructWidget() {
 }
 
 void ListWidget::updateSizeAndPosition() {
-  int rows = m_members.size() % m_columns ? m_members.size() / m_columns + 1 : m_members.size() / m_columns;
+  int rows = static_cast<int>(m_members.size() % m_columns ? m_members.size() / m_columns + 1 : m_members.size() / m_columns);
   for (size_t i = 0; i < m_members.size(); i++) {
     Vec2I currentOffset;
     int col = i % m_columns;

@@ -363,7 +363,7 @@ TEST(LuaTest, CallbackTest) {
   LuaCallbacks callbacks;
   callbacks.registerCallback("add", [](LuaInt a, LuaInt b) { return a + b; });
   callbacks.registerCallbackWithSignature<LuaInt, LuaInt, LuaInt>("subtract", [](int a, int b) { return a - b; });
-  callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", bind([](int a, int b) { return a * b; }, 2, _1));
+  callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", [](int b) { return 2 * b; });
   callbacks.registerCallbackWithSignature<void, LuaValue>("nothing", [](LuaValue v) { return v; });
 
   LuaContext luaContext = luaEngine->createContext();
@@ -778,8 +778,8 @@ TEST(LuaTest, GarbageCollection) {
 TEST(LuaTest, IntTest) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
-  context.setPath("test", (uint64_t)-1);
-  EXPECT_EQ(context.getPath<uint64_t>("test"), (uint64_t)-1);
+  context.setPath("test", static_cast<uint64_t>(-1));
+  EXPECT_EQ(context.getPath<uint64_t>("test"), static_cast<uint64_t>(-1));
 }
 
 TEST(LuaTest, VariantTest) {

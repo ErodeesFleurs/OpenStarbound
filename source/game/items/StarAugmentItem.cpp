@@ -19,7 +19,7 @@ ItemPtr AugmentItem::clone() const {
 }
 
 StringList AugmentItem::augmentScripts() const {
-  return jsonToStringList(instanceValue("scripts")).transformed(bind(&AssetPath::relativeTo, directory(), _1));
+  return jsonToStringList(instanceValue("scripts")).transformed([dir = directory()](String const& s) { return AssetPath::relativeTo(dir, s); });
 }
 
 ItemPtr AugmentItem::applyTo(ItemPtr const item) {

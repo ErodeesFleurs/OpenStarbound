@@ -91,7 +91,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.setUpdateDelta(m_parameters.getUInt("scriptDelta", m_config->config.getUInt("scriptDelta", 1)));
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
       m_scriptComponent.init(world);
@@ -389,7 +389,7 @@ void Projectile::render(RenderCallback* renderCallback) {
 }
 
 void Projectile::renderLightSources(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
+  for (auto const& renderable : m_pendingRenderables) {
     if (renderable.is<LightSource>())
       renderCallback->addLightSource(renderable.get<LightSource>());
   }
@@ -599,6 +599,7 @@ void Projectile::processAction(Json const& action) {
     for (auto sets : parameters.getArray("materials")) {
       unsigned numDrops = sets.getUInt("quantity", 1);
       auto mat = materialDatabase->materialId(sets.getString("kind"));
+      tileDrops.reserve(tileDrops.size() + numDrops);
       for (unsigned i = 0; i < numDrops; i++)
         tileDrops.push_back(mat);
       totalDrops += numDrops;
@@ -612,8 +613,9 @@ void Projectile::processAction(Json const& action) {
 
     Random::shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
-      if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), static_cast<Vec2F>(std::get<0>(tile)));
+      auto [tilePos, tileMat] = tile;
+      if (!world()->modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos));
         world()->addEntity(itemDrop);
       }
     }
@@ -624,7 +626,7 @@ void Projectile::processAction(Json const& action) {
 
     auto materialDatabase = Root::singleton().materialDatabase();
     Maybe<ModId> previousMod =
-        parameters.optString("previousMod").apply(bind(&MaterialDatabase::modId, materialDatabase, _1));
+        parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);
@@ -1018,7 +1020,7 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
 }
 
 void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
+  for (auto const& renderable : m_pendingRenderables) {
     if (renderable.is<AudioInstancePtr>())
       renderCallback->addAudio(renderable.get<AudioInstancePtr>());
     else if (renderable.is<Particle>())

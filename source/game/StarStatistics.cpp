@@ -202,17 +202,17 @@ void Statistics::mergeServiceStatistics() {
 LuaCallbacks Statistics::makeStatisticsCallbacks() {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, String, String, Json>("setStat", bind(&Statistics::setStat, this, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<void, String, String, Json>("setStat", [this](String const& statName, String const& statKey, Json const& statValue) { return setStat(statName, statKey, statValue); });
 
-  callbacks.registerCallbackWithSignature<Json, String, Json>("stat", bind(&Statistics::stat, this, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, Json>("stat", [this](String const& statName, Json const& defaultValue) { return stat(statName, defaultValue); });
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", bind(&Statistics::statType, this, _1));
+  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", [this](String const& statName) { return statType(statName); });
 
-  callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", bind(&Statistics::achievementUnlocked, this, _1));
+  callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", [this](String const& achievementId) { return achievementUnlocked(achievementId); });
 
-  callbacks.registerCallbackWithSignature<bool, String>("checkAchievement", bind(&Statistics::checkAchievement, this, _1));
+  callbacks.registerCallbackWithSignature<bool, String>("checkAchievement", [this](String const& achievementId) { return checkAchievement(achievementId); });
 
-  callbacks.registerCallbackWithSignature<void, String>("unlockAchievement", bind(&Statistics::unlockAchievement, this, _1));
+  callbacks.registerCallbackWithSignature<void, String>("unlockAchievement", [this](String const& achievementId) { return unlockAchievement(achievementId); });
 
   return callbacks;
 }

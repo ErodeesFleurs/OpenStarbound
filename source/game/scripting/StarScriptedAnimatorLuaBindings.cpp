@@ -8,10 +8,10 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("animationParameter", getParameter);
-  callbacks.registerCallbackWithSignature<Maybe<Vec2F>, String, String>("partPoint", bind(&NetworkedAnimator::partPoint, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<Maybe<PolyF>, String, String>("partPoly", bind(&NetworkedAnimator::partPoly, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<String>, Maybe<int>>("partProperty", bind(&NetworkedAnimator::partProperty, networkedAnimator, _1, _2, _3, _4, _5));
-  callbacks.registerCallbackWithSignature<Json, String, String>("partNextProperty", bind(&NetworkedAnimator::partNextProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Maybe<Vec2F>, String, String>("partPoint", [networkedAnimator](auto&&... args) { return networkedAnimator->partPoint(std::forward<decltype(args)>(args)...); });
+  callbacks.registerCallbackWithSignature<Maybe<PolyF>, String, String>("partPoly", [networkedAnimator](auto&&... args) { return networkedAnimator->partPoly(std::forward<decltype(args)>(args)...); });
+  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<String>, Maybe<int>>("partProperty", [networkedAnimator](auto&&... args) { return networkedAnimator->partProperty(std::forward<decltype(args)>(args)...); });
+  callbacks.registerCallbackWithSignature<Json, String, String>("partNextProperty", [networkedAnimator](auto&&... args) { return networkedAnimator->partNextProperty(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallback("transformPoint", [networkedAnimator] (Vec2F point, String const& part) -> Vec2F {
       return networkedAnimator->partTransformation(part).transformVec2(point);
@@ -22,37 +22,37 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
     });
 
   callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
-      "setLocalAnimationState", bind(&NetworkedAnimator::setLocalState, networkedAnimator, _1, _2, _3, _4));
+      "setLocalAnimationState", [networkedAnimator](auto&&... args) { return networkedAnimator->setLocalState(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<int>>(
-      "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2, _3, _4));
+      "animationStateProperty", [networkedAnimator](auto&&... args) { return networkedAnimator->stateProperty(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<Json, String, String>(
-      "animationStateNextProperty", bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, _1, _2));
+      "animationStateNextProperty", [networkedAnimator](auto&&... args) { return networkedAnimator->stateNextProperty(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<String, String>(
-      "animationState", bind(&NetworkedAnimator::state, networkedAnimator, _1));
+      "animationState", [networkedAnimator](auto&&... args) { return networkedAnimator->state(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<int, String>(
-      "animationStateFrame", bind(&NetworkedAnimator::stateFrame, networkedAnimator, _1));
+      "animationStateFrame", [networkedAnimator](auto&&... args) { return networkedAnimator->stateFrame(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<int, String>(
-      "animationStateNextFrame", bind(&NetworkedAnimator::stateNextFrame, networkedAnimator, _1));
+      "animationStateNextFrame", [networkedAnimator](auto&&... args) { return networkedAnimator->stateNextFrame(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "animationStateFrameProgress", bind(&NetworkedAnimator::stateFrameProgress, networkedAnimator, _1));
+      "animationStateFrameProgress", [networkedAnimator](auto&&... args) { return networkedAnimator->stateFrameProgress(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "animationStateTimer", bind(&NetworkedAnimator::stateTimer, networkedAnimator, _1));
+      "animationStateTimer", [networkedAnimator](auto&&... args) { return networkedAnimator->stateTimer(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "animationStateReverse", bind(&NetworkedAnimator::stateReverse, networkedAnimator, _1));
+      "animationStateReverse", [networkedAnimator](auto&&... args) { return networkedAnimator->stateReverse(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallbackWithSignature<float, String, Maybe<String>>(
-      "stateCycle", bind(&NetworkedAnimator::stateCycle, networkedAnimator, _1, _2));
+      "stateCycle", [networkedAnimator](auto&&... args) { return networkedAnimator->stateCycle(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<int, String, Maybe<String>>(
-      "stateFrames", bind(&NetworkedAnimator::stateFrames, networkedAnimator, _1, _2));
+      "stateFrames", [networkedAnimator](auto&&... args) { return networkedAnimator->stateFrames(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
-      "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
+      "hasState", [networkedAnimator](auto&&... args) { return networkedAnimator->hasState(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallbackWithSignature<bool, String>(
-      "hasTransformationGroup", bind(&NetworkedAnimator::hasTransformationGroup, networkedAnimator, _1));
+      "hasTransformationGroup", [networkedAnimator](auto&&... args) { return networkedAnimator->hasTransformationGroup(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallbackWithSignature<void, String, Vec2F>("translateLocalTransformationGroup",
-      bind(&NetworkedAnimator::translateLocalTransformationGroup, networkedAnimator, _1, _2));
+      [networkedAnimator](auto&&... args) { return networkedAnimator->translateLocalTransformationGroup(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallback("rotateLocalTransformationGroup",
       [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
         networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation, rotationCenter.value());
@@ -70,18 +70,18 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       });
   callbacks.registerCallbackWithSignature<void, String, float, float, float, float, float, float>(
       "transformLocalTransformationGroup",
-      bind(&NetworkedAnimator::transformLocalTransformationGroup, networkedAnimator, _1, _2, _3, _4, _5, _6, _7));
+      [networkedAnimator](auto&&... args) { return networkedAnimator->transformLocalTransformationGroup(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "resetLocalTransformationGroup", bind(&NetworkedAnimator::resetLocalTransformationGroup, networkedAnimator, _1));
+      "resetLocalTransformationGroup", [networkedAnimator](auto&&... args) { return networkedAnimator->resetLocalTransformationGroup(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, Mat3F>(
-      "setLocalTransformationGroup", bind(&NetworkedAnimator::setLocalTransformationGroup, networkedAnimator, _1, _2));
+      "setLocalTransformationGroup", [networkedAnimator](auto&&... args) { return networkedAnimator->setLocalTransformationGroup(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<Mat3F, String>(
-      "getLocalTransformationGroup", bind(&NetworkedAnimator::getLocalTransformationGroup, networkedAnimator, _1));
+      "getLocalTransformationGroup", [networkedAnimator](auto&&... args) { return networkedAnimator->getLocalTransformationGroup(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
-      "addPartDrawables", bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, _1, _2));
+      "addPartDrawables", [networkedAnimator](auto&&... args) { return networkedAnimator->addPartDrawables(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
-      "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
+      "setPartDrawables", [networkedAnimator](auto&&... args) { return networkedAnimator->setPartDrawables(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallback("addPartJsonDrawables",
     [networkedAnimator](String const& part, JsonArray drawablesConfig) {
       networkedAnimator->addPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
@@ -97,9 +97,9 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
 
 
   callbacks.registerCallbackWithSignature<String, String, String>(
-      "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
+      "applyPartTags", [networkedAnimator](auto&&... args) { return networkedAnimator->applyPartTags(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
-      "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
+      "setLocalTag", [networkedAnimator](auto&&... args) { return networkedAnimator->setLocalTag(std::forward<decltype(args)>(args)...); });
 
   callbacks.registerCallback("flipped", [networkedAnimator]() -> bool {
         return networkedAnimator->flipped();

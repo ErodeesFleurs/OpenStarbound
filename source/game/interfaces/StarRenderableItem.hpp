@@ -8,7 +8,7 @@ namespace Star {
 
   class RenderableItem {
   public:
-    virtual ~RenderableItem() {}
+    virtual ~RenderableItem() = default;
 
     virtual void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
   };

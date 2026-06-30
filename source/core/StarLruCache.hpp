@@ -13,27 +13,29 @@ public:
 
   using ProducerFunction = function<Value(Key const&)>;
 
-  LruCacheBase(size_t maxSize = 256);
+  static constexpr size_t DefaultLruCacheSize = 256;
+
+  LruCacheBase(size_t maxSize = DefaultLruCacheSize);
 
   // Max size cannot be zero, it will be clamped to at least 1 in order to hold
   // the most recent element returned by get.
-  size_t maxSize() const;
+  [[nodiscard]] size_t maxSize() const;
   void setMaxSize(size_t maxSize);
 
-  size_t currentSize() const;
+  [[nodiscard]] size_t currentSize() const;
 
-  List<Key> keys() const;
-  List<Value> values() const;
+  [[nodiscard]] List<Key> keys() const;
+  [[nodiscard]] List<Value> values() const;
 
   // If the value is in the cache, returns a pointer to it and marks it as
   // accessed, otherwise returns nullptr.
-  Value* ptr(Key const& key);
+  [[nodiscard]] Value* ptr(Key const& key);
 
   // Put the given value into the cache.
   void set(Key const& key, Value value);
   // Removes the given value from the cache.  If found and removed, returns
   // true.
-  bool remove(Key const& key);
+  [[nodiscard]] bool remove(Key const& key);
 
   // Remove all key / value pairs matching a filter.
   void removeWhere(function<bool(Key const&, Value&)> filter);
@@ -64,7 +66,7 @@ LruCacheBase<OrderedMapType>::LruCacheBase(size_t maxSize) {
 }
 
 template <typename OrderedMapType>
-size_t LruCacheBase<OrderedMapType>::maxSize() const {
+[[nodiscard]] size_t LruCacheBase<OrderedMapType>::maxSize() const {
   return m_maxSize;
 }
 
@@ -77,22 +79,22 @@ void LruCacheBase<OrderedMapType>::setMaxSize(size_t maxSize) {
 }
 
 template <typename OrderedMapType>
-size_t LruCacheBase<OrderedMapType>::currentSize() const {
+[[nodiscard]] size_t LruCacheBase<OrderedMapType>::currentSize() const {
   return m_map.size();
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::keys() const -> List<Key> {
+[[nodiscard]] auto LruCacheBase<OrderedMapType>::keys() const -> List<Key> {
   return m_map.keys();
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::values() const -> List<Value> {
+[[nodiscard]] auto LruCacheBase<OrderedMapType>::values() const -> List<Value> {
   return m_map.values();
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::ptr(Key const& key) -> Value * {
+[[nodiscard]] auto LruCacheBase<OrderedMapType>::ptr(Key const& key) -> Value * {
   auto i = m_map.find(key);
   if (i == m_map.end())
     return nullptr;
@@ -112,7 +114,7 @@ void LruCacheBase<OrderedMapType>::set(Key const& key, Value value) {
 }
 
 template <typename OrderedMapType>
-bool LruCacheBase<OrderedMapType>::remove(Key const& key) {
+[[nodiscard]] bool LruCacheBase<OrderedMapType>::remove(Key const& key) {
   return m_map.remove(key);
 }
 

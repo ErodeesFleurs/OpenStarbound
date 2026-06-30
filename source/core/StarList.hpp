@@ -48,23 +48,23 @@ public:
   reference last();
   const_reference last() const;
 
-  Maybe<value_type> maybeFirst();
-  Maybe<value_type> maybeLast();
+  [[nodiscard]] Maybe<value_type> maybeFirst();
+  [[nodiscard]] Maybe<value_type> maybeLast();
 
   void removeLast();
   value_type takeLast();
 
-  Maybe<value_type> maybeTakeLast();
+  [[nodiscard]] Maybe<value_type> maybeTakeLast();
 
   // Limit the size of the list by removing elements from the back until the
   // size is the maximumSize or less.
   void limitSizeBack(size_t maximumSize);
 
-  size_t count() const;
+  [[nodiscard]] size_t count() const;
 
-  bool contains(const_reference e) const;
+  [[nodiscard]] bool contains(const_reference e) const;
   // Remove all equal to element, returns number removed.
-  size_t remove(const_reference e);
+  [[nodiscard]] size_t remove(const_reference e);
 
   template <typename Filter>
   void filter(Filter&& filter);
@@ -75,8 +75,8 @@ public:
 
   // Returns true if this *sorted* list contains the given element.
   template <typename Comparator>
-  bool containsSorted(value_type const& e, Comparator&& comparator);
-  bool containsSorted(value_type e);
+  [[nodiscard]] bool containsSorted(value_type const& e, Comparator&& comparator);
+  [[nodiscard]] bool containsSorted(value_type e);
 
   template <typename Function>
   void exec(Function&& function);
@@ -88,12 +88,12 @@ public:
   void transform(Function&& function);
 
   template <typename Function>
-  bool any(Function&& function) const;
-  bool any() const;
+  [[nodiscard]] bool any(Function&& function) const;
+  [[nodiscard]] bool any() const;
 
   template <typename Function>
-  bool all(Function&& function) const;
-  bool all() const;
+  [[nodiscard]] bool all(Function&& function) const;
+  [[nodiscard]] bool all() const;
 };
 
 template <typename List>
@@ -125,9 +125,9 @@ public:
   void reverse();
 
   // Returns first index of given element, NPos if not found.
-  size_t indexOf(const_reference e, size_t from = 0) const;
+  [[nodiscard]] size_t indexOf(const_reference e, size_t from = 0) const;
   // Returns last index of given element, NPos if not found.
-  size_t lastIndexOf(const_reference e, size_t til = NPos) const;
+  [[nodiscard]] size_t lastIndexOf(const_reference e, size_t til = NPos) const;
 
   const_reference at(size_t n) const;
   reference at(size_t n);
@@ -136,14 +136,14 @@ public:
   reference operator[](size_t n);
 
   // Does not throw if n is beyond end of list, instead returns def
-  value_type get(size_t n, value_type def = value_type()) const;
+  [[nodiscard]] value_type get(size_t n, value_type def = value_type()) const;
 
   value_type takeAt(size_t i);
 
   // Same as at, but wraps around back to the beginning
   // (throws if list is empty)
-  const_reference wrap(size_t n) const;
-  reference wrap(size_t n);
+  [[nodiscard]] const_reference wrap(size_t n) const;
+  [[nodiscard]] reference wrap(size_t n);
 
   // Does not throw if list is empty
   value_type wrap(size_t n, value_type def) const;
@@ -484,14 +484,14 @@ auto ListMixin<BaseList>::last() const -> const_reference {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeFirst() -> Maybe<value_type> {
+[[nodiscard]] auto ListMixin<BaseList>::maybeFirst() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   return *Base::begin();
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeLast() -> Maybe<value_type> {
+[[nodiscard]] auto ListMixin<BaseList>::maybeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   return *prev(Base::end());
@@ -512,7 +512,7 @@ auto ListMixin<BaseList>::takeLast() -> value_type {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeTakeLast() -> Maybe<value_type> {
+[[nodiscard]] auto ListMixin<BaseList>::maybeTakeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   value_type e = std::move(last());
@@ -527,12 +527,12 @@ void ListMixin<BaseList>::limitSizeBack(size_t maximumSize) {
 }
 
 template <typename BaseList>
-size_t ListMixin<BaseList>::count() const {
+[[nodiscard]] size_t ListMixin<BaseList>::count() const {
   return Base::size();
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::contains(const_reference e) const {
+[[nodiscard]] bool ListMixin<BaseList>::contains(const_reference e) const {
   for (auto const& r : *this) {
     if (r == e)
       return true;
@@ -541,7 +541,7 @@ bool ListMixin<BaseList>::contains(const_reference e) const {
 }
 
 template <typename BaseList>
-size_t ListMixin<BaseList>::remove(const_reference e) {
+[[nodiscard]] size_t ListMixin<BaseList>::remove(const_reference e) {
   size_t removed = 0;
   auto i = Base::begin();
   while (i != Base::end()) {
@@ -576,13 +576,13 @@ void ListMixin<BaseList>::insertSorted(value_type e) {
 
 template <typename BaseList>
 template <typename Comparator>
-bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
+[[nodiscard]] bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
   auto range = std::equal_range(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
   return range.first != range.second;
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::containsSorted(value_type e) {
+[[nodiscard]] bool ListMixin<BaseList>::containsSorted(value_type e) {
   auto range = std::equal_range(Base::begin(), Base::end(), e);
   return range.first != range.second;
 }
@@ -610,23 +610,23 @@ void ListMixin<BaseList>::transform(Function&& function) {
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::any(Function&& function) const {
+[[nodiscard]] bool ListMixin<BaseList>::any(Function&& function) const {
   return Star::any(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::any() const {
+[[nodiscard]] bool ListMixin<BaseList>::any() const {
   return Star::any(*this);
 }
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::all(Function&& function) const {
+[[nodiscard]] bool ListMixin<BaseList>::all(Function&& function) const {
   return Star::all(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::all() const {
+[[nodiscard]] bool ListMixin<BaseList>::all() const {
   return Star::all(*this);
 }
 
@@ -647,7 +647,7 @@ void RandomAccessListMixin<BaseList>::reverse() {
 }
 
 template <typename BaseList>
-size_t RandomAccessListMixin<BaseList>::indexOf(const_reference e, size_t from) const {
+[[nodiscard]] size_t RandomAccessListMixin<BaseList>::indexOf(const_reference e, size_t from) const {
   for (size_t i = from; i < Base::size(); ++i)
     if (operator[](i) == e)
       return i;
@@ -655,7 +655,7 @@ size_t RandomAccessListMixin<BaseList>::indexOf(const_reference e, size_t from) 
 }
 
 template <typename BaseList>
-size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t til) const {
+[[nodiscard]] size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t til) const {
   size_t index = NPos;
   size_t end = std::min(Base::size(), til);
   for (size_t i = 0; i < end; ++i) {
@@ -692,7 +692,7 @@ auto RandomAccessListMixin<BaseList>::operator[](size_t n) -> reference {
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::get(size_t n, value_type def) const -> value_type {
+[[nodiscard]] auto RandomAccessListMixin<BaseList>::get(size_t n, value_type def) const -> value_type {
   if (n >= BaseList::size())
     return def;
   return operator[](n);
@@ -706,7 +706,7 @@ auto RandomAccessListMixin<BaseList>::takeAt(size_t i) -> value_type {
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(size_t n) const -> const_reference {
+[[nodiscard]] auto RandomAccessListMixin<BaseList>::wrap(size_t n) const -> const_reference {
   if (BaseList::empty())
     throw OutOfRangeException();
   else
@@ -714,7 +714,7 @@ auto RandomAccessListMixin<BaseList>::wrap(size_t n) const -> const_reference {
 }
 
 template <typename BaseList>
-auto RandomAccessListMixin<BaseList>::wrap(size_t n) -> reference {
+[[nodiscard]] auto RandomAccessListMixin<BaseList>::wrap(size_t n) -> reference {
   if (BaseList::empty())
     throw OutOfRangeException();
   else

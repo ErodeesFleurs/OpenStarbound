@@ -26,6 +26,8 @@
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
 
+constexpr float WireEntityQueryHalfExtent = 16.0f;
+
 namespace Star {
 
 static int const PlantAdjustmentLimit = 2;
@@ -168,7 +170,7 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
     return;
 
   if (m_worldServer->isTileProtected(to)) {
-    for (auto drop : m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true))
+    for (auto const& drop : m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true))
       m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to)));
   } else {
     toTile->foreground = fromTile->foreground;
@@ -448,8 +450,8 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
   for (auto entry : wireGroup) {
     bool found = false;
     Vec2F posf = centerOfTile(entry);
-    RectF bounds = {posf - Vec2F(16, 16), posf + Vec2F(16, 16)};
-    for (auto entity : m_worldServer->query<WireEntity>(bounds)) {
+    RectF bounds = {posf - Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent), posf + Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent)};
+    for (auto const& entity : m_worldServer->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         if (entity->tilePosition() + entity->nodePosition({WireDirection::Input, i}) == entry) {
           inbounds.append(WireConnection{entity->tilePosition(), i});
@@ -551,7 +553,7 @@ void DungeonGeneratorWorld::clearTileEntities(RectI const& bounds, Set<Vec2I> co
       return false;
     });
 
-  for (auto entity : entities)
+  for (auto const& entity : entities)
     m_worldServer->removeEntity(entity->entityId(), false);
 }
 
@@ -1165,7 +1167,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
 
   auto entities = m_worldServer->entityQuery(RectF(sectorTiles.padded(1)));
   List<TileEntityPtr> biomeTileEntities;
-  for (auto entity : entities) {
+  for (auto const& entity : entities) {
     if (auto plant = as<Plant>(entity)) {
       biomeTileEntities.append(as<TileEntity>(entity));
     } else if (auto object = as<Object>(entity)) {

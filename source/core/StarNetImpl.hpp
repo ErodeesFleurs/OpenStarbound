@@ -42,45 +42,88 @@ struct WindowsSocketInitializer {
 static WindowsSocketInitializer g_windowsSocketInitializer;
 #endif
 
-inline String netErrorString() {
-#ifdef STAR_SYSTEM_WINDOWS
-  LPWSTR lpMsgBuf = nullptr;
-  int error = WSAGetLastError();
+// Platform trait that encapsulates all socket-level platform differences.
+// Each platform specialization provides: SocketDesc, errorString(), connectionReset(),
+// isInterrupt(), and setSockOpt().
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+struct SocketPlatform {
+  using SocketDesc = SOCKET;
+  static constexpr SOCKET invalidSocketDesc = INVALID_SOCKET;
 
-  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
-              | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-      nullptr,
-      error,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-      reinterpret_cast<LPTSTR>(&lpMsgBuf),
-      0,
-      nullptr);
+  static bool isInvalid(SOCKET s) { return s == INVALID_SOCKET; }
 
-  String result = strf("{} - {}", error, utf16ToString(lpMsgBuf));
+  static String errorString() {
+    LPWSTR lpMsgBuf = nullptr;
+    int error = WSAGetLastError();
 
-  if (lpMsgBuf != nullptr)
-    LocalFree(lpMsgBuf);
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
+                  | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+        nullptr,
+        error,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPTSTR>(&lpMsgBuf),
+        0,
+        nullptr);
 
-  return result;
+    String result = strf("{} - {}", error, utf16ToString(lpMsgBuf));
+
+    if (lpMsgBuf != nullptr)
+      LocalFree(lpMsgBuf);
+
+    return result;
+  }
+
+  static bool connectionReset() {
+    return WSAGetLastError() == WSAECONNRESET || WSAGetLastError() == WSAENETRESET;
+  }
+
+  static bool isInterrupt() {
+    return WSAGetLastError() == WSAEINTR || WSAGetLastError() == WSAEWOULDBLOCK;
+  }
+
+  static void setSockOpt(SOCKET s, int level, int optname, const void* optval, socklen_t len) {
+    int ret = ::setsockopt(s, level, optname, static_cast<const char*>(optval), len);
+    if (ret < 0)
+      throw NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, errorString()));
+  }
+};
 #else
-  return strf("{} - {}", errno, strerror(errno));
+struct SocketPlatform {
+  using SocketDesc = int;
+  static constexpr int invalidSocketDesc = -1;
+
+  static bool isInvalid(int s) { return s < 0; }
+
+  static String errorString() {
+    return strf("{} - {}", errno, strerror(errno));
+  }
+
+  static bool connectionReset() {
+    return errno == ECONNRESET || errno == ETIMEDOUT;
+  }
+
+  static bool isInterrupt() {
+    return errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK;
+  }
+
+  static void setSockOpt(int s, int level, int optname, const void* optval, socklen_t len) {
+    int ret = ::setsockopt(s, level, optname, optval, len);
+    if (ret < 0)
+      throw NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, errorString()));
+  }
+};
 #endif
+
+inline String netErrorString() {
+  return SocketPlatform::errorString();
 }
 
 inline bool netErrorConnectionReset() {
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  return WSAGetLastError() == WSAECONNRESET || WSAGetLastError() == WSAENETRESET;
-#else
-  return errno == ECONNRESET || errno == ETIMEDOUT;
-#endif
+  return SocketPlatform::connectionReset();
 }
 
 inline bool netErrorInterrupt() {
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  return WSAGetLastError() == WSAEINTR || WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK;
-#endif
+  return SocketPlatform::isInterrupt();
 }
 
 inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMode mode, struct sockaddr_storage* sockAddr) {
@@ -128,15 +171,9 @@ inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, str
   }
 }
 
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-inline bool invalidSocketDescriptor(SOCKET socket) {
-  return socket == INVALID_SOCKET;
+inline bool invalidSocketDescriptor(typename SocketPlatform::SocketDesc socket) {
+  return SocketPlatform::isInvalid(socket);
 }
-#else
-inline bool invalidSocketDescriptor(int socket) {
-  return socket < 0;
-}
-#endif
 
 struct SocketImpl {
   SocketImpl() {
@@ -144,20 +181,10 @@ struct SocketImpl {
   }
 
   void setSockOpt(int level, int optname, const void* optval, socklen_t len) {
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-    int ret = ::setsockopt(socketDesc, level, optname, static_cast<const char*>(optval), len);
-#else
-    int ret = ::setsockopt(socketDesc, level, optname, optval, len);
-#endif
-    if (ret < 0)
-      throw NetworkException(strf("setSockOpt failed to set {}, {}: {}", level, optname, netErrorString()));
+    SocketPlatform::setSockOpt(socketDesc, level, optname, optval, len);
   }
 
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-  SOCKET socketDesc;
-#else
-  int socketDesc;
-#endif
+  SocketPlatform::SocketDesc socketDesc;
 };
 
 }

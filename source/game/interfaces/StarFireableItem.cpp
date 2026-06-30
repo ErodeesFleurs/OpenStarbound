@@ -66,7 +66,7 @@ void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
       m_scriptComponent->setScripts(*scripts);
     }
     m_scriptComponent->addCallbacks(
-        "config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+        "config", LuaBindings::makeConfigCallbacks([item = as<Item>(this)](String const& name, Json const& def) { return item->instanceValue(name, def); }));
     m_scriptComponent->addCallbacks("fireableItem", LuaBindings::makeFireableItemCallbacks(this));
     m_scriptComponent->addCallbacks("item", LuaBindings::makeItemCallbacks(as<Item>(this)));
     m_scriptComponent->init(world());

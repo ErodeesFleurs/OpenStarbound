@@ -16,10 +16,11 @@ struct WorldTile {
 
   // Copy constructor and operator= do not preserve collision cache.
   WorldTile(WorldTile const& worldTile);
-  WorldTile& operator=(WorldTile const& worldTile);
+  WorldTile& operator=(WorldTile other) noexcept;
 
   MaterialId material(TileLayer layer) const;
   ModId mod(TileLayer layer) const;
+  tuple<MaterialId, ModId> materialAndMod(TileLayer layer) const;
   MaterialColorVariant materialColor(TileLayer layer) const;
   CollisionKind getCollision() const;
   tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
@@ -41,7 +42,8 @@ struct WorldTile {
   CollisionKind collision;
 
   bool collisionCacheDirty;
-  StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace> collisionCache;
+  // Collision cache moved to external WorldServer/WorldClient storage
+  // to reduce per-tile memory from ~300B to ~50B.
 
   BiomeIndex blockBiomeIndex;
   BiomeIndex environmentBiomeIndex;
@@ -55,6 +57,8 @@ struct WorldTile {
   // as well as governing block protection
   DungeonId dungeonId;
 };
+
+void swap(WorldTile& a, WorldTile& b) noexcept;
 
 struct ServerTile : public WorldTile {
   static VersionNumber const CurrentSerializationVersion;
@@ -94,7 +98,7 @@ struct ClientTile : public WorldTile {
   ClientTile();
 
   ClientTile(ClientTile const& clientTile);
-  ClientTile& operator=(ClientTile const& clientTile);
+  ClientTile& operator=(ClientTile other) noexcept;
 
   bool backgroundLightTransparent;
   bool foregroundLightTransparent;
@@ -103,6 +107,9 @@ struct ClientTile : public WorldTile {
 
   float gravity;
 };
+
+void swap(ClientTile& a, ClientTile& b) noexcept;
+
 using ClientTileSectorArray = TileSectorArray<ClientTile, WorldSectorSize>;
 using ClientTileSectorArrayPtr = shared_ptr<ClientTileSectorArray>;
 
@@ -217,31 +224,8 @@ inline WorldTile::WorldTile(WorldTile const& worldTile) {
   *this = worldTile;
 }
 
-inline WorldTile& WorldTile::operator=(WorldTile const& worldTile) {
-  foreground = worldTile.foreground;
-  foregroundHueShift = worldTile.foregroundHueShift;
-  foregroundMod = worldTile.foregroundMod;
-  foregroundModHueShift = worldTile.foregroundModHueShift;
-  foregroundColorVariant = worldTile.foregroundColorVariant;
-
-  background = worldTile.background;
-  backgroundHueShift = worldTile.backgroundHueShift;
-  backgroundMod = worldTile.backgroundMod;
-  backgroundModHueShift = worldTile.backgroundModHueShift;
-  backgroundColorVariant = worldTile.backgroundColorVariant;
-
-  // Don't bother copying collision cache
-  collisionCacheDirty = true;
-
-  collision = worldTile.collision;
-  blockBiomeIndex = worldTile.blockBiomeIndex;
-  environmentBiomeIndex = worldTile.environmentBiomeIndex;
-
-  foregroundDamage = worldTile.foregroundDamage;
-  backgroundDamage = worldTile.backgroundDamage;
-
-  dungeonId = worldTile.dungeonId;
-
+inline WorldTile& WorldTile::operator=(WorldTile other) noexcept {
+  swap(*this, other);
   return *this;
 }
 
@@ -279,20 +263,21 @@ inline tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialA
         background, backgroundHueShift, backgroundColorVariant};
 }
 
+inline tuple<MaterialId, ModId> WorldTile::materialAndMod(TileLayer layer) const {
+  if (layer == TileLayer::Foreground)
+    return std::tuple<MaterialId, ModId>{foreground, foregroundMod};
+  else
+    return std::tuple<MaterialId, ModId>{background, backgroundMod};
+}
+
 inline ClientTile::ClientTile() : backgroundLightTransparent(true), foregroundLightTransparent(true), gravity() {}
 
 inline ClientTile::ClientTile(ClientTile const& clientTile) : WorldTile() {
   *this = clientTile;
 }
 
-inline ClientTile& ClientTile::operator=(ClientTile const& clientTile) {
-  WorldTile::operator=(clientTile);
-
-  backgroundLightTransparent = clientTile.backgroundLightTransparent;
-  foregroundLightTransparent = clientTile.foregroundLightTransparent;
-  liquid = clientTile.liquid;
-  gravity = clientTile.gravity;
-
+inline ClientTile& ClientTile::operator=(ClientTile other) noexcept {
+  swap(*this, other);
   return *this;
 }
 
@@ -330,11 +315,11 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   if (FastHash) {
     hasher.push(reinterpret_cast<char const*>(this), TerrainEndOffset);
   } else {
-    char buffer[TotalTerrainSize];
+    std::array<char, TotalTerrainSize> buffer{};
     size_t bufferSize = 0;
 
     auto hashTilePart = [&](void const* data, size_t size) {
-      memcpy(buffer + bufferSize, data, size);
+      memcpy(buffer.data() + bufferSize, data, size);
       bufferSize += size;
     };
 
@@ -356,18 +341,57 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
     hashTilePart(&backgroundDamageType, sizeof(backgroundDamageType));
     hashTilePart(&backgroundDamageLevel, sizeof(backgroundDamageLevel));
 
-    hasher.push(buffer, TotalTerrainSize);
+    hasher.push(buffer.data(), TotalTerrainSize);
   }
 }
 
 template <typename Hasher>
 inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
-  char buffer[sizeof(liquidLevel) + sizeof(liquidId)];
+  std::array<char, sizeof(liquidLevel) + sizeof(liquidId)> buffer{};
 
-  memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
-  memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
+  memcpy(buffer.data(), &liquidLevel, sizeof(liquidLevel));
+  memcpy(buffer.data() + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
-  hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
+  hasher.push(buffer.data(), sizeof(liquidLevel) + sizeof(liquidId));
+}
+
+template <typename TileArrayPtr>
+inline void dirtyCollisionImpl(TileArrayPtr& tileArray, RectI const& region) {
+  auto dirtyRegion = region.padded(CollisionGenerator::BlockInfluenceRadius);
+  for (int x = dirtyRegion.xMin(); x < dirtyRegion.xMax(); ++x) {
+    for (int y = dirtyRegion.yMin(); y < dirtyRegion.yMax(); ++y) {
+      if (auto tile = tileArray->modifyTile({x, y}))
+        tile->collisionCacheDirty = true;
+    }
+  }
+}
+
+template <typename TileArrayPtr, typename CollisionCache>
+inline void freshenCollisionImpl(TileArrayPtr& tileArray, CollisionGenerator& collisionGenerator, CollisionCache& collisionCache, RectI const& region) {
+  RectI freshenRegion = RectI::null();
+  for (int x = region.xMin(); x < region.xMax(); ++x) {
+    for (int y = region.yMin(); y < region.yMax(); ++y) {
+      if (auto tile = tileArray->modifyTile({x, y})) {
+        if (tile->collisionCacheDirty)
+          freshenRegion.combine(RectI(x, y, x + 1, y + 1));
+      }
+    }
+  }
+
+  if (!freshenRegion.isNull()) {
+    for (int x = freshenRegion.xMin(); x < freshenRegion.xMax(); ++x) {
+      for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
+        if (auto tile = tileArray->modifyTile({x, y})) {
+          tile->collisionCacheDirty = false;
+          collisionCache.remove({x, y});
+        }
+      }
+    }
+
+    for (auto& collisionBlock : collisionGenerator.getBlocks(freshenRegion)) {
+      collisionCache[collisionBlock.space].append(std::move(collisionBlock));
+    }
+  }
 }
 
 }

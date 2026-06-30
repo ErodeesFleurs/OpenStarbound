@@ -58,7 +58,7 @@ ItemPtr ActiveItem::clone() const {
 void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   ToolUserItem::init(owner, hand);
   if (entityMode() == EntityMode::Master) {
-    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed([dir = directory()](String const& s) { return AssetPath::relativeTo(dir, s); }));
     m_script.setUpdateDelta(instanceValue("scriptDelta", 1).toUInt());
     m_twoHandedGrip.set(twoHanded());
 
@@ -67,7 +67,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
 
     m_script.addCallbacks("activeItem", makeActiveItemCallbacks());
     m_script.addCallbacks("item", LuaBindings::makeItemCallbacks(this));
-    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks([item = as<Item>(this)](String const& name, Json const& def) { return item->instanceValue(name, def); }));
     m_script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_itemAnimator));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(owner->statusController()));
     m_script.addActorMovementCallbacks(owner->movementController());
@@ -79,7 +79,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   }
   if (world()->isClient()) {
     if (auto animationScripts = instanceValue("animationScripts")) {
-      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed([dir = directory()](String const& s) { return AssetPath::relativeTo(dir, s); }));
       m_scriptedAnimator.setUpdateDelta(instanceValue("animationDelta", 1).toUInt());
 
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(&m_itemAnimator,
@@ -87,7 +87,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
       m_scriptedAnimator.addCallbacks("activeItemAnimation", makeScriptedAnimationCallbacks());
-      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([item = as<Item>(this)](String const& name, Json const& def) { return item->instanceValue(name, def); }));
       m_scriptedAnimator.init(world());
     }
   }

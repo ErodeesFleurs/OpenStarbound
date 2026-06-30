@@ -57,12 +57,12 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(ba
   m_colorCodes[MessageContext::RadioMessage] = config.query("colors.radioMessage").toString();
   m_colorCodes[MessageContext::World] = config.query("colors.world").toString();
   if (!m_scripted) {
-    m_reader->registerCallback("textBox", [=, this](Widget*) { startChat(); });
-    m_reader->registerCallback("upButton", [=, this](Widget*) { scrollUp(); });
-    m_reader->registerCallback("downButton", [=, this](Widget*) { scrollDown(); });
-    m_reader->registerCallback("bottomButton", [=, this](Widget*) { scrollBottom(); });
+    m_reader->registerCallback("textBox", [this](Widget*) { startChat(); });
+    m_reader->registerCallback("upButton", [this](Widget*) { scrollUp(); });
+    m_reader->registerCallback("downButton", [this](Widget*) { scrollDown(); });
+    m_reader->registerCallback("bottomButton", [this](Widget*) { scrollBottom(); });
 
-    m_reader->registerCallback("filterGroup", [=, this](Widget* widget) {
+    m_reader->registerCallback("filterGroup", [this](Widget* widget) {
       Json data = as<ButtonWidget>(widget)->data();
       auto filter = data.getArray("filter", {});
       m_modeFilter.clear();
@@ -285,7 +285,7 @@ void Chat::renderImpl() {
   if (m_textBox->hasFocus())
     m_timeChatLastActive = Time::monotonicMilliseconds();
   Vec4B fade = {255, 255, 255, 255};
-  fade[3] = (uint8_t)(visible() * 255);
+  fade[3] = static_cast<uint8_t>(visible() * 255);
   if (!visible()) {
     hide();
     return;
@@ -417,7 +417,7 @@ bool Chat::sendEvent(InputEvent const& event) {
 }
 
 void Chat::scrollUp() {
-  auto shownMessages = m_receivedMessages.filtered([=, this](LogMessage msg) {
+  auto shownMessages = m_receivedMessages.filtered([this](LogMessage msg) {
       return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
     });
 

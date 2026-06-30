@@ -233,46 +233,46 @@ namespace LuaBindings {
     addWorldEnvironmentCallbacks(callbacks, world);
     addWorldEntityCallbacks(callbacks, world);
 
-    callbacks.registerCallbackWithSignature<float, Vec2F, Maybe<Vec2F>>("magnitude", bind(&WorldCallbacks::magnitude, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", bind(WorldCallbacks::distance, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", bind(WorldCallbacks::polyContains, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", bind(WorldCallbacks::xwrap, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Variant<Vec2F, float>, Variant<Vec2F, float>>("nearestTo", bind(WorldCallbacks::nearestTo, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<float, Vec2F, Maybe<Vec2F>>("magnitude", [world](auto&&... args) { return WorldCallbacks::magnitude(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Vec2F, Vec2F, Vec2F>("distance", [world](auto&&... args) { return WorldCallbacks::distance(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, PolyF, Vec2F>("polyContains", [world](auto&&... args) { return WorldCallbacks::polyContains(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, LuaValue>("xwrap", [world](auto&&... args) { return WorldCallbacks::xwrap(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Variant<Vec2F, float>, Variant<Vec2F, float>>("nearestTo", [world](auto&&... args) { return WorldCallbacks::nearestTo(world, std::forward<decltype(args)>(args)...); });
 
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectCollision", bind(WorldCallbacks::rectCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointTileCollision", bind(WorldCallbacks::pointTileCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollision", bind(WorldCallbacks::lineTileCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<pair<Vec2F, Vec2I>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollisionPoint", bind(WorldCallbacks::lineTileCollisionPoint, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectTileCollision", bind(WorldCallbacks::rectTileCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointCollision", bind(WorldCallbacks::pointCollision, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineCollision", bind(WorldCallbacks::lineCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<bool, PolyF, Maybe<Vec2F>, Maybe<CollisionSet>>("polyCollision", bind(WorldCallbacks::polyCollision, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, Maybe<CollisionSet>, Maybe<int>>("collisionBlocksAlongLine", bind(WorldCallbacks::collisionBlocksAlongLine, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<List<pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", bind(WorldCallbacks::liquidAlongLine, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, PolyF, Vec2F, float, Maybe<CollisionSet>>("resolvePolyCollision", bind(WorldCallbacks::resolvePolyCollision, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", bind(WorldCallbacks::tileIsOccupied, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", bind(WorldCallbacks::placeObject, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", bind(WorldCallbacks::spawnItem, world, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<uint64_t>>("spawnTreasure", bind(WorldCallbacks::spawnTreasure, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<JsonObject>>("spawnMonster", bind(WorldCallbacks::spawnMonster, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, String, float, Maybe<uint64_t>, Json>("spawnNpc", bind(WorldCallbacks::spawnNpc, world, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", bind(WorldCallbacks::spawnStagehand, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", bind(WorldCallbacks::spawnProjectile, world, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", bind(WorldCallbacks::spawnVehicle, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<float>("threatLevel", bind(&World::threatLevel, world));
-    callbacks.registerCallbackWithSignature<double>("time", bind(WorldCallbacks::time, world));
-    callbacks.registerCallbackWithSignature<uint64_t>("day", bind(WorldCallbacks::day, world));
-    callbacks.registerCallbackWithSignature<double>("timeOfDay", bind(WorldCallbacks::timeOfDay, world));
-    callbacks.registerCallbackWithSignature<float>("dayLength", bind(WorldCallbacks::dayLength, world));
-    callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", bind(WorldCallbacks::getProperty, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", bind(WorldCallbacks::setProperty, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", bind(WorldCallbacks::liquidAt, world, _1));
-    callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", bind(WorldCallbacks::gravity, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", bind(WorldCallbacks::spawnLiquid, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", bind(WorldCallbacks::destroyLiquid, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", bind(WorldCallbacks::isTileProtected, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", bind(WorldCallbacks::findPlatformerPath, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<PlatformerAStar::PathFinder, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", bind(WorldCallbacks::platformerPathStart, world, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectCollision", [world](auto&&... args) { return WorldCallbacks::rectCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointTileCollision", [world](auto&&... args) { return WorldCallbacks::pointTileCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollision", [world](auto&&... args) { return WorldCallbacks::lineTileCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<pair<Vec2F, Vec2I>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineTileCollisionPoint", [world](auto&&... args) { return WorldCallbacks::lineTileCollisionPoint(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, RectF, Maybe<CollisionSet>>("rectTileCollision", [world](auto&&... args) { return WorldCallbacks::rectTileCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, Maybe<CollisionSet>>("pointCollision", [world](auto&&... args) { return WorldCallbacks::pointCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTupleReturn<Maybe<Vec2F>, Maybe<Vec2F>>, Vec2F, Vec2F, Maybe<CollisionSet>>("lineCollision", [world](auto&&... args) { return WorldCallbacks::lineCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, PolyF, Maybe<Vec2F>, Maybe<CollisionSet>>("polyCollision", [world](auto&&... args) { return WorldCallbacks::polyCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<List<Vec2I>, Vec2F, Vec2F, Maybe<CollisionSet>, Maybe<int>>("collisionBlocksAlongLine", [world](auto&&... args) { return WorldCallbacks::collisionBlocksAlongLine(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<List<pair<Vec2I, LiquidLevel>>, Vec2F, Vec2F>("liquidAlongLine", [world](auto&&... args) { return WorldCallbacks::liquidAlongLine(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, PolyF, Vec2F, float, Maybe<CollisionSet>>("resolvePolyCollision", [world](auto&&... args) { return WorldCallbacks::resolvePolyCollision(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2I, Maybe<bool>, Maybe<bool>>("tileIsOccupied", [world](auto&&... args) { return WorldCallbacks::tileIsOccupied(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, String, Vec2I, Maybe<int>, Json>("placeObject", [world](auto&&... args) { return WorldCallbacks::placeObject(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Json, Vec2F, Maybe<size_t>, Json, Maybe<Vec2F>, Maybe<float>>("spawnItem", [world](auto&&... args) { return WorldCallbacks::spawnItem(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<List<EntityId>, Vec2F, String, float, Maybe<uint64_t>>("spawnTreasure", [world](auto&&... args) { return WorldCallbacks::spawnTreasure(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<JsonObject>>("spawnMonster", [world](auto&&... args) { return WorldCallbacks::spawnMonster(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, String, float, Maybe<uint64_t>, Json>("spawnNpc", [world](auto&&... args) { return WorldCallbacks::spawnNpc(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, Vec2F, String, Json>("spawnStagehand", [world](auto&&... args) { return WorldCallbacks::spawnStagehand(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Maybe<EntityId>, Maybe<Vec2F>, bool, Json>("spawnProjectile", [world](auto&&... args) { return WorldCallbacks::spawnProjectile(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<EntityId>, String, Vec2F, Json>("spawnVehicle", [world](auto&&... args) { return WorldCallbacks::spawnVehicle(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<float>("threatLevel", [world]() { return world->threatLevel(); });
+    callbacks.registerCallbackWithSignature<double>("time", [world]() { return WorldCallbacks::time(world); });
+    callbacks.registerCallbackWithSignature<uint64_t>("day", [world]() { return WorldCallbacks::day(world); });
+    callbacks.registerCallbackWithSignature<double>("timeOfDay", [world]() { return WorldCallbacks::timeOfDay(world); });
+    callbacks.registerCallbackWithSignature<float>("dayLength", [world]() { return WorldCallbacks::dayLength(world); });
+    callbacks.registerCallbackWithSignature<Json, String, Json>("getProperty", [world](auto&&... args) { return WorldCallbacks::getProperty(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<void, String, Json>("setProperty", [world](auto&&... args) { return WorldCallbacks::setProperty(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Variant<RectF, Vec2I>>("liquidAt", [world](auto&&... args) { return WorldCallbacks::liquidAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<float, Vec2F>("gravity", [world](auto&&... args) { return WorldCallbacks::gravity(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, LiquidId, float>("spawnLiquid", [world](auto&&... args) { return WorldCallbacks::spawnLiquid(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("destroyLiquid", [world](auto&&... args) { return WorldCallbacks::destroyLiquid(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F>("isTileProtected", [world](auto&&... args) { return WorldCallbacks::isTileProtected(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<PlatformerAStar::Path>, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("findPlatformerPath", [world](auto&&... args) { return WorldCallbacks::findPlatformerPath(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<PlatformerAStar::PathFinder, Vec2F, Vec2F, ActorMovementParameters, PlatformerAStar::Parameters>("platformerPathStart", [world](auto&&... args) { return WorldCallbacks::platformerPathStart(world, std::forward<decltype(args)>(args)...); });
 
     callbacks.registerCallback("type", [world](LuaEngine& engine) -> LuaString {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -389,8 +389,8 @@ namespace LuaBindings {
       callbacks.registerCallback("isClient", []() { return true;  });
       callbacks.registerCallback("isServer", []() { return false; });
       callbacks.registerCallback("latency", [clientWorld]() { return clientWorld->latency(); });
-      callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", bind(ClientWorldCallbacks::resendEntity, clientWorld, _1));
-      callbacks.registerCallbackWithSignature<RectI>("clientWindow", bind(ClientWorldCallbacks::clientWindow, clientWorld));
+      callbacks.registerCallbackWithSignature<void, EntityId>("resendEntity", [clientWorld](auto&&... args) { return ClientWorldCallbacks::resendEntity(clientWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<RectI>("clientWindow", [clientWorld]() { return ClientWorldCallbacks::clientWindow(clientWorld); });
       callbacks.registerCallback("players", [clientWorld]() {
         List<EntityId> playerIds;
 
@@ -416,22 +416,22 @@ namespace LuaBindings {
       callbacks.registerCallback("isClient", []() { return false; });
       callbacks.registerCallback("isServer", []() { return true;  });
 
-      callbacks.registerCallbackWithSignature<String>("id", bind(ServerWorldCallbacks::id, serverWorld));
-      callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", bind(ServerWorldCallbacks::breakObject, serverWorld, _1, _2));
-      callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", bind(ServerWorldCallbacks::isVisibleToPlayer, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", bind(ServerWorldCallbacks::loadRegion, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", bind(ServerWorldCallbacks::regionActive, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", bind(ServerWorldCallbacks::setTileProtection, serverWorld, _1, _2));
-      callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", bind(ServerWorldCallbacks::isPlayerModified, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("forceDestroyLiquid", bind(ServerWorldCallbacks::forceDestroyLiquid, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", bind(ServerWorldCallbacks::loadUniqueEntity, serverWorld, _1));
-      callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", bind(ServerWorldCallbacks::setUniqueId, serverWorld, _1, _2));
-      callbacks.registerCallbackWithSignature<Json, EntityId, Maybe<EntityId>>("takeItemDrop", bind(ServerWorldCallbacks::takeItemDrop, world, _1, _2));
-      callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", bind(ServerWorldCallbacks::setPlayerStart, world, _1, _2));
-      callbacks.registerCallbackWithSignature<List<EntityId>>("players", bind(ServerWorldCallbacks::players, world));
-      callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", bind(ServerWorldCallbacks::fidelity, world, _1));
-      callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", bind(ServerWorldCallbacks::callScriptContext, world, _1, _2, _3));
-      callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", bind(ServerWorldCallbacks::sendPacket, serverWorld, _1, _2, _3));
+      callbacks.registerCallbackWithSignature<String>("id", [serverWorld]() { return ServerWorldCallbacks::id(serverWorld); });
+      callbacks.registerCallbackWithSignature<bool, EntityId, bool>("breakObject", [serverWorld](auto&&... args) { return ServerWorldCallbacks::breakObject(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<bool, RectF>("isVisibleToPlayer", [serverWorld](auto&&... args) { return ServerWorldCallbacks::isVisibleToPlayer(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<bool, RectF>("loadRegion", [serverWorld](auto&&... args) { return ServerWorldCallbacks::loadRegion(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<bool, RectF>("regionActive", [serverWorld](auto&&... args) { return ServerWorldCallbacks::regionActive(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<void, DungeonId, bool>("setTileProtection", [serverWorld](auto&&... args) { return ServerWorldCallbacks::setTileProtection(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<bool, RectI>("isPlayerModified", [serverWorld](auto&&... args) { return ServerWorldCallbacks::isPlayerModified(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<Maybe<LiquidLevel>, Vec2F>("forceDestroyLiquid", [serverWorld](auto&&... args) { return ServerWorldCallbacks::forceDestroyLiquid(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<EntityId, String>("loadUniqueEntity", [serverWorld](auto&&... args) { return ServerWorldCallbacks::loadUniqueEntity(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<void, EntityId, String>("setUniqueId", [serverWorld](auto&&... args) { return ServerWorldCallbacks::setUniqueId(serverWorld, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<Json, EntityId, Maybe<EntityId>>("takeItemDrop", [world](auto&&... args) { return ServerWorldCallbacks::takeItemDrop(world, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<void, Vec2F, Maybe<bool>>("setPlayerStart", [world](auto&&... args) { return ServerWorldCallbacks::setPlayerStart(world, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<List<EntityId>>("players", [world]() { return ServerWorldCallbacks::players(world); });
+      callbacks.registerCallbackWithSignature<LuaString, LuaEngine&>("fidelity", [world](auto&&... args) { return ServerWorldCallbacks::fidelity(world, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<Maybe<LuaValue>, String, String, LuaVariadic<LuaValue>>("callScriptContext", [world](auto&&... args) { return ServerWorldCallbacks::callScriptContext(world, std::forward<decltype(args)>(args)...); });
+      callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", [serverWorld](auto&&... args) { return ServerWorldCallbacks::sendPacket(serverWorld, std::forward<decltype(args)>(args)...); });
 
       callbacks.registerCallbackWithSignature<double>("skyTime", [serverWorld]() {
           return serverWorld->sky()->epochTime();
@@ -519,16 +519,16 @@ namespace LuaBindings {
   }
 
   void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world) {
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("entityQuery", bind(WorldEntityCallbacks::entityQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("monsterQuery", bind(WorldEntityCallbacks::monsterQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("npcQuery", bind(WorldEntityCallbacks::npcQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("objectQuery", bind(WorldEntityCallbacks::objectQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("itemDropQuery", bind(WorldEntityCallbacks::itemDropQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("playerQuery", bind(WorldEntityCallbacks::playerQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("loungeableQuery", bind(WorldEntityCallbacks::loungeableQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("entityLineQuery", bind(WorldEntityCallbacks::entityLineQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("objectLineQuery", bind(WorldEntityCallbacks::objectLineQuery, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("npcLineQuery", bind(WorldEntityCallbacks::npcLineQuery, world, _1, _2, _3, _4));
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("entityQuery", [world](auto&&... args) { return WorldEntityCallbacks::entityQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("monsterQuery", [world](auto&&... args) { return WorldEntityCallbacks::monsterQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("npcQuery", [world](auto&&... args) { return WorldEntityCallbacks::npcQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("objectQuery", [world](auto&&... args) { return WorldEntityCallbacks::objectQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("itemDropQuery", [world](auto&&... args) { return WorldEntityCallbacks::itemDropQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("playerQuery", [world](auto&&... args) { return WorldEntityCallbacks::playerQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, LuaValue, Maybe<LuaTable>>("loungeableQuery", [world](auto&&... args) { return WorldEntityCallbacks::loungeableQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("entityLineQuery", [world](auto&&... args) { return WorldEntityCallbacks::entityLineQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("objectLineQuery", [world](auto&&... args) { return WorldEntityCallbacks::objectLineQuery(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&, Vec2F, Vec2F, Maybe<LuaTable>>("npcLineQuery", [world](auto&&... args) { return WorldEntityCallbacks::npcLineQuery(world, std::forward<decltype(args)>(args)...); });
     callbacks.registerCallback("objectAt",
         [world](Vec2I const& tilePosition) -> Maybe<int> {
           if (auto object = world->findEntityAtTile(tilePosition, [](TileEntityPtr const& entity) { return is<Object>(entity); }))
@@ -545,60 +545,60 @@ namespace LuaBindings {
       }
     });
 
-    callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
-    callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId>("entityAggressive", bind(WorldEntityCallbacks::entityAggressive, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<LuaString>, LuaEngine&, int>("entityType", bind(WorldEntityCallbacks::entityType, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityPosition", bind(WorldEntityCallbacks::entityPosition, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityVelocity", bind(WorldEntityCallbacks::entityVelocity, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<RectF>, int>("entityMetaBoundBox", bind(WorldEntityCallbacks::entityMetaBoundBox, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<uint64_t>, EntityId, String>("entityCurrency", bind(WorldEntityCallbacks::entityCurrency, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<uint64_t>, EntityId, Json, Maybe<bool>>("entityHasCountOfItem", bind(WorldEntityCallbacks::entityHasCountOfItem, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, EntityId>("entityHealth", bind(WorldEntityCallbacks::entityHealth, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", bind(WorldEntityCallbacks::entitySpecies, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", bind(WorldEntityCallbacks::entityGender, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", bind(WorldEntityCallbacks::entityName, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", bind(WorldEntityCallbacks::entityNametag, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", bind(WorldEntityCallbacks::entityDescription, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", bind(WorldEntityCallbacks::entityPortrait, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", bind(WorldEntityCallbacks::entityHandItem, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", bind(WorldEntityCallbacks::entityHandItemDescriptor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<String>>, EntityId>("entityUniqueId", bind(WorldEntityCallbacks::entityUniqueId, world, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getObjectParameter", bind(WorldEntityCallbacks::getObjectParameter, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getNpcScriptParameter", bind(WorldEntityCallbacks::getNpcScriptParameter, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", bind(WorldEntityCallbacks::objectSpaces, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("farmableStage", bind(WorldEntityCallbacks::farmableStage, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("containerSize", bind(WorldEntityCallbacks::containerSize, world, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", bind(WorldEntityCallbacks::containerClose, world, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", bind(WorldEntityCallbacks::containerOpen, world, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", bind(WorldEntityCallbacks::containerItems, world, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerItemAt", bind(WorldEntityCallbacks::containerItemAt, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Json>("containerConsume", bind(WorldEntityCallbacks::containerConsume, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, size_t, int>("containerConsumeAt", bind(WorldEntityCallbacks::containerConsumeAt, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerAvailable", bind(WorldEntityCallbacks::containerAvailable, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", bind(WorldEntityCallbacks::containerTakeAll, world, _1));
-    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerTakeAt", bind(WorldEntityCallbacks::containerTakeAt, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, size_t, int>("containerTakeNumItemsAt", bind(WorldEntityCallbacks::containerTakeNumItemsAt, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerItemsCanFit", bind(WorldEntityCallbacks::containerItemsCanFit, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", bind(WorldEntityCallbacks::containerItemsFitWhere, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", bind(WorldEntityCallbacks::containerAddItems, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", bind(WorldEntityCallbacks::containerStackItems, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerPutItemsAt", bind(WorldEntityCallbacks::containerPutItemsAt, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItems", bind(WorldEntityCallbacks::containerSwapItems, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItemsNoCombine", bind(WorldEntityCallbacks::containerSwapItemsNoCombine, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerItemApply", bind(WorldEntityCallbacks::containerItemApply, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", bind(WorldEntityCallbacks::callScriptedEntity, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", bind(WorldEntityCallbacks::findUniqueEntity, world, _1));
-    callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", bind(WorldEntityCallbacks::sendEntityMessage, world, _1, _2, _3, _4));
-    callbacks.registerCallbackWithSignature<Maybe<List<EntityId>>, EntityId, Maybe<size_t>>("loungingEntities", bind(WorldEntityCallbacks::loungingEntities, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Maybe<size_t>>("loungeableOccupied", bind(WorldEntityCallbacks::loungeableOccupied, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId>("loungeableAnchorCount", bind(WorldEntityCallbacks::loungeableAnchorCount, world, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<bool>>("isMonster", bind(WorldEntityCallbacks::isMonster, world, _1, _2));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("monsterType", bind(WorldEntityCallbacks::monsterType, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("npcType", bind(WorldEntityCallbacks::npcType, world, _1));
-    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("stagehandType", bind(WorldEntityCallbacks::stagehandType, world, _1));
-    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<int>>("isNpc", bind(WorldEntityCallbacks::isNpc, world, _1, _2));
+    callbacks.registerCallbackWithSignature<bool, int>("entityExists", [world](auto&&... args) { return WorldEntityCallbacks::entityExists(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", [world](auto&&... args) { return WorldEntityCallbacks::entityCanDamage(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", [world](auto&&... args) { return WorldEntityCallbacks::entityDamageTeam(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId>("entityAggressive", [world](auto&&... args) { return WorldEntityCallbacks::entityAggressive(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<LuaString>, LuaEngine&, int>("entityType", [world](auto&&... args) { return WorldEntityCallbacks::entityType(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityPosition", [world](auto&&... args) { return WorldEntityCallbacks::entityPosition(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, int>("entityVelocity", [world](auto&&... args) { return WorldEntityCallbacks::entityVelocity(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<RectF>, int>("entityMetaBoundBox", [world](auto&&... args) { return WorldEntityCallbacks::entityMetaBoundBox(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<uint64_t>, EntityId, String>("entityCurrency", [world](auto&&... args) { return WorldEntityCallbacks::entityCurrency(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<uint64_t>, EntityId, Json, Maybe<bool>>("entityHasCountOfItem", [world](auto&&... args) { return WorldEntityCallbacks::entityHasCountOfItem(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<Vec2F>, EntityId>("entityHealth", [world](auto&&... args) { return WorldEntityCallbacks::entityHealth(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entitySpecies", [world](auto&&... args) { return WorldEntityCallbacks::entitySpecies(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityGender", [world](auto&&... args) { return WorldEntityCallbacks::entityGender(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("entityName", [world](auto&&... args) { return WorldEntityCallbacks::entityName(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<Json>, EntityId>("entityNametag", [world](auto&&... args) { return WorldEntityCallbacks::entityNametag(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, Maybe<String>>("entityDescription", [world](auto&&... args) { return WorldEntityCallbacks::entityDescription(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<List<Drawable>>>, EntityId, String>("entityPortrait", [world](auto&&... args) { return WorldEntityCallbacks::entityPortrait(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId, String>("entityHandItem", [world](auto&&... args) { return WorldEntityCallbacks::entityHandItem(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, String>("entityHandItemDescriptor", [world](auto&&... args) { return WorldEntityCallbacks::entityHandItemDescriptor(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaNullTermWrapper<Maybe<String>>, EntityId>("entityUniqueId", [world](auto&&... args) { return WorldEntityCallbacks::entityUniqueId(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getObjectParameter", [world](auto&&... args) { return WorldEntityCallbacks::getObjectParameter(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, String, Maybe<Json>>("getNpcScriptParameter", [world](auto&&... args) { return WorldEntityCallbacks::getNpcScriptParameter(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<List<Vec2I>, EntityId>("objectSpaces", [world](auto&&... args) { return WorldEntityCallbacks::objectSpaces(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("farmableStage", [world](auto&&... args) { return WorldEntityCallbacks::farmableStage(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<int>, EntityId>("containerSize", [world](auto&&... args) { return WorldEntityCallbacks::containerSize(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, EntityId>("containerClose", [world](auto&&... args) { return WorldEntityCallbacks::containerClose(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, EntityId>("containerOpen", [world](auto&&... args) { return WorldEntityCallbacks::containerOpen(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId>("containerItems", [world](auto&&... args) { return WorldEntityCallbacks::containerItems(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerItemAt", [world](auto&&... args) { return WorldEntityCallbacks::containerItemAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Json>("containerConsume", [world](auto&&... args) { return WorldEntityCallbacks::containerConsume(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, size_t, int>("containerConsumeAt", [world](auto&&... args) { return WorldEntityCallbacks::containerConsumeAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerAvailable", [world](auto&&... args) { return WorldEntityCallbacks::containerAvailable(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId>("containerTakeAll", [world](auto&&... args) { return WorldEntityCallbacks::containerTakeAll(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, size_t>("containerTakeAt", [world](auto&&... args) { return WorldEntityCallbacks::containerTakeAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, size_t, int>("containerTakeNumItemsAt", [world](auto&&... args) { return WorldEntityCallbacks::containerTakeNumItemsAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId, Json>("containerItemsCanFit", [world](auto&&... args) { return WorldEntityCallbacks::containerItemsCanFit(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerItemsFitWhere", [world](auto&&... args) { return WorldEntityCallbacks::containerItemsFitWhere(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerAddItems", [world](auto&&... args) { return WorldEntityCallbacks::containerAddItems(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json>("containerStackItems", [world](auto&&... args) { return WorldEntityCallbacks::containerStackItems(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerPutItemsAt", [world](auto&&... args) { return WorldEntityCallbacks::containerPutItemsAt(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItems", [world](auto&&... args) { return WorldEntityCallbacks::containerSwapItems(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerSwapItemsNoCombine", [world](auto&&... args) { return WorldEntityCallbacks::containerSwapItemsNoCombine(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Json, EntityId, Json, size_t>("containerItemApply", [world](auto&&... args) { return WorldEntityCallbacks::containerItemApply(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<LuaValue>, EntityId, String, LuaVariadic<LuaValue>>("callScriptedEntity", [world](auto&&... args) { return WorldEntityCallbacks::callScriptedEntity(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<RpcPromise<Vec2F>, String>("findUniqueEntity", [world](auto&&... args) { return WorldEntityCallbacks::findUniqueEntity(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<RpcPromise<Json>, LuaEngine&, LuaValue, String, LuaVariadic<Json>>("sendEntityMessage", [world](auto&&... args) { return WorldEntityCallbacks::sendEntityMessage(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<List<EntityId>>, EntityId, Maybe<size_t>>("loungingEntities", [world](auto&&... args) { return WorldEntityCallbacks::loungingEntities(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<bool>, EntityId, Maybe<size_t>>("loungeableOccupied", [world](auto&&... args) { return WorldEntityCallbacks::loungeableOccupied(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<size_t>, EntityId>("loungeableAnchorCount", [world](auto&&... args) { return WorldEntityCallbacks::loungeableAnchorCount(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<bool>>("isMonster", [world](auto&&... args) { return WorldEntityCallbacks::isMonster(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("monsterType", [world](auto&&... args) { return WorldEntityCallbacks::monsterType(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("npcType", [world](auto&&... args) { return WorldEntityCallbacks::npcType(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<Maybe<String>, EntityId>("stagehandType", [world](auto&&... args) { return WorldEntityCallbacks::stagehandType(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, EntityId, Maybe<int>>("isNpc", [world](auto&&... args) { return WorldEntityCallbacks::isNpc(world, std::forward<decltype(args)>(args)...); });
     callbacks.registerCallback("isEntityInteractive", [world](EntityId entityId) -> Maybe<bool> {
         if (auto entity = world->get<InteractiveEntity>(entityId))
           return entity->isInteractive();
@@ -633,16 +633,16 @@ namespace LuaBindings {
   }
 
   void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world) {
-    callbacks.registerCallbackWithSignature<float, Vec2F>("lightLevel", bind(WorldEnvironmentCallbacks::lightLevel, world, _1));
-    callbacks.registerCallbackWithSignature<float, Vec2F>("windLevel", bind(WorldEnvironmentCallbacks::windLevel, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F>("breathable", bind(WorldEnvironmentCallbacks::breathable, world, _1));
-    callbacks.registerCallbackWithSignature<bool, Vec2F>("underground", bind(WorldEnvironmentCallbacks::underground, world, _1));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("material", bind(WorldEnvironmentCallbacks::material, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("mod", bind(WorldEnvironmentCallbacks::mod, world, _1, _2, _3));
-    callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", bind(WorldEnvironmentCallbacks::materialHueShift, world, _1, _2));
-    callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", bind(WorldEnvironmentCallbacks::modHueShift, world, _1, _2));
-    callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", bind(WorldEnvironmentCallbacks::materialColor, world, _1, _2));
-    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", bind(WorldEnvironmentCallbacks::setMaterialColor, world, _1, _2, _3));
+    callbacks.registerCallbackWithSignature<float, Vec2F>("lightLevel", [world](auto&&... args) { return WorldEnvironmentCallbacks::lightLevel(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<float, Vec2F>("windLevel", [world](auto&&... args) { return WorldEnvironmentCallbacks::windLevel(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F>("breathable", [world](auto&&... args) { return WorldEnvironmentCallbacks::breathable(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F>("underground", [world](auto&&... args) { return WorldEnvironmentCallbacks::underground(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("material", [world](auto&&... args) { return WorldEnvironmentCallbacks::material(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<LuaValue, LuaEngine&, Vec2F, String>("mod", [world](auto&&... args) { return WorldEnvironmentCallbacks::mod(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<float, Vec2F, String>("materialHueShift", [world](auto&&... args) { return WorldEnvironmentCallbacks::materialHueShift(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<float, Vec2F, String>("modHueShift", [world](auto&&... args) { return WorldEnvironmentCallbacks::modHueShift(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<MaterialColorVariant, Vec2F, String>("materialColor", [world](auto&&... args) { return WorldEnvironmentCallbacks::materialColor(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<void, Vec2F, String, MaterialColorVariant>("setMaterialColor", [world](auto&&... args) { return WorldEnvironmentCallbacks::setMaterialColor(world, std::forward<decltype(args)>(args)...); });
 
     callbacks.registerCallback("oceanLevel", [world](Vec2I position) -> int {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -657,12 +657,12 @@ namespace LuaBindings {
         return world->environmentStatusEffects(position);
       });
 
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", bind(WorldEnvironmentCallbacks::damageTiles, world, _1, _2, _3, _4, _5, _6, _7));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", bind(WorldEnvironmentCallbacks::damageTileArea, world, _1, _2, _3, _4, _5, _6, _7, _8));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", bind(WorldEnvironmentCallbacks::placeMaterial, world, _1, _2, _3, _4, _5));
-    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", bind(WorldEnvironmentCallbacks::replaceMaterials, world, _1, _2, _3, _4, _5));
-    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", bind(WorldEnvironmentCallbacks::replaceMaterialArea, world, _1, _2, _3, _4, _5, _6));
-    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", bind(WorldEnvironmentCallbacks::placeMod, world, _1, _2, _3, _4, _5));
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTiles", [world](auto&&... args) { return WorldEnvironmentCallbacks::damageTiles(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, Vec2F, String, float, Maybe<unsigned>, Maybe<EntityId>>("damageTileArea", [world](auto&&... args) { return WorldEnvironmentCallbacks::damageTileArea(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMaterial", [world](auto&&... args) { return WorldEnvironmentCallbacks::placeMaterial(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, List<Vec2I>, String, String, Maybe<int>, bool>("replaceMaterials", [world](auto&&... args) { return WorldEnvironmentCallbacks::replaceMaterials(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2F, float, String, String, Maybe<int>, bool>("replaceMaterialArea", [world](auto&&... args) { return WorldEnvironmentCallbacks::replaceMaterialArea(world, std::forward<decltype(args)>(args)...); });
+    callbacks.registerCallbackWithSignature<bool, Vec2I, String, String, Maybe<int>, bool>("placeMod", [world](auto&&... args) { return WorldEnvironmentCallbacks::placeMod(world, std::forward<decltype(args)>(args)...); });
 
     callbacks.registerCallback("radialTileQuery", [world](Vec2F center, float radius, String layerName) -> List<Vec2I> {
       auto layer = TileLayerNames.getLeft(layerName);

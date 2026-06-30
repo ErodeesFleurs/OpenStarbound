@@ -21,7 +21,6 @@ ByteArray ByteArray::withReserve(size_t capacity) {
 }
 
 ByteArray::ByteArray() {
-  m_data = nullptr;
   m_capacity = 0;
   m_size = 0;
 }
@@ -63,7 +62,7 @@ ByteArray& ByteArray::operator=(ByteArray&& b) noexcept {
   if (&b != this) {
     reset();
 
-    m_data = take(b.m_data);
+    m_data = std::move(b.m_data);
     m_capacity = take(b.m_capacity);
     m_size = take(b.m_size);
   }
@@ -72,12 +71,9 @@ ByteArray& ByteArray::operator=(ByteArray&& b) noexcept {
 }
 
 void ByteArray::reset() {
-  if (m_data) {
-    Star::free(m_data, m_capacity);
-    m_data = nullptr;
-    m_capacity = 0;
-    m_size = 0;
-  }
+  m_data.reset();
+  m_capacity = 0;
+  m_size = 0;
 }
 
 void ByteArray::reserve(size_t newCapacity) {
@@ -86,14 +82,17 @@ void ByteArray::reserve(size_t newCapacity) {
       auto newMem = static_cast<char*>(Star::malloc(newCapacity));
       if (!newMem)
         throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
-      m_data = newMem;
+      m_data.reset(newMem);
       m_capacity = newCapacity;
     } else {
       newCapacity = max({m_capacity * 2, newCapacity, static_cast<size_t>(8)});
-      auto newMem = static_cast<char*>(Star::realloc(m_data, newCapacity));
-      if (!newMem)
+      auto oldPtr = m_data.release();
+      auto newMem = static_cast<char*>(Star::realloc(oldPtr, newCapacity));
+      if (!newMem) {
+        Star::free(oldPtr);
         throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
-      m_data = newMem;
+      }
+      m_data.reset(newMem);
       m_capacity = newCapacity;
     }
   }
@@ -113,7 +112,7 @@ void ByteArray::fill(size_t s, char c) {
   if (s != NPos)
     resize(s);
 
-  memset(m_data, c, m_size);
+  memset(m_data.get(), c, m_size);
 }
 
 void ByteArray::fill(char c) {
@@ -124,7 +123,7 @@ ByteArray ByteArray::sub(size_t b, size_t s) const {
   if (b == 0 && s >= m_size) {
     return ByteArray(*this);
   } else {
-    return ByteArray(m_data + b, min(m_size, b + s));
+    return ByteArray(m_data.get() + b, min(m_size, b + s));
   }
 }
 
@@ -145,7 +144,7 @@ void ByteArray::trimLeft(size_t s) {
   if (s >= m_size) {
     clear();
   } else {
-    std::memmove(m_data, m_data + s, m_size - s);
+    std::memmove(m_data.get(), m_data.get() + s, m_size - s);
     resize(m_size - s);
   }
 }
@@ -159,8 +158,8 @@ void ByteArray::trimRight(size_t s) {
 
 size_t ByteArray::diffChar(const ByteArray& b) const {
   size_t s = min(m_size, b.size());
-  char* ac = m_data;
-  char* bc = b.m_data;
+  char* ac = m_data.get();
+  char* bc = b.m_data.get();
   size_t i;
   for (i = 0; i < s; ++i) {
     if (ac[i] != bc[i])

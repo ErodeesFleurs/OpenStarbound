@@ -15,7 +15,7 @@ using EnvironmentPainterPtr = SharedPtr<EnvironmentPainter>;
 
 class EnvironmentPainter {
 public:
-  EnvironmentPainter(RendererPtr renderer);
+  explicit EnvironmentPainter(RendererPtr renderer);
 
   void update(float dt);
 

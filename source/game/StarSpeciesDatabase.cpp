@@ -236,6 +236,7 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
     m_defaultBlueprints.append(ItemDescriptor(v));
 
   auto personalities = humanoidConfig().getArray("personalities");
+  m_personalities.reserve(m_personalities.size() + personalities.size());
   for (auto personality : personalities) {
     m_personalities.push_back(parsePersonalityArray(personality));
   }

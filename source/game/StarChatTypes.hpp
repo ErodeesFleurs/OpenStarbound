@@ -1,10 +1,10 @@
 #pragma once
 
-#include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
+class DataStream;
 
 enum class ChatSendMode : uint8_t {
   Broadcast,

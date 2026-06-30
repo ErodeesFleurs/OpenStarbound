@@ -8,7 +8,7 @@ class NonRotatedDrawablesItem;
 
 class NonRotatedDrawablesItem {
 public:
-  virtual ~NonRotatedDrawablesItem() {}
+  virtual ~NonRotatedDrawablesItem() = default;
   virtual List<Drawable> nonRotatedDrawables() const = 0;
 };
 

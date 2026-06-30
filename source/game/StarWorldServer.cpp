@@ -7,6 +7,7 @@
 #include "StarWireEntity.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarWorldGeneration.hpp"
+#include "StarPacketPool.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItemDrop.hpp"
 #include "StarObjectDatabase.hpp"
@@ -161,7 +162,7 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
   }
 
   auto objectDatabase = Root::singleton().objectDatabase();
-  for (auto structureObject : m_centralStructure.objects()) {
+  for (auto const& structureObject : m_centralStructure.objects()) {
     generateRegion(RectI::withSize(structureObject.position, {1, 1}));
     if (auto object = objectDatabase->createForPlacement(this, structureObject.name, structureObject.position, structureObject.direction, structureObject.parameters))
       addEntity(object);
@@ -303,7 +304,7 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
       auto response = m_entityMessageResponses[uuid].second;
       if (response.is<ConnectionId>()) {
         if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
-          clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
+          clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
       } else {
         response.get<RpcPromiseKeeper<Json>>().fail("Client disconnected");
       }
@@ -348,7 +349,7 @@ PlayerPtr WorldServer::clientPlayer(ConnectionId clientId) const {
 
 List<EntityId> WorldServer::players() const {
   List<EntityId> playerIds;
-  for (auto pair : m_clientInfo)
+  for (auto const& pair : m_clientInfo)
     playerIds.append(pair.second->clientState.playerId());
   return playerIds;
 }
@@ -385,12 +386,12 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
     } else if (auto mtpacket = as<ModifyTileListPacket>(packet)) {
       auto unappliedModifications = applyTileModifications(mtpacket->modifications, mtpacket->allowEntityOverlap);
       if (!unappliedModifications.empty())
-        clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
+        clientInfo->outgoingPackets.append(makePooled<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
       auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage, rtpacket->applyDamage);
       if (!unappliedModifications.empty())
-        clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
+        clientInfo->outgoingPackets.append(makePooled<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto dtgpacket = as<DamageTileGroupPacket>(packet)) {
       damageTiles(dtgpacket->tilePositions, dtgpacket->layer, dtgpacket->sourcePosition, dtgpacket->tileDamage, dtgpacket->sourceEntity);
@@ -428,7 +429,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
       for (auto const& pair : m_clientInfo) {
         if (pair.first != clientId && pair.second->needsDamageNotification(damage->remoteDamageNotification))
-          pair.second->outgoingPackets.append(make_shared<DamageNotificationPacket>(damage->remoteDamageNotification));
+          pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(damage->remoteDamageNotification));
       }
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
@@ -484,17 +485,17 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       }
 
     } else if (auto disconnectWires = as<DisconnectAllWiresPacket>(packet)) {
-      for (auto wireEntity : atTile<WireEntity>(disconnectWires->entityPosition)) {
-        for (auto connection : wireEntity->connectionsForNode(disconnectWires->wireNode)) {
+      for (auto const& wireEntity : atTile<WireEntity>(disconnectWires->entityPosition)) {
+        for (auto const& connection : wireEntity->connectionsForNode(disconnectWires->wireNode)) {
           wireEntity->removeNodeConnection(disconnectWires->wireNode, connection);
-          for (auto connectedEntity : atTile<WireEntity>(connection.entityLocation))
+          for (auto const& connectedEntity : atTile<WireEntity>(connection.entityLocation))
             connectedEntity->removeNodeConnection({otherWireDirection(disconnectWires->wireNode.direction), connection.nodeIndex}, WireConnection{disconnectWires->entityPosition, disconnectWires->wireNode.nodeIndex});
         }
       }
 
     } else if (auto connectWire = as<ConnectWirePacket>(packet)) {
-      for (auto source : atTile<WireEntity>(connectWire->inputConnection.entityLocation)) {
-        for (auto target : atTile<WireEntity>(connectWire->outputConnection.entityLocation)) {
+      for (auto const& source : atTile<WireEntity>(connectWire->inputConnection.entityLocation)) {
+        for (auto const& target : atTile<WireEntity>(connectWire->outputConnection.entityLocation)) {
           source->addNodeConnection(WireNode{WireDirection::Input, connectWire->inputConnection.nodeIndex}, connectWire->outputConnection);
           target->addNodeConnection(WireNode{WireDirection::Output, connectWire->outputConnection.nodeIndex}, connectWire->inputConnection);
         }
@@ -512,14 +513,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         entity = m_entityMap->entity(loadUniqueEntity(entityMessagePacket->entityId.get<String>()));
 
       if (!entity) {
-        clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
+        clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
       } else {
         if (entity->isMaster()) {
           auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args);
           if (response)
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
+            clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
           else
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
+            clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
         } else if (auto const& clientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
           m_entityMessageResponses[entityMessagePacket->uuid] = {clientInfo->clientId, clientId};
           entityMessagePacket->fromConnection = clientId;
@@ -554,7 +555,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           m_worldProperties[pair.first] = pair.second;
       }
       for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
+        pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
     } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
       if (!clientInfo->admin)
@@ -644,13 +645,23 @@ void WorldServer::update(float dt) {
     m_needsGlobalBreakCheck = false;
 
   List<EntityId> toRemove;
+
+  HashSet<Vec2S> activeSectors;
+  for (auto const& pair : m_clientInfo) {
+    auto window = pair.second->clientState.window().padded(WorldSectorSize);
+    activeSectors.addAll(m_tileArray->validSectorsFor(window));
+  }
+
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+      auto sector = m_tileArray->sectorFor(Vec2I::floor(entity->position()));
+      if (!activeSectors.contains(Vec2S(sector[0], sector[1]))) {
+        if (entity->entityMode() != EntityMode::Master)
+          return;
+      }
+
       entity->update(dt, m_currentStep);
 
       if (auto tileEntity = as<TileEntity>(entity)) {
-        // Only do break checks on objects if all sectors the object touches
-        // *and surrounding sectors* are active.  Objects that this object
-        // rests on can be up to an entire sector large in any direction.
         if (doBreakChecks && regionActive(RectI::integral(tileEntity->metaBoundBox().translated(tileEntity->position())).padded(WorldSectorSize)))
           tileEntity->checkBroken();
         updateTileEntityTiles(tileEntity);
@@ -681,7 +692,7 @@ void WorldServer::update(float dt) {
 
   m_weather.setClientVisibleRegions(clientWindows);
   m_weather.update(dt);
-  for (auto projectile : m_weather.pullNewProjectiles())
+  for (auto&& projectile : m_weather.pullNewProjectiles())
     addEntity(std::move(projectile));
 
   if (shouldRunThisStep("liquidUpdate")) {
@@ -747,6 +758,10 @@ uint64_t WorldServer::currentStep() const {
 
 MaterialId WorldServer::material(Vec2I const& pos, TileLayer layer) const {
   return m_tileArray->tile(pos).material(layer);
+}
+
+std::tuple<MaterialId, ModId> WorldServer::materialAndMod(Vec2I const& pos, TileLayer layer) const {
+  return m_tileArray->tile(pos).materialAndMod(layer);
 }
 
 MaterialHue WorldServer::materialHueShift(Vec2I const& position, TileLayer layer) const {
@@ -826,12 +841,13 @@ CollisionKind WorldServer::tileCollisionKind(Vec2I const& pos) const {
 
 void WorldServer::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {
   const_cast<WorldServer*>(this)->freshenCollision(region);
-  m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ServerTile const& tile) {
+  m_tileArray->tileEach(region, [&](Vec2I const& pos, ServerTile const& tile) {
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
-        for (auto const& block : tile.collisionCache)
+        auto const& cache = m_collisionCache.get(pos);
+        for (auto const& block : cache)
           iterator(block);
       }
     });
@@ -924,7 +940,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
       auto damage = placeMaterial->layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       Vec2F dropPosition = centerOfTile(pos);
 
-      for (auto drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
+      for (auto const& drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
       
       return true;
@@ -941,7 +957,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
     List<Vec2I> toDamage;
     TileLayer layer;
 
-    for (auto pair : modificationList) {
+    for (auto const& pair : modificationList) {
       if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
         layer = placeMaterial->layer;
 
@@ -970,7 +986,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
       damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
     
   } else {
-    for (auto pair : modificationList) {
+    for (auto const& pair : modificationList) {
       if (replaceTile(pair.first, pair.second, tileDamage))
         success.append(pair);
       else
@@ -980,7 +996,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
 
   failures.appendAll(doApplyTileModifications(success, true, false, false));
 
-  for (auto pair : success) {
+  for (auto const& pair : success) {
     checkEntityBreaks(RectF::withSize(Vec2F(pair.first), Vec2F(1, 1)));
     m_liquidEngine->visitLocation(pair.first);
     m_fallingBlocksAgent->visitLocation(pair.first);
@@ -1016,7 +1032,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
           damagePositionSet.add(entityDamagePos);
         }
 
-        for (auto entity : m_entityMap->entitiesAtTile(entityDamagePos)) {
+        for (auto const& entity : m_entityMap->entitiesAtTile(entityDamagePos)) {
           if (!damagedEntities.contains(entity)) {
             Set<Vec2I> entitySpacesSet;
             for (auto const& space : entity->spaces())
@@ -1119,7 +1135,7 @@ ItemDescriptor WorldServer::collectLiquid(List<Vec2I> const& tilePositions, Liqu
   float nextUnit = bucketSize;
   List<ServerTile*> maybeDrainTiles;
 
-  for (auto pos : tilePositions) {
+  for (auto const& pos : tilePositions) {
     ServerTile* tile = m_tileArray->modifyTile(pos);
     if (tile->liquid.liquid == liquidId && !isTileProtected(pos)) {
       if (tile->liquid.level >= nextUnit) {
@@ -1165,7 +1181,7 @@ bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position,
   DungeonGenerator dungeonGenerator(dungeonName, seed, m_worldTemplate->threatLevel(), dungeonId);
   if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
     auto worldGenerator = make_shared<WorldGenerator>(this);
-    for (auto position : generateResult->second) {
+    for (auto const& position : generateResult->second) {
       if (ServerTile* tile = modifyServerTile(position))
         worldGenerator->replaceBiomeBlocks(tile);
     }
@@ -1188,8 +1204,8 @@ void WorldServer::addBiomeRegion(Vec2I const& position, String const& biomeName,
     return;
   }
 
-  for (auto region : regions) {
-    for (auto sector : m_worldStorage->sectorsForRegion(region))
+  for (auto const& region : regions) {
+    for (auto const& sector : m_worldStorage->sectorsForRegion(region))
       m_worldStorage->triggerTerraformSector(sector);
   }
 
@@ -1206,8 +1222,8 @@ void WorldServer::expandBiomeRegion(Vec2I const& position, int newWidth) {
     return;
   }
 
-  for (auto region : regions) {
-    for (auto sector : m_worldStorage->sectorsForRegion(region))
+  for (auto const& region : regions) {
+    for (auto const& sector : m_worldStorage->sectorsForRegion(region))
       m_worldStorage->triggerTerraformSector(sector);
   }
 
@@ -1218,7 +1234,7 @@ bool WorldServer::pregenerateAddBiome(Vec2I const& position, int width) {
   auto regions = m_worldTemplate->previewAddBiomeRegion(position, width);
 
   bool generationComplete = true;
-  for (auto region : regions)
+  for (auto const& region : regions)
     generationComplete = generationComplete && signalRegion(region);
 
   return generationComplete;
@@ -1228,7 +1244,7 @@ bool WorldServer::pregenerateExpandBiome(Vec2I const& position, int newWidth) {
   auto regions = m_worldTemplate->previewExpandBiomeRegion(position, newWidth);
 
   bool generationComplete = true;
-  for (auto region : regions)
+  for (auto const& region : regions)
     generationComplete = generationComplete && signalRegion(region);
 
   return generationComplete;
@@ -1429,7 +1445,7 @@ void WorldServer::init(bool firstTime) {
   m_tileEntityBreakCheckTimer = GameTimer(m_serverConfig.getFloat("tileEntityBreakCheckInterval"));
 
   m_liquidEngine = make_shared<LiquidCellEngine<LiquidId>>(liquidsDatabase->liquidEngineParameters(), make_shared<LiquidWorld>(this));
-  for (auto liquidSettings : liquidsDatabase->allLiquidSettings())
+  for (auto const& liquidSettings : liquidsDatabase->allLiquidSettings())
     m_liquidEngine->setLiquidTickDelta(liquidSettings->id, liquidSettings->tickDelta);
 
   m_fallingBlocksAgent = make_shared<FallingBlocksAgent>(make_shared<FallingBlocksWorld>(this));
@@ -1470,7 +1486,7 @@ void WorldServer::init(bool firstTime) {
             // floating dungeon worlds should force immediate generation (since there won't be terrain) to avoid
             // bottlenecking "generation" of empty generation levels during loading
             if (isFloatingDungeonWorld()) {
-              for (auto region : generateResult->first)
+              for (auto const& region : generateResult->first)
                 generateRegion(region);
             }
 
@@ -1767,7 +1783,7 @@ bool WorldServer::signalRegion(RectI const& region) {
 }
 
 void WorldServer::generateRegion(RectI const& region) {
-  for (auto sector : m_worldStorage->sectorsForRegion(region))
+  for (auto const& sector : m_worldStorage->sectorsForRegion(region))
     m_worldStorage->activateSector(sector);
 }
 
@@ -1931,7 +1947,7 @@ List<ItemDescriptor> WorldServer::destroyBlock(TileLayer layer, Vec2I const& pos
 
 void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdates) {
   auto const& clientInfo = m_clientInfo.get(clientId);
-  clientInfo->outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentTime));
+  clientInfo->outgoingPackets.append(makePooled<StepUpdatePacket>(m_currentTime));
 
   if (shouldRunThisStep("environmentUpdate")) {
     ByteArray skyDelta;
@@ -1941,14 +1957,14 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
     tie(weatherDelta, clientInfo->weatherNetVersion) = m_weather.writeUpdate(clientInfo->weatherNetVersion, clientInfo->clientState.netCompatibilityRules());
 
     if (!skyDelta.empty() || !weatherDelta.empty())
-      clientInfo->outgoingPackets.append(make_shared<EnvironmentUpdatePacket>(std::move(skyDelta), std::move(weatherDelta)));
+      clientInfo->outgoingPackets.append(makePooled<EnvironmentUpdatePacket>(std::move(skyDelta), std::move(weatherDelta)));
   }
 
   for (auto sector : clientInfo->pendingSectors.values()) {
     if (!m_worldStorage->sectorActive(sector))
       continue;
 
-    auto tileArrayUpdate = make_shared<TileArrayUpdatePacket>();
+    auto tileArrayUpdate = makePooled<TileArrayUpdatePacket>();
     auto sectorTiles = m_tileArray->sectorRegion(sector);
     tileArrayUpdate->min = sectorTiles.min();
     tileArrayUpdate->array.resize(Vec2S(sectorTiles.width(), sectorTiles.height()));
@@ -1961,8 +1977,8 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
     clientInfo->pendingSectors.remove(sector);
   }
 
-  for (auto pos : clientInfo->pendingTileUpdates) {
-    auto tileUpdate = make_shared<TileUpdatePacket>();
+  for (auto const& pos : clientInfo->pendingTileUpdates) {
+    auto tileUpdate = makePooled<TileUpdatePacket>();
     tileUpdate->position = pos;
     writeNetTile(pos, tileUpdate->tile);
 
@@ -1970,20 +1986,20 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   }
   clientInfo->pendingTileUpdates.clear();
 
-  for (auto pair : clientInfo->pendingTileDamageUpdates) {
+  for (auto const& pair : clientInfo->pendingTileDamageUpdates) {
     auto tile = m_tileArray->tile(pair.first);
     if (pair.second == TileLayer::Foreground)
       clientInfo->outgoingPackets.append(
-          make_shared<TileDamageUpdatePacket>(pair.first, TileLayer::Foreground, tile.foregroundDamage));
+          makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Foreground, tile.foregroundDamage));
     else
       clientInfo->outgoingPackets.append(
-          make_shared<TileDamageUpdatePacket>(pair.first, TileLayer::Background, tile.backgroundDamage));
+          makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Background, tile.backgroundDamage));
   }
   clientInfo->pendingTileDamageUpdates.clear();
 
-  for (auto pos : clientInfo->pendingLiquidUpdates) {
+  for (auto const& pos : clientInfo->pendingLiquidUpdates) {
     auto tile = m_tileArray->tile(pos);
-    clientInfo->outgoingPackets.append(make_shared<TileLiquidUpdatePacket>(pos, tile.liquid.netUpdate()));
+    clientInfo->outgoingPackets.append(makePooled<TileLiquidUpdatePacket>(pos, tile.liquid.netUpdate()));
   }
   clientInfo->pendingLiquidUpdates.clear();
 
@@ -1996,16 +2012,16 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   for (auto const& monitoredEntity : monitoredEntities)
     outOfMonitoredRegionsEntities.remove(monitoredEntity->entityId());
   for (auto entityId : outOfMonitoredRegionsEntities) {
-    clientInfo->outgoingPackets.append(make_shared<EntityDestroyPacket>(entityId, ByteArray(), false));
+    clientInfo->outgoingPackets.append(makePooled<EntityDestroyPacket>(entityId, ByteArray(), false));
     clientInfo->clientSlavesNetVersion.remove(entityId);
   }
 
   HashMap<ConnectionId, shared_ptr<EntityUpdateSetPacket>> updateSetPackets;
   if (sendRemoteUpdates || clientInfo->local)
-    updateSetPackets.add(ServerConnectionId, make_shared<EntityUpdateSetPacket>(ServerConnectionId));
+    updateSetPackets.add(ServerConnectionId, makePooled<EntityUpdateSetPacket>(ServerConnectionId));
   for (auto const& p : m_clientInfo) {
     if (p.first != clientId && p.second->pendingForward)
-      updateSetPackets.add(p.first, make_shared<EntityUpdateSetPacket>(p.first));
+      updateSetPackets.add(p.first, makePooled<EntityUpdateSetPacket>(p.first));
   }
 
   for (auto const& monitoredEntity : monitoredEntities) {
@@ -2029,7 +2045,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
         // Client was unaware of this entity until now
         auto firstUpdate = monitoredEntity->writeNetState(0, netRules);
         clientInfo->clientSlavesNetVersion.add(entityId, firstUpdate.second);
-        clientInfo->outgoingPackets.append(make_shared<EntityCreatePacket>(monitoredEntity->entityType(),
+        clientInfo->outgoingPackets.append(makePooled<EntityCreatePacket>(monitoredEntity->entityType(),
               entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(firstUpdate.first), entityId));
       }
     }
@@ -2056,7 +2072,7 @@ void WorldServer::updateDamage(float dt) {
   for (auto const& remoteDamageNotification : m_damageManager->pullRemoteDamageNotifications()) {
     for (auto const& pair : m_clientInfo) {
       if (pair.second->needsDamageNotification(remoteDamageNotification))
-        pair.second->outgoingPackets.append(make_shared<DamageNotificationPacket>(remoteDamageNotification));
+        pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(remoteDamageNotification));
     }
   }
 }
@@ -2078,7 +2094,7 @@ WorldChunks WorldServer::readChunks() {
 void WorldServer::updateDamagedBlocks(float dt) {
   auto materialDatabase = Root::singleton().materialDatabase();
 
-  for (auto pos : m_damagedBlocks.values()) {
+  for (auto const& pos : m_damagedBlocks.values()) {
     auto tile = m_tileArray->modifyTile(pos);
     if (!tile) {
       m_damagedBlocks.remove(pos);
@@ -2088,7 +2104,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
     Vec2F dropPosition = centerOfTile(pos);
     if (tile->foregroundDamage.dead()) {
       bool harvested = tile->foregroundDamage.harvested();
-      for (auto drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType())))
+      for (auto const& drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType())))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
 
     } else if (tile->foregroundDamage.damaged()) {
@@ -2110,7 +2126,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
 
     if (tile->backgroundDamage.dead()) {
       bool harvested = tile->backgroundDamage.harvested();
-      for (auto drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType())))
+      for (auto const& drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType())))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
 
     } else if (tile->backgroundDamage.damaged()) {
@@ -2138,7 +2154,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
 }
 
 void WorldServer::checkEntityBreaks(RectF const& rect) {
-  for (auto tileEntity : m_entityMap->query<TileEntity>(rect))
+  for (auto const& tileEntity : m_entityMap->query<TileEntity>(rect))
     tileEntity->checkBroken();
 }
 
@@ -2176,41 +2192,11 @@ void WorldServer::writeNetTile(Vec2I const& pos, NetTile& netTile) const {
 }
 
 void WorldServer::dirtyCollision(RectI const& region) {
-  auto dirtyRegion = region.padded(CollisionGenerator::BlockInfluenceRadius);
-  for (int x = dirtyRegion.xMin(); x < dirtyRegion.xMax(); ++x) {
-    for (int y = dirtyRegion.yMin(); y < dirtyRegion.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y}))
-        tile->collisionCacheDirty = true;
-    }
-  }
+  dirtyCollisionImpl(m_tileArray, region);
 }
 
 void WorldServer::freshenCollision(RectI const& region) {
-  RectI freshenRegion = RectI::null();
-  for (int x = region.xMin(); x < region.xMax(); ++x) {
-    for (int y = region.yMin(); y < region.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y})) {
-        if (tile->collisionCacheDirty)
-          freshenRegion.combine(RectI(x, y, x + 1, y + 1));
-      }
-    }
-  }
-
-  if (!freshenRegion.isNull()) {
-    for (int x = freshenRegion.xMin(); x < freshenRegion.xMax(); ++x) {
-      for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
-        if (auto tile = m_tileArray->modifyTile({x, y})) {
-          tile->collisionCacheDirty = false;
-          tile->collisionCache.clear();
-        }
-      }
-    }
-
-    for (auto collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
-      if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
-        tile->collisionCache.append(std::move(collisionBlock));
-    }
-  }
+  freshenCollisionImpl(m_tileArray, m_collisionGenerator, m_collisionCache, region);
 }
 
 void WorldServer::removeEntity(EntityId entityId, bool andDie) {
@@ -2325,7 +2311,7 @@ void WorldServer::setProperty(String const& propertyName, Json const& property) 
     else
       entry->second = property;
     for (auto const& pair : m_clientInfo)
-      pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
+      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
   }
   auto listener = m_worldPropertyListeners.find(propertyName);
   if (listener != m_worldPropertyListeners.end())
@@ -2405,7 +2391,7 @@ void WorldServer::setPlayerStart(Vec2F const& startPosition, bool respawnInWorld
   m_playerStart = startPosition;
   m_respawnInWorld = respawnInWorld;
   m_adjustPlayerStart = false;
-  for (auto pair : m_clientInfo)
+  for (auto const& pair : m_clientInfo)
     pair.second->outgoingPackets.append(make_shared<SetPlayerStartPacket>(m_playerStart, m_respawnInWorld));
 }
 
@@ -2534,7 +2520,7 @@ void WorldServer::writeMetadata() {
 
 bool WorldServer::isVisibleToPlayer(RectF const& region) const {
   for (auto const& p : m_clientInfo) {
-    for (auto playerRegion : p.second->monitoringRegions(m_entityMap)) {
+    for (auto const& playerRegion : p.second->monitoringRegions(m_entityMap)) {
       if (m_geometry.rectIntersectsRect(RectF(playerRegion), region))
         return true;
     }
@@ -2648,8 +2634,8 @@ void WorldServer::setTemplate(WorldTemplatePtr newTemplate) {
 void WorldServer::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex) {
   WireConnection output = {outputPosition, outputIndex};
   WireConnection input = {inputPosition, inputIndex};
-  for (auto source : atTile<WireEntity>(input.entityLocation)) {
-    for (auto target : atTile<WireEntity>(output.entityLocation)) {
+  for (auto const& source : atTile<WireEntity>(input.entityLocation)) {
+    for (auto const& target : atTile<WireEntity>(output.entityLocation)) {
       source->addNodeConnection(WireNode{WireDirection::Input, input.nodeIndex}, output);
       target->addNodeConnection(WireNode{WireDirection::Output, output.nodeIndex}, input);
     }

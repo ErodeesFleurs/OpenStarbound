@@ -31,7 +31,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
     canvasWidget->drawDrawable(std::move(drawable), screenPos.value(Vec2F()));
   });
 
-  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables, Maybe<Vec2F> screenPos) {
+  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> const& drawables, Maybe<Vec2F> screenPos) {
     Vec2F pos = screenPos.value(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(std::move(drawable), pos);

@@ -12,10 +12,10 @@ public:
   ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction);
   void setImageStretchSet(String const& beginImage, String const& innerImage, String const& endImage);
 
-  virtual ~ImageStretchWidget() {}
+  virtual ~ImageStretchWidget() = default;
 
 protected:
-  virtual void renderImpl();
+  virtual void renderImpl() override;
 
 private:
   ImageStretchSet m_imageStretchSet;

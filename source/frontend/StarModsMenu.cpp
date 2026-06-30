@@ -13,8 +13,8 @@ ModsMenu::ModsMenu() {
   auto assets = Root::singleton().assets();
 
   GuiReader reader;
-  reader.registerCallback("linkbutton", bind(&ModsMenu::openLink, this));
-  reader.registerCallback("workshopbutton", bind(&ModsMenu::openWorkshop, this));
+  reader.registerCallback("linkbutton", [this](Widget*) { openLink(); });
+  reader.registerCallback("workshopbutton", [this](Widget*) { openWorkshop(); });
   reader.construct(assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
 
   m_assetsSources = assets->assetSources();

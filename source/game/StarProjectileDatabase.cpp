@@ -161,7 +161,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   projectileConfig->masterOnly = config.getBool("masterOnly", false);
 
   projectileConfig->scripts =
-      jsonToStringList(config.get("scripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
+      jsonToStringList(config.get("scripts", JsonArray())).transformed([path](String const& s) { return AssetPath::relativeTo(path, s); });
 
   projectileConfig->physicsForces = config.get("physicsForces", JsonObject());
   projectileConfig->physicsCollisions = config.get("physicsCollisions", JsonObject());

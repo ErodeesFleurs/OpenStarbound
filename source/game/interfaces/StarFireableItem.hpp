@@ -13,7 +13,7 @@ class FireableItem : public virtual ToolUserItem, public virtual StatusEffectIte
 public:
   FireableItem();
   FireableItem(Json const& params);
-  virtual ~FireableItem() {}
+  virtual ~FireableItem() = default;
 
   FireableItem(FireableItem const& fireableItem);
 

@@ -56,7 +56,7 @@ public:
   void drawImageCentered(String texName, Vec2F const& position, float scale = 1.0f, Vec4B const& color = Vec4B(255, 255, 255, 255));
 
   void drawDrawable(Drawable drawable, Vec2F const& screenPos);
-  void drawDrawables(List<Drawable> drawables, Vec2F const& screenPos);
+  void drawDrawables(List<Drawable> const& drawables, Vec2F const& screenPos);
 
   // Draw an image whose texture is applied over the entire screen rect in a
   // tiled manner, so that it wraps in X and Y.

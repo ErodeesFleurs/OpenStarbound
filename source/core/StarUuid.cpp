@@ -28,30 +28,6 @@ String Uuid::hex() const {
   return hexEncode(m_data.ptr(), UuidSize);
 }
 
-bool Uuid::operator==(Uuid const& u) const {
-  return m_data == u.m_data;
-}
-
-bool Uuid::operator!=(Uuid const& u) const {
-  return m_data != u.m_data;
-}
-
-bool Uuid::operator<(Uuid const& u) const {
-  return m_data < u.m_data;
-}
-
-bool Uuid::operator<=(Uuid const& u) const {
-  return m_data <= u.m_data;
-}
-
-bool Uuid::operator>(Uuid const& u) const {
-  return m_data > u.m_data;
-}
-
-bool Uuid::operator>=(Uuid const& u) const {
-  return m_data >= u.m_data;
-}
-
 size_t hash<Uuid>::operator()(Uuid const& u) const {
   size_t hashval = 0;
   for (size_t i = 0; i < UuidSize; ++i)

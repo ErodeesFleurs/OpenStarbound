@@ -23,8 +23,8 @@ struct InstanceWorldId {
   InstanceWorldId();
   InstanceWorldId(String instance, Maybe<Uuid> uuid = {}, Maybe<float> level = {});
 
-  bool operator==(InstanceWorldId const& rhs) const;
-  bool operator<(InstanceWorldId const& rhs) const;
+  bool operator==(InstanceWorldId const& other) const;
+  bool operator<(InstanceWorldId const& other) const;
 };
 
 template <>

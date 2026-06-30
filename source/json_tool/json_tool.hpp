@@ -55,7 +55,7 @@ using JsonInputFormatConstUPtr = UniquePtr<JsonInputFormat const>;
 
 class JsonInputFormat {
 public:
-  virtual ~JsonInputFormat() {}
+  virtual ~JsonInputFormat() = default;
   virtual FormattedJson toJson(String const& input) const = 0;
   virtual String fromJson(FormattedJson const& json) const = 0;
   virtual FormattedJson getDefault() const = 0;
@@ -92,7 +92,7 @@ using OutputConstUPtr = UniquePtr<Output const>;
 
 class Output {
 public:
-  virtual ~Output() {}
+  virtual ~Output() = default;
   virtual void out(FormattedJson const& json) = 0;
   virtual void flush() = 0;
 

@@ -71,6 +71,7 @@ namespace Dungeon {
 
   List<RuleConstPtr> Rule::readRules(Json const& rules) {
     List<RuleConstPtr> result;
+    result.reserve(rules.size());
     for (auto const& list : rules.iterateArray()) {
       Maybe<RuleConstPtr> rule = Rule::parse(list);
       if (rule.isValid())
@@ -81,6 +82,7 @@ namespace Dungeon {
 
   List<BrushConstPtr> Brush::readBrushes(Json const& brushes) {
     List<BrushConstPtr> result;
+    result.reserve(brushes.size());
     for (auto const& list : brushes.iterateArray())
       result.push_back(Brush::parse(list));
     return result;
@@ -1180,7 +1182,7 @@ namespace Dungeon {
 
     PolyF::VertexList terrainBlendingVertexes;
     PolyF::VertexList spaceBlendingVertexes;
-    for (auto bb : m_boundingBoxes) {
+    for (auto const& bb : m_boundingBoxes) {
       m_facade->markRegion(bb);
 
       if (m_terrainMarkingSurfaceLevel) {
@@ -1222,12 +1224,12 @@ namespace Dungeon {
 
     List<Vec2I> sortedPositions = m_objects.keys();
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
-    for (auto pos : sortedPositions) {
+    for (auto const& pos : sortedPositions) {
       auto& object = m_objects[pos];
       m_facade->placeObject(displace(pos), object.objectName, object.direction, object.parameters);
     }
 
-    for (auto entry : m_vehicles) {
+    for (auto const& entry : m_vehicles) {
       String vehicleName;
       Json parameters;
       tie(vehicleName, parameters) = entry.second;
@@ -1236,13 +1238,13 @@ namespace Dungeon {
 
     sortedPositions = List<Vec2I>::from(m_biomeTrees);
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
-    for (auto pos : sortedPositions) {
+    for (auto const& pos : sortedPositions) {
       m_facade->placeBiomeTree(pos);
     }
 
     sortedPositions = List<Vec2I>::from(m_biomeItems);
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
-    for (auto pos : sortedPositions) {
+    for (auto const& pos : sortedPositions) {
       m_facade->placeSurfaceBiomeItems(pos);
     }
 

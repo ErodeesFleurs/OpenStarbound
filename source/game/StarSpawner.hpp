@@ -17,7 +17,7 @@ class Spawner;
 
 class SpawnerFacade {
 public:
-  virtual ~SpawnerFacade(){};
+  virtual ~SpawnerFacade() = default;
 
   virtual WorldGeometry geometry() const = 0;
   virtual List<RectF> clientWindows() const = 0;

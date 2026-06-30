@@ -7,7 +7,7 @@
 namespace Star {
 
 struct JsonStream {
-  virtual ~JsonStream() {}
+  virtual ~JsonStream() = default;
 
   virtual void beginObject() = 0;
   virtual void objectKey(char32_t const*, size_t) = 0;
@@ -40,7 +40,7 @@ class JsonParser {
 public:
   JsonParser(JsonStream& stream)
     : m_line(0), m_column(0), m_error(nullptr), m_stream(stream) {}
-  virtual ~JsonParser() {}
+  virtual ~JsonParser() = default;
 
   // Does not throw.  On error, returned iterator will not be equal to end, and
   // error() will be non-null.  Set fragment to true to parse any JSON type

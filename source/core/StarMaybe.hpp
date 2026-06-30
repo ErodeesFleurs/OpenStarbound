@@ -37,12 +37,12 @@ public:
   template <typename T2>
   Maybe& operator=(Maybe<T2> const& rhs);
 
-  bool isValid() const;
-  bool isNothing() const;
+  [[nodiscard]] bool isValid() const;
+  [[nodiscard]] bool isNothing() const;
   explicit operator bool() const;
 
-  PointerConstType ptr() const;
-  PointerType ptr();
+  [[nodiscard]] PointerConstType ptr() const;
+  [[nodiscard]] PointerType ptr();
 
   PointerConstType operator->() const;
   PointerType operator->();
@@ -293,7 +293,7 @@ auto Maybe<T>::get() -> RefType {
 }
 
 template <typename T>
-T Maybe<T>::value(T def) const {
+[[nodiscard]] T Maybe<T>::value(T def) const {
   if (m_initialized)
     return *ptr();
   else
@@ -301,7 +301,7 @@ T Maybe<T>::value(T def) const {
 }
 
 template <typename T>
-Maybe<T> Maybe<T>::orMaybe(Maybe const& other) const {
+[[nodiscard]] Maybe<T> Maybe<T>::orMaybe(Maybe const& other) const {
   if (m_initialized)
     return *this;
   else
@@ -309,7 +309,7 @@ Maybe<T> Maybe<T>::orMaybe(Maybe const& other) const {
 }
 
 template <typename T>
-T Maybe<T>::take() {
+[[nodiscard]] T Maybe<T>::take() {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
@@ -321,7 +321,7 @@ T Maybe<T>::take() {
 }
 
 template <typename T>
-bool Maybe<T>::put(T& t) {
+[[nodiscard]] bool Maybe<T>::put(T& t) {
   if (m_initialized) {
     t = std::move(*ptr());
 
@@ -362,7 +362,7 @@ void Maybe<T>::reset() {
 
 template <typename T>
 template <typename Function>
-auto Maybe<T>::apply(Function&& function) const
+[[nodiscard]] auto Maybe<T>::apply(Function&& function) const
     -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
   if (!isValid())
     return {};
@@ -378,7 +378,7 @@ void Maybe<T>::exec(Function&& function) {
 
 template <typename T>
 template <typename Function>
-auto Maybe<T>::sequence(Function function) const -> decltype(function(std::declval<T>())) {
+[[nodiscard]] auto Maybe<T>::sequence(Function function) const -> decltype(function(std::declval<T>())) {
   if (!isValid())
     return {};
   return function(get());

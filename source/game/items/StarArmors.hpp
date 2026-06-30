@@ -30,7 +30,7 @@ using BackArmorPtr = SharedPtr<BackArmor>;
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
   ArmorItem(Json const& config, String const& directory, Json const& data);
-  virtual ~ArmorItem() {}
+  virtual ~ArmorItem() = default;
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
   bool statusEffectsInCosmeticSlot() const;
@@ -81,7 +81,7 @@ private:
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
   HeadArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~HeadArmor() {}
+  virtual ~HeadArmor() = default;
 
   virtual ItemPtr clone() const override;
 
@@ -101,7 +101,7 @@ private:
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
   ChestArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~ChestArmor() {}
+  virtual ~ChestArmor() = default;
 
   virtual ItemPtr clone() const override;
 
@@ -130,7 +130,7 @@ private:
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
   LegsArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~LegsArmor() {}
+  virtual ~LegsArmor() = default;
 
   virtual ItemPtr clone() const override;
 
@@ -149,7 +149,7 @@ private:
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
   BackArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~BackArmor() {}
+  virtual ~BackArmor() = default;
 
   virtual ItemPtr clone() const override;
 

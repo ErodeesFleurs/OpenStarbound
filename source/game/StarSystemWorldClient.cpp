@@ -65,9 +65,9 @@ void SystemWorldClient::update(float dt) {
       m_universeMap->addMappedCoordinate(orbit->target.planet());
   }
 
-  for (auto p : m_clientShips)
+  for (auto const& p : m_clientShips)
     p.second->clientUpdate(dt);
-  for (auto p : m_objects)
+  for (auto const& p : m_objects)
     p.second->clientUpdate(dt);
 
   if (currentSystem().isNull()) {
@@ -110,13 +110,13 @@ Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Mayb
 bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
   if (auto updatePacket = as<SystemWorldUpdatePacket>(packet)) {
     auto location = m_ship->systemLocation();
-    for (auto p : updatePacket->shipUpdates) {
+    for (auto const& p : updatePacket->shipUpdates) {
       if (m_ship && p.first == m_ship->uuid())
         m_ship->readNetState(p.second, SystemWorldTimestep);
       else
         m_clientShips[p.first]->readNetState(p.second, SystemWorldTimestep);
     }
-    for (auto p : updatePacket->objectUpdates) {
+    for (auto const& p : updatePacket->objectUpdates) {
       auto object = getObject(p.first);
       object->readNetState(p.second, SystemWorldTimestep);
     }
@@ -140,11 +140,11 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
     m_objects.clear();
     m_clientShips.clear();
     m_location = startPacket->location;
-    for (auto netStore: startPacket->objectStores) {
+    for (auto const& netStore : startPacket->objectStores) {
       auto object = netLoadObject(netStore);
       m_objects.set(object->uuid(), object);
     }
-    for (auto netStore : startPacket->shipStores) {
+    for (auto const& netStore : startPacket->shipStores) {
       auto ship = netLoadShip(netStore);
       m_clientShips.set(ship->uuid(), ship);
     }

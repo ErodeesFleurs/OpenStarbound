@@ -39,12 +39,12 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
     effect.effectConfig = config.get("effectConfig", JsonObject());
     effect.defaultDuration = config.getFloat("defaultDuration", 0.0f);
     effect.scripts =
-        jsonToStringList(config.get("scripts", JsonArray{})).transformed(bind(&AssetPath::relativeTo, path, _1));
+        jsonToStringList(config.get("scripts", JsonArray{})).transformed([path](String const& s) { return AssetPath::relativeTo(path, s); });
     effect.scriptDelta = config.getUInt("scriptDelta", 1);
-    effect.animationConfig = config.optString("animationConfig").apply(bind(&AssetPath::relativeTo, path, _1));
+    effect.animationConfig = config.optString("animationConfig").apply([path](String const& s) { return AssetPath::relativeTo(path, s); });
     effect.label = config.getString("label", "");
     effect.description = config.getString("description", "");
-    effect.icon = config.optString("icon").apply(bind(&AssetPath::relativeTo, path, _1));
+    effect.icon = config.optString("icon").apply([path](String const& s) { return AssetPath::relativeTo(path, s); });
     return effect;
   } catch (std::exception const& e) {
     throw StatusEffectDatabaseException("Error reading StatusEffect config", e);

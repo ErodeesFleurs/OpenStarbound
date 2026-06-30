@@ -14,9 +14,9 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<bool>(
-    "hudVisible", bind(mem_fn(&MainInterface::hudVisible), mainInterface));
+    "hudVisible", [mainInterface]() { return mainInterface->hudVisible(); });
   callbacks.registerCallbackWithSignature<void, bool>(
-    "setHudVisible", bind(mem_fn(&MainInterface::setHudVisible), mainInterface, _1));
+    "setHudVisible", [mainInterface](bool visible) { return mainInterface->setHudVisible(visible); });
 
   callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, Maybe<bool> ignoreInterfaceScale) -> Maybe<CanvasWidgetPtr> {
     if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value(false)))

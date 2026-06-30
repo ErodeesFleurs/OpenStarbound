@@ -191,7 +191,7 @@ void Vehicle::init(World* world, EntityId entityId, EntityMode mode) {
   if (isMaster()) {
     m_scriptComponent.addCallbacks("vehicle", makeVehicleCallbacks());
     m_scriptComponent.addCallbacks(
-        "config", LuaBindings::makeConfigCallbacks(bind(&Vehicle::configValue, this, _1, _2)));
+        "config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_networkedAnimator));

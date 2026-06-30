@@ -32,9 +32,9 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   m_okCallback = std::move(okCallback);
   m_cancelCallback = std::move(cancelCallback);
 
-  reader.registerCallback("close", bind(&ConfirmationDialog::dismiss, this));
-  reader.registerCallback("cancel", bind(&ConfirmationDialog::dismiss, this));
-  reader.registerCallback("ok", bind(&ConfirmationDialog::ok, this));
+  reader.registerCallback("close", [this](Widget*) { dismiss(); });
+  reader.registerCallback("cancel", [this](Widget*) { dismiss(); });
+  reader.registerCallback("ok", [this](Widget*) { ok(); });
 
   m_confirmed = false;
 

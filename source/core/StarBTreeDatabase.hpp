@@ -24,27 +24,27 @@ public:
   // before they need to be split, but it also means that more space is wasted
   // for index or leaf nodes that are not completely full.  Cannot be changed
   // once the database is opened.  Defaults to 2048.
-  uint32_t blockSize() const;
+  [[nodiscard]] uint32_t blockSize() const;
   void setBlockSize(uint32_t blockSize);
 
   // Constant size of the database keys.  Should be much smaller than the block
   // size, cannot be changed once a database is opened.  Defaults zero, which
   // is invalid, so must be set if opening a new database.
-  uint32_t keySize() const;
+  [[nodiscard]] uint32_t keySize() const;
   void setKeySize(uint32_t keySize);
 
   // Must be no greater than ContentIdentifierStringSize large.  May not be
   // called when the database is opened.
-  String contentIdentifier() const;
+  [[nodiscard]] String contentIdentifier() const;
   void setContentIdentifier(String contentIdentifier);
 
   // Cache size for index nodes, defaults to 64
-  uint32_t indexCacheSize() const;
+  [[nodiscard]] uint32_t indexCacheSize() const;
   void setIndexCacheSize(uint32_t indexCacheSize);
 
   // If true, very write operation will immediately result in a commit.
   // Defaults to true.
-  bool autoCommit() const;
+  [[nodiscard]] bool autoCommit() const;
   void setAutoCommit(bool autoCommit);
 
   IODevicePtr ioDevice() const;
@@ -54,37 +54,37 @@ public:
   // size, and content identifier with those from the opened database.
   // Otherwise, it will use the currently set values.  Returns true if a new
   // database was created, false if an existing database was found and opened.
-  bool open();
+  [[nodiscard]] bool open();
 
-  bool isOpen() const;
+  [[nodiscard]] bool isOpen() const;
 
-  bool contains(ByteArray const& k);
+  [[nodiscard]] bool contains(ByteArray const& k);
 
-  Maybe<ByteArray> find(ByteArray const& k);
-  List<pair<ByteArray, ByteArray>> find(ByteArray const& lower, ByteArray const& upper);
+  [[nodiscard]] Maybe<ByteArray> find(ByteArray const& k);
+  [[nodiscard]] List<pair<ByteArray, ByteArray>> find(ByteArray const& lower, ByteArray const& upper);
 
   void forEach(ByteArray const& lower, ByteArray const& upper, function<void(ByteArray, ByteArray)> v);
   void forAll(function<void(ByteArray, ByteArray)> v);
   void recoverAll(function<void(ByteArray, ByteArray)> v, function<void(String const&, std::exception const&)> e);
 
   // Returns true if a value was overwritten
-  bool insert(ByteArray const& k, ByteArray const& data);
+  [[nodiscard]] bool insert(ByteArray const& k, ByteArray const& data);
 
   // Returns true if the element was found and removed
-  bool remove(ByteArray const& k);
+  [[nodiscard]] bool remove(ByteArray const& k);
 
   // Remove all elements in the given range, returns keys removed.
   List<ByteArray> remove(ByteArray const& lower, ByteArray const& upper);
 
-  uint64_t recordCount();
+  [[nodiscard]] uint64_t recordCount();
 
   // The depth of the index nodes in this database
-  uint8_t indexLevels();
+  [[nodiscard]] uint8_t indexLevels();
 
-  uint32_t totalBlockCount();
-  uint32_t freeBlockCount();
-  uint32_t indexBlockCount();
-  uint32_t leafBlockCount();
+  [[nodiscard]] uint32_t totalBlockCount();
+  [[nodiscard]] uint32_t freeBlockCount();
+  [[nodiscard]] uint32_t indexBlockCount();
+  [[nodiscard]] uint32_t leafBlockCount();
 
   void commit();
   void rollback();
@@ -307,17 +307,17 @@ public:
   BTreeSha256Database(String const& contentIdentifier);
 
   // Keys can be arbitrary size, actual key is the SHA-256 checksum of the key.
-  bool contains(ByteArray const& key);
-  Maybe<ByteArray> find(ByteArray const& key);
-  bool insert(ByteArray const& key, ByteArray const& value);
-  bool remove(ByteArray const& key);
+  [[nodiscard]] bool contains(ByteArray const& key);
+  [[nodiscard]] Maybe<ByteArray> find(ByteArray const& key);
+  [[nodiscard]] bool insert(ByteArray const& key, ByteArray const& value);
+  [[nodiscard]] bool remove(ByteArray const& key);
 
   // Convenience string versions of access methods.  Equivalent to the utf8
   // bytes of the string minus the null terminator.
-  bool contains(String const& key);
-  Maybe<ByteArray> find(String const& key);
-  bool insert(String const& key, ByteArray const& value);
-  bool remove(String const& key);
+  [[nodiscard]] bool contains(String const& key);
+  [[nodiscard]] Maybe<ByteArray> find(String const& key);
+  [[nodiscard]] bool insert(String const& key, ByteArray const& value);
+  [[nodiscard]] bool remove(String const& key);
 
   using BTreeDatabase::ContentIdentifierStringSize;
   using BTreeDatabase::blockSize;

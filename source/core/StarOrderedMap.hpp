@@ -44,7 +44,7 @@ public:
   List<mapped_type> values() const;
   List<pair<key_type, mapped_type>> pairs() const;
 
-  bool contains(key_type const& k) const;
+  [[nodiscard]] bool contains(key_type const& k) const;
 
   // Throws MapException if key not found
   mapped_type& get(key_type const& k);
@@ -53,7 +53,7 @@ public:
   // Return def if key not found
   mapped_type value(key_type const& k, mapped_type d = mapped_type()) const;
 
-  Maybe<mapped_type> maybe(key_type const& k) const;
+  [[nodiscard]] Maybe<mapped_type> maybe(key_type const& k) const;
 
   mapped_const_ptr ptr(key_type const& k) const;
   mapped_ptr ptr(key_type const& k);
@@ -95,7 +95,7 @@ public:
   // found.
   mapped_type take(key_type const& k);
 
-  Maybe<value_type> maybeTake(key_type const& k);
+  [[nodiscard]] Maybe<value_type> maybeTake(key_type const& k);
 
   const_iterator begin() const;
   const_iterator end() const;
@@ -109,7 +109,7 @@ public:
   reverse_iterator rbegin();
   reverse_iterator rend();
 
-  size_t size() const;
+  [[nodiscard]] size_t size() const;
 
   iterator erase(iterator i);
   size_t erase(key_type const& k);
@@ -117,7 +117,7 @@ public:
   iterator find(key_type const& k);
   const_iterator find(key_type const& k) const;
 
-  Maybe<size_t> indexOf(key_type const& k) const;
+  [[nodiscard]] Maybe<size_t> indexOf(key_type const& k) const;
 
   key_type const& keyAt(size_t i) const;
   mapped_type const& valueAt(size_t i) const;
@@ -136,7 +136,7 @@ public:
 
   void clear();
 
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
   iterator toBack(iterator i);
   void toBack(key_type const& k);
@@ -219,7 +219,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::pairs() const ->
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::contains(key_type const& k) const {
+[[nodiscard]] bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::contains(key_type const& k) const {
   return m_map.contains(k);
 }
 
@@ -247,7 +247,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::value(key_type c
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybe(key_type const& k) const -> Maybe<mapped_type> {
+[[nodiscard]] auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybe(key_type const& k) const -> Maybe<mapped_type> {
   auto i = find(k);
   if (i == end())
     return {};
@@ -409,7 +409,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::take(key_type co
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybeTake(key_type const& k) -> Maybe<value_type> {
+[[nodiscard]] auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::maybeTake(key_type const& k) -> Maybe<value_type> {
   iterator i = find(k);
   if (i != end()) {
     value_type v = *i;
@@ -461,7 +461,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::rend() -> revers
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::size() const -> size_t {
+[[nodiscard]] auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::size() const -> size_t {
   return m_map.size();
 }
 
@@ -497,7 +497,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::find(key_type co
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> Maybe<size_t> {
+[[nodiscard]] auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> Maybe<size_t> {
   typename MapType::const_iterator i = m_map.find(k);
   if (i == m_map.end())
     return {};
@@ -591,7 +591,7 @@ void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::clear() {
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::empty() const {
+[[nodiscard]] bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::empty() const {
   return size() == 0;
 }
 

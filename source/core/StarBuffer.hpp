@@ -82,8 +82,8 @@ public:
   // must be valid for the lifetime of the ExternalBuffer.
   ExternalBuffer(char const* externalData, size_t len);
 
-  ExternalBuffer(ExternalBuffer const& buffer) = default;
-  ExternalBuffer& operator=(ExternalBuffer const& buffer) = default;
+  ExternalBuffer(ExternalBuffer const& buffer) noexcept = default;
+  ExternalBuffer& operator=(ExternalBuffer const& buffer) noexcept = default;
 
   StreamOffset pos() override;
   void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;

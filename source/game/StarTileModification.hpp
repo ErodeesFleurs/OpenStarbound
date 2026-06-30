@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 
 namespace Star {
+class DataStream;
 
 struct PlaceMaterial {
   TileLayer layer;

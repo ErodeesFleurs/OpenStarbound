@@ -1,11 +1,11 @@
 #pragma once
 
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
 #include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 
 namespace Star {
+class DataStream;
 
 enum DamageType : uint8_t { NoDamage, Damage, IgnoresDef, Knockback, Environment, Status };
 extern EnumMap<DamageType> const DamageTypeNames;

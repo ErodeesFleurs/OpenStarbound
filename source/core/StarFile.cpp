@@ -3,6 +3,8 @@
 
 #include <fstream>
 
+constexpr size_t FileCopyBufferSize = 1024;
+
 namespace Star {
 
 void File::makeDirectoryRecursive(String const& fileName) {
@@ -39,9 +41,9 @@ void File::copy(String const& source, String const& target) {
 
   targetFile->resize(0);
 
-  char buf[1024];
+  char buf[FileCopyBufferSize];
   while (!sourceFile->atEnd()) {
-    size_t r = sourceFile->read(buf, 1024);
+    size_t r = sourceFile->read(buf, FileCopyBufferSize);
     targetFile->writeFull(buf, r);
   }
 }
@@ -56,8 +58,8 @@ ByteArray File::readFile(String const& filename) {
   FilePtr file = File::open(filename, IOMode::Read);
   ByteArray bytes;
   while (!file->atEnd()) {
-    char buffer[1024];
-    size_t r = file->read(buffer, 1024);
+    char buffer[FileCopyBufferSize];
+    size_t r = file->read(buffer, FileCopyBufferSize);
     bytes.append(buffer, r);
   }
 
@@ -68,8 +70,8 @@ String File::readFileString(String const& filename) {
   FilePtr file = File::open(filename, IOMode::Read);
   std::string str;
   while (!file->atEnd()) {
-    char buffer[1024];
-    size_t r = file->read(buffer, 1024);
+    char buffer[FileCopyBufferSize];
+    size_t r = file->read(buffer, FileCopyBufferSize);
     for (size_t i = 0; i < r; ++i)
       str.push_back(buffer[i]);
   }

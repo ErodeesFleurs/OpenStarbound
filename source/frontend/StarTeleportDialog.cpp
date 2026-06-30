@@ -31,15 +31,15 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
 
   GuiReader reader;
 
-  reader.registerCallback("dismiss", bind(&Pane::dismiss, this));
-  reader.registerCallback("teleport", bind(&TeleportDialog::teleport, this));
-  reader.registerCallback("selectDestination", bind(&TeleportDialog::selectDestination, this));
+  reader.registerCallback("dismiss", [this](Widget*) { Pane::dismiss(); });
+  reader.registerCallback("teleport", [this](Widget*) { teleport(); });
+  reader.registerCallback("selectDestination", [this](Widget*) { selectDestination(); });
 
   reader.construct(assets->json("/interface/windowconfig/teleportdialog.config:paneLayout"), this);
 
   config = assets->fetchJson(config);
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  destList->registerMemberCallback("editBookmark", bind(&TeleportDialog::editBookmark, this));
+  destList->registerMemberCallback("editBookmark", [this](Widget*) { editBookmark(); });
 
   for (auto dest : config.getArray("destinations", JsonArray())) {
     if (auto prerequisite = dest.optString("prerequisiteQuest")) {

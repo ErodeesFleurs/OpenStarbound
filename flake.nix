@@ -47,15 +47,21 @@
           nasm
         ];
 
-        clangTools = with pkgs; [
-          clang
-          lld
-        ] ++ commonTools;
+        clangTools =
+          with pkgs;
+          [
+            clang
+            lld
+          ]
+          ++ commonTools;
 
-        gccTools = with pkgs; [
-          gcc
-          lld
-        ] ++ commonTools;
+        gccTools =
+          with pkgs;
+          [
+            gcc
+            lld
+          ]
+          ++ commonTools;
 
         systemLibraries = with pkgs; [
           alsa-lib
@@ -231,10 +237,13 @@
 
         profileServerStartupScript = pkgs.writeShellApplication {
           name = "openstarbound-profile-server-startup";
-          runtimeInputs = clangTools ++ systemLibraries ++ [
-            pkgs.coreutils
-            pkgs.time
-          ];
+          runtimeInputs =
+            clangTools
+            ++ systemLibraries
+            ++ [
+              pkgs.coreutils
+              pkgs.time
+            ];
           text = ''
             export CC=clang
             export CXX=clang++
@@ -289,16 +298,19 @@
         };
       in
       {
-        checks.cmake-presets = pkgs.runCommand "openstarbound-cmake-presets" {
-          nativeBuildInputs = [
-            pkgs.cmake
-            pkgs.python3
-          ];
-        } ''
-          python -m json.tool ${self}/source/CMakePresets.json > /dev/null
-          export VCPKG_ROOT="${vcpkgRoot}"
-          cmake --list-presets -S ${self}/source > $out
-        '';
+        checks.cmake-presets =
+          pkgs.runCommand "openstarbound-cmake-presets"
+            {
+              nativeBuildInputs = [
+                pkgs.cmake
+                pkgs.python3
+              ];
+            }
+            ''
+              python -m json.tool ${self}/source/CMakePresets.json > /dev/null
+              export VCPKG_ROOT="${vcpkgRoot}"
+              cmake --list-presets -S ${self}/source > $out
+            '';
 
         devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
           packages = clangTools ++ systemLibraries;

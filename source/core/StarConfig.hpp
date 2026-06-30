@@ -36,13 +36,11 @@ using std::initializer_list;
 using std::min;
 using std::max;
 
-using std::bind;
 using std::function;
 using std::forward;
 using std::mem_fn;
 using std::ref;
 using std::cref;
-using namespace std::placeholders;
 using namespace std::string_literals;
 
 using std::prev;

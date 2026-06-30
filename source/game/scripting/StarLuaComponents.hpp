@@ -147,9 +147,15 @@ public:
   template <typename Ret = LuaValue, typename... V>
   Maybe<Ret> update(V&&... args);
 
+  void contextSetup() {
+    Base::contextSetup();
+    m_hasUpdate = Base::context()->getPath("update") != LuaNil;
+  }
+
 private:
   Periodic m_updatePeriodic;
   mutable float m_lastDt;
+  bool m_hasUpdate = true;
 };
 
 // Wraps a basic lua component so that world callbacks are added on init, and
@@ -293,6 +299,9 @@ bool LuaUpdatableComponent<Base>::updateReady() const {
 template <typename Base>
 template <typename Ret, typename... V>
 Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
+  if (!m_hasUpdate)
+    return {};
+
   if (!m_updatePeriodic.tick())
     return {};
 

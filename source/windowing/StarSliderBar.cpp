@@ -25,8 +25,8 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
 
   if (showSpinner) {
     GuiReader guiReader;
-    guiReader.registerCallback("spinner.down", bind(&SliderBarWidget::leftCallback, this));
-    guiReader.registerCallback("spinner.up", bind(&SliderBarWidget::rightCallback, this));
+    guiReader.registerCallback("spinner.down", [this](Widget*) { leftCallback(); });
+    guiReader.registerCallback("spinner.up", [this](Widget*) { rightCallback(); });
 
     float rightButtonOffset = imgMetadata->imageSize(assets->json("/interface.config:slider.leftBase").toString())[0];
     rightButtonOffset += assets->json("/interface.config:slider.defaultPadding").toInt();

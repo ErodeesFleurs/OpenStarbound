@@ -358,7 +358,9 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     res.currencyInputs = jsonToMapV<StringMap<uint64_t>>(config.get("currencyInputs", JsonObject()), mem_fn(&Json::toUInt));
 
     // parse currency items into currency inputs
-    for (auto input : config.getArray("input")) {
+    auto inputArray = config.getArray("input");
+    res.inputs.reserve(res.inputs.size() + inputArray.size());
+    for (auto input : inputArray) {
       auto id = ItemDescriptor(input);
       if (itemType(id.name()) == ItemType::CurrencyItem) {
         auto currencyItem = as<CurrencyItem>(itemShared(id));
@@ -405,7 +407,7 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
     script.setLuaRoot(m_luaRoot);
     script.setScripts(augment->augmentScripts());
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
-    script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, augment, _1, _2)));
+    script.addCallbacks("config", LuaBindings::makeConfigCallbacks([augment](String const& name, Json const& def) { return augment->instanceValue(name, def); }));
     script.init();
     auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<uint64_t>>>("apply", item->descriptor().toJson());
     script.uninit();
@@ -585,7 +587,7 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.directory = AssetPath::directory(file);
       data.filename = AssetPath::filename(file);
 
-      data.agingScripts = data.agingScripts.transformed(bind(&AssetPath::relativeTo, data.directory, _1));
+      data.agingScripts = data.agingScripts.transformed([dir = data.directory](String const& s) { return AssetPath::relativeTo(dir, s); });
     } catch (std::exception const& e) {
       throw ItemException(strf("Could not load item asset {}", file), e);
     }

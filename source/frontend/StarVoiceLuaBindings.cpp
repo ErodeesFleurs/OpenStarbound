@@ -11,7 +11,7 @@ LuaCallbacks LuaBindings::makeVoiceCallbacks() {
 
   auto voice = Voice::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<StringList>("devices", bind(&Voice::availableDevices, voice));
+  callbacks.registerCallbackWithSignature<StringList>("devices", [voice]() { return voice->availableDevices(); });
   callbacks.registerCallback(  "getSettings", [voice]() -> Json      { return voice->saveJson();         });
   callbacks.registerCallback("mergeSettings", [voice](Json const& settings) { voice->loadJson(settings); });
   // i have an alignment addiction i'm so sorry

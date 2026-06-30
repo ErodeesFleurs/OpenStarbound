@@ -17,7 +17,7 @@ using WirePanePtr = SharedPtr<WirePane>;
 class WirePane : public Pane, public WireConnector {
 public:
   WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter);
-  virtual ~WirePane() {}
+  virtual ~WirePane() = default;
 
   virtual void update(float dt) override;
   virtual bool sendEvent(InputEvent const& event) override;

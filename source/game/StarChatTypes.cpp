@@ -1,4 +1,5 @@
 #include "StarChatTypes.hpp"
+#include "StarDataStream.hpp"
 
 namespace Star {
 

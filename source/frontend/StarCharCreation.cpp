@@ -247,7 +247,7 @@ void CharCreationPane::changed() {
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
   auto species = speciesDefinition->options();
   auto genderOptions = species.genderOptions.wrap(m_genderChoice);
-  int genderIdx = pmod<int64_t>(m_genderChoice, species.genderOptions.size());
+  int genderIdx = pmod<int64_t>(m_genderChoice, static_cast<int64_t>(species.genderOptions.size()));
 
   auto labels = speciesDefinition->charGenTextLabels();
 

@@ -20,7 +20,7 @@ STAR_CLASS(DungeonDefinitions);
 
 class DungeonGeneratorWorldFacade {
 public:
-  virtual ~DungeonGeneratorWorldFacade() {}
+  virtual ~DungeonGeneratorWorldFacade() = default;
 
   // Hint that the given rectangular region is dungeon generated, and thus
   // would not receive the normal entity generation steps.
@@ -166,7 +166,7 @@ namespace Dungeon {
     static Maybe<RuleConstPtr> parse(Json const& rule);
     static List<RuleConstPtr> readRules(Json const& rules);
 
-    virtual ~Rule() {}
+    virtual ~Rule() = default;
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
 
@@ -313,7 +313,7 @@ namespace Dungeon {
     static BrushConstPtr parse(Json const& brush);
     static List<BrushConstPtr> readBrushes(Json const& brushes);
 
-    virtual ~Brush() {}
+    virtual ~Brush() = default;
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const = 0;
 
@@ -540,7 +540,7 @@ namespace Dungeon {
 
   class PartReader {
   public:
-    virtual ~PartReader() {}
+    virtual ~PartReader() = default;
 
     virtual void readAsset(String const& asset) = 0;
 

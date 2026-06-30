@@ -30,7 +30,7 @@ struct TextPositioning {
       Maybe<unsigned> wrapWidth = {},
       Maybe<unsigned> charLimit = {});
 
-  TextPositioning(Json const& v);
+  explicit TextPositioning(Json const& v);
   Json toJson() const;
 
   TextPositioning translated(Vec2F translation) const;

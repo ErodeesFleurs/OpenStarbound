@@ -1,4 +1,5 @@
 #include "StarDamageTypes.hpp"
+#include "StarDataStream.hpp"
 
 namespace Star {
 

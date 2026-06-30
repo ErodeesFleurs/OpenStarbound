@@ -172,7 +172,7 @@ struct ConditionVariableImpl {
 
 private:
   struct Impl {
-    virtual ~Impl() {}
+    virtual ~Impl() = default;
 
     virtual void wait(Mutex& mutex) = 0;
     virtual void wait(Mutex& mutex, unsigned millis) = 0;
@@ -405,7 +405,7 @@ unsigned Thread::numberOfProcessors() {
 }
 
 Thread::Thread(String const& name) {
-  m_impl.reset(new ThreadImpl([this]() { run(); }, name));
+  m_impl = make_unique<ThreadImpl>([this]() { run(); }, name);
 }
 
 Thread::Thread(Thread&&) = default;
@@ -439,7 +439,7 @@ ThreadFunction<void>::ThreadFunction() {}
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
 ThreadFunction<void>::ThreadFunction(function<void()> function, String const& name) {
-  m_impl.reset(new ThreadFunctionImpl(std::move(function), name));
+  m_impl = make_unique<ThreadFunctionImpl>(std::move(function), name);
   m_impl->start();
 }
 
@@ -477,7 +477,7 @@ String ThreadFunction<void>::name() {
     return "";
 }
 
-Mutex::Mutex() : m_impl(new MutexImpl()) {}
+Mutex::Mutex() : m_impl(make_unique<MutexImpl>()) {}
 
 Mutex::Mutex(Mutex&&) = default;
 
@@ -497,7 +497,7 @@ void Mutex::unlock() {
   m_impl->unlock();
 }
 
-ConditionVariable::ConditionVariable() : m_impl(new ConditionVariableImpl()) {}
+ConditionVariable::ConditionVariable() : m_impl(make_unique<ConditionVariableImpl>()) {}
 
 ConditionVariable::ConditionVariable(ConditionVariable&&) = default;
 
@@ -520,7 +520,7 @@ void ConditionVariable::broadcast() {
   m_impl->broadcast();
 }
 
-RecursiveMutex::RecursiveMutex() : m_impl(new RecursiveMutexImpl()) {}
+RecursiveMutex::RecursiveMutex() : m_impl(make_unique<RecursiveMutexImpl>()) {}
 
 RecursiveMutex::RecursiveMutex(RecursiveMutex&&) = default;
 

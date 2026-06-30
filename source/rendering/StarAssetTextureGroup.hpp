@@ -17,7 +17,7 @@ class AssetTextureGroup {
 public:
   // Creates a texture group using the given renderer and textureFiltering for
   // the managed textures.
-  AssetTextureGroup(TextureGroupPtr textureGroup);
+  explicit AssetTextureGroup(TextureGroupPtr textureGroup);
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.

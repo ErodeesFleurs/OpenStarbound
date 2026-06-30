@@ -251,9 +251,9 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
         return m_movementController->pathfinding();
       });
 
-    callbacks.registerCallbackWithSignature<bool>("autoClearControls", bind(&LuaActorMovementComponent::autoClearControls, this));
-    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", bind(&LuaActorMovementComponent::setAutoClearControls, this, _1));
-    callbacks.registerCallbackWithSignature<void>("clearControls", bind(&LuaActorMovementComponent::clearControls, this));
+    callbacks.registerCallbackWithSignature<bool>("autoClearControls", [this]() { return autoClearControls(); });
+    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", [this](bool v) { return setAutoClearControls(v); });
+    callbacks.registerCallbackWithSignature<void>("clearControls", [this]() { return clearControls(); });
 
     Base::addCallbacks("mcontroller", callbacks);
 
@@ -296,15 +296,11 @@ void LuaActorMovementComponent<Base>::performControls() {
     m_movementController->controlAcceleration(m_controlAcceleration);
     m_movementController->controlForce(m_controlForce);
     if (m_controlApproachVelocity)
-      tupleUnpackFunction(bind(&ActorMovementController::controlApproachVelocity, m_movementController, _1, _2), *m_controlApproachVelocity);
+      tupleUnpackFunction([mc = m_movementController](auto&&... args) { return mc->controlApproachVelocity(std::forward<decltype(args)>(args)...); }, *m_controlApproachVelocity);
     if (m_controlApproachVelocityAlongAngle)
-      tupleUnpackFunction(bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, _1, _2, _3, _4), *m_controlApproachVelocityAlongAngle);
-    if (m_controlParameters)
-      m_movementController->controlParameters(*m_controlParameters);
-    if (m_controlModifiers)
-      m_movementController->controlModifiers(*m_controlModifiers);
+      tupleUnpackFunction([mc = m_movementController](auto&&... args) { return mc->controlApproachVelocityAlongAngle(std::forward<decltype(args)>(args)...); }, *m_controlApproachVelocityAlongAngle);
     if (m_controlMove)
-      tupleUnpackFunction(bind(&ActorMovementController::controlMove, m_movementController, _1, _2), *m_controlMove);
+      tupleUnpackFunction([mc = m_movementController](auto&&... args) { return mc->controlMove(std::forward<decltype(args)>(args)...); }, *m_controlMove);
     if (m_controlFace)
       m_movementController->controlFace(*m_controlFace);
     if (m_controlDown)

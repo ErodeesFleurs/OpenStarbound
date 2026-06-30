@@ -2,6 +2,7 @@
 #include "StarThread.hpp"
 #include "StarTime.hpp"
 #include "StarMathCommon.hpp"
+#include <random>
 
 namespace Star {
 
@@ -195,14 +196,12 @@ namespace Random {
   static uint64_t produceRandomSeed() {
     int64_t seed = Time::monotonicTicks();
     seed *= 1099511628211;
-    seed ^= (static_cast<int64_t>(rand()) << 32) | static_cast<int64_t>(rand());
+    seed ^= (static_cast<int64_t>(std::random_device{}()) << 32) | static_cast<int64_t>(std::random_device{}());
     return seed;
   }
 
   void doInit(uint64_t seed) {
     g_randSource = RandomSource(seed);
-    // Also set the C stdlib random seed
-    srand(seed);
   }
 
   void checkInit() {

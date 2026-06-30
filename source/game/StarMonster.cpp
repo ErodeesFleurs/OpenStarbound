@@ -723,8 +723,8 @@ void Monster::setupNetStates() {
   m_netGroup.addNetElement(&m_animationDamageParts, false);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
 
-  m_netGroup.setNeedsLoadCallback(bind(&Monster::getNetStates, this, _1));
-  m_netGroup.setNeedsStoreCallback(bind(&Monster::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback([this](bool initial) { return getNetStates(initial); });
+  m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
 void Monster::setNetStates() {

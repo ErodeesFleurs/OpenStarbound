@@ -4,6 +4,7 @@
 #include "StarLexicalCast.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
+#include "StarLogging.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
@@ -55,7 +56,9 @@ void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJs
   VersionNumber extraVersioning = 0;
   try {
     ds.read(extraVersioning);
-  } catch (...) {
+  } catch (EofException const&) {
+  } catch (std::exception const& e) {
+    Logger::warn("Exception reading sub-versioning header from data stream: {}", e.what());
   }
   if (extraVersioning == 1) {
     JsonObject source = ds.read<JsonObject>();

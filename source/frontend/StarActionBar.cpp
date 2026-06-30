@@ -32,15 +32,15 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   GuiReader reader;
 
   for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    reader.registerCallback(strf("customBar{}L", i + 1), bind(&ActionBar::customBarClick, this, i, true));
-    reader.registerCallback(strf("customBar{}R", i + 1), bind(&ActionBar::customBarClick, this, i, false));
+    reader.registerCallback(strf("customBar{}L", i + 1), [this, i](Widget*) { customBarClick(i, true); });
+    reader.registerCallback(strf("customBar{}R", i + 1), [this, i](Widget*) { customBarClick(i, false); });
 
-    reader.registerCallback(strf("customBar{}L.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, true));
-    reader.registerCallback(strf("customBar{}R.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, false));
+    reader.registerCallback(strf("customBar{}L.right", i + 1), [this, i](Widget*) { customBarClickRight(i, true); });
+    reader.registerCallback(strf("customBar{}R.right", i + 1), [this, i](Widget*) { customBarClickRight(i, false); });
   }
 
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
-    reader.registerCallback(strf("essentialBar{}", i + 1), bind(&ActionBar::essentialBarClick, this, i));
+    reader.registerCallback(strf("essentialBar{}", i + 1), [this, i](Widget*) { essentialBarClick(i); });
 
   reader.registerCallback("pickupToActionBar", [=](Widget* widget) {
       auto button = as<ButtonWidget>(widget);

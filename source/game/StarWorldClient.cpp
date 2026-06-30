@@ -22,6 +22,8 @@
 #include "StarInspectableEntity.hpp"
 #include "StarCurve25519.hpp"
 
+constexpr unsigned DefaultClientWindowTiles = 100;
+
 namespace Star {
 
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
@@ -56,7 +58,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
 
   m_mainPlayer = mainPlayer;
 
-  centerClientWindowOnPlayer(Vec2U(100, 100));
+  centerClientWindowOnPlayer(Vec2U(DefaultClientWindowTiles, DefaultClientWindowTiles));
 
   m_collisionGenerator.init([this](int x, int y) {
     if (!m_predictedTiles.empty()) {
@@ -285,12 +287,13 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
     return;
 
   const_cast<WorldClient*>(this)->freshenCollision(region);
-  m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ClientTile const& tile) {
+  m_tileArray->tileEach(region, [&](Vec2I const& pos, ClientTile const& tile) {
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
-        for (auto const& block : tile.collisionCache)
+        auto const& cache = m_collisionCache.get(pos);
+        for (auto const& block : cache)
           iterator(block);
       }
     });
@@ -409,7 +412,7 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
     return modificationList;
   
   TileModificationList success, failures;
-  for (auto pair : modificationList) {
+  for (auto const& pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
       success.append(pair);
     else
@@ -494,34 +497,9 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   renderData.geometry = m_geometry;
 
-  ClientRenderCallback lightingRenderCallback;
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-    if (m_startupHiddenEntities.contains(entity->entityId()))
-      return;
-
-    entity->renderLightSources(&lightingRenderCallback);
-  });
-
-  renderLightSources = std::move(lightingRenderCallback.lightSources);
-
   RectI window = m_clientState.window();
   RectI tileRange = window.padded(bufferTiles);
   renderData.tileMinPosition = tileRange.min();
-
-  if (!m_fullBright) {
-    {
-      MutexLocker m_prepLocker(m_lightMapPrepMutex);
-      m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = m_particles->lightSources();
-      m_pendingLightRange = window.padded(1);
-      m_pendingLightReady = true;
-    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
-
-    if (m_asyncLighting)
-      m_lightingCond.signal();
-    else
-      lightingCalc();
-  }
 
   float pulseLevel = 1 - m_interactivePulseAmount * 0.5 * (sin(2 * Constants::pi * m_interactivePulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
 
@@ -540,9 +518,13 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       if (auto& globalDirectives = parameters->globalDirectives)
         directives = &globalDirectives.get();
   }
+
+  ClientRenderCallback lightingRenderCallback;
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
       if (m_startupHiddenEntities.contains(entity->entityId()))
         return;
+
+      entity->renderLightSources(&lightingRenderCallback);
 
       ClientRenderCallback renderCallback;
 
@@ -567,7 +549,6 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
         }
       }
-      
 
       EntityDrawables ed;
       for (auto& p : renderCallback.drawables) {
@@ -601,7 +582,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         for (auto& p : renderCallback.particles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(std::move(renderCallback.particles));
       m_samples.appendAll(std::move(renderCallback.audios));
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
@@ -610,6 +591,23 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }, [](EntityPtr const& a, EntityPtr const& b) {
       return a->entityId() < b->entityId();
     });
+
+  renderLightSources = std::move(lightingRenderCallback.lightSources);
+
+  if (!m_fullBright) {
+    {
+      MutexLocker m_prepLocker(m_lightMapPrepMutex);
+      m_pendingLights = std::move(renderLightSources);
+      m_pendingParticleLights = m_particles->lightSources();
+      m_pendingLightRange = window.padded(1);
+      m_pendingLightReady = true;
+    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
+
+    if (m_asyncLighting)
+      m_lightingCond.signal();
+    else
+      lightingCalc();
+  }
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
       renderTile.foreground = clientTile.foreground;
@@ -1188,7 +1186,11 @@ void WorldClient::update(float dt) {
 
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
+  RectF clientWindow = RectF(m_clientState.window()).padded(20); // spatial culling margin
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+      if (!clientWindow.intersects(entity->metaBoundBox().translated(entity->position())))
+        return;
+
       try { entity->update(dt, m_currentStep); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
@@ -1235,7 +1237,7 @@ void WorldClient::update(float dt) {
 
     Vec2F playerPos = m_mainPlayer->position();
     auto dropList = m_entityMap->query<ItemDrop>(RectF(playerPos - Vec2F::filled(DropDist / 2), playerPos + Vec2F::filled(DropDist / 2)));
-    for (auto itemDrop : dropList) {
+    for (auto const& itemDrop : dropList) {
       auto distSquared = m_geometry.diff(itemDrop->position(), playerPos).magnitudeSquared();
 
       // If the drop is within DropDist and not owned, request it.
@@ -1316,7 +1318,7 @@ void WorldClient::update(float dt) {
         return RectI::integral(entity->metaBoundBox().translated(entity->position()));
       return {};
     });
-  for (auto monitoredRegion : monitoredRegions)
+  for (auto const& monitoredRegion : monitoredRegions)
     neededSectors.addAll(m_tileArray->validSectorsFor(monitoredRegion.padded(WorldSectorSize)));
 
   auto loadedSectors = m_tileArray->loadedSectors();
@@ -1349,6 +1351,12 @@ MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
   if (!inWorld())
     return NullMaterialId;
   return m_tileArray->tile(pos).material(layer);
+}
+
+std::tuple<MaterialId, ModId> WorldClient::materialAndMod(Vec2I const& pos, TileLayer layer) const {
+  if (!inWorld())
+    return {NullMaterialId, NoModId};
+  return m_tileArray->tile(pos).materialAndMod(layer);
 }
 
 MaterialHue WorldClient::materialHueShift(Vec2I const& position, TileLayer layer) const {
@@ -2084,45 +2092,13 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
 void WorldClient::dirtyCollision(RectI const& region) {
   if (!inWorld())
     return;
-
-  auto dirtyRegion = region.padded(CollisionGenerator::BlockInfluenceRadius);
-  for (int x = dirtyRegion.xMin(); x < dirtyRegion.xMax(); ++x) {
-    for (int y = dirtyRegion.yMin(); y < dirtyRegion.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y}))
-        tile->collisionCacheDirty = true;
-    }
-  }
+  dirtyCollisionImpl(m_tileArray, region);
 }
 
 void WorldClient::freshenCollision(RectI const& region) {
   if (!inWorld())
     return;
-
-  RectI freshenRegion = RectI::null();
-  for (int x = region.xMin(); x < region.xMax(); ++x) {
-    for (int y = region.yMin(); y < region.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y})) {
-        if (tile->collisionCacheDirty)
-          freshenRegion.combine(RectI(x, y, x + 1, y + 1));
-      }
-    }
-  }
-
-  if (!freshenRegion.isNull()) {
-    for (int x = freshenRegion.xMin(); x < freshenRegion.xMax(); ++x) {
-      for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
-        if (auto tile = m_tileArray->modifyTile({x, y})) {
-          tile->collisionCacheDirty = false;
-          tile->collisionCache.clear();
-        }
-      }
-    }
-
-    for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
-      if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
-        tile->collisionCache.append(std::move(collisionBlock));
-    }
-  }
+  freshenCollisionImpl(m_tileArray, m_collisionGenerator, m_collisionCache, region);
 }
 
 float WorldClient::lightLevel(Vec2F const& pos) const {

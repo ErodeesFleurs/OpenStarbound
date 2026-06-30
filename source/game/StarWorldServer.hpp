@@ -129,6 +129,7 @@ public:
   WorldGeometry geometry() const override;
   uint64_t currentStep() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
+  std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
   ModId mod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
@@ -400,6 +401,7 @@ private:
   ClockPtr m_referenceClock;
 
   CollisionGenerator m_collisionGenerator;
+  HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
   List<CollisionBlock> m_workingCollisionBlocks;
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;

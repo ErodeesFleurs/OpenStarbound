@@ -20,12 +20,7 @@ public:
   ByteArray bytes() const;
   String hex() const;
 
-  bool operator==(Uuid const& u) const;
-  bool operator!=(Uuid const& u) const;
-  bool operator<(Uuid const& u) const;
-  bool operator<=(Uuid const& u) const;
-  bool operator>(Uuid const& u) const;
-  bool operator>=(Uuid const& u) const;
+  auto operator<=>(Uuid const&) const = default;
 
 private:
   Array<char, UuidSize> m_data;

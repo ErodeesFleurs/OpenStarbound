@@ -14,6 +14,8 @@
 #include "StarSha256.hpp"
 #include "StarEncode.hpp"
 
+constexpr size_t AudioDecodeBufferFrames = 1024;
+
 namespace Star {
 
 float const DefaultPerceptualRangeDb = 40.f;
@@ -361,9 +363,9 @@ public:
     // Create a memory buffer to store decompressed data
     auto memDevice = make_shared<Buffer>();
 
-    int16_t buffer[1024];
+    int16_t buffer[AudioDecodeBufferFrames];
     while (true) {
-      size_t ramt = impl.readPartial(buffer, 1024);
+      size_t ramt = impl.readPartial(buffer, AudioDecodeBufferFrames);
       if (ramt == 0)
         break;
       memDevice->writeFull(reinterpret_cast<char*>(buffer), ramt * 2);
@@ -394,10 +396,10 @@ public:
     m_channels = impl.channels();
     m_sampleRate = impl.sampleRate();
 
-    int16_t buffer[1024];
+    int16_t buffer[AudioDecodeBufferFrames];
     Buffer uncompressBuffer;
     while (true) {
-      size_t ramt = impl.readPartial(buffer, 1024);
+      size_t ramt = impl.readPartial(buffer, AudioDecodeBufferFrames);
 
       if (ramt == 0) {
         // End of stream reached

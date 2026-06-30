@@ -58,7 +58,7 @@ public:
 
   // Parses JSON object or array only (the only top level types allowed by
   // JSON)
-  static Json parseJson(String const& json);
+  [[nodiscard]] static Json parseJson(String const& json);
 
   // Constructs type Null
   Json();
@@ -111,18 +111,18 @@ public:
   // opt* methods work like this, if the json is null, it returns none.  If the
   // json is convertible, it returns the converted type, otherwise an exception
   // occurrs.
-  Maybe<Json> opt() const;
-  Maybe<double> optDouble() const;
-  Maybe<float> optFloat() const;
-  Maybe<bool> optBool() const;
-  Maybe<int64_t> optInt() const;
-  Maybe<uint64_t> optUInt() const;
-  Maybe<String> optString() const;
-  Maybe<JsonArray> optArray() const;
-  Maybe<JsonObject> optObject() const;
+  [[nodiscard]] Maybe<Json> opt() const;
+  [[nodiscard]] Maybe<double> optDouble() const;
+  [[nodiscard]] Maybe<float> optFloat() const;
+  [[nodiscard]] Maybe<bool> optBool() const;
+  [[nodiscard]] Maybe<int64_t> optInt() const;
+  [[nodiscard]] Maybe<uint64_t> optUInt() const;
+  [[nodiscard]] Maybe<String> optString() const;
+  [[nodiscard]] Maybe<JsonArray> optArray() const;
+  [[nodiscard]] Maybe<JsonObject> optObject() const;
 
   // Size of array / object type json
-  size_t size() const;
+  [[nodiscard]] size_t size() const;
 
   // If this json is array type, get the value at the given index
   Json get(size_t index) const;
@@ -148,7 +148,7 @@ public:
   JsonObject getObject(size_t index, JsonObject def) const;
 
   // If object type, whether object contains key
-  bool contains(String const& key) const;
+  [[nodiscard]] bool contains(String const& key) const;
 
   // If this json is object type, get the value for the given key
   Json get(String const& key) const;
@@ -175,15 +175,15 @@ public:
 
   // Works the same way as opt methods above.  Will never return a null value,
   // if there is a null entry it will just return an empty Maybe.
-  Maybe<Json> opt(String const& key) const;
-  Maybe<double> optDouble(String const& key) const;
-  Maybe<float> optFloat(String const& key) const;
-  Maybe<bool> optBool(String const& key) const;
-  Maybe<int64_t> optInt(String const& key) const;
-  Maybe<uint64_t> optUInt(String const& key) const;
-  Maybe<String> optString(String const& key) const;
-  Maybe<JsonArray> optArray(String const& key) const;
-  Maybe<JsonObject> optObject(String const& key) const;
+  [[nodiscard]] Maybe<Json> opt(String const& key) const;
+  [[nodiscard]] Maybe<double> optDouble(String const& key) const;
+  [[nodiscard]] Maybe<float> optFloat(String const& key) const;
+  [[nodiscard]] Maybe<bool> optBool(String const& key) const;
+  [[nodiscard]] Maybe<int64_t> optInt(String const& key) const;
+  [[nodiscard]] Maybe<uint64_t> optUInt(String const& key) const;
+  [[nodiscard]] Maybe<String> optString(String const& key) const;
+  [[nodiscard]] Maybe<JsonArray> optArray(String const& key) const;
+  [[nodiscard]] Maybe<JsonObject> optObject(String const& key) const;
 
   // Combines gets recursively in friendly expressions.  For
   // example, call like this: json.query("path.to.array[3][4]")
@@ -211,15 +211,15 @@ public:
 
   // Returns none on on missing / null keys anywhere in the query path.  Will
   // never return a null value, just an empty Maybe.
-  Maybe<Json> optQuery(String const& path) const;
-  Maybe<double> optQueryDouble(String const& path) const;
-  Maybe<float> optQueryFloat(String const& path) const;
-  Maybe<bool> optQueryBool(String const& path) const;
-  Maybe<int64_t> optQueryInt(String const& path) const;
-  Maybe<uint64_t> optQueryUInt(String const& path) const;
-  Maybe<String> optQueryString(String const& path) const;
-  Maybe<JsonArray> optQueryArray(String const& path) const;
-  Maybe<JsonObject> optQueryObject(String const& path) const;
+  [[nodiscard]] Maybe<Json> optQuery(String const& path) const;
+  [[nodiscard]] Maybe<double> optQueryDouble(String const& path) const;
+  [[nodiscard]] Maybe<float> optQueryFloat(String const& path) const;
+  [[nodiscard]] Maybe<bool> optQueryBool(String const& path) const;
+  [[nodiscard]] Maybe<int64_t> optQueryInt(String const& path) const;
+  [[nodiscard]] Maybe<uint64_t> optQueryUInt(String const& path) const;
+  [[nodiscard]] Maybe<String> optQueryString(String const& path) const;
+  [[nodiscard]] Maybe<JsonArray> optQueryArray(String const& path) const;
+  [[nodiscard]] Maybe<JsonObject> optQueryObject(String const& path) const;
 
   // Returns a *new* object with the given values set/erased.  Throws if not an
   // object.
@@ -236,23 +236,23 @@ public:
   Json append(Json value) const;
   Json eraseIndex(size_t index) const;
 
-  Type type() const;
-  String typeName() const;
-  Json convert(Type u) const;
+  [[nodiscard]] Type type() const;
+  [[nodiscard]] String typeName() const;
+  [[nodiscard]] Json convert(Type u) const;
 
-  bool isType(Type type) const;
-  bool canConvert(Type type) const;
+  [[nodiscard]] bool isType(Type type) const;
+  [[nodiscard]] bool canConvert(Type type) const;
 
   // isNull returns true when the type of the Json is null.  operator bool() is
   // the opposite of isNull().
-  bool isNull() const;
+  [[nodiscard]] bool isNull() const;
   explicit operator bool() const;
 
   // Prints JSON or JSON sub-type.  If sort is true, then any object anywhere
   // inside this value will be sorted alphanumerically before being written,
   // resulting in a known *unique* textual representation of the Json that is
   // cross-platform.
-  String repr(int pretty = 0, bool sort = false) const;
+  [[nodiscard]] String repr(int pretty = 0, bool sort = false) const;
   // Prints JSON object or array only (only top level types allowed by JSON)
   String printJson(int pretty = 0, bool sort = false) const;
   // Same but avoids quotation marks if this is a string
@@ -264,7 +264,7 @@ public:
   bool operator!=(Json const& v) const;
 
   // Does this Json not share its storage with any other Json?
-  bool unique() const;
+  [[nodiscard]] bool unique() const;
 
   void getHash(XXHash3& hasher) const;
 

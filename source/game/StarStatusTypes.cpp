@@ -1,4 +1,5 @@
 #include "StarStatusTypes.hpp"
+#include "StarDataStream.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 

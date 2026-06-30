@@ -95,7 +95,8 @@ int TextPainter::stringWidth(StringView s, unsigned charLimit) {
   if (s.empty())
     return 0;
 
-  String font = m_renderSettings.font, setFont = font;
+  String font = m_renderSettings.font;
+  String setFont = m_renderSettings.font;
   m_fontTextureGroup.switchFont(font);
 
   Text::CommandsCallback commandsCallback = [&](StringView commands) {
@@ -127,7 +128,8 @@ int TextPainter::stringWidth(StringView s, unsigned charLimit) {
 }
 
 bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapTextCallback textFunc) {
-  String font = m_renderSettings.font, setFont = font;
+  String font = m_renderSettings.font;
+  String setFont = m_renderSettings.font;
   m_fontTextureGroup.switchFont(font);
   auto iterator = text.begin(), end = text.end();
 
@@ -389,7 +391,7 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
   List<StringView> lines = wrapTextViews(s, position.wrapWidth);
 
   TextStyle backup = m_savedRenderSettings = m_renderSettings;
-  int height = (lines.size() - 1) * backup.lineSpacing * backup.fontSize + backup.fontSize;
+  int height = (static_cast<int>(lines.size()) - 1) * backup.lineSpacing * backup.fontSize + backup.fontSize;
   if (position.vAnchor == VerticalAnchor::BottomAnchor)
     pos[1] += (height - backup.fontSize);
   else if (position.vAnchor == VerticalAnchor::VMidAnchor)

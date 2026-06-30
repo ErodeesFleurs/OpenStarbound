@@ -189,7 +189,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     Sound& sound = m_sounds[std::move(soundName)];
     if (soundConfig.isType(Json::Type::Array)) {
       sound.rangeMultiplier = 1.0f;
-      sound.soundPool.set(jsonToStringList(soundConfig).transformed(bind(&AssetPath::relativeTo, m_relativePath, _1)));
+      sound.soundPool.set(jsonToStringList(soundConfig).transformed([path = m_relativePath](String const& s) { return AssetPath::relativeTo(path, s); }));
       sound.volumeTarget.set(1.0f);
       sound.volumeRampTime.set(0.0f);
       sound.pitchMultiplierTarget.set(1.0f);
@@ -207,7 +207,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
       sound.pitchMultiplierTarget.set(soundConfig.getFloat("pitchMultiplier", 1.0f));
       sound.pitchMultiplierRampTime.set(soundConfig.getFloat("pitchMultiplierRampTime", 0.0f));
 
-      sound.soundPool.set(jsonToStringList(soundConfig.get("pool", JsonArray())).transformed(bind(&AssetPath::relativeTo, m_relativePath, _1)));
+      sound.soundPool.set(jsonToStringList(soundConfig.get("pool", JsonArray())).transformed([path = m_relativePath](String const& s) { return AssetPath::relativeTo(path, s); }));
     }
   }
 
@@ -481,10 +481,10 @@ void NetworkedAnimator::setLocalTag(String tagName, Maybe<String> tagValue) {
     m_localTags.remove(tagName);
 }
 
-void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
+void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> const& drawables) {
   m_partDrawables.set(partName, drawables);
 }
-void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
+void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> const& drawables) {
   m_partDrawables.ptr(partName)->appendAll(drawables);
 }
 String NetworkedAnimator::applyPartTags(String const& partName, String apply) const {

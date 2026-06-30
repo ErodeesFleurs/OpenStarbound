@@ -55,8 +55,7 @@ struct AssetPath {
   AssetPath() = default;
   AssetPath(const char* path);
   AssetPath(String const& path);
-  AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives);
-  AssetPath(const String& basePath, const Maybe<String>& subPath, const DirectivesGroup& directives);
+  AssetPath(String basePath, Maybe<String> subPath, DirectivesGroup directives);
   String basePath;
   Maybe<String> subPath;
   DirectivesGroup directives;

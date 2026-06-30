@@ -10,9 +10,9 @@ using FuelWidgetPtr = SharedPtr<FuelWidget>;
 class FuelWidget : public Widget {
 public:
   FuelWidget();
-  virtual ~FuelWidget() {}
+  virtual ~FuelWidget() = default;
 
-  virtual void update(float dt);
+  virtual void update(float dt) override;
 
   void setCurrentFuelLevel(float amount);
   void setMaxFuelLevel(float amount);
@@ -22,7 +22,7 @@ public:
   void ping();
 
 protected:
-  virtual void renderImpl();
+  virtual void renderImpl() override;
 
   float m_fuelLevel;
   float m_maxLevel;

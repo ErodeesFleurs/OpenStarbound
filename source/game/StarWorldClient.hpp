@@ -46,6 +46,7 @@ public:
   WorldGeometry geometry() const override;
   uint64_t currentStep() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
+  std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
   ModId mod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const override;
@@ -301,6 +302,7 @@ private:
   SkyPtr m_sky;
 
   CollisionGenerator m_collisionGenerator;
+  HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
 
   WorldClientState m_clientState;
   Maybe<ConnectionId> m_clientId;

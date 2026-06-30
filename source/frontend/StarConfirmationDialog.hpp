@@ -12,7 +12,7 @@ class ConfirmationDialog : public Pane {
 public:
   ConfirmationDialog();
 
-  virtual ~ConfirmationDialog() {}
+  virtual ~ConfirmationDialog() = default;
 
   void displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
   void displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);

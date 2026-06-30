@@ -672,9 +672,9 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
   callbacks.registerCallback(
       "setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); });
 
-  callbacks.registerCallbackWithSignature<void, Maybe<JsonArray>>("setObjectiveList", bind(&Quest::setObjectiveList, this, _1));
-  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setProgress", bind(&Quest::setProgress, this, _1));
-  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setCompassDirection", bind(&Quest::setCompassDirection, this, _1));
+  callbacks.registerCallbackWithSignature<void, Maybe<JsonArray>>("setObjectiveList", [this](Maybe<JsonArray> const& objectiveList) { return setObjectiveList(objectiveList); });
+  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setProgress", [this](Maybe<float> const& progress) { return setProgress(progress); });
+  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setCompassDirection", [this](Maybe<float> const& direction) { return setCompassDirection(direction); });
 
   callbacks.registerCallbackWithSignature<void, String>("setTitle", [this](String const& title) {
       m_title = title;

@@ -272,7 +272,7 @@ Maybe<bool> CelestialMasterDatabase::hasChildren(CelestialCoordinate const& coor
 }
 
 List<CelestialCoordinate> CelestialMasterDatabase::children(CelestialCoordinate const& coordinate) {
-  return childOrbits(coordinate).transformed(bind(&CelestialCoordinate::child, coordinate, _1));
+  return childOrbits(coordinate).transformed([coordinate](int orbit) { return coordinate.child(orbit); });
 }
 
 List<int> CelestialMasterDatabase::childOrbits(CelestialCoordinate const& coordinate) {
@@ -758,7 +758,7 @@ Maybe<bool> CelestialSlaveDatabase::hasChildren(CelestialCoordinate const& coord
 }
 
 List<CelestialCoordinate> CelestialSlaveDatabase::children(CelestialCoordinate const& coordinate) {
-  return childOrbits(coordinate).transformed(bind(&CelestialCoordinate::child, coordinate, _1));
+  return childOrbits(coordinate).transformed([coordinate](int orbit) { return coordinate.child(orbit); });
 }
 
 List<int> CelestialSlaveDatabase::childOrbits(CelestialCoordinate const& coordinate) {

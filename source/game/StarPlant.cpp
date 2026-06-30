@@ -694,6 +694,7 @@ void Plant::scanSpacesAndRoots() {
 
   m_boundBox = RectI::boundBoxOfPoints(m_spaces);
 
+  m_roots.reserve(m_roots.size() + m_spaces.size());
   for (auto space : m_spaces) {
     if (space[1] == 0) {
       if (m_ceiling)
@@ -883,8 +884,8 @@ void Plant::setupNetStates() {
   m_netGroup.addNetElement(&m_tileDamageYNetState);
   m_netGroup.addNetElement(&m_tileDamageEventNetState);
 
-  m_netGroup.setNeedsStoreCallback(bind(&Plant::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(bind(&Plant::getNetStates, this));
+  m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
+  m_netGroup.setNeedsLoadCallback([this](bool) { return getNetStates(); });
 }
 
 void Plant::getNetStates() {
