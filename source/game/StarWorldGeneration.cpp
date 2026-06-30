@@ -1,4 +1,5 @@
 #include "StarWorldGeneration.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarWorldServer.hpp"
 #include "StarMaterialItem.hpp"
 #include "StarMaterialDatabase.hpp"
@@ -196,24 +197,15 @@ DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer& worldServer, ObjectDat
     m_stagehandDatabase(worldServer.stagehandDatabase()),
     m_vehicleDatabase(worldServer.vehicleDatabase()),
     m_markForActivation(markForActivation) {
-  if (!m_objectDatabase)
-    throw StarException("DungeonGeneratorWorld requires object database service");
-  if (!m_materialDatabase)
-    throw StarException("DungeonGeneratorWorld requires material database service");
-  if (!m_liquidsDatabase)
-    throw StarException("DungeonGeneratorWorld requires liquids database service");
-  if (!m_plantDatabase)
-    throw StarException("DungeonGeneratorWorld requires plant database service");
-  if (!m_treasureDatabase)
-    throw StarException("DungeonGeneratorWorld requires treasure database service");
-  if (!m_npcDatabase)
-    throw StarException("DungeonGeneratorWorld requires npc database service");
-  if (!m_monsterDatabase)
-    throw StarException("DungeonGeneratorWorld requires monster database service");
-  if (!m_stagehandDatabase)
-    throw StarException("DungeonGeneratorWorld requires stagehand database service");
-  if (!m_vehicleDatabase)
-    throw StarException("DungeonGeneratorWorld requires vehicle database service");
+  requireNotNull(m_objectDatabase, "DungeonGeneratorWorld", "object database");
+  requireNotNull(m_materialDatabase, "DungeonGeneratorWorld", "material database");
+  requireNotNull(m_liquidsDatabase, "DungeonGeneratorWorld", "liquids database");
+  requireNotNull(m_plantDatabase, "DungeonGeneratorWorld", "plant database");
+  requireNotNull(m_treasureDatabase, "DungeonGeneratorWorld", "treasure database");
+  requireNotNull(m_npcDatabase, "DungeonGeneratorWorld", "npc database");
+  requireNotNull(m_monsterDatabase, "DungeonGeneratorWorld", "monster database");
+  requireNotNull(m_stagehandDatabase, "DungeonGeneratorWorld", "stagehand database");
+  requireNotNull(m_vehicleDatabase, "DungeonGeneratorWorld", "vehicle database");
 }
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
@@ -685,22 +677,14 @@ WorldGenerator::WorldGenerator(WorldServer& server, ObjectDatabaseConstPtr objec
     m_monsterDatabase(server.monsterDatabase()),
     m_stagehandDatabase(server.stagehandDatabase()),
     m_vehicleDatabase(server.vehicleDatabase()) {
-  if (!m_objectDatabase)
-    throw StarException("WorldGenerator requires object database service");
-  if (!m_materialDatabase)
-    throw StarException("WorldGenerator requires material database service");
-  if (!m_plantDatabase)
-    throw StarException("WorldGenerator requires plant database service");
-  if (!m_treasureDatabase)
-    throw StarException("WorldGenerator requires treasure database service");
-  if (!m_npcDatabase)
-    throw StarException("WorldGenerator requires npc database service");
-  if (!m_monsterDatabase)
-    throw StarException("WorldGenerator requires monster database service");
-  if (!m_stagehandDatabase)
-    throw StarException("WorldGenerator requires stagehand database service");
-  if (!m_vehicleDatabase)
-    throw StarException("WorldGenerator requires vehicle database service");
+  requireNotNull(m_objectDatabase, "WorldGenerator", "object database");
+  requireNotNull(m_materialDatabase, "WorldGenerator", "material database");
+  requireNotNull(m_plantDatabase, "WorldGenerator", "plant database");
+  requireNotNull(m_treasureDatabase, "WorldGenerator", "treasure database");
+  requireNotNull(m_npcDatabase, "WorldGenerator", "npc database");
+  requireNotNull(m_monsterDatabase, "WorldGenerator", "monster database");
+  requireNotNull(m_stagehandDatabase, "WorldGenerator", "stagehand database");
+  requireNotNull(m_vehicleDatabase, "WorldGenerator", "vehicle database");
 
   m_microDungeonFactory = make_shared<MicroDungeonFactory>();
 }

@@ -1,4 +1,5 @@
 #include "StarStatistics.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarStatisticsDatabase.hpp"
 #include "StarStatisticsService.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -11,10 +12,8 @@ Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPt
   m_service = std::move(service);
   m_versioningDatabase = std::move(versioningDatabase);
   m_statisticsDatabase = std::move(statisticsDatabase);
-  if (!m_versioningDatabase)
-    throw StarException("Statistics requires versioning database service");
-  if (!m_statisticsDatabase)
-    throw StarException("Statistics requires statistics database service");
+  requireNotNull(m_versioningDatabase, "Statistics", "versioning database");
+  requireNotNull(m_statisticsDatabase, "Statistics", "statistics database");
 
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;

@@ -1,5 +1,5 @@
 #include "StarTilePainter.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
@@ -18,10 +18,8 @@ TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDa
   m_assets = std::move(assets);
   m_materialDatabase = std::move(materialDatabase);
   auto liquidDatabase = std::move(liquidsDatabase);
-  if (!m_materialDatabase)
-    throw StarException("TilePainter requires material database service");
-  if (!liquidDatabase)
-    throw StarException("TilePainter requires liquids database service");
+  requireNotNull(m_materialDatabase, "TilePainter", "material database");
+  requireNotNull(liquidDatabase, "TilePainter", "liquids database");
 
   m_terrainChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());
   m_terrainChunkCache.setTimeSmear(m_terrainChunkCache.timeToLive() / 4);

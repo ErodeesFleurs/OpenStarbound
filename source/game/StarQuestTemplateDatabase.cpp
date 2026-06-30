@@ -1,4 +1,5 @@
 #include "StarQuestTemplateDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
@@ -58,8 +59,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
 }
 
 QuestTemplateDatabase::QuestTemplateDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("QuestTemplateDatabase requires assets service");
+  requireNotNull(assets, "QuestTemplateDatabase", "assets");
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {

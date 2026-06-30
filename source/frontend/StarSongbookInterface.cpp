@@ -1,4 +1,5 @@
 #include "StarSongbookInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarListWidget.hpp"
@@ -15,10 +16,8 @@ SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices
   m_player = std::move(player);
   m_assets = std::move(services.assets);
   m_registerReloadListener = std::move(services.registerReloadListener);
-  if (!m_assets)
-    throw StarException("SongbookInterface requires assets service");
-  if (!m_registerReloadListener)
-    throw StarException("SongbookInterface requires reload listener service");
+  requireNotNull(m_assets, "SongbookInterface", "assets");
+  requireService(m_registerReloadListener, "SongbookInterface", "reload listener");
 
   GuiReader reader(context());
 

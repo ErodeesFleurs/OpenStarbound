@@ -1,6 +1,6 @@
 #include "StarInterfaceCursor.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarException.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -8,10 +8,8 @@ namespace Star {
 InterfaceCursor::InterfaceCursor(InterfaceCursorServices services)
   : m_assets(std::move(services.assets)),
     m_imageMetadata(std::move(services.imageMetadata)) {
-  if (!m_assets)
-    throw StarException("InterfaceCursor requires assets service");
-  if (!m_imageMetadata)
-    throw StarException("InterfaceCursor requires image metadata service");
+  requireNotNull(m_assets, "InterfaceCursor", "assets");
+  requireNotNull(m_imageMetadata, "InterfaceCursor", "image metadata");
 
   resetCursor();
 }

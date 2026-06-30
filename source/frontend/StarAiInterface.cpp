@@ -1,4 +1,5 @@
 #include "StarAiInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarJsonRpc.hpp"
@@ -11,7 +12,6 @@
 #include "StarPlayerInventory.hpp"
 #include "StarQuests.hpp"
 #include "StarQuestManager.hpp"
-#include "StarException.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarClientContext.hpp"
@@ -43,15 +43,13 @@ AiInterface::AiInterface(UniverseClientPtr client,
   m_client = client;
   m_cinematic = cinematic;
   m_assets = std::move(services.assets);
-  if (!m_assets)
-    throw StarException("AiInterface requires assets service");
+  requireNotNull(m_assets, "AiInterface", "assets");
 
   m_textLength = 0.0;
   m_textMaxLength = 0.0;
 
   m_aiDatabase = std::move(services.aiDatabase);
-  if (!m_aiDatabase)
-    throw StarException("AiInterface requires ai database service");
+  requireNotNull(m_aiDatabase, "AiInterface", "ai database");
 
   GuiReader reader(context());
   reader.registerCallback("close", [this](Widget*) { dismiss(); });

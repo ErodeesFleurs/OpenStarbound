@@ -1,4 +1,5 @@
 #include "StarAnimation.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
@@ -26,8 +27,7 @@ Animation::Animation() {
 Animation::Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
   : m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   m_directory = directory;
-  if (!m_imageMetadataDatabase)
-    throw StarException("Animation requires image metadata database service");
+  requireNotNull(m_imageMetadataDatabase, "Animation", "image metadata database");
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
       m_directory = AssetPath::directory(config.toString());

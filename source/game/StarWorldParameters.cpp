@@ -1,4 +1,5 @@
 #include "StarWorldParameters.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -460,12 +461,9 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
 }
 
 TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed) {
-  if (!assets)
-    throw StarException("generateTerrestrialWorldParameters requires assets service");
-  if (!liquidsDatabase)
-    throw StarException("generateTerrestrialWorldParameters requires liquids database service");
-  if (!biomeDatabase)
-    throw StarException("generateTerrestrialWorldParameters requires biome database service");
+  requireNotNull(assets, "generateTerrestrialWorldParameters", "assets");
+  requireNotNull(liquidsDatabase, "generateTerrestrialWorldParameters", "liquids database");
+  requireNotNull(biomeDatabase, "generateTerrestrialWorldParameters", "biome database");
 
   auto terrestrialConfig = assets->json("/terrestrial_worlds.config");
 
@@ -638,8 +636,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr 
 }
 
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed) {
-  if (!assets)
-    throw StarException("generateAsteroidsWorldParameters requires assets service");
+  requireNotNull(assets, "generateAsteroidsWorldParameters", "assets");
 
   auto parameters = make_shared<AsteroidsWorldParameters>();
 
@@ -669,8 +666,7 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr asse
 }
 
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName) {
-  if (!assets)
-    throw StarException("generateFloatingDungeonWorldParameters requires assets service");
+  requireNotNull(assets, "generateFloatingDungeonWorldParameters", "assets");
 
   auto worldConfig = assets->json("/dungeon_worlds.config:" + dungeonWorldName);
 

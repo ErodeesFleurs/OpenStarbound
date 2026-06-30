@@ -1,4 +1,5 @@
 #include "StarInventory.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarSimpleTooltip.hpp"
@@ -33,14 +34,10 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
     m_techDatabase(std::move(services.techDatabase)),
     m_objectDatabase(std::move(services.objectDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  if (!m_assets)
-    throw StarException("InventoryPane requires assets service");
-  if (!m_techDatabase)
-    throw StarException("InventoryPane requires tech database service");
-  if (!m_objectDatabase)
-    throw StarException("InventoryPane requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("InventoryPane requires status effect database service");
+  requireNotNull(m_assets, "InventoryPane", "assets");
+  requireNotNull(m_techDatabase, "InventoryPane", "tech database");
+  requireNotNull(m_objectDatabase, "InventoryPane", "object database");
+  requireNotNull(m_statusEffectDatabase, "InventoryPane", "status effect database");
 
   GuiReader invWindowReader(context());
   m_config = m_assets->json("/interface/windowconfig/playerinventory.config");

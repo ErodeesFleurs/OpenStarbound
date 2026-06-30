@@ -1,4 +1,5 @@
 #include "StarSpawner.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
@@ -11,12 +12,9 @@ namespace Star {
 
 Spawner::Spawner(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, SpawnTypeDatabaseConstPtr spawnTypeDatabase)
   : m_monsterDatabase(std::move(monsterDatabase)), m_spawnTypeDatabase(std::move(spawnTypeDatabase)) {
-  if (!assets)
-    throw StarException("Spawner requires assets service");
-  if (!m_monsterDatabase)
-    throw StarException("Spawner requires monster database service");
-  if (!m_spawnTypeDatabase)
-    throw StarException("Spawner requires spawn type database service");
+  requireNotNull(assets, "Spawner", "assets");
+  requireNotNull(m_monsterDatabase, "Spawner", "monster database");
+  requireNotNull(m_spawnTypeDatabase, "Spawner", "spawn type database");
 
   auto config = assets->json("/spawning.config");
 

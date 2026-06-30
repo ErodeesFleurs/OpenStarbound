@@ -1,5 +1,6 @@
 #include "StarWorldPainter.hpp"
 #include "StarAnimation.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
@@ -15,18 +16,12 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration
     m_materialDatabase(std::move(materialDatabase)),
     m_liquidsDatabase(std::move(liquidsDatabase)),
     m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
-  if (!m_assets)
-    throw StarException("WorldPainter requires assets service");
-  if (!m_configuration)
-    throw StarException("WorldPainter requires configuration service");
-  if (!m_registerReloadListener)
-    throw StarException("WorldPainter requires reload listener registrar service");
-  if (!m_materialDatabase)
-    throw StarException("WorldPainter requires material database service");
-  if (!m_liquidsDatabase)
-    throw StarException("WorldPainter requires liquids database service");
-  if (!m_imageMetadataDatabase)
-    throw StarException("WorldPainter requires image metadata database service");
+  requireNotNull(m_assets, "WorldPainter", "assets");
+  requireNotNull(m_configuration, "WorldPainter", "configuration");
+  requireService(m_registerReloadListener, "WorldPainter", "reload listener registrar");
+  requireNotNull(m_materialDatabase, "WorldPainter", "material database");
+  requireNotNull(m_liquidsDatabase, "WorldPainter", "liquids database");
+  requireNotNull(m_imageMetadataDatabase, "WorldPainter", "image metadata database");
 
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());

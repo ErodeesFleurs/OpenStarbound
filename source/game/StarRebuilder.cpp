@@ -1,4 +1,5 @@
 #include "StarRebuilder.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLua.hpp"
 #include "StarRootLuaBindings.hpp"
@@ -7,8 +8,7 @@
 namespace Star {
 
 Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices) {
-  if (!assets)
-    throw StarException("Rebuilder requires assets service");
+  requireNotNull(assets, "Rebuilder", "assets");
 
   m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
   m_contexts = make_shared<List<LuaContext>>();

@@ -1,4 +1,5 @@
 #include "StarParticleDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 
@@ -21,10 +22,8 @@ Particle ParticleConfig::instance() {
 }
 
 ParticleDatabase::ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  if (!assets)
-    throw StarException("ParticleDatabase requires assets service");
-  if (!imageMetadataDatabase)
-    throw StarException("ParticleDatabase requires image metadata database service");
+  requireNotNull(assets, "ParticleDatabase", "assets");
+  requireNotNull(imageMetadataDatabase, "ParticleDatabase", "image metadata database");
   m_assets = std::move(assets);
   m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   auto& files = m_assets->scanExtension("particle");

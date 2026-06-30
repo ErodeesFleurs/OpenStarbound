@@ -1,4 +1,5 @@
 #include "StarMainInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarLexicalCast.hpp"
@@ -67,15 +68,19 @@ namespace Star {
 namespace {
 
 template <typename Service>
+Service requireMainInterfaceSharedService(Service service, char const* name) {
+  requireNotNull(service, "MainInterface", name);
+  return service;
+}
+
+template <typename Service>
 Service requireMainInterfaceService(Service service, char const* name) {
-  if (!service)
-    throw StarException(strf("MainInterface requires {} service", name));
+  requireService(service, "MainInterface", name);
   return service;
 }
 
 String requireMainInterfaceOutputDirectory(String outputDirectory) {
-  if (outputDirectory.empty())
-    throw StarException("MainInterface requires output directory service");
+  requireNonEmptyService(outputDirectory, "MainInterface", "output directory");
   return outputDirectory;
 }
 
@@ -96,15 +101,15 @@ MainInterface::MainInterface(UniverseClientPtr client,
   : m_guiContext(services.guiContext)
   , m_input(services.input)
   , m_voice(services.voice)
-  , m_assets(requireMainInterfaceService(std::move(services.assets), "assets"))
-  , m_configuration(requireMainInterfaceService(std::move(services.configuration), "configuration"))
-  , m_imageMetadata(requireMainInterfaceService(std::move(services.imageMetadata), "image metadata"))
-  , m_functionDatabase(requireMainInterfaceService(std::move(services.functionDatabase), "function database"))
-  , m_itemDatabase(requireMainInterfaceService(std::move(services.itemDatabase), "item database"))
-  , m_objectDatabase(requireMainInterfaceService(std::move(services.objectDatabase), "object database"))
-  , m_aiDatabase(requireMainInterfaceService(std::move(services.aiDatabase), "AI database"))
-  , m_techDatabase(requireMainInterfaceService(std::move(services.techDatabase), "tech database"))
-  , m_statusEffectDatabase(requireMainInterfaceService(std::move(services.statusEffectDatabase), "status effect database"))
+  , m_assets(requireMainInterfaceSharedService(std::move(services.assets), "assets"))
+  , m_configuration(requireMainInterfaceSharedService(std::move(services.configuration), "configuration"))
+  , m_imageMetadata(requireMainInterfaceSharedService(std::move(services.imageMetadata), "image metadata"))
+  , m_functionDatabase(requireMainInterfaceSharedService(std::move(services.functionDatabase), "function database"))
+  , m_itemDatabase(requireMainInterfaceSharedService(std::move(services.itemDatabase), "item database"))
+  , m_objectDatabase(requireMainInterfaceSharedService(std::move(services.objectDatabase), "object database"))
+  , m_aiDatabase(requireMainInterfaceSharedService(std::move(services.aiDatabase), "AI database"))
+  , m_techDatabase(requireMainInterfaceSharedService(std::move(services.techDatabase), "tech database"))
+  , m_statusEffectDatabase(requireMainInterfaceSharedService(std::move(services.statusEffectDatabase), "status effect database"))
   , m_imageFrames(requireMainInterfaceService(std::move(services.imageFrames), "image frames"))
   , m_registerReloadListener(requireMainInterfaceService(std::move(services.registerReloadListener), "reload listener registrar"))
   , m_reloadRoot(requireMainInterfaceService(std::move(services.reloadRoot), "root reload callback"))

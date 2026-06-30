@@ -1,7 +1,7 @@
 #include "StarNameplatePainter.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarException.hpp"
 #include "StarNametagEntity.hpp"
 #include "StarPlayer.hpp"
 #include "StarGuiContext.hpp"
@@ -10,8 +10,7 @@ namespace Star {
 
 NameplatePainter::NameplatePainter(Services services) : m_guiContext(services.guiContext) {
   auto assets = std::move(services.assets);
-  if (!assets)
-    throw StarException("NameplatePainter requires assets service");
+  requireNotNull(assets, "NameplatePainter", "assets");
 
   Json nametagConfig = assets->json("/interface.config:nametag");
   m_showMasterNames = nametagConfig.getBool("showMasterNames");

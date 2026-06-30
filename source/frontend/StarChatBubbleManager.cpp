@@ -1,7 +1,7 @@
 #include "StarChatBubbleManager.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarWorldClient.hpp"
 #include "StarChattyEntity.hpp"
@@ -20,14 +20,10 @@ ChatBubbleManager::ChatBubbleManager(ChatBubbleManagerServices services)
     m_guiContext(services.guiContext),
     m_textTemplate(Vec2F()),
     m_portraitTextTemplate(Vec2F()) {
-  if (!m_assets)
-    throw StarException("ChatBubbleManager requires assets service");
-  if (!m_configuration)
-    throw StarException("ChatBubbleManager requires configuration service");
-  if (!m_functionDatabase)
-    throw StarException("ChatBubbleManager requires function database service");
-  if (!m_imageMetadata)
-    throw StarException("ChatBubbleManager requires image metadata service");
+  requireNotNull(m_assets, "ChatBubbleManager", "assets");
+  requireNotNull(m_configuration, "ChatBubbleManager", "configuration");
+  requireNotNull(m_functionDatabase, "ChatBubbleManager", "function database");
+  requireNotNull(m_imageMetadata, "ChatBubbleManager", "image metadata");
   m_cachedInterfaceScale = m_guiContext.interfaceScale();
 
   auto jsonData = m_assets->json("/interface/windowconfig/chatbubbles.config");

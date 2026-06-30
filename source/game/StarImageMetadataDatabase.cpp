@@ -1,4 +1,5 @@
 #include "StarImageMetadataDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarFile.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
@@ -9,8 +10,7 @@
 namespace Star {
 
 ImageMetadataDatabase::ImageMetadataDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw StarException("ImageMetadataDatabase requires assets service");
+  requireNotNull(m_assets, "ImageMetadataDatabase", "assets");
 
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;

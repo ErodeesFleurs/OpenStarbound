@@ -1,4 +1,5 @@
 #include "StarItemDrop.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
@@ -17,14 +18,12 @@ namespace Star {
 namespace {
 
 AssetsConstPtr itemDropAssets(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("ItemDrop requires assets service");
+  requireNotNull(assets, "ItemDrop", "assets");
   return assets;
 }
 
 ItemDatabaseConstPtr itemDropItemDatabase(ItemDatabaseConstPtr itemDatabase) {
-  if (!itemDatabase)
-    throw StarException("ItemDrop requires item database service");
+  requireNotNull(itemDatabase, "ItemDrop", "item database");
   return itemDatabase;
 }
 

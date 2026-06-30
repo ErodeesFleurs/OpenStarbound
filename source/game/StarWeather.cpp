@@ -1,4 +1,5 @@
 #include "StarWeather.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarTime.hpp"
@@ -28,12 +29,9 @@ ServerWeather::ServerWeather() {
 
 void ServerWeather::setup(AssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
     WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase, ProjectileDatabaseConstPtr projectileDatabase) {
-  if (!assets)
-    throw StarException("ServerWeather requires assets service");
-  if (!biomeDatabase)
-    throw StarException("ServerWeather requires biome database service");
-  if (!projectileDatabase)
-    throw StarException("ServerWeather requires projectile database service");
+  requireNotNull(assets, "ServerWeather", "assets");
+  requireNotNull(biomeDatabase, "ServerWeather", "biome database");
+  requireNotNull(projectileDatabase, "ServerWeather", "projectile database");
 
   m_assets = std::move(assets);
   m_biomeDatabase = std::move(biomeDatabase);
@@ -319,8 +317,7 @@ ClientWeather::ClientWeather() {
 }
 
 void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase) {
-  if (!biomeDatabase)
-    throw StarException("ClientWeather requires biome database service");
+  requireNotNull(biomeDatabase, "ClientWeather", "biome database");
 
   m_biomeDatabase = std::move(biomeDatabase);
   m_worldGeometry = worldGeometry;

@@ -1,8 +1,8 @@
 #include "StarCraftingInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarException.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
 #include "StarContainerEntity.hpp"
@@ -42,16 +42,11 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
   m_itemDatabase = std::move(services.itemDatabase);
   m_objectDatabase = std::move(services.objectDatabase);
   m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  if (!m_assets)
-    throw StarException("CraftingPane requires assets service");
-  if (!m_configuration)
-    throw StarException("CraftingPane requires configuration service");
-  if (!m_itemDatabase)
-    throw StarException("CraftingPane requires item database service");
-  if (!m_objectDatabase)
-    throw StarException("CraftingPane requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("CraftingPane requires status effect database service");
+  requireNotNull(m_assets, "CraftingPane", "assets");
+  requireNotNull(m_configuration, "CraftingPane", "configuration");
+  requireNotNull(m_itemDatabase, "CraftingPane", "item database");
+  requireNotNull(m_objectDatabase, "CraftingPane", "object database");
+  requireNotNull(m_statusEffectDatabase, "CraftingPane", "status effect database");
 
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;

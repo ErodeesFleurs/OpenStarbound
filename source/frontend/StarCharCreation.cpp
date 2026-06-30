@@ -1,4 +1,5 @@
 #include "StarCharCreation.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarNameGenerator.hpp"
@@ -28,16 +29,11 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
     m_speciesDatabase(std::move(services.speciesDatabase)),
     m_nameGenerator(std::move(services.nameGenerator)),
     m_itemDatabase(std::move(services.itemDatabase)) {
-  if (!m_assets)
-    throw StarException("CharCreationPane requires assets service");
-  if (!m_playerFactory)
-    throw StarException("CharCreationPane requires player factory service");
-  if (!m_speciesDatabase)
-    throw StarException("CharCreationPane requires species database service");
-  if (!m_nameGenerator)
-    throw StarException("CharCreationPane requires name generator service");
-  if (!m_itemDatabase)
-    throw StarException("CharCreationPane requires item database service");
+  requireNotNull(m_assets, "CharCreationPane", "assets");
+  requireNotNull(m_playerFactory, "CharCreationPane", "player factory");
+  requireNotNull(m_speciesDatabase, "CharCreationPane", "species database");
+  requireNotNull(m_nameGenerator, "CharCreationPane", "name generator");
+  requireNotNull(m_itemDatabase, "CharCreationPane", "item database");
 
   m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 

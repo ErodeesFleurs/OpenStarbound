@@ -1,4 +1,5 @@
 #include "StarQuestInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
 #include "StarException.hpp"
@@ -29,12 +30,9 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   m_assets = std::move(services.assets);
   m_objectDatabase = std::move(services.objectDatabase);
   m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  if (!m_assets)
-    throw StarException("QuestLogInterface requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("QuestLogInterface requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("QuestLogInterface requires status effect database service");
+  requireNotNull(m_assets, "QuestLogInterface", "assets");
+  requireNotNull(m_objectDatabase, "QuestLogInterface", "object database");
+  requireNotNull(m_statusEffectDatabase, "QuestLogInterface", "status effect database");
 
   auto config = m_assets->json("/interface/windowconfig/questlog.config");
 
@@ -302,12 +300,9 @@ QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServ
     m_assets(std::move(services.assets)),
     m_objectDatabase(std::move(services.objectDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  if (!m_assets)
-    throw StarException("QuestPane requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("QuestPane requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("QuestPane requires status effect database service");
+  requireNotNull(m_assets, "QuestPane", "assets");
+  requireNotNull(m_objectDatabase, "QuestPane", "object database");
+  requireNotNull(m_statusEffectDatabase, "QuestPane", "status effect database");
 }
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {

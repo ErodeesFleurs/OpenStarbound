@@ -1,4 +1,5 @@
 #include "StarItemTooltip.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPane.hpp"
 #include "StarListWidget.hpp"
@@ -23,20 +24,17 @@ namespace Star {
 
 namespace {
 AssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
-  if (!services.assets)
-    throw StarException("ItemTooltipBuilder requires assets service");
+  requireNotNull(services.assets, "ItemTooltipBuilder", "assets");
   return services.assets;
 }
 
 ObjectDatabaseConstPtr tooltipObjectDatabase(ItemTooltipBuilder::Services const& services) {
-  if (!services.objectDatabase)
-    throw StarException("ItemTooltipBuilder requires object database service");
+  requireNotNull(services.objectDatabase, "ItemTooltipBuilder", "object database");
   return services.objectDatabase;
 }
 
 StatusEffectDatabaseConstPtr tooltipStatusEffectDatabase(ItemTooltipBuilder::Services const& services) {
-  if (!services.statusEffectDatabase)
-    throw StarException("ItemTooltipBuilder requires status effect database service");
+  requireNotNull(services.statusEffectDatabase, "ItemTooltipBuilder", "status effect database");
   return services.statusEffectDatabase;
 }
 

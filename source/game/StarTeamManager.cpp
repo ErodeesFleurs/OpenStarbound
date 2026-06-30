@@ -1,4 +1,5 @@
 #include "StarTeamManager.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarException.hpp"
@@ -11,8 +12,7 @@ constexpr int MaxPvpTeamAssignmentAttempts = 256;
 namespace Star {
 
 TeamManager::TeamManager(ConfigurationPtr configuration) {
-  if (!configuration)
-    throw StarException("TeamManager requires configuration service");
+  requireNotNull(configuration, "TeamManager", "configuration");
   m_pvpTeamCounter = 1;
   m_maxTeamSize = configuration->get("maxTeamSize").toUInt();
   m_polledInvitationTimeout = configuration->getPath("teamInvitationTimeout", Json(600.0)).toDouble();

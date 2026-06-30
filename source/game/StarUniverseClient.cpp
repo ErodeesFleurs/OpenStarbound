@@ -1,4 +1,5 @@
 #include "StarUniverseClient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarClientContext.hpp"
 #include "StarConfiguration.hpp"
 #include "StarEncode.hpp"
@@ -56,52 +57,37 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage,
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_assets = std::move(assets);
-  if (!m_assets)
-    throw StarException("UniverseClient requires assets service");
+  requireNotNull(m_assets, "UniverseClient", "assets");
   m_configuration = std::move(configuration);
-  if (!m_configuration)
-    throw StarException("UniverseClient requires configuration service");
+  requireNotNull(m_configuration, "UniverseClient", "configuration");
   m_luaRootServices = std::move(luaRootServices);
   m_materialDatabase = std::move(materialDatabase);
-  if (!m_materialDatabase)
-    throw StarException("UniverseClient requires material database service");
+  requireNotNull(m_materialDatabase, "UniverseClient", "material database");
   m_itemDatabase = std::move(itemDatabase);
-  if (!m_itemDatabase)
-    throw StarException("UniverseClient requires item database service");
+  requireNotNull(m_itemDatabase, "UniverseClient", "item database");
   m_objectDatabase = std::move(objectDatabase);
-  if (!m_objectDatabase)
-    throw StarException("UniverseClient requires object database service");
+  requireNotNull(m_objectDatabase, "UniverseClient", "object database");
   m_speciesDatabase = std::move(speciesDatabase);
-  if (!m_speciesDatabase)
-    throw StarException("UniverseClient requires species database service");
+  requireNotNull(m_speciesDatabase, "UniverseClient", "species database");
   m_entityFactory = std::move(entityFactory);
-  if (!m_entityFactory)
-    throw StarException("UniverseClient requires entity factory service");
+  requireNotNull(m_entityFactory, "UniverseClient", "entity factory");
   m_liquidsDatabase = std::move(liquidsDatabase);
-  if (!m_liquidsDatabase)
-    throw StarException("UniverseClient requires liquids database service");
+  requireNotNull(m_liquidsDatabase, "UniverseClient", "liquids database");
   m_terrainDatabase = std::move(terrainDatabase);
-  if (!m_terrainDatabase)
-    throw StarException("UniverseClient requires terrain database service");
+  requireNotNull(m_terrainDatabase, "UniverseClient", "terrain database");
   m_biomeDatabase = std::move(biomeDatabase);
-  if (!m_biomeDatabase)
-    throw StarException("UniverseClient requires biome database service");
+  requireNotNull(m_biomeDatabase, "UniverseClient", "biome database");
   m_nameGenerator = std::move(nameGenerator);
-  if (!m_nameGenerator)
-    throw StarException("UniverseClient requires name generator service");
+  requireNotNull(m_nameGenerator, "UniverseClient", "name generator");
   m_functionDatabase = std::move(functionDatabase);
-  if (!m_functionDatabase)
-    throw StarException("UniverseClient requires function database service");
+  requireNotNull(m_functionDatabase, "UniverseClient", "function database");
   m_behaviorDatabase = std::move(behaviorDatabase);
   m_particleDatabase = std::move(particleDatabase);
-  if (!m_particleDatabase)
-    throw StarException("UniverseClient requires particle database service");
+  requireNotNull(m_particleDatabase, "UniverseClient", "particle database");
   m_damageDatabase = std::move(damageDatabase);
-  if (!m_damageDatabase)
-    throw StarException("UniverseClient requires damage database service");
+  requireNotNull(m_damageDatabase, "UniverseClient", "damage database");
   m_projectileDatabase = std::move(projectileDatabase);
-  if (!m_projectileDatabase)
-    throw StarException("UniverseClient requires projectile database service");
+  requireNotNull(m_projectileDatabase, "UniverseClient", "projectile database");
   m_effectSourceDatabase = std::move(effectSourceDatabase);
   m_techDatabase = std::move(techDatabase);
   m_statusEffectDatabase = std::move(statusEffectDatabase);
@@ -109,8 +95,7 @@ UniverseClient::UniverseClient(PlayerStoragePtr playerStorage,
   m_treasureDatabase = std::move(treasureDatabase);
   m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   m_dungeonDefinitions = std::move(dungeonDefinitions);
-  if (!m_dungeonDefinitions)
-    throw StarException("UniverseClient requires dungeon definitions service");
+  requireNotNull(m_dungeonDefinitions, "UniverseClient", "dungeon definitions");
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>(m_luaRootServices);
   reset();

@@ -1,5 +1,5 @@
 #include "StarCharSelection.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLargeCharPlateWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -24,10 +24,8 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     m_createCallback(createCallback),
     m_selectCallback(selectCallback),
     m_deleteCallback(deleteCallback) {
-  if (!m_assets)
-    throw StarException("CharSelectionPane requires assets service");
-  if (!m_configuration)
-    throw StarException("CharSelectionPane requires configuration service");
+  requireNotNull(m_assets, "CharSelectionPane", "assets");
+  requireNotNull(m_configuration, "CharSelectionPane", "configuration");
 
   GuiReader guiReader(context());
 

@@ -1,4 +1,5 @@
 #include "StarSystemWorldServer.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarClientContext.hpp"
@@ -11,8 +12,7 @@ namespace Star {
 SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
     : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
   m_liquidsDatabase = std::move(liquidsDatabase);
-  if (!m_liquidsDatabase)
-    throw StarException("SystemWorldServer requires liquids database service");
+  requireNotNull(m_liquidsDatabase, "SystemWorldServer", "liquids database");
   m_location = std::move(location);
 
   placeInitialObjects();
@@ -25,8 +25,7 @@ SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConst
 SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
     : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
   m_liquidsDatabase = std::move(liquidsDatabase);
-  if (!m_liquidsDatabase)
-    throw StarException("SystemWorldServer requires liquids database service");
+  requireNotNull(m_liquidsDatabase, "SystemWorldServer", "liquids database");
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {

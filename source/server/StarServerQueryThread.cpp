@@ -1,4 +1,5 @@
 #include "StarServerQueryThread.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLogging.hpp"
 #include "StarException.hpp"
 #include "StarConfiguration.hpp"
@@ -14,8 +15,7 @@ ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPo
     m_queryServer(bindAddress),
     m_stop(true),
     m_lastChallengeCheck(Time::monotonicMilliseconds()) {
-  if (!configuration)
-    throw StarException("ServerQueryThread requires configuration service");
+  requireNotNull(configuration, "ServerQueryThread", "configuration");
 
   m_playersResponse.resize(A2S_PACKET_SIZE);
   m_playersResponse.setByteOrder(ByteOrder::LittleEndian);

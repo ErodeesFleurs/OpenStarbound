@@ -1,8 +1,8 @@
 #include "StarMerchantInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarException.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
 #include "StarWorldClient.hpp"
@@ -34,14 +34,10 @@ MerchantPane::MerchantPane(
   m_itemDatabase = std::move(services.itemDatabase);
   m_objectDatabase = std::move(services.objectDatabase);
   m_statusEffectDatabase = std::move(services.statusEffectDatabase);
-  if (!m_assets)
-    throw StarException("MerchantPane requires assets service");
-  if (!m_itemDatabase)
-    throw StarException("MerchantPane requires item database service");
-  if (!m_objectDatabase)
-    throw StarException("MerchantPane requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("MerchantPane requires status effect database service");
+  requireNotNull(m_assets, "MerchantPane", "assets");
+  requireNotNull(m_itemDatabase, "MerchantPane", "item database");
+  requireNotNull(m_objectDatabase, "MerchantPane", "object database");
+  requireNotNull(m_statusEffectDatabase, "MerchantPane", "status effect database");
 
   m_sourceEntityId = sourceEntityId;
 

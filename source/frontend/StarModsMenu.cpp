@@ -1,6 +1,6 @@
 #include "StarModsMenu.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
-#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
@@ -12,8 +12,7 @@ namespace Star {
 ModsMenu::ModsMenu(Services services)
   : Pane(services.guiContext),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("ModsMenu requires assets service");
+  requireNotNull(m_assets, "ModsMenu", "assets");
 
   GuiReader reader(context());
   reader.registerCallback("linkbutton", [this](Widget*) { openLink(); });

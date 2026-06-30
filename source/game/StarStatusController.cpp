@@ -1,4 +1,5 @@
 #include "StarStatusController.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
@@ -23,16 +24,11 @@ StatusController::StatusController(Json const& config, AssetsConstPtr assets, Li
       m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
-  if (!m_assets)
-    throw StarException("StatusController requires assets service");
-  if (!m_liquidsDatabase)
-    throw StarException("StatusController requires liquids database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("StatusController requires status effect database service");
-  if (!m_particleDatabase)
-    throw StarException("StatusController requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw StarException("StatusController requires image metadata database service");
+  requireNotNull(m_assets, "StatusController", "assets");
+  requireNotNull(m_liquidsDatabase, "StatusController", "liquids database");
+  requireNotNull(m_statusEffectDatabase, "StatusController", "status effect database");
+  requireNotNull(m_particleDatabase, "StatusController", "particle database");
+  requireNotNull(m_imageMetadataDatabase, "StatusController", "image metadata database");
 
   m_statusProperties.reset(config.getObject("statusProperties", {}));
   m_statusProperties.setOverrides(

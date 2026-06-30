@@ -1,4 +1,5 @@
 #include "StarWorldTemplate.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBiome.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarInterpolation.hpp"
@@ -571,12 +572,9 @@ uint64_t WorldTemplate::seedFor(int x, int y) const {
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
     : m_assets(std::move(assets)), m_terrainDatabase(std::move(terrainDatabase)), m_biomeDatabase(std::move(biomeDatabase)), m_dungeonDefinitions(std::move(dungeonDefinitions)) {
-  if (!m_assets)
-    throw StarException("WorldTemplate requires assets service");
-  if (!m_terrainDatabase)
-    throw StarException("WorldTemplate requires terrain database service");
-  if (!m_biomeDatabase)
-    throw StarException("WorldTemplate requires biome database service");
+  requireNotNull(m_assets, "WorldTemplate", "assets");
+  requireNotNull(m_terrainDatabase, "WorldTemplate", "terrain database");
+  requireNotNull(m_biomeDatabase, "WorldTemplate", "biome database");
 
   m_templateConfig = m_assets->json("/world_template.config");
   m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");

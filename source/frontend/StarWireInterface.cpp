@@ -1,5 +1,5 @@
 #include "StarWireInterface.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWireEntity.hpp"
@@ -17,8 +17,7 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
     m_player(std::move(player)),
     m_worldPainter(std::move(worldPainter)),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("WirePane requires assets service");
+  requireNotNull(m_assets, "WirePane", "assets");
 
   m_connecting = false;
 

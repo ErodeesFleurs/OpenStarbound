@@ -1,4 +1,5 @@
 #include "StarSystemWorld.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
@@ -115,10 +116,8 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
 
 SystemWorld::SystemWorld(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
   : m_celestialDatabase(std::move(celestialDatabase)), m_assets(std::move(assets)), m_universeClock(std::move(universeClock)), m_nameGenerator(std::move(nameGenerator)) {
-  if (!m_assets)
-    throw StarException("SystemWorld requires assets service");
-  if (!m_nameGenerator)
-    throw StarException("SystemWorld requires name generator service");
+  requireNotNull(m_assets, "SystemWorld", "assets");
+  requireNotNull(m_nameGenerator, "SystemWorld", "name generator");
 
   m_config = SystemWorldConfig::fromJson(m_assets->json("/systemworld.config"));
 }
@@ -283,8 +282,7 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
 }
 
 Json SystemWorld::systemObjectTypeConfig(AssetsConstPtr assets, String const& name) {
-  if (!assets)
-    throw StarException("SystemWorld::systemObjectTypeConfig requires assets service");
+  requireNotNull(assets, "SystemWorld::systemObjectTypeConfig", "assets");
 
   return assets->json(strf("/system_objects.config:{}", name));
 }
@@ -338,8 +336,7 @@ SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& po
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, PatternedNameGeneratorConstPtr nameGenerator, JsonObject parameters)
   : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
-  if (!nameGenerator)
-    throw StarException("SystemObject requires name generator service");
+  requireNotNull(nameGenerator, "SystemObject", "name generator");
   setPosition(position);
   for (auto p : m_config.generatedParameters) {
     if (!m_parameters.contains(p.first))

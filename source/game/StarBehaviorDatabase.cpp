@@ -1,4 +1,5 @@
 #include "StarBehaviorDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -147,8 +148,7 @@ BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject con
   : name(name), scripts(scripts), parameters(parameters) { }
 
 BehaviorDatabase::BehaviorDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("BehaviorDatabase requires assets service");
+  requireNotNull(assets, "BehaviorDatabase", "assets");
 
   auto& nodeFiles = assets->scanExtension("nodes");
   assets->queueJsons(nodeFiles);

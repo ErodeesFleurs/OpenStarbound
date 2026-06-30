@@ -1,4 +1,5 @@
 #include "StarPlayerCodexes.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCodex.hpp"
 #include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
@@ -8,10 +9,8 @@ namespace Star {
 
 PlayerCodexes::PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& variant)
   : m_assets(std::move(assets)), m_codexDatabase(std::move(codexDatabase)) {
-  if (!m_assets)
-    throw StarException("PlayerCodexes requires assets service");
-  if (!m_codexDatabase)
-    throw StarException("PlayerCodexes requires codex database service");
+  requireNotNull(m_assets, "PlayerCodexes", "assets");
+  requireNotNull(m_codexDatabase, "PlayerCodexes", "codex database");
 
   if (variant) {
     auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));

@@ -1,4 +1,5 @@
 #include "StarCommandProcessor.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarNpc.hpp"
@@ -48,26 +49,16 @@ CommandProcessor::CommandProcessor(UniverseServer& universe,
     m_stagehandDatabase(std::move(stagehandDatabase)),
     m_liquidsDatabase(std::move(liquidsDatabase)),
     m_reloadRoot(std::move(reloadRoot)) {
-  if (!m_assets)
-    throw StarException("CommandProcessor requires assets service");
-  if (!m_configuration)
-    throw StarException("CommandProcessor requires configuration service");
-  if (!m_itemDatabase)
-    throw StarException("CommandProcessor requires item database service");
-  if (!m_treasureDatabase)
-    throw StarException("CommandProcessor requires treasure database service");
-  if (!m_monsterDatabase)
-    throw StarException("CommandProcessor requires monster database service");
-  if (!m_npcDatabase)
-    throw StarException("CommandProcessor requires npc database service");
-  if (!m_vehicleDatabase)
-    throw StarException("CommandProcessor requires vehicle database service");
-  if (!m_stagehandDatabase)
-    throw StarException("CommandProcessor requires stagehand database service");
-  if (!m_liquidsDatabase)
-    throw StarException("CommandProcessor requires liquids database service");
-  if (!m_reloadRoot)
-    throw StarException("CommandProcessor requires root reload service");
+  requireNotNull(m_assets, "CommandProcessor", "assets");
+  requireNotNull(m_configuration, "CommandProcessor", "configuration");
+  requireNotNull(m_itemDatabase, "CommandProcessor", "item database");
+  requireNotNull(m_treasureDatabase, "CommandProcessor", "treasure database");
+  requireNotNull(m_monsterDatabase, "CommandProcessor", "monster database");
+  requireNotNull(m_npcDatabase, "CommandProcessor", "npc database");
+  requireNotNull(m_vehicleDatabase, "CommandProcessor", "vehicle database");
+  requireNotNull(m_stagehandDatabase, "CommandProcessor", "stagehand database");
+  requireNotNull(m_liquidsDatabase, "CommandProcessor", "liquids database");
+  requireService(m_reloadRoot, "CommandProcessor", "root reload");
 
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());

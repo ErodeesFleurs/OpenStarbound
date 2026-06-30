@@ -1,4 +1,5 @@
 #include "StarProjectile.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDamageDatabase.hpp"
@@ -504,8 +505,7 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
 }
 
 List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource) {
-  if (!assets)
-    throw StarException("Projectile::sparkBlock requires assets service");
+  requireNotNull(assets, "Projectile::sparkBlock", "assets");
 
   auto materialDatabase = world.materialDatabase();
 

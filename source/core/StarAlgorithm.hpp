@@ -491,6 +491,18 @@ void requireNotNull(SharedPtr<T> const& ptr, char const* context, char const* se
     throw StarException(strf("{} requires {} service", context, serviceName));
 }
 
+template <typename Service>
+void requireService(Service const& service, char const* context, char const* serviceName) {
+  if (!service)
+    throw StarException(strf("{} requires {} service", context, serviceName));
+}
+
+template <typename Service>
+void requireNonEmptyService(Service const& service, char const* context, char const* serviceName) {
+  if (service.empty())
+    throw StarException(strf("{} requires {} service", context, serviceName));
+}
+
 // Generates compile time sequences of indexes from MinIndex to MaxIndex
 
 template <size_t...>

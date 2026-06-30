@@ -1,7 +1,7 @@
 #include "StarActionBar.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarException.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
@@ -27,14 +27,10 @@ ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, Ac
     m_configuration(std::move(services.configuration)),
     m_objectDatabase(std::move(services.objectDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
-  if (!m_assets)
-    throw StarException("ActionBar requires assets service");
-  if (!m_configuration)
-    throw StarException("ActionBar requires configuration service");
-  if (!m_objectDatabase)
-    throw StarException("ActionBar requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("ActionBar requires status effect database service");
+  requireNotNull(m_assets, "ActionBar", "assets");
+  requireNotNull(m_configuration, "ActionBar", "configuration");
+  requireNotNull(m_objectDatabase, "ActionBar", "object database");
+  requireNotNull(m_statusEffectDatabase, "ActionBar", "status effect database");
 
   m_config = m_assets->json("/interface/windowconfig/actionbar.config");
 

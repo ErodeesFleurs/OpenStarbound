@@ -1,4 +1,5 @@
 #include "StarSongbook.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAudio.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRandom.hpp"
@@ -13,8 +14,7 @@ Mutex Songbook::s_timeSourcesMutex;
 StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
 Songbook::Songbook(AssetsConstPtr assets, String const& species) {
-  if (!assets)
-    throw StarException("Songbook requires assets service");
+  requireNotNull(assets, "Songbook", "assets");
 
   m_assets = std::move(assets);
   m_activeCooldown = 0;

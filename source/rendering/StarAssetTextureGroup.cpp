@@ -1,4 +1,5 @@
 #include "StarAssetTextureGroup.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
@@ -10,10 +11,8 @@ namespace Star {
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_textureGroup(std::move(textureGroup)),
     m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw StarException("AssetTextureGroup requires assets service");
-  if (!registerReloadListener)
-    throw StarException("AssetTextureGroup requires reload listener registrar service");
+  requireNotNull(m_assets, "AssetTextureGroup", "assets");
+  requireService(registerReloadListener, "AssetTextureGroup", "reload listener registrar");
   m_reloadTracker = make_shared<TrackerListener>();
   registerReloadListener(m_reloadTracker);
 }

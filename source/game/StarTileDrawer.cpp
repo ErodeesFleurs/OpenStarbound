@@ -1,4 +1,5 @@
 #include "StarTileDrawer.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
@@ -29,8 +30,7 @@ RenderTile TileDrawer::DefaultRenderTile{
 TileDrawer::TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase)
   : m_assets(std::move(assets)),
     m_materialDatabase(std::move(materialDatabase)) {
-  if (!m_assets)
-    throw StarException("TileDrawer requires assets service");
+  requireNotNull(m_assets, "TileDrawer", "assets");
 
   m_backgroundLayerColor = jsonToColor(m_assets->json("/rendering.config:backgroundLayerColor")).toRgba();
   m_foregroundLayerColor = jsonToColor(m_assets->json("/rendering.config:foregroundLayerColor")).toRgba();

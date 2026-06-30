@@ -1,6 +1,6 @@
 #include "StarConfirmationDialog.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
-#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -12,8 +12,7 @@ namespace Star {
 ConfirmationDialog::ConfirmationDialog(Services services)
   : Pane(services.guiContext),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("ConfirmationDialog requires assets service");
+  requireNotNull(m_assets, "ConfirmationDialog", "assets");
 }
 
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {

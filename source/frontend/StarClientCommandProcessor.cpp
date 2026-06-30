@@ -1,4 +1,5 @@
 #include "StarClientCommandProcessor.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
@@ -36,26 +37,16 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
   m_input(services.input),
   m_setClipboardImage(std::move(services.setClipboardImage)),
   m_macroCommands(std::move(macroCommands)) {
-  if (!m_assets)
-    throw StarException("ClientCommandProcessor requires assets service");
-  if (!m_configuration)
-    throw StarException("ClientCommandProcessor requires configuration service");
-  if (!m_itemDatabase)
-    throw StarException("ClientCommandProcessor requires item database service");
-  if (!m_objectDatabase)
-    throw StarException("ClientCommandProcessor requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("ClientCommandProcessor requires status effect database service");
-  if (!m_imageFrames)
-    throw StarException("ClientCommandProcessor requires image frames service");
-  if (m_outputDirectory.empty())
-    throw StarException("ClientCommandProcessor requires output directory service");
-  if (!m_reloadRoot)
-    throw StarException("ClientCommandProcessor requires reload root service");
-  if (!m_hotReloadRoot)
-    throw StarException("ClientCommandProcessor requires hot reload root service");
-  if (!m_setClipboardImage)
-    throw StarException("ClientCommandProcessor requires clipboard image service");
+  requireNotNull(m_assets, "ClientCommandProcessor", "assets");
+  requireNotNull(m_configuration, "ClientCommandProcessor", "configuration");
+  requireNotNull(m_itemDatabase, "ClientCommandProcessor", "item database");
+  requireNotNull(m_objectDatabase, "ClientCommandProcessor", "object database");
+  requireNotNull(m_statusEffectDatabase, "ClientCommandProcessor", "status effect database");
+  requireService(m_imageFrames, "ClientCommandProcessor", "image frames");
+  requireNonEmptyService(m_outputDirectory, "ClientCommandProcessor", "output directory");
+  requireService(m_reloadRoot, "ClientCommandProcessor", "reload root");
+  requireService(m_hotReloadRoot, "ClientCommandProcessor", "hot reload root");
+  requireService(m_setClipboardImage, "ClientCommandProcessor", "clipboard image");
 
   m_builtinCommands = {
     {"reload", [this](String const&) { return reload(); }},

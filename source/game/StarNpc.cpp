@@ -1,4 +1,5 @@
 #include "StarNpc.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarBehaviorLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -33,8 +34,7 @@ namespace Star {
 namespace {
 
 AssetsConstPtr requireNpcAssets(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("Npc requires assets service");
+  requireNotNull(assets, "Npc", "assets");
   return assets;
 }
 
@@ -53,8 +53,7 @@ Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDa
   m_liquidsDatabase = std::move(liquidsDatabase);
   m_statusEffectDatabase = std::move(statusEffectDatabase);
   m_particleDatabase = std::move(particleDatabase);
-  if (!m_imageMetadataDatabase)
-    throw StarException("Npc requires image metadata database service");
+  requireNotNull(m_imageMetadataDatabase, "Npc", "image metadata database");
   m_netHumanoid.setElementFactory([this]() {
     return make_shared<NetHumanoid>(HumanoidIdentity(), JsonObject(), Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   });

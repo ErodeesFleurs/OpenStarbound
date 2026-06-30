@@ -1,6 +1,6 @@
 #include "StarStatusPane.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarException.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarGuiReader.hpp"
 #include "StarImageWidget.hpp"
@@ -20,12 +20,9 @@ StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
     m_imageMetadataDatabase(std::move(services.imageMetadataDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
     m_guiContext(services.guiContext) {
-  if (!m_assets)
-    throw StarException("StatusPane requires assets service");
-  if (!m_imageMetadataDatabase)
-    throw StarException("StatusPane requires image metadata service");
-  if (!m_statusEffectDatabase)
-    throw StarException("StatusPane requires status effect database service");
+  requireNotNull(m_assets, "StatusPane", "assets");
+  requireNotNull(m_imageMetadataDatabase, "StatusPane", "image metadata");
+  requireNotNull(m_statusEffectDatabase, "StatusPane", "status effect database");
   m_player = m_client->mainPlayer();
 
   GuiReader reader(m_guiContext);

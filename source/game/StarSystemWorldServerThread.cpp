@@ -1,7 +1,7 @@
 #include "StarSystemWorldServerThread.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarTickRateMonitor.hpp"
 #include "StarNetPackets.hpp"
-#include "StarException.hpp"
 
 namespace Star {
 
@@ -12,8 +12,7 @@ SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWo
   , m_storageFile(storageFile)
   , m_versioningDatabase(std::move(versioningDatabase))
 {
-  if (!m_versioningDatabase)
-    throw StarException("SystemWorldServerThread requires versioning database service");
+  requireNotNull(m_versioningDatabase, "SystemWorldServerThread", "versioning database");
 }
 
 SystemWorldServerThread::~SystemWorldServerThread() {

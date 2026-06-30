@@ -1,4 +1,5 @@
 #include "StarEffectSourceDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGameTypes.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarJsonExtra.hpp"
@@ -8,8 +9,7 @@
 namespace Star {
 
 EffectSourceDatabase::EffectSourceDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("EffectSourceDatabase requires assets service");
+  requireNotNull(assets, "EffectSourceDatabase", "assets");
 
   auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
@@ -32,8 +32,7 @@ EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kin
 
 EffectSourceConfig::EffectSourceConfig(AssetsConstPtr assets, Json const& config)
   : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw StarException("EffectSourceConfig requires assets service");
+  requireNotNull(m_assets, "EffectSourceConfig", "assets");
 
   m_kind = config.getString("kind");
   m_config = config;
@@ -49,8 +48,7 @@ EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocatio
 
 EffectSource::EffectSource(AssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition)
   : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw StarException("EffectSource requires assets service");
+  requireNotNull(m_assets, "EffectSource", "assets");
 
   m_kind = kind;
   m_config = definition;
@@ -140,8 +138,7 @@ String EffectSource::suggestedSpawnLocation() const {
 }
 
 List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase) {
-  if (!particleDatabase)
-    throw StarException("particlesFromDefinition requires particle database service");
+  requireNotNull(particleDatabase, "particlesFromDefinition", "particle database");
 
   Json particles;
   if (config.type() == Json::Type::Array)
@@ -167,8 +164,7 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
 }
 
 List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position) {
-  if (!assets)
-    throw StarException("soundsFromDefinition requires assets service");
+  requireNotNull(assets, "soundsFromDefinition", "assets");
 
   Json sound;
   if (config.type() == Json::Type::Array)

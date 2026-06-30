@@ -1,11 +1,11 @@
 #include "StarEmoteProcessor.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
 EmoteProcessor::EmoteProcessor(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("EmoteProcessor requires assets service");
+  requireNotNull(assets, "EmoteProcessor", "assets");
 
   m_emoteBindings.clear();
   auto cfg = assets->json("/emotes.config");

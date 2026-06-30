@@ -1,4 +1,5 @@
 #include "StarDrawable.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarDataStream.hpp"
 #include "StarColor.hpp"
 #include "StarJsonExtra.hpp"
@@ -10,8 +11,7 @@
 namespace Star {
 
 static ImageMetadataDatabaseConstPtr resolveImageMetadata(ImageMetadataDatabaseConstPtr const& ptr) {
-  if (!ptr)
-    throw StarException("Drawable operation requires image metadata database service");
+  requireNotNull(ptr, "Drawable operation", "image metadata database");
   return ptr;
 }
 

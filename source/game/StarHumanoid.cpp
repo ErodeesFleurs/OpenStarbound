@@ -1,4 +1,5 @@
 #include "StarHumanoid.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
 #include "StarDanceDatabase.hpp"
@@ -198,8 +199,7 @@ Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
 }
 
 Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("HumanoidTiming requires assets service");
+  requireNotNull(assets, "HumanoidTiming", "assets");
   return HumanoidTiming(assets->json("/humanoid.config:humanoidTiming"));
 }
 

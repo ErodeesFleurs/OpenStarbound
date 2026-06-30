@@ -1,4 +1,5 @@
 #include "StarTeamClient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarPlayer.hpp"
@@ -10,8 +11,7 @@
 namespace Star {
 
 TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
-  if (!assets)
-    throw StarException("TeamClient requires assets service");
+  requireNotNull(assets, "TeamClient", "assets");
 
   m_assets = std::move(assets);
   m_mainPlayer = mainPlayer;

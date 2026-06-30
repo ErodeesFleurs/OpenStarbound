@@ -1,6 +1,6 @@
 #include "StarQuestTracker.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
-#include "StarException.hpp"
 #include "StarMathCommon.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
@@ -15,8 +15,7 @@ namespace Star {
 
 QuestTrackerPane::QuestTrackerPane(Services services) : Pane(services.guiContext) {
   auto assets = std::move(services.assets);
-  if (!assets)
-    throw StarException("QuestTrackerPane requires assets service");
+  requireNotNull(assets, "QuestTrackerPane", "assets");
 
   auto config = assets->json("/interface/questtracker/questtracker.config");
 

@@ -1,7 +1,7 @@
 #include "StarCodexInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarCodex.hpp"
-#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPlayer.hpp"
 #include "StarLabelWidget.hpp"
@@ -16,8 +16,7 @@ namespace Star {
 CodexInterface::CodexInterface(PlayerPtr player, Services services) : Pane(services.guiContext) {
   m_player = player;
   auto assets = std::move(services.assets);
-  if (!assets)
-    throw StarException("CodexInterface requires assets service");
+  requireNotNull(assets, "CodexInterface", "assets");
 
   GuiReader reader(context());
 

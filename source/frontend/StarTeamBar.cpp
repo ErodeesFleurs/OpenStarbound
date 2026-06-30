@@ -1,7 +1,7 @@
 #include "StarTeamBar.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarException.hpp"
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
@@ -26,10 +26,8 @@ TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Service
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)),
     m_guiContext(services.guiContext) {
-  if (!m_assets)
-    throw StarException("TeamBar requires assets service");
-  if (!m_configuration)
-    throw StarException("TeamBar requires configuration service");
+  requireNotNull(m_assets, "TeamBar", "assets");
+  requireNotNull(m_configuration, "TeamBar", "configuration");
   m_teamInvite = make_shared<TeamInvite>(*this);
   m_teamInvitation = make_shared<TeamInvitation>(*this);
   m_teamMemberMenu = make_shared<TeamMemberMenu>(*this);

@@ -1,7 +1,7 @@
 #include "StarJoinRequestDialog.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
-#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -12,8 +12,7 @@ namespace Star {
 JoinRequestDialog::JoinRequestDialog(Services services)
   : Pane(services.guiContext),
     m_assets(std::move(services.assets)), m_confirmed(false) {
-  if (!m_assets)
-    throw StarException("JoinRequestDialog requires assets service");
+  requireNotNull(m_assets, "JoinRequestDialog", "assets");
 }
 
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {

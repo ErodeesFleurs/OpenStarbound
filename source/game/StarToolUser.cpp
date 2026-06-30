@@ -1,6 +1,7 @@
 #include "StarToolUser.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarActiveItem.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
@@ -22,12 +23,9 @@ ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, Obj
       m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
       m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
       m_suppress() {
-  if (!assets)
-    throw StarException("ToolUser requires assets service");
-  if (!m_itemDatabase)
-    throw StarException("ToolUser requires item database service");
-  if (!m_objectDatabase)
-    throw StarException("ToolUser requires object database service");
+  requireNotNull(assets, "ToolUser", "assets");
+  requireNotNull(m_itemDatabase, "ToolUser", "item database");
+  requireNotNull(m_objectDatabase, "ToolUser", "object database");
 
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();
   m_beamGunGlowBorder = assets->json("/player.config:previewGlowBorder").toInt();

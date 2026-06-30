@@ -1,6 +1,6 @@
 #include "StarCinematic.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarException.hpp"
 #include "StarWorldClient.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
@@ -13,8 +13,7 @@ const float vHeight = 540.0f;
 
 Cinematic::Cinematic(Services services)
   : m_assets(std::move(services.assets)), m_guiContext(services.guiContext) {
-  if (!m_assets)
-    throw StarException("Cinematic requires assets service");
+  requireNotNull(m_assets, "Cinematic", "assets");
 
   m_completable = false;
   m_suppressInput = false;

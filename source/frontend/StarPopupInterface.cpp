@@ -1,6 +1,6 @@
 #include "StarPopupInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
-#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
@@ -10,8 +10,7 @@ namespace Star {
 PopupInterface::PopupInterface(Services services)
   : Pane(services.guiContext),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("PopupInterface requires assets service");
+  requireNotNull(m_assets, "PopupInterface", "assets");
 
   GuiReader reader(context());
 

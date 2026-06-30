@@ -1,4 +1,5 @@
 #include "StarQuestManager.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarClientContext.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
@@ -12,14 +13,10 @@ namespace Star {
 
 QuestManager::QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  if (!m_assets)
-    throw StarException("QuestManager requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("QuestManager requires object database service");
-  if (!m_questTemplateDatabase)
-    throw StarException("QuestManager requires quest template database service");
-  if (!m_versioningDatabase)
-    throw StarException("QuestManager requires versioning database service");
+  requireNotNull(m_assets, "QuestManager", "assets");
+  requireNotNull(m_objectDatabase, "QuestManager", "object database");
+  requireNotNull(m_questTemplateDatabase, "QuestManager", "quest template database");
+  requireNotNull(m_versioningDatabase, "QuestManager", "versioning database");
 
   m_player = &player;
   m_world = nullptr;

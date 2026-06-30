@@ -1,4 +1,5 @@
 #include "StarKeybindingsMenu.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 #include "StarException.hpp"
@@ -16,10 +17,8 @@ KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
     m_activeKeybinding(nullptr),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
-  if (!m_assets)
-    throw StarException("KeybindingsMenu requires assets service");
-  if (!m_configuration)
-    throw StarException("KeybindingsMenu requires configuration service");
+  requireNotNull(m_assets, "KeybindingsMenu", "assets");
+  requireNotNull(m_configuration, "KeybindingsMenu", "configuration");
 
   GuiReader reader(context());
   reader.registerCallback("cancel",

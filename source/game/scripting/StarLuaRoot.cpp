@@ -1,4 +1,5 @@
 #include "StarLuaRoot.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
@@ -11,14 +12,11 @@ namespace Star {
 namespace {
 
 LuaRootServices requireLuaRootServices(LuaRootServices services) {
-  if (!services.assets)
-    throw StarException("LuaRoot requires assets service");
-  if (!services.configuration)
-    throw StarException("LuaRoot requires configuration service");
+  requireNotNull(services.assets, "LuaRoot", "assets");
+  requireNotNull(services.configuration, "LuaRoot", "configuration");
   if (!services.root)
     throw StarException("LuaRoot requires root service");
-  if (services.storageDirectory.empty())
-    throw StarException("LuaRoot requires storage directory service");
+  requireNonEmptyService(services.storageDirectory, "LuaRoot", "storage directory");
   return services;
 }
 

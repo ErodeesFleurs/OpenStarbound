@@ -1,5 +1,5 @@
 #include "StarBaseScriptPane.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -22,8 +22,7 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServic
     m_objectDatabase(std::move(services.objectDatabase)),
     m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
     m_luaRootServices(std::move(services.luaRootServices)) {
-  if (!m_assets)
-    throw StarException("BaseScriptPane requires assets service");
+  requireNotNull(m_assets, "BaseScriptPane", "assets");
 
   if (config.type() == Json::Type::Object && config.contains("baseConfig")) {
     auto baseConfig = m_assets->fetchJson(config.getString("baseConfig"));
@@ -142,15 +141,13 @@ Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
     return {};
 
   if (result->type() == Json::Type::Bool) {
-    if (!m_itemDatabase)
-      throw StarException("BaseScriptPane requires item database service");
+    requireNotNull(m_itemDatabase, "BaseScriptPane", "item database");
     if (result->toBool())
       return m_itemDatabase->item({});
     return {};
   }
 
-  if (!m_itemDatabase)
-    throw StarException("BaseScriptPane requires item database service");
+  requireNotNull(m_itemDatabase, "BaseScriptPane", "item database");
   return m_itemDatabase->item(ItemDescriptor(result.value()));
 }
 

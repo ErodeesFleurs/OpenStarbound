@@ -1,7 +1,7 @@
 #include "StarGraphicsMenu.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
@@ -18,10 +18,8 @@ GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, Graph
     m_paneManager(manager),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
-  if (!m_assets)
-    throw StarException("GraphicsMenu requires assets service");
-  if (!m_configuration)
-    throw StarException("GraphicsMenu requires configuration service");
+  requireNotNull(m_assets, "GraphicsMenu", "assets");
+  requireNotNull(m_configuration, "GraphicsMenu", "configuration");
 
   GuiReader reader(context());
   reader.registerCallback("cancel",

@@ -1,4 +1,5 @@
 #include "StarTextPainter.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarException.hpp"
 #include "StarJsonExtra.hpp"
 
@@ -43,10 +44,8 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, Ass
     m_defaultRenderSettings(),
     m_renderSettings(),
     m_savedRenderSettings() {
-  if (!m_assets)
-    throw StarException("TextPainter requires assets service");
-  if (!m_registerReloadListener)
-    throw StarException("TextPainter requires reload listener registrar service");
+  requireNotNull(m_assets, "TextPainter", "assets");
+  requireService(m_registerReloadListener, "TextPainter", "reload listener registrar");
 
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();

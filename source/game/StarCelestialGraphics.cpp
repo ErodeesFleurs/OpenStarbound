@@ -1,4 +1,5 @@
 #include "StarCelestialGraphics.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarCelestialDatabase.hpp"
@@ -15,14 +16,12 @@ namespace Star {
 namespace {
 
 AssetsConstPtr requireCelestialGraphicsAssets(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("CelestialGraphics requires assets service");
+  requireNotNull(assets, "CelestialGraphics", "assets");
   return assets;
 }
 
 LiquidsDatabaseConstPtr requireCelestialGraphicsLiquidsDatabase(LiquidsDatabaseConstPtr liquidsDatabase) {
-  if (!liquidsDatabase)
-    throw StarException("CelestialGraphics requires liquids database service");
+  requireNotNull(liquidsDatabase, "CelestialGraphics", "liquids database");
   return liquidsDatabase;
 }
 

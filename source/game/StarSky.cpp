@@ -1,4 +1,5 @@
 #include "StarSky.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarException.hpp"
@@ -13,8 +14,7 @@ namespace Star {
 
 Sky::Sky(AssetsConstPtr assets) {
   m_assets = std::move(assets);
-  if (!m_assets)
-    throw StarException("Sky requires assets service");
+  requireNotNull(m_assets, "Sky", "assets");
   skyParametersUpdated();
 
   m_netInit = false;

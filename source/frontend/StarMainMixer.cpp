@@ -1,6 +1,6 @@
 #include "StarMainMixer.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarPlayer.hpp"
@@ -15,10 +15,8 @@ MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Voice& voice, Servi
   : m_voice(voice),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
-  if (!m_assets)
-    throw StarException("MainMixer requires assets service");
-  if (!m_configuration)
-    throw StarException("MainMixer requires configuration service");
+  requireNotNull(m_assets, "MainMixer", "assets");
+  requireNotNull(m_configuration, "MainMixer", "configuration");
 
   m_mixer = make_shared<Mixer>(sampleRate, channels);
 }

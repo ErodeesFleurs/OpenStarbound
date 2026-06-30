@@ -1,4 +1,5 @@
 #include "StarSpeciesDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarItemDatabase.hpp"
@@ -27,10 +28,8 @@ SpeciesOption::SpeciesOption()
 
 SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices)
   : m_nameGenerator(std::move(nameGenerator)), m_luaRoot(make_shared<LuaRoot>(std::move(luaRootServices))) {
-  if (!assets)
-    throw StarException("SpeciesDatabase requires assets service");
-  if (!m_nameGenerator)
-    throw StarException("SpeciesDatabase requires name generator service");
+  requireNotNull(assets, "SpeciesDatabase", "assets");
+  requireNotNull(m_nameGenerator, "SpeciesDatabase", "name generator");
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
@@ -218,8 +217,7 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
 }
 
 SpeciesDefinition::SpeciesDefinition(Json const& config, AssetsConstPtr assets) : m_assets(std::move(assets)) {
-  if (!m_assets)
-    throw StarException("SpeciesDefinition requires assets service");
+  requireNotNull(m_assets, "SpeciesDefinition", "assets");
 
   m_config = config;
   m_kind = config.getString("kind");

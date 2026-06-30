@@ -1,7 +1,7 @@
 #include "StarHttpTrustDialog.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
@@ -13,10 +13,8 @@ HttpTrustDialog::HttpTrustDialog(Services services)
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)),
     m_confirmed(false) {
-  if (!m_assets)
-    throw StarException("HttpTrustDialog requires assets service");
-  if (!m_configuration)
-    throw StarException("HttpTrustDialog requires configuration service");
+  requireNotNull(m_assets, "HttpTrustDialog", "assets");
+  requireNotNull(m_configuration, "HttpTrustDialog", "configuration");
 }
 
 void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {

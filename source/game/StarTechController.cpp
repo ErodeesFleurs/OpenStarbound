@@ -1,4 +1,5 @@
 #include "StarTechController.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
@@ -37,12 +38,9 @@ TechController::TechController(AssetsConstPtr assets, ParticleDatabaseConstPtr p
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
-  if (!m_assets)
-    throw StarException("TechController requires assets service");
-  if (!m_particleDatabase)
-    throw StarException("TechController requires particle database service");
-  if (!m_imageMetadataDatabase)
-    throw StarException("TechController requires image metadata database service");
+  requireNotNull(m_assets, "TechController", "assets");
+  requireNotNull(m_particleDatabase, "TechController", "particle database");
+  requireNotNull(m_imageMetadataDatabase, "TechController", "image metadata database");
 
   m_moveRun = false;
   m_movePrimaryFire = false;

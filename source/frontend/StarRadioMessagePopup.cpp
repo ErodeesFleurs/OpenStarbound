@@ -1,9 +1,9 @@
 #include "StarRadioMessagePopup.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarException.hpp"
 #include "StarLogging.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
@@ -16,8 +16,7 @@ namespace Star {
 RadioMessagePopup::RadioMessagePopup(Services services)
   : Pane(services.guiContext),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("RadioMessagePopup requires assets service");
+  requireNotNull(m_assets, "RadioMessagePopup", "assets");
 
   auto config = m_assets->json("/interface/radiomessage/radiomessage.config");
 

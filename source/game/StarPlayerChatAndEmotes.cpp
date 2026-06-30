@@ -1,4 +1,5 @@
 #include "StarPlayerChatAndEmotes.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarPlayer.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarDanceDatabase.hpp"
@@ -13,10 +14,8 @@ PlayerChatAndEmotes::PlayerChatAndEmotes(Player& player, DanceDatabaseConstPtr d
     m_emoteState(HumanoidEmote::Idle),
     m_chatMessageChanged(false),
     m_chatMessageUpdated(false) {
-  if (!m_danceDatabase)
-    throw StarException("PlayerChatAndEmotes requires dance database service");
-  if (!m_emoteProcessor)
-    throw StarException("PlayerChatAndEmotes requires emote processor service");
+  requireNotNull(m_danceDatabase, "PlayerChatAndEmotes", "dance database");
+  requireNotNull(m_emoteProcessor, "PlayerChatAndEmotes", "emote processor");
 }
 
 void PlayerChatAndEmotes::init(float emoteCooldown, Vec2F blinkInterval) {

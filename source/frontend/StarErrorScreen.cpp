@@ -1,5 +1,5 @@
 #include "StarErrorScreen.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPaneManager.hpp"
@@ -14,10 +14,8 @@ ErrorScreen::ErrorScreen(ErrorScreenServices services)
     m_assets(std::move(services.assets)),
     m_imageMetadata(std::move(services.imageMetadata)),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
-  if (!m_assets)
-    throw StarException("ErrorScreen requires assets service");
-  if (!m_imageMetadata)
-    throw StarException("ErrorScreen requires image metadata service");
+  requireNotNull(m_assets, "ErrorScreen", "assets");
+  requireNotNull(m_imageMetadata, "ErrorScreen", "image metadata");
   m_paneManager = make_shared<PaneManager>(m_guiContext);
 
   m_accepted = true;

@@ -1,4 +1,5 @@
 #include "StarAmbient.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
 #include "StarMixer.hpp"
@@ -57,8 +58,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
 }
 
 AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
-  if (!m_assets)
-    throw StarException("AmbientManager requires assets service");
+  requireNotNull(m_assets, "AmbientManager", "assets");
 
   if (m_currentTrack) {
     if (m_currentTrack->finished())
@@ -120,8 +120,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
 }
 
 AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
-  if (!m_assets)
-    throw StarException("AmbientManager requires assets service");
+  requireNotNull(m_assets, "AmbientManager", "assets");
 
   if (m_weatherTrack) {
     if (m_weatherTrack->finished())

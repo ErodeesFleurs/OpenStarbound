@@ -1,12 +1,12 @@
 #include "StarDanceDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {
 
 DanceDatabase::DanceDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("DanceDatabase requires assets service");
+  requireNotNull(assets, "DanceDatabase", "assets");
   auto& files = assets->scanExtension("dance");
   for (auto& file : files) {
     try {

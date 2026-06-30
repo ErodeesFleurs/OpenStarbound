@@ -1,4 +1,5 @@
 #include "StarCasting.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarTilesetDatabase.hpp"
 
 namespace Star {
@@ -323,8 +324,7 @@ namespace Tiled {
 }
 
 TilesetDatabase::TilesetDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_tilesetCache() {
-  if (!m_assets)
-    throw StarException("TilesetDatabase requires assets service");
+  requireNotNull(m_assets, "TilesetDatabase", "assets");
 }
 
 Tiled::TilesetConstPtr TilesetDatabase::get(String const& path) const {

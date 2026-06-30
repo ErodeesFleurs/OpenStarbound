@@ -1,4 +1,5 @@
 #include "StarUniverseSettings.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 
@@ -91,8 +92,7 @@ void UniverseSettings::resetFlags() {
 }
 
 void UniverseSettings::loadFlagActions(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("UniverseSettings requires assets service");
+  requireNotNull(assets, "UniverseSettings", "assets");
 
   m_flagActions.clear();
 

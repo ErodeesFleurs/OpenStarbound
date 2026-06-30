@@ -1,4 +1,5 @@
 #include "StarWorldLayout.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
@@ -9,14 +10,12 @@
 namespace Star {
 
 TerrainDatabaseConstPtr requireTerrainDatabase(TerrainDatabaseConstPtr terrainDatabase) {
-  if (!terrainDatabase)
-    throw StarException("WorldLayout requires terrain database service");
+  requireNotNull(terrainDatabase, "WorldLayout", "terrain database");
   return terrainDatabase;
 }
 
 BiomeDatabaseConstPtr requireBiomeDatabase(BiomeDatabaseConstPtr biomeDatabase) {
-  if (!biomeDatabase)
-    throw StarException("WorldLayout requires biome database service");
+  requireNotNull(biomeDatabase, "WorldLayout", "biome database");
   return biomeDatabase;
 }
 

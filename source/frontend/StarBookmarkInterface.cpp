@@ -1,10 +1,10 @@
 #include "StarBookmarkInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarTextBoxWidget.hpp"
 #include "StarLabelWidget.hpp"
-#include "StarException.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -13,8 +13,7 @@ EditBookmarkDialog::EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, S
   : Pane(services.guiContext),
     m_playerUniverseMap(std::move(playerUniverseMap)),
     m_assets(std::move(services.assets)) {
-  if (!m_assets)
-    throw StarException("EditBookmarkDialog requires assets service");
+  requireNotNull(m_assets, "EditBookmarkDialog", "assets");
 
   GuiReader reader(context());
   reader.registerCallback("ok", [this](Widget*) { ok(); });

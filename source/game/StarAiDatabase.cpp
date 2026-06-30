@@ -1,4 +1,5 @@
 #include "StarAiDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
@@ -6,10 +7,8 @@
 namespace Star {
 
 AiDatabase::AiDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
-  if (!assets)
-    throw StarException("AiDatabase requires assets service");
-  if (!imageMetadataDatabase)
-    throw StarException("AiDatabase requires image metadata database service");
+  requireNotNull(assets, "AiDatabase", "assets");
+  requireNotNull(imageMetadataDatabase, "AiDatabase", "image metadata database");
   auto config = assets->json("/ai/ai.config");
 
   auto& missions = assets->scanExtension("aimission");

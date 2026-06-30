@@ -1,5 +1,5 @@
 #include "StarOptionsMenu.hpp"
-#include "StarException.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
@@ -23,10 +23,8 @@ OptionsMenu::OptionsMenu(PaneManager& manager, UniverseClientPtr client, Options
     m_luaRootServices(std::move(services.luaRootServices)),
     m_voice(services.voice),
     m_input(services.input) {
-  if (!m_assets)
-    throw StarException("OptionsMenu requires assets service");
-  if (!m_configuration)
-    throw StarException("OptionsMenu requires configuration service");
+  requireNotNull(m_assets, "OptionsMenu", "assets");
+  requireNotNull(m_configuration, "OptionsMenu", "configuration");
 
   GuiReader reader(context());
 

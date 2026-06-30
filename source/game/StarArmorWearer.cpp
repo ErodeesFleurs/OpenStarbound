@@ -1,5 +1,6 @@
 #include "StarArmorWearer.hpp"
 #include "StarActivatableItem.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
@@ -18,8 +19,7 @@ namespace Star {
 ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
     : m_itemDatabase(std::move(itemDatabase)),
       m_lastNude(true) {
-  if (!m_itemDatabase)
-    throw StarException("ArmorWearer requires item database service");
+  requireNotNull(m_itemDatabase, "ArmorWearer", "item database");
 
   for (size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];

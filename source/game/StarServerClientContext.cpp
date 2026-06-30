@@ -1,4 +1,5 @@
 #include "StarServerClientContext.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarWorldServerThread.hpp"
@@ -19,8 +20,7 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
     m_canBecomeAdmin(canBecomeAdmin),
     m_itemDatabase(std::move(itemDatabase)),
     m_shipChunks(std::move(initialShipChunks)) {
-  if (!m_itemDatabase)
-    throw StarException("ServerClientContext requires item database service");
+  requireNotNull(m_itemDatabase, "ServerClientContext", "item database");
 
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);

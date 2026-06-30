@@ -1,12 +1,12 @@
 #include "StarDamageDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
 DamageDatabase::DamageDatabase(AssetsConstPtr assets) {
-  if (!assets)
-    throw StarException("DamageDatabase requires assets service");
+  requireNotNull(assets, "DamageDatabase", "assets");
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
   for (auto p : elementalConfig.iterateObject()) {
     ElementalType type;

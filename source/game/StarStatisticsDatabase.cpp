@@ -1,12 +1,12 @@
 #include "StarStatisticsDatabase.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {
 
 StatisticsDatabase::StatisticsDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_eventCache() {
-  if (!m_assets)
-    throw StarException("StatisticsDatabase requires assets service");
+  requireNotNull(m_assets, "StatisticsDatabase", "assets");
 
   auto& eventFiles = m_assets->scanExtension("event");
   m_assets->queueJsons(eventFiles);

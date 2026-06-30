@@ -1,4 +1,5 @@
 #include "StarContainerInterface.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCasting.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarWorldClient.hpp"
@@ -32,16 +33,11 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   m_objectDatabase = std::move(services.objectDatabase);
   m_statusEffectDatabase = std::move(services.statusEffectDatabase);
   m_takeAllPressed = std::move(services.takeAllPressed);
-  if (!m_itemDatabase)
-    throw StarException("ContainerPane requires item database service");
-  if (!m_assets)
-    throw StarException("ContainerPane requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("ContainerPane requires object database service");
-  if (!m_statusEffectDatabase)
-    throw StarException("ContainerPane requires status effect database service");
-  if (!m_takeAllPressed)
-    throw StarException("ContainerPane requires take all input service");
+  requireNotNull(m_itemDatabase, "ContainerPane", "item database");
+  requireNotNull(m_assets, "ContainerPane", "assets");
+  requireNotNull(m_objectDatabase, "ContainerPane", "object database");
+  requireNotNull(m_statusEffectDatabase, "ContainerPane", "status effect database");
+  requireService(m_takeAllPressed, "ContainerPane", "take all input");
 
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();

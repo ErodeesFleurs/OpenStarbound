@@ -1,4 +1,5 @@
 #include "StarQuests.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarClientContext.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -33,14 +34,10 @@ EnumMap<QuestState> const QuestStateNames{
 
 Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  if (!m_assets)
-    throw StarException("Quest requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("Quest requires object database service");
-  if (!m_questTemplateDatabase)
-    throw StarException("Quest requires quest template database service");
-  if (!m_versioningDatabase)
-    throw StarException("Quest requires versioning database service");
+  requireNotNull(m_assets, "Quest", "assets");
+  requireNotNull(m_objectDatabase, "Quest", "object database");
+  requireNotNull(m_questTemplateDatabase, "Quest", "quest template database");
+  requireNotNull(m_versioningDatabase, "Quest", "versioning database");
 
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
@@ -98,14 +95,10 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
 
 Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
     : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
-  if (!m_assets)
-    throw StarException("Quest requires assets service");
-  if (!m_objectDatabase)
-    throw StarException("Quest requires object database service");
-  if (!m_questTemplateDatabase)
-    throw StarException("Quest requires quest template database service");
-  if (!m_versioningDatabase)
-    throw StarException("Quest requires versioning database service");
+  requireNotNull(m_assets, "Quest", "assets");
+  requireNotNull(m_objectDatabase, "Quest", "object database");
+  requireNotNull(m_questTemplateDatabase, "Quest", "quest template database");
+  requireNotNull(m_versioningDatabase, "Quest", "versioning database");
 
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();

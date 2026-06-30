@@ -1,4 +1,5 @@
 #include "StarPlayerNarrativeQueue.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarStatusController.hpp"
@@ -16,12 +17,9 @@ PlayerNarrativeQueue::PlayerNarrativeQueue(Player& player, RadioMessageDatabaseC
     m_configuration(std::move(configuration)),
     m_aiDatabase(std::move(aiDatabase)),
     m_interruptRadioMessage(false) {
-  if (!m_radioMessageDatabase)
-    throw StarException("PlayerNarrativeQueue requires radio message database service");
-  if (!m_configuration)
-    throw StarException("PlayerNarrativeQueue requires configuration service");
-  if (!m_aiDatabase)
-    throw StarException("PlayerNarrativeQueue requires ai database service");
+  requireNotNull(m_radioMessageDatabase, "PlayerNarrativeQueue", "radio message database");
+  requireNotNull(m_configuration, "PlayerNarrativeQueue", "configuration");
+  requireNotNull(m_aiDatabase, "PlayerNarrativeQueue", "ai database");
 }
 
 void PlayerNarrativeQueue::init(List<PersistentStatusEffect> inCinematicStatusEffects) {
