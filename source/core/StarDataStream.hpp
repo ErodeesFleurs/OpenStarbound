@@ -212,7 +212,7 @@ public:
   void readContainer(Container& container, ReadFunction function);
 
   template <typename Container, typename WriteFunction>
-  void writeMapContainer(Container& map, WriteFunction function);
+  void writeMapContainer(Container const& map, WriteFunction function);
 
   // Specialization of readContainer for map types (whose elements are a pair
   // with the key type marked const)
@@ -379,12 +379,12 @@ void DataStream::readContainer(Container& container, ReadFunction function) {
   for (size_t i = 0; i < size; ++i) {
     typename Container::value_type elem;
     function(*this, elem);
-    container.insert(container.end(), elem);
+    container.insert(container.end(), std::move(elem));
   }
 }
 
 template <typename Container, typename WriteFunction>
-void DataStream::writeMapContainer(Container& map, WriteFunction function) {
+void DataStream::writeMapContainer(Container const& map, WriteFunction function) {
   writeVlqU(map.size());
   for (auto const& [key, value] : map)
     function(*this, key, value);
