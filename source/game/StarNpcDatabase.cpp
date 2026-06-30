@@ -8,7 +8,6 @@
 #include "StarSpeciesDatabase.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarAssets.hpp"
 #include "StarEncode.hpp"
 #include "StarArmors.hpp"
 #include "StarRootLuaBindings.hpp"
@@ -17,14 +16,15 @@
 
 namespace Star {
 
-NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
-  auto assets = Root::singleton().assets();
+NpcDatabase::NpcDatabase(AssetsConstPtr assets) : m_rebuilder(make_shared<Rebuilder>(assets, "npc")), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw NpcException("NpcDatabase requires assets service");
 
-  auto& files = assets->scanExtension("npctype");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("npctype");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       String typeName = config.getString("type");
 
       if (m_npcTypes.contains(typeName))
@@ -85,7 +85,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig){
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    variant.humanoidConfig = m_assets->json(config.getString("humanoidConfig"));
     auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
     // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
     identity.personality = parsePersonalityArray(randSource.randFrom(usedHumanoidConfig.getArray("personalities")));
@@ -232,7 +232,7 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
   auto speciesDefinition = speciesDatabase->species(variant.species);
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    variant.humanoidConfig = m_assets->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
@@ -317,7 +317,7 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   auto speciesDefinition = speciesDatabase->species(variant.species);
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
   if (variant.uniqueHumanoidConfig)
-    variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
+    variant.humanoidConfig = m_assets->json(config.getString("humanoidConfig"));
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 

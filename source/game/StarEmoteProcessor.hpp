@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarHumanoid.hpp"
 
 namespace Star {
@@ -10,7 +11,7 @@ using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
 
 class EmoteProcessor {
 public:
-  EmoteProcessor();
+  EmoteProcessor(AssetsConstPtr assets);
 
   HumanoidEmote detectEmotes(String const& chatter) const;
 

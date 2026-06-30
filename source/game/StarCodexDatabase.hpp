@@ -2,6 +2,7 @@
 
 #include "StarJson.hpp"
 #include "StarCodex.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -14,7 +15,7 @@ using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
 
 class CodexDatabase {
 public:
-  CodexDatabase();
+  CodexDatabase(AssetsConstPtr assets);
 
   StringMap<CodexConstPtr> codexes() const;
   CodexConstPtr codex(String const& codexId) const;

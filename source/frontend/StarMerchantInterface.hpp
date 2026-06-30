@@ -28,10 +28,16 @@ using TabSetWidgetPtr = SharedPtr<TabSetWidget>;
 
 class MerchantPane;
 using MerchantPanePtr = SharedPtr<MerchantPane>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct MerchantPaneServices {
   IAssetsConstPtr assets;
   IItemDatabaseConstPtr itemDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class MerchantPane : public Pane {
@@ -39,8 +45,8 @@ public:
   MerchantPane(WorldClientPtr worldClient,
       PlayerPtr player,
       Json const& settings,
-      EntityId sourceEntityId = NullEntityId,
-      MerchantPaneServices services = {});
+      EntityId sourceEntityId,
+      MerchantPaneServices services);
 
   void displayed() override;
   void dismissed() override;
@@ -74,6 +80,8 @@ private:
   PlayerPtr m_player;
   IAssetsConstPtr m_assets;
   IItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   EntityId m_sourceEntityId;
   Json m_settings;
 

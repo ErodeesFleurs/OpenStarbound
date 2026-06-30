@@ -36,7 +36,7 @@ void WorldPainter::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
-  m_tilePainter = make_shared<TilePainter>(m_renderer);
+  m_tilePainter = make_shared<TilePainter>(m_assets, m_renderer);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener));
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer, m_assets, m_registerReloadListener);
 }

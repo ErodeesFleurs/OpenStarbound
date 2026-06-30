@@ -10,7 +10,6 @@
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarObjectItem.hpp"
-#include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarActiveItem.hpp"
@@ -19,11 +18,13 @@
 
 namespace Star {
 
-ToolUser::ToolUser()
+ToolUser::ToolUser(IAssetsConstPtr assets)
   : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
     m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
     m_suppress() {
-  auto assets = Root::singleton().assets();
+  if (!assets)
+    throw StarException("ToolUser requires assets service");
+
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();
   m_beamGunGlowBorder = assets->json("/player.config:previewGlowBorder").toInt();
   m_objectPreviewInnerAlpha = assets->json("/player.config:objectPreviewInnerAlpha").toFloat();
@@ -57,7 +58,7 @@ ToolUser::ToolUser()
   m_altTimeFiringNetState.setInterpolator(interpolateTimer);
 }
 
-ToolUser::ToolUser(ToolUserEntity* user) : ToolUser() {
+ToolUser::ToolUser(IAssetsConstPtr assets, ToolUserEntity* user) : ToolUser(std::move(assets)) {
   init(user);
 }
 

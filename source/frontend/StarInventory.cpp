@@ -2,7 +2,7 @@
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarSimpleTooltip.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarButtonWidget.hpp"
@@ -28,8 +28,18 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   m_parent = parent;
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
-  m_techDatabase = services.techDatabase ? std::move(services.techDatabase) : Root::singleton().techDatabase();
+  m_assets = std::move(services.assets);
+  m_techDatabase = std::move(services.techDatabase);
+  m_objectDatabase = std::move(services.objectDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  if (!m_assets)
+    throw StarException("InventoryPane requires assets service");
+  if (!m_techDatabase)
+    throw StarException("InventoryPane requires tech database service");
+  if (!m_objectDatabase)
+    throw StarException("InventoryPane requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("InventoryPane requires status effect database service");
 
   GuiReader invWindowReader;
   m_config = m_assets->json("/interface/windowconfig/playerinventory.config");
@@ -260,7 +270,7 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
 
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {

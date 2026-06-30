@@ -3,7 +3,7 @@
 #include "StarPane.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarObjectItem.hpp"
 #include "StarImageWidget.hpp"
@@ -23,15 +23,21 @@ namespace Star {
 
 namespace {
 IAssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
-  return services.assets ? services.assets : Root::singleton().assets();
+  if (!services.assets)
+    throw StarException("ItemTooltipBuilder requires assets service");
+  return services.assets;
 }
 
 ObjectDatabaseConstPtr tooltipObjectDatabase(ItemTooltipBuilder::Services const& services) {
-  return services.objectDatabase ? services.objectDatabase : Root::singleton().objectDatabase();
+  if (!services.objectDatabase)
+    throw StarException("ItemTooltipBuilder requires object database service");
+  return services.objectDatabase;
 }
 
 StatusEffectDatabaseConstPtr tooltipStatusEffectDatabase(ItemTooltipBuilder::Services const& services) {
-  return services.statusEffectDatabase ? services.statusEffectDatabase : Root::singleton().statusEffectDatabase();
+  if (!services.statusEffectDatabase)
+    throw StarException("ItemTooltipBuilder requires status effect database service");
+  return services.statusEffectDatabase;
 }
 
 String categoryDisplayName(String const& category, ItemTooltipBuilder::Services const& services) {

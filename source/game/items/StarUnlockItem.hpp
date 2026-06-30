@@ -4,6 +4,7 @@
 #include "StarWorld.hpp"
 #include "StarSwingableItem.hpp"
 #include "StarPreviewableItem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -11,7 +12,7 @@ class UnlockItem;
 
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:
-  UnlockItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  UnlockItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -22,6 +23,7 @@ protected:
   void fireTriggered() override;
 
 private:
+  IAssetsConstPtr m_assets;
   Maybe<String> m_sectorUnlock;
   Maybe<String> m_tierRecipesUnlock;
   Maybe<unsigned> m_shipUpgrade;

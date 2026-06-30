@@ -3,6 +3,7 @@
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -38,7 +39,7 @@ struct TechConfig {
 
 class TechDatabase {
 public:
-  TechDatabase();
+  TechDatabase(AssetsConstPtr assets);
 
   bool contains(String const& techName) const;
   TechConfig tech(String const& techName) const;

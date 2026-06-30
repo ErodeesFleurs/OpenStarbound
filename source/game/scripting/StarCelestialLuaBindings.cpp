@@ -157,8 +157,8 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       else
         return {};
     });
-  callbacks.registerCallback("objectTypeConfig", [](String const& typeName) -> Json {
-      return SystemWorld::systemObjectTypeConfig(typeName);
+  callbacks.registerCallback("objectTypeConfig", [systemWorld](String const& typeName) -> Json {
+      return SystemWorld::systemObjectTypeConfig(systemWorld->assets(), typeName);
     });
   callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, Maybe<Vec2F> const& position, Maybe<String> uuidHex, Maybe<JsonObject> parameters) -> String {
       Maybe<Uuid> uuid = uuidHex.apply([](auto const& u) { return Uuid(u); });

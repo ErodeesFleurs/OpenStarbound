@@ -23,7 +23,7 @@ struct StatusPaneServices {
 
 class StatusPane : public Pane {
 public:
-  StatusPane(UniverseClientPtr client, StatusPaneServices services = {});
+  StatusPane(UniverseClientPtr client, StatusPaneServices services);
 
   virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
 

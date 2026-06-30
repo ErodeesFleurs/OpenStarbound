@@ -1,7 +1,7 @@
 #include "StarMainInterfaceTypes.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarException.hpp"
 #include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
@@ -35,7 +35,10 @@ EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
 };
 
 MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices services) {
-  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  auto assets = std::move(services.assets);
+  if (!assets)
+    throw StarException("MainInterfaceConfig requires assets service");
+
   auto config = make_shared<MainInterfaceConfig>();
 
   config->textStyle = assets->json("/interface.config:textStyle");

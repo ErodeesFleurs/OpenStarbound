@@ -1,12 +1,13 @@
 #pragma once
 
 #include "StarAiTypes.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
 class AiDatabase {
 public:
-  AiDatabase();
+  AiDatabase(AssetsConstPtr assets);
 
   AiMission mission(String const& missionName) const;
 

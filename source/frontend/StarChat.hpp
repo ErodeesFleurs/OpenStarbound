@@ -27,7 +27,7 @@ struct ChatServices {
 
 class Chat : public BaseScriptPane {
 public:
-  Chat(UniverseClientPtr client, Json const&, ChatServices services = {});
+  Chat(UniverseClientPtr client, Json const&, ChatServices services);
 
   void startChat();
   void startCommand();

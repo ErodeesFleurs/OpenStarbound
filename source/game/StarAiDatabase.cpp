@@ -1,13 +1,13 @@
 #include "StarAiDatabase.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
-AiDatabase::AiDatabase() {
-  auto assets = Root::singleton().assets();
+AiDatabase::AiDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("AiDatabase requires assets service");
   auto config = assets->json("/ai/ai.config");
 
   auto& missions = assets->scanExtension("aimission");

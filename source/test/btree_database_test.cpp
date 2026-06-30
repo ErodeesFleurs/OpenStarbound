@@ -1,4 +1,5 @@
 #include "StarBTreeDatabase.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarFile.hpp"
 #include "StarRandom.hpp"
 
@@ -172,6 +173,23 @@ TEST(BTreeDatabaseTest, Consistency) {
   // in maximum index / leaf size calculations.
   for (size_t i = 0; i < 16; ++i)
     testBTreeDatabase(30, 2, 2, 2, 200 + i);
+}
+
+TEST(BTreeDatabaseTest, InvalidExistingHeader) {
+  auto tmpFile = File::temporaryFile();
+  auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
+
+  tmpFile->resize(512);
+  DataStreamIODevice ds(tmpFile);
+  ds.seek(0);
+  ds.writeData("BTreeDB5", 8);
+  ds.write<uint32_t>(2048);
+
+  BTreeDatabase db;
+  db.setIODevice(tmpFile);
+  EXPECT_THROW(db.open(), DBException);
+  EXPECT_FALSE(db.isOpen());
+  EXPECT_EQ(tmpFile->size(), 512);
 }
 
 TEST(BTreeDatabaseTest, Threading) {

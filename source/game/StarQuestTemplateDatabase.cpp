@@ -1,9 +1,8 @@
 #include "StarQuestTemplateDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -58,8 +57,9 @@ QuestTemplate::QuestTemplate(Json const& config) {
   }
 }
 
-QuestTemplateDatabase::QuestTemplateDatabase() {
-  auto assets = Root::singleton().assets();
+QuestTemplateDatabase::QuestTemplateDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("QuestTemplateDatabase requires assets service");
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {

@@ -2,7 +2,6 @@
 #include "StarObjectDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarItemBag.hpp"
 #include "StarWorld.hpp"
 #include "StarContainerObject.hpp"
@@ -10,8 +9,9 @@
 
 namespace Star {
 
-TreasureDatabase::TreasureDatabase() {
-  auto assets = Root::singleton().assets();
+TreasureDatabase::TreasureDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw TreasureException("TreasureDatabase requires assets service");
 
   auto& treasurePools = assets->scanExtension("treasurepools");
   auto& treasureChests = assets->scanExtension("treasurechests");

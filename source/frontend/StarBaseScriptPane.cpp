@@ -1,5 +1,5 @@
 #include "StarBaseScriptPane.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -15,7 +15,14 @@
 namespace Star {
 
 BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services)
-  : Pane(), m_rawConfig(config), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()), m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()) {
+  : Pane(),
+    m_rawConfig(config),
+    m_assets(std::move(services.assets)),
+    m_itemDatabase(std::move(services.itemDatabase)),
+    m_objectDatabase(std::move(services.objectDatabase)),
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
+  if (!m_assets)
+    throw StarException("BaseScriptPane requires assets service");
 
   if (config.type() == Json::Type::Object && config.contains("baseConfig")) {
     auto baseConfig = m_assets->fetchJson(config.getString("baseConfig"));
@@ -115,7 +122,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item, {}, {m_assets});
+      return ItemTooltipBuilder::buildItemTooltip(item, {}, {m_assets, m_objectDatabase, m_statusEffectDatabase});
     return {};
   }
 }
@@ -134,11 +141,15 @@ Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
     return {};
 
   if (result->type() == Json::Type::Bool) {
+    if (!m_itemDatabase)
+      throw StarException("BaseScriptPane requires item database service");
     if (result->toBool())
       return m_itemDatabase->item({});
     return {};
   }
 
+  if (!m_itemDatabase)
+    throw StarException("BaseScriptPane requires item database service");
   return m_itemDatabase->item(ItemDescriptor(result.value()));
 }
 

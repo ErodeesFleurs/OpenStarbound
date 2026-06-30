@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
@@ -11,6 +12,10 @@ using CollectionDatabaseException = TypedException<StarException, CollectionData
 class CollectionDatabase;
 using CollectionDatabasePtr = SharedPtr<CollectionDatabase>;
 using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class MonsterDatabase;
+using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
 
 enum class CollectionType : uint16_t {
   Generic,
@@ -41,7 +46,7 @@ struct Collection {
 
 class CollectionDatabase {
 public:
-  CollectionDatabase();
+  CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, ItemDatabaseConstPtr itemDatabase);
 
   List<Collection> collections() const;
   Collection collection(String const& collectionName) const;
@@ -55,6 +60,8 @@ private:
   Collectable parseMonsterCollectable(String const& name, Json const& config) const;
   Collectable parseItemCollectable(String const& name, Json const& config) const;
 
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
   StringMap<Collection> m_collections;
   StringMap<StringMap<Collectable>> m_collectables;
 };

@@ -2,6 +2,7 @@
 
 #include "StarBiMap.hpp"
 #include "StarJson.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -35,12 +36,13 @@ struct RadioMessage {
 
 class RadioMessageDatabase {
 public:
-  RadioMessageDatabase();
+  RadioMessageDatabase(AssetsConstPtr assets);
 
   RadioMessage radioMessage(String const& messageName) const;
   RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
 
 private:
+  Json m_messageDefaults;
   StringMap<RadioMessage> m_radioMessages;
 };
 

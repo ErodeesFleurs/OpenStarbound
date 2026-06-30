@@ -4,6 +4,7 @@
 #include "StarThread.hpp"
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -68,7 +69,7 @@ public:
 // Stores and returns from the list of known quest templates
 class QuestTemplateDatabase {
 public:
-  QuestTemplateDatabase();
+  QuestTemplateDatabase(AssetsConstPtr assets);
 
   // Return a list of all known template id values
   List<String> allQuestTemplateIds() const;

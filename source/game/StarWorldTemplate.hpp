@@ -7,6 +7,7 @@
 #include "StarCelestialDatabase.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarAmbient.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -71,13 +72,13 @@ public:
   };
 
   // Creates a blank world with the given size
-  WorldTemplate(Vec2U const& size);
+  WorldTemplate(IAssetsConstPtr assets, Vec2U const& size);
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
+  WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
+  WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
   // Load a world template from the given stored data.
-  WorldTemplate(Json const& store);
+  WorldTemplate(IAssetsConstPtr assets, Json const& store);
 
   Json store() const;
 
@@ -179,7 +180,7 @@ private:
     bool solid;
   };
 
-  WorldTemplate();
+  WorldTemplate(IAssetsConstPtr assets);
 
   void determineWorldName();
 
@@ -189,6 +190,7 @@ private:
   BlockInfo getBlockInfo(uint32_t x, uint32_t y) const;
 
   Json m_templateConfig;
+  IAssetsConstPtr m_assets;
   float m_customTerrainBlendSize;
   float m_customTerrainBlendWeight;
 

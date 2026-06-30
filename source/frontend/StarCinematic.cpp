@@ -1,6 +1,6 @@
 #include "StarCinematic.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarWorldClient.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
@@ -12,7 +12,10 @@ const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
 Cinematic::Cinematic(Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
+  : m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("Cinematic requires assets service");
+
   m_completable = false;
   m_suppressInput = false;
 }

@@ -80,7 +80,7 @@ public:
 
   // Create a new world with the given template, writing new storage file.
   WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
-  // Synonym for WorldServer(make_shared<WorldTemplate>(size), storage);
+  // Synonym for WorldServer(make_shared<WorldTemplate>(assets, size), storage);
   WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   // Load an existing world from the given storage files
   WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
@@ -94,6 +94,7 @@ public:
 
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
+  IAssetsConstPtr assets() const;
 
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);

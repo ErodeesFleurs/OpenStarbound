@@ -40,7 +40,7 @@ public:
   // is not initialized.
   static GuiContext& singleton();
 
-  GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services = {});
+  GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services);
   ~GuiContext();
 
   GuiContext(GuiContext const&) = delete;

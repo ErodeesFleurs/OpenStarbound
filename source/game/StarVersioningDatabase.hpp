@@ -5,6 +5,7 @@
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -52,7 +53,7 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson);
 
 class VersioningDatabase {
 public:
-  VersioningDatabase();
+  VersioningDatabase(AssetsConstPtr assets);
 
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
@@ -83,6 +84,7 @@ private:
 
   mutable RecursiveMutex m_mutex;
   mutable LuaRoot m_luaRoot;
+  AssetsConstPtr m_assets;
 
   StringMap<VersionNumber> m_currentVersions;
   StringMap<List<VersionUpdateScript>> m_versionUpdateScripts;

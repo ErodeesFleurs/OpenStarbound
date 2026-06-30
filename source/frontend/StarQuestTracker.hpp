@@ -25,7 +25,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  QuestTrackerPane(Services services = {});
+  explicit QuestTrackerPane(Services services);
 
   bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;

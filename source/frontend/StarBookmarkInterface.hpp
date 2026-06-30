@@ -12,7 +12,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services = {});
+  EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services);
 
   virtual void show() override;
 

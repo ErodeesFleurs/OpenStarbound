@@ -1,13 +1,18 @@
 #include "StarInterfaceCursor.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
 InterfaceCursor::InterfaceCursor(InterfaceCursorServices services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()) {
+  : m_assets(std::move(services.assets)),
+    m_imageMetadata(std::move(services.imageMetadata)) {
+  if (!m_assets)
+    throw StarException("InterfaceCursor requires assets service");
+  if (!m_imageMetadata)
+    throw StarException("InterfaceCursor requires image metadata service");
+
   resetCursor();
 }
 

@@ -81,7 +81,7 @@ Npc::Npc(NpcVariant const& npcVariant) {
   if (!m_statusController->statusProperty("effectDirectives"))
     m_statusController->setStatusProperty("effectDirectives", speciesDefinition->effectDirectives());
 
-  m_songbook = make_shared<Songbook>(species());
+  m_songbook = make_shared<Songbook>(assets, species());
 
   m_effectEmitter = make_shared<EffectEmitter>();
 
@@ -91,7 +91,7 @@ Npc::Npc(NpcVariant const& npcVariant) {
   m_blinkCooldownTimer = GameTimer();
 
   m_armor = make_shared<ArmorWearer>();
-  m_tools = make_shared<ToolUser>(this);
+  m_tools = make_shared<ToolUser>(assets, this);
 
   m_aggressive.set(false);
 

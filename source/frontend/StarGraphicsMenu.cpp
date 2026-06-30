@@ -1,7 +1,7 @@
 #include "StarGraphicsMenu.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
@@ -15,8 +15,13 @@ namespace Star {
 
 GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services)
   : m_paneManager(manager),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+    m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)) {
+  if (!m_assets)
+    throw StarException("GraphicsMenu requires assets service");
+  if (!m_configuration)
+    throw StarException("GraphicsMenu requires configuration service");
+
   GuiReader reader;
   reader.registerCallback("cancel",
       [&](Widget*) {
@@ -129,7 +134,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, Graph
   initConfig();
   syncGui();
   
-  m_shadersMenu = make_shared<ShadersMenu>(m_assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
+  m_shadersMenu = make_shared<ShadersMenu>(m_assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client, BaseScriptPaneServices{m_assets});
 }
 
 void GraphicsMenu::show() {

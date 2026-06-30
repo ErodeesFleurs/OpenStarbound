@@ -13,7 +13,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  PopupInterface(Services services = {});
+  explicit PopupInterface(Services services);
 
   virtual ~PopupInterface() = default;
 

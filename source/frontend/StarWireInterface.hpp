@@ -21,7 +21,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services = {});
+  WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services);
   virtual ~WirePane() = default;
 
   virtual void update(float dt) override;

@@ -69,7 +69,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item, m_client->mainPlayer(), {m_assets});
+      return ItemTooltipBuilder::buildItemTooltip(item, m_client->mainPlayer(), {m_assets, m_objectDatabase, m_statusEffectDatabase});
     return {};
   }
 }

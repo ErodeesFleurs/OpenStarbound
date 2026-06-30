@@ -1,21 +1,21 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFormat.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarParticleDatabase.hpp"
 
 namespace Star {
 
-MaterialDatabase::MaterialDatabase() {
+MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase) {
+  if (!assets)
+    throw MaterialException("MaterialDatabase requires assets service");
+  if (!particleDatabase)
+    throw MaterialException("MaterialDatabase requires particle database");
+
   m_metaModIndex = {
       {"metamod:none", NoModId},
       {"metamod:biome", BiomeModId},
       {"metamod:undergroundbiome", UndergroundBiomeModId}};
-
-  auto assets = Root::singleton().assets();
-  auto pdb = Root::singleton().particleDatabase();
 
   setMetaMaterial(EmptyMaterialId, MaterialDatabase::MetaMaterialInfo{"metamaterial:empty", EmptyMaterialId, CollisionKind::None, false});
   setMetaMaterial(NullMaterialId, MaterialDatabase::MetaMaterialInfo{"metamaterial:null", NullMaterialId, CollisionKind::Block, true});
@@ -87,7 +87,7 @@ MaterialDatabase::MaterialDatabase() {
 
       material.particleColor = jsonToColor(matConfig.get("particleColor", JsonArray{0, 0, 0, 255}));
       if (matConfig.contains("miningParticle"))
-        material.miningParticle = pdb->config(matConfig.getString("miningParticle"));
+        material.miningParticle = particleDatabase->config(matConfig.getString("miningParticle"));
       if (matConfig.contains("miningSounds"))
         material.miningSounds = transform<StringList>(
             jsonToStringList(matConfig.get("miningSounds")), [file](String const& s) { return AssetPath::relativeTo(file, s); });
@@ -164,7 +164,7 @@ MaterialDatabase::MaterialDatabase() {
 
       mod.particleColor = jsonToColor(modConfig.get("particleColor", JsonArray{0, 0, 0, 255}));
       if (modConfig.contains("miningParticle"))
-        mod.miningParticle = pdb->config(modConfig.getString("miningParticle"));
+        mod.miningParticle = particleDatabase->config(modConfig.getString("miningParticle"));
       if (modConfig.contains("miningSounds"))
         mod.miningSounds = transform<StringList>(
             jsonToStringList(modConfig.get("miningSounds")), [file](String const& s) { return AssetPath::relativeTo(file, s); });

@@ -2,7 +2,7 @@
 #include "StarCasting.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarWorldClient.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarLabelWidget.hpp"
@@ -26,8 +26,18 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   m_worldClient = worldClient;
   m_player = player;
   m_containerInteractor = std::move(containerInteractor);
-  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_itemDatabase = std::move(services.itemDatabase);
+  m_assets = std::move(services.assets);
+  m_objectDatabase = std::move(services.objectDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  if (!m_itemDatabase)
+    throw StarException("ContainerPane requires item database service");
+  if (!m_assets)
+    throw StarException("ContainerPane requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("ContainerPane requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("ContainerPane requires status effect database service");
 
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();
@@ -218,7 +228,7 @@ PanePtr ContainerPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
   return {};
 }
 

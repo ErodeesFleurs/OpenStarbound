@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 
@@ -52,7 +53,7 @@ public:
   Config selectorConfig(String const& name) const;
   TerrainSelectorConstPtr createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
 
-  TerrainDatabase();
+  TerrainDatabase(AssetsConstPtr assets);
 
   TerrainSelectorConstPtr createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
   TerrainSelectorConstPtr constantSelector(float value);

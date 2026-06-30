@@ -1,5 +1,4 @@
 #include "StarRebuilder.hpp"
-#include "StarAssets.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLua.hpp"
 #include "StarRootLuaBindings.hpp"
@@ -7,9 +6,11 @@
 
 namespace Star {
 
-Rebuilder::Rebuilder(String const& id) {
+Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id) {
+  if (!assets)
+    throw StarException("Rebuilder requires assets service");
+
   m_luaRoot = make_shared<LuaRoot>();
-  auto assets = Root::singleton().assets();
   m_contexts = make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {

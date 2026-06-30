@@ -1306,11 +1306,12 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions() : m_paths(), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
-  auto assets = Root::singleton().assets();
+DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets) : m_paths(), m_assets(std::move(assets)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
+  if (!m_assets)
+    throw DungeonException("DungeonDefinitions requires assets service");
 
-  for (auto& file : assets->scan(".dungeon")) {
-    Json dungeon = assets->json(file);
+  for (auto& file : m_assets->scan(".dungeon")) {
+    Json dungeon = m_assets->json(file);
     m_paths.insert(dungeon.get("metadata").getString("name"), file);
   }
 }
@@ -1330,10 +1331,9 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
   return definition->metadata();
 }
 
-DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) {
+DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-    return make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
+    return make_shared<DungeonDefinition>(m_assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }

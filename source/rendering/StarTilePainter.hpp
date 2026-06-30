@@ -30,7 +30,7 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  explicit TilePainter(RendererPtr renderer);
+  TilePainter(AssetsConstPtr assets, RendererPtr renderer);
 
   // Adjusts lighting levels for liquids.
   void adjustLighting(WorldRenderData& renderData) const;

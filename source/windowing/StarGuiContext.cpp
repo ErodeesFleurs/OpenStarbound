@@ -1,5 +1,5 @@
 #include "StarGuiContext.hpp"
-#include "StarRoot.hpp"
+#include "StarFormat.hpp"
 #include "StarConfiguration.hpp"
 #include "StarMixer.hpp"
 #include "StarAssets.hpp"
@@ -8,6 +8,17 @@
 namespace Star {
 
 GuiContext* GuiContext::s_singleton;
+
+namespace {
+
+template <typename Service>
+Service requireGuiContextService(Service service, char const* name) {
+  if (!service)
+    throw GuiContextException(strf("GuiContext requires {} service", name));
+  return service;
+}
+
+}
 
 GuiContext* GuiContext::singletonPtr() {
   return s_singleton;
@@ -28,15 +39,11 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, G
 
   m_mixer = std::move(mixer);
   m_applicationController = std::move(appController);
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
-  m_configuration = services.configuration ? std::move(services.configuration) : Root::singleton().configuration();
-  m_imageMetadata = services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase();
-  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
-  m_registerReloadListener = std::move(services.registerReloadListener);
-  if (!m_registerReloadListener)
-    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
+  m_assets = requireGuiContextService(std::move(services.assets), "assets");
+  m_configuration = requireGuiContextService(std::move(services.configuration), "configuration");
+  m_imageMetadata = requireGuiContextService(std::move(services.imageMetadata), "image metadata");
+  m_itemDatabase = requireGuiContextService(std::move(services.itemDatabase), "item database");
+  m_registerReloadListener = requireGuiContextService(std::move(services.registerReloadListener), "reload listener registrar");
 
   m_interfaceScale = 1;
 

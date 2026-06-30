@@ -1,6 +1,4 @@
 #include "StarCollectionDatabase.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarMonsterDatabase.hpp"
 #include "StarItemDatabase.hpp"
 
@@ -21,8 +19,15 @@ Collectable::Collectable() : name(), order(), title(), description(), icon() {}
 Collectable::Collectable(String const& name, int order, String const& title, String const& description, String const& icon)
   : name(name), order(order), title(title), description(description), icon(icon) {};
 
-CollectionDatabase::CollectionDatabase() {
-  auto assets = Root::singleton().assets();
+CollectionDatabase::CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, ItemDatabaseConstPtr itemDatabase)
+  : m_monsterDatabase(std::move(monsterDatabase)), m_itemDatabase(std::move(itemDatabase)) {
+  if (!assets)
+    throw CollectionDatabaseException("CollectionDatabase requires assets service");
+  if (!m_monsterDatabase)
+    throw CollectionDatabaseException("CollectionDatabase requires monster database");
+  if (!m_itemDatabase)
+    throw CollectionDatabaseException("CollectionDatabase requires item database");
+
   auto& files = assets->scanExtension("collection");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -98,7 +103,7 @@ Collectable CollectionDatabase::parseGenericCollectable(String const& name, Json
 Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json const& config) const {
   Collectable collectable = parseGenericCollectable(name, config);
   auto seed = 0; // use a static seed to utilize caching
-  auto variant = Root::singleton().monsterDatabase()->monsterVariant(config.getString("monsterType"), seed);
+  auto variant = m_monsterDatabase->monsterVariant(config.getString("monsterType"), seed);
 
   collectable.title = variant.shortDescription.value("");
   collectable.description = variant.description.value("");
@@ -108,8 +113,7 @@ Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json
 
 Collectable CollectionDatabase::parseItemCollectable(String const& name, Json const& config) const {
   Collectable collectable = parseGenericCollectable(name, config);
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto item = itemDatabase->itemShared(ItemDescriptor(config.getString("item")));
+  auto item = m_itemDatabase->itemShared(ItemDescriptor(config.getString("item")));
 
   collectable.title = item->friendlyName();
   collectable.description = item->description();
@@ -119,7 +123,7 @@ Collectable CollectionDatabase::parseItemCollectable(String const& name, Json co
   } else {
     auto inventoryIcon = item->instanceValue("inventoryIcon", "");
     if (inventoryIcon.isType(Json::Type::String))
-      collectable.icon = AssetPath::relativeTo(itemDatabase->itemConfig(item->name(), JsonObject()).directory, inventoryIcon.toString());
+      collectable.icon = AssetPath::relativeTo(m_itemDatabase->itemConfig(item->name(), JsonObject()).directory, inventoryIcon.toString());
   }
 
   return collectable;

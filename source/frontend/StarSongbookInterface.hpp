@@ -20,7 +20,7 @@ struct SongbookInterfaceServices {
 
 class SongbookInterface : public Pane {
 public:
-  SongbookInterface(PlayerPtr player, SongbookInterfaceServices services = {});
+  SongbookInterface(PlayerPtr player, SongbookInterfaceServices services);
 
   void update(float dt) override;
 

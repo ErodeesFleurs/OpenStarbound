@@ -1,8 +1,9 @@
 #include "StarInspectionTool.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
+#include "StarAssetPath.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -129,7 +130,6 @@ bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& tar
 }
 
 InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
-  auto assets = Root::singleton().assets();
   auto species = owner()->species();
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level

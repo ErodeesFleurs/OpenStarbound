@@ -1,6 +1,6 @@
 #include "StarChat.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -25,7 +25,10 @@ namespace Star {
 Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices services)
   : BaseScriptPane(baseConfig, false, BaseScriptPaneServices{services.assets, {}}),
     m_client(std::move(client)),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
+    m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("Chat requires assets service");
+
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
   m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks((World*)m_client->worldClient().get()));

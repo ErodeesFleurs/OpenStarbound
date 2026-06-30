@@ -5,17 +5,17 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarMixer.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-EffectSourceDatabase::EffectSourceDatabase() {
-  auto assets = Root::singleton().assets();
+EffectSourceDatabase::EffectSourceDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("EffectSourceDatabase requires assets service");
 
   auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
   for (auto const& file : files) {
-    auto sourceConfig = make_shared<EffectSourceConfig>(assets->json(file));
+    auto sourceConfig = make_shared<EffectSourceConfig>(assets, assets->json(file));
     if (m_sourceConfigs.contains(sourceConfig->kind()))
       throw StarException(
           strf("Duplicate effect source asset kind Name {}. configfile {}", sourceConfig->kind(), file));
@@ -31,7 +31,11 @@ EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kin
   return m_sourceConfigs.get(k);
 }
 
-EffectSourceConfig::EffectSourceConfig(Json const& config) {
+EffectSourceConfig::EffectSourceConfig(IAssetsConstPtr assets, Json const& config)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("EffectSourceConfig requires assets service");
+
   m_kind = config.getString("kind");
   m_config = config;
 }
@@ -41,10 +45,14 @@ String const& EffectSourceConfig::kind() {
 }
 
 EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
-  return make_shared<EffectSource>(kind(), suggestedSpawnLocation, m_config.getObject("definition"));
+  return make_shared<EffectSource>(m_assets, kind(), suggestedSpawnLocation, m_config.getObject("definition"));
 }
 
-EffectSource::EffectSource(String const& kind, String suggestedSpawnLocation, Json const& definition) {
+EffectSource::EffectSource(IAssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("EffectSource requires assets service");
+
   m_kind = kind;
   m_config = definition;
   m_expired = false;
@@ -100,15 +108,15 @@ List<String> EffectSource::particles() {
 List<AudioInstancePtr> EffectSource::sounds(Vec2F offset) {
   List<AudioInstancePtr> result;
   if (m_initialTick) {
-    result.appendAll(soundsFromDefinition(m_config.get("start", JsonObject()).get("sounds", Json()), offset));
+    result.appendAll(soundsFromDefinition(m_assets, m_config.get("start", JsonObject()).get("sounds", Json()), offset));
 
-    m_mainSounds = soundsFromDefinition(m_config.get("sounds", Json()), offset);
+    m_mainSounds = soundsFromDefinition(m_assets, m_config.get("sounds", Json()), offset);
     result.appendAll(m_mainSounds);
   }
   if (m_finalTick) {
     for (auto& s : m_mainSounds)
       s->stop();
-    result.appendAll(soundsFromDefinition(m_config.get("stop", JsonObject()).get("sounds", Json()), offset));
+    result.appendAll(soundsFromDefinition(m_assets, m_config.get("stop", JsonObject()).get("sounds", Json()), offset));
   }
   return result;
 }
@@ -158,7 +166,10 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   return {};
 }
 
-List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& position) {
+List<AudioInstancePtr> soundsFromDefinition(IAssetsConstPtr assets, Json const& config, Vec2F const& position) {
+  if (!assets)
+    throw StarException("soundsFromDefinition requires assets service");
+
   Json sound;
   if (config.type() == Json::Type::Array)
     sound = Random::randValueFrom(config.toArray(), Json());
@@ -168,7 +179,6 @@ List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& pos
     if (sound.type() != Json::Type::Array)
       sound = JsonArray{sound};
     List<AudioInstancePtr> result;
-    auto assets = Root::singleton().assets();
     for (auto entry : sound.iterateArray()) {
       if (entry.type() != Json::Type::Object) {
         JsonObject t;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
@@ -131,7 +132,7 @@ struct BehaviorTree {
 
 class BehaviorDatabase {
 public:
-  BehaviorDatabase();
+  BehaviorDatabase(AssetsConstPtr assets);
 
   BehaviorTreeConstPtr behaviorTree(String const& name) const;
   BehaviorTreeConstPtr buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;

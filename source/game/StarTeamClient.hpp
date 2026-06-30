@@ -2,6 +2,7 @@
 
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
+#include "StarIAssets.hpp"
 #include "StarWarping.hpp"
 #include "StarJsonRpc.hpp"
 
@@ -28,7 +29,7 @@ public:
     List<Drawable> portrait;
   };
 
-  TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext);
+  TeamClient(IAssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext);
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
@@ -67,6 +68,7 @@ private:
 
   PlayerPtr m_mainPlayer;
   ClientContextPtr m_clientContext;
+  IAssetsConstPtr m_assets;
   Maybe<Uuid> m_teamUuid;
 
   Uuid m_teamLeader;

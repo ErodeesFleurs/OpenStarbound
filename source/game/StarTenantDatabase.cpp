@@ -1,5 +1,6 @@
 #include "StarTenantDatabase.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -12,14 +13,15 @@ bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   return true;
 }
 
-TenantDatabase::TenantDatabase() {
-  auto assets = Root::singleton().assets();
+TenantDatabase::TenantDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw TenantException("TenantDatabase requires assets service");
 
-  auto& files = assets->scanExtension("tenant");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("tenant");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
-      String name = assets->json(file).getString("name");
+      String name = m_assets->json(file).getString("name");
       if (m_paths.contains(name))
         Logger::error("Tenant {} defined twice, second time from {}", name, file);
       else
@@ -59,10 +61,9 @@ List<TenantPtr> TenantDatabase::getMatchingTenants(StringMap<unsigned> const& co
   return matchingTenants;
 }
 
-TenantPtr TenantDatabase::readTenant(String const& path) {
+TenantPtr TenantDatabase::readTenant(String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-    Json config = assets->json(path);
+    Json config = m_assets->json(path);
 
     String name = config.getString("name");
     float priority = config.getFloat("priority");

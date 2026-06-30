@@ -1,7 +1,6 @@
 #include "StarVehicleDatabase.hpp"
 #include "StarVehicle.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
@@ -9,8 +8,9 @@
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle")) {
-  auto assets = Root::singleton().assets();
+VehicleDatabase::VehicleDatabase(AssetsConstPtr assets) : m_rebuilder(make_shared<Rebuilder>(assets, "vehicle")) {
+  if (!assets)
+    throw VehicleDatabaseException("VehicleDatabase requires assets service");
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
   for (String file : files) {

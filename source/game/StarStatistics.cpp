@@ -13,8 +13,6 @@ Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr serv
   m_storageDirectory = storageDirectory;
   readStatistics();
 
-  auto assets = Root::singleton().assets();
-
   m_luaRoot = make_shared<LuaRoot>();
 }
 

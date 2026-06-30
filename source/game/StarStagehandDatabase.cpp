@@ -1,13 +1,13 @@
 #include "StarStagehandDatabase.hpp"
 #include "StarStagehand.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
-StagehandDatabase::StagehandDatabase() {
-  auto assets = Root::singleton().assets();
+StagehandDatabase::StagehandDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StagehandDatabaseException("StagehandDatabase requires assets service");
   auto& files = assets->scanExtension("stagehand");
   assets->queueJsons(files);
   for (auto& file : files) {

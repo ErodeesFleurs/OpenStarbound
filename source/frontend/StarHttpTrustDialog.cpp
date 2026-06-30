@@ -1,17 +1,22 @@
 #include "StarHttpTrustDialog.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 
 namespace Star {
 
 HttpTrustDialog::HttpTrustDialog(Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
-    m_confirmed(false) {}
+  : m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)),
+    m_confirmed(false) {
+  if (!m_assets)
+    throw StarException("HttpTrustDialog requires assets service");
+  if (!m_configuration)
+    throw StarException("HttpTrustDialog requires configuration service");
+}
 
 void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {
   removeAllChildren();
@@ -83,6 +88,5 @@ void HttpTrustDialog::dismissed() {
 }
 
 }
-
 
 

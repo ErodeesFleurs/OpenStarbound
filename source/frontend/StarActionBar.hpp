@@ -18,15 +18,21 @@ using ImageWidgetPtr = SharedPtr<ImageWidget>;
 
 class ActionBar;
 using ActionBarPtr = SharedPtr<ActionBar>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ActionBarServices {
   IAssetsConstPtr assets;
   IConfigurationPtr configuration;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class ActionBar : public Pane {
 public:
-  ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services = {});
+  ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services);
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   bool sendEvent(InputEvent const& event) override;
@@ -52,6 +58,8 @@ private:
   PlayerPtr m_player;
   IAssetsConstPtr m_assets;
   IConfigurationPtr m_configuration;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   Json m_config;
 
   Vec2I m_actionBarSelectOffset;

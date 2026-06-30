@@ -17,14 +17,20 @@ using UniverseClientPtr = SharedPtr<UniverseClient>;
 class PaneManager;
 class ItemBag;
 using ItemBagPtr = SharedPtr<ItemBag>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct QuestInterfaceServices {
   IAssetsConstPtr assets;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class QuestLogInterface : public Pane {
 public:
-  QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services = {});
+  QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services);
   virtual ~QuestLogInterface() = default;
 
   virtual void displayed() override;
@@ -47,6 +53,8 @@ private:
   CinematicPtr m_cinematic;
   UniverseClientPtr m_client;
   IAssetsConstPtr m_assets;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 
   String m_trackLabel;
   String m_untrackLabel;
@@ -58,7 +66,7 @@ private:
 
 class QuestPane : public Pane {
 protected:
-  QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
+  QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services);
 
   void commonSetup(Json config, String bodyText, String const& portraitName);
   virtual void close();
@@ -69,6 +77,8 @@ protected:
   QuestPtr m_quest;
   PlayerPtr m_player;
   IAssetsConstPtr m_assets;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 };
 
 class NewQuestInterface : public QuestPane {
@@ -79,7 +89,7 @@ public:
     Cancelled
   };
 
-  NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
+  NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services);
 
 protected:
   void close() override;
@@ -94,7 +104,7 @@ private:
 
 class QuestCompleteInterface : public QuestPane {
 public:
-  QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic, QuestInterfaceServices services = {});
+  QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic, QuestInterfaceServices services);
 
 protected:
   void close() override;
@@ -106,7 +116,7 @@ private:
 
 class QuestFailedInterface : public QuestPane {
 public:
-  QuestFailedInterface(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
+  QuestFailedInterface(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services);
 };
 
 }

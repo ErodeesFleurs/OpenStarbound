@@ -26,6 +26,7 @@ public:
   virtual ImageConstPtr tryImage(AssetPath const& path) const = 0;
 
   virtual AudioConstPtr audio(String const& path) const = 0;
+  virtual AudioConstPtr tryAudio(String const& path) const = 0;
 
   virtual ByteArrayConstPtr bytes(String const& path) const = 0;
 
@@ -43,4 +44,3 @@ using IAssetsPtr = SharedPtr<IAssets>;
 using IAssetsConstPtr = SharedPtr<IAssets const>;
 
 }
-

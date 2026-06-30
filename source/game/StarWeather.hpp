@@ -3,6 +3,7 @@
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarWorldGeometry.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -21,7 +22,7 @@ class ServerWeather {
 public:
   ServerWeather();
 
-  void setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
+  void setup(IAssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
       WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
   void setReferenceClock(ClockConstPtr referenceClock = {});
@@ -59,6 +60,7 @@ private:
   void spawnWeatherProjectiles(float dt);
 
   WeatherPool m_weatherPool;
+  IAssetsConstPtr m_assets;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;

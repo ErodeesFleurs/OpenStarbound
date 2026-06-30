@@ -1,15 +1,18 @@
 #include "StarQuestIndicatorPainter.hpp"
 #include "StarAssets.hpp"
+#include "StarException.hpp"
 #include "StarGuiContext.hpp"
 #include "StarQuestManager.hpp"
-#include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
 
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client, Services services)
-  : m_client(client), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
+  : m_client(client), m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("QuestIndicatorPainter requires assets service");
+}
 
 AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPath) const {
   return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath);

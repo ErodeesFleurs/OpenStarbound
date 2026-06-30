@@ -3,7 +3,6 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
-#include "StarAssets.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarBiomeDatabase.hpp"
@@ -28,8 +27,12 @@ ServerWeather::ServerWeather() {
   m_netGroup.addNetElement(&m_currentWindNetState);
 }
 
-void ServerWeather::setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
+void ServerWeather::setup(IAssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
     WeatherEffectsActiveQuery weatherEffectsActiveQuery) {
+  if (!assets)
+    throw StarException("ServerWeather requires assets service");
+
+  m_assets = std::move(assets);
   m_weatherPool = weatherPool;
   m_undergroundLevel = undergroundLevel;
 
@@ -84,9 +87,8 @@ void ServerWeather::update(double dt) {
     else
       m_currentWeatherIntensity = 0.0f;
   } else if (!m_weatherPool.empty()) {
-    auto assets = Root::singleton().assets();
-    double weatherCooldownTime = assets->json("/weather.config:weatherCooldownTime").toDouble();
-    double weatherWarmupTime = assets->json("/weather.config:weatherWarmupTime").toDouble();
+    double weatherCooldownTime = m_assets->json("/weather.config:weatherCooldownTime").toDouble();
+    double weatherWarmupTime = m_assets->json("/weather.config:weatherWarmupTime").toDouble();
 
     if (m_currentTime >= m_nextWeatherChangeTime) {
       m_currentWeatherIndex = m_weatherPool.selectIndex();

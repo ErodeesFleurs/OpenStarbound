@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLruCache.hpp"
 
@@ -29,7 +28,7 @@ struct Achievement {
 
 class StatisticsDatabase {
 public:
-  StatisticsDatabase();
+  StatisticsDatabase(AssetsConstPtr assets);
 
   StatEventPtr event(String const& eventName) const;
 
@@ -38,9 +37,10 @@ public:
   StringList achievementsForStat(String const& statName) const;
 
 private:
-  static StatEventPtr readEvent(String const& path);
-  static AchievementPtr readAchievement(String const& path);
+  StatEventPtr readEvent(String const& path) const;
+  AchievementPtr readAchievement(String const& path) const;
 
+  AssetsConstPtr m_assets;
   StringMap<String> m_eventPaths;
   StringMap<String> m_achievementPaths;
   StringMap<StringList> m_statAchievements;

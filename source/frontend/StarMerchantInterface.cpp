@@ -2,7 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
 #include "StarWorldClient.hpp"
@@ -29,8 +29,19 @@ MerchantPane::MerchantPane(
     MerchantPaneServices services) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
-  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
+  m_assets = std::move(services.assets);
+  m_itemDatabase = std::move(services.itemDatabase);
+  m_objectDatabase = std::move(services.objectDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  if (!m_assets)
+    throw StarException("MerchantPane requires assets service");
+  if (!m_itemDatabase)
+    throw StarException("MerchantPane requires item database service");
+  if (!m_objectDatabase)
+    throw StarException("MerchantPane requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("MerchantPane requires status effect database service");
+
   m_sourceEntityId = sourceEntityId;
 
   auto baseConfig = settings.get("config", "/interface/windowconfig/merchant.config");
@@ -136,12 +147,12 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
         ItemPtr item = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
-        return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+        return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
       }
     }
   } else {
     if (auto item = m_itemGrid->itemAt(screenPosition))
-      return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+      return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
   }
   return {};
 }

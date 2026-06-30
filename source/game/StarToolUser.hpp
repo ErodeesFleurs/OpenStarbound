@@ -9,6 +9,7 @@
 #include "StarEffectEmitter.hpp"
 #include "StarEntityRenderingTypes.hpp"
 #include "StarPhysicsEntity.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -22,9 +23,9 @@ using ToolUserPtr = SharedPtr<ToolUser>;
 
 class ToolUser : public NetElementSyncGroup {
 public:
-  ToolUser();
+  ToolUser(IAssetsConstPtr assets);
 
-  explicit ToolUser(ToolUserEntity* user);
+  ToolUser(IAssetsConstPtr assets, ToolUserEntity* user);
 
   Json diskStore() const;
   void diskLoad(Json const& diskStore);

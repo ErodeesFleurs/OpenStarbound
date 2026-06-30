@@ -1,6 +1,6 @@
 #include "StarConfirmationDialog.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -10,7 +10,10 @@
 namespace Star {
 
 ConfirmationDialog::ConfirmationDialog(Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
+  : m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("ConfirmationDialog requires assets service");
+}
 
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {
   m_resultPromise = resultPromise;

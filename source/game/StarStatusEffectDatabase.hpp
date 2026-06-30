@@ -2,6 +2,7 @@
 
 #include "StarThread.hpp"
 #include "StarStatusTypes.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -31,7 +32,7 @@ struct UniqueStatusEffectConfig {
 
 class StatusEffectDatabase {
 public:
-  StatusEffectDatabase();
+  StatusEffectDatabase(AssetsConstPtr assets);
 
   bool isUniqueEffect(UniqueStatusEffect const& effect) const;
 

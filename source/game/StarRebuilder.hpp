@@ -1,4 +1,5 @@
 #pragma once
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 
@@ -10,7 +11,7 @@ using LuaRootPtr = SharedPtr<LuaRoot>;
 
 class Rebuilder {
 public:
-  Rebuilder(String const& id);
+  Rebuilder(AssetsConstPtr assets, String const& id);
   ~Rebuilder() = default;
 
   using AttemptCallback = function<String(Json const&)>;

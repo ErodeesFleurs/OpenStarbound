@@ -35,7 +35,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
     auto orientations = jOrientations->toArray();
     for (size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
-    m_orientations = ObjectDatabase::parseOrientations(m_config->path, base, m_config->config);
+    m_orientations = ObjectDatabase::parseOrientations(m_config->assets, m_config->path, base, m_config->config);
   }
 
   m_animationTimer = 0.0f;

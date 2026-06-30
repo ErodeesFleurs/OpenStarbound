@@ -87,8 +87,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   setUniqueId(uuid.hex());
   m_appearance.init();
 
-  m_questManager = make_shared<QuestManager>(this);
-  m_tools = make_shared<ToolUser>(this);
+  m_questManager = make_shared<QuestManager>(m_assets, this);
+  m_tools = make_shared<ToolUser>(m_assets, this);
   m_armor = make_shared<ArmorWearer>();
   m_companions = make_shared<PlayerCompanions>(config->companionsConfig);
 
@@ -114,7 +114,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
 
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
-  m_codexes = make_shared<PlayerCodexes>();
+  m_codexes = make_shared<PlayerCodexes>(m_assets);
   m_techs = make_shared<PlayerTech>();
   m_log = make_shared<PlayerLog>();
   m_narrativeQueue = make_shared<PlayerNarrativeQueue>(this);
@@ -145,7 +145,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
 
   m_chatAndEmotes->init(m_assets->json("/player.config:emoteCooldown").toFloat(), jsonToVec2F(m_assets->json("/player.config:blinkInterval")));
 
-  m_songbook = make_shared<Songbook>(species());
+  m_songbook = make_shared<Songbook>(m_assets, species());
 
 
   m_ageItemsTimer = GameTimer(m_assets->json("/player.config:ageItemsEvery").toFloat());
@@ -244,7 +244,7 @@ void Player::diskLoad(Json const& diskStore) {
   if (m_clientContext)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 
-  m_codexes = make_shared<PlayerCodexes>(diskStore.get("codexes"));
+  m_codexes = make_shared<PlayerCodexes>(m_assets, diskStore.get("codexes"));
   m_techs = make_shared<PlayerTech>(diskStore.get("techs"));
   m_appearance.m_identity = HumanoidIdentity(diskStore.get("identity"));
   m_appearance.identityUpdated() = true;

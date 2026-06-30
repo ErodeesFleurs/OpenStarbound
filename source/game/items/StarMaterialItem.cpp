@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
@@ -19,8 +18,11 @@ const String AltBlockRadiusPropertyKey = "building.altBlockRadius";
 const String CollisionOverridePropertyKey = "building.collisionOverride";
 const String BlockSwapPropertyKey = "building.blockSwap";
 
-MaterialItem::MaterialItem(Json const& config, String const& directory, Json const& settings)
-  : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
+MaterialItem::MaterialItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
+  : Item(config, directory, settings), FireableItem(config), BeamItem(config), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw ItemException("MaterialItem requires assets service");
+
   m_material = config.getInt("materialId");
   m_materialHueShift = materialHueFromDegrees(instanceValue("materialHueShift", 0).toFloat());
   auto materialDatabase = Root::singleton().materialDatabase();
@@ -38,7 +40,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
 
   setTwoHanded(config.getBool("twoHanded", true));
 
-  auto defaultParameters = Root::singleton().assets()->json("/items/defaultParameters.config");
+  auto defaultParameters = m_assets->json("/items/defaultParameters.config");
   setCooldownTime(config.queryFloat("materialItems.cooldown", defaultParameters.queryFloat("materialItems.cooldown")));
   m_blockRadius = config.getFloat("blockRadius", defaultParameters.getFloat("blockRadius"));
   m_altBlockRadius = config.getFloat("altBlockRadius", defaultParameters.getFloat("altBlockRadius"));
@@ -306,7 +308,6 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     return success;
 
   auto materialDatabase = Root::singleton().materialDatabase();
-  auto assets = Root::singleton().assets();
   String blockSound;
 
   for (auto pos : willDamage) {
@@ -319,18 +320,18 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
     for (auto pos : willDamage) {
       blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
       if (!blockSound.empty()
-          && blockSound != assets->json("/client.config:defaultFootstepSound").toString())
+          && blockSound != m_assets->json("/client.config:defaultFootstepSound").toString())
         break;
     }
   }
 
-  owner()->addSound(blockSound, assets->json("/sfx.config:miningBlockVolume").toFloat());
+  owner()->addSound(blockSound, m_assets->json("/sfx.config:miningBlockVolume").toFloat());
 
   auto strikeSounds = beamAxe->instanceValue("strikeSounds");
   if (!strikeSounds.isNull()) {
     owner()->addSound(
         Random::randValueFrom(jsonToStringList(strikeSounds)),
-        assets->json("/sfx.config:miningToolVolume").toFloat()
+        m_assets->json("/sfx.config:miningToolVolume").toFloat()
     );
   }
 

@@ -1,7 +1,7 @@
 #include "StarChatBubbleManager.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarWorldClient.hpp"
 #include "StarChattyEntity.hpp"
@@ -13,12 +13,21 @@
 namespace Star {
 
 ChatBubbleManager::ChatBubbleManager(ChatBubbleManagerServices services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
-    m_functionDatabase(services.functionDatabase ? std::move(services.functionDatabase) : Root::singleton().functionDatabase()),
-    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()),
+  : m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)),
+    m_functionDatabase(std::move(services.functionDatabase)),
+    m_imageMetadata(std::move(services.imageMetadata)),
     m_textTemplate(Vec2F()),
     m_portraitTextTemplate(Vec2F()) {
+  if (!m_assets)
+    throw StarException("ChatBubbleManager requires assets service");
+  if (!m_configuration)
+    throw StarException("ChatBubbleManager requires configuration service");
+  if (!m_functionDatabase)
+    throw StarException("ChatBubbleManager requires function database service");
+  if (!m_imageMetadata)
+    throw StarException("ChatBubbleManager requires image metadata service");
+
   m_guiContext = GuiContext::singletonPtr();
   m_cachedInterfaceScale = m_guiContext->interfaceScale();
 

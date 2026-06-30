@@ -69,7 +69,7 @@ public:
   TitleScreen(PlayerStoragePtr playerStorage,
       MixerPtr mixer,
       UniverseClientPtr client,
-      TitleScreenServices services = {});
+      TitleScreenServices services);
 
   void renderInit(RendererPtr renderer);
 

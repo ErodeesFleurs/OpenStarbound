@@ -1,6 +1,6 @@
 #include "StarCharSelection.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarLargeCharPlateWidget.hpp"
 #include "StarTextBoxWidget.hpp"
 #include "StarAssets.hpp"
@@ -15,14 +15,19 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     DeleteCharacterCallback deleteCallback,
     CharSelectionServices services)
   : m_playerStorage(playerStorage),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
+    m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)),
     m_downScroll(0),
     m_search(""),
     m_filteredList({}),
     m_createCallback(createCallback),
     m_selectCallback(selectCallback),
     m_deleteCallback(deleteCallback) {
+  if (!m_assets)
+    throw StarException("CharSelectionPane requires assets service");
+  if (!m_configuration)
+    throw StarException("CharSelectionPane requires configuration service");
+
   GuiReader guiReader;
 
   guiReader.registerCallback("playerUpButton", [=, this](Widget*) { shiftCharacters(-1); });

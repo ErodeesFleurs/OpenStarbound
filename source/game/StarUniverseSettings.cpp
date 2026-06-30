@@ -1,7 +1,6 @@
 #include "StarUniverseSettings.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -19,15 +18,15 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json) {
   }
 }
 
-UniverseSettings::UniverseSettings() {
-  loadFlagActions();
+UniverseSettings::UniverseSettings(IAssetsConstPtr assets) {
+  loadFlagActions(std::move(assets));
 }
 
-UniverseSettings::UniverseSettings(Json const& json) {
+UniverseSettings::UniverseSettings(IAssetsConstPtr assets, Json const& json) {
   m_uuid = Uuid(json.getString("uuid"));
   m_flags = jsonToStringSet(json.get("flags"));
 
-  loadFlagActions();
+  loadFlagActions(std::move(assets));
 }
 
 Json UniverseSettings::toJson() const {
@@ -91,10 +90,13 @@ void UniverseSettings::resetFlags() {
   m_flags.clear();
 }
 
-void UniverseSettings::loadFlagActions() {
+void UniverseSettings::loadFlagActions(IAssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("UniverseSettings requires assets service");
+
   m_flagActions.clear();
 
-  Json flagsConfig = Root::singleton().assets()->json("/universeflags.config");
+  Json flagsConfig = assets->json("/universeflags.config");
   for (auto flagPair : flagsConfig.iterateObject()) {
     List<UniverseFlagAction> actions;
     for (auto actionConfig : flagPair.second.get("actions").iterateArray())

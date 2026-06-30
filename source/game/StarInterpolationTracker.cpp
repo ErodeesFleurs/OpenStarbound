@@ -1,16 +1,19 @@
 #include "StarInterpolationTracker.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
 constexpr double VanillaStepsPerSecond = 60.0;
 
-InterpolationTracker::InterpolationTracker(Json config) {
+InterpolationTracker::InterpolationTracker(Json config)
+  : InterpolationTracker({}, std::move(config)) {}
+
+InterpolationTracker::InterpolationTracker(IAssetsConstPtr assets, Json config) {
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {
-    auto assets = Root::singleton().assets();
+    if (!assets)
+      throw StarException("InterpolationTracker requires assets service to load config path");
+
     config = assets->json(config.toString());
   }
 

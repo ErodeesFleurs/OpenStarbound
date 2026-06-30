@@ -2,7 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
 #include "StarContainerEntity.hpp"
@@ -36,10 +36,22 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_blueprints = m_player->blueprints();
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
-  m_configuration = services.configuration ? std::move(services.configuration) : Root::singleton().configuration();
-  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
-  m_objectDatabase = services.objectDatabase ? std::move(services.objectDatabase) : Root::singleton().objectDatabase();
+  m_assets = std::move(services.assets);
+  m_configuration = std::move(services.configuration);
+  m_itemDatabase = std::move(services.itemDatabase);
+  m_objectDatabase = std::move(services.objectDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  if (!m_assets)
+    throw StarException("CraftingPane requires assets service");
+  if (!m_configuration)
+    throw StarException("CraftingPane requires configuration service");
+  if (!m_itemDatabase)
+    throw StarException("CraftingPane requires item database service");
+  if (!m_objectDatabase)
+    throw StarException("CraftingPane requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("CraftingPane requires status effect database service");
+
   m_recipeAutorefreshCooldown = 0;
   m_sourceEntityId = sourceEntityId;
 
@@ -268,7 +280,7 @@ void CraftingPane::update(float dt) {
       description->removeAllChildren();
 
       auto item = m_itemDatabase->itemShared(recipe.output);
-      ItemTooltipBuilder::buildItemDescription(description, item, {m_assets, m_objectDatabase});
+      ItemTooltipBuilder::buildItemDescription(description, item, {m_assets, m_objectDatabase, m_statusEffectDatabase});
     }
   }
 

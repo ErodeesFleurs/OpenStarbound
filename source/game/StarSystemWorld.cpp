@@ -115,9 +115,16 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
   return config;
 }
 
-SystemWorld::SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
-  m_config = SystemWorldConfig::fromJson(Root::singleton().assets()->json("/systemworld.config"));
+SystemWorld::SystemWorld(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+  : m_celestialDatabase(std::move(celestialDatabase)), m_assets(std::move(assets)), m_universeClock(std::move(universeClock)) {
+  if (!m_assets)
+    throw StarException("SystemWorld requires assets service");
+
+  m_config = SystemWorldConfig::fromJson(m_assets->json("/systemworld.config"));
+}
+
+IAssetsConstPtr SystemWorld::assets() const {
+  return m_assets;
 }
 
 SystemWorldConfig const& SystemWorld::systemConfig() const {
@@ -245,7 +252,7 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   RandomSource rand(staticRandomU64(uuid.hex()));
 
   SystemObjectConfig object;
-  auto config = systemObjectTypeConfig(name);
+  auto config = systemObjectTypeConfig(m_assets, name);
   auto orbitRange = jsonToVec2F(config.get("orbitRange"));
   auto lifeTimeRange = jsonToVec2F(config.get("lifeTime"));
 
@@ -271,8 +278,11 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   return object;
 }
 
-Json SystemWorld::systemObjectTypeConfig(String const& name) {
-  return Root::singleton().assets()->json(strf("/system_objects.config:{}", name));
+Json SystemWorld::systemObjectTypeConfig(IAssetsConstPtr assets, String const& name) {
+  if (!assets)
+    throw StarException("SystemWorld::systemObjectTypeConfig requires assets service");
+
+  return assets->json(strf("/system_objects.config:{}", name));
 }
 
 Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
@@ -494,7 +504,7 @@ SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, 
   setPosition(system->systemLocationPosition(location).value({}));
 
   // temporary
-  auto shipConfig = Root::singleton().assets()->json("/systemworld.config:clientShip");
+  auto shipConfig = system->assets()->json("/systemworld.config:clientShip");
   m_config = ClientShipConfig{
     shipConfig.getFloat("orbitDistance"),
     shipConfig.getFloat("departTime"),

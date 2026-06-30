@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarUuid.hpp"
 #include "StarJson.hpp"
 
@@ -12,7 +13,7 @@ class PlayerCodexes {
 public:
   using CodexEntry = pair<CodexConstPtr, bool>;
 
-  PlayerCodexes(Json const& json = {});
+  PlayerCodexes(IAssetsConstPtr assets, Json const& json = {});
 
   Json toJson() const;
 
@@ -30,6 +31,7 @@ public:
   CodexConstPtr firstNewCodex() const;
 
 private:
+  IAssetsConstPtr m_assets;
   StringMap<CodexEntry> m_codexes;
 };
 

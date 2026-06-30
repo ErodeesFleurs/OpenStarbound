@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
@@ -7,6 +8,7 @@ namespace Star {
 class InterpolationTracker {
 public:
   InterpolationTracker(Json config = Json());
+  InterpolationTracker(IAssetsConstPtr assets, Json config);
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.

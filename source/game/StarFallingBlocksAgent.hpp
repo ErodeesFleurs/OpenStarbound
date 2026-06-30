@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
@@ -31,7 +32,7 @@ public:
 
 class FallingBlocksAgent {
 public:
-  FallingBlocksAgent(FallingBlocksFacadePtr worldFacade);
+  FallingBlocksAgent(IAssetsConstPtr assets, FallingBlocksFacadePtr worldFacade);
 
   void update();
 

@@ -120,7 +120,9 @@
             export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-release-clang -S source
+            cmake --preset=linux-release-clang -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-release-clang
           '';
         };
@@ -143,7 +145,9 @@
             export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-release-gcc -S source
+            cmake --preset=linux-release-gcc -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-release-gcc
           '';
         };
@@ -184,7 +188,9 @@
             export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-profile-clang -S source
+            cmake --preset=linux-profile-clang -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-profile-clang
           '';
         };
@@ -207,7 +213,9 @@
             export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-profile-clang-system-alloc -S source
+            cmake --preset=linux-profile-clang-system-alloc -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-profile-clang-system-alloc
           '';
         };
@@ -230,7 +238,9 @@
             export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-profile-clang-mimalloc -S source
+            cmake --preset=linux-profile-clang-mimalloc -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-profile-clang-mimalloc
           '';
         };
@@ -260,7 +270,9 @@
 
             timeout_seconds="''${STAR_PROFILE_SERVER_TIMEOUT:-20}"
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
-            cmake --preset=linux-profile-clang -S source
+            cmake --preset=linux-profile-clang -S source \
+              -DCMAKE_SKIP_BUILD_RPATH=FALSE \
+              -DCMAKE_BUILD_RPATH="${runtimeLibraryPath}"
             cmake --build build/linux-profile-clang
 
             cd dist

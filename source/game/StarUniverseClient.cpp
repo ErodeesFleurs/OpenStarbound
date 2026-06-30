@@ -155,7 +155,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_universeClock = make_shared<Clock>();
     m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
     m_clientContext->setNetCompatibilityRules(compatibilityRules);
-    m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
+    m_teamClient = make_shared<TeamClient>(assets, m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
     m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
@@ -163,8 +163,8 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_worldClient->setAsyncLighting(true);
 
     m_connection = std::move(connection);
-    m_celestialDatabase = make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
-    m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
+    m_celestialDatabase = make_shared<CelestialSlaveDatabase>(assets, std::move(success->celestialInformation));
+    m_systemWorldClient = make_shared<SystemWorldClient>(assets, m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
     Logger::info("UniverseClient: Joined {} server as client {}", legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
     return {};

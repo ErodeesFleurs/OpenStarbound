@@ -251,6 +251,7 @@ private:
   void dirty();
   void writeRoot();
   void readRoot();
+  void validateRoot();
   void doCommit();
   void commitWrites();
   bool tryFlatten();

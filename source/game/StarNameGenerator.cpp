@@ -1,17 +1,17 @@
 #include "StarNameGenerator.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
-PatternedNameGenerator::PatternedNameGenerator() {
-  auto assets = Root::singleton().assets();
-  auto &files = assets->scanExtension("namesource");
-  assets->queueJsons(files);
+PatternedNameGenerator::PatternedNameGenerator(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw NameGeneratorException("PatternedNameGenerator requires assets service");
+
+  auto &files = m_assets->scanExtension("namesource");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
-      auto sourceConfig = assets->json(file);
+      auto sourceConfig = m_assets->json(file);
 
       if (m_markovSources.contains(sourceConfig.getString("name")))
         throw NameGeneratorException::format("Duplicate name source '{}', config file '{}'", sourceConfig.getString("name"), file);
@@ -23,7 +23,7 @@ PatternedNameGenerator::PatternedNameGenerator() {
     }
   }
 
-  auto profanityFilter = assets->json("/names/profanityfilter.config").toArray();
+  auto profanityFilter = m_assets->json("/names/profanityfilter.config").toArray();
   for (auto& naughtyWord : profanityFilter)
     m_profanityFilter.add(naughtyWord.toString().toLower());
 }
@@ -39,8 +39,7 @@ String PatternedNameGenerator::generateName(String const& rulesAsset, uint64_t s
 }
 
 String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
-  auto assets = Root::singleton().assets();
-  auto rules = assets->json(rulesAsset).toArray();
+  auto rules = m_assets->json(rulesAsset).toArray();
   String res = "";
   int tries = 100;
   while ((res.empty() || isProfane(res)) && tries > 0) {

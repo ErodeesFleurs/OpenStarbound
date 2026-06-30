@@ -1,15 +1,16 @@
 #include "StarCodexItem.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
 #include "StarClientContext.hpp"
 #include "StarCodex.hpp"
 
 namespace Star {
 
-CodexItem::CodexItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+CodexItem::CodexItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : Item(config, directory, data), SwingableItem(config), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw ItemException("CodexItem requires assets service");
+
   setWindupTime(0.2f);
   setCooldownTime(0.5f);
   m_requireEdgeTrigger = true;
@@ -31,10 +32,10 @@ void CodexItem::fireTriggered() {
   if (auto player = as<Player>(owner())) {
     auto codexLearned = player->codexes()->learnCodex(m_codexId);
     if (codexLearned) {
-      player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.learned").toString());
+      player->queueUIMessage(m_assets->json("/codex.config:messages.learned").toString());
     } else {
       player->codexes()->markCodexUnread(m_codexId);
-      player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.alreadyKnown").toString());
+      player->queueUIMessage(m_assets->json("/codex.config:messages.alreadyKnown").toString());
     }
   }
 }

@@ -1,6 +1,4 @@
-#include "StarAssets.hpp"
 #include "StarCasting.hpp"
-#include "StarRoot.hpp"
 #include "StarTilesetDatabase.hpp"
 
 namespace Star {
@@ -324,16 +322,18 @@ namespace Tiled {
   }
 }
 
-TilesetDatabase::TilesetDatabase() : m_cacheMutex(), m_tilesetCache() {}
+TilesetDatabase::TilesetDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_tilesetCache() {
+  if (!m_assets)
+    throw StarException("TilesetDatabase requires assets service");
+}
 
 Tiled::TilesetConstPtr TilesetDatabase::get(String const& path) const {
   MutexLocker locker(m_cacheMutex);
-  return m_tilesetCache.get(path, TilesetDatabase::readTileset);
+  return m_tilesetCache.get(path, [this](String const& path) { return readTileset(path); });
 }
 
-Tiled::TilesetConstPtr TilesetDatabase::readTileset(String const& path) {
-  auto assets = Root::singleton().assets();
-  return make_shared<Tiled::Tileset>(assets->json(path));
+Tiled::TilesetConstPtr TilesetDatabase::readTileset(String const& path) const {
+  return make_shared<Tiled::Tileset>(m_assets->json(path));
 }
 
 namespace Tiled {

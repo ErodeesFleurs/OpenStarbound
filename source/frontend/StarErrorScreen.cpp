@@ -1,6 +1,6 @@
 #include "StarErrorScreen.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPaneManager.hpp"
 #include "StarLabelWidget.hpp"
@@ -10,9 +10,14 @@
 namespace Star {
 
 ErrorScreen::ErrorScreen(ErrorScreenServices services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()),
+  : m_assets(std::move(services.assets)),
+    m_imageMetadata(std::move(services.imageMetadata)),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
+  if (!m_assets)
+    throw StarException("ErrorScreen requires assets service");
+  if (!m_imageMetadata)
+    throw StarException("ErrorScreen requires image metadata service");
+
   m_paneManager = make_shared<PaneManager>();
 
   m_accepted = true;

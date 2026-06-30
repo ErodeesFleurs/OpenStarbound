@@ -1,16 +1,16 @@
 #include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
-ProjectileDatabase::ProjectileDatabase() {
-  auto assets = Root::singleton().assets();
+ProjectileDatabase::ProjectileDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw ProjectileDatabaseException("ProjectileDatabase requires assets service");
 
-  auto& files = assets->scanExtension("projectile");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("projectile");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
       auto projectileConfig = readConfig(file);
@@ -66,9 +66,7 @@ ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, N
 }
 
 ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
-  auto assets = Root::singleton().assets();
-
-  Json config = assets->json(path);
+  Json config = m_assets->json(path);
 
   auto projectileConfig = make_shared<ProjectileConfig>();
   projectileConfig->config = config;
@@ -82,7 +80,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   auto physicsType = config.getString("physics", "default");
   JsonObject movementSettings = config.getObject("movementSettings", JsonObject());
   projectileConfig->movementSettings =
-      jsonMerge(assets->json(strf("/projectiles/physics.config:{}", physicsType)), movementSettings);
+      jsonMerge(m_assets->json(strf("/projectiles/physics.config:{}", physicsType)), movementSettings);
 
   projectileConfig->initialSpeed = config.getFloat("speed", 50);
   projectileConfig->acceleration = config.getFloat("acceleration", 0);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarColor.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarMaterialRenderProfile.hpp"
@@ -11,6 +12,8 @@ namespace Star {
 
 class ParticleConfig;
 using ParticleConfigPtr = SharedPtr<ParticleConfig>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 class MaterialDatabase;
 using MaterialDatabasePtr = SharedPtr<MaterialDatabase>;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
@@ -32,7 +35,7 @@ struct LiquidModInteraction {
 
 class MaterialDatabase : public IMaterialDatabase {
 public:
-  MaterialDatabase();
+  MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase);
 
   StringList materialNames() const;
   bool isMetaMaterialName(String const& name) const;

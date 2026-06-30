@@ -18,7 +18,7 @@ public:
     IConfigurationPtr configuration;
   };
 
-  HttpTrustDialog(Services services = {});
+  explicit HttpTrustDialog(Services services);
 
   ~HttpTrustDialog() override = default;
 

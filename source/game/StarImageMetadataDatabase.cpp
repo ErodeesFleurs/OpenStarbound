@@ -5,12 +5,13 @@
 #include "StarLogging.hpp"
 #include "StarEncode.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-ImageMetadataDatabase::ImageMetadataDatabase() {
+ImageMetadataDatabase::ImageMetadataDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("ImageMetadataDatabase requires assets service");
+
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;
   int64_t timeToLive = 60000;
@@ -53,7 +54,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
 
   locker.unlock();
 
-  auto image = Root::singleton().assets()->image(filteredPath);
+  auto image = m_assets->image(filteredPath);
   int imageWidth = image->width();
   int imageHeight = image->height();
 
@@ -111,7 +112,7 @@ RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   }
 
   locker.unlock();
-  auto image = Root::singleton().assets()->image(filteredPath);
+  auto image = m_assets->image(filteredPath);
   RectU region = RectU::null();
   image->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) {
     if (pixel[3] > 0)
@@ -161,19 +162,17 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   // In error cases, this will fall back to calling Assets::image, so that image
   // can possibly produce a missing image asset or properly report the error.
 
-  auto assets = Root::singleton().assets();
-
-  auto fallback = [&assets, &path]() {
-    return assets->image(path)->size();
+  auto fallback = [this, &path]() {
+    return m_assets->image(path)->size();
   };
 
-  if (!assets->assetExists(path.basePath)) {
+  if (!m_assets->assetExists(path.basePath)) {
     return fallback();
   }
 
   Vec2U imageSize;
   if (path.subPath) {
-    auto frames = assets->imageFrames(path.basePath);
+    auto frames = m_assets->imageFrames(path.basePath);
     if (!frames)
       return fallback();
 
@@ -190,7 +189,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       imageSize = *size;
     } else {
       locker.unlock();
-      auto file = assets->openFile(path.basePath);
+      auto file = m_assets->openFile(path.basePath);
       if (Image::isPng(file))
         imageSize = get<0>(Image::readPngMetadata(file));
       else

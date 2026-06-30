@@ -35,7 +35,7 @@ public:
   // cancel button) or the newly created player (when the user hits the save
   // button).
   CharCreationPane(function<void(PlayerPtr)> requestCloseFunc,
-      CharCreationServices services = {});
+      CharCreationServices services);
 
   void randomize();
   void randomizeName();

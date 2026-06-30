@@ -18,15 +18,21 @@ class ItemBag;
 using ItemBagPtr = SharedPtr<ItemBag>;
 class ContainerPane;
 using ContainerPanePtr = SharedPtr<ContainerPane>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ContainerPaneServices {
   IItemDatabaseConstPtr itemDatabase;
   IAssetsConstPtr assets;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class ContainerPane : public Pane {
 public:
-  ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services = {});
+  ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services);
 
   void displayed() override;
   void dismissed() override;
@@ -57,6 +63,8 @@ private:
   ContainerInteractorPtr m_containerInteractor;
   IItemDatabaseConstPtr m_itemDatabase;
   IAssetsConstPtr m_assets;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   ItemBagPtr m_itemBag;
 
   ExpectingSwap m_expectingSwap;

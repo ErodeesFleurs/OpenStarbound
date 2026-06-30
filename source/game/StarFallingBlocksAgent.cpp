@@ -1,12 +1,13 @@
 #include "StarFallingBlocksAgent.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(FallingBlocksFacadePtr worldFacade)
+FallingBlocksAgent::FallingBlocksAgent(IAssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
   : m_facade(std::move(worldFacade)) {
-  m_immediateUpwardPropagateProbability = Root::singleton().assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
+  if (!assets)
+    throw StarException("FallingBlocksAgent requires assets service");
+
+  m_immediateUpwardPropagateProbability = assets->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
 
 void FallingBlocksAgent::update() {

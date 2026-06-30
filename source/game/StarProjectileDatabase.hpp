@@ -2,6 +2,7 @@
 
 #include "StarSet.hpp"
 #include "StarThread.hpp"
+#include "StarAssets.hpp"
 #include "StarEntityRenderingTypes.hpp"
 #include "StarProjectile.hpp"
 
@@ -103,7 +104,7 @@ struct ProjectileConfig {
 
 class ProjectileDatabase {
 public:
-  ProjectileDatabase();
+  ProjectileDatabase(AssetsConstPtr assets);
 
   StringList allProjectileTypes() const;
   bool isProjectile(String const& typeName) const;
@@ -119,6 +120,7 @@ public:
 private:
   ProjectileConfigPtr readConfig(String const& path);
 
+  AssetsConstPtr m_assets;
   StringMap<ProjectileConfigPtr> m_configs;
 };
 

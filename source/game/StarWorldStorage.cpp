@@ -8,7 +8,6 @@
 #include "StarRoot.hpp"
 #include "StarEntityMap.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarAssets.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 
@@ -49,8 +48,8 @@ WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
   return chunks;
 }
 
-WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
-  : WorldStorage() {
+WorldStorage::WorldStorage(IAssetsConstPtr assets, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
+  : WorldStorage(std::move(assets)) {
   m_tileArray = make_shared<ServerTileSectorArray>(worldSize);
   m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
   m_generatorFacade = generatorFacade;
@@ -65,7 +64,7 @@ WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, Wo
   m_db.commit();
 }
 
-WorldStorage::WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage() {
+WorldStorage::WorldStorage(IAssetsConstPtr assets, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets)) {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -76,7 +75,7 @@ WorldStorage::WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr co
   m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
-WorldStorage::WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage() {
+WorldStorage::WorldStorage(IAssetsConstPtr assets, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets)) {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -363,7 +362,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
 
 void WorldStorage::unloadAll(bool force) {
   try {
-    auto storageConfig = Root::singleton().assets()->json("/worldstorage.config");
+    auto storageConfig = m_assets->json("/worldstorage.config");
     auto sectors = m_sectorMetadata.keys();
 
     // Entities can do some strange things during unload, such as repeatedly
@@ -602,8 +601,11 @@ void WorldStorage::openDatabase(BTreeDatabase& db, IODevicePtr device) {
     throw WorldStorageException::format("World database format is too old or unrecognized!");
 }
 
-WorldStorage::WorldStorage() {
-  auto storageConfig = Root::singleton().assets()->json("/worldstorage.config");
+WorldStorage::WorldStorage(IAssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw WorldStorageException("WorldStorage requires assets service");
+
+  auto storageConfig = m_assets->json("/worldstorage.config");
   m_sectorTimeToLive = jsonToVec2F(storageConfig.get("sectorTimeToLive"));
   m_generationQueueTimeToLive = storageConfig.getFloat("generationQueueTimeToLive");
 }

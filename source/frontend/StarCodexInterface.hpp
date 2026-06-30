@@ -26,7 +26,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  CodexInterface(PlayerPtr player, Services services = {});
+  CodexInterface(PlayerPtr player, Services services);
 
   virtual void show() override;
   virtual void tick(float dt) override;

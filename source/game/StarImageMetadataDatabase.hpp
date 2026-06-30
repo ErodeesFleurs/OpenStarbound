@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarRect.hpp"
 #include "StarMap.hpp"
 #include "StarString.hpp"
@@ -18,7 +19,7 @@ using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 // because they are expensive to compute and cheap to keep around.
 class ImageMetadataDatabase {
 public:
-  ImageMetadataDatabase();
+  ImageMetadataDatabase(AssetsConstPtr assets);
   Vec2U imageSize(AssetPath const& path) const;
   List<Vec2I> imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const;
   RectU nonEmptyRegion(AssetPath const& path) const;
@@ -34,6 +35,7 @@ private:
   // Path, position, fillLimit, and flip
   using SpacesEntry = tuple<AssetPath, Vec2I, float, bool>;
 
+  AssetsConstPtr m_assets;
   mutable Mutex m_mutex;
   mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;
   mutable HashTtlCache<SpacesEntry, List<Vec2I>> m_spacesCache;

@@ -19,7 +19,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  NameplatePainter(Services services = {});
+  explicit NameplatePainter(Services services);
 
   void update(float dt, WorldClientPtr const& world, WorldCamera const& camera, bool inspectionMode);
   void render();

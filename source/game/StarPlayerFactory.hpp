@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
 #include "StarEntitySplash.hpp"
@@ -60,7 +61,7 @@ struct PlayerConfig {
 
 class PlayerFactory {
 public:
-  PlayerFactory();
+  PlayerFactory(AssetsConstPtr assets);
 
   PlayerPtr create() const;
   PlayerPtr diskLoadPlayer(Json const& diskStore) const;

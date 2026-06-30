@@ -74,7 +74,7 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
     String material = damageNotification.targetMaterialKind;
     if (!material.empty() && damageKind.effects.contains(material)) {
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
-      m_worldClient->m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
+      m_worldClient->m_samples.appendAll(soundsFromDefinition(m_worldClient->m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
 
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
 

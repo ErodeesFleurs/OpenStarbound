@@ -8,6 +8,7 @@
 #include "StarIConfiguration.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
 
 namespace Star {
 
@@ -34,6 +35,7 @@ struct CraftingPaneServices {
   IConfigurationPtr configuration;
   ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class CraftingPane : public Pane {
@@ -42,8 +44,8 @@ public:
       WorldClientPtr worldClient,
       PlayerPtr player,
       Json const& settings,
-      EntityId sourceEntityId = NullEntityId,
-      CraftingPaneServices services = {});
+      EntityId sourceEntityId,
+      CraftingPaneServices services);
 
   void displayed() override;
   void dismissed() override;
@@ -81,6 +83,7 @@ private:
   IConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 
   bool m_crafting;
   GameTimer m_craftTimer;

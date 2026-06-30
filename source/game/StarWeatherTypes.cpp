@@ -1,9 +1,6 @@
 #include "StarWeatherTypes.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarBiomeDatabase.hpp"
 
 namespace Star {
 
@@ -11,10 +8,13 @@ WeatherType::WeatherType() {
   maximumWind = 0;
 }
 
-WeatherType::WeatherType(Json config, String path) {
+WeatherType::WeatherType(IAssetsConstPtr assets, Json config, String path) {
   if (config.isType(Json::Type::String)) {
+    if (!assets)
+      throw StarException("WeatherType requires assets service to load config path");
+
     path = config.toString();
-    config = Root::singleton().assets()->json(path);
+    config = assets->json(path);
   }
 
   name = config.getString("name");

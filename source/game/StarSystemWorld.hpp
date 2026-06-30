@@ -8,6 +8,7 @@
 #include "StarSkyParameters.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSystem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -73,10 +74,11 @@ struct SystemWorldConfig {
 
 class SystemWorld {
 public:
-  SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorld(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
 
   virtual ~SystemWorld() = default;
 
+  IAssetsConstPtr assets() const;
   SystemWorldConfig const& systemConfig() const;
   double time() const;
   Vec3I location() const;
@@ -99,13 +101,14 @@ public:
   virtual SystemObjectPtr getObject(Uuid const& uuid) const = 0;
 
   SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
-  static Json systemObjectTypeConfig(String const& typeName);
+  static Json systemObjectTypeConfig(IAssetsConstPtr assets, String const& typeName);
 
 protected:
   Vec3I m_location;
   CelestialDatabasePtr m_celestialDatabase;
 
 private:
+  IAssetsConstPtr m_assets;
   ClockConstPtr m_universeClock;
   SystemWorldConfig m_config;
 };

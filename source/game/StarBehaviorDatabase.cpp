@@ -1,6 +1,4 @@
 #include "StarBehaviorDatabase.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -148,8 +146,9 @@ RandomizeNode::RandomizeNode(List<BehaviorNodeConstPtr> children) : children(chi
 BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject const& parameters)
   : name(name), scripts(scripts), parameters(parameters) { }
 
-BehaviorDatabase::BehaviorDatabase() {
-  auto assets = Root::singleton().assets();
+BehaviorDatabase::BehaviorDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("BehaviorDatabase requires assets service");
 
   auto& nodeFiles = assets->scanExtension("nodes");
   assets->queueJsons(nodeFiles);

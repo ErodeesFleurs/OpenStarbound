@@ -9,7 +9,7 @@ using BindingsMenuPtr = SharedPtr<BindingsMenu>;
 
 class BindingsMenu : public BaseScriptPane {
 public:
-  BindingsMenu(Json const& config);
+  BindingsMenu(Json const& config, BaseScriptPaneServices services);
 
   virtual void show() override;
   void displayed() override;

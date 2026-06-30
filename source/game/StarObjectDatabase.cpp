@@ -104,17 +104,22 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
   return NPos;
 }
 
-Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
+Json ObjectDatabase::parseTouchDamage(IAssetsConstPtr assets, String const& path, Json const& config) {
+  if (!assets)
+    throw ObjectException("ObjectDatabase::parseTouchDamage requires assets service");
+
   auto touchDamage = config.get("touchDamage", {});
   if (touchDamage.isType(Json::Type::String)) {
-    auto assets = Root::singleton().assets();
     return assets->fetchJson(AssetPath::relativeTo(path, touchDamage.toString()));
   }
 
   return touchDamage;
 }
 
-List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path, Json const& configList, Json const& baseConfig) {
+List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(IAssetsConstPtr assets, String const& path, Json const& configList, Json const& baseConfig) {
+  if (!assets)
+    throw ObjectException("ObjectDatabase::parseOrientations requires assets service");
+
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
   List<ObjectOrientationPtr> res;
@@ -308,7 +313,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
 
-    orientation->touchDamageConfig = parseTouchDamage(path, orientationSettings);
+    orientation->touchDamageConfig = parseTouchDamage(assets, path, orientationSettings);
 
     res.append(std::move(orientation));
   }
@@ -316,14 +321,16 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() : m_rebuilder(make_shared<Rebuilder>("object")) {
-  auto assets = Root::singleton().assets();
+ObjectDatabase::ObjectDatabase(AssetsConstPtr assets)
+  : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "object")) {
+  if (!m_assets)
+    throw ObjectException("ObjectDatabase requires assets service");
 
-  auto& files = assets->scanExtension("object");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("object");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
-      String name = assets->json(file).getString("objectName");
+      String name = m_assets->json(file).getString("objectName");
       if (m_paths.contains(name))
         Logger::error("Object {} defined twice, second time from {}", name, file);
       else
@@ -451,14 +458,13 @@ ObjectPtr ObjectDatabase::createForPlacement(World const* world, String const& o
   return object;
 }
 
-ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
+ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-
-    Json config = assets->json(path);
+    Json config = m_assets->json(path);
 
     auto objectConfig = make_shared<ObjectConfig>();
     objectConfig->path = path;
+    objectConfig->assets = m_assets;
     objectConfig->config = config;
 
     objectConfig->name = config.getString("objectName");
@@ -523,7 +529,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
       objectConfig->smashable = false;
 
     objectConfig->tileDamageParameters = TileDamageParameters(
-        assets->fetchJson(config.get("damageTable", "/objects/defaultParameters.config:damageTable")),
+        m_assets->fetchJson(config.get("damageTable", "/objects/defaultParameters.config:damageTable")),
         config.optFloat("health"),
         config.optUInt("harvestLevel"));
 
@@ -562,7 +568,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     objectConfig->soundEffectRangeMultiplier = config.getFloat("soundEffectRangeMultiplier", 1.0f);
 
     objectConfig->statusEffects = config.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect);
-    objectConfig->touchDamageConfig = parseTouchDamage(path, config);
+    objectConfig->touchDamageConfig = parseTouchDamage(m_assets, path, config);
 
     objectConfig->minimumLiquidLevel = config.optFloat("minimumLiquidLevel");
     objectConfig->maximumLiquidLevel = config.optFloat("maximumLiquidLevel");
@@ -571,12 +577,12 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     objectConfig->health = config.getFloat("health", 1);
 
     if (auto animationConfig = config.get("animation", {})) {
-      objectConfig->animationConfig = assets->fetchJson(animationConfig, path);
+      objectConfig->animationConfig = m_assets->fetchJson(animationConfig, path);
       if (auto customConfig = config.get("animationCustom", {}))
-        objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, assets->fetchJson(customConfig, path));
+        objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, m_assets->fetchJson(customConfig, path));
     }
 
-    objectConfig->orientations = ObjectDatabase::parseOrientations(path, config.get("orientations"), config);
+    objectConfig->orientations = ObjectDatabase::parseOrientations(m_assets, path, config.get("orientations"), config);
 
     // For compatibility, allow particle emitter specs in the base config as
     // well as in individual orientations.

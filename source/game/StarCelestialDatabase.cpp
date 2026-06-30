@@ -7,7 +7,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarIterator.hpp"
 
@@ -54,8 +53,9 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
   return RectI(chunkIndex * m_baseInformation.chunkSize, (chunkIndex + Vec2I(1, 1)) * m_baseInformation.chunkSize);
 }
 
-CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
-  auto assets = Root::singleton().assets();
+CelestialMasterDatabase::CelestialMasterDatabase(IAssetsConstPtr assets, Maybe<String> databaseFile) {
+  if (!assets)
+    throw CelestialException("CelestialMasterDatabase requires assets service");
 
   auto config = assets->json("/celestial.config");
 
@@ -133,15 +133,24 @@ CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
     m_generationInformation.systemSuffixNames.add(list.getFloat(0), list.getString(1));
 
   if (databaseFile) {
-    m_database.setContentIdentifier("Celestial2");
-    m_database.setIODevice(File::open(*databaseFile, IOMode::ReadWrite));
-    (void)m_database.open();
-    if (m_database.contentIdentifier() != "Celestial2") {
-      Logger::error("CelestialMasterDatabase database content identifier is not 'Celestial2', moving out of the way and recreating");
-      m_database.close();
-      File::rename(*databaseFile, strf("{}.{}.fail", *databaseFile, Time::millisecondsSinceEpoch()));
+    auto openDatabase = [&]() {
+      m_database.setContentIdentifier("Celestial2");
       m_database.setIODevice(File::open(*databaseFile, IOMode::ReadWrite));
       (void)m_database.open();
+      if (m_database.contentIdentifier() != "Celestial2")
+        throw DBException("CelestialMasterDatabase database content identifier is not 'Celestial2'");
+      (void)m_database.indexLevels();
+    };
+
+    try {
+      openDatabase();
+    } catch (std::exception const& e) {
+      Logger::error("CelestialMasterDatabase could not load celestial database '{}', moving it out of the way and recreating. Cause: {}",
+          *databaseFile, outputException(e, false));
+      m_database.close(true);
+      if (File::isFile(*databaseFile))
+        File::rename(*databaseFile, strf("{}.{}.fail", *databaseFile, Time::millisecondsSinceEpoch()));
+      openDatabase();
     }
     m_database.setAutoCommit(false);
   }
@@ -626,8 +635,11 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
   return constellations;
 }
 
-CelestialSlaveDatabase::CelestialSlaveDatabase(CelestialBaseInformation baseInformation) {
-  auto config = Root::singleton().assets()->json("/celestial.config");
+CelestialSlaveDatabase::CelestialSlaveDatabase(IAssetsConstPtr assets, CelestialBaseInformation baseInformation) {
+  if (!assets)
+    throw CelestialException("CelestialSlaveDatabase requires assets service");
+
+  auto config = assets->json("/celestial.config");
 
   m_baseInformation = std::move(baseInformation);
   m_requestTimeout = config.getFloat("requestTimeout");

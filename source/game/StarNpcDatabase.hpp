@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarThread.hpp"
 #include "StarHumanoid.hpp"
 #include "StarDamageTypes.hpp"
@@ -62,7 +63,7 @@ struct NpcVariant {
 
 class NpcDatabase {
 public:
-  NpcDatabase();
+  NpcDatabase(AssetsConstPtr assets);
 
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
@@ -87,6 +88,7 @@ private:
   Json mergeConfigValues(Json const& base, Json const& merger) const;
 
   RebuilderPtr m_rebuilder;
+  AssetsConstPtr m_assets;
 
   StringMap<Json> m_npcTypes;
 };

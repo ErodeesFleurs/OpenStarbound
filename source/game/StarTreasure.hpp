@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarThread.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarWeightedPool.hpp"
@@ -24,7 +25,7 @@ using TreasureException = TypedException<StarException, TreasureExceptionTag>;
 
 class TreasureDatabase {
 public:
-  TreasureDatabase();
+  TreasureDatabase(AssetsConstPtr assets);
 
   StringList treasurePools() const;
   bool isTreasurePool(String const& treasurePool) const;

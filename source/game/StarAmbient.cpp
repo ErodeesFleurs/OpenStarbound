@@ -2,8 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
 #include "StarMixer.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
 
@@ -46,6 +44,10 @@ AmbientManager::~AmbientManager() {
   cancelAll();
 }
 
+void AmbientManager::setAssets(IAssetsConstPtr assets) {
+  m_assets = std::move(assets);
+}
+
 void AmbientManager::setTrackSwitchGrace(float grace) {
   m_trackSwitchGrace = grace;
 }
@@ -55,7 +57,8 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
 }
 
 AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
-  auto assets = Root::singleton().assets();
+  if (!m_assets)
+    throw StarException("AmbientManager requires assets service");
 
   if (m_currentTrack) {
     if (m_currentTrack->finished())
@@ -88,7 +91,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
       }
     }
     if (!m_currentTrackName.empty()) {
-      if (auto audio = assets->tryAudio(m_currentTrackName)) {
+      if (auto audio = m_assets->tryAudio(m_currentTrackName)) {
         m_recentTracks.append(m_currentTrackName);
         m_currentTrack = make_shared<AudioInstance>(*audio);
         m_currentTrack->setLoops(current ? current->trackLoops : -1);
@@ -117,7 +120,8 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
 }
 
 AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
-  auto assets = Root::singleton().assets();
+  if (!m_assets)
+    throw StarException("AmbientManager requires assets service");
 
   if (m_weatherTrack) {
     if (m_weatherTrack->finished())
@@ -138,7 +142,7 @@ AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr curre
   if (!m_weatherTrack) {
     m_weatherTrackName = Random::randValueFrom(tracks);
     if (!m_weatherTrackName.empty()) {
-      if (auto audio = assets->tryAudio(m_weatherTrackName)) {
+      if (auto audio = m_assets->tryAudio(m_weatherTrackName)) {
         m_weatherTrack = make_shared<AudioInstance>(*audio);
         m_weatherTrack->setLoops(-1);
         m_weatherTrack->setVolume(0.0f);

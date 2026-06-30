@@ -3,6 +3,7 @@
 #include "StarItem.hpp"
 #include "StarWorld.hpp"
 #include "StarSwingableItem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -10,7 +11,7 @@ class BlueprintItem;
 
 class BlueprintItem : public Item, public SwingableItem {
 public:
-  BlueprintItem(Json const& config, String const& directory, Json const& data);
+  BlueprintItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ItemPtr clone() const override;
 
   virtual List<Drawable> drawables() const override;

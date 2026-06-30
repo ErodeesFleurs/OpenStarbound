@@ -1,12 +1,12 @@
 #include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
-CodexDatabase::CodexDatabase() {
-  auto assets = Root::singleton().assets();
+CodexDatabase::CodexDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw CodexDatabaseException("CodexDatabase requires assets service");
   auto& files = assets->scanExtension("codex");
   auto codexConfig = assets->json("/codex.config");
   assets->queueJsons(files);

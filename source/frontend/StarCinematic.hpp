@@ -22,7 +22,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  Cinematic(Services services = {});
+  explicit Cinematic(Services services);
 
   void load(Json const& definition);
 

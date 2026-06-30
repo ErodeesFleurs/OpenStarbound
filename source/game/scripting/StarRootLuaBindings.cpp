@@ -267,8 +267,8 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->dungeonDefinitions()->getMetadata(name);
     });
 
-  callbacks.registerCallback("systemObjectTypeConfig", [](String const& name) -> Json {
-      return SystemWorld::systemObjectTypeConfig(name);
+  callbacks.registerCallback("systemObjectTypeConfig", [root](String const& name) -> Json {
+      return SystemWorld::systemObjectTypeConfig(root->assets(), name);
     });
 
   callbacks.registerCallback("itemDescriptorsMatch", [](Json const& descriptor1, Json const& descriptor2, Maybe<bool> exactMatch) -> bool {

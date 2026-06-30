@@ -1,8 +1,6 @@
 #include "StarPlantDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -101,37 +99,38 @@ Json BushVariant::toJson() const {
       {"tileDamageParameters", tileDamageParameters.toJson()}};
 }
 
-PlantDatabase::PlantDatabase() {
-  auto assets = Root::singleton().assets();
+PlantDatabase::PlantDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw PlantDatabaseException("PlantDatabase requires assets service");
 
-  auto& stems = assets->scanExtension("modularstem");
-  auto& foliages = assets->scanExtension("modularfoliage");
-  auto& grasses = assets->scanExtension("grass");
-  auto& bushes = assets->scanExtension("bush");
+  auto& stems = m_assets->scanExtension("modularstem");
+  auto& foliages = m_assets->scanExtension("modularfoliage");
+  auto& grasses = m_assets->scanExtension("grass");
+  auto& bushes = m_assets->scanExtension("bush");
 
-  assets->queueJsons(stems);
-  assets->queueJsons(foliages);
-  assets->queueJsons(grasses);
-  assets->queueJsons(bushes);
+  m_assets->queueJsons(stems);
+  m_assets->queueJsons(foliages);
+  m_assets->queueJsons(grasses);
+  m_assets->queueJsons(bushes);
 
   try {
     for (auto& file : stems) {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       m_treeStemConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
     for (auto& file : foliages) {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       m_treeFoliageConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
     for (auto& file : grasses) {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       m_grassConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
 
     for (auto& file : bushes) {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       m_bushConfigs.insert(config.getString("name"), Config{AssetPath::directory(file), config.toObject()});
     }
   } catch (StarException const& e) {
@@ -207,7 +206,7 @@ TreeVariant PlantDatabase::buildTreeVariant(
 
   treeVariant.ephemeral = stemConfig.settings.getBool("allowsBlockPlacement", false);
 
-  treeVariant.tileDamageParameters = TileDamageParameters(
+  treeVariant.tileDamageParameters = TileDamageParameters(m_assets,
       stemConfig.settings.get("damageTable", "/plants/treeDamage.config"),
       stemConfig.settings.getFloat("health", 1.0f));
 
@@ -242,7 +241,7 @@ TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHu
 
   treeVariant.ephemeral = stemConfig.settings.getBool("ephemeral", false);
 
-  treeVariant.tileDamageParameters = TileDamageParameters(
+  treeVariant.tileDamageParameters = TileDamageParameters(m_assets,
       stemConfig.settings.get("damageTable", "/plants/treeDamage.config"),
       stemConfig.settings.getFloat("health", 1.0f));
 
@@ -280,7 +279,7 @@ GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift
   grassVariant.descriptions = descriptions;
 
   grassVariant.ephemeral = config.settings.getBool("ephemeral", true);
-  grassVariant.tileDamageParameters = TileDamageParameters(
+  grassVariant.tileDamageParameters = TileDamageParameters(m_assets,
       config.settings.get("damageTable", "/plants/grassDamage.config"),
       config.settings.getFloat("health", 1.0f));
 
@@ -332,7 +331,7 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   bushVariant.descriptions = descriptions;
 
   bushVariant.ephemeral = config.settings.getBool("ephemeral", true);
-  bushVariant.tileDamageParameters = TileDamageParameters(
+  bushVariant.tileDamageParameters = TileDamageParameters(m_assets,
       config.settings.get("damageTable", "/plants/bushDamage.config"),
       config.settings.getFloat("health", 1.0f));
   return bushVariant;

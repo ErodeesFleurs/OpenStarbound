@@ -10,15 +10,18 @@
 
 namespace Star {
 
-BiomeDatabase::BiomeDatabase() {
-  auto assets = Root::singleton().assets();
+BiomeDatabase::BiomeDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw BiomeException("BiomeDatabase requires assets service");
+
+  m_spawnGroups = m_assets->json("/spawning.config:spawnGroups");
 
   // 'type' here is the extension of the file, and determines the selector type
-  auto scanFiles = [=](String const& type, ConfigMap& map) {
-    auto& files = assets->scanExtension(type);
-    assets->queueJsons(files);
+  auto scanFiles = [this](String const& type, ConfigMap& map) {
+    auto& files = m_assets->scanExtension(type);
+    m_assets->queueJsons(files);
     for (auto& path : files) {
-      auto parameters = assets->json(path);
+      auto parameters = m_assets->json(path);
       if (parameters.isNull())
         continue;
 
@@ -47,8 +50,7 @@ WeatherPool BiomeDatabase::biomeWeathers(String const& biomeName, uint64_t seed,
   if (auto weatherList = binnedChoiceFromJson(m_biomes.get(biomeName).parameters.get("weather", JsonArray{}), threatLevel).optArray()) {
     auto weatherPoolPath = staticRandomFrom(*weatherList, seed, "WeatherPool");
 
-    auto assets = Root::singleton().assets();
-    auto weatherPoolConfig = assets->fetchJson(weatherPoolPath);
+    auto weatherPoolConfig = m_assets->fetchJson(weatherPoolPath);
     weatherPool = jsonToWeightedPool<String>(weatherPoolConfig);
   }
 
@@ -130,7 +132,7 @@ WeatherType BiomeDatabase::weatherType(String const& name) const {
   auto config = m_weathers.get(name);
 
   try {
-    return WeatherType(config.parameters, config.path);
+    return WeatherType(m_assets, config.parameters, config.path);
   } catch (MapException const& e) {
     throw BiomeException(strf("Required key not found in weather config {}", config.path), e);
   }
@@ -179,7 +181,7 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
       biome->ambientNoises = make_shared<AmbientNoisesDescription>(config.parameters.getObject("ambientNoises"), config.path);
 
     if (config.parameters.contains("spawnProfile"))
-      biome->spawnProfile = constructSpawnProfile(config.parameters.getObject("spawnProfile"), seed);
+      biome->spawnProfile = constructSpawnProfile(config.parameters.getObject("spawnProfile"), m_spawnGroups, seed);
 
     return biome;
   } catch (std::exception const& cause) {

@@ -24,8 +24,7 @@ using PlayerPtr = SharedPtr<Player>;
 
 namespace ItemTooltipBuilder {
   struct Services {
-    Services() = default;
-    Services(IAssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase = {}, StatusEffectDatabaseConstPtr statusEffectDatabase = {})
+    Services(IAssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase)
       : assets(std::move(assets)), objectDatabase(std::move(objectDatabase)), statusEffectDatabase(std::move(statusEffectDatabase)) {}
 
     IAssetsConstPtr assets;
@@ -33,13 +32,13 @@ namespace ItemTooltipBuilder {
     StatusEffectDatabaseConstPtr statusEffectDatabase;
   };
 
-  PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer = {}, Services services = {});
+  PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services);
 
-  void buildItemDescription(WidgetPtr const& container, ItemPtr const& item, Services services = {});
+  void buildItemDescription(WidgetPtr const& container, ItemPtr const& item, Services services);
   void buildItemDescriptionInner(
-      WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer = {}, Services services = {});
+      WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer, Services services);
 
-  void describePersistentEffect(ListWidgetPtr const& container, PersistentStatusEffect const& effect, Services services = {});
+  void describePersistentEffect(ListWidgetPtr const& container, PersistentStatusEffect const& effect, Services services);
 };
 
 }

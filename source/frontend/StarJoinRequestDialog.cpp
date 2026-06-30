@@ -1,7 +1,7 @@
 #include "StarJoinRequestDialog.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -10,7 +10,10 @@
 namespace Star {
 
 JoinRequestDialog::JoinRequestDialog(Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()), m_confirmed(false) {}
+  : m_assets(std::move(services.assets)), m_confirmed(false) {
+  if (!m_assets)
+    throw StarException("JoinRequestDialog requires assets service");
+}
 
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {
   removeAllChildren();

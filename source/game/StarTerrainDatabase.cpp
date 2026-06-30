@@ -12,8 +12,6 @@
 #include "StarPerlinSelector.hpp"
 #include "StarCacheSelector.hpp"
 #include "StarIslandSurfaceSelector.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
@@ -54,8 +52,9 @@ TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParame
 
 TerrainSelector::~TerrainSelector() {}
 
-TerrainDatabase::TerrainDatabase() {
-  auto assets = Root::singleton().assets();
+TerrainDatabase::TerrainDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw TerrainException("TerrainDatabase requires assets service");
 
   // 'type' here is the extension of the file, and determines the selector type
   auto scanFiles = [this, assets](String const& type) {

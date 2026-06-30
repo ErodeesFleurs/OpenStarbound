@@ -1,5 +1,5 @@
 #include "StarOptionsMenu.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
@@ -18,8 +18,13 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client, Options
   : m_sfxRange(0, 100),
     m_musicRange(0, 100),
     m_paneManager(manager),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+    m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)) {
+  if (!m_assets)
+    throw StarException("OptionsMenu requires assets service");
+  if (!m_configuration)
+    throw StarException("OptionsMenu requires configuration service");
+
   GuiReader reader;
 
   reader.registerCallback("instrumentSlider", [=, this](Widget*) {
@@ -93,8 +98,8 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client, Options
   m_sfxSlider->setRange(m_sfxRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
-  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(m_assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
-  m_modBindingsMenu = make_shared<BindingsMenu>(m_assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
+  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(m_assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")), BaseScriptPaneServices{m_assets});
+  m_modBindingsMenu = make_shared<BindingsMenu>(m_assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")), BaseScriptPaneServices{m_assets});
   m_keybindingsMenu = make_shared<KeybindingsMenu>(KeybindingsMenuServices{m_assets, m_configuration});
   m_graphicsMenu = make_shared<GraphicsMenu>(manager, client, GraphicsMenuServices{m_assets, m_configuration});
 

@@ -1,6 +1,6 @@
 #include "StarSongbookInterface.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -12,12 +12,12 @@ String const SongPathPrefix = "/songs/";
 
 SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services) {
   m_player = std::move(player);
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_assets = std::move(services.assets);
   m_registerReloadListener = std::move(services.registerReloadListener);
+  if (!m_assets)
+    throw StarException("SongbookInterface requires assets service");
   if (!m_registerReloadListener)
-    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
+    throw StarException("SongbookInterface requires reload listener service");
 
   GuiReader reader;
 

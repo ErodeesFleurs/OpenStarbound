@@ -1,6 +1,6 @@
 #include "StarStatusPane.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarGuiReader.hpp"
 #include "StarImageWidget.hpp"
@@ -15,9 +15,16 @@ namespace Star {
 
 StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
   : m_client(std::move(client)),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_imageMetadataDatabase(services.imageMetadataDatabase ? std::move(services.imageMetadataDatabase) : Root::singleton().imageMetadataDatabase()),
-    m_statusEffectDatabase(services.statusEffectDatabase ? std::move(services.statusEffectDatabase) : Root::singleton().statusEffectDatabase()) {
+    m_assets(std::move(services.assets)),
+    m_imageMetadataDatabase(std::move(services.imageMetadataDatabase)),
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
+  if (!m_assets)
+    throw StarException("StatusPane requires assets service");
+  if (!m_imageMetadataDatabase)
+    throw StarException("StatusPane requires image metadata service");
+  if (!m_statusEffectDatabase)
+    throw StarException("StatusPane requires status effect database service");
+
   m_player = m_client->mainPlayer();
 
   m_guiContext = GuiContext::singletonPtr();

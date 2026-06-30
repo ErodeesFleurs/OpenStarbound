@@ -6,18 +6,17 @@
 #include "StarRoot.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarLiquidTypes.hpp"
-#include "StarAssets.hpp"
 #include "StarLogging.hpp"
 #include "StarDungeonGenerator.hpp"
 
 namespace Star {
 
-WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {
+WorldTemplate::WorldTemplate(IAssetsConstPtr assets, Vec2U const& size) : WorldTemplate(std::move(assets)) {
   m_geometry = size;
 }
 
-WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase)
-  : WorldTemplate() {
+WorldTemplate::WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase)
+  : WorldTemplate(std::move(assets)) {
   auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
   if (!celestialParameters)
     throw StarException("Celestial parameters for constructing WorldTemplate not found!");
@@ -41,8 +40,8 @@ WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, Cel
   determineWorldName();
 }
 
-WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed)
-  : WorldTemplate() {
+WorldTemplate::WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed)
+  : WorldTemplate(std::move(assets)) {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
@@ -61,7 +60,7 @@ WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParame
   determineWorldName();
 }
 
-WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
+WorldTemplate::WorldTemplate(IAssetsConstPtr assets, Json const& store) : WorldTemplate(std::move(assets)) {
   m_celestialParameters = jsonToMaybe<CelestialParameters>(store.get("celestialParameters", {}));
   m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
   m_skyParameters = SkyParameters(store.get("skyParameters"));
@@ -571,9 +570,11 @@ uint64_t WorldTemplate::seedFor(int x, int y) const {
   return staticRandomU64(m_seed, m_geometry.xwrap(x), y, "Block");
 }
 
-WorldTemplate::WorldTemplate() {
-  auto assets = Root::singleton().assets();
-  m_templateConfig = Root::singleton().assets()->json("/world_template.config");
+WorldTemplate::WorldTemplate(IAssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("WorldTemplate requires assets service");
+
+  m_templateConfig = m_assets->json("/world_template.config");
   m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");
   m_customTerrainBlendWeight = m_templateConfig.getFloat("customTerrainBlendWeight");
 
@@ -592,8 +593,6 @@ void WorldTemplate::determineWorldName() {
 }
 
 pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
-  auto assets = Root::singleton().assets();
-
   float minimumDistance = highest<float>();
   float finalSolidWeight = 0.0f;
   float totalWeight = 0.0f;

@@ -1,7 +1,5 @@
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -92,9 +90,8 @@ Json SpawnProfile::toJson() const {
   };
 }
 
-SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed) {
+SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups, uint64_t seed) {
   SpawnProfile spawnProfile;
-  auto commonGroups = Root::singleton().assets()->json("/spawning.config:spawnGroups");
   for (auto group : config.get("groups", JsonArray()).iterateArray()) {
     auto poolNameOrConfig = group.get("pool");
     WeightedPool<String> typePool;
@@ -111,8 +108,10 @@ SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed) {
   return spawnProfile;
 }
 
-SpawnTypeDatabase::SpawnTypeDatabase() {
-  auto assets = Root::singleton().assets();
+SpawnTypeDatabase::SpawnTypeDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw SpawnTypeDatabaseException("SpawnTypeDatabase requires assets service");
+
   auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);
   uint64_t seedMix = 0;

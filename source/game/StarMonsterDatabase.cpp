@@ -1,7 +1,5 @@
 #include "StarMonsterDatabase.hpp"
 #include "StarMonster.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
@@ -11,22 +9,23 @@
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {
-  auto assets = Root::singleton().assets();
+MonsterDatabase::MonsterDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "monster")) {
+  if (!m_assets)
+    throw MonsterException("MonsterDatabase requires assets service");
 
-  auto& monsterTypes = assets->scanExtension("monstertype");
-  auto& monsterParts = assets->scanExtension("monsterpart");
-  auto& monsterSkills = assets->scanExtension("monsterskill");
-  auto& monsterColors = assets->scanExtension("monstercolors");
+  auto& monsterTypes = m_assets->scanExtension("monstertype");
+  auto& monsterParts = m_assets->scanExtension("monsterpart");
+  auto& monsterSkills = m_assets->scanExtension("monsterskill");
+  auto& monsterColors = m_assets->scanExtension("monstercolors");
 
-  assets->queueJsons(monsterTypes);
-  assets->queueJsons(monsterParts);
-  assets->queueJsons(monsterSkills);
-  assets->queueJsons(monsterColors);
+  m_assets->queueJsons(monsterTypes);
+  m_assets->queueJsons(monsterParts);
+  m_assets->queueJsons(monsterSkills);
+  m_assets->queueJsons(monsterColors);
 
   for (auto const& file : monsterTypes) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       String typeName = config.getString("type");
 
       if (m_monsterTypes.contains(typeName))
@@ -54,7 +53,7 @@ MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster
       // for updated monsters, use the partParameterDescription from the
       // .partparams file
       if (config.contains("partParameters")) {
-        Json partParameterSource = assets->json(AssetPath::relativeTo(file, config.getString("partParameters")));
+        Json partParameterSource = m_assets->json(AssetPath::relativeTo(file, config.getString("partParameters")));
         monsterType.partParameterDescription = partParameterSource.getObject("partParameterDescription");
         monsterType.partParameterOverrides = partParameterSource.getObject("partParameters");
       } else {
@@ -71,7 +70,7 @@ MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster
 
   for (auto const& file : monsterParts) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       if (config.isNull())
         continue;
 
@@ -96,7 +95,7 @@ MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster
 
   for (auto const& file : monsterSkills) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       if (config.isNull())
         continue;
 
@@ -120,7 +119,7 @@ MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster
 
   for (auto const& file : monsterColors) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       if (config.isNull())
         continue;
 
@@ -420,7 +419,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   monsterVariant.seed = seed;
   monsterVariant.uniqueParameters = uniqueParameters;
 
-  monsterVariant.animatorConfig = Root::singleton().assets()->fetchJson(monsterType.animationConfigPath);
+  monsterVariant.animatorConfig = m_assets->fetchJson(monsterType.animationConfigPath);
   monsterVariant.reversed = monsterType.reversed;
 
   // select a list of monster parts

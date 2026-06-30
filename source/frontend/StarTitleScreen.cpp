@@ -1,7 +1,7 @@
 #include "StarTitleScreen.hpp"
 #include "StarEncode.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarGuiContext.hpp"
@@ -22,17 +22,24 @@
 
 namespace Star {
 
+template <typename T>
+T requireTitleScreenService(T service, char const* message) {
+  if (!service)
+    throw StarException(message);
+  return service;
+}
+
 TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
     MixerPtr mixer,
     UniverseClientPtr client,
     TitleScreenServices services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
-    m_playerFactory(services.playerFactory ? std::move(services.playerFactory) : Root::singleton().playerFactory()),
-    m_speciesDatabase(services.speciesDatabase ? std::move(services.speciesDatabase) : Root::singleton().speciesDatabase()),
-    m_nameGenerator(services.nameGenerator ? std::move(services.nameGenerator) : Root::singleton().nameGenerator()),
-    m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()),
-    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()),
+  : m_assets(requireTitleScreenService(std::move(services.assets), "TitleScreen requires assets service")),
+    m_configuration(requireTitleScreenService(std::move(services.configuration), "TitleScreen requires configuration service")),
+    m_playerFactory(requireTitleScreenService(std::move(services.playerFactory), "TitleScreen requires player factory service")),
+    m_speciesDatabase(requireTitleScreenService(std::move(services.speciesDatabase), "TitleScreen requires species database service")),
+    m_nameGenerator(requireTitleScreenService(std::move(services.nameGenerator), "TitleScreen requires name generator service")),
+    m_itemDatabase(requireTitleScreenService(std::move(services.itemDatabase), "TitleScreen requires item database service")),
+    m_imageMetadata(requireTitleScreenService(std::move(services.imageMetadata), "TitleScreen requires image metadata service")),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}),
     m_playerStorage(playerStorage),
     m_skipMultiPlayerConnection(false),
@@ -41,7 +48,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
 
   m_guiContext = GuiContext::singletonPtr();
 
-  m_celestialDatabase = make_shared<CelestialMasterDatabase>();
+  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets);
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
     }).take();
@@ -53,6 +60,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
   m_skyBackdrop = make_shared<Sky>(skyParameters, true);
 
   m_musicTrack = make_shared<AmbientNoisesDescription>(m_assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
+  m_musicTrackManager.setAssets(m_assets);
 
   initMainMenu();
   initCharSelectionMenu();
@@ -471,7 +479,7 @@ void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = make_shared<ModsMenu>(m_assets);
+  auto modsMenu = make_shared<ModsMenu>(ModsMenu::Services{m_assets});
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 

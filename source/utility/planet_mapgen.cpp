@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>();
+    CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>(root->assets());
 
     Maybe<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())
@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
     coutf("Generating world with coordinate {}\n", *coordinate);
 
-    WorldTemplate worldTemplate(*coordinate, celestialDatabase);
+    WorldTemplate worldTemplate(root->assets(), *coordinate, celestialDatabase);
     auto size = worldTemplate.size();
 
     if (!options.parameters["size"].empty()) {

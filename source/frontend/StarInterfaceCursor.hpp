@@ -14,7 +14,7 @@ struct InterfaceCursorServices {
 
 class InterfaceCursor {
 public:
-  InterfaceCursor(InterfaceCursorServices services = {});
+  explicit InterfaceCursor(InterfaceCursorServices services);
 
   // Sets the cursor to the default defined in interface.config
   void resetCursor();

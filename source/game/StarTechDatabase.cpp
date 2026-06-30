@@ -1,6 +1,5 @@
 #include "StarTechDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -11,8 +10,9 @@ EnumMap<TechType> const TechTypeNames{
   {TechType::Legs, "Legs"}
 };
 
-TechDatabase::TechDatabase() {
-  auto assets = Root::singleton().assets();
+TechDatabase::TechDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw TechDatabaseException("TechDatabase requires assets service");
   auto& files = assets->scanExtension("tech");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -36,8 +36,6 @@ TechConfig TechDatabase::tech(String const& techName) const {
 
 TechConfig TechDatabase::parseTech(Json const& config, String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-
     TechConfig tech;
     tech.name = config.getString("name");
     tech.path = path;

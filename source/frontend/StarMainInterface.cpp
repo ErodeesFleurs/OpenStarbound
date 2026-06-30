@@ -5,7 +5,7 @@
 #include "StarContainerInterface.hpp"
 #include "StarCraftingInterface.hpp"
 #include "StarMerchantInterface.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarCodexInterface.hpp"
 #include "StarSongbookInterface.hpp"
@@ -63,6 +63,23 @@
 
 namespace Star {
 
+namespace {
+
+template <typename Service>
+Service requireMainInterfaceService(Service service, char const* name) {
+  if (!service)
+    throw StarException(strf("MainInterface requires {} service", name));
+  return service;
+}
+
+String requireMainInterfaceOutputDirectory(String outputDirectory) {
+  if (outputDirectory.empty())
+    throw StarException("MainInterface requires output directory service");
+  return outputDirectory;
+}
+
+}
+
 GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
@@ -73,21 +90,21 @@ MainInterface::MainInterface(UniverseClientPtr client,
     CinematicPtr cinematicOverlay,
     MainInterfaceServices services)
   : m_guiContext(GuiContext::singletonPtr())
-  , m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets())
-  , m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration())
-  , m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase())
-  , m_functionDatabase(services.functionDatabase ? std::move(services.functionDatabase) : Root::singleton().functionDatabase())
-  , m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase())
-  , m_objectDatabase(services.objectDatabase ? std::move(services.objectDatabase) : Root::singleton().objectDatabase())
-  , m_aiDatabase(services.aiDatabase ? std::move(services.aiDatabase) : Root::singleton().aiDatabase())
-  , m_techDatabase(services.techDatabase ? std::move(services.techDatabase) : Root::singleton().techDatabase())
-  , m_statusEffectDatabase(services.statusEffectDatabase ? std::move(services.statusEffectDatabase) : Root::singleton().statusEffectDatabase())
-  , m_imageFrames(std::move(services.imageFrames))
-  , m_registerReloadListener(std::move(services.registerReloadListener))
-  , m_reloadRoot(std::move(services.reloadRoot))
-  , m_reloadRootForCommand(std::move(services.reloadRootForCommand))
-  , m_hotReloadRoot(std::move(services.hotReloadRoot))
-  , m_outputDirectory(std::move(services.outputDirectory))
+  , m_assets(requireMainInterfaceService(std::move(services.assets), "assets"))
+  , m_configuration(requireMainInterfaceService(std::move(services.configuration), "configuration"))
+  , m_imageMetadata(requireMainInterfaceService(std::move(services.imageMetadata), "image metadata"))
+  , m_functionDatabase(requireMainInterfaceService(std::move(services.functionDatabase), "function database"))
+  , m_itemDatabase(requireMainInterfaceService(std::move(services.itemDatabase), "item database"))
+  , m_objectDatabase(requireMainInterfaceService(std::move(services.objectDatabase), "object database"))
+  , m_aiDatabase(requireMainInterfaceService(std::move(services.aiDatabase), "AI database"))
+  , m_techDatabase(requireMainInterfaceService(std::move(services.techDatabase), "tech database"))
+  , m_statusEffectDatabase(requireMainInterfaceService(std::move(services.statusEffectDatabase), "status effect database"))
+  , m_imageFrames(requireMainInterfaceService(std::move(services.imageFrames), "image frames"))
+  , m_registerReloadListener(requireMainInterfaceService(std::move(services.registerReloadListener), "reload listener registrar"))
+  , m_reloadRoot(requireMainInterfaceService(std::move(services.reloadRoot), "root reload callback"))
+  , m_reloadRootForCommand(requireMainInterfaceService(std::move(services.reloadRootForCommand), "command root reload callback"))
+  , m_hotReloadRoot(requireMainInterfaceService(std::move(services.hotReloadRoot), "hot reload callback"))
+  , m_outputDirectory(requireMainInterfaceOutputDirectory(std::move(services.outputDirectory)))
   , m_config(MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices{m_assets}))
   , m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata})
   , m_client(std::move(client))
@@ -95,25 +112,6 @@ MainInterface::MainInterface(UniverseClientPtr client,
   , m_cinematicOverlay(std::move(cinematicOverlay))
   , m_containerInteractor(make_shared<ContainerInteractor>())
 {
-  if (!m_reloadRoot)
-    m_reloadRoot = []() {
-      auto& root = Root::singleton();
-      root.reload();
-      root.fullyLoad();
-    };
-  if (!m_reloadRootForCommand)
-    m_reloadRootForCommand = []() {
-      Root::singleton().reload();
-    };
-  if (!m_hotReloadRoot)
-    m_hotReloadRoot = []() {
-      Root::singleton().hotReload();
-    };
-  if (!m_registerReloadListener)
-    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
-
   GuiReader itemSlotReader;
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
 
@@ -124,7 +122,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
 
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
-  m_inventoryWindow = make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase});
+  m_inventoryWindow = make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](PanePtr const&) {
       if (auto player = m_client->mainPlayer())
           player->clearSwap();
@@ -145,7 +143,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
       m_client->mainPlayer(),
       JsonObject{{"filter", JsonArray{"plain"}}},
       m_client->mainPlayer()->entityId(),
-      CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase});
+      CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, m_plainCraftingWindow);
 
   m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, createEscapeDialog());
@@ -153,7 +151,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
   auto songbookInterface = make_shared<SongbookInterface>(m_client->mainPlayer(), SongbookInterfaceServices{m_assets, m_registerReloadListener});
   m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, songbookInterface);
 
-  m_questLogInterface = make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets});
+  m_questLogInterface = make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::QuestLog, PaneLayer::Window, m_questLogInterface);
 
   auto aiInterface = make_shared<AiInterface>(m_client, m_cinematicOverlay, &m_paneManager, AiInterfaceServices{m_assets, m_aiDatabase});
@@ -176,16 +174,16 @@ MainInterface::MainInterface(UniverseClientPtr client,
   m_joinRequestDialog = make_shared<JoinRequestDialog>(JoinRequestDialog::Services{m_assets});
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
 
-  m_actionBar = make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration});
+  m_actionBar = make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::ActionBar, PaneLayer::Hud, m_actionBar);
 
   m_questTracker = make_shared<QuestTrackerPane>(QuestTrackerPane::Services{m_assets});
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase});
+  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase});
+  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
   m_chat = make_shared<Chat>(m_client, m_assets->json("/interface/chat/chat.config"), ChatServices{m_assets});
@@ -194,6 +192,8 @@ MainInterface::MainInterface(UniverseClientPtr client,
   commandServices.assets = m_assets;
   commandServices.configuration = m_configuration;
   commandServices.itemDatabase = m_itemDatabase;
+  commandServices.objectDatabase = m_objectDatabase;
+  commandServices.statusEffectDatabase = m_statusEffectDatabase;
   commandServices.imageFrames = m_imageFrames;
   commandServices.outputDirectory = m_outputDirectory;
   commandServices.reloadRoot = m_reloadRootForCommand;
@@ -276,7 +276,7 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
   }
 
   m_craftingWindow = make_shared<CraftingPane>(
-      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase});
+      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](PanePtr const&) {
     if (auto player = m_client->mainPlayer())
       player->clearSwap();
@@ -295,7 +295,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
   bool openWithInventory = config.getBool("openWithInventory", true);
   bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
   m_merchantWindow = make_shared<MerchantPane>(
-      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, MerchantPaneServices{m_assets, m_itemDatabase});
+      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, MerchantPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
   m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](PanePtr const&) {
     if (closeWithInventory)
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -476,7 +476,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     bool closeWithInventory = !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
-    m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets});
+    m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets, m_objectDatabase, m_statusEffectDatabase});
     m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](PanePtr const&) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -570,7 +570,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
-    ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase});
+    ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
     displayScriptPane(scriptPane, sourceEntity);
 
   } else if (interactAction.type == InteractActionType::Message) {
@@ -1071,7 +1071,7 @@ void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
 void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
   for (auto& info : panes) { // this is evil and stupid
     info.scriptPane->~ScriptPane();
-    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase});
+    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
     info.scriptPane->setVisibility(info.visible);
     displayScriptPane(info.scriptPane, info.sourceEntityId);
     info.scriptPane->setPosition(info.position);

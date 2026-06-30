@@ -51,8 +51,10 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() : m_rebuilder(make_shared<Rebuilder>("player")) {
-  auto assets = Root::singleton().assets();
+PlayerFactory::PlayerFactory(AssetsConstPtr assets) : m_rebuilder(make_shared<Rebuilder>(assets, "player")) {
+  if (!assets)
+    throw PlayerException("PlayerFactory requires assets service");
+
   m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
 }
 

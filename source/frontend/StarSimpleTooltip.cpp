@@ -1,13 +1,15 @@
 #include "StarSimpleTooltip.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
 
 PanePtr SimpleTooltipBuilder::buildTooltip(String const& text, SimpleTooltipServices services) {
-  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  auto assets = std::move(services.assets);
+  if (!assets)
+    throw StarException("SimpleTooltipBuilder requires assets service");
 
   PanePtr tooltip = make_shared<Pane>();
   tooltip->removeAllChildren();

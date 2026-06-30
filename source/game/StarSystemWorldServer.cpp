@@ -1,5 +1,4 @@
 #include "StarSystemWorldServer.hpp"
-#include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarClientContext.hpp"
@@ -9,8 +8,8 @@
 
 namespace Star {
 
-SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(IAssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase)) {
   m_location = std::move(location);
 
   placeInitialObjects();
@@ -20,8 +19,8 @@ SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock
   spawnObjects();
 }
 
-SystemWorldServer::SystemWorldServer(Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(IAssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase)) {
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {
@@ -320,7 +319,7 @@ Json SystemWorldServer::diskStore() {
 }
 
 void SystemWorldServer::placeInitialObjects() {
-  auto config = Root::singleton().assets()->json("/systemworld.config");
+  auto config = assets()->json("/systemworld.config");
   RandomSource rand(staticRandomU64("SystemWorldGeneration", toString(m_location)));
 
   WeightedPool<JsonArray> spawnPools = jsonToWeightedPool<JsonArray>(config.getArray("initialObjectPools"));
@@ -348,7 +347,7 @@ void SystemWorldServer::spawnObjects() {
     m_objectSpawnTime = Random::randf(systemConfig().objectSpawnInterval[0], systemConfig().objectSpawnInterval[1]);
     diff = time() - m_lastSpawn;
 
-    WeightedPool<String> spawnPool = jsonToWeightedPool<String>(Root::singleton().assets()->json("/systemworld.config:objectSpawnPool").toArray());
+    WeightedPool<String> spawnPool = jsonToWeightedPool<String>(assets()->json("/systemworld.config:objectSpawnPool").toArray());
     String name = spawnPool.select();
     Uuid uuid = Uuid();
     auto objectConfig = systemObjectConfig(name, uuid);

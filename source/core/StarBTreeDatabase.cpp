@@ -111,8 +111,6 @@ bool BTreeDatabase::open() {
   if (!m_device->isOpen())
     m_device->open(IOMode::ReadWrite);
 
-  m_open = true;
-
   if (m_device->size() > 0) {
     DataStreamIODevice ds(m_device);
     ds.seek(0);
@@ -129,10 +127,12 @@ bool BTreeDatabase::open() {
     m_keySize = ds.read<uint32_t>();
 
     readRoot();
+    validateRoot();
 
     if (m_device->isWritable())
       m_device->resize(m_deviceSize);
 
+    m_open = true;
     return false;
 
   } else {
@@ -162,6 +162,7 @@ bool BTreeDatabase::open() {
     m_impl.createNewRoot();
     doCommit();
 
+    m_open = true;
     return true;
   }
 }
@@ -312,9 +313,10 @@ void BTreeDatabase::close(bool closeDevice) {
     m_indexCache.clear();
 
     m_open = false;
-    if (closeDevice && m_device && m_device->isOpen())
-      m_device->close();
   }
+
+  if (closeDevice && m_device && m_device->isOpen())
+    m_device->close();
 }
 
 BTreeDatabase::BlockIndex const BTreeDatabase::InvalidBlockIndex;
@@ -1072,6 +1074,31 @@ void BTreeDatabase::readRoot() {
   m_deviceSize = ds.read<StreamOffset>();
   m_root = ds.read<BlockIndex>();
   m_rootIsLeaf = ds.read<bool>();
+}
+
+void BTreeDatabase::validateRoot() {
+  if (m_blockSize == 0)
+    throw DBException("Invalid BTreeDatabase file: block size is zero");
+
+  if (m_deviceSize < HeaderSize)
+    throw DBException::format("Invalid BTreeDatabase file: committed size {} is smaller than header size {}", m_deviceSize, HeaderSize);
+
+  if ((m_deviceSize - HeaderSize) % m_blockSize != 0)
+    throw DBException::format("Invalid BTreeDatabase file: committed size {} is not aligned to block size {}", m_deviceSize, m_blockSize);
+
+  if (m_deviceSize > m_device->size())
+    throw DBException::format("Invalid BTreeDatabase file: committed size {} exceeds file size {}", m_deviceSize, m_device->size());
+
+  if (m_headFreeIndexBlock != InvalidBlockIndex)
+    checkBlockIndex(m_headFreeIndexBlock);
+
+  checkBlockIndex(m_root);
+
+  ByteArray magic(2, 0);
+  rawReadBlock(m_root, 0, magic.ptr(), magic.size());
+  ByteArray expectedMagic(m_rootIsLeaf ? LeafMagic : IndexMagic, 2);
+  if (magic != expectedMagic)
+    throw DBException::format("Invalid BTreeDatabase file: root block {} has incorrect {} signature", m_root, m_rootIsLeaf ? "leaf" : "index");
 }
 
 void BTreeDatabase::doCommit() {

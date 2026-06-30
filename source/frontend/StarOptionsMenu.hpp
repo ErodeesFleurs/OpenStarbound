@@ -32,7 +32,7 @@ struct OptionsMenuServices {
 
 class OptionsMenu : public Pane {
 public:
-  OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services = {});
+  OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services);
 
   virtual void show() override;
 

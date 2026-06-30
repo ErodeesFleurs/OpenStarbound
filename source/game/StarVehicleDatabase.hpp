@@ -2,6 +2,7 @@
 
 #include "StarJson.hpp"
 #include "StarVehicle.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ using VehicleDatabaseException = TypedException<StarException, VehicleDatabaseEx
 
 class VehicleDatabase {
 public:
-  VehicleDatabase();
+  VehicleDatabase(AssetsConstPtr assets);
 
   VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
 

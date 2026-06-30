@@ -4,7 +4,6 @@
 #include "StarXXHash.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 
 namespace Star {
@@ -41,12 +40,14 @@ TileDrawer& TileDrawer::singleton() {
     return *s_singleton;
 }
 
-TileDrawer::TileDrawer() {
-  auto assets = Root::singleton().assets();
+TileDrawer::TileDrawer(IAssetsConstPtr assets)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("TileDrawer requires assets service");
 
-  m_backgroundLayerColor = jsonToColor(assets->json("/rendering.config:backgroundLayerColor")).toRgba();
-  m_foregroundLayerColor = jsonToColor(assets->json("/rendering.config:foregroundLayerColor")).toRgba();
-  m_liquidDrawLevels = jsonToVec2F(assets->json("/rendering.config:liquidDrawLevels"));
+  m_backgroundLayerColor = jsonToColor(m_assets->json("/rendering.config:backgroundLayerColor")).toRgba();
+  m_foregroundLayerColor = jsonToColor(m_assets->json("/rendering.config:foregroundLayerColor")).toRgba();
+  m_liquidDrawLevels = jsonToVec2F(m_assets->json("/rendering.config:liquidDrawLevels"));
   s_singleton = this;
 }
 
@@ -58,7 +59,6 @@ TileDrawer::~TileDrawer() {
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {
   auto& root = Root::singleton();
-  auto assets = Root::singleton().assets();
   auto materialDatabase = root.materialDatabase();
 
   RenderTile const& tile = getRenderTile(renderData, pos);

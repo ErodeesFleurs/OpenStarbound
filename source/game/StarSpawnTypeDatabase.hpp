@@ -4,6 +4,7 @@
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
 #include "StarWeightedPool.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -79,11 +80,11 @@ struct SpawnProfile {
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed);
+SpawnProfile constructSpawnProfile(Json const& config, Json const& commonGroups, uint64_t seed);
 
 class SpawnTypeDatabase {
 public:
-  SpawnTypeDatabase();
+  SpawnTypeDatabase(AssetsConstPtr assets);
 
   SpawnType spawnType(String const& typeName) const;
 

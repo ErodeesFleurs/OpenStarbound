@@ -28,7 +28,7 @@ struct ChatBubbleManagerServices {
 
 class ChatBubbleManager {
 public:
-  ChatBubbleManager(ChatBubbleManagerServices services = {});
+  explicit ChatBubbleManager(ChatBubbleManagerServices services);
 
   void setCamera(WorldCamera const& camera);
 

@@ -133,8 +133,11 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   return true;
 }
 
-ItemDatabase::ItemDatabase()
-  : m_luaRoot(make_shared<LuaRoot>()), m_rebuilder(make_shared<Rebuilder>("item")) {
+ItemDatabase::ItemDatabase(AssetsConstPtr assets)
+  : m_assets(std::move(assets)), m_luaRoot(make_shared<LuaRoot>()), m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
+  if (!m_assets)
+    throw ItemException("ItemDatabase requires assets service");
+
   scanItems();
   addObjectItems();
   addCodexes();
@@ -198,7 +201,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
 
   ItemConfig itemConfig;
   if (data.assetsConfig)
-    itemConfig.config = Root::singleton().assets()->json(*data.assetsConfig);
+    itemConfig.config = m_assets->json(*data.assetsConfig);
   itemConfig.directory = data.directory;
   itemConfig.config = jsonMerge(itemConfig.config, data.customConfig);
   itemConfig.parameters = parameters;
@@ -371,7 +374,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     }
 
     res.output = ItemDescriptor(config.get("output"));
-    res.duration = config.getFloat("duration", Root::singleton().assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
+    res.duration = config.getFloat("duration", m_assets->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
     res.groups = StringSet::from(jsonToStringList(config.get("groups", JsonArray())));
     if (auto item = ItemDatabase::itemShared(res.output)) {
       res.outputRarity = item->rarity();
@@ -455,31 +458,31 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
+ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
     return make_shared<GenericItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
-    return make_shared<LiquidItem>(config.config, config.directory, config.parameters);
+    return make_shared<LiquidItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::MaterialItem) {
-    return make_shared<MaterialItem>(config.config, config.directory, config.parameters);
+    return make_shared<MaterialItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ObjectItem) {
     return make_shared<ObjectItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::CurrencyItem) {
     return make_shared<CurrencyItem>(config.config, config.directory);
   } else if (type == ItemType::MiningTool) {
-    return make_shared<MiningTool>(config.config, config.directory, config.parameters);
+    return make_shared<MiningTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Flashlight) {
     return make_shared<Flashlight>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::WireTool) {
-    return make_shared<WireTool>(config.config, config.directory, config.parameters);
+    return make_shared<WireTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::BeamMiningTool) {
-    return make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
+    return make_shared<BeamMiningTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::PaintingBeamTool) {
-    return make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
+    return make_shared<PaintingBeamTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::TillingTool) {
-    return make_shared<TillingTool>(config.config, config.directory, config.parameters);
+    return make_shared<TillingTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HarvestingTool) {
-    return make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
+    return make_shared<HarvestingTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HeadArmor) {
     return make_shared<HeadArmor>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::ChestArmor) {
@@ -491,9 +494,9 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   } else if (type == ItemType::Consumable) {
     return make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::Blueprint) {
-    return make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
+    return make_shared<BlueprintItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Codex) {
-    return make_shared<CodexItem>(config.config, config.directory, config.parameters);
+    return make_shared<CodexItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::InspectionTool) {
     return make_shared<InspectionTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::InstrumentItem) {
@@ -501,9 +504,9 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   } else if (type == ItemType::ThrownItem) {
     return make_shared<ThrownItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::UnlockItem) {
-    return make_shared<UnlockItem>(config.config, config.directory, config.parameters);
+    return make_shared<UnlockItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ActiveItem) {
-    return make_shared<ActiveItem>(config.config, config.directory, config.parameters);
+    return make_shared<ActiveItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::AugmentItem) {
     return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
   } else {
@@ -518,14 +521,14 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   try {
     if (newDescriptor.name() == "perfectlygenericitem" && newDescriptor.parameters().contains("genericItemStorage"))
       newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
-    result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+    result = createItem(m_assets, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
   } catch (std::exception const& e) {
     if (!ignoreInvalid) {
       bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
         try {
           ItemDescriptor newDescriptor(store);
-          result = createItem(m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+          result = createItem(m_assets, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
           result->setCount(newDescriptor.count());
         }
         catch (std::exception const& e) {
@@ -537,10 +540,10 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
       if (!success) {
         if (descriptor.name() == "perfectlygenericitem") {
           Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+          result = createItem(m_assets, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
         } else {
           Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
+          result = createItem(m_assets, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
             {"genericItemStorage", descriptor.toJson()},
             {"shortdescription", descriptor.name()},
             {"description", "Reinstall the parent mod to return this item to normal"}
@@ -573,11 +576,10 @@ ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor 
 }
 
 void ItemDatabase::addItemSet(ItemType type, String const& extension) {
-  auto assets = Root::singleton().assets();
-  for (auto& file : assets->scanExtension(extension)) {
+  for (auto& file : m_assets->scanExtension(extension)) {
     ItemData data;
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       data.type = type;
       data.assetsConfig = file;
       data.name = config.get("itemName").toString();
@@ -600,8 +602,6 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
 }
 
 void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objectConfig) {
-  auto assets = Root::singleton().assets();
-
   ItemData data;
   data.type = ItemType::ObjectItem;
   data.name = objectConfig.get("objectName").toString();
@@ -612,7 +612,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   data.filename = AssetPath::filename(objectPath);
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
-    customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
+    customConfig["inventoryIcon"] = m_assets->json("/objects/defaultParameters.config:missingIcon");
     Logger::warn(strf("Missing inventoryIcon for {}, using default", data.name).c_str());
   }
   customConfig["itemName"] = data.name;
@@ -636,12 +636,10 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
 }
 
 void ItemDatabase::scanItems() {
-  auto assets = Root::singleton().assets();
-
   List<std::pair<ItemType, String>> itemSets;
-  auto scanItemType = [&itemSets, assets](ItemType type, String const& extension) {
+  auto scanItemType = [this, &itemSets](ItemType type, String const& extension) {
     itemSets.append(make_pair(type, extension));
-    assets->queueJsons(assets->scanExtension(extension));
+    m_assets->queueJsons(m_assets->scanExtension(extension));
   };
 
   scanItemType(ItemType::Generic, "item");
@@ -684,13 +682,11 @@ void ItemDatabase::addObjectItems() {
 }
 
 void ItemDatabase::scanRecipes() {
-  auto assets = Root::singleton().assets();
-
-  auto& files = assets->scanExtension("recipe");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("recipe");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
     try {
-      m_recipes.add(parseRecipe(assets->json(file)));
+      m_recipes.add(parseRecipe(m_assets->json(file)));
     } catch (std::exception const& e) {
       Logger::error("Could not load recipe {}: {}", file, outputException(e, false));
     }
@@ -698,8 +694,6 @@ void ItemDatabase::scanRecipes() {
 }
 
 void ItemDatabase::addBlueprints() {
-  auto assets = Root::singleton().assets();
-
   for (auto const& recipe : m_recipes) {
     auto baseDesc = recipe.output;
     auto baseItem = itemShared(baseDesc);
@@ -715,15 +709,15 @@ void ItemDatabase::addBlueprints() {
       JsonObject configInfo;
       configInfo["recipe"] = baseDesc.singular().toJson();
 
-      String description = assets->json("/blueprint.config:description").toString();
+      String description = m_assets->json("/blueprint.config:description").toString();
       description = description.replace("<item>", baseItem->friendlyName());
       configInfo["description"] = Json(description);
 
-      String shortDesc = assets->json("/blueprint.config:shortdescription").toString();
+      String shortDesc = m_assets->json("/blueprint.config:shortdescription").toString();
       shortDesc = shortDesc.replace("<item>", baseItem->friendlyName());
       configInfo["shortdescription"] = Json(shortDesc);
 
-      configInfo["category"] = assets->json("/blueprint.config:category").toString();
+      configInfo["category"] = m_assets->json("/blueprint.config:category").toString();
 
       blueprintData.name = blueprintName;
       blueprintData.friendlyName = shortDesc;
@@ -747,8 +741,7 @@ void ItemDatabase::addBlueprints() {
 }
 
 void ItemDatabase::addCodexes() {
-  auto assets = Root::singleton().assets();
-  auto codexConfig = assets->json("/codex.config");
+  auto codexConfig = m_assets->json("/codex.config");
 
   auto codexDatabase = Root::singleton().codexDatabase();
   for (auto const& codexPair : codexDatabase->codexes()) {

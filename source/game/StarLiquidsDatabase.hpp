@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarEither.hpp"
 #include "StarGameTypes.hpp"
@@ -15,6 +16,8 @@ using LiquidSettingsConstPtr = SharedPtr<LiquidSettings const>;
 class LiquidsDatabase;
 using LiquidsDatabasePtr = SharedPtr<LiquidsDatabase>;
 using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 struct LiquidExceptionTag { static constexpr char const* typeName = "LiquidException"; };
 using LiquidException = TypedException<StarException, LiquidExceptionTag>;
@@ -41,7 +44,7 @@ struct LiquidSettings {
 
 class LiquidsDatabase : public ILiquidsDatabase {
 public:
-  LiquidsDatabase();
+  LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase);
 
   LiquidCellEngineParameters liquidEngineParameters() const;
   float backgroundDrain() const;

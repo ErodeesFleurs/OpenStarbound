@@ -131,7 +131,7 @@ public:
   MainInterface(UniverseClientPtr client,
       WorldPainterPtr painter,
       CinematicPtr cinematicOverlay,
-      MainInterfaceServices services = {});
+      MainInterfaceServices services);
 
   ~MainInterface();
 

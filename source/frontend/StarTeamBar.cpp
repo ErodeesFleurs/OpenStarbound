@@ -1,9 +1,9 @@
 #include "StarTeamBar.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
+#include "StarException.hpp"
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarGuiReader.hpp"
 #include "StarButtonWidget.hpp"
@@ -22,8 +22,13 @@ namespace Star {
 TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services)
   : m_mainInterface(mainInterface),
     m_client(std::move(client)),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+    m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)) {
+  if (!m_assets)
+    throw StarException("TeamBar requires assets service");
+  if (!m_configuration)
+    throw StarException("TeamBar requires configuration service");
+
   m_guiContext = GuiContext::singletonPtr();
 
   m_teamInvite = make_shared<TeamInvite>(this);

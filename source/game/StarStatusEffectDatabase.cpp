@@ -1,12 +1,12 @@
 #include "StarStatusEffectDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
-StatusEffectDatabase::StatusEffectDatabase() {
-  auto assets = Root::singleton().assets();
+StatusEffectDatabase::StatusEffectDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StatusEffectDatabaseException("StatusEffectDatabase requires assets service");
   auto& files = assets->scanExtension("statuseffect");
   assets->queueJsons(files);
   for (auto& file : files) {
@@ -31,8 +31,6 @@ UniqueStatusEffectConfig StatusEffectDatabase::uniqueEffectConfig(UniqueStatusEf
 
 UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& config, String const& path) const {
   try {
-    auto assets = Root::singleton().assets();
-
     UniqueStatusEffectConfig effect;
     effect.name = config.getString("name");
     effect.blockingStat = config.optString("blockingStat");

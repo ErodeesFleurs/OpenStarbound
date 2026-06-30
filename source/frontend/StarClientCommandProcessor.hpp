@@ -15,11 +15,17 @@ namespace Star {
 
 struct FramesSpecification;
 using FramesSpecificationConstPtr = SharedPtr<FramesSpecification const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ClientCommandProcessorServices {
   IAssetsConstPtr assets;
   IConfigurationPtr configuration;
   ItemDatabaseConstPtr itemDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
   function<FramesSpecificationConstPtr(String const&)> imageFrames;
   String outputDirectory;
   function<void()> reloadRoot;
@@ -29,7 +35,7 @@ struct ClientCommandProcessorServices {
 class ClientCommandProcessor {
 public:
   ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services = {});
+      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services);
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
 
@@ -84,6 +90,8 @@ private:
   IAssetsConstPtr m_assets;
   IConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   function<FramesSpecificationConstPtr(String const&)> m_imageFrames;
   String m_outputDirectory;
   function<void()> m_reloadRoot;

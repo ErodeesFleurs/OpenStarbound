@@ -1,19 +1,21 @@
 #include "StarStatisticsDatabase.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
-StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
-  auto assets = Root::singleton().assets();
+StatisticsDatabase::StatisticsDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_cacheMutex(), m_eventCache() {
+  if (!m_assets)
+    throw StarException("StatisticsDatabase requires assets service");
 
-  auto& eventFiles = assets->scanExtension("event");
-  assets->queueJsons(eventFiles);
-  auto& achievementFiles = assets->scanExtension("achievement");
-  assets->queueJsons(achievementFiles);
+  auto& eventFiles = m_assets->scanExtension("event");
+  m_assets->queueJsons(eventFiles);
+  auto& achievementFiles = m_assets->scanExtension("achievement");
+  m_assets->queueJsons(achievementFiles);
 
   for (auto& file : eventFiles) {
     try {
-      String name = assets->json(file).getString("eventName");
+      String name = m_assets->json(file).getString("eventName");
       if (m_eventPaths.contains(name))
         Logger::error("Event {} defined twice, second time from {}", name, file);
       else
@@ -25,7 +27,7 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
 
   for (auto& file : achievementFiles) {
     try {
-      Json achievement = assets->json(file);
+      Json achievement = m_assets->json(file);
       String name = achievement.getString("name");
       if (m_achievementPaths.contains(name))
         Logger::error("Achievement {} defined twice, second time from {}", name, file);
@@ -67,9 +69,8 @@ StringList StatisticsDatabase::achievementsForStat(String const& statName) const
   return m_statAchievements.value(statName);
 }
 
-StatEventPtr StatisticsDatabase::readEvent(String const& path) {
-  auto assets = Root::singleton().assets();
-  Json config = assets->json(path);
+StatEventPtr StatisticsDatabase::readEvent(String const& path) const {
+  Json config = m_assets->json(path);
 
   return make_shared<StatEvent>(StatEvent {
       config.getString("eventName"),
@@ -78,9 +79,8 @@ StatEventPtr StatisticsDatabase::readEvent(String const& path) {
     });
 }
 
-AchievementPtr StatisticsDatabase::readAchievement(String const& path) {
-  auto assets = Root::singleton().assets();
-  Json config = assets->json(path);
+AchievementPtr StatisticsDatabase::readAchievement(String const& path) const {
+  Json config = m_assets->json(path);
 
   return make_shared<Achievement>(Achievement {
       config.getString("name"),

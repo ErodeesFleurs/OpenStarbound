@@ -20,7 +20,7 @@ struct GraphicsMenuServices {
 
 class GraphicsMenu : public Pane {
 public:
-  GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services = {});
+  GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services);
 
   void show() override;
   void dismissed() override;

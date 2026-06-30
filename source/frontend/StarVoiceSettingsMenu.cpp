@@ -3,7 +3,8 @@
 
 namespace Star {
 
-VoiceSettingsMenu::VoiceSettingsMenu(Json const& config) : BaseScriptPane(config) {
+VoiceSettingsMenu::VoiceSettingsMenu(Json const& config, BaseScriptPaneServices services)
+  : BaseScriptPane(config, true, std::move(services)) {
   m_script.setLuaRoot(make_shared<LuaRoot>());
   m_script.addCallbacks("voice", LuaBindings::makeVoiceCallbacks());
 }

@@ -3,15 +3,17 @@
 #include "StarWorldTemplate.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarClientContext.hpp"
 #include "StarWorldClient.hpp"
 #include "StarJsonRpc.hpp"
 
 namespace Star {
 
-TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
+TeamClient::TeamClient(IAssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
+  if (!assets)
+    throw StarException("TeamClient requires assets service");
+
+  m_assets = std::move(assets);
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
 
@@ -118,7 +120,7 @@ void TeamClient::update() {
   handleRpcResponses();
 
   if (!m_hasPendingInvitation) {
-    if (Time::monotonicTime() - m_pollInvitationsTimer > Root::singleton().assets()->json("/interface.config:invitationPollInterval").toFloat()) {
+    if (Time::monotonicTime() - m_pollInvitationsTimer > m_assets->json("/interface.config:invitationPollInterval").toFloat()) {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
@@ -133,13 +135,13 @@ void TeamClient::update() {
     }
   }
   if (!m_fullUpdateRunning) {
-    if (Time::monotonicTime() - m_fullUpdateTimer > Root::singleton().assets()->json("/interface.config:fullUpdateInterval").toFloat()) {
+    if (Time::monotonicTime() - m_fullUpdateTimer > m_assets->json("/interface.config:fullUpdateInterval").toFloat()) {
       m_fullUpdateTimer = Time::monotonicTime();
       pullFullUpdate();
     }
   }
   if (!m_statusUpdateRunning) {
-    if (Time::monotonicTime() - m_statusUpdateTimer > Root::singleton().assets()->json("/interface.config:statusUpdateInterval").toFloat()) {
+    if (Time::monotonicTime() - m_statusUpdateTimer > m_assets->json("/interface.config:statusUpdateInterval").toFloat()) {
       m_statusUpdateTimer = Time::monotonicTime();
       statusUpdate();
     }

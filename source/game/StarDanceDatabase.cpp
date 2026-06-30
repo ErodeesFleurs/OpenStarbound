@@ -1,14 +1,16 @@
 #include "StarDanceDatabase.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
-DanceDatabase::DanceDatabase() {
-  auto assets = Root::singleton().assets();
+DanceDatabase::DanceDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("DanceDatabase requires assets service");
   auto& files = assets->scanExtension("dance");
   for (auto& file : files) {
     try {
-      DancePtr dance = readDance(file);
+      DancePtr dance = readDance(assets, file);
       m_dances[dance->name] = dance;
     } catch (std::exception const& e) {
       Logger::error("Error loading dance file {}: {}", file, outputException(e, true));
@@ -25,8 +27,7 @@ DancePtr DanceDatabase::getDance(String const& name) const {
   }
 }
 
-DancePtr DanceDatabase::readDance(String const& path) {
-  auto assets = Root::singleton().assets();
+DancePtr DanceDatabase::readDance(AssetsConstPtr assets, String const& path) {
   Json config = assets->json(path);
 
   String name = config.getString("name");

@@ -8,6 +8,7 @@
 #include "StarThread.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarApplicationController.hpp"
+#include "StarIConfiguration.hpp"
 
 #include <queue>
 
@@ -35,6 +36,10 @@ class VoiceAudioStream;
 using VoiceAudioStreamPtr = SharedPtr<VoiceAudioStream>;
 class ApplicationController;
 using ApplicationControllerPtr = SharedPtr<ApplicationController>;
+
+struct VoiceServices {
+  IConfigurationPtr configuration;
+};
 
 struct VoiceAudioChunk {
   std::unique_ptr<int16_t[]> data;
@@ -111,7 +116,7 @@ public:
   // is not initialized.
   static Voice& singleton();
 
-  Voice(ApplicationControllerPtr appController);
+  Voice(ApplicationControllerPtr appController, VoiceServices services);
   ~Voice();
 
   Voice(Voice const&) = delete;
@@ -210,6 +215,7 @@ private:
   std::vector<int16_t> m_resampleBuffer;
 
   ApplicationControllerPtr m_applicationController;
+  IConfigurationPtr m_configuration;
 
   struct EncodedChunk {
     std::unique_ptr<unsigned char[]> data;

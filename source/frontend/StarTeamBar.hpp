@@ -77,7 +77,7 @@ public:
     IConfigurationPtr configuration;
   };
 
-  TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services = {});
+  TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services);
 
   bool sendEvent(InputEvent const& event) override;
 

@@ -23,7 +23,7 @@ struct ErrorScreenServices {
 
 class ErrorScreen {
 public:
-  ErrorScreen(ErrorScreenServices services = {});
+  explicit ErrorScreen(ErrorScreenServices services);
 
   // Resets accepted
   void setMessage(String const& message);

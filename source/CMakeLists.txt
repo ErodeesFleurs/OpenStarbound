@@ -367,7 +367,9 @@ if(STAR_COMPILER_GNU)
   star_add_config_compile_options(RelWithDebInfo -g -DNDEBUG -O3 -ffast-math)
   star_add_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
-  set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  if(NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
+    set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  endif()
 
 elseif(STAR_COMPILER_CLANG)
   star_add_c_compile_options(-Wall -Wextra -Wuninitialized -Wshadow -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
@@ -409,7 +411,9 @@ elseif(STAR_COMPILER_CLANG)
   star_add_config_compile_options(RelWithDebInfo -gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math)
   star_add_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
-  set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  if(NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
+    set(CMAKE_SKIP_BUILD_RPATH TRUE)
+  endif()
 
 elseif(STAR_COMPILER_MSVC)
   # /MP      - Multi-processor building

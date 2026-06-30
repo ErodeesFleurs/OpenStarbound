@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarQuests.hpp"
 
 namespace Star {
@@ -14,9 +15,9 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(Player* player);
+  QuestManager(IAssetsConstPtr assets, Player* player);
 
-  QuestManager(Player* player, World* world);
+  QuestManager(IAssetsConstPtr assets, Player* player, World* world);
 
   void diskLoad(Json const& quests);
   Json diskStore();
@@ -75,6 +76,7 @@ private:
   Player* m_player;
   World* m_world;
   UniverseClient* m_client;
+  IAssetsConstPtr m_assets;
 
   StringMap<QuestPtr> m_quests;
 

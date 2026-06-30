@@ -2,7 +2,6 @@
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
@@ -12,13 +11,17 @@
 
 namespace Star {
 
-QuestManager::QuestManager(Player* player) {
+QuestManager::QuestManager(IAssetsConstPtr assets, Player* player)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("QuestManager requires assets service");
+
   m_player = player;
   m_world = nullptr;
   m_trackOnWorldQuests = false;
 }
 
-QuestManager::QuestManager(Player* player, World* world) : QuestManager(player) {
+QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, World* world) : QuestManager(std::move(assets), player) {
   init(world);
 }
 
@@ -335,7 +338,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
   }
 
   if (indicatorType) {
-    Json indicators = Root::singleton().assets()->json("/quests/quests.config:indicators");
+    Json indicators = m_assets->json("/quests/quests.config:indicators");
     String indicatorImage = indicators.get(*indicatorType).getString("image");
     if (questGiver)
       indicatorPos = questGiver->questIndicatorPosition();
@@ -423,7 +426,7 @@ void QuestManager::update(float dt) {
 
 void QuestManager::startInitialQuests() {
   auto startingQuests =
-      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
+      m_assets->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))

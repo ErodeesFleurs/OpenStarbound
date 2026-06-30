@@ -6,6 +6,7 @@
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
 #include "StarTtlCache.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -78,7 +79,7 @@ public:
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
   static String guiFilterString(ItemPtr const& item);
 
-  ItemDatabase();
+  ItemDatabase(AssetsConstPtr assets);
 
   void cleanup();
 
@@ -167,7 +168,7 @@ private:
     String filename;
   };
 
-  static ItemPtr createItem(ItemType type, ItemConfig const& config);
+  static ItemPtr createItem(AssetsConstPtr assets, ItemType type, ItemConfig const& config);
   ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
@@ -182,6 +183,7 @@ private:
   void addBlueprints();
   void addCodexes();
 
+  AssetsConstPtr m_assets;
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
 

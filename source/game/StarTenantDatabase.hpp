@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarTtlCache.hpp"
 
@@ -55,7 +54,7 @@ struct Tenant {
 
 class TenantDatabase {
 public:
-  TenantDatabase();
+  TenantDatabase(AssetsConstPtr assets);
 
   void cleanup();
 
@@ -66,8 +65,9 @@ public:
   List<TenantPtr> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
 
 private:
-  static TenantPtr readTenant(String const& path);
+  TenantPtr readTenant(String const& path) const;
 
+  AssetsConstPtr m_assets;
   Map<String, String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, TenantPtr> m_tenantCache;

@@ -1,13 +1,12 @@
 #include "StarSystemWorldClient.hpp"
-#include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarPlayerUniverseMap.hpp"
 
 namespace Star {
 
-SystemWorldClient::SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)
-  : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
+SystemWorldClient::SystemWorldClient(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase)), m_universeMap(std::move(universeMap)) {}
 
 CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);

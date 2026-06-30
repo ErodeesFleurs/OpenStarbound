@@ -1,7 +1,7 @@
 #include "StarKeybindingsMenu.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
@@ -13,8 +13,13 @@ namespace Star {
 
 KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
   : m_activeKeybinding(nullptr),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+    m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)) {
+  if (!m_assets)
+    throw StarException("KeybindingsMenu requires assets service");
+  if (!m_configuration)
+    throw StarException("KeybindingsMenu requires configuration service");
+
   GuiReader reader;
   reader.registerCallback("cancel",
       [&](Widget*) {

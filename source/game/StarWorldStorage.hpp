@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarBTreeDatabase.hpp"
+#include "StarIAssets.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarOrderedSet.hpp"
@@ -99,11 +100,11 @@ public:
   static WorldChunks getWorldChunksFromFile(String const& file);
 
   // Create a new world of the given size.
-  WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(IAssetsConstPtr assets, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
   // Read an existing world.
-  WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(IAssetsConstPtr assets, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
   // Read an in-memory world.
-  WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(IAssetsConstPtr assets, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
   ~WorldStorage();
 
   VersionedJson worldMetadata();
@@ -247,7 +248,7 @@ private:
 
   static void openDatabase(BTreeDatabase& db, IODevicePtr device);
 
-  WorldStorage();
+  WorldStorage(IAssetsConstPtr assets);
 
   bool belongsInSector(Sector const& sector, Vec2F const& position) const;
 
@@ -298,6 +299,7 @@ private:
   ServerTileSectorArrayPtr m_tileArray;
   EntityMapPtr m_entityMap;
   WorldGeneratorFacadePtr m_generatorFacade;
+  IAssetsConstPtr m_assets;
 
   bool m_floatingDungeonWorld;
 

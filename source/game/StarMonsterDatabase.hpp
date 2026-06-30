@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarTtlCache.hpp"
@@ -94,7 +95,7 @@ struct MonsterVariant {
 
 class MonsterDatabase {
 public:
-  MonsterDatabase();
+  MonsterDatabase(AssetsConstPtr assets);
 
   void cleanup();
 
@@ -200,6 +201,7 @@ private:
   StringMap<MonsterSkill> m_skills;
   StringMap<List<ColorReplaceMap>> m_colorSwaps;
 
+  AssetsConstPtr m_assets;
   mutable Mutex m_cacheMutex;
 
   RebuilderPtr m_rebuilder;

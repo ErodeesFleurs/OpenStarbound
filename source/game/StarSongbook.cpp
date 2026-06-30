@@ -1,6 +1,5 @@
 #include "StarSongbook.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarAudio.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRandom.hpp"
 #include "StarWorld.hpp"
@@ -13,7 +12,11 @@ namespace Star {
 Mutex Songbook::s_timeSourcesMutex;
 StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
-Songbook::Songbook(String const& species) {
+Songbook::Songbook(IAssetsConstPtr assets, String const& species) {
+  if (!assets)
+    throw StarException("Songbook requires assets service");
+
+  m_assets = std::move(assets);
   m_activeCooldown = 0;
   m_dataUpdated = false;
   m_dataChanged = false;
@@ -38,7 +41,7 @@ Songbook::~Songbook() {
 Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String const& species, int note) {
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
-    auto tuning = Root::singleton().assets()->json(strf("/sfx/instruments/{}/tuning.config", instrument));
+    auto tuning = m_assets->json(strf("/sfx/instruments/{}/tuning.config", instrument));
     for (auto e : tuning.get("mapping").iterateObject()) {
       int keyNumber = lexicalCast<int>(e.first);
       NoteMapping nm;
@@ -128,7 +131,7 @@ void Songbook::playback() {
     if (delta > 1)
       continue; // skip notes that are more than a second behind
     if (!m_uncompressedSamples.contains(note.file)) {
-      auto sample = Root::singleton().assets()->audio(note.file);
+      auto sample = m_assets->audio(note.file);
       if (sample->compressed()) {
         auto copy = make_shared<Audio>(*sample);
         copy->uncompress();
@@ -214,7 +217,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
       return key.toLower().replace(" ", "").replace("minor", "m").replace("min", "m").replace("major", "maj");
     };
     String key = cleanupKey(fields.value("K", "c"));
-    auto keys = Root::singleton().assets()->json("/songbook.config:keys");
+    auto keys = m_assets->json("/songbook.config:keys");
     while (true) {
       if (!keys.contains(key)) {
         Logger::info("Failed to find key {}, falling back to C", key);

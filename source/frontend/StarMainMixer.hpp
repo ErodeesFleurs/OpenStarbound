@@ -21,7 +21,7 @@ public:
     IConfigurationPtr configuration;
   };
 
-  MainMixer(unsigned sampleRate, unsigned channels, Services services = {});
+  MainMixer(unsigned sampleRate, unsigned channels, Services services);
 
   void setUniverseClient(UniverseClientPtr universeClient);
   void setWorldPainter(WorldPainterPtr worldPainter);

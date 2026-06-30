@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarJson.hpp"
 #include "StarMultiTable.hpp"
@@ -79,7 +80,7 @@ private:
 
 class FunctionDatabase {
 public:
-  FunctionDatabase();
+  FunctionDatabase(AssetsConstPtr assets);
 
   StringList namedFunctions() const;
   StringList namedFunctions2() const;

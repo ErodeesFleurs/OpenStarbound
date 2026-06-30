@@ -39,6 +39,9 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstP
 
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
+  m_audio.m_ambientSounds.setAssets(m_assets);
+  m_audio.m_musicTrack.setAssets(m_assets);
+  m_audio.m_altMusicTrack.setAssets(m_assets);
 
   m_currentStep = 0;
   m_currentTime = 0;
@@ -1616,7 +1619,7 @@ void WorldClient::handleDamageNotifications() {
     if (!material.empty() && damageKind.effects.contains(material)) {
       // default to normal hit
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
-      m_audio.m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
+      m_audio.m_samples.appendAll(soundsFromDefinition(m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
       
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
       
@@ -1813,18 +1816,17 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   clearWorld();
   m_outgoingPackets.append(make_shared<WorldStartAcknowledgePacket>());
 
-  auto assets = m_assets;
   if (startPacket.localInterpolationMode)
-    m_interpolationTracker = InterpolationTracker(m_clientConfig.query("interpolationSettings.local"));
+    m_interpolationTracker = InterpolationTracker(m_assets, m_clientConfig.query("interpolationSettings.local"));
   else
-    m_interpolationTracker = InterpolationTracker(m_clientConfig.query("interpolationSettings.normal"));
+    m_interpolationTracker = InterpolationTracker(m_assets, m_clientConfig.query("interpolationSettings.normal"));
 
   m_entityUpdateTimer = GameTimer(m_interpolationTracker.entityUpdateDelta());
 
   m_clientId = startPacket.clientId;
   m_mainPlayer->clientContext()->setConnectionId(startPacket.clientId);
   auto entitySpace = connectionEntitySpace(startPacket.clientId);
-  m_worldTemplate = make_shared<WorldTemplate>(startPacket.templateData);
+  m_worldTemplate = make_shared<WorldTemplate>(m_assets, startPacket.templateData);
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {

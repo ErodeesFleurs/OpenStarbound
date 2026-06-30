@@ -77,7 +77,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
     }
   }
 
-  m_celestialDatabase = make_shared<CelestialMasterDatabase>(File::relativeTo(m_storageDirectory, "universe.chunks"));
+  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets, File::relativeTo(m_storageDirectory, "universe.chunks"));
 
   Logger::info("UniverseServer: Loading settings");
   loadSettings();
@@ -1367,7 +1367,7 @@ void UniverseServer::loadSettings() {
 
   auto loadDefaultSettings = [this]() {
     m_universeClock = make_shared<Clock>();
-    m_universeSettings = make_shared<UniverseSettings>();
+    m_universeSettings = make_shared<UniverseSettings>(m_assets);
   };
 
   auto versioningDatabase = Root::singleton().versioningDatabase();
@@ -1375,7 +1375,7 @@ void UniverseServer::loadSettings() {
   if (File::isFile(storageFile)) {
     try {
       auto settings = versioningDatabase->loadVersionedJson(VersionedJson::readFile(storageFile), "UniverseSettings");
-      m_universeSettings = make_shared<UniverseSettings>(settings);
+      m_universeSettings = make_shared<UniverseSettings>(m_assets, settings);
       m_universeClock = make_shared<Clock>();
       m_universeClock->setTime(settings.getDouble("time"));
     } catch (std::exception const& e) {
@@ -2385,7 +2385,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
 
     if (!worldServer) {
       Logger::info("UniverseServer: Creating celestial world {}", celestialWorldId);
-      auto worldTemplate = make_shared<WorldTemplate>(celestialWorldId, celestialDatabase);
+      auto worldTemplate = make_shared<WorldTemplate>(m_assets, celestialWorldId, celestialDatabase);
       worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
     }
 
@@ -2433,7 +2433,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
     worldParameters->disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
 
     SkyParameters skyParameters = SkyParameters(worldConfig.get("skyParameters", Json()));
-    auto worldTemplate = make_shared<WorldTemplate>(worldParameters, skyParameters, worldSeed);
+    auto worldTemplate = make_shared<WorldTemplate>(m_assets, worldParameters, skyParameters, worldSeed);
     Json worldProperties = worldConfig.get("worldProperties", JsonObject{});
     bool spawningEnabled = worldConfig.getBool("spawningEnabled", true);
     bool persistent = worldConfig.getBool("persistent", false);
@@ -2536,7 +2536,7 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
         VersionedJson versionedStore = VersionedJson::readFile(storageFile);
         Json store = versioningDatabase->loadVersionedJson(versionedStore, "System");
 
-        systemWorld = make_shared<SystemWorldServer>(store, m_universeClock, m_celestialDatabase);
+        systemWorld = make_shared<SystemWorldServer>(m_assets, store, m_universeClock, m_celestialDatabase);
         loadedFromStorage = true;
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Failed to load system {} from disk storage, re-creating. Cause: {}", location, outputException(e, false));
@@ -2547,7 +2547,7 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
 
     if (!loadedFromStorage) {
       Logger::info("UniverseServer: Creating new system world at location {}", location);
-      systemWorld = make_shared<SystemWorldServer>(location, m_universeClock, m_celestialDatabase);
+      systemWorld = make_shared<SystemWorldServer>(m_assets, location, m_universeClock, m_celestialDatabase);
     }
 
     auto systemThread = make_shared<SystemWorldServerThread>(location, systemWorld, storageFile);

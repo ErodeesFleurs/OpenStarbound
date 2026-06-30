@@ -11,10 +11,16 @@ class CanvasWidget;
 using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
 class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct BaseScriptPaneServices {
-  IAssetsConstPtr assets;
-  ItemDatabaseConstPtr itemDatabase;
+  IAssetsConstPtr assets = {};
+  ItemDatabaseConstPtr itemDatabase = {};
+  ObjectDatabaseConstPtr objectDatabase = {};
+  StatusEffectDatabaseConstPtr statusEffectDatabase = {};
 };
 
 // A more 'raw' script pane that doesn't depend on a world being present.
@@ -23,7 +29,7 @@ struct BaseScriptPaneServices {
 
 class BaseScriptPane : public Pane {
 public:
-  BaseScriptPane(Json config, bool construct = true, BaseScriptPaneServices services = {});
+  BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services);
 
   virtual void show() override;
   void displayed() override;
@@ -50,6 +56,8 @@ protected:
   Json m_rawConfig;
   IAssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 
   GuiReaderPtr m_reader;
 

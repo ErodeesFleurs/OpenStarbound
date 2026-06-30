@@ -1,4 +1,5 @@
 #include "StarClientCommandProcessor.hpp"
+#include "StarException.hpp"
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
@@ -19,28 +20,34 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
   MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager),
-  m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-  m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
-  m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()),
+  m_assets(std::move(services.assets)),
+  m_configuration(std::move(services.configuration)),
+  m_itemDatabase(std::move(services.itemDatabase)),
+  m_objectDatabase(std::move(services.objectDatabase)),
+  m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
   m_imageFrames(std::move(services.imageFrames)),
   m_outputDirectory(std::move(services.outputDirectory)),
   m_reloadRoot(std::move(services.reloadRoot)),
   m_hotReloadRoot(std::move(services.hotReloadRoot)),
   m_macroCommands(std::move(macroCommands)) {
+  if (!m_assets)
+    throw StarException("ClientCommandProcessor requires assets service");
+  if (!m_configuration)
+    throw StarException("ClientCommandProcessor requires configuration service");
+  if (!m_itemDatabase)
+    throw StarException("ClientCommandProcessor requires item database service");
+  if (!m_objectDatabase)
+    throw StarException("ClientCommandProcessor requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("ClientCommandProcessor requires status effect database service");
   if (!m_imageFrames)
-    m_imageFrames = [](String const& path) {
-      return Root::singleton().assets()->imageFrames(path);
-    };
+    throw StarException("ClientCommandProcessor requires image frames service");
   if (m_outputDirectory.empty())
-    m_outputDirectory = Root::singleton().toStoragePath("output");
+    throw StarException("ClientCommandProcessor requires output directory service");
   if (!m_reloadRoot)
-    m_reloadRoot = []() {
-      Root::singleton().reload();
-    };
+    throw StarException("ClientCommandProcessor requires reload root service");
   if (!m_hotReloadRoot)
-    m_hotReloadRoot = []() {
-      Root::singleton().hotReload();
-    };
+    throw StarException("ClientCommandProcessor requires hot reload root service");
 
   m_builtinCommands = {
     {"reload", [this](String const&) { return reload(); }},
@@ -296,7 +303,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets});
+    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
   });
 }
 
@@ -306,7 +313,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets});
+    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
   });
 }
 
@@ -316,7 +323,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets});
+    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
   });
 }
 

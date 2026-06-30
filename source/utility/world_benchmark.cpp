@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     uint64_t worldSeed = Random::randu64();
     if (options.parameters.contains("seed"))
       worldSeed = lexicalCast<uint64_t>(options.parameters.get("seed").first());
-    auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), worldSeed);
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters, SkyParameters(), worldSeed);
 
     auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
     root->configuration()->set("serverFidelity", fidelity.value("high"));

@@ -24,7 +24,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  RadioMessagePopup(Services services = {});
+  explicit RadioMessagePopup(Services services);
 
   void update(float dt) override;
   void dismissed() override;

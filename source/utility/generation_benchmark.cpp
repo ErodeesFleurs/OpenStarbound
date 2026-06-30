@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     root->fullyLoad();
     coutf(" done\n");
 
-    CelestialMasterDatabase celestialDatabase;
+    CelestialMasterDatabase celestialDatabase(root->assets());
 
     CelestialCoordinate coordinate;
     if (auto coordinateOption = options.parameters.maybe("coordinate")) {
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
-    auto worldTemplate = make_shared<WorldTemplate>(worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 

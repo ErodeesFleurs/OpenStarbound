@@ -11,6 +11,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarTileEntity.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -123,6 +124,7 @@ struct ObjectConfig {
   size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
 
   String path;
+  IAssetsConstPtr assets;
   // The JSON values that were used to configure this Object
   Json config;
 
@@ -193,10 +195,10 @@ struct ObjectConfig {
 class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(String const& path, Json const& touchDamage);
-  static List<ObjectOrientationPtr> parseOrientations(String const& path, Json const& configList, Json const& baseConfig);
+  static Json parseTouchDamage(IAssetsConstPtr assets, String const& path, Json const& touchDamage);
+  static List<ObjectOrientationPtr> parseOrientations(IAssetsConstPtr assets, String const& path, Json const& configList, Json const& baseConfig);
 
-  ObjectDatabase();
+  ObjectDatabase(AssetsConstPtr assets);
 
   void cleanup();
 
@@ -221,8 +223,9 @@ public:
       Direction direction, Json parameters = {}) const;
 
 private:
-  static ObjectConfigPtr readConfig(String const& path);
+  ObjectConfigPtr readConfig(String const& path) const;
 
+  AssetsConstPtr m_assets;
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;

@@ -1,6 +1,6 @@
 #include "StarModsMenu.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
@@ -9,8 +9,11 @@
 
 namespace Star {
 
-ModsMenu::ModsMenu(AssetsConstPtr assets)
-  : m_assets(assets ? std::move(assets) : Root::singleton().assets()) {
+ModsMenu::ModsMenu(Services services)
+  : m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("ModsMenu requires assets service");
+
   GuiReader reader;
   reader.registerCallback("linkbutton", [this](Widget*) { openLink(); });
   reader.registerCallback("workshopbutton", [this](Widget*) { openWorkshop(); });

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarBiome.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarSkyTypes.hpp"
@@ -12,7 +13,7 @@ using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
 
 class BiomeDatabase {
 public:
-  BiomeDatabase();
+  BiomeDatabase(AssetsConstPtr assets);
 
   StringList biomeNames() const;
 
@@ -47,6 +48,8 @@ private:
 
   ConfigMap m_biomes;
   ConfigMap m_weathers;
+  AssetsConstPtr m_assets;
+  Json m_spawnGroups;
 };
 
 }

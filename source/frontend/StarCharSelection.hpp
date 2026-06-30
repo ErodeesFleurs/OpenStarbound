@@ -22,7 +22,7 @@ public:
 
   CharSelectionPane(PlayerStoragePtr playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback,
-      CharSelectionServices services = {});
+      CharSelectionServices services);
 
   bool sendEvent(InputEvent const& event) override;
   void show() override;

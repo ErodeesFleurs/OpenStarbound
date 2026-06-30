@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarJson.hpp"
 #include "StarLexicalCast.hpp"
@@ -73,13 +74,14 @@ namespace Tiled {
 
 class TilesetDatabase {
 public:
-  TilesetDatabase();
+  TilesetDatabase(AssetsConstPtr assets);
 
   Tiled::TilesetConstPtr get(String const& path) const;
 
 private:
-  static Tiled::TilesetConstPtr readTileset(String const& path);
+  Tiled::TilesetConstPtr readTileset(String const& path) const;
 
+  AssetsConstPtr m_assets;
   mutable Mutex m_cacheMutex;
   mutable HashLruCache<String, Tiled::TilesetConstPtr> m_tilesetCache;
 };

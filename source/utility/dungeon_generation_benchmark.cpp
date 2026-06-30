@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
       }
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
-      auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
+      auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters, SkyParameters(), 1234);
       WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     }
 

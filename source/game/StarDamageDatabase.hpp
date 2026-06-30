@@ -3,6 +3,7 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -32,7 +33,7 @@ struct DamageKind {
 
 class DamageDatabase {
 public:
-  DamageDatabase();
+  DamageDatabase(AssetsConstPtr assets);
 
   DamageKind const& damageKind(String name) const;
   ElementalType const& elementalType(String const& name) const;

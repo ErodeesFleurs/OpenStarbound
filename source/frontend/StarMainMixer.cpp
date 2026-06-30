@@ -1,6 +1,6 @@
 #include "StarMainMixer.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarPlayer.hpp"
@@ -12,8 +12,13 @@
 namespace Star {
 
 MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+  : m_assets(std::move(services.assets)),
+    m_configuration(std::move(services.configuration)) {
+  if (!m_assets)
+    throw StarException("MainMixer requires assets service");
+  if (!m_configuration)
+    throw StarException("MainMixer requires configuration service");
+
   m_mixer = make_shared<Mixer>(sampleRate, channels);
 }
 

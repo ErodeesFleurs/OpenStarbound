@@ -1,5 +1,4 @@
 #include "StarKeyBindings.hpp"
-#include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarLogging.hpp"
 #include "StarJsonExtra.hpp"

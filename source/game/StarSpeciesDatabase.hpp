@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
@@ -63,7 +64,7 @@ struct CharacterCreationResult {
 
 class SpeciesDefinition {
 public:
-  SpeciesDefinition(Json const& config);
+  SpeciesDefinition(Json const& config, AssetsConstPtr assets);
 
   Json config() const;
   String kind() const;
@@ -84,6 +85,7 @@ public:
 
 private:
   String m_kind;
+  AssetsConstPtr m_assets;
   SpeciesCharCreationTooltip m_tooltip;
   bool m_playerSelectable;
   Json m_config;
@@ -108,7 +110,7 @@ private:
 
 class SpeciesDatabase : public ISpeciesDatabase {
 public:
-  SpeciesDatabase();
+  SpeciesDatabase(AssetsConstPtr assets);
 
   bool hasSpecies(String const& kind) const override;
   SpeciesDefinitionPtr species(String const& kind) const override;

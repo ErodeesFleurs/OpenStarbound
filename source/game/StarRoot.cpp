@@ -437,35 +437,35 @@ ConfigurationPtr Root::configuration() {
 }
 
 ObjectDatabaseConstPtr Root::objectDatabase() {
-  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase");
+  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets());
 }
 
 PlantDatabaseConstPtr Root::plantDatabase() {
-  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase");
+  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", assets());
 }
 
 ProjectileDatabaseConstPtr Root::projectileDatabase() {
-  return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase");
+  return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase", assets());
 }
 
 MonsterDatabaseConstPtr Root::monsterDatabase() {
-  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase");
+  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", assets());
 }
 
 NpcDatabaseConstPtr Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase");
+  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets());
 }
 
 StagehandDatabaseConstPtr Root::stagehandDatabase() {
-  return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase");
+  return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase", assets());
 }
 
 VehicleDatabaseConstPtr Root::vehicleDatabase() {
-  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase");
+  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", assets());
 }
 
 PlayerFactoryConstPtr Root::playerFactory() {
-  return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory");
+  return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", assets());
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
@@ -473,119 +473,119 @@ EntityFactoryConstPtr Root::entityFactory() {
 }
 
 PatternedNameGeneratorConstPtr Root::nameGenerator() {
-  return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator");
+  return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator", assets());
 }
 
 ItemDatabaseConstPtr Root::itemDatabase() {
-  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase");
+  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets());
 }
 
 MaterialDatabaseConstPtr Root::materialDatabase() {
-  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase");
+  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", assets(), particleDatabase());
 }
 
 TerrainDatabaseConstPtr Root::terrainDatabase() {
-  return loadMember(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase");
+  return loadMember(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase", assets());
 }
 
 BiomeDatabaseConstPtr Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase");
+  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets());
 }
 
 LiquidsDatabaseConstPtr Root::liquidsDatabase() {
-  return loadMember(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase");
+  return loadMember(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase", assets(), materialDatabase());
 }
 
 StatusEffectDatabaseConstPtr Root::statusEffectDatabase() {
-  return loadMember(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase");
+  return loadMember(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase", assets());
 }
 
 DamageDatabaseConstPtr Root::damageDatabase() {
-  return loadMember(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase");
+  return loadMember(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase", assets());
 }
 
 ParticleDatabaseConstPtr Root::particleDatabase() {
-  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase");
+  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", assets());
 }
 
 EffectSourceDatabaseConstPtr Root::effectSourceDatabase() {
-  return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase");
+  return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase", assets());
 }
 
 FunctionDatabaseConstPtr Root::functionDatabase() {
-  return loadMember(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase");
+  return loadMember(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase", assets());
 }
 
 TreasureDatabaseConstPtr Root::treasureDatabase() {
-  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase");
+  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", assets());
 }
 
 DungeonDefinitionsConstPtr Root::dungeonDefinitions() {
-  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions");
+  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", assets());
 }
 
 TilesetDatabaseConstPtr Root::tilesetDatabase() {
-  return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase");
+  return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase", assets());
 }
 
 StatisticsDatabaseConstPtr Root::statisticsDatabase() {
-  return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase");
+  return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase", assets());
 }
 
 EmoteProcessorConstPtr Root::emoteProcessor() {
-  return loadMember(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor");
+  return loadMember(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor", assets());
 }
 
 SpeciesDatabaseConstPtr Root::speciesDatabase() {
-  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase");
+  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets());
 }
 
 ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
-  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase");
+  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase", assets());
 }
 
 VersioningDatabaseConstPtr Root::versioningDatabase() {
-  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase");
+  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", assets());
 }
 
 QuestTemplateDatabaseConstPtr Root::questTemplateDatabase() {
-  return loadMember(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase");
+  return loadMember(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase", assets());
 }
 
 AiDatabaseConstPtr Root::aiDatabase() {
-  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase");
+  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", assets());
 }
 
 TechDatabaseConstPtr Root::techDatabase() {
-  return loadMember(m_techDatabase, m_techDatabaseMutex, "TechDatabase");
+  return loadMember(m_techDatabase, m_techDatabaseMutex, "TechDatabase", assets());
 }
 
 CodexDatabaseConstPtr Root::codexDatabase() {
-  return loadMember(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase");
+  return loadMember(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase", assets());
 }
 
 BehaviorDatabaseConstPtr Root::behaviorDatabase() {
-  return loadMember(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase");
+  return loadMember(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase", assets());
 }
 
 TenantDatabaseConstPtr Root::tenantDatabase() {
-  return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase");
+  return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase", assets());
 }
 
 DanceDatabaseConstPtr Root::danceDatabase() {
-  return loadMember(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase");
+  return loadMember(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase", assets());
 }
 
 SpawnTypeDatabaseConstPtr Root::spawnTypeDatabase() {
-  return loadMember(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase");
+  return loadMember(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase", assets());
 }
 
 RadioMessageDatabaseConstPtr Root::radioMessageDatabase() {
-  return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase");
+  return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase", assets());
 }
 
 CollectionDatabaseConstPtr Root::collectionDatabase() {
-  return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase");
+  return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase", assets(), monsterDatabase(), itemDatabase());
 }
 
 Root::Settings& Root::settings() {
@@ -753,7 +753,7 @@ void Root::writeConfig() {
 template <typename T, typename... Params>
 shared_ptr<T> Root::loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
-      return make_shared<T>(forward<Params>(params)...);
+      return make_shared<T>(std::forward<Params>(params)...);
     });
 }
 

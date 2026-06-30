@@ -7,6 +7,7 @@
 #include "StarBTreeDatabase.hpp"
 #include "StarCelestialTypes.hpp"
 #include "StarPerlin.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -74,7 +75,7 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
-  CelestialMasterDatabase(Maybe<String> databaseFile = {});
+  CelestialMasterDatabase(IAssetsConstPtr assets, Maybe<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
   CelestialResponse respondToRequest(CelestialRequest const& requests);
@@ -186,7 +187,7 @@ protected:
 
 class CelestialSlaveDatabase : public CelestialDatabase {
 public:
-  CelestialSlaveDatabase(CelestialBaseInformation baseInformation);
+  CelestialSlaveDatabase(IAssetsConstPtr assets, CelestialBaseInformation baseInformation);
 
   // Signal that the given region should be requested from the master database.
   void signalRegion(RectI const& region);

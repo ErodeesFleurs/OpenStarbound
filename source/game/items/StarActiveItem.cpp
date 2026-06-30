@@ -1,6 +1,5 @@
 #include "StarActiveItem.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarAssetPath.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarItemLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
@@ -15,10 +14,12 @@
 
 namespace Star {
 
-ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
-  auto assets = Root::singleton().assets();
-  auto animationConfig = assets->fetchJson(instanceValue("animation"), directory);
+ActiveItem::ActiveItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+  : Item(config, directory, parameters), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw ItemException("ActiveItem requires assets service");
+
+  auto animationConfig = m_assets->fetchJson(instanceValue("animation"), directory);
   if (auto customConfig = instanceValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);
   m_itemAnimator = NetworkedAnimator(animationConfig, directory);
@@ -49,7 +50,7 @@ ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& 
   m_armAngle.setFixedPointBase(0.01f);
 }
 
-ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
+ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.m_assets, rhs.config(), rhs.directory(), rhs.parameters()) {}
 
 ItemPtr ActiveItem::clone() const {
   return make_shared<ActiveItem>(*this);

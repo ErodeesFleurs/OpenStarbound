@@ -50,7 +50,7 @@ public:
   AiInterface(UniverseClientPtr client,
       CinematicPtr cinematic,
       MainInterfacePaneManager* paneManager,
-      AiInterfaceServices services = {});
+      AiInterfaceServices services);
 
   void update(float dt) override;
 

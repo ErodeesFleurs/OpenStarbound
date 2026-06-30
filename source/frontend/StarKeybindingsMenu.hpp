@@ -20,7 +20,7 @@ struct KeybindingsMenuServices {
 
 class KeybindingsMenu : public Pane {
 public:
-  KeybindingsMenu(KeybindingsMenuServices services = {});
+  explicit KeybindingsMenu(KeybindingsMenuServices services);
 
   // We need to handle our own Esc dismissal
   KeyboardCaptureMode keyboardCaptureMode() const override;

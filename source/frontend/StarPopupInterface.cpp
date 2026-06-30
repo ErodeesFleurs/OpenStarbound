@@ -1,6 +1,6 @@
 #include "StarPopupInterface.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
@@ -8,7 +8,10 @@
 namespace Star {
 
 PopupInterface::PopupInterface(Services services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
+  : m_assets(std::move(services.assets)) {
+  if (!m_assets)
+    throw StarException("PopupInterface requires assets service");
+
   GuiReader reader;
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });

@@ -1,7 +1,6 @@
 #include "StarParticleDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -21,8 +20,9 @@ Particle ParticleConfig::instance() {
   return particle;
 }
 
-ParticleDatabase::ParticleDatabase() {
-  auto assets = Root::singleton().assets();
+ParticleDatabase::ParticleDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("ParticleDatabase requires assets service");
   auto& files = assets->scanExtension("particle");
   assets->queueJsons(files);
   for (auto& file : files) {

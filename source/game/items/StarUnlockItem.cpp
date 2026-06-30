@@ -1,14 +1,16 @@
 #include "StarUnlockItem.hpp"
 #include "StarPlayer.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarAssetPath.hpp"
 #include "StarClientContext.hpp"
 #include "StarPlayerBlueprints.hpp"
 
 namespace Star {
 
-UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config) {
+UnlockItem::UnlockItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
+  : Item(config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw ItemException("UnlockItem requires assets service");
+
   m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
   m_unlockMessage = instanceValue("unlockMessage").optString().value();
@@ -50,13 +52,13 @@ void UnlockItem::fireTriggered() {
     }
 
     if (m_tierRecipesUnlock) {
-      auto playerConfig = Root::singleton().assets()->json("/player.config");
+      auto playerConfig = m_assets->json("/player.config");
 
       List<ItemDescriptor> blueprints;
       for (Json v : playerConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 
-      auto speciesConfig = Root::singleton().assets()->json(strf("/species/{}.species", player->species()));
+      auto speciesConfig = m_assets->json(strf("/species/{}.species", player->species()));
       for (Json v : speciesConfig.get("defaultBlueprints", JsonObject()).getArray(*m_tierRecipesUnlock, JsonArray()))
         blueprints.append(ItemDescriptor(v));
 

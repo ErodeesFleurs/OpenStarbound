@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarThread.hpp"
+#include "StarIAssets.hpp"
 #include "StarJson.hpp"
 #include "StarUuid.hpp"
 #include "StarGameTypes.hpp"
@@ -22,8 +23,8 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json);
 
 class UniverseSettings {
 public:
-  UniverseSettings();
-  UniverseSettings(Json const& json);
+  UniverseSettings(IAssetsConstPtr assets);
+  UniverseSettings(IAssetsConstPtr assets, Json const& json);
 
   Json toJson() const;
 
@@ -36,7 +37,7 @@ public:
   void resetFlags();
 
 private:
-  void loadFlagActions();
+  void loadFlagActions(IAssetsConstPtr assets);
 
   mutable Mutex m_lock;
 

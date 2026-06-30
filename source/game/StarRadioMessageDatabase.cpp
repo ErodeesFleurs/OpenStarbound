@@ -1,5 +1,4 @@
 #include "StarRadioMessageDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -11,8 +10,10 @@ EnumMap<RadioMessageType> const RadioMessageTypeNames{
     {RadioMessageType::Tutorial, "tutorial"},
 };
 
-RadioMessageDatabase::RadioMessageDatabase() {
-  auto assets = Root::singleton().assets();
+RadioMessageDatabase::RadioMessageDatabase(AssetsConstPtr assets) {
+  if (!assets)
+    throw RadioMessageDatabaseException("RadioMessageDatabase requires assets service");
+  m_messageDefaults = assets->json("/radiomessages.config:messageDefaults");
   auto& files = assets->scanExtension("radiomessages");
   for (auto& file : files) {
     try {
@@ -39,8 +40,7 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe
   if (config.isType(Json::Type::String)) {
     return radioMessage(config.toString());
   } else if (config.isType(Json::Type::Object)) {
-    Json const& defaults = Root::singleton().assets()->json("/radiomessages.config:messageDefaults");
-    auto mergedConfig = jsonMerge(defaults, config);
+    auto mergedConfig = jsonMerge(m_messageDefaults, config);
 
     RadioMessage message;
     message.messageId = messageId.value(mergedConfig.getString("messageId", ""));

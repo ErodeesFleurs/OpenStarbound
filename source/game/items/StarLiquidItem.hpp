@@ -5,6 +5,7 @@
 #include "StarBeamItem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarPreviewTileTool.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -12,7 +13,7 @@ class LiquidItem;
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
-  LiquidItem(Json const& config, String const& directory, Json const& settings);
+  LiquidItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings);
   virtual ~LiquidItem() = default;
 
   ItemPtr clone() const override;

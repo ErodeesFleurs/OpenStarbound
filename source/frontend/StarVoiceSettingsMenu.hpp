@@ -9,7 +9,7 @@ using VoiceSettingsMenuPtr = SharedPtr<VoiceSettingsMenu>;
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
-  VoiceSettingsMenu(Json const& config);
+  VoiceSettingsMenu(Json const& config, BaseScriptPaneServices services);
 
   virtual void show() override;
   void displayed() override;

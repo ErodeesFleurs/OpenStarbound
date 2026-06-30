@@ -290,7 +290,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener);
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root->imageMetadataDatabase(), root->itemDatabase(), registerReloadListener});
   m_input = make_shared<Input>();
-  m_voice = make_shared<Voice>(appController);  
+  m_voice = make_shared<Voice>(appController, VoiceServices{configuration});
 
   {
     auto& io = ImGui::GetIO();
@@ -929,8 +929,7 @@ void ClientApplication::loadMods() {
     if (modDirectories.empty()) {
       Logger::info("No subscribed user generated content");
     } else {
-      Root::singleton().loadMods(modDirectories, false);
-      auto assets = m_root->assets();
+      m_root->loadMods(modDirectories, false);
     }
   }
 }
@@ -971,7 +970,7 @@ void ClientApplication::updateMods(float dt) {
           changeState(MainAppState::Splash);
         } else {
           Logger::info("Reloading to include updated user generated content");
-          Root::singleton().loadMods(modDirectories);
+          m_root->loadMods(modDirectories);
 
           // We've just reloaded, so make sure to grab our config again!
           // If we don't do this, we'll be able to read modsWarningShown

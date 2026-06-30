@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarApplicationController.hpp"
 #include "StarTime.hpp"
-#include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarAudio.hpp"
@@ -137,14 +136,17 @@ Voice& Voice::singleton() {
     return *s_singleton;
 }
 
-Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_encoder_destroy) {
+Voice::Voice(ApplicationControllerPtr appController, VoiceServices services) : m_encoder(nullptr, opus_encoder_destroy) {
   if (s_singleton)
     throw VoiceException("Singleton Voice has been constructed twice");
+  if (!services.configuration)
+    throw VoiceException("Voice requires configuration service");
 
   m_clientSpeaker = make_shared<Speaker>(m_speakerId);
   m_inputMode = VoiceInputMode::PushToTalk;
   m_channelMode = VoiceChannelMode::Mono;
   m_applicationController = appController;
+  m_configuration = std::move(services.configuration);
 
   m_stopThread = false;
   m_thread = Thread::invoke("Voice::thread", mem_fn(&Voice::thread), this);
@@ -261,10 +263,7 @@ Json Voice::saveJson() const {
 }
 
 void Voice::save() const {
-  if (Root* root = Root::singletonPtr()) {
-    if (auto config = root->configuration())
-      config->set("voice", saveJson());
-  }
+  m_configuration->set("voice", saveJson());
 }
 
 void Voice::scheduleSave() {

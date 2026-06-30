@@ -3,7 +3,7 @@
 #include "StarGuiReader.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarWorldClient.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarButtonWidget.hpp"
@@ -22,11 +22,22 @@ namespace Star {
 
 CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc,
     CharCreationServices services)
-  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
-    m_playerFactory(services.playerFactory ? std::move(services.playerFactory) : Root::singleton().playerFactory()),
-    m_speciesDatabase(services.speciesDatabase ? std::move(services.speciesDatabase) : Root::singleton().speciesDatabase()),
-    m_nameGenerator(services.nameGenerator ? std::move(services.nameGenerator) : Root::singleton().nameGenerator()),
-    m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()) {
+  : m_assets(std::move(services.assets)),
+    m_playerFactory(std::move(services.playerFactory)),
+    m_speciesDatabase(std::move(services.speciesDatabase)),
+    m_nameGenerator(std::move(services.nameGenerator)),
+    m_itemDatabase(std::move(services.itemDatabase)) {
+  if (!m_assets)
+    throw StarException("CharCreationPane requires assets service");
+  if (!m_playerFactory)
+    throw StarException("CharCreationPane requires player factory service");
+  if (!m_speciesDatabase)
+    throw StarException("CharCreationPane requires species database service");
+  if (!m_nameGenerator)
+    throw StarException("CharCreationPane requires name generator service");
+  if (!m_itemDatabase)
+    throw StarException("CharCreationPane requires item database service");
+
   m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
   GuiReader guiReader;

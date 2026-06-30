@@ -24,15 +24,21 @@ class Widget;
 using WidgetPtr = SharedPtr<Widget>;
 class InventoryPane;
 using InventoryPanePtr = SharedPtr<InventoryPane>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct InventoryPaneServices {
   IAssetsConstPtr assets;
   TechDatabaseConstPtr techDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
 
 class InventoryPane : public Pane {
 public:
-  InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services = {});
+  InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services);
 
   void displayed() override;
   PanePtr createTooltip(Vec2I const& screenPosition) override;
@@ -57,6 +63,8 @@ private:
   ContainerInteractorPtr m_containerInteractor;
   IAssetsConstPtr m_assets;
   TechDatabaseConstPtr m_techDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   Json m_config;
 
   bool m_alwaysDisplayCosmetics;

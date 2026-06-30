@@ -7,7 +7,7 @@
 #include "StarPlayer.hpp"
 #include "StarQuestManager.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPaneManager.hpp"
 #include "StarButtonWidget.hpp"
@@ -26,8 +26,11 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   : m_sourceEntityId(sourceEntityId),
     m_client(std::move(client)),
     m_paneManager(paneManager),
-    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_assets(std::move(services.assets)),
     m_currentLocation(std::move(currentLocation)) {
+  if (!m_assets)
+    throw StarException("TeleportDialog requires assets service");
+
   GuiReader reader;
 
   reader.registerCallback("dismiss", [this](Widget*) { Pane::dismiss(); });

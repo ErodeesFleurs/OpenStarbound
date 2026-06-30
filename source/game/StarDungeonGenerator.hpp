@@ -8,6 +8,7 @@
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarLruCache.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -686,15 +687,16 @@ private:
 
 class DungeonDefinitions {
 public:
-  DungeonDefinitions();
+  DungeonDefinitions(AssetsConstPtr assets);
 
   DungeonDefinitionConstPtr get(String const& name) const;
   JsonObject getMetadata(String const& name) const;
 
 private:
-  static DungeonDefinitionPtr readDefinition(String const& path);
+  DungeonDefinitionPtr readDefinition(String const& path) const;
 
   StringMap<String> m_paths;
+  AssetsConstPtr m_assets;
   mutable Mutex m_cacheMutex;
   mutable HashLruCache<String, DungeonDefinitionPtr> m_definitionCache;
 };

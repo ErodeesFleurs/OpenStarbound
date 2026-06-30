@@ -3,13 +3,15 @@
 #include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-PlayerCodexes::PlayerCodexes(Json const& variant) {
+PlayerCodexes::PlayerCodexes(IAssetsConstPtr assets, Json const& variant)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("PlayerCodexes requires assets service");
+
   if (variant) {
-    auto assets = Root::singleton().assets();
     auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
     for (auto pair : codexData) {
       if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
@@ -72,7 +74,7 @@ bool PlayerCodexes::markCodexUnread(String const& codexId) {
 }
 
 void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
-  for (auto codexId : jsonToStringList(Root::singleton().assets()->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
+  for (auto codexId : jsonToStringList(m_assets->json(strf("/player.config:defaultCodexes.{}", playerSpecies))))
     learnCodex(codexId, true);
 }
 

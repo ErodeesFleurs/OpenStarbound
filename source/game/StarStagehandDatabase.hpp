@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarJson.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -16,7 +17,7 @@ using StagehandDatabaseConstPtr = SharedPtr<StagehandDatabase const>;
 
 class StagehandDatabase {
 public:
-  StagehandDatabase();
+  StagehandDatabase(AssetsConstPtr assets);
 
   StagehandPtr createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
 

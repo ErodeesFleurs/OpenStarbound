@@ -22,7 +22,7 @@ void validateWorld(TestUniverse& testUniverse) {
 }
 
 TEST(SpawnTest, RandomCelestialWorld) {
-  CelestialMasterDatabase celestialDatabase;
+  CelestialMasterDatabase celestialDatabase(Root::singleton().assets());
   Maybe<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
       return celestialDatabase.parameters(coord)->isVisitable();
     });

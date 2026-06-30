@@ -10,12 +10,12 @@
 
 namespace Star {
 
-TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
+TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer) : TileDrawer(assets) {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
   auto& root = Root::singleton();
-  m_assets = root.assets();
+  m_assets = std::move(assets);
   m_materialDatabase = root.materialDatabase();
 
   m_terrainChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());

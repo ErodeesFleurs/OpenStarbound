@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -34,12 +33,12 @@ struct Dance {
 
 class DanceDatabase {
 public:
-  DanceDatabase();
+  DanceDatabase(AssetsConstPtr assets);
 
   DancePtr getDance(String const& name) const;
 
 private:
-  static DancePtr readDance(String const& path);
+  static DancePtr readDance(AssetsConstPtr assets, String const& path);
 
   StringMap<DancePtr> m_dances;
 };

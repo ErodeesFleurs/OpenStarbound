@@ -46,11 +46,11 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_worldTemplate = worldTemplate;
-  m_worldStorage = make_shared<WorldStorage>(m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this));
   m_spawnFinder.m_adjustPlayerStart = true;
   m_spawnFinder.m_respawnInWorld = false;
   m_dungeonProtection.m_tileProtectionEnabled = true;
-  m_universeSettings = make_shared<UniverseSettings>();
+  m_universeSettings = make_shared<UniverseSettings>(m_assets);
   m_worldId = worldTemplate->worldName();
   m_expiryTimer = GameTimer(0.0f);
 
@@ -59,7 +59,7 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
 }
 
 WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
-  : WorldServer(make_shared<WorldTemplate>(size), storage, assets, configuration) {}
+  : WorldServer(make_shared<WorldTemplate>(assets ? assets : Root::singleton().assets(), size), storage, assets, configuration) {}
 
 WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
@@ -69,13 +69,13 @@ WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, ICo
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(storage, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, storage, make_shared<WorldGenerator>(this));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
     });
   m_dungeonProtection.m_tileProtectionEnabled = true;
-  m_universeSettings = make_shared<UniverseSettings>();
+  m_universeSettings = make_shared<UniverseSettings>(m_assets);
   m_worldId = "Nowhere";
 
   readMetadata();
@@ -90,13 +90,13 @@ WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, ICon
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(chunks, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, chunks, make_shared<WorldGenerator>(this));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
     });
   m_dungeonProtection.m_tileProtectionEnabled = true;
-  m_universeSettings = make_shared<UniverseSettings>();
+  m_universeSettings = make_shared<UniverseSettings>(m_assets);
   m_worldId = "Nowhere";
 
   readMetadata();
@@ -283,9 +283,9 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 
   InterpolationTracker tracker;
   if (isLocal)
-    tracker = InterpolationTracker(m_serverConfig.query("interpolationSettings.local"));
+    tracker = InterpolationTracker(m_assets, m_serverConfig.query("interpolationSettings.local"));
   else
-    tracker = InterpolationTracker(m_serverConfig.query("interpolationSettings.normal"));
+    tracker = InterpolationTracker(m_assets, m_serverConfig.query("interpolationSettings.normal"));
 
   tracker.update(m_currentTime);
 
@@ -596,7 +596,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       if (!clientInfo->admin)
         continue; // nuh-uh!
 
-      auto newWorldTemplate = make_shared<WorldTemplate>(updateWorldTemplate->templateData);
+      auto newWorldTemplate = make_shared<WorldTemplate>(m_assets, updateWorldTemplate->templateData);
       setTemplate(newWorldTemplate);
       // setTemplate re-adds all clients currently, update clientInfo
       clientInfo = m_clientInfo.get(clientId);
@@ -1325,7 +1325,7 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
       m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
       m_sky->setReferenceClock(referenceClock);
 
-      m_weather.setup(m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
+      m_weather.setup(m_assets, m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
         auto const& tile = m_tileArray->tile(pos);
         return !isRealMaterial(tile.background);
       });
@@ -1478,7 +1478,7 @@ void WorldServer::init(bool firstTime) {
   for (auto const& liquidSettings : liquidsDatabase->allLiquidSettings())
     m_liquid.liquidEngine()->setLiquidTickDelta(liquidSettings->id, liquidSettings->tickDelta);
 
-  m_fallingBlocksAgent = make_shared<FallingBlocksAgent>(make_shared<FallingBlocksWorld>(this));
+  m_fallingBlocksAgent = make_shared<FallingBlocksAgent>(m_assets, make_shared<FallingBlocksWorld>(this));
 
   setupForceRegions();
 
@@ -1535,7 +1535,7 @@ void WorldServer::init(bool firstTime) {
 
     generateRegion(RectI::integral(RectF(m_spawnFinder.m_playerStart, m_spawnFinder.m_playerStart)).padded(m_serverConfig.getInt("playerStartInitialGenRadius")));
 
-    m_weather.setup(m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
+    m_weather.setup(m_assets, m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
         auto const& tile = m_tileArray->tile(pos);
         return !isRealMaterial(tile.background);
       });
@@ -1861,6 +1861,10 @@ EntityId WorldServer::loadUniqueEntity(String const& uniqueId) {
 
 WorldTemplatePtr WorldServer::worldTemplate() const {
   return m_worldTemplate;
+}
+
+IAssetsConstPtr WorldServer::assets() const {
+  return m_assets;
 }
 
 SkyPtr WorldServer::sky() const {
@@ -2424,7 +2428,7 @@ void WorldServer::readMetadata() {
   m_spawnFinder.m_playerStart = jsonToVec2F(metadata.get("playerStart"));
   m_spawnFinder.m_respawnInWorld = metadata.getBool("respawnInWorld");
   m_spawnFinder.m_adjustPlayerStart = metadata.getBool("adjustPlayerStart");
-  m_worldTemplate = make_shared<WorldTemplate>(metadata.get("worldTemplate"));
+  m_worldTemplate = make_shared<WorldTemplate>(m_assets, metadata.get("worldTemplate"));
   m_centralStructure = WorldStructure(metadata.get("centralStructure"));
   m_dungeonProtection.m_protectedDungeonIds = jsonToSet<StableHashSet<DungeonId>>(metadata.get("protectedDungeonIds"), mem_fn(&Json::toUInt));
   m_worldProperties.properties() = metadata.getObject("worldProperties");

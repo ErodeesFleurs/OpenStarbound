@@ -15,7 +15,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  JoinRequestDialog(Services services = {});
+  explicit JoinRequestDialog(Services services);
 
   virtual ~JoinRequestDialog() = default;
 

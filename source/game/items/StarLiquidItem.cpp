@@ -2,18 +2,19 @@
 #include "StarJson.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarWorld.hpp"
 
 namespace Star {
 
-LiquidItem::LiquidItem(Json const& config, String const& directory, Json const& settings)
+LiquidItem::LiquidItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
   : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
+  if (!assets)
+    throw ItemException("LiquidItem requires assets service");
+
   m_liquidId = Root::singleton().liquidsDatabase()->liquidId(config.getString("liquid"));
 
   setTwoHanded(config.getBool("twoHanded", true));
 
-  auto assets = Root::singleton().assets();
   m_quantity = assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toUInt();
   setCooldownTime(assets->json("/items/defaultParameters.config:liquidItems.cooldown").toFloat());
   m_blockRadius = assets->json("/items/defaultParameters.config:blockRadius").toFloat();

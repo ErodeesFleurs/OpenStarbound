@@ -14,7 +14,11 @@ using ListWidgetPtr = SharedPtr<ListWidget>;
 
 class ModsMenu : public Pane {
 public:
-  ModsMenu(AssetsConstPtr assets = {});
+  struct Services {
+    AssetsConstPtr assets;
+  };
+
+  explicit ModsMenu(Services services);
 
   void update(float dt) override;
 

@@ -3,7 +3,6 @@
 #include "StarRandom.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarNameGenerator.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarRootLuaBindings.hpp"
@@ -27,13 +26,14 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
-  auto assets = Root::singleton().assets();
+SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets) : m_luaRoot(make_shared<LuaRoot>()) {
+  if (!assets)
+    throw StarException("SpeciesDatabase requires assets service");
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto speciesDefinition = make_shared<SpeciesDefinition>(assets->json(file));
+    auto speciesDefinition = make_shared<SpeciesDefinition>(assets->json(file), assets);
     if (m_species.contains(speciesDefinition->kind()))
       throw StarException(strf("Duplicate species asset with kind {}. configfile {}", speciesDefinition->kind(), file));
     auto k = speciesDefinition->kind().toLower();
@@ -217,7 +217,10 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
   );
 }
 
-SpeciesDefinition::SpeciesDefinition(Json const& config) {
+SpeciesDefinition::SpeciesDefinition(Json const& config, AssetsConstPtr assets) : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("SpeciesDefinition requires assets service");
+
   m_config = config;
   m_kind = config.getString("kind");
   m_humanoidConfig = config.getString("humanoidConfig", "/humanoid.config");
@@ -308,7 +311,7 @@ SpeciesOption const& SpeciesDefinition::options() const {
 }
 
 Json SpeciesDefinition::humanoidConfig() const {
-  auto config = Root::singleton().assets()->json(m_humanoidConfig);
+  auto config = m_assets->json(m_humanoidConfig);
   return jsonMerge(config, m_humanoidOverrides);
 }
 

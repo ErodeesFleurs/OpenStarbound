@@ -27,7 +27,7 @@ public:
       Json config,
       EntityId sourceEntityId,
       TeleportBookmark currentLocation,
-      Services services = {});
+      Services services);
 
   void tick(float dt) override;
 

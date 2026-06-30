@@ -3,6 +3,7 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarParticle.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -27,7 +28,7 @@ private:
 
 class ParticleDatabase {
 public:
-  ParticleDatabase();
+  ParticleDatabase(AssetsConstPtr assets);
 
   ParticleConfigPtr config(String const& kind) const;
 

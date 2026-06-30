@@ -15,7 +15,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  ConfirmationDialog(Services services = {});
+  explicit ConfirmationDialog(Services services);
 
   virtual ~ConfirmationDialog() = default;
 

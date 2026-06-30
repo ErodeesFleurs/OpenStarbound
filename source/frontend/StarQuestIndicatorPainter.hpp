@@ -17,7 +17,7 @@ public:
     IAssetsConstPtr assets;
   };
 
-  QuestIndicatorPainter(UniverseClientPtr const& client, Services services = {});
+  QuestIndicatorPainter(UniverseClientPtr const& client, Services services);
 
   void update(float dt, WorldClientPtr const& world, WorldCamera const& camera);
   void render();

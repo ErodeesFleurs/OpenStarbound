@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarTileDamage.hpp"
@@ -96,7 +97,7 @@ struct BushVariant {
 
 class PlantDatabase {
 public:
-  PlantDatabase();
+  PlantDatabase(AssetsConstPtr assets);
 
   StringList treeStemNames(bool ceiling = false) const;
   StringList treeFoliageNames() const;
@@ -137,6 +138,7 @@ private:
   StringMap<Config> m_grassConfigs;
 
   StringMap<Config> m_bushConfigs;
+  AssetsConstPtr m_assets;
 };
 
 }

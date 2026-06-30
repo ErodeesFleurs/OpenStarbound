@@ -504,7 +504,7 @@ namespace LuaBindings {
         return serverWorld->worldTemplate()->store();
       });
       callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) {
-        auto newTemplate = make_shared<WorldTemplate>(worldTemplate);
+        auto newTemplate = make_shared<WorldTemplate>(serverWorld->assets(), worldTemplate);
         serverWorld->setTemplate(newTemplate);
       });
     }

@@ -2,7 +2,8 @@
 
 namespace Star {
 
-ShadersMenu::ShadersMenu(Json const& config, UniverseClientPtr client) : BaseScriptPane(config) {
+ShadersMenu::ShadersMenu(Json const& config, UniverseClientPtr client, BaseScriptPaneServices services)
+  : BaseScriptPane(config, true, std::move(services)) {
   m_client = std::move(client);
 }
 

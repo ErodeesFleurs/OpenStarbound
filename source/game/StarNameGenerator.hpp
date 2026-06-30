@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarRandom.hpp"
 
@@ -22,7 +23,7 @@ struct MarkovSource {
 
 class PatternedNameGenerator {
 public:
-  PatternedNameGenerator();
+  PatternedNameGenerator(AssetsConstPtr assets);
 
   String generateName(String const& rulesAsset) const;
   String generateName(String const& rulesAsset, uint64_t seed) const;
@@ -35,6 +36,7 @@ private:
 
   MarkovSource makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames);
 
+  AssetsConstPtr m_assets;
   StringMap<MarkovSource> m_markovSources;
   StringSet m_profanityFilter;
 };

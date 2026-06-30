@@ -8,7 +8,6 @@
 #include "StarWorldLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarAssets.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarNpcDatabase.hpp"
 #include "StarRoot.hpp"
@@ -127,17 +126,19 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   return ds;
 }
 
-VersioningDatabase::VersioningDatabase() {
-  auto assets = Root::singleton().assets();
+VersioningDatabase::VersioningDatabase(AssetsConstPtr assets)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw VersioningDatabaseException("VersioningDatabase requires assets service");
 
-  for (auto const& pair : assets->json("/versioning.config").iterateObject())
+  for (auto const& pair : m_assets->json("/versioning.config").iterateObject())
     m_currentVersions[pair.first] = pair.second.toUInt();
 
-  for (auto const& pair : assets->json("/versioning/subVersioning.config").iterateObject())
+  for (auto const& pair : m_assets->json("/versioning/subVersioning.config").iterateObject())
     for (auto const& p : pair.second.iterateObject())
       m_currentSubVersions[pair.first][p.first] = p.second.toUInt();
 
-  for (auto const& scriptFile : assets->scan("/versioning/", ".lua")) {
+  for (auto const& scriptFile : m_assets->scan("/versioning/", ".lua")) {
     try {
       auto scriptParts = File::baseName(scriptFile).splitAny("_.");
       if (scriptParts.size() == 4) {
@@ -203,8 +204,7 @@ bool VersioningDatabase::versionedJsonCurrent(VersionedJson const& versionedJson
 VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versionedJson) const {
   RecursiveMutexLocker locker(m_mutex);
 
-  auto& root = Root::singleton();
-  CelestialMasterDatabase celestialDatabase;
+  CelestialMasterDatabase celestialDatabase(m_assets);
 
   VersionedJson result = versionedJson;
   Maybe<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
@@ -226,7 +226,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
 
           if (subVersionUpdateScript.fromVersion == result.subVersions.value(subVersionScripts.first)) {
             auto scriptContext = m_luaRoot.createContext();
-            scriptContext.load(*root.assets()->bytes(subVersionUpdateScript.script), subVersionUpdateScript.script);
+            scriptContext.load(*m_assets->bytes(subVersionUpdateScript.script), subVersionUpdateScript.script);
             scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks());
             scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
             scriptContext.setCallbacks("celestial", celestialCallbacks);
@@ -250,7 +250,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
 
       if (updateScript.fromVersion == result.version) {
         auto scriptContext = m_luaRoot.createContext();
-        scriptContext.load(*root.assets()->bytes(updateScript.script), updateScript.script);
+        scriptContext.load(*m_assets->bytes(updateScript.script), updateScript.script);
         scriptContext.setCallbacks("root", LuaBindings::makeRootCallbacks());
         scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
         scriptContext.setCallbacks("celestial", celestialCallbacks);

@@ -1,8 +1,8 @@
 #include "StarQuestInterface.hpp"
 #include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
+#include "StarException.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarPaneManager.hpp"
 #include "StarListWidget.hpp"
@@ -25,7 +25,15 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   m_player = player;
   m_cinematic = cinematic;
   m_client = client;
-  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_assets = std::move(services.assets);
+  m_objectDatabase = std::move(services.objectDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  if (!m_assets)
+    throw StarException("QuestLogInterface requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("QuestLogInterface requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("QuestLogInterface requires status effect database service");
 
   auto config = m_assets->json("/interface/windowconfig/questlog.config");
 
@@ -77,15 +85,15 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets});
+    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
     (*failableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets});
+    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
     (*completableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets});
+    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
     paneManager->displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
@@ -180,7 +188,7 @@ PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
   return {};
 }
 
@@ -287,7 +295,19 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
 }
 
 QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
-  : Pane(), m_quest(quest), m_player(std::move(player)), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
+  : Pane(),
+    m_quest(quest),
+    m_player(std::move(player)),
+    m_assets(std::move(services.assets)),
+    m_objectDatabase(std::move(services.objectDatabase)),
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
+  if (!m_assets)
+    throw StarException("QuestPane requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("QuestPane requires object database service");
+  if (!m_statusEffectDatabase)
+    throw StarException("QuestPane requires status effect database service");
+}
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
   GuiReader reader;
@@ -347,7 +367,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
   return {};
 }
 
