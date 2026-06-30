@@ -7,7 +7,7 @@
 
 namespace Star {
 
-WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
+WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
   : m_assets(std::move(assets)),
     m_configuration(std::move(configuration)),
     m_registerReloadListener(std::move(registerReloadListener)),

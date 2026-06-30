@@ -19,12 +19,12 @@
 namespace Star {
 
 ObjectOrientation::ParticleEmissionEntry ObjectOrientation::parseParticleEmitter(
-    String const& path, Json const& config) {
+    String const& path, Json const& config, AssetsConstPtr assets) {
   ObjectOrientation::ParticleEmissionEntry result;
   result.particleEmissionRate = config.getFloat("emissionRate", 0.0);
   result.particleEmissionRateVariance = config.getFloat("emissionVariance", 0.0);
-  result.particle = Particle(config.getObject("particle", {}), path);
-  result.particleVariance = Particle(config.getObject("particleVariance", {}), path);
+  result.particle = Particle(config.getObject("particle", {}), path, assets);
+  result.particleVariance = Particle(config.getObject("particleVariance", {}), path, assets);
   result.particle.position += jsonToVec2F(config.get("pixelOrigin", JsonArray{TilePixels / 2, TilePixels / 2})) / TilePixels;
   result.placeInSpaces = config.getBool("placeInSpaces", false);
   return result;
@@ -103,7 +103,7 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
   return NPos;
 }
 
-Json ObjectDatabase::parseTouchDamage(IAssetsConstPtr assets, String const& path, Json const& config) {
+Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& config) {
   if (!assets)
     throw ObjectException("ObjectDatabase::parseTouchDamage requires assets service");
 
@@ -116,7 +116,7 @@ Json ObjectDatabase::parseTouchDamage(IAssetsConstPtr assets, String const& path
 }
 
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
-    IAssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
+    AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
   if (!assets)
     throw ObjectException("ObjectDatabase::parseOrientations requires assets service");
   if (!materialDatabase)
@@ -310,9 +310,9 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
 
     if (orientationSettings.contains("particleEmitter"))
       orientation->particleEmitters.append(
-          ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter")));
+          ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter"), assets));
     for (auto const& particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
-      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, assets));
 
     orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
 
@@ -604,9 +604,9 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
 
     List<ObjectOrientation::ParticleEmissionEntry> particleEmitters;
     if (config.contains("particleEmitter"))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter")));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter"), m_assets));
     for (auto const& particleEmitterConfig : config.getArray("particleEmitters", {}))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, m_assets));
 
     for (auto const& orientation : objectConfig->orientations)
       orientation->particleEmitters.appendAll(particleEmitters);

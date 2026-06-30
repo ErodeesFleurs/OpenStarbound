@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarPane.hpp"
 #include "StarUuid.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -73,8 +73,8 @@ private:
 class TeamBar : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
-    IConfigurationPtr configuration;
+    AssetsConstPtr assets;
+    ConfigurationPtr configuration;
   };
 
   TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services);
@@ -98,8 +98,8 @@ private:
 
   MainInterface* m_mainInterface;
   UniverseClientPtr m_client;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
 
   GuiContext* m_guiContext;
 

@@ -3,7 +3,7 @@
 #include "StarItem.hpp"
 #include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
 
 namespace Star {
@@ -13,7 +13,7 @@ using ObjectItemPtr = SharedPtr<ObjectItem>;
 
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:
-  ObjectItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase);
+  ObjectItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase);
   virtual ~ObjectItem() = default;
 
   ItemPtr clone() const override;

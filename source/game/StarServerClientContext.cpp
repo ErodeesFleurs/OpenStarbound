@@ -9,7 +9,7 @@
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, IItemDatabaseConstPtr itemDatabase)
+    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, ItemDatabaseConstPtr itemDatabase)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),

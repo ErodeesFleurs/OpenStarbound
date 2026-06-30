@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParticle.hpp"
 
@@ -24,7 +24,7 @@ struct WeatherType {
   };
 
   WeatherType();
-  WeatherType(IAssetsConstPtr assets, Json config, String path = String());
+  WeatherType(AssetsConstPtr assets, Json config, String path = String());
 
   Json toJson() const;
 

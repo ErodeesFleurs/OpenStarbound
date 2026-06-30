@@ -1,7 +1,8 @@
 #pragma once
 
 #include "StarBTreeDatabase.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarEntityFactory.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarOrderedSet.hpp"
@@ -20,6 +21,10 @@ struct WorldGeneratorFacade;
 using WorldGeneratorFacadePtr = SharedPtr<WorldGeneratorFacade>;
 class WorldStorage;
 using WorldStoragePtr = SharedPtr<WorldStorage>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 
 using WorldChunks = HashMap<ByteArray, Maybe<ByteArray>>;
 
@@ -100,11 +105,11 @@ public:
   static WorldChunks getWorldChunksFromFile(String const& file);
 
   // Create a new world of the given size.
-  WorldStorage(IAssetsConstPtr assets, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
   // Read an existing world.
-  WorldStorage(IAssetsConstPtr assets, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade);
   // Read an in-memory world.
-  WorldStorage(IAssetsConstPtr assets, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
+  WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade);
   ~WorldStorage();
 
   VersionedJson worldMetadata();
@@ -235,7 +240,7 @@ private:
   static ByteArray writeEntitySector(EntitySectorStore const& store);
 
   static ByteArray tileSectorKey(Sector const& sector);
-  static TileSectorStore readTileSector(ByteArray const& data, IAssetsConstPtr assets);
+  static TileSectorStore readTileSector(ByteArray const& data, AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
   static ByteArray writeTileSector(TileSectorStore const& store);
 
   static ByteArray uniqueIndexKey(String const& uniqueId);
@@ -248,7 +253,7 @@ private:
 
   static void openDatabase(BTreeDatabase& db, IODevicePtr device);
 
-  WorldStorage(IAssetsConstPtr assets);
+  WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory);
 
   bool belongsInSector(Sector const& sector, Vec2F const& position) const;
 
@@ -299,7 +304,10 @@ private:
   ServerTileSectorArrayPtr m_tileArray;
   EntityMapPtr m_entityMap;
   WorldGeneratorFacadePtr m_generatorFacade;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  EntityFactoryConstPtr m_entityFactory;
 
   bool m_floatingDungeonWorld;
 

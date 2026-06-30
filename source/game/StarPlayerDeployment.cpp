@@ -9,7 +9,7 @@
 
 namespace Star {
 
-PlayerDeployment::PlayerDeployment(Json const& config, IAssetsConstPtr assets)
+PlayerDeployment::PlayerDeployment(Json const& config, AssetsConstPtr assets)
   : m_config(config), m_scriptComponent(std::move(assets)) {
   m_deploying = false;
   m_deployed = false;

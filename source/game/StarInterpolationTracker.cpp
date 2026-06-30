@@ -7,7 +7,7 @@ constexpr double VanillaStepsPerSecond = 60.0;
 InterpolationTracker::InterpolationTracker(Json config)
   : InterpolationTracker({}, std::move(config)) {}
 
-InterpolationTracker::InterpolationTracker(IAssetsConstPtr assets, Json config) {
+InterpolationTracker::InterpolationTracker(AssetsConstPtr assets, Json config) {
   if (config.isNull()) {
     config = JsonObject();
   } else if (config.type() == Json::Type::String) {

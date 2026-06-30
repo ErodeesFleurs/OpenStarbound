@@ -6,7 +6,7 @@
 #include "StarPlayerTech.hpp"
 #include "StarGameTimers.hpp"
 #include "StarContainerInteractor.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarTechDatabase.hpp"
 
 namespace Star {
@@ -30,7 +30,7 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct InventoryPaneServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   TechDatabaseConstPtr techDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
@@ -61,7 +61,7 @@ private:
   MainInterface* m_parent;
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   TechDatabaseConstPtr m_techDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;

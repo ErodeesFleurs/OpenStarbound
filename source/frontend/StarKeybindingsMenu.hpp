@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -14,8 +14,8 @@ class KeybindingsMenu;
 using KeybindingsMenuPtr = SharedPtr<KeybindingsMenu>;
 
 struct KeybindingsMenuServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
 };
 
 class KeybindingsMenu : public Pane {
@@ -51,8 +51,8 @@ private:
 
   size_t m_maxBindings;
   KeyMod m_currentMods;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
 };
 
 }

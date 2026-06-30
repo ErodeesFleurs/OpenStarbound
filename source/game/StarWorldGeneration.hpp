@@ -7,6 +7,12 @@
 #include "StarMicroDungeon.hpp"
 #include "StarCellularLiquid.hpp"
 #include "StarBiomePlacement.hpp"
+#include "StarMonsterDatabase.hpp"
+#include "StarNpcDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarStagehandDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarVehicleDatabase.hpp"
 
 namespace Star {
 
@@ -17,6 +23,8 @@ class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class LiquidsDatabase;
 using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class VehicleDatabase;
+using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
@@ -79,6 +87,8 @@ public:
   void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) override;
 
   WorldGeometry getWorldGeometry() const override;
+  MaterialDatabaseConstPtr materialDatabase() const override;
+  LiquidsDatabaseConstPtr liquidsDatabase() const override;
 
 private:
   void placePlant(PlantPtr const& plant, Vec2I const& position);
@@ -86,6 +96,14 @@ private:
 
   WorldServer* m_worldServer;
   ObjectDatabaseConstPtr m_objectDatabase;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  PlantDatabaseConstPtr m_plantDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  NpcDatabaseConstPtr m_npcDatabase;
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  StagehandDatabaseConstPtr m_stagehandDatabase;
+  VehicleDatabaseConstPtr m_vehicleDatabase;
   bool m_markForActivation;
 };
 
@@ -156,6 +174,13 @@ private:
 
   WorldServer* m_worldServer;
   ObjectDatabaseConstPtr m_objectDatabase;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  PlantDatabaseConstPtr m_plantDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  NpcDatabaseConstPtr m_npcDatabase;
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  StagehandDatabaseConstPtr m_stagehandDatabase;
+  VehicleDatabaseConstPtr m_vehicleDatabase;
   MicroDungeonFactoryPtr m_microDungeonFactory;
   List<QueuedPlacement> m_queuedPlacements;
 };

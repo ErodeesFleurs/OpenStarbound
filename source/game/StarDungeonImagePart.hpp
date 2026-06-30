@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarDungeonGenerator.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -13,7 +13,7 @@ namespace Dungeon {
 
   class ImagePartReader : public PartReader {
   public:
-    ImagePartReader(IAssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(std::move(assets)), m_tileset(std::move(tileset)) {}
+    ImagePartReader(AssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(std::move(assets)), m_tileset(std::move(tileset)) {}
 
     virtual void readAsset(String const& asset) override;
     virtual Vec2U size() const override;
@@ -22,7 +22,7 @@ namespace Dungeon {
     virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
   private:
-    IAssetsConstPtr m_assets;
+    AssetsConstPtr m_assets;
     List<pair<String, ImageConstPtr>> m_images;
     ImageTilesetConstPtr m_tileset;
   };

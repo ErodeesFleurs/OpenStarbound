@@ -7,7 +7,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarTechDatabase.hpp"
 #include "StarQuestManager.hpp"
 
@@ -41,7 +41,7 @@ struct AiInterfaceExceptionTag { static constexpr char const* typeName = "AiInte
 using AiInterfaceException = TypedException<StarException, AiInterfaceExceptionTag>;
 
 struct AiInterfaceServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   AiDatabaseConstPtr aiDatabase;
 };
 
@@ -94,7 +94,7 @@ private:
   CinematicPtr m_cinematic;
   MainInterfacePaneManager* m_paneManager;
   QuestManagerPtr m_questManager;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 
   EntityId m_sourceEntityId;
 

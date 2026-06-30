@@ -17,7 +17,7 @@ class ErrorScreen;
 using ErrorScreenPtr = SharedPtr<ErrorScreen>;
 
 struct ErrorScreenServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   ImageMetadataDatabaseConstPtr imageMetadata;
 };
 
@@ -45,7 +45,7 @@ private:
   GuiContext* m_guiContext;
   PaneManagerPtr m_paneManager;
   PanePtr m_errorPane;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
 
   bool m_accepted;

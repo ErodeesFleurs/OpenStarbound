@@ -1,17 +1,28 @@
 #include "StarPlayerNarrativeQueue.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarRoot.hpp"
 #include "StarStatusController.hpp"
 #include "StarRadioMessageDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarAiDatabase.hpp"
+#include "StarConfiguration.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {
 
-PlayerNarrativeQueue::PlayerNarrativeQueue(Player* player)
-  : m_player(player), m_interruptRadioMessage(false) {}
+PlayerNarrativeQueue::PlayerNarrativeQueue(Player* player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase)
+  : m_player(player),
+    m_radioMessageDatabase(std::move(radioMessageDatabase)),
+    m_configuration(std::move(configuration)),
+    m_aiDatabase(std::move(aiDatabase)),
+    m_interruptRadioMessage(false) {
+  if (!m_radioMessageDatabase)
+    throw StarException("PlayerNarrativeQueue requires radio message database service");
+  if (!m_configuration)
+    throw StarException("PlayerNarrativeQueue requires configuration service");
+  if (!m_aiDatabase)
+    throw StarException("PlayerNarrativeQueue requires ai database service");
+}
 
 void PlayerNarrativeQueue::init(List<PersistentStatusEffect> inCinematicStatusEffects) {
   m_interruptRadioMessage = false;
@@ -42,16 +53,16 @@ Maybe<RadioMessage> PlayerNarrativeQueue::pullPendingRadioMessage() {
 void PlayerNarrativeQueue::queueRadioMessage(Json const& messageConfig, float delay) {
   RadioMessage message;
   try {
-    message = Root::singleton().radioMessageDatabase()->createRadioMessage(messageConfig);
+    message = m_radioMessageDatabase->createRadioMessage(messageConfig);
 
     while (message.speciesAiMessage.contains(m_player->shipSpecies()) || message.speciesMessage.contains(m_player->species()))
       message = message.speciesAiMessage.value(m_player->shipSpecies(), message.speciesMessage.value(m_player->species()));
 
-    if (message.type == RadioMessageType::Tutorial && !Root::singleton().configuration()->get("tutorialMessages").toBool())
+    if (message.type == RadioMessageType::Tutorial && !m_configuration->get("tutorialMessages").toBool())
       return;
 
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
-      message.portraitImage = Root::singleton().aiDatabase()->portraitImage(m_player->shipSpecies(), message.portraitImage);
+      message.portraitImage = m_aiDatabase->portraitImage(m_player->shipSpecies(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
     Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;

@@ -4,7 +4,7 @@
 #include "StarMultiArray.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 
 namespace Star {
@@ -25,6 +25,8 @@ using LegsArmorPtr = SharedPtr<LegsArmor>;
 class BackArmor;
 using BackArmorPtr = SharedPtr<BackArmor>;
 class Player;
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
 
 class PlayerInventory;
 using PlayerInventoryPtr = SharedPtr<PlayerInventory>;
@@ -56,7 +58,7 @@ public:
   bool itemAllowedInBag(ItemPtr const& item, String const& bagType) const;
   static bool itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot);
 
-  PlayerInventory(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
+  PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ConfigurationPtr configuration);
 
   ItemPtr itemsAt(InventorySlot const& slot) const;
 
@@ -248,8 +250,9 @@ private:
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
+  ConfigurationPtr m_configuration;
   List<ItemPtr> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 

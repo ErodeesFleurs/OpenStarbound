@@ -2,6 +2,7 @@
 
 #include "StarNetElementSystem.hpp"
 #include "StarEffectSourceDatabase.hpp"
+#include "StarParticleDatabase.hpp"
 #include "StarGameTypes.hpp"
 
 namespace Star {
@@ -19,10 +20,10 @@ public:
   void setDirection(Direction direction);
   void setBaseVelocity(Vec2F const& velocity);
 
-  void tick(float dt, EntityMode mode);
+  void tick(float dt, EntityMode mode, EffectSourceDatabaseConstPtr effectSourceDatabase);
   void reset();
 
-  void render(RenderCallback* renderCallback);
+  void render(RenderCallback* renderCallback, ParticleDatabaseConstPtr particleDatabase);
 
   Json toJson() const;
   void fromJson(Json const& diskStore);

@@ -5,7 +5,7 @@
 
 namespace Star {
 
-InstrumentItem::InstrumentItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data) : Item(std::move(assets), config, directory, data) {
+InstrumentItem::InstrumentItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data) : Item(std::move(assets), config, directory, data) {
   m_activeCooldown = 0;
 
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());

@@ -1,32 +1,32 @@
 #include "StarWorldServer.hpp"
-#include "StarLogging.hpp"
-#include "StarIterator.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarBiome.hpp"
-#include "StarWireProcessor.hpp"
-#include "StarWireEntity.hpp"
-#include "StarWorldImpl.hpp"
-#include "StarWorldGeneration.hpp"
-#include "StarPacketPool.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarContainerEntity.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarFallingBlocksAgent.hpp"
+#include "StarItemBag.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItemDrop.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarObject.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarContainerEntity.hpp"
-#include "StarItemBag.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarProjectile.hpp"
-#include "StarPlayer.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarBiomeDatabase.hpp"
+#include "StarIterator.hpp"
 #include "StarLiquidTypes.hpp"
+#include "StarLogging.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarObject.hpp"
+#include "StarObjectDatabase.hpp"
+#include "StarPacketPool.hpp"
+#include "StarPhysicsEntity.hpp"
+#include "StarPlayer.hpp"
+#include "StarProjectile.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarFallingBlocksAgent.hpp"
-#include "StarWarpTargetEntity.hpp"
-#include "StarUniverseSettings.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
+#include "StarUniverseSettings.hpp"
+#include "StarWarpTargetEntity.hpp"
+#include "StarWireEntity.hpp"
+#include "StarWireProcessor.hpp"
+#include "StarWorldGeneration.hpp"
+#include "StarWorldImpl.hpp"
 
 namespace Star {
 
@@ -34,23 +34,16 @@ EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
   {WorldServerFidelity::Minimum, "minimum"},
   {WorldServerFidelity::Low, "low"},
   {WorldServerFidelity::Medium, "medium"},
-  {WorldServerFidelity::High, "high"}
-};
+  {WorldServerFidelity::High, "high"}};
 
-WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
-    m_spawner(m_assets) {
-  m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
-  m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = std::move(itemDatabase);
-  m_objectDatabase = std::move(objectDatabase);
-  if (!m_objectDatabase)
-    throw WorldServerException("WorldServer requires object database service");
-  m_speciesDatabase = Root::singleton().speciesDatabase();
-  m_entityFactory = Root::singleton().entityFactory();
-  m_liquidsDatabase = Root::singleton().liquidsDatabase();
+WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate,
+                         IODevicePtr storage,
+                         WorldServerServices services)
+    : m_assets(std::move(services.assets)),
+      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
+  setServices(std::move(services));
   m_worldTemplate = worldTemplate;
-  m_worldStorage = make_shared<WorldStorage>(m_assets, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this, m_objectDatabase));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_spawnFinder.m_adjustPlayerStart = true;
   m_spawnFinder.m_respawnInWorld = false;
   m_dungeonProtection.m_tileProtectionEnabled = true;
@@ -62,26 +55,21 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   writeMetadata();
 }
 
-WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : WorldServer(make_shared<WorldTemplate>(assets ? assets : Root::singleton().assets(), size), storage, assets, configuration, std::move(itemDatabase), std::move(objectDatabase)) {}
+WorldServer::WorldServer(Vec2U const& size,
+                         IODevicePtr storage,
+                         WorldServerServices services)
+    : WorldServer(make_shared<WorldTemplate>(services.assets, TerrainDatabaseConstPtr{}, services.biomeDatabase, size), storage, services) {}
 
-WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
-    m_spawner(m_assets) {
-  m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
-  m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = std::move(itemDatabase);
-  m_objectDatabase = std::move(objectDatabase);
-  if (!m_objectDatabase)
-    throw WorldServerException("WorldServer requires object database service");
-  m_speciesDatabase = Root::singleton().speciesDatabase();
-  m_entityFactory = Root::singleton().entityFactory();
-  m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(m_assets, storage, make_shared<WorldGenerator>(this, m_objectDatabase));
+WorldServer::WorldServer(IODevicePtr const& storage,
+                         WorldServerServices services)
+    : m_assets(std::move(services.assets)),
+      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
+  setServices(std::move(services));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, storage, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
-      for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
-    });
+    for (auto const& pair : m_clientInfo)
+      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
+  });
   m_dungeonProtection.m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>(m_assets);
   m_worldId = "Nowhere";
@@ -90,29 +78,69 @@ WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, ICo
   init(false);
 }
 
-WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
-    m_spawner(m_assets) {
-  m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
-  m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = std::move(itemDatabase);
-  m_objectDatabase = std::move(objectDatabase);
-  if (!m_objectDatabase)
-    throw WorldServerException("WorldServer requires object database service");
-  m_speciesDatabase = Root::singleton().speciesDatabase();
-  m_entityFactory = Root::singleton().entityFactory();
-  m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(m_assets, chunks, make_shared<WorldGenerator>(this, m_objectDatabase));
+WorldServer::WorldServer(WorldChunks const& chunks,
+                         WorldServerServices services)
+    : m_assets(std::move(services.assets)),
+      m_spawner(m_assets, services.monsterDatabase, services.spawnTypeDatabase) {
+  setServices(std::move(services));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, chunks, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
-      for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
-    });
+    for (auto const& pair : m_clientInfo)
+      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
+  });
   m_dungeonProtection.m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>(m_assets);
   m_worldId = "Nowhere";
 
   readMetadata();
   init(false);
+}
+
+void WorldServer::setServices(WorldServerServices services) {
+  requireNotNull(m_assets, "WorldServer", "assets");
+  m_configuration = std::move(services.configuration);
+  requireNotNull(m_configuration, "WorldServer", "configuration");
+  m_materialDatabase = std::move(services.materialDatabase);
+  requireNotNull(m_materialDatabase, "WorldServer", "materialDatabase");
+  m_itemDatabase = std::move(services.itemDatabase);
+  requireNotNull(m_itemDatabase, "WorldServer", "itemDatabase");
+  m_objectDatabase = std::move(services.objectDatabase);
+  requireNotNull(m_objectDatabase, "WorldServer", "objectDatabase");
+  m_projectileDatabase = std::move(services.projectileDatabase);
+  requireNotNull(m_projectileDatabase, "WorldServer", "projectileDatabase");
+  m_plantDatabase = std::move(services.plantDatabase);
+  requireNotNull(m_plantDatabase, "WorldServer", "plantDatabase");
+  m_treasureDatabase = std::move(services.treasureDatabase);
+  requireNotNull(m_treasureDatabase, "WorldServer", "treasureDatabase");
+  m_npcDatabase = std::move(services.npcDatabase);
+  requireNotNull(m_npcDatabase, "WorldServer", "npcDatabase");
+  m_monsterDatabase = std::move(services.monsterDatabase);
+  requireNotNull(m_monsterDatabase, "WorldServer", "monsterDatabase");
+  m_spawnTypeDatabase = std::move(services.spawnTypeDatabase);
+  requireNotNull(m_spawnTypeDatabase, "WorldServer", "spawnTypeDatabase");
+  m_stagehandDatabase = std::move(services.stagehandDatabase);
+  requireNotNull(m_stagehandDatabase, "WorldServer", "stagehandDatabase");
+  m_vehicleDatabase = std::move(services.vehicleDatabase);
+  requireNotNull(m_vehicleDatabase, "WorldServer", "vehicleDatabase");
+  m_speciesDatabase = std::move(services.speciesDatabase);
+  requireNotNull(m_speciesDatabase, "WorldServer", "speciesDatabase");
+  m_entityFactory = std::move(services.entityFactory);
+  requireNotNull(m_entityFactory, "WorldServer", "entityFactory");
+  m_liquidsDatabase = std::move(services.liquidsDatabase);
+  requireNotNull(m_liquidsDatabase, "WorldServer", "liquidsDatabase");
+  m_biomeDatabase = std::move(services.biomeDatabase);
+  requireNotNull(m_biomeDatabase, "WorldServer", "biomeDatabase");
+  m_versioningDatabase = std::move(services.versioningDatabase);
+  requireNotNull(m_versioningDatabase, "WorldServer", "versioningDatabase");
+  m_functionDatabase = std::move(services.functionDatabase);
+  requireNotNull(m_functionDatabase, "WorldServer", "functionDatabase");
+  m_behaviorDatabase = std::move(services.behaviorDatabase);
+  m_effectSourceDatabase = std::move(services.effectSourceDatabase);
+  m_particleDatabase = std::move(services.particleDatabase);
+  m_techDatabase = std::move(services.techDatabase);
+  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  m_imageMetadataDatabase = std::move(services.imageMetadataDatabase);
+  m_dungeonDefinitions = std::move(services.dungeonDefinitions);
 }
 
 WorldServer::~WorldServer() {
@@ -309,7 +337,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   auto& templateData = worldStartPacket->templateData = m_worldTemplate->store();
   // this makes it possible to use custom InstanceWorlds without clients having the mod that adds their dungeon:
   if (templateData.optQueryString("worldParameters.primaryDungeon")
-    && Root::singletonPtr()->configuration()->getPath("compatibility.customDungeonWorld").optBool().value(false))
+      && m_configuration->getPath("compatibility.customDungeonWorld").optBool().value(false))
     worldStartPacket->templateData = worldStartPacket->templateData.setPath("worldParameters.primaryDungeon", "testarena");
 
   tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate(0, netRules);
@@ -398,9 +426,8 @@ List<EntityId> WorldServer::players() const {
 
 void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> const& packets) {
   shared_ptr<ClientInfo> clientInfo = m_clientInfo.get(clientId);
-  auto& root = Root::singleton();
-  auto entityFactory = root.entityFactory();
-  auto itemDatabase = root.itemDatabase();
+  auto entityFactory = m_entityFactory;
+  auto itemDatabase = m_itemDatabase;
 
   for (auto const& packet : packets) {
     if (auto worldStartAcknowledge = as<WorldStartAcknowledgePacket>(packet)) {
@@ -513,12 +540,12 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = clientInfo->interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-          EntityId entityId = entity->entityId();
-          if (connectionForEntity(entityId) == clientId) {
-            starAssert(entity->isSlave());
-            entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, clientInfo->clientState.netCompatibilityRules());
-          }
-        });
+        EntityId entityId = entity->entityId();
+        if (connectionForEntity(entityId) == clientId) {
+          starAssert(entity->isSlave());
+          entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, clientInfo->clientState.netCompatibilityRules());
+        }
+      });
       clientInfo->pendingForward = true;
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
@@ -549,7 +576,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto findUniqueEntity = as<FindUniqueEntityPacket>(packet)) {
       clientInfo->outgoingPackets.append(make_shared<FindUniqueEntityResponsePacket>(findUniqueEntity->uniqueEntityId,
-          m_worldStorage->findUniqueEntity(findUniqueEntity->uniqueEntityId)));
+                                                                                     m_worldStorage->findUniqueEntity(findUniqueEntity->uniqueEntityId)));
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
       EntityPtr entity;
@@ -605,15 +632,15 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
       if (!clientInfo->admin)
-        continue; // nuh-uh!
+        continue;// nuh-uh!
 
-      auto newWorldTemplate = make_shared<WorldTemplate>(m_assets, updateWorldTemplate->templateData);
+      auto newWorldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, updateWorldTemplate->templateData);
       setTemplate(newWorldTemplate);
       // setTemplate re-adds all clients currently, update clientInfo
       clientInfo = m_clientInfo.get(clientId);
     } else {
       Logger::warn("UniverseServer: Dropping unexpected {} packet from client",
-          PacketTypeNames.getRight(packet->type()));
+                   PacketTypeNames.getRight(packet->type()));
     }
   }
 }
@@ -675,12 +702,12 @@ void WorldServer::update(float dt) {
 
   List<WorldAction> triggeredActions;
   eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-      if ((timer.first -= dt) <= 0) {
-        triggeredActions.append(timer.second);
-        return true;
-      }
-      return false;
-    });
+    if ((timer.first -= dt) <= 0) {
+      triggeredActions.append(timer.second);
+      return true;
+    }
+    return false;
+  });
   for (auto const& action : triggeredActions)
     action(this);
 
@@ -714,10 +741,7 @@ void WorldServer::update(float dt) {
       }
 
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
-        toRemove.append(entity->entityId());
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityType() < b->entityType();
-    });
+        toRemove.append(entity->entityId()); }, [](EntityPtr const& a, EntityPtr const& b) { return a->entityType() < b->entityType(); });
 
   for (auto& pair : m_scriptContexts)
     pair.second->update(pair.second->updateDt(dt));
@@ -758,18 +782,18 @@ void WorldServer::update(float dt) {
 
   if (auto delta = shouldRunThisStep("worldStorageGenerate")) {
     m_worldStorage->generateQueue(m_fidelityConfig.optUInt("worldStorageGenerationLevelLimit"), [this](WorldStorage::Sector a, WorldStorage::Sector b) {
-        auto distanceToClosestPlayer = [this](WorldStorage::Sector sector) {
-          Vec2F sectorCenter = RectF(*m_worldStorage->regionForSector(sector)).center();
-          float distance = highest<float>();
-          for (auto const& pair : m_clientInfo) {
-            if (auto player = get<Player>(pair.second->clientState.playerId()))
-              distance = min(vmag(sectorCenter - player->position()), distance);
-          }
-          return distance;
-        };
+      auto distanceToClosestPlayer = [this](WorldStorage::Sector sector) {
+        Vec2F sectorCenter = RectF(*m_worldStorage->regionForSector(sector)).center();
+        float distance = highest<float>();
+        for (auto const& pair : m_clientInfo) {
+          if (auto player = get<Player>(pair.second->clientState.playerId()))
+            distance = min(vmag(sectorCenter - player->position()), distance);
+        }
+        return distance;
+      };
 
-        return distanceToClosestPlayer(a) < distanceToClosestPlayer(b);
-      });
+      return distanceToClosestPlayer(a) < distanceToClosestPlayer(b);
+    });
   }
 
   for (EntityId entityId : toRemove)
@@ -884,20 +908,19 @@ CollisionKind WorldServer::tileCollisionKind(Vec2I const& pos) const {
   return m_collision.tileCollisionKind(pos);
 }
 
-
 void WorldServer::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {
   const_cast<WorldServer*>(this)->freshenCollision(region);
   m_tileArray->tileEach(region, [&](Vec2I const& pos, ServerTile const& tile) {
-      if (tile.getCollision() == CollisionKind::Null) {
-        iterator(CollisionBlock::nullBlock(pos));
-      } else {
-        starAssert(!tile.collisionCacheDirty);
-        if (auto cache = m_collision.m_collisionCache.ptr(pos)) {
-          for (auto const& block : *cache)
-            iterator(block);
-        }
+    if (tile.getCollision() == CollisionKind::Null) {
+      iterator(CollisionBlock::nullBlock(pos));
+    } else {
+      starAssert(!tile.collisionCacheDirty);
+      if (auto cache = m_collision.m_collisionCache.ptr(pos)) {
+        for (auto const& block : *cache)
+          iterator(block);
       }
-    });
+    }
+  });
 }
 
 bool WorldServer::isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly) const {
@@ -953,9 +976,10 @@ void WorldServer::setPropertyListener(String const& propertyName, WorldPropertyL
 }
 
 TileModificationList WorldServer::validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const {
-  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
-      return !isTileProtected(pos);
-    }).first;
+  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase, [this](Vec2I pos, TileModification) {
+           return !isTileProtected(pos);
+         })
+    .first;
 }
 
 TileModificationList WorldServer::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
@@ -974,22 +998,22 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
   if (isTileProtected(pos))
     return false;
 
-  if (!WorldImpl::validateTileReplacement(modification))
+  if (!WorldImpl::validateTileReplacement(modification, m_materialDatabase))
     return false;
-  
+
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (!isTileConnectable(pos, placeMaterial->layer, true))
       return false;
 
     if (auto tile = m_tileArray->modifyTile(pos)) {
-      auto damageParameters = WorldImpl::tileDamageParameters(tile, placeMaterial->layer, tileDamage);
+      auto damageParameters = WorldImpl::tileDamageParameters(tile, placeMaterial->layer, tileDamage, m_materialDatabase);
       bool harvested = tileDamage.amount >= 0 && tileDamage.harvestLevel >= damageParameters.requiredHarvestLevel();
       auto damage = placeMaterial->layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       Vec2F dropPosition = centerOfTile(pos);
 
       for (auto const& drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets, m_itemDatabase));
-      
+
       return true;
     }
   }
@@ -1025,13 +1049,13 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
         success.append(pair);
         continue;
       }
-      
+
       failures.append(pair);
     }
 
     if (!toDamage.empty())
       damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
-    
+
   } else {
     for (auto const& pair : modificationList) {
       if (replaceTile(pair.first, pair.second, tileDamage))
@@ -1053,7 +1077,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
 }
 
 bool WorldServer::damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const {
-  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage);
+  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage, m_materialDatabase);
 }
 
 TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& damage, Maybe<EntityId> sourceEntity) {
@@ -1091,10 +1115,10 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
               if (auto object = as<Object>(entity))
                 name = object->name();
               sendEntityMessage(*sourceEntity, "tileEntityBroken", {
-                  jsonFromVec2I(pos),
-                  EntityTypeNames.getRight(entity->entityType()),
-                  jsonFromMaybe(name),
-                });
+                                                                     jsonFromVec2I(pos),
+                                                                     EntityTypeNames.getRight(entity->entityType()),
+                                                                     jsonFromMaybe(name),
+                                                                   });
             }
 
             if (tileDamage.type == TileDamageType::Protected)
@@ -1110,7 +1134,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
       // Penetrating damage should carry through to the blocks behind this
       // entity.
       if (tileRes == TileDamageResult::None || tileDamageIsPenetrating(tileDamage.type)) {
-        auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage);
+        auto damageParameters = WorldImpl::tileDamageParameters(tile, layer, tileDamage, m_materialDatabase);
 
         if (layer == TileLayer::Foreground && isRealMaterial(tile->foreground)) {
           if (!tile->rootSource || damagedEntities.empty()) {
@@ -1119,12 +1143,12 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
             // if the tile is broken, send a message back to the source entity with position, layer, dungeonId, and whether the tile was harvested
             if (sourceEntity.isValid() && tile->foregroundDamage.dead()) {
               sendEntityMessage(*sourceEntity, "tileBroken", {
-                  jsonFromVec2I(pos),
-                  TileLayerNames.getRight(TileLayer::Foreground),
-                  tile->foreground,
-                  tile->dungeonId,
-                  tile->foregroundDamage.harvested(),
-                });
+                                                               jsonFromVec2I(pos),
+                                                               TileLayerNames.getRight(TileLayer::Foreground),
+                                                               tile->foreground,
+                                                               tile->dungeonId,
+                                                               tile->foregroundDamage.harvested(),
+                                                             });
             }
 
             queueTileDamageUpdates(pos, TileLayer::Foreground);
@@ -1137,17 +1161,17 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
           }
         } else if (layer == TileLayer::Background && isRealMaterial(tile->background)) {
           tile->backgroundDamage.damage(damageParameters, sourcePosition, tileDamage);
-          
+
           // if the tile is broken, send a message back to the source entity with position and whether the tile was harvested
-            if (sourceEntity.isValid() && tile->backgroundDamage.dead()) {
-              sendEntityMessage(*sourceEntity, "tileBroken", {
-                  jsonFromVec2I(pos),
-                  TileLayerNames.getRight(TileLayer::Background),
-                  tile->background,
-                  tile->dungeonId,
-                  tile->backgroundDamage.harvested(),
-                });
-            }
+          if (sourceEntity.isValid() && tile->backgroundDamage.dead()) {
+            sendEntityMessage(*sourceEntity, "tileBroken", {
+                                                             jsonFromVec2I(pos),
+                                                             TileLayerNames.getRight(TileLayer::Background),
+                                                             tile->background,
+                                                             tile->dungeonId,
+                                                             tile->backgroundDamage.harvested(),
+                                                           });
+          }
 
           queueTileDamageUpdates(pos, TileLayer::Background);
           m_damagedBlocks.add(pos);
@@ -1172,8 +1196,8 @@ DungeonId WorldServer::dungeonId(Vec2I const& pos) const {
 
 bool WorldServer::isPlayerModified(RectI const& region) const {
   return m_tileArray->tileSatisfies(region, [](Vec2I const&, ServerTile const& tile) {
-      return tile.dungeonId == ConstructionDungeonId || tile.dungeonId == DestroyedBlockDungeonId;
-    });
+    return tile.dungeonId == ConstructionDungeonId || tile.dungeonId == DestroyedBlockDungeonId;
+  });
 }
 
 ItemDescriptor WorldServer::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId) {
@@ -1225,8 +1249,8 @@ bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position,
   auto seed = worldTemplate()->seedFor(position[0], position[1]);
   auto facade = make_shared<DungeonGeneratorWorld>(this, m_objectDatabase, true);
   bool placed = false;
-  DungeonGenerator dungeonGenerator(dungeonName, seed, m_worldTemplate->threatLevel(), dungeonId);
-    if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
+  DungeonGenerator dungeonGenerator(m_dungeonDefinitions, dungeonName, seed, m_worldTemplate->threatLevel(), dungeonId);
+  if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
     auto worldGenerator = make_shared<WorldGenerator>(this, m_objectDatabase);
     for (auto const& dungeonPosition : generateResult->second) {
       if (ServerTile* tile = modifyServerTile(dungeonPosition))
@@ -1312,7 +1336,7 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
       newTerrestrialParameters->typeName = planetType;
       newTerrestrialParameters->primaryBiome = primaryBiomeName;
 
-      auto biomeDatabase = Root::singleton().biomeDatabase();
+      auto biomeDatabase = m_biomeDatabase;
       auto newWeatherPool = biomeDatabase->biomeWeathers(primaryBiomeName, m_worldTemplate->worldSeed(), m_worldTemplate->threatLevel());
       newTerrestrialParameters->weatherPool = newWeatherPool;
 
@@ -1339,13 +1363,12 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
       m_weather.setup(m_assets, m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
         auto const& tile = m_tileArray->tile(pos);
         return !isRealMaterial(tile.background);
-      });
+      }, m_biomeDatabase, m_projectileDatabase);
 
       m_newPlanetType = pair<String, String>{planetType, primaryBiomeName};
     }
   }
 }
-
 
 void WorldServer::setWeatherIndex(size_t weatherIndex, bool force) {
   m_weather.setWeatherIndex(weatherIndex, force);
@@ -1384,7 +1407,7 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
   if (updated) {
     for (auto const& pair : m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
-  
+
     Logger::info("Protected dungeonIds for world set to {}", m_dungeonProtection.m_protectedDungeonIds);
   }
 }
@@ -1447,13 +1470,12 @@ float WorldServer::gravityFromTile(ServerTile const& tile) const {
 
 bool WorldServer::isFloatingDungeonWorld() const {
   return m_worldTemplate && m_worldTemplate->worldParameters()
-      && m_worldTemplate->worldParameters()->type() == WorldParametersType::FloatingDungeonWorldParameters;
+    && m_worldTemplate->worldParameters()->type() == WorldParametersType::FloatingDungeonWorldParameters;
 }
 
 void WorldServer::init(bool firstTime) {
-  auto& root = Root::singleton();
   auto assets = m_assets;
-  auto liquidsDatabase = root.liquidsDatabase();
+  auto liquidsDatabase = m_liquidsDatabase;
 
   m_serverConfig = assets->json("/worldserver.config");
   setFidelity(WorldServerFidelity::Medium);
@@ -1479,8 +1501,8 @@ void WorldServer::init(bool firstTime) {
   m_entityMessageResponses = {};
 
   m_collision.m_collisionGenerator.init([=, this](int x, int y) {
-      return m_tileArray->tile({x, y}).getCollision();
-    });
+    return m_tileArray->tile({x, y}).getCollision();
+  });
 
   m_entityUpdateTimer = GameTimer(m_serverConfig.query("interpolationSettings.normal").getFloat("entityUpdateDelta") / 60.f);
   m_tileEntityBreakCheckTimer = GameTimer(m_serverConfig.getFloat("tileEntityBreakCheckInterval"));
@@ -1511,7 +1533,7 @@ void WorldServer::init(bool firstTime) {
           --retryCounter;
           auto dungeonFacade = make_shared<DungeonGeneratorWorld>(this, m_objectDatabase, true);
           Vec2I position = Vec2I((dungeon.baseX + rnd.randInt(0, dungeon.xVariance)) % m_geometry.width(), dungeon.baseHeight);
-          DungeonGenerator dungeonGenerator(dungeon.dungeon, m_worldTemplate->worldSeed(), m_worldTemplate->threatLevel(), currentDungeonId);
+          DungeonGenerator dungeonGenerator(m_dungeonDefinitions, dungeon.dungeon, m_worldTemplate->worldSeed(), m_worldTemplate->threatLevel(), currentDungeonId);
           if (auto generateResult = dungeonGenerator.generate(dungeonFacade, position, dungeon.blendWithTerrain, dungeon.force)) {
             if (dungeonGenerator.definition()->isProtected())
               setTileProtection(currentDungeonId, true);
@@ -1538,8 +1560,7 @@ void WorldServer::init(bool firstTime) {
 
       m_dungeonProtection.m_dungeonIdGravity[ZeroGDungeonId] = 0.0;
       m_dungeonProtection.m_dungeonIdGravity[ProtectedZeroGDungeonId] = 0.0;
-
-        }
+    }
 
     if (m_spawnFinder.m_adjustPlayerStart)
       m_spawnFinder.m_playerStart = findPlayerStart(firstTime ? Maybe<Vec2F>() : m_spawnFinder.m_playerStart);
@@ -1547,9 +1568,9 @@ void WorldServer::init(bool firstTime) {
     generateRegion(RectI::integral(RectF(m_spawnFinder.m_playerStart, m_spawnFinder.m_playerStart)).padded(m_serverConfig.getInt("playerStartInitialGenRadius")));
 
     m_weather.setup(m_assets, m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
-        auto const& tile = m_tileArray->tile(pos);
-        return !isRealMaterial(tile.background);
-      });
+      auto const& tile = m_tileArray->tile(pos);
+      return !isRealMaterial(tile.background);
+    }, m_biomeDatabase, m_projectileDatabase);
   } catch (std::exception const& e) {
     m_worldStorage->unloadAll(true);
     throw WorldServerException("Exception encountered initializing world", e);
@@ -1579,7 +1600,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
 
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
-      if (!WorldImpl::canPlaceMaterial(m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, m_tileGetterFunction))
+      if (!WorldImpl::canPlaceMaterial(m_entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, m_tileGetterFunction, m_materialDatabase))
         continue;
 
       ServerTile* tile = m_tileArray->modifyTile(pos);
@@ -1634,7 +1655,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       queueTileUpdates(pos);
 
     } else if (auto placeMod = modification.ptr<PlaceMod>()) {
-      if (!WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, m_tileGetterFunction))
+      if (!WorldImpl::canPlaceMod(pos, placeMod->layer, placeMod->mod, m_tileGetterFunction, m_materialDatabase))
         continue;
 
       ServerTile* tile = m_tileArray->modifyTile(pos);
@@ -1659,7 +1680,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
       queueTileUpdates(pos);
 
     } else if (auto placeMaterialColor = modification.ptr<PlaceMaterialColor>()) {
-      if (!WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, m_tileGetterFunction))
+      if (!WorldImpl::canPlaceMaterialColorVariant(pos, placeMaterialColor->layer, placeMaterialColor->color, m_tileGetterFunction, m_materialDatabase))
         continue;
 
       WorldTile* tile = m_tileArray->modifyTile(pos);
@@ -1747,7 +1768,7 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
       if (updatedCollision) {
         m_liquid.liquidEngine()->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
-        dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+        dirtyCollision(RectI::withSize(pos, {1, 1}));
       }
       if (updatedTile)
         queueTileUpdates(pos);
@@ -1779,7 +1800,7 @@ void WorldServer::updateTileEntityTiles(TileEntityPtr const& entity, bool removi
       if (updatedCollision) {
         m_liquid.liquidEngine()->visitLocation(pos);
         m_fallingBlocksAgent->visitLocation(pos);
-        dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+        dirtyCollision(RectI::withSize(pos, {1, 1}));
       }
       if (updatedTile)
         queueTileUpdates(pos);
@@ -1874,16 +1895,88 @@ WorldTemplatePtr WorldServer::worldTemplate() const {
   return m_worldTemplate;
 }
 
-IAssetsConstPtr WorldServer::assets() const {
+AssetsConstPtr WorldServer::assets() const {
   return m_assets;
 }
 
-IItemDatabaseConstPtr WorldServer::itemDatabase() const {
+MaterialDatabaseConstPtr WorldServer::materialDatabase() const {
+  return m_materialDatabase;
+}
+
+ItemDatabaseConstPtr WorldServer::itemDatabase() const {
   return m_itemDatabase;
 }
 
 ObjectDatabaseConstPtr WorldServer::objectDatabase() const {
   return m_objectDatabase;
+}
+
+PlantDatabaseConstPtr WorldServer::plantDatabase() const {
+  return m_plantDatabase;
+}
+
+TreasureDatabaseConstPtr WorldServer::treasureDatabase() const {
+  return m_treasureDatabase;
+}
+
+ImageMetadataDatabaseConstPtr WorldServer::imageMetadataDatabase() const {
+  return m_imageMetadataDatabase;
+}
+
+FunctionDatabaseConstPtr WorldServer::functionDatabase() const {
+  return m_functionDatabase;
+}
+
+NpcDatabaseConstPtr WorldServer::npcDatabase() const {
+  return m_npcDatabase;
+}
+
+MonsterDatabaseConstPtr WorldServer::monsterDatabase() const {
+  return m_monsterDatabase;
+}
+
+ProjectileDatabaseConstPtr WorldServer::projectileDatabase() const {
+  return m_projectileDatabase;
+}
+
+SpawnTypeDatabaseConstPtr WorldServer::spawnTypeDatabase() const {
+  return m_spawnTypeDatabase;
+}
+
+StagehandDatabaseConstPtr WorldServer::stagehandDatabase() const {
+  return m_stagehandDatabase;
+}
+
+VehicleDatabaseConstPtr WorldServer::vehicleDatabase() const {
+  return m_vehicleDatabase;
+}
+
+DungeonDefinitionsConstPtr WorldServer::dungeonDefinitions() const {
+  return m_dungeonDefinitions;
+}
+
+BehaviorDatabaseConstPtr WorldServer::behaviorDatabase() const {
+  return m_behaviorDatabase;
+}
+
+LiquidsDatabaseConstPtr WorldServer::liquidsDatabase() const {
+  return m_liquidsDatabase;
+}
+
+EffectSourceDatabaseConstPtr WorldServer::effectSourceDatabase() const {
+  return m_effectSourceDatabase;
+}
+
+ParticleDatabaseConstPtr WorldServer::particleDatabase() const {
+  return m_particleDatabase;
+}
+
+TechDatabaseConstPtr WorldServer::techDatabase() const {
+  return m_techDatabase;
+}
+
+StatusEffectDatabaseConstPtr WorldServer::statusEffectDatabase() const {
+  return m_statusEffectDatabase;
 }
 
 SkyPtr WorldServer::sky() const {
@@ -2042,10 +2135,10 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
     auto tile = m_tileArray->tile(pair.first);
     if (pair.second == TileLayer::Foreground)
       clientInfo->outgoingPackets.append(
-          makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Foreground, tile.foregroundDamage));
+        makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Foreground, tile.foregroundDamage));
     else
       clientInfo->outgoingPackets.append(
-          makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Background, tile.backgroundDamage));
+        makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Background, tile.backgroundDamage));
   }
   clientInfo->pendingTileDamageUpdates.clear();
 
@@ -2098,7 +2191,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
         auto firstUpdate = monitoredEntity->writeNetState(0, netRules);
         clientInfo->clientSlavesNetVersion.add(entityId, firstUpdate.second);
         clientInfo->outgoingPackets.append(makePooled<EntityCreatePacket>(monitoredEntity->entityType(),
-              entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(firstUpdate.first), entityId));
+                                                                          entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(firstUpdate.first), entityId));
       }
     }
   }
@@ -2115,11 +2208,11 @@ void WorldServer::updateDamage(float dt) {
 
   for (auto const& remoteHitRequest : m_damageManager->pullRemoteHitRequests())
     m_clientInfo.get(remoteHitRequest.destinationConnection())
-        ->outgoingPackets.append(make_shared<HitRequestPacket>(remoteHitRequest));
+      ->outgoingPackets.append(make_shared<HitRequestPacket>(remoteHitRequest));
 
   for (auto const& remoteDamageRequest : m_damageManager->pullRemoteDamageRequests())
     m_clientInfo.get(remoteDamageRequest.destinationConnection())
-        ->outgoingPackets.append(make_shared<DamageRequestPacket>(remoteDamageRequest));
+      ->outgoingPackets.append(make_shared<DamageRequestPacket>(remoteDamageRequest));
 
   for (auto const& remoteDamageNotification : m_damageManager->pullRemoteDamageNotifications()) {
     for (auto const& pair : m_clientInfo) {
@@ -2280,7 +2373,7 @@ float WorldServer::windLevel(Vec2F const& pos) const {
 }
 
 float WorldServer::lightLevel(Vec2F const& pos) const {
-  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lightIntensityCalculator, pos);
+  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lightIntensityCalculator, pos, m_materialDatabase, m_liquidsDatabase);
 }
 
 void WorldServer::setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathable) {
@@ -2296,8 +2389,6 @@ void WorldServer::setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathab
   }
 }
 
-
-
 bool WorldServer::breathable(Vec2F const& pos) const {
   return WorldImpl::breathable(this, m_tileArray, m_dungeonProtection.m_dungeonIdBreathable, m_worldTemplate, pos);
 }
@@ -2312,7 +2403,7 @@ StringList WorldServer::environmentStatusEffects(Vec2F const& pos) const {
 
 StringList WorldServer::weatherStatusEffects(Vec2F const& pos) const {
   if (!m_weather.statusEffects().empty()) {
-     if (exposedToWeather(pos))
+    if (exposedToWeather(pos))
       return m_weather.statusEffects();
   }
 
@@ -2428,42 +2519,39 @@ void WorldServer::setPlayerStart(Vec2F const& startPosition, bool respawnInWorld
   m_spawnFinder.setPlayerStart(startPosition, respawnInWorld);
 }
 
-
 Vec2F WorldServer::findPlayerStart(Maybe<Vec2F> firstTry) {
   return m_spawnFinder.findPlayerStart(firstTry);
 }
-
 
 Vec2F WorldServer::findPlayerSpaceStart(float targetX) {
   return m_spawnFinder.findPlayerSpaceStart(targetX);
 }
 
 void WorldServer::readMetadata() {
-  auto dungeonDefinitions = Root::singleton().dungeonDefinitions();
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
 
   auto metadata = versioningDatabase->loadVersionedJson(m_worldStorage->worldMetadata(), "WorldMetadata");
 
   m_spawnFinder.m_playerStart = jsonToVec2F(metadata.get("playerStart"));
   m_spawnFinder.m_respawnInWorld = metadata.getBool("respawnInWorld");
   m_spawnFinder.m_adjustPlayerStart = metadata.getBool("adjustPlayerStart");
-  m_worldTemplate = make_shared<WorldTemplate>(m_assets, metadata.get("worldTemplate"));
+  m_worldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, metadata.get("worldTemplate"));
   m_centralStructure = WorldStructure(metadata.get("centralStructure"));
   m_dungeonProtection.m_protectedDungeonIds = jsonToSet<StableHashSet<DungeonId>>(metadata.get("protectedDungeonIds"), mem_fn(&Json::toUInt));
   m_worldProperties.properties() = metadata.getObject("worldProperties");
   m_spawner.setActive(metadata.getBool("spawningEnabled"));
 
   m_dungeonProtection.m_dungeonIdGravity = transform<HashMap<DungeonId, float>>(metadata.getArray("dungeonIdGravity"), [](Json const& p) {
-      return make_pair(p.getInt(0), p.getFloat(1));
-    });
+    return make_pair(p.getInt(0), p.getFloat(1));
+  });
 
   m_dungeonProtection.m_dungeonIdBreathable = transform<HashMap<DungeonId, bool>>(metadata.getArray("dungeonIdBreathable"), [](Json const& p) {
-      return make_pair(p.getInt(0), p.getBool(1));
-    });
+    return make_pair(p.getInt(0), p.getBool(1));
+  });
 }
 
 void WorldServer::writeMetadata() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
 
   Json metadata = JsonObject{
     {"playerStart", jsonFromVec2F(m_spawnFinder.m_playerStart)},
@@ -2475,12 +2563,11 @@ void WorldServer::writeMetadata() {
     {"worldProperties", m_worldProperties.properties()},
     {"spawningEnabled", m_spawner.active()},
     {"dungeonIdGravity", m_dungeonProtection.m_dungeonIdGravity.pairs().transformed([](auto const& p) -> Json {
-        return JsonArray{p.first, p.second};
-      })},
+       return JsonArray{p.first, p.second};
+     })},
     {"dungeonIdBreathable", m_dungeonProtection.m_dungeonIdBreathable.pairs().transformed([](auto const& p) -> Json {
-        return JsonArray{p.first, p.second};
-      })}
-  };
+       return JsonArray{p.first, p.second};
+     })}};
 
   m_worldStorage->setWorldMetadata(versioningDatabase->makeCurrentVersionedJson("WorldMetadata", metadata));
 }
@@ -2495,8 +2582,8 @@ bool WorldServer::isVisibleToPlayer(RectF const& region) const {
   return false;
 }
 
-WorldServer::ClientInfo::ClientInfo(IAssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit)
-  : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), clientState(std::move(assets)), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
+WorldServer::ClientInfo::ClientInfo(AssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit)
+    : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), clientState(std::move(assets)), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
 List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
   return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {
@@ -2556,11 +2643,10 @@ void WorldServer::setupForceRegions() {
 
   if (addTopRegion) {
     auto topForceRegion = GradientForceRegion();
-    topForceRegion.region = PolyF({
-        {0, worldSize[1] - regionHeight},
-        {worldSize[0], worldSize[1] - regionHeight},
-        (worldSize),
-        {0, worldSize[1]}});
+    topForceRegion.region = PolyF({{0, worldSize[1] - regionHeight},
+                                   {worldSize[0], worldSize[1] - regionHeight},
+                                   (worldSize),
+                                   {0, worldSize[1]}});
     topForceRegion.gradient = Line2F({0, worldSize[1]}, {0, worldSize[1] - regionHeight});
     topForceRegion.baseTargetVelocity = regionVelocity;
     topForceRegion.baseControlForce = regionForce;
@@ -2570,11 +2656,10 @@ void WorldServer::setupForceRegions() {
 
   if (addBottomRegion) {
     auto bottomForceRegion = GradientForceRegion();
-    bottomForceRegion.region = PolyF({
-        {0, 0},
-        {worldSize[0], 0},
-        {worldSize[0], regionHeight},
-        {0, regionHeight}});
+    bottomForceRegion.region = PolyF({{0, 0},
+                                      {worldSize[0], 0},
+                                      {worldSize[0], regionHeight},
+                                      {0, regionHeight}});
     bottomForceRegion.gradient = Line2F({0, 0}, {0, regionHeight});
     bottomForceRegion.baseTargetVelocity = regionVelocity;
     bottomForceRegion.baseControlForce = regionForce;
@@ -2609,4 +2694,4 @@ void WorldServer::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I co
   }
 }
 
-}
+}// namespace Star

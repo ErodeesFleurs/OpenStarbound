@@ -3,6 +3,7 @@
 #include "StarSystemWorldServer.hpp"
 #include "StarThread.hpp"
 #include "StarNetPackets.hpp"
+#include "StarVersioningDatabase.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ using ClientShipAction = function<void(SystemClientShip*)>;
 
 class SystemWorldServerThread : public Thread {
 public:
-  SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile);
+  SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile, VersioningDatabaseConstPtr versioningDatabase);
   ~SystemWorldServerThread();
 
   Vec3I location() const;
@@ -52,6 +53,7 @@ private:
   float m_periodicStorage{300.0f};
   bool m_triggerStorage{ false};
   String m_storageFile;
+  VersioningDatabaseConstPtr m_versioningDatabase;
 
   SharedPtr<atomic<bool> const> m_pause;
   function<void(SystemWorldServerThread*)> m_updateAction;

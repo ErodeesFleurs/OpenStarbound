@@ -63,12 +63,12 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
 
   auto newItemIndicatorConfig = interfaceConfig.get("newItemAnimation");
-  m_newItemIndicator = Animation(newItemIndicatorConfig);
+  m_newItemIndicator = Animation(newItemIndicatorConfig, {}, assets);
   // End animation before it begins, only display when triggered
   m_newItemIndicator.update(newItemIndicatorConfig.getDouble("animationCycle") * newItemIndicatorConfig.getDouble("loops", 1.0f));
 
   Json highlightAnimationConfig = interfaceConfig.get("highlightAnimation");
-  m_highlightAnimation = Animation(highlightAnimationConfig);
+  m_highlightAnimation = Animation(highlightAnimationConfig, {}, assets);
   m_highlightEnabled = false;
 
   Vec2I backingImageSize;

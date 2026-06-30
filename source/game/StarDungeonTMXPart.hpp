@@ -4,7 +4,7 @@
 #include "StarDungeonGenerator.hpp"
 #include "StarTilesetDatabase.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -22,7 +22,7 @@ namespace Dungeon {
 
   class TMXTilesets {
   public:
-    TMXTilesets(Json const& tmx);
+    TMXTilesets(Json const& tmx, TilesetDatabaseConstPtr tilesetDatabase);
 
     Tiled::Tile const& getTile(unsigned gid, TileLayer layer) const;
 
@@ -169,7 +169,7 @@ namespace Dungeon {
 
   class TMXMap {
   public:
-    TMXMap(Json const& tmx);
+    TMXMap(Json const& tmx, TilesetDatabaseConstPtr tilesetDatabase);
 
     List<TMXTileLayerPtr> const& tileLayers() const {
       return m_tileLayers;
@@ -200,7 +200,7 @@ namespace Dungeon {
 
   class TMXPartReader : public PartReader {
   public:
-    explicit TMXPartReader(IAssetsConstPtr assets) : m_assets(std::move(assets)) {}
+    explicit TMXPartReader(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_assets(std::move(assets)), m_tilesetDatabase(std::move(tilesetDatabase)) {}
 
     virtual void readAsset(String const& asset) override;
 
@@ -213,7 +213,8 @@ namespace Dungeon {
     // Return true in the callback to exit early without processing later maps
     void forEachMap(function<bool(TMXMapConstPtr const&)> func) const;
 
-    IAssetsConstPtr m_assets;
+    AssetsConstPtr m_assets;
+    TilesetDatabaseConstPtr m_tilesetDatabase;
     List<pair<String, TMXMapConstPtr>> m_maps;
   };
 }

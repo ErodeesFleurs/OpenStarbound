@@ -504,7 +504,7 @@ void Object::destroy(RenderCallback* renderCallback) {
       if (doSmash) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
-          for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
+          for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
             world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
@@ -515,7 +515,7 @@ void Object::destroy(RenderCallback* renderCallback) {
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
-          for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
+          for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
             world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
@@ -544,10 +544,9 @@ void Object::destroy(RenderCallback* renderCallback) {
   }
 
   if (renderCallback && doSmash && !m_config->smashParticles.empty()) {
-    auto& root = Root::singleton();
     List<Particle> particles;
     for (auto const& config : m_config->smashParticles) {
-      auto creator = root.particleDatabase()->particleCreator(config.get("particle"), m_config->path);
+      auto creator = world()->particleDatabase()->particleCreator(config.get("particle"), m_config->path);
       unsigned count = config.getUInt("count", 1);
       Vec2F offset = jsonToVec2F(config.get("offset", JsonArray{0, 0}));
       bool flip = config.getBool("flip", false);
@@ -1098,7 +1097,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
 
   callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
       List<MaterialSpace> materialSpaces;
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world()->materialDatabase();
       for (auto space : newSpaces.value())
         materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
       m_materialSpaces.set(materialSpaces);

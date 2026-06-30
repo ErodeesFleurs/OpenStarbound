@@ -40,6 +40,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
     m_nameGenerator(requireTitleScreenService(std::move(services.nameGenerator), "TitleScreen requires name generator service")),
     m_itemDatabase(requireTitleScreenService(std::move(services.itemDatabase), "TitleScreen requires item database service")),
     m_imageMetadata(requireTitleScreenService(std::move(services.imageMetadata), "TitleScreen requires image metadata service")),
+    m_versioningDatabase(requireTitleScreenService(std::move(services.versioningDatabase), "TitleScreen requires versioning database service")),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}),
     m_playerStorage(playerStorage),
     m_skipMultiPlayerConnection(false),
@@ -48,7 +49,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
 
   m_guiContext = GuiContext::singletonPtr();
 
-  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets);
+  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets, m_versioningDatabase);
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
     }).take();

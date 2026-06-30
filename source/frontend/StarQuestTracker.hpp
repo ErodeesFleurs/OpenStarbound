@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -22,7 +22,7 @@ using QuestTrackerPanePtr = SharedPtr<QuestTrackerPane>;
 class QuestTrackerPane : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   explicit QuestTrackerPane(Services services);

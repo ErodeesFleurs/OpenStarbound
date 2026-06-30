@@ -3,7 +3,9 @@
 #include "StarJson.hpp"
 #include "StarRect.hpp"
 #include "StarGameTypes.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
 
 namespace Star {
 
@@ -42,7 +44,7 @@ public:
   };
 
   WorldStructure();
-  WorldStructure(IAssetsConstPtr assets, String const& configPath);
+  WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath);
   WorldStructure(Json const& store);
 
   Json configValue(String const& name) const;

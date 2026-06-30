@@ -5,7 +5,7 @@
 #include "StarEnvironmentPainter.hpp"
 #include "StarTextPainter.hpp"
 #include "StarDrawablePainter.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 #include "StarRenderer.hpp"
 
 namespace Star {
@@ -20,7 +20,7 @@ using WorldPainterPtr = SharedPtr<WorldPainter>;
 // Will update client rendering window internally
 class WorldPainter {
 public:
-  WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
+  WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
 
   void renderInit(RendererPtr renderer);
 
@@ -62,7 +62,7 @@ private:
   // Updated every frame
 
   AssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration;
   function<void(ListenerWeakPtr)> m_registerReloadListener;
   MaterialDatabaseConstPtr m_materialDatabase;
   LiquidsDatabaseConstPtr m_liquidsDatabase;

@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     uint64_t worldSeed = Random::randu64();
     if (options.parameters.contains("seed"))
       worldSeed = lexicalCast<uint64_t>(options.parameters.get("seed").first());
-    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters, SkyParameters(), worldSeed);
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters, SkyParameters(), worldSeed);
 
     auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
     root->configuration()->set("serverFidelity", fidelity.value("high"));
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 
     double sumTime = 0.0;
     for (uint64_t i = 0; i < times; ++i) {
-      WorldServer worldServer(worldTemplate, File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
+      WorldServer worldServer(worldTemplate, File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
 
       coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();

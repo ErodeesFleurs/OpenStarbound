@@ -8,7 +8,7 @@
 #include "StarFireableItem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarPreviewTileTool.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -26,7 +26,7 @@ class PaintingBeamTool;
 
 class MiningTool : public Item, public SwingableItem, public DurabilityItem {
 public:
-  MiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  MiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -43,7 +43,7 @@ public:
 private:
   void changeDurability(float amount);
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_image;
   int m_frames;
   float m_frameCycle;
@@ -65,7 +65,7 @@ private:
 
 class HarvestingTool : public Item, public SwingableItem {
 public:
-  HarvestingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  HarvestingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -94,7 +94,7 @@ private:
 
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
-  Flashlight(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  Flashlight(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -113,7 +113,7 @@ private:
 
 class WireTool : public Item, public FireableItem, public PointableItem, public BeamItem {
 public:
-  WireTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  WireTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -133,7 +133,7 @@ public:
   void setConnector(WireConnector* connector);
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_image;
   Vec2F m_handPosition;
 
@@ -145,7 +145,7 @@ private:
 
 class BeamMiningTool : public Item, public FireableItem, public PreviewTileTool, public PointableItem, public BeamItem {
 public:
-  BeamMiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  BeamMiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -164,7 +164,7 @@ public:
   List<PersistentStatusEffect> statusEffects() const override;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   float m_blockRadius;
   float m_altBlockRadius;
 
@@ -181,7 +181,7 @@ private:
 
 class TillingTool : public Item, public SwingableItem {
 public:
-  TillingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  TillingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 
@@ -193,7 +193,7 @@ public:
   float getAngle(float aimAngle) override;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_image;
   int m_frames;
   float m_frameCycle;
@@ -215,7 +215,7 @@ class PaintingBeamTool
     public PointableItem,
     public BeamItem {
 public:
-  PaintingBeamTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  PaintingBeamTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 

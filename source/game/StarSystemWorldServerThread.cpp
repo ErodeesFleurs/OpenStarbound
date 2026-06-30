@@ -1,15 +1,19 @@
 #include "StarSystemWorldServerThread.hpp"
 #include "StarTickRateMonitor.hpp"
 #include "StarNetPackets.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
-SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile)
+SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile, VersioningDatabaseConstPtr versioningDatabase)
   : Thread(strf("SystemWorldServer: {}", location))
   , m_systemLocation(location)
   , m_systemWorld(std::move(systemWorld))
   , m_storageFile(storageFile)
+  , m_versioningDatabase(std::move(versioningDatabase))
 {
+  if (!m_versioningDatabase)
+    throw StarException("SystemWorldServerThread requires versioning database service");
 }
 
 SystemWorldServerThread::~SystemWorldServerThread() {
@@ -174,7 +178,7 @@ void SystemWorldServerThread::store() {
   locker.unlock();
 
   Logger::debug("Trigger disk storage for system world {}:{}:{}", m_systemLocation.x(), m_systemLocation.y(), m_systemLocation.z());
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
   auto versionedStore = versioningDatabase->makeCurrentVersionedJson("System", store);
   VersionedJson::writeFile(versionedStore, m_storageFile);
 }

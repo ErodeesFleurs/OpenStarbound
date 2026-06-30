@@ -9,7 +9,7 @@
 
 namespace Star {
 
-TeamClient::TeamClient(IAssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
+TeamClient::TeamClient(AssetsConstPtr assets, PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   if (!assets)
     throw StarException("TeamClient requires assets service");
 

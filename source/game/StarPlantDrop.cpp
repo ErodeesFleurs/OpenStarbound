@@ -19,7 +19,7 @@ PlantDrop::PlantDropPiece::PlantDropPiece() {
   flip = false;
 }
 
-PlantDrop::PlantDrop(IAssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+PlantDrop::PlantDrop(AssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
     bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random)
   : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
   if (!m_assets)
@@ -89,7 +89,7 @@ PlantDrop::PlantDrop(IAssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec
     m_collisionRect = fullBounds;
 }
 
-PlantDrop::PlantDrop(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
+PlantDrop::PlantDrop(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
   : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
   if (!m_assets)
     throw StarException("PlantDrop requires assets service");
@@ -217,7 +217,7 @@ void PlantDrop::update(float dt, uint64_t) {
         m_time = 0;
     }
 
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto imgMetadata = world()->imageMetadataDatabase();
 
     if ((m_time <= 0 || world()->gravity(position()) == 0) && !m_spawnedDrops.get()) {
       m_spawnedDrops.set(true);
@@ -269,7 +269,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
   Particle particle;
 
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = world()->imageMetadataDatabase();
 
   Vec2F imageSize = Vec2F(imgMetadata->imageSize(piece.image)) / TilePixels;
   float density = (imageSize.x() * imageSize.y()) / particleConfig.getFloat("density", 1);
@@ -286,7 +286,7 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 
     auto config = Random::randValueFrom(particleOptions, {});
 
-    particle = Root::singleton().particleDatabase()->particle(config);
+    particle = world()->particleDatabase()->particle(config);
     particle.color.hueShift(mainConfig.getFloat("hueshift", 0) / 360.0f);
     for (Directives const& directives : piece.image.directives.list())
       particle.directives.append(directives);

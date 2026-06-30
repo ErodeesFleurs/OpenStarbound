@@ -1,7 +1,6 @@
 #include "StarItemDatabase.hpp"
 #include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarCurrency.hpp"
@@ -133,12 +132,30 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   return true;
 }
 
-ItemDatabase::ItemDatabase(AssetsConstPtr assets, function<ObjectDatabaseConstPtr()> objectDatabase)
-  : m_assets(std::move(assets)), m_objectDatabase(std::move(objectDatabase)), m_luaRoot(make_shared<LuaRoot>(m_assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
+ItemDatabase::ItemDatabase(AssetsConstPtr assets,
+    function<ObjectDatabaseConstPtr()> objectDatabase,
+    LiquidsDatabaseConstPtr liquidsDatabase,
+    FunctionDatabaseConstPtr functionDatabase,
+    CodexDatabaseConstPtr codexDatabase,
+    MaterialDatabaseConstPtr materialDatabase)
+  : m_assets(std::move(assets)),
+    m_objectDatabase(std::move(objectDatabase)),
+    m_liquidsDatabase(std::move(liquidsDatabase)),
+    m_functionDatabase(std::move(functionDatabase)),
+    m_codexDatabase(std::move(codexDatabase)),
+    m_materialDatabase(std::move(materialDatabase)),
+    m_luaRoot(make_shared<LuaRoot>(m_assets)),
+    m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
   if (!m_assets)
     throw ItemException("ItemDatabase requires assets service");
   if (!m_objectDatabase)
     throw ItemException("ItemDatabase requires object database provider");
+  if (!m_liquidsDatabase)
+    throw ItemException("ItemDatabase requires liquids database service");
+  if (!m_functionDatabase)
+    throw ItemException("ItemDatabase requires function database service");
+  if (!m_codexDatabase)
+    throw ItemException("ItemDatabase requires codex database service");
 
   scanItems();
   addObjectItems();
@@ -468,9 +485,9 @@ ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const* item
   if (type == ItemType::Generic) {
     return make_shared<GenericItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
-    return make_shared<LiquidItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<LiquidItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_liquidsDatabase);
   } else if (type == ItemType::MaterialItem) {
-    return make_shared<MaterialItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<MaterialItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_materialDatabase);
   } else if (type == ItemType::ObjectItem) {
     return make_shared<ObjectItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_objectDatabase());
   } else if (type == ItemType::CurrencyItem) {
@@ -490,13 +507,13 @@ ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const* item
   } else if (type == ItemType::HarvestingTool) {
     return make_shared<HarvestingTool>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HeadArmor) {
-    return make_shared<HeadArmor>(assets, config.config, config.directory, config.parameters);
+    return make_shared<HeadArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
   } else if (type == ItemType::ChestArmor) {
-    return make_shared<ChestArmor>(assets, config.config, config.directory, config.parameters);
+    return make_shared<ChestArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
   } else if (type == ItemType::LegsArmor) {
-    return make_shared<LegsArmor>(assets, config.config, config.directory, config.parameters);
+    return make_shared<LegsArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
   } else if (type == ItemType::BackArmor) {
-    return make_shared<BackArmor>(assets, config.config, config.directory, config.parameters);
+    return make_shared<BackArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
   } else if (type == ItemType::Consumable) {
     return make_shared<ConsumableItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Blueprint) {
@@ -749,8 +766,7 @@ void ItemDatabase::addBlueprints() {
 void ItemDatabase::addCodexes() {
   auto codexConfig = m_assets->json("/codex.config");
 
-  auto codexDatabase = Root::singleton().codexDatabase();
-  for (auto const& codexPair : codexDatabase->codexes()) {
+  for (auto const& codexPair : m_codexDatabase->codexes()) {
     String codexItemName = strf("{}-codex", codexPair.second->id());
     if (m_items.contains(codexItemName)) {
       Logger::warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);

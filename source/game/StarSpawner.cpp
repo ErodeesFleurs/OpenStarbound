@@ -9,7 +9,15 @@
 
 namespace Star {
 
-Spawner::Spawner(IAssetsConstPtr assets) {
+Spawner::Spawner(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, SpawnTypeDatabaseConstPtr spawnTypeDatabase)
+  : m_monsterDatabase(std::move(monsterDatabase)), m_spawnTypeDatabase(std::move(spawnTypeDatabase)) {
+  if (!assets)
+    throw StarException("Spawner requires assets service");
+  if (!m_monsterDatabase)
+    throw StarException("Spawner requires monster database service");
+  if (!m_spawnTypeDatabase)
+    throw StarException("Spawner requires spawn type database service");
+
   auto config = assets->json("/spawning.config");
 
   m_spawnCellSize = config.getUInt("spawnCellSize");
@@ -263,14 +271,11 @@ void Spawner::spawnInCell(Vec2I const& cell) {
   if (m_debug)
     m_debugSpawnInfo[cell] = SpawnCellDebugInfo{*cellSpawnParameters, 0, 0};
 
-  auto monsterDatabase = Root::singleton().monsterDatabase();
-  auto spawnTypeDatabase = Root::singleton().spawnTypeDatabase();
-
   RectF spawnRegion = cellRegion(cell);
   auto spawnProfile = m_facade->spawnProfile(spawnRegion.center());
 
   for (auto const& spawnTypeName : spawnProfile.spawnTypes) {
-    auto spawnType = spawnTypeDatabase->spawnType(spawnTypeName);
+    auto spawnType = m_spawnTypeDatabase->spawnType(spawnTypeName);
     if (!spawnType.spawnParameters.compatible(*cellSpawnParameters))
       continue;
 
@@ -284,7 +289,7 @@ void Spawner::spawnInCell(Vec2I const& cell) {
         else
           monsterType = spawnType.monsterType.get<String>();
 
-        auto monsterVariant = monsterDatabase->monsterVariant(monsterType, spawnSeed, spawnType.monsterParameters);
+        auto monsterVariant = m_monsterDatabase->monsterVariant(monsterType, spawnSeed, spawnType.monsterParameters);
         auto monsterBoundBox = monsterVariant.movementSettings.standingPoly->boundBox();
 
         if (m_debug)
@@ -299,7 +304,7 @@ void Spawner::spawnInCell(Vec2I const& cell) {
 
           auto positionSpawnProfile = m_facade->spawnProfile(*position);
 
-          auto entity = monsterDatabase->createMonster(monsterVariant, level, positionSpawnProfile.monsterParameters);
+          auto entity = m_monsterDatabase->createMonster(monsterVariant, level, positionSpawnProfile.monsterParameters);
           entity->setPosition(*position);
           entity->setKeepAlive(true);
           auto entityId = m_facade->spawnEntity(entity);

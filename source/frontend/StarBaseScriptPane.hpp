@@ -3,7 +3,7 @@
 #include "StarPane.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarGuiReader.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -17,7 +17,7 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct BaseScriptPaneServices {
-  IAssetsConstPtr assets = {};
+  AssetsConstPtr assets = {};
   ItemDatabaseConstPtr itemDatabase = {};
   ObjectDatabaseConstPtr objectDatabase = {};
   StatusEffectDatabaseConstPtr statusEffectDatabase = {};
@@ -54,7 +54,7 @@ protected:
 
   Json m_config;
   Json m_rawConfig;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;

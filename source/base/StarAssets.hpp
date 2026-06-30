@@ -3,7 +3,6 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarIAssets.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarAssetSource.hpp"
@@ -54,7 +53,7 @@ struct FramesSpecification {
 // packed asset file.
 //
 // Assets is thread safe and performs TTL caching.
-class Assets : public IAssets {
+class Assets {
 public:
   struct Settings {
     // TTL for cached assets
@@ -122,14 +121,14 @@ public:
   };
 
   struct JsonData : AssetData {
-    bool shouldPersist() const override;
+    bool shouldPersist() const;
 
     Json json;
   };
 
   // Image data for an image, sub-frame, or post-processed image.
   struct ImageData : AssetData {
-    bool shouldPersist() const override;
+    bool shouldPersist() const;
 
     ImageConstPtr image;
 
@@ -144,19 +143,19 @@ public:
   };
 
   struct AudioData : AssetData {
-    bool shouldPersist() const override;
+    bool shouldPersist() const;
 
     AudioConstPtr audio;
   };
 
   struct FontData : AssetData {
-    bool shouldPersist() const override;
+    bool shouldPersist() const;
 
     FontConstPtr font;
   };
 
   struct BytesData : AssetData {
-    bool shouldPersist() const override;
+    bool shouldPersist() const;
 
     ByteArrayConstPtr bytes;
   };

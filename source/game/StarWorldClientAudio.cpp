@@ -2,7 +2,6 @@
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarSky.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -33,8 +32,14 @@ AmbientNoisesDescriptionPtr StarWorldClientAudio::currentMusicTrack() const {
   return m_worldClient->m_worldTemplate->musicTrack(pos[0], pos[1]);
 }
 
+AmbientNoisesDescriptionPtr StarWorldClientAudio::currentAltMusicTrack() const {
+  if (!m_worldClient->inWorld())
+    return {};
+
+  return m_altMusicTrackDescription;
+}
+
 void StarWorldClientAudio::playAltMusic(StringList const& newTracks, float fadeTime, int loops) {
-  auto newTrackGroup = AmbientTrackGroup(newTracks);
   m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
   if (!m_altMusicActive) {
     m_musicTrack.setVolume(0.0, 0.0, fadeTime);

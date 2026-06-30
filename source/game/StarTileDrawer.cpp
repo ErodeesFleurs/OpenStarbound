@@ -4,7 +4,6 @@
 #include "StarXXHash.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -40,8 +39,9 @@ TileDrawer& TileDrawer::singleton() {
     return *s_singleton;
 }
 
-TileDrawer::TileDrawer(IAssetsConstPtr assets)
-  : m_assets(std::move(assets)) {
+TileDrawer::TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase)
+  : m_assets(std::move(assets)),
+    m_materialDatabase(std::move(materialDatabase)) {
   if (!m_assets)
     throw StarException("TileDrawer requires assets service");
 
@@ -58,8 +58,7 @@ TileDrawer::~TileDrawer() {
 
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {
-  auto& root = Root::singleton();
-  auto materialDatabase = root.materialDatabase();
+  auto materialDatabase = m_materialDatabase;
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 

@@ -40,7 +40,7 @@ struct Particle {
   Particle();
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
-  explicit Particle(Json const& config, String const& assetsPath = "/", IAssetsConstPtr assets = {});
+  explicit Particle(Json const& config, String const& assetsPath = "/", AssetsConstPtr assets = {});
 
   Json toJson() const;
 
@@ -64,7 +64,7 @@ struct Particle {
   // Internally called by update() / collide() / destruct()
   void destructionUpdate();
 
-  void initializeAnimation(IAssetsConstPtr assets = {});
+  void initializeAnimation(AssetsConstPtr assets);
 
   Type type;
 
@@ -113,6 +113,9 @@ struct Particle {
   bool trail;
 
   Maybe<Animation> animation;
+
+  // Non-serialized: assets used for lazy animation initialization in update()
+  AssetsConstPtr assets;
 };
 
 DataStream& operator<<(DataStream& ds, Particle const& particle);

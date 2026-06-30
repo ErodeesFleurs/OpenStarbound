@@ -99,10 +99,12 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
       DataStreamBuffer buffer;
       for (auto inPacket : take(packets)) {
         buffer.clear();
-        inPacket->write(buffer);
+        buffer.setStreamCompatibilityVersion(netRules());
+        inPacket->write(buffer, netRules());
         auto outPacket = createPacket(inPacket->type());
+        outPacket->setCompressionMode(inPacket->compressionMode());
         buffer.seek(0);
-        outPacket->read(buffer);
+        outPacket->read(buffer, netRules());
         packets.append(outPacket);
       }
     }

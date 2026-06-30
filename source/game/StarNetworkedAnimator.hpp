@@ -7,7 +7,7 @@
 #include "StarParticle.hpp"
 #include "StarLightSource.hpp"
 #include "StarMixer.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -65,10 +65,10 @@ public:
     HashMap<AudioInstancePtr, Vec2F> currentAudioBasePositions;
   };
 
-  NetworkedAnimator(IAssetsConstPtr assets = {});
+  NetworkedAnimator(AssetsConstPtr assets = {});
   // If passed a string as config, NetworkedAnimator will interpret this as a
   // config path, otherwise it is interpreted as the literal config.
-  NetworkedAnimator(Json config, String relativePath = String(), IAssetsConstPtr assets = {});
+  NetworkedAnimator(Json config, String relativePath = String(), AssetsConstPtr assets = {});
 
   NetworkedAnimator(NetworkedAnimator&& animator);
   NetworkedAnimator(NetworkedAnimator const& animator);
@@ -362,7 +362,7 @@ private:
 
   Json mergeIncludes(Json config, Json includes, String relativePath);
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_relativePath;
   uint8_t m_animatorVersion;
 

@@ -4,8 +4,8 @@
 #include "StarTextPainter.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarChatBubbleSeparation.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarStoredFunctions.hpp"
 
@@ -20,8 +20,8 @@ class ChatBubbleManager;
 using ChatBubbleManagerPtr = SharedPtr<ChatBubbleManager>;
 
 struct ChatBubbleManagerServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
   FunctionDatabaseConstPtr functionDatabase;
   ImageMetadataDatabaseConstPtr imageMetadata;
 };
@@ -72,8 +72,8 @@ private:
   void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
   GuiContext* m_guiContext;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   FunctionDatabaseConstPtr m_functionDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
 

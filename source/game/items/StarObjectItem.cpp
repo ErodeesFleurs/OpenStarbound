@@ -7,7 +7,7 @@
 
 namespace Star {
 
-ObjectItem::ObjectItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
+ObjectItem::ObjectItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
   : Item(assets, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), config), m_objectDatabase(std::move(objectDatabase)) {
   if (!m_objectDatabase)
     throw ItemException("ObjectItem requires object database service");

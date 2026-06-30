@@ -3,7 +3,7 @@
 #include "StarSongbook.hpp"
 #include "StarPane.hpp"
 #include "StarListener.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -14,7 +14,7 @@ class SongbookInterface;
 using SongbookInterfacePtr = SharedPtr<SongbookInterface>;
 
 struct SongbookInterfaceServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   function<void(ListenerWeakPtr)> registerReloadListener;
 };
 
@@ -26,7 +26,7 @@ public:
 
 private:
   PlayerPtr m_player;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   function<void(ListenerWeakPtr)> m_registerReloadListener;
   StringList m_files;
   String m_lastSearch;

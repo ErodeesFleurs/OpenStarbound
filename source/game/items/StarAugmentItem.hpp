@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -10,7 +10,7 @@ class ItemDatabase;
 
 class AugmentItem : public Item {
 public:
-  AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters = JsonObject());
+  AugmentItem(AssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
   ItemPtr clone() const override;

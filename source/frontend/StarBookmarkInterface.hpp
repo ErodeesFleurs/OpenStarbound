@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarPane.hpp"
 
@@ -9,7 +9,7 @@ namespace Star {
 class EditBookmarkDialog : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services);
@@ -24,7 +24,7 @@ public:
 
 private:
   PlayerUniverseMapPtr m_playerUniverseMap;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   TeleportBookmark m_bookmark;
 
   bool m_isNew;

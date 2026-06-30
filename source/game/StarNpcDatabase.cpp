@@ -20,14 +20,18 @@ NpcDatabase::NpcDatabase(AssetsConstPtr assets,
     ObjectDatabaseConstPtr objectDatabase,
     SpeciesDatabaseConstPtr speciesDatabase,
     PatternedNameGeneratorConstPtr nameGenerator,
-    FunctionDatabaseConstPtr functionDatabase)
+    FunctionDatabaseConstPtr functionDatabase,
+    DanceDatabaseConstPtr danceDatabase,
+    EmoteProcessorConstPtr emoteProcessor)
   : m_rebuilder(make_shared<Rebuilder>(assets, "npc")),
     m_assets(std::move(assets)),
     m_itemDatabase(std::move(itemDatabase)),
     m_objectDatabase(std::move(objectDatabase)),
     m_speciesDatabase(std::move(speciesDatabase)),
     m_nameGenerator(std::move(nameGenerator)),
-    m_functionDatabase(std::move(functionDatabase)) {
+    m_functionDatabase(std::move(functionDatabase)),
+    m_danceDatabase(std::move(danceDatabase)),
+    m_emoteProcessor(std::move(emoteProcessor)) {
   if (!m_assets)
     throw NpcException("NpcDatabase requires assets service");
   if (!m_itemDatabase)
@@ -186,7 +190,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"), m_assets);
 
   return variant;
 }
@@ -283,7 +287,7 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"), m_assets);
 
   return variant;
 }
@@ -367,26 +371,27 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   variant.nametagColor = jsonToVec3B(config.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"));
+  variant.splashConfig = EntitySplashConfig(config.get("splashConfig"), m_assets);
 
   return variant;
 }
 
 NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return make_shared<Npc>(m_assets, npcVariant, m_itemDatabase, m_objectDatabase);
+  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, m_itemDatabase, m_objectDatabase);
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   NpcPtr npc;
+  auto self = NpcDatabaseConstPtr(shared_from_this());
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = make_shared<Npc>(m_assets, npcVariant, diskStore, m_itemDatabase, m_objectDatabase);
+    npc = make_shared<Npc>(m_assets, self, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, diskStore, m_itemDatabase, m_objectDatabase);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
-    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
+    bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&, self](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = make_shared<Npc>(m_assets, npcVariant, store, m_itemDatabase, m_objectDatabase);
+        npc = make_shared<Npc>(m_assets, self, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, store, m_itemDatabase, m_objectDatabase);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -401,7 +406,7 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Npc>(m_assets, readNpcVariant(netStore, rules), m_itemDatabase, m_objectDatabase);
+  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_speciesDatabase, m_danceDatabase, m_emoteProcessor, readNpcVariant(netStore, rules), m_itemDatabase, m_objectDatabase);
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {

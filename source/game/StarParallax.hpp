@@ -4,7 +4,8 @@
 #include "StarColor.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarDirectives.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -45,10 +46,14 @@ using ParallaxLayers = List<ParallaxLayer>;
 DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
 DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
+
 // Object managing and rendering the parallax for a World
 class Parallax {
 public:
-  Parallax(IAssetsConstPtr assets,
+  Parallax(AssetsConstPtr assets,
+      ImageMetadataDatabaseConstPtr imageMetadataDatabase,
       String const& assetFile,
       uint64_t seed,
       float verticalOrigin,
@@ -71,6 +76,8 @@ private:
   float m_hueShift;
 
   String m_imageDirectory;
+
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   ParallaxLayers m_layers;
 };

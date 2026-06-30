@@ -11,6 +11,12 @@
 namespace Star {
 
 class Player;
+class AiDatabase;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
+class RadioMessageDatabase;
+using RadioMessageDatabaseConstPtr = SharedPtr<RadioMessageDatabase const>;
 class StatusController;
 using StatusControllerPtr = SharedPtr<StatusController>;
 class PlayerLog;
@@ -18,7 +24,7 @@ using PlayerLogPtr = SharedPtr<PlayerLog>;
 
 class PlayerNarrativeQueue {
 public:
-  explicit PlayerNarrativeQueue(Player* player);
+  PlayerNarrativeQueue(Player* player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase);
 
   void init(List<PersistentStatusEffect> inCinematicStatusEffects);
 
@@ -44,6 +50,9 @@ public:
 
 private:
   Player* m_player;
+  RadioMessageDatabaseConstPtr m_radioMessageDatabase;
+  ConfigurationPtr m_configuration;
+  AiDatabaseConstPtr m_aiDatabase;
 
   StringSet m_missionRadioMessages;
   bool m_interruptRadioMessage;
@@ -57,4 +66,3 @@ private:
 };
 
 }
-

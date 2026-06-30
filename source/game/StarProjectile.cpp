@@ -1,6 +1,7 @@
 #include "StarProjectile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
+#include "StarWorldServer.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -20,7 +21,7 @@
 
 namespace Star {
 
-Projectile::Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters) {
+Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters) {
   m_assets = std::move(assets);
   m_config = config;
   m_parameters = parameters;
@@ -28,7 +29,7 @@ Projectile::Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config
   setup();
 }
 
-Projectile::Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+Projectile::Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
   m_assets = std::move(assets);
   m_config = config;
   data.read(m_parameters);
@@ -372,7 +373,7 @@ void Projectile::render(RenderCallback* renderCallback) {
   if (m_persistentAudio)
     m_persistentAudio->setPosition(position());
 
-  m_effectEmitter->render(renderCallback);
+  m_effectEmitter->render(renderCallback, world()->particleDatabase());
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
   Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
@@ -503,12 +504,11 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
   return collision;
 }
 
-List<Particle> Projectile::sparkBlock(IAssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource) {
+List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource) {
   if (!assets)
     throw StarException("Projectile::sparkBlock requires assets service");
 
-  auto& root = Root::singleton();
-  auto materialDatabase = root.materialDatabase();
+  auto materialDatabase = world->materialDatabase();
 
   auto blockDamageParticle = Particle(assets->json("/client.config:blockDamageParticle"), "/", assets);
   auto blockDamageVariance = Particle(assets->json("/client.config:blockDamageParticleVariance"), "/", assets);
@@ -597,7 +597,7 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world()->materialDatabase();
     List<MaterialId> tileDrops;
     unsigned totalDrops = 0;
     for (auto sets : parameters.getArray("materials")) {
@@ -628,7 +628,7 @@ void Projectile::processAction(Json const& action) {
     if (isSlave())
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world()->materialDatabase();
     Maybe<ModId> previousMod =
         parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
@@ -667,7 +667,7 @@ void Projectile::processAction(Json const& action) {
       return;
 
     float waterAmount = parameters.getFloat("quantity", 1.0f);
-    LiquidId liquid = Root::singleton().liquidsDatabase()->liquidId(parameters.getString("liquid"));
+    LiquidId liquid = world()->liquidsDatabase()->liquidId(parameters.getString("liquid"));
     auto empty = world()->findEmptyTiles(m_lastNonCollidingTile, parameters.getInt("radius", 5), 50);
     for (Vec2I pos : empty) {
       if (world()->lineTileCollision(Vec2F(pos), Vec2F(m_lastNonCollidingTile)))
@@ -695,7 +695,8 @@ void Projectile::processAction(Json const& action) {
     if (parameters.contains("inheritSpeedFactor"))
       projectileParameters = projectileParameters.set("speed", (m_movementController->velocity() - m_referenceVelocity.value()).magnitude() * parameters.getFloat("inheritSpeedFactor"));
 
-    auto projectile = Root::singleton().projectileDatabase()->createProjectile(type, projectileParameters);
+    auto projectileDb = as<WorldServer>(world()) ? as<WorldServer>(world())->projectileDatabase() : Root::singleton().projectileDatabase();
+    auto projectile = projectileDb->createProjectile(type, projectileParameters);
     Vec2F offset;
     if (parameters.contains("offset")) {
       offset = jsonToVec2F(parameters.getArray("offset", {0.0f, 0.0f}));
@@ -760,7 +761,7 @@ void Projectile::processAction(Json const& action) {
     if (!world()->isClient())
       return;
 
-    Particle particle = Root::singleton().particleDatabase()->particle(parameters.get("specification"));
+    Particle particle = world()->particleDatabase()->particle(parameters.get("specification"));
     particle.position = particle.position.rotate(m_movementController->rotation());
     if (parameters.getBool("rotate", false)) {
       particle.rotation = m_movementController->rotation();
@@ -802,7 +803,7 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto monsterDatabase = Root::singleton().monsterDatabase();
+      auto monsterDatabase = as<WorldServer>(world()) ? as<WorldServer>(world())->monsterDatabase() : Root::singleton().monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 
       auto spawnPosition = position();
@@ -892,7 +893,7 @@ void Projectile::tickShared(float dt) {
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setDirection(getAngleSide(m_movementController->rotation(), true).second);
-  m_effectEmitter->tick(dt, *entityMode());
+  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
 
   if (m_collisionEvent.pullOccurred()) {
     for (auto const& action : m_parameters.getArray("actionOnCollide", m_config->actionOnCollide))

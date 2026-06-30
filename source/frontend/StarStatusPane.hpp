@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -16,7 +16,7 @@ class StatusPane;
 using StatusPanePtr = SharedPtr<StatusPane>;
 
 struct StatusPaneServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   ImageMetadataDatabaseConstPtr imageMetadataDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
@@ -41,7 +41,7 @@ private:
 
   UniverseClientPtr m_client;
   PlayerPtr m_player;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 

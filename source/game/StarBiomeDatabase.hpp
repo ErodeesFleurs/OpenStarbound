@@ -14,10 +14,12 @@ class FunctionDatabase;
 using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
 class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 class BiomeDatabase {
 public:
-  BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase);
+  BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   StringList biomeNames() const;
 
@@ -55,6 +57,7 @@ private:
   AssetsConstPtr m_assets;
   MaterialDatabaseConstPtr m_materialDatabase;
   FunctionDatabaseConstPtr m_functionDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   Json m_spawnGroups;
 };
 

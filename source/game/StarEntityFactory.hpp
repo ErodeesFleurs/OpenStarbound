@@ -2,9 +2,8 @@
 
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
-#include "StarIEntityFactory.hpp"
-#include "StarIAssets.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarAssets.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -28,14 +27,23 @@ using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
 struct EntityFactoryExceptionTag { static constexpr char const* typeName = "EntityFactoryException"; };
 using EntityFactoryException = TypedException<StarException, EntityFactoryExceptionTag>;
 
-class EntityFactory : public IEntityFactory {
+class EntityFactory {
 public:
-  EntityFactory(IAssetsConstPtr assets = {});
+  EntityFactory(
+      AssetsConstPtr assets,
+      PlayerFactoryConstPtr playerFactory,
+      MonsterDatabaseConstPtr monsterDatabase,
+      ObjectDatabaseConstPtr objectDatabase,
+      ProjectileDatabaseConstPtr projectileDatabase,
+      NpcDatabaseConstPtr npcDatabase,
+      VehicleDatabaseConstPtr vehicleDatabase,
+      VersioningDatabaseConstPtr versioningDatabase,
+      ItemDatabaseConstPtr itemDatabase);
 
-  EntityPtr create(String const& entityName, Json const& extraParams = {}) const override;
+  EntityPtr create(String const& entityName, Json const& extraParams = {}) const;
 
-  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const override;
-  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const override;
+  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const;
+  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
   Json diskStoreEntity(EntityPtr const& entity) const;
   EntityPtr diskLoadEntity(EntityType type, Json const& diskStore) const;
@@ -61,8 +69,8 @@ private:
   NpcDatabaseConstPtr m_npcDatabase;
   VehicleDatabaseConstPtr m_vehicleDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
-  IAssetsConstPtr m_assets;
-  IItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
 };
 
 }

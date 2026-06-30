@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarHumanoid.hpp"
@@ -19,7 +19,7 @@ class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 
 struct CharCreationServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   PlayerFactoryConstPtr playerFactory;
   SpeciesDatabaseConstPtr speciesDatabase;
   PatternedNameGeneratorConstPtr nameGenerator;
@@ -52,7 +52,7 @@ private:
 
   void createPlayer();
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   PlayerFactoryConstPtr m_playerFactory;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;

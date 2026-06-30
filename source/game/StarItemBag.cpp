@@ -3,22 +3,22 @@
 
 namespace Star {
 
-ItemBag::ItemBag(IItemDatabaseConstPtr itemDatabase)
+ItemBag::ItemBag(ItemDatabaseConstPtr itemDatabase)
   : m_itemDatabase(std::move(itemDatabase)) {}
 
-ItemBag::ItemBag(size_t size, IItemDatabaseConstPtr itemDatabase)
+ItemBag::ItemBag(size_t size, ItemDatabaseConstPtr itemDatabase)
   : ItemBag(std::move(itemDatabase)) {
   m_items.resize(size);
 }
 
-ItemBag ItemBag::fromJson(Json const& store, IItemDatabaseConstPtr itemDatabase) {
+ItemBag ItemBag::fromJson(Json const& store, ItemDatabaseConstPtr itemDatabase) {
   ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
 
   return res;
 }
 
-ItemBag ItemBag::loadStore(Json const& store, IItemDatabaseConstPtr itemDatabase) {
+ItemBag ItemBag::loadStore(Json const& store, ItemDatabaseConstPtr itemDatabase) {
   ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
 

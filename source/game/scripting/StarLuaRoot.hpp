@@ -2,7 +2,7 @@
 
 #include "StarThread.hpp"
 #include "StarLua.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 
 namespace Star {
@@ -15,7 +15,7 @@ using LuaRootPtr = SharedPtr<LuaRoot>;
 // for single threaded access and have no locking.
 class LuaRoot {
 public:
-  explicit LuaRoot(IAssetsConstPtr assets = {});
+  explicit LuaRoot(AssetsConstPtr assets = {});
   ~LuaRoot();
 
   void loadScript(String const& assetPath);
@@ -49,7 +49,7 @@ public:
 private:
   class ScriptCache {
   public:
-    explicit ScriptCache(IAssetsConstPtr assets);
+    explicit ScriptCache(AssetsConstPtr assets);
 
     void loadScript(LuaEngine& engine, String const& assetPath);
     bool scriptLoaded(String const& assetPath) const;
@@ -59,12 +59,12 @@ private:
     size_t memoryUsage() const;
 
   private:
-    IAssetsConstPtr m_assets;
+    AssetsConstPtr m_assets;
     mutable RecursiveMutex mutex;
     StringMap<ByteArray> scripts;
   };
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
   SharedPtr<ScriptCache> m_scriptCache;

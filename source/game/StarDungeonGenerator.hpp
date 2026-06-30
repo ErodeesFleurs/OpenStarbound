@@ -9,6 +9,8 @@
 #include "StarThread.hpp"
 #include "StarLruCache.hpp"
 #include "StarAssets.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
 
 namespace Star {
 
@@ -21,7 +23,10 @@ class DungeonDefinition;
 using DungeonDefinitionPtr = SharedPtr<DungeonDefinition>;
 using DungeonDefinitionConstPtr = SharedPtr<DungeonDefinition const>;
 class DungeonDefinitions;
+class TilesetDatabase;
+using TilesetDatabaseConstPtr = SharedPtr<TilesetDatabase const>;
 using DungeonDefinitionsPtr = SharedPtr<DungeonDefinitions>;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
 
 class DungeonGeneratorWorldFacade {
 public:
@@ -57,6 +62,8 @@ public:
   virtual void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) = 0;
 
   virtual WorldGeometry getWorldGeometry() const = 0;
+  virtual MaterialDatabaseConstPtr materialDatabase() const = 0;
+  virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
 
   virtual void setPlayerStart(Vec2F const& startPosition) = 0;
 };
@@ -81,6 +88,10 @@ namespace Dungeon {
     DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
 
     Vec2I wrapPosition(Vec2I const& pos) const;
+    MaterialId materialId(String const& materialName) const;
+    ModId modId(String const& modName) const;
+    CollisionKind materialCollisionKind(MaterialId material) const;
+    LiquidId liquidId(String const& liquidName) const;
 
     void setMarkDungeonId(Maybe<DungeonId> markDungeonId = {});
 
@@ -142,6 +153,8 @@ namespace Dungeon {
     };
 
     DungeonGeneratorWorldFacadePtr m_facade;
+    MaterialDatabaseConstPtr m_materialDatabase;
+    LiquidsDatabaseConstPtr m_liquidsDatabase;
     Maybe<int> m_terrainMarkingSurfaceLevel;
     Maybe<int> m_terrainSurfaceSpaceExtends;
 
@@ -646,7 +659,7 @@ namespace Dungeon {
 
 class DungeonDefinition {
 public:
-  DungeonDefinition(IAssetsConstPtr assets, JsonObject const& definition, String const& directory);
+  DungeonDefinition(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, JsonObject const& definition, String const& directory);
 
   JsonObject metadata() const;
   String directory() const;
@@ -687,7 +700,7 @@ private:
 
 class DungeonDefinitions {
 public:
-  DungeonDefinitions(AssetsConstPtr assets);
+  DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase);
 
   DungeonDefinitionConstPtr get(String const& name) const;
   JsonObject getMetadata(String const& name) const;
@@ -697,13 +710,14 @@ private:
 
   StringMap<String> m_paths;
   AssetsConstPtr m_assets;
+  TilesetDatabaseConstPtr m_tilesetDatabase;
   mutable Mutex m_cacheMutex;
   mutable HashLruCache<String, DungeonDefinitionPtr> m_definitionCache;
 };
 
 class DungeonGenerator {
 public:
-  DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
+  DungeonGenerator(DungeonDefinitionsConstPtr dungeonDefinitions, String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
 
   Maybe<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 

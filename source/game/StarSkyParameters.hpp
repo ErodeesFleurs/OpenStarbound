@@ -3,7 +3,7 @@
 #include "StarSkyTypes.hpp"
 #include "StarEither.hpp"
 #include "StarCelestialCoordinate.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -26,7 +26,7 @@ using VisitableWorldParametersConstPtr = SharedPtr<VisitableWorldParameters cons
 // parameters, e.g. for terraforming
 struct SkyParameters {
   SkyParameters();
-  SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, IAssetsConstPtr assets = {});
+  SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets = {});
   SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
   explicit SkyParameters(Json const& config);
 

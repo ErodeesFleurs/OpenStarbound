@@ -6,7 +6,7 @@
 
 namespace Star {
 
-CodexItem::CodexItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+CodexItem::CodexItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
   : Item(assets, config, directory, data), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("CodexItem requires assets service");

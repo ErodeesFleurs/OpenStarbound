@@ -5,6 +5,7 @@
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 class DataStream;
@@ -29,18 +30,18 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false);
-    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
+    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
+    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& removeDirectives(bool keepImageCenterPosition = false);
+    ImagePart& removeDirectives(bool keepImageCenterPosition = false, ImageMetadataDatabaseConstPtr imageMetadata = {});
   };
 
   static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
   static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
+  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);
@@ -64,7 +65,7 @@ struct Drawable {
   static RectF boundBoxAll(DrawablesContainer const& drawables, bool cropImages);
 
   Drawable();
-  explicit Drawable(Json const& json);
+  explicit Drawable(Json const& json, ImageMetadataDatabaseConstPtr imageMetadata = {});
 
   Json toJson() const;
 
@@ -80,7 +81,7 @@ struct Drawable {
   // between them.
   void rebase(Vec2F const& newBase = Vec2F());
 
-  RectF boundBox(bool cropImages) const;
+  RectF boundBox(bool cropImages, ImageMetadataDatabaseConstPtr imageMetadata = {}) const;
 
   bool isLine() const;
   LinePart& linePart();

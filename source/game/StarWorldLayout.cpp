@@ -102,10 +102,9 @@ Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize)
   return noisePos;
 }
 
-WorldLayout WorldLayout::buildTerrestrialLayout(IAssetsConstPtr assets, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
-  auto& root = Root::singleton();
-  auto terrainDatabase = root.terrainDatabase();
-  auto biomeDatabase = root.biomeDatabase();
+WorldLayout WorldLayout::buildTerrestrialLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
+  auto terrainDb = terrainDatabase ? std::move(terrainDatabase) : Root::singleton().terrainDatabase();
+  auto biomeDb = biomeDatabase ? std::move(biomeDatabase) : Root::singleton().biomeDatabase();
   bool useSecondaryEnvironmentBiomeIndex = assets->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool();
   int playerStartSearchYRange = assets->json("/world_template.config:playerStartSearchYRange").toInt();
 
@@ -113,6 +112,8 @@ WorldLayout WorldLayout::buildTerrestrialLayout(IAssetsConstPtr assets, Terrestr
 
   WorldLayout layout;
   layout.m_worldSize = terrestrialParameters.worldSize;
+  layout.m_terrainDatabase = terrainDb;
+  layout.m_biomeDatabase = biomeDb;
 
   auto addLayer = [&](TerrestrialWorldParameters::TerrestrialLayer const& terrestrialLayer) {
     RegionParams primaryRegionParams = {
@@ -239,7 +240,7 @@ WorldLayout WorldLayout::buildTerrestrialLayout(IAssetsConstPtr assets, Terrestr
   return layout;
 }
 
-WorldLayout WorldLayout::buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
+WorldLayout WorldLayout::buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
   RandomSource randSource(seed);
 
   auto asteroidsConfig = assets->json("/asteroids_worlds.config");
@@ -248,6 +249,8 @@ WorldLayout WorldLayout::buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsW
 
   WorldLayout layout;
   layout.m_worldSize = asteroidParameters.worldSize;
+  layout.m_terrainDatabase = std::move(terrainDatabase);
+  layout.m_biomeDatabase = std::move(biomeDatabase);
 
   RegionParams asteroidRegion{
     static_cast<int>(asteroidParameters.worldSize[1]) / 2,
@@ -289,13 +292,15 @@ WorldLayout WorldLayout::buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsW
   return layout;
 }
 
-WorldLayout WorldLayout::buildFloatingDungeonLayout(IAssetsConstPtr, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
-  auto biomeDatabase = Root::singleton().biomeDatabase();
+WorldLayout WorldLayout::buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
+  auto biomeDb = biomeDatabase ? std::move(biomeDatabase) : Root::singleton().biomeDatabase();
 
   RandomSource randSource(seed);
 
   WorldLayout layout;
   layout.m_worldSize = floatingDungeonParameters.worldSize;
+  layout.m_terrainDatabase = terrainDatabase;
+  layout.m_biomeDatabase = biomeDb;
 
   RegionParams biomeRegion{
     static_cast<int>(floatingDungeonParameters.dungeonSurfaceHeight),
@@ -307,7 +312,7 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(IAssetsConstPtr, FloatingDun
 
   layout.addLayer(seed, 0, biomeRegion);
   if (floatingDungeonParameters.biome)
-    biomeDatabase->biomeSkyColoring(*floatingDungeonParameters.biome, seed);
+    biomeDb->biomeSkyColoring(*floatingDungeonParameters.biome, seed);
   else
     layout.finalize(Color::Black);
 
@@ -316,8 +321,9 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(IAssetsConstPtr, FloatingDun
 
 WorldLayout::WorldLayout() : m_regionBlending(0.0f) {}
 
-WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
-  auto terrainDatabase = Root::singleton().terrainDatabase();
+WorldLayout::WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase) : WorldLayout() {
+  auto terrainDb = terrainDatabase ? std::move(terrainDatabase) : Root::singleton().terrainDatabase();
+  m_terrainDatabase = terrainDb;
 
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 
@@ -325,8 +331,8 @@ WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
       return BiomeConstPtr(make_shared<Biome>(json));
     });
 
-  m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDatabase](Json const& v) {
-      return TerrainSelectorConstPtr(terrainDatabase->loadSelector(v));
+  m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDb](Json const& v) {
+      return TerrainSelectorConstPtr(terrainDb->loadSelector(v));
     });
 
   m_layers = store.getArray("layers").transformed([](Json const& l) {
@@ -350,14 +356,12 @@ WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
 }
 
 Json WorldLayout::toJson() const {
-  auto terrainDatabase = Root::singleton().terrainDatabase();
-
   return JsonObject{
     {"worldSize", jsonFromVec2U(m_worldSize)},
     {"biomes", transform<JsonArray>(m_biomes, [](auto const& biome) {
         return biome->toJson();
       })},
-    {"terrainSelectors", transform<JsonArray>(m_terrainSelectors, [terrainDatabase](auto const& selector) {
+    {"terrainSelectors", transform<JsonArray>(m_terrainSelectors, [terrainDatabase = m_terrainDatabase](auto const& selector) {
         return terrainDatabase->storeSelector(selector);
       })},
     {"layers", m_layers.transformed([](WorldLayer const& layer) -> Json {
@@ -568,7 +572,7 @@ void WorldLayout::addBiomeRegion(
   newRegion.backgroundOreSelectorIndexes = targetRegion->backgroundOreSelectorIndexes;
   newRegion.regionLiquids = targetRegion->regionLiquids;
 
-  auto biomeDatabase = Root::singleton().biomeDatabase();
+  auto biomeDatabase = m_biomeDatabase ? m_biomeDatabase : Root::singleton().biomeDatabase();
 
   auto newBiome = biomeDatabase->createBiome(biomeName, staticRandomU64(seed, "BiomeSeed"), terrestrialLayer.layerBaseHeight, terrestrialParameters.threatLevel);
 
@@ -583,7 +587,7 @@ void WorldLayout::addBiomeRegion(
   baseSelectorParameters.worldWidth = m_worldSize[0];
   baseSelectorParameters.baseHeight = terrestrialLayer.layerBaseHeight;
 
-  auto terrainDatabase = Root::singleton().terrainDatabase();
+  auto terrainDatabase = m_terrainDatabase ? m_terrainDatabase : Root::singleton().terrainDatabase();
   for (size_t i = 0; i < newBiome->subBlocks.size(); ++i) {
     auto selector = terrainDatabase->createNamedSelector(subBlockSelector, baseSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
     newRegion.subBlockSelectorIndexes.append(registerTerrainSelector(selector));
@@ -812,8 +816,8 @@ TerrainSelectorIndex WorldLayout::registerTerrainSelector(TerrainSelectorConstPt
 }
 
 WorldRegion WorldLayout::buildRegion(uint64_t seed, RegionParams const& regionParams) {
-  auto terrainDatabase = Root::singleton().terrainDatabase();
-  auto biomeDatabase = Root::singleton().biomeDatabase();
+  auto terrainDatabase = m_terrainDatabase ? m_terrainDatabase : Root::singleton().terrainDatabase();
+  auto biomeDatabase = m_biomeDatabase ? m_biomeDatabase : Root::singleton().biomeDatabase();
 
   WorldRegion region;
 

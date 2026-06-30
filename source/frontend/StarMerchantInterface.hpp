@@ -2,8 +2,8 @@
 
 #include "StarWorldClient.hpp"
 #include "StarPane.hpp"
-#include "StarIAssets.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarAssets.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -34,8 +34,8 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct MerchantPaneServices {
-  IAssetsConstPtr assets;
-  IItemDatabaseConstPtr itemDatabase;
+  AssetsConstPtr assets;
+  ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
@@ -78,8 +78,8 @@ private:
 
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
-  IAssetsConstPtr m_assets;
-  IItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   EntityId m_sourceEntityId;

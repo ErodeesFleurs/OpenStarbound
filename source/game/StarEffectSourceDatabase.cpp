@@ -31,7 +31,7 @@ EffectSourceConfigPtr EffectSourceDatabase::effectSourceConfig(String const& kin
   return m_sourceConfigs.get(k);
 }
 
-EffectSourceConfig::EffectSourceConfig(IAssetsConstPtr assets, Json const& config)
+EffectSourceConfig::EffectSourceConfig(AssetsConstPtr assets, Json const& config)
   : m_assets(std::move(assets)) {
   if (!m_assets)
     throw StarException("EffectSourceConfig requires assets service");
@@ -48,7 +48,7 @@ EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocatio
   return make_shared<EffectSource>(m_assets, kind(), suggestedSpawnLocation, m_config.getObject("definition"));
 }
 
-EffectSource::EffectSource(IAssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition)
+EffectSource::EffectSource(AssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition)
   : m_assets(std::move(assets)) {
   if (!m_assets)
     throw StarException("EffectSource requires assets service");
@@ -140,7 +140,7 @@ String EffectSource::suggestedSpawnLocation() const {
   return m_suggestedSpawnLocation;
 }
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position) {
+List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase) {
   Json particles;
   if (config.type() == Json::Type::Array)
     particles = Random::randValueFrom(config.toArray(), Json());
@@ -149,14 +149,13 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   if (!particles.isNull()) {
     if (particles.type() != Json::Type::Array)
       particles = JsonArray{particles};
+    auto particleDb = particleDatabase ? particleDatabase : Root::singleton().particleDatabase();
     List<Particle> result;
     for (auto entry : particles.iterateArray()) {
       if (entry.type() != Json::Type::Object) {
-        result.append(Root::singleton().particleDatabase()->particle(entry.toString()));
+        result.append(particleDb->particle(entry.toString()));
       } else {
-        Particle particle(entry.toObject());
-        Particle variance(entry.getObject("variance", {}));
-        particle.applyVariance(variance);
+        Particle particle = particleDb->particle(entry);
         particle.position += position;
         result.append(particle);
       }
@@ -166,7 +165,7 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   return {};
 }
 
-List<AudioInstancePtr> soundsFromDefinition(IAssetsConstPtr assets, Json const& config, Vec2F const& position) {
+List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position) {
   if (!assets)
     throw StarException("soundsFromDefinition requires assets service");
 

@@ -1,7 +1,6 @@
 #include "StarWorldServerLiquid.hpp"
 #include "StarWorldServer.hpp"
 #include "StarWorldImpl.hpp"
-#include "StarRoot.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarItemDescriptor.hpp"
@@ -25,7 +24,7 @@ void WorldServerLiquid::modifyLiquid(Vec2I const& pos, LiquidId liquid, float qu
     quantity = 0;
 
   if (ServerTile* tile = m_worldServer->m_tileArray->modifyTile(pos)) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = m_worldServer->m_materialDatabase;
     if (tile->foreground == EmptyMaterialId || !isSolidColliding(materialDatabase->materialCollisionKind(tile->foreground))) {
       if (additive && liquid == tile->liquid.liquid)
         quantity += tile->liquid.level;
@@ -88,7 +87,7 @@ ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions
   }
 
   if (drainedUnits > 0) {
-    auto liquidConfig = Root::singleton().liquidsDatabase()->liquidSettings(liquidId);
+    auto liquidConfig = m_worldServer->m_liquidsDatabase->liquidSettings(liquidId);
     if (liquidConfig && liquidConfig->itemDrop)
       return liquidConfig->itemDrop.multiply(drainedUnits);
   }

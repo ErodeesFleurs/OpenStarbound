@@ -1,5 +1,4 @@
 #include "StarWorldStructure.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarMaterialDatabase.hpp"
@@ -10,8 +9,12 @@ namespace Star {
 
 WorldStructure::WorldStructure() {}
 
-WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath) {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+WorldStructure::WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath) {
+  if (!materialDatabase)
+    throw WorldStructureException("WorldStructure requires material database service");
+  if (!imageMetadataDatabase)
+    throw WorldStructureException("WorldStructure requires image metadata database service");
+
   auto settings = assets->json(configPath);
 
   m_region = RectI::null();
@@ -26,7 +29,7 @@ WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath)
         overlaySettings.getBool("fullbright", false)};
     m_backgroundOverlays.append(overlay);
     m_region.combine(RectI::withSize(
-        Vec2I::floor(overlay.min), Vec2I::ceil(Vec2F(imgMetadata->imageSize(overlay.image)) / TilePixels)));
+        Vec2I::floor(overlay.min), Vec2I::ceil(Vec2F(imageMetadataDatabase->imageSize(overlay.image)) / TilePixels)));
   }
 
   for (auto overlaySettings : settings.getArray("foregroundOverlays", JsonArray())) {
@@ -35,7 +38,7 @@ WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath)
         overlaySettings.getBool("fullbright", false)};
     m_foregroundOverlays.append(overlay);
     m_region.combine(RectI::withSize(
-        Vec2I::floor(overlay.min), Vec2I::ceil(Vec2F(imgMetadata->imageSize(overlay.image)) / TilePixels)));
+        Vec2I::floor(overlay.min), Vec2I::ceil(Vec2F(imageMetadataDatabase->imageSize(overlay.image)) / TilePixels)));
   }
 
   // Read block position, keys, and then use that to interpret the block image,
@@ -43,7 +46,6 @@ WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath)
 
   auto blockPosition = jsonToVec2I(settings.getArray("blocksPosition", JsonArray{0, 0}));
   HashMap<Vec4B, BlockKey> blockKeys;
-  auto matDb = Root::singleton().materialDatabase();
   for (auto const& blockKeyConfig :
       assets->fetchJson(settings.get("blockKey", JsonArray()), configPath).iterateArray()) {
     auto foregroundMat = blockKeyConfig.getString("foregroundMat", "");
@@ -51,28 +53,28 @@ WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath)
     if (foregroundMat == "")
       foregroundMatId = StructureMaterialId;
     else
-      foregroundMatId = matDb->materialId(foregroundMat);
+      foregroundMatId = materialDatabase->materialId(foregroundMat);
 
     auto backgroundMat = blockKeyConfig.getString("backgroundMat", "");
     MaterialId backgroundMatId;
     if (backgroundMat == "")
       backgroundMatId = StructureMaterialId;
     else
-      backgroundMatId = matDb->materialId(backgroundMat);
+      backgroundMatId = materialDatabase->materialId(backgroundMat);
 
     auto foregroundMod = blockKeyConfig.getString("foregroundMod", "");
     ModId foregroundModId;
     if (foregroundMod == "")
       foregroundModId = NoModId;
     else
-      foregroundModId = matDb->modId(foregroundMod);
+      foregroundModId = materialDatabase->modId(foregroundMod);
 
     auto backgroundMod = blockKeyConfig.getString("backgroundMod", "");
     ModId backgroundModId;
     if (backgroundMod == "")
       backgroundModId = NoModId;
     else
-      backgroundModId = matDb->modId(backgroundMod);
+      backgroundModId = materialDatabase->modId(backgroundMod);
 
     BlockKey blockKey{blockKeyConfig.getBool("anchor", false),
         blockKeyConfig.getBool("foregroundBlock", false),

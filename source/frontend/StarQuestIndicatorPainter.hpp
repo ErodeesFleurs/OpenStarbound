@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarWorldClient.hpp"
 
@@ -14,7 +14,7 @@ using QuestIndicatorPainterPtr = SharedPtr<QuestIndicatorPainter>;
 class QuestIndicatorPainter {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   QuestIndicatorPainter(UniverseClientPtr const& client, Services services);
@@ -35,7 +35,7 @@ private:
   AnimationPtr indicatorAnimation(String const& indicatorPath) const;
 
   UniverseClientPtr m_client;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   WorldCamera m_camera;
   Map<EntityId, Indicator> m_indicators;
 };

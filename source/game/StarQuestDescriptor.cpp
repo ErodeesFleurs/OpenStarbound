@@ -271,7 +271,7 @@ bool QuestArcDescriptor::operator==(QuestArcDescriptor const& rhs) const {
   return quests == rhs.quests && stagehandUniqueId == rhs.stagehandUniqueId;
 }
 
-String questParamText(QuestParam const& parameter, IItemDatabaseConstPtr itemDatabase) {
+String questParamText(QuestParam const& parameter, ItemDatabaseConstPtr itemDatabase) {
   if (parameter.name)
     return *parameter.name;
 
@@ -299,7 +299,7 @@ StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) 
       [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
 }
 
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, IItemDatabaseConstPtr itemDatabase) {
+StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase) {
   return transformedMapValues(parameters, [itemDatabase](QuestParam const& parameter) {
       return questParamText(parameter, itemDatabase);
     });

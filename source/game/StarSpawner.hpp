@@ -8,7 +8,7 @@
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarSpawnTypeDatabase.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -44,7 +44,7 @@ public:
 
 class Spawner {
 public:
-  Spawner(IAssetsConstPtr assets);
+  Spawner(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, SpawnTypeDatabaseConstPtr spawnTypeDatabase);
 
   void init(SpawnerFacadePtr facade);
   // Despawns all spawned entities before shutting down
@@ -107,6 +107,8 @@ private:
   unsigned m_windowActivationBorder;
 
   bool m_active;
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  SpawnTypeDatabaseConstPtr m_spawnTypeDatabase;
   SpawnerFacadePtr m_facade;
   HashSet<EntityId> m_spawnedEntities;
   HashMap<Vec2I, float> m_activeSpawnCells;

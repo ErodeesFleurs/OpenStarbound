@@ -194,11 +194,11 @@ void Root::reload() {
     // database.
     MutexLocker entityFactoryLock(m_entityFactoryMutex);
 
+    // Player factory depends on the species database and several other services below.
+    MutexLocker playerFactoryLock(m_playerFactoryMutex);
+
     // Species database depends on the item database.
     MutexLocker speciesDatabaseLock(m_speciesDatabaseMutex);
-
-    // Player factory depends on the item database.
-    MutexLocker playerFactoryLock(m_playerFactoryMutex);
 
     // Item database depends on object database and codex database
     MutexLocker itemDatabaseLock(m_itemDatabaseMutex);
@@ -457,7 +457,7 @@ MonsterDatabaseConstPtr Root::monsterDatabase() {
 }
 
 NpcDatabaseConstPtr Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase());
+  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase(), danceDatabase(), emoteProcessor());
 }
 
 StagehandDatabaseConstPtr Root::stagehandDatabase() {
@@ -470,12 +470,18 @@ VehicleDatabaseConstPtr Root::vehicleDatabase() {
 
 PlayerFactoryConstPtr Root::playerFactory() {
   return loadMemberFunction<PlayerFactory>(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", [this]() {
-      return make_shared<PlayerFactory>(assets(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase());
+      return make_shared<PlayerFactory>(assets(), configuration(), materialDatabase(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase(), codexDatabase(), danceDatabase(), emoteProcessor(), radioMessageDatabase(), aiDatabase(), collectionDatabase(), speciesDatabase(), [this]() {
+          return entityFactory();
+        }, liquidsDatabase(), techDatabase());
     });
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
-  return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory", assets());
+  return loadMemberFunction<EntityFactory>(m_entityFactory, m_entityFactoryMutex, "EntityFactory", [this]() {
+      return make_shared<EntityFactory>(assets(), playerFactory(), monsterDatabase(),
+          objectDatabase(), projectileDatabase(), npcDatabase(), vehicleDatabase(),
+          versioningDatabase(), itemDatabase());
+    });
 }
 
 PatternedNameGeneratorConstPtr Root::nameGenerator() {
@@ -485,7 +491,7 @@ PatternedNameGeneratorConstPtr Root::nameGenerator() {
 ItemDatabaseConstPtr Root::itemDatabase() {
   return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets(), [this]() {
       return objectDatabase();
-    });
+    }, liquidsDatabase(), functionDatabase(), codexDatabase(), materialDatabase());
 }
 
 MaterialDatabaseConstPtr Root::materialDatabase() {
@@ -497,7 +503,7 @@ TerrainDatabaseConstPtr Root::terrainDatabase() {
 }
 
 BiomeDatabaseConstPtr Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase());
+  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase(), imageMetadataDatabase());
 }
 
 LiquidsDatabaseConstPtr Root::liquidsDatabase() {
@@ -529,7 +535,7 @@ TreasureDatabaseConstPtr Root::treasureDatabase() {
 }
 
 DungeonDefinitionsConstPtr Root::dungeonDefinitions() {
-  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", assets());
+  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", assets(), tilesetDatabase());
 }
 
 TilesetDatabaseConstPtr Root::tilesetDatabase() {

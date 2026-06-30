@@ -7,7 +7,7 @@
 
 namespace Star {
 
-MovementParameters MovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
+MovementParameters MovementParameters::sensibleDefaults(AssetsConstPtr assets) {
   if (!assets)
     throw MovementControllerException("MovementParameters requires assets service");
   return MovementParameters(assets->json("/default_movement.config").toObject());
@@ -168,7 +168,7 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
   return ds;
 }
 
-MovementController::MovementController(MovementParameters const& parameters, IAssetsConstPtr assets) {
+MovementController::MovementController(MovementParameters const& parameters, AssetsConstPtr assets) {
   m_assets = std::move(assets);
   if (!m_assets)
     throw MovementControllerException("MovementController requires assets service");
@@ -217,7 +217,7 @@ MovementController::MovementController(MovementParameters const& parameters, IAs
   resetParameters(parameters);
 }
 
-MovementController::MovementController(MovementParameters const& parameters, World* world, IAssetsConstPtr assets) : MovementController(parameters, std::move(assets)) {
+MovementController::MovementController(MovementParameters const& parameters, World* world, AssetsConstPtr assets) : MovementController(parameters, std::move(assets)) {
   init(world);
 }
 

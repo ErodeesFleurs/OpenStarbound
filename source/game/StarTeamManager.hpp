@@ -6,7 +6,7 @@
 #include "StarWarping.hpp"
 #include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 
 namespace Star {
 
@@ -15,7 +15,7 @@ using TeamManagerPtr = SharedPtr<TeamManager>;
 
 class TeamManager {
 public:
-  TeamManager(IConfigurationPtr configuration);
+  TeamManager(ConfigurationPtr configuration);
 
   JsonRpcHandlers rpcHandlers();
 

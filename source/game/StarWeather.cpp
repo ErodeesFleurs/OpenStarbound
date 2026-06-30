@@ -1,7 +1,6 @@
 #include "StarWeather.hpp"
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
@@ -27,12 +26,18 @@ ServerWeather::ServerWeather() {
   m_netGroup.addNetElement(&m_currentWindNetState);
 }
 
-void ServerWeather::setup(IAssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
-    WeatherEffectsActiveQuery weatherEffectsActiveQuery) {
+void ServerWeather::setup(AssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
+    WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase, ProjectileDatabaseConstPtr projectileDatabase) {
   if (!assets)
     throw StarException("ServerWeather requires assets service");
+  if (!biomeDatabase)
+    throw StarException("ServerWeather requires biome database service");
+  if (!projectileDatabase)
+    throw StarException("ServerWeather requires projectile database service");
 
   m_assets = std::move(assets);
+  m_biomeDatabase = std::move(biomeDatabase);
+  m_projectileDatabase = std::move(projectileDatabase);
   m_weatherPool = weatherPool;
   m_undergroundLevel = undergroundLevel;
 
@@ -95,7 +100,7 @@ void ServerWeather::update(double dt) {
       if (m_currentWeatherIndex == NPos)
         m_currentWeatherType = {};
       else
-        m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+        m_currentWeatherType = m_biomeDatabase->weatherType(m_weatherPool.item(m_currentWeatherIndex));
 
       m_lastWeatherChangeTime = m_nextWeatherChangeTime;
       m_nextWeatherChangeTime = m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1]);
@@ -159,8 +164,7 @@ void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
     m_currentWind = 0.0f;
   } else {
     m_currentWeatherIndex = weatherIndex;
-    m_currentWeatherType =
-      Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+    m_currentWeatherType = m_biomeDatabase->weatherType(m_weatherPool.item(m_currentWeatherIndex));
     m_currentWeatherIntensity = 1.0f;
     m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
   }
@@ -193,8 +197,6 @@ void ServerWeather::setNetStates() {
 void ServerWeather::spawnWeatherProjectiles(float dt) {
   if (!m_currentWeatherType || m_clientVisibleRegions.empty())
     return;
-
-  auto projectileDatabase = Root::singleton().projectileDatabase();
 
   // TODO: The complexity of this method is TERRIBLE, if this becomes a problem
   // for any reason there are large numbers of ways to make this much better,
@@ -290,7 +292,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
           }
 
           if (!intersectsVisibleRegion) {
-            auto newProjectile = projectileDatabase->createProjectile(projectileConfig.projectile, projectileConfig.parameters);
+            auto newProjectile = m_projectileDatabase->createProjectile(projectileConfig.projectile, projectileConfig.parameters);
             newProjectile->setInitialPosition(position);
             newProjectile->setInitialVelocity(projectileConfig.velocity + Vec2F(projectileConfig.windAffectAmount * wind(), 0));
             newProjectile->setTeam(EntityDamageTeam(TeamType::Environment));
@@ -316,7 +318,11 @@ ClientWeather::ClientWeather() {
   m_netGroup.addNetElement(&m_currentWindNetState);
 }
 
-void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery) {
+void ClientWeather::setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase) {
+  if (!biomeDatabase)
+    throw StarException("ClientWeather requires biome database service");
+
+  m_biomeDatabase = std::move(biomeDatabase);
   m_worldGeometry = worldGeometry;
   m_weatherEffectsActiveQuery = weatherEffectsActiveQuery;
   m_currentTime = 0.0;
@@ -340,7 +346,7 @@ void ClientWeather::update(double dt) {
     m_currentWeatherType = {};
   } else {
     if (m_visibleRegion.yMax() > m_undergroundLevel)
-      m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
+      m_currentWeatherType = m_biomeDatabase->weatherType(m_weatherPool.item(m_currentWeatherIndex));
     else
       m_currentWeatherType = {};
   }

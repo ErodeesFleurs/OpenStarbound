@@ -48,11 +48,11 @@ int main(int argc, char** argv) {
     coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
-    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 
-    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
+    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
     Vec2U worldSize = worldServer.geometry().size();
 
     double start = Time::monotonicTime();

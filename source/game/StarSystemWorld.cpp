@@ -1,10 +1,8 @@
 #include "StarSystemWorld.hpp"
-#include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarSystemWorldServer.hpp"
-#include "StarNameGenerator.hpp"
 
 namespace Star {
 
@@ -115,16 +113,22 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
   return config;
 }
 
-SystemWorld::SystemWorld(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : m_celestialDatabase(std::move(celestialDatabase)), m_assets(std::move(assets)), m_universeClock(std::move(universeClock)) {
+SystemWorld::SystemWorld(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
+  : m_celestialDatabase(std::move(celestialDatabase)), m_assets(std::move(assets)), m_universeClock(std::move(universeClock)), m_nameGenerator(std::move(nameGenerator)) {
   if (!m_assets)
     throw StarException("SystemWorld requires assets service");
+  if (!m_nameGenerator)
+    throw StarException("SystemWorld requires name generator service");
 
   m_config = SystemWorldConfig::fromJson(m_assets->json("/systemworld.config"));
 }
 
-IAssetsConstPtr SystemWorld::assets() const {
+AssetsConstPtr SystemWorld::assets() const {
   return m_assets;
+}
+
+PatternedNameGeneratorConstPtr SystemWorld::nameGenerator() const {
+  return m_nameGenerator;
 }
 
 SystemWorldConfig const& SystemWorld::systemConfig() const {
@@ -278,7 +282,7 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   return object;
 }
 
-Json SystemWorld::systemObjectTypeConfig(IAssetsConstPtr assets, String const& name) {
+Json SystemWorld::systemObjectTypeConfig(AssetsConstPtr assets, String const& name) {
   if (!assets)
     throw StarException("SystemWorld::systemObjectTypeConfig requires assets service");
 
@@ -332,12 +336,14 @@ SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& po
   init();
 }
 
-SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters)
+SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, PatternedNameGeneratorConstPtr nameGenerator, JsonObject parameters)
   : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
+  if (!nameGenerator)
+    throw StarException("SystemObject requires name generator service");
   setPosition(position);
   for (auto p : m_config.generatedParameters) {
     if (!m_parameters.contains(p.first))
-      m_parameters[p.first] = Root::singleton().nameGenerator()->generateName(p.second);
+      m_parameters[p.first] = nameGenerator->generateName(p.second);
   }
   init();
 }

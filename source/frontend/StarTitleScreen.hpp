@@ -4,7 +4,7 @@
 #include "StarAmbient.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarInterfaceCursor.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarListWidget.hpp"
 
@@ -42,12 +42,13 @@ using TitleScreenPtr = SharedPtr<TitleScreen>;
 
 struct TitleScreenServices {
   AssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  ConfigurationPtr configuration;
   PlayerFactoryConstPtr playerFactory;
   SpeciesDatabaseConstPtr speciesDatabase;
   PatternedNameGeneratorConstPtr nameGenerator;
   ItemDatabaseConstPtr itemDatabase;
   ImageMetadataDatabaseConstPtr imageMetadata;
+  VersioningDatabaseConstPtr versioningDatabase;
 };
 
 enum class TitleState {
@@ -146,12 +147,13 @@ private:
 
   Vec2I m_cursorScreenPos;
   AssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration;
   PlayerFactoryConstPtr m_playerFactory;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;
   ItemDatabaseConstPtr m_itemDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
+  VersioningDatabaseConstPtr m_versioningDatabase;
   InterfaceCursor m_cursor;
   TitleState m_titleState;
 

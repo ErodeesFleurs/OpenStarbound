@@ -10,7 +10,7 @@
 
 namespace Star {
 
-MiningTool::MiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+MiningTool::MiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MiningTool requires assets service");
@@ -54,7 +54,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = world()->materialDatabase();
 
   if (initialized()) {
     bool used = false;
@@ -142,7 +142,7 @@ void MiningTool::changeDurability(float amount) {
   }
 }
 
-HarvestingTool::HarvestingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+HarvestingTool::HarvestingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), SwingableItem(config) {
   if (!assets)
     throw ItemException("HarvestingTool requires assets service");
@@ -212,7 +212,7 @@ float HarvestingTool::getAngle(float aimAngle) {
   return aimAngle;
 }
 
-Flashlight::Flashlight(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+Flashlight::Flashlight(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(std::move(assets), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
@@ -245,7 +245,7 @@ List<LightSource> Flashlight::lightSources() const {
   return {std::move(lightSource)};
 }
 
-WireTool::WireTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+WireTool::WireTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("WireTool requires assets service");
@@ -321,7 +321,7 @@ void WireTool::setConnector(WireConnector* connector) {
   m_wireConnector = connector;
 }
 
-BeamMiningTool::BeamMiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+BeamMiningTool::BeamMiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("BeamMiningTool requires assets service");
@@ -407,7 +407,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (!ready())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = world()->materialDatabase();
 
   auto worldp = world();
   auto ownerp = owner();
@@ -496,7 +496,7 @@ float BeamMiningTool::getAngle(float angle) {
   return BeamItem::getAngle(angle);
 }
 
-TillingTool::TillingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+TillingTool::TillingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("TillingTool requires assets service");
@@ -538,7 +538,7 @@ void TillingTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   auto strikeSound = Random::randValueFrom(m_strikeSounds);
 
   if (owner() && world()) {
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world()->materialDatabase();
     Vec2I pos(owner()->aimPosition().floor());
 
     if (world()->material(pos + Vec2I(0, 1), TileLayer::Foreground) != EmptyMaterialId)
@@ -593,7 +593,7 @@ float TillingTool::getAngle(float aimAngle) {
   return aimAngle;
 }
 
-PaintingBeamTool::PaintingBeamTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+PaintingBeamTool::PaintingBeamTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config) {
   if (!assets)
     throw ItemException("PaintingBeamTool requires assets service");

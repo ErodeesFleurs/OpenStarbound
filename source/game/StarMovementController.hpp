@@ -5,7 +5,7 @@
 #include "StarNetElementSystem.hpp"
 #include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -20,7 +20,7 @@ using MovementControllerPtr = SharedPtr<MovementController>;
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
   // Load sensible defaults from a config file.
-  static MovementParameters sensibleDefaults(IAssetsConstPtr assets);
+  static MovementParameters sensibleDefaults(AssetsConstPtr assets);
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -79,9 +79,9 @@ class MovementController : public NetElementGroup {
 public:
   // Constructs a MovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  MovementController(MovementParameters const& parameters, IAssetsConstPtr assets);
+  MovementController(MovementParameters const& parameters, AssetsConstPtr assets);
 
-  MovementController(MovementParameters const& parameters, World* world, IAssetsConstPtr assets);
+  MovementController(MovementParameters const& parameters, World* world, AssetsConstPtr assets);
 
   MovementParameters const& parameters() const;
 
@@ -219,7 +219,7 @@ protected:
   World* world();
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   struct CollisionResult {
     Vec2F movement;
     Vec2F correction;

@@ -5,7 +5,7 @@
 #include "StarUdp.hpp"
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 
 #include <random>
 
@@ -16,7 +16,7 @@ class ServerQueryThread;
 
 class ServerQueryThread : public Thread {
 public:
-  ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, IConfigurationPtr configuration);
+  ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration);
   ~ServerQueryThread();
 
   void start();

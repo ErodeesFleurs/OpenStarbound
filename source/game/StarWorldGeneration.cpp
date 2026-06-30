@@ -12,7 +12,6 @@
 #include "StarWireEntity.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
@@ -34,9 +33,8 @@ static int const PlantAdjustmentLimit = 2;
 
 LiquidWorld::LiquidWorld(WorldServer* world) {
   m_worldServer = world;
-  auto& root = Root::singleton();
-  m_liquidsDatabase = root.liquidsDatabase();
-  m_materialDatabase = root.materialDatabase();
+  m_liquidsDatabase = world->liquidsDatabase();
+  m_materialDatabase = world->materialDatabase();
 }
 
 Vec2I LiquidWorld::uniqueLocation(Vec2I const& location) const {
@@ -143,7 +141,7 @@ void LiquidWorld::liquidCollision(Vec2I const& liquidPos, LiquidId liquidId, Vec
 }
 
 FallingBlocksWorld::FallingBlocksWorld(WorldServer* w)
-  : m_worldServer(w), m_materialDatabase(Root::singleton().materialDatabase()) {}
+  : m_worldServer(w), m_materialDatabase(w->materialDatabase()) {}
 
 FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos) {
   auto const& tile =  m_worldServer->getServerTile(pos, true);
@@ -188,13 +186,47 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
 }
 
 DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation)
-  : m_worldServer(worldServer), m_objectDatabase(std::move(objectDatabase)), m_markForActivation(markForActivation) {
+  : m_worldServer(worldServer),
+    m_objectDatabase(std::move(objectDatabase)),
+    m_materialDatabase(worldServer->materialDatabase()),
+    m_liquidsDatabase(worldServer->liquidsDatabase()),
+    m_plantDatabase(worldServer->plantDatabase()),
+    m_treasureDatabase(worldServer->treasureDatabase()),
+    m_npcDatabase(worldServer->npcDatabase()),
+    m_monsterDatabase(worldServer->monsterDatabase()),
+    m_stagehandDatabase(worldServer->stagehandDatabase()),
+    m_vehicleDatabase(worldServer->vehicleDatabase()),
+    m_markForActivation(markForActivation) {
   if (!m_objectDatabase)
     throw StarException("DungeonGeneratorWorld requires object database service");
+  if (!m_materialDatabase)
+    throw StarException("DungeonGeneratorWorld requires material database service");
+  if (!m_liquidsDatabase)
+    throw StarException("DungeonGeneratorWorld requires liquids database service");
+  if (!m_plantDatabase)
+    throw StarException("DungeonGeneratorWorld requires plant database service");
+  if (!m_treasureDatabase)
+    throw StarException("DungeonGeneratorWorld requires treasure database service");
+  if (!m_npcDatabase)
+    throw StarException("DungeonGeneratorWorld requires npc database service");
+  if (!m_monsterDatabase)
+    throw StarException("DungeonGeneratorWorld requires monster database service");
+  if (!m_stagehandDatabase)
+    throw StarException("DungeonGeneratorWorld requires stagehand database service");
+  if (!m_vehicleDatabase)
+    throw StarException("DungeonGeneratorWorld requires vehicle database service");
 }
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
   return m_worldServer->geometry();
+}
+
+MaterialDatabaseConstPtr DungeonGeneratorWorld::materialDatabase() const {
+  return m_materialDatabase;
+}
+
+LiquidsDatabaseConstPtr DungeonGeneratorWorld::liquidsDatabase() const {
+  return m_liquidsDatabase;
 }
 
 void DungeonGeneratorWorld::markRegion(RectI const& region) {
@@ -231,7 +263,7 @@ void DungeonGeneratorWorld::setForegroundMaterial(Vec2I const& position, Materia
     tile->foregroundColorVariant = colorVariant;
     tile->foregroundMod = NoModId;
     tile->foregroundModHueShift = MaterialHue();
-    tile->collision = Root::singleton().materialDatabase()->materialCollisionKind(tile->foreground);
+    tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
     tile->collisionCacheDirty = true;
   }
 }
@@ -259,8 +291,7 @@ void DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectNa
 void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
   m_worldServer->signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
 
-  auto vehicleDatabase = Root::singleton().vehicleDatabase();
-  auto vehicle = vehicleDatabase->create(vehicleName, parameters.opt().value(JsonObject{}).set("persistent", true));
+  auto vehicle = m_vehicleDatabase->create(vehicleName, parameters.opt().value(JsonObject{}).set("persistent", true));
   vehicle->setPosition(pos);
   m_worldServer->addEntity(vehicle);
 }
@@ -275,7 +306,7 @@ void DungeonGeneratorWorld::placeBiomeTree(Vec2I const& pos) {
     m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
     auto seed = m_worldServer->worldTemplate()->seedFor(pos[0], pos[1]);
     if (auto treeVariant = biome->surfacePlaceables.firstTreeType())
-      placePlant(Root::singleton().plantDatabase()->createPlant(*treeVariant, seed), pos);
+      placePlant(m_plantDatabase->createPlant(*treeVariant, seed), pos);
   }
 }
 
@@ -335,7 +366,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
       if (adjustBackground)
         tile->background = EmptyMaterialId;
       tile->collision = CollisionKind::None;
-      tile->collision = Root::singleton().materialDatabase()->materialCollisionKind(tile->foreground);
+      tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
       tile->collisionCacheDirty = true;
     } else {
       return;
@@ -348,7 +379,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
     if (auto tile = m_worldServer->modifyServerTile(root)) {
       if (!isRealMaterial(tile->foreground)) {
         *tile = rootTile;
-        tile->collision = Root::singleton().materialDatabase()->materialCollisionKind(tile->foreground);
+        tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
         tile->collisionCacheDirty = true;
       }
     } else {
@@ -368,10 +399,10 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {
       auto& grass = placement.item.get<GrassVariant>();
-      placePlant(Root::singleton().plantDatabase()->createPlant(grass, seed), placement.position);
+      placePlant(m_plantDatabase->createPlant(grass, seed), placement.position);
     } else if (placement.item.is<BushVariant>()) {
       auto& bush = placement.item.get<BushVariant>();
-      placePlant(Root::singleton().plantDatabase()->createPlant(bush, seed), placement.position);
+      placePlant(m_plantDatabase->createPlant(bush, seed), placement.position);
     } else if (placement.item.is<TreePair>()) {
       auto& treePair = placement.item.get<TreePair>();
       TreeVariant treeVariant;
@@ -380,7 +411,7 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
       else
         treeVariant = treePair.second;
 
-      placePlant(Root::singleton().plantDatabase()->createPlant(treeVariant, seed), placement.position);
+      placePlant(m_plantDatabase->createPlant(treeVariant, seed), placement.position);
     } else if (placement.item.is<ObjectPool>()) {
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
@@ -391,7 +422,7 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
-      if (auto treasureContainer = Root::singleton().treasureDatabase()->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
+      if (auto treasureContainer = m_treasureDatabase->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
         m_worldServer->addEntity(treasureContainer);
     }
   }
@@ -404,24 +435,22 @@ void DungeonGeneratorWorld::addDrop(Vec2F const& position, ItemDescriptor const&
 void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& parameters) {
   auto kind = parameters.getString("kind");
   if (kind.equals("npc", String::CaseInsensitive)) {
-    auto npcDatabase = Root::singleton().npcDatabase();
     uint64_t seed = parameters.getUInt("seed", Random::randu64());
     String species = parameters.getString("species");
     String typeName = parameters.getString("typeName", "default");
     JsonObject uniqueParameters = parameters.getObject("parameters", {});
     if (!uniqueParameters.contains("persistent"))
       uniqueParameters["persistent"] = true;
-    auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(species, typeName, m_worldServer->threatLevel(), seed, uniqueParameters));
+    auto npc = m_npcDatabase->createNpc(m_npcDatabase->generateNpcVariant(species, typeName, m_worldServer->threatLevel(), seed, uniqueParameters));
     npc->setPosition(position - npc->feetOffset());
     m_worldServer->addEntity(npc);
   } else if (kind.equals("monster", String::CaseInsensitive)) {
-    auto monsterDatabase = Root::singleton().monsterDatabase();
     uint64_t seed = parameters.getUInt("seed", Random::randu64());
     String typeName = parameters.getString("typeName");
     JsonObject uniqueParameters = parameters.getObject("parameters", {});
     if (!uniqueParameters.contains("persistent"))
       uniqueParameters["persistent"] = true;
-    auto monster = monsterDatabase->createMonster(monsterDatabase->monsterVariant(typeName, seed, uniqueParameters));
+    auto monster = m_monsterDatabase->createMonster(m_monsterDatabase->monsterVariant(typeName, seed, uniqueParameters));
     monster->setPosition(position);
     m_worldServer->addEntity(monster);
   } else
@@ -429,7 +458,7 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
 }
 
 void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& definition) {
-  auto stagehand = Root::singleton().stagehandDatabase()->createStagehand(definition.getString("type"), definition.get("parameters", Json()));
+  auto stagehand = m_stagehandDatabase->createStagehand(definition.getString("type"), definition.get("parameters", Json()));
   stagehand->setPosition(position);
   m_worldServer->addEntity(stagehand);
 }
@@ -648,9 +677,31 @@ EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
 }
 
 WorldGenerator::WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objectDatabase)
-  : m_worldServer(server), m_objectDatabase(std::move(objectDatabase)) {
+  : m_worldServer(server),
+    m_objectDatabase(std::move(objectDatabase)),
+    m_materialDatabase(server->materialDatabase()),
+    m_plantDatabase(server->plantDatabase()),
+    m_treasureDatabase(server->treasureDatabase()),
+    m_npcDatabase(server->npcDatabase()),
+    m_monsterDatabase(server->monsterDatabase()),
+    m_stagehandDatabase(server->stagehandDatabase()),
+    m_vehicleDatabase(server->vehicleDatabase()) {
   if (!m_objectDatabase)
     throw StarException("WorldGenerator requires object database service");
+  if (!m_materialDatabase)
+    throw StarException("WorldGenerator requires material database service");
+  if (!m_plantDatabase)
+    throw StarException("WorldGenerator requires plant database service");
+  if (!m_treasureDatabase)
+    throw StarException("WorldGenerator requires treasure database service");
+  if (!m_npcDatabase)
+    throw StarException("WorldGenerator requires npc database service");
+  if (!m_monsterDatabase)
+    throw StarException("WorldGenerator requires monster database service");
+  if (!m_stagehandDatabase)
+    throw StarException("WorldGenerator requires stagehand database service");
+  if (!m_vehicleDatabase)
+    throw StarException("WorldGenerator requires vehicle database service");
 
   m_microDungeonFactory = make_shared<MicroDungeonFactory>();
 }
@@ -765,7 +816,7 @@ void WorldGenerator::replaceBiomeBlocks(ServerTile* tile) {
 }
 
 void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
   auto planet = m_worldServer->worldTemplate();
   // Generate sector.
   auto tileArray = worldStorage->tileArray();
@@ -854,7 +905,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
       Maybe<DungeonId> dungeonId;
       starAssert(!dungeonName.empty());
-      if (auto generateResult = m_microDungeonFactory->generate(bounds, dungeonName, placement.position, seed, m_worldServer->threatLevel(), facade)) {
+      if (auto generateResult = m_microDungeonFactory->generate(bounds, m_worldServer->dungeonDefinitions(), dungeonName, placement.position, seed, m_worldServer->threatLevel(), facade)) {
         if (queued) {
           dungeonId = queued->dungeonId;
           queued->promise.fulfill(placement.position);
@@ -893,7 +944,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
   bounds.min()[1] = clamp<int>(bounds.min()[1], 0, dimensions[1] - 1);
   bounds.max()[1] = clamp<int>(bounds.max()[1], 0, dimensions[1] - 1);
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
 
   auto samplePoint = sectorTiles.center();
   auto blockInfo = m_worldServer->worldTemplate()->blockInfo(samplePoint[0], samplePoint[1]);
@@ -1002,7 +1053,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
 }
 
 void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
   auto planet = m_worldServer->worldTemplate();
   auto tileArray = worldStorage->tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
@@ -1058,10 +1109,10 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {
       auto& grass = placement.item.get<GrassVariant>();
-      placePlant(worldStorage, Root::singleton().plantDatabase()->createPlant(grass, seed), placement.position);
+      placePlant(worldStorage, m_plantDatabase->createPlant(grass, seed), placement.position);
     } else if (placement.item.is<BushVariant>()) {
       auto& bush = placement.item.get<BushVariant>();
-      placePlant(worldStorage, Root::singleton().plantDatabase()->createPlant(bush, seed), placement.position);
+      placePlant(worldStorage, m_plantDatabase->createPlant(bush, seed), placement.position);
     } else if (placement.item.is<TreePair>()) {
       auto& treePair = placement.item.get<TreePair>();
       TreeVariant treeVariant;
@@ -1070,7 +1121,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
       else
         treeVariant = treePair.second;
 
-      placePlant(worldStorage, Root::singleton().plantDatabase()->createPlant(treeVariant, seed), placement.position);
+      placePlant(worldStorage, m_plantDatabase->createPlant(treeVariant, seed), placement.position);
     } else if (placement.item.is<ObjectPool>()) {
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
@@ -1081,8 +1132,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
-      if (auto treasureContainer = Root::singleton().treasureDatabase()->createTreasureChest(
-              m_worldServer, treasureBoxSet, placement.position, direction, seed))
+      if (auto treasureContainer = m_treasureDatabase->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
         m_worldServer->addEntity(treasureContainer);
     }
   }
@@ -1097,7 +1147,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
 
 void WorldGenerator::prepareSectorBiomeBlocks(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
   auto tileArray = worldStorage->tileArray();
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
@@ -1164,7 +1214,7 @@ void WorldGenerator::placeBiomeGrass(WorldStorage* worldStorage, ServerTile* til
 }
 
 void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
   auto planet = m_worldServer->worldTemplate();
   auto tileArray = worldStorage->tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
@@ -1367,10 +1417,10 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
       auto seed = m_worldServer->worldTemplate()->seedFor(position[0], position[1]);
       if (biomeItemPlacement.item.is<GrassVariant>()) {
         auto& grass = biomeItemPlacement.item.get<GrassVariant>();
-        simplePlacePlant(Root::singleton().plantDatabase()->createPlant(grass, seed), position);
+        simplePlacePlant(m_plantDatabase->createPlant(grass, seed), position);
       } else if (biomeItemPlacement.item.is<BushVariant>()) {
         auto& bush = biomeItemPlacement.item.get<BushVariant>();
-        simplePlacePlant(Root::singleton().plantDatabase()->createPlant(bush, seed), position);
+        simplePlacePlant(m_plantDatabase->createPlant(bush, seed), position);
       } else if (biomeItemPlacement.item.is<TreePair>()) {
         auto& treePair = biomeItemPlacement.item.get<TreePair>();
         TreeVariant treeVariant;
@@ -1379,7 +1429,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
         else
           treeVariant = treePair.second;
 
-        simplePlacePlant(Root::singleton().plantDatabase()->createPlant(treeVariant, seed), position);
+        simplePlacePlant(m_plantDatabase->createPlant(treeVariant, seed), position);
       } else if (biomeItemPlacement.item.is<ObjectPool>()) {
         auto& objectPool = biomeItemPlacement.item.get<ObjectPool>();
         auto direction = seed % 2 ? Direction::Left : Direction::Right;
@@ -1576,7 +1626,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
     if (auto tile = worldStorage->tileArray()->modifyTile(root)) {
       if (!isRealMaterial(tile->foreground)) {
         *tile = rootTile;
-        tile->collision = Root::singleton().materialDatabase()->materialCollisionKind(tile->foreground);
+        tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
         tile->collisionCacheDirty = true;
       }
     } else {

@@ -114,7 +114,7 @@ struct ObjectOrientation {
   Json touchDamageConfig;
   MaterialDatabaseConstPtr materialDatabase;
 
-  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config);
+  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config, AssetsConstPtr assets);
   bool placementValid(World const* world, Vec2I const& position) const;
   bool anchorsValid(World const* world, Vec2I const& position) const;
 };
@@ -130,7 +130,7 @@ struct ObjectConfig {
   size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
 
   String path;
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   MaterialDatabaseConstPtr materialDatabase;
   ImageMetadataDatabaseConstPtr imageMetadataDatabase;
   // The JSON values that were used to configure this Object
@@ -203,9 +203,9 @@ struct ObjectConfig {
 class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(IAssetsConstPtr assets, String const& path, Json const& touchDamage);
+  static Json parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& touchDamage);
   static List<ObjectOrientationPtr> parseOrientations(
-      IAssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
+      AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
 
   ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, function<ItemDatabaseConstPtr()> itemDatabase);
 

@@ -12,7 +12,6 @@
 #include "StarLogging.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarSecureRandom.hpp"
 #include "StarSha256.hpp"
 #include "StarSky.hpp"
@@ -22,23 +21,108 @@
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarWorldTemplate.hpp"
+#include "StarRoot.hpp"
 
 constexpr unsigned DefaultShipWorldDim = 2048;
 
 namespace Star {
 
-UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets, IConfigurationPtr _configuration, ItemDatabaseConstPtr _itemDatabase)
+UniverseServer::UniverseServer(String const& storageDir,
+    AssetsConstPtr _assets,
+    ConfigurationPtr _configuration,
+    MaterialDatabaseConstPtr materialDatabase,
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+    ItemDatabaseConstPtr itemDatabase,
+    ObjectDatabaseConstPtr objectDatabase,
+    ProjectileDatabaseConstPtr projectileDatabase,
+    PlantDatabaseConstPtr plantDatabase,
+    TreasureDatabaseConstPtr treasureDatabase,
+    NpcDatabaseConstPtr npcDatabase,
+    MonsterDatabaseConstPtr monsterDatabase,
+    SpawnTypeDatabaseConstPtr spawnTypeDatabase,
+    StagehandDatabaseConstPtr stagehandDatabase,
+    VehicleDatabaseConstPtr vehicleDatabase,
+    SpeciesDatabaseConstPtr speciesDatabase,
+    EntityFactoryConstPtr entityFactory,
+    LiquidsDatabaseConstPtr liquidsDatabase,
+    BiomeDatabaseConstPtr biomeDatabase,
+    PatternedNameGeneratorConstPtr nameGenerator,
+    VersioningDatabaseConstPtr versioningDatabase,
+    FunctionDatabaseConstPtr functionDatabase,
+    EffectSourceDatabaseConstPtr effectSourceDatabase,
+    ParticleDatabaseConstPtr particleDatabase,
+    TechDatabaseConstPtr techDatabase,
+    StatusEffectDatabaseConstPtr statusEffectDatabase)
     : Thread("UniverseServer"),
       m_workerPool("UniverseServerWorkerPool"),
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
   m_assets = std::move(_assets);
+  if (!m_assets)
+    throw UniverseServerException("UniverseServer requires assets service");
   m_configuration = std::move(_configuration);
-  m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = std::move(_itemDatabase);
-  m_objectDatabase = Root::singleton().objectDatabase();
-  m_speciesDatabase = Root::singleton().speciesDatabase();
-  m_entityFactory = Root::singleton().entityFactory();
-  m_liquidsDatabase = Root::singleton().liquidsDatabase();
+  if (!m_configuration)
+    throw UniverseServerException("UniverseServer requires configuration service");
+  m_materialDatabase = std::move(materialDatabase);
+  if (!m_materialDatabase)
+    throw UniverseServerException("UniverseServer requires material database service");
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
+  if (!m_imageMetadataDatabase)
+    throw UniverseServerException("UniverseServer requires image metadata database service");
+  m_itemDatabase = std::move(itemDatabase);
+  if (!m_itemDatabase)
+    throw UniverseServerException("UniverseServer requires item database service");
+  m_objectDatabase = std::move(objectDatabase);
+  if (!m_objectDatabase)
+    throw UniverseServerException("UniverseServer requires object database service");
+  m_projectileDatabase = std::move(projectileDatabase);
+  if (!m_projectileDatabase)
+    throw UniverseServerException("UniverseServer requires projectile database service");
+  m_plantDatabase = std::move(plantDatabase);
+  if (!m_plantDatabase)
+    throw UniverseServerException("UniverseServer requires plant database service");
+  m_treasureDatabase = std::move(treasureDatabase);
+  if (!m_treasureDatabase)
+    throw UniverseServerException("UniverseServer requires treasure database service");
+  m_npcDatabase = std::move(npcDatabase);
+  if (!m_npcDatabase)
+    throw UniverseServerException("UniverseServer requires npc database service");
+  m_monsterDatabase = std::move(monsterDatabase);
+  if (!m_monsterDatabase)
+    throw UniverseServerException("UniverseServer requires monster database service");
+  m_spawnTypeDatabase = std::move(spawnTypeDatabase);
+  if (!m_spawnTypeDatabase)
+    throw UniverseServerException("UniverseServer requires spawn type database service");
+  m_stagehandDatabase = std::move(stagehandDatabase);
+  if (!m_stagehandDatabase)
+    throw UniverseServerException("UniverseServer requires stagehand database service");
+  m_vehicleDatabase = std::move(vehicleDatabase);
+  if (!m_vehicleDatabase)
+    throw UniverseServerException("UniverseServer requires vehicle database service");
+  m_speciesDatabase = std::move(speciesDatabase);
+  if (!m_speciesDatabase)
+    throw UniverseServerException("UniverseServer requires species database service");
+  m_entityFactory = std::move(entityFactory);
+  if (!m_entityFactory)
+    throw UniverseServerException("UniverseServer requires entity factory service");
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  if (!m_liquidsDatabase)
+    throw UniverseServerException("UniverseServer requires liquids database service");
+  m_biomeDatabase = std::move(biomeDatabase);
+  if (!m_biomeDatabase)
+    throw UniverseServerException("UniverseServer requires biome database service");
+  m_nameGenerator = std::move(nameGenerator);
+  if (!m_nameGenerator)
+    throw UniverseServerException("UniverseServer requires name generator service");
+  m_versioningDatabase = std::move(versioningDatabase);
+  if (!m_versioningDatabase)
+    throw UniverseServerException("UniverseServer requires versioning database service");
+  m_functionDatabase = std::move(functionDatabase);
+  if (!m_functionDatabase)
+    throw UniverseServerException("UniverseServer requires function database service");
+  m_effectSourceDatabase = std::move(effectSourceDatabase);
+  m_particleDatabase = std::move(particleDatabase);
+  m_techDatabase = std::move(techDatabase);
+  m_statusEffectDatabase = std::move(statusEffectDatabase);
   String const LockFile = "universe.lock";
 
   m_storageDirectory = storageDir;
@@ -59,7 +143,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
 
   startLuaScripts();
 
-  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot, m_assets, m_itemDatabase);
+  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot, m_assets, m_configuration, m_itemDatabase, m_treasureDatabase, m_monsterDatabase, m_npcDatabase, m_vehicleDatabase, m_stagehandDatabase, m_liquidsDatabase);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler([this](ConnectionId clientId, String const& command, String const& argumentString) { return m_commandProcessor->userCommand(clientId, command, argumentString); });
 
@@ -77,7 +161,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
     }
   }
 
-  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets, File::relativeTo(m_storageDirectory, "universe.chunks"));
+  m_celestialDatabase = make_shared<CelestialMasterDatabase>(m_assets, m_versioningDatabase, File::relativeTo(m_storageDirectory, "universe.chunks"));
 
   Logger::info("UniverseServer: Loading settings");
   loadSettings();
@@ -106,6 +190,19 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
   m_pause = make_shared<atomic<bool>>(false);
 
   m_secureWarps = m_configuration->getPath("security.secureWarps").optBool().value(true);
+}
+
+WorldServerServices UniverseServer::worldServerServices() const {
+  return WorldServerServices{
+    m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase,
+    m_projectileDatabase, m_plantDatabase, m_treasureDatabase, m_npcDatabase,
+    m_monsterDatabase, m_spawnTypeDatabase, m_stagehandDatabase, m_vehicleDatabase,
+    m_speciesDatabase, m_entityFactory, m_liquidsDatabase, m_biomeDatabase,
+    m_versioningDatabase, m_functionDatabase, m_effectSourceDatabase, m_particleDatabase, m_techDatabase,
+    m_statusEffectDatabase, m_imageMetadataDatabase,
+    Root::singleton().dungeonDefinitions(),
+    Root::singleton().behaviorDatabase()
+  };
 }
 
 UniverseServer::~UniverseServer() {
@@ -494,7 +591,7 @@ bool UniverseServer::updatePlanetType(CelestialCoordinate const& coordinate, Str
         auto newTerrestrialParameters = make_shared<TerrestrialWorldParameters>(*terrestrialParameters);
         newTerrestrialParameters->typeName = newType;
 
-        auto biomeDatabase = Root::singleton().biomeDatabase();
+        auto biomeDatabase = m_biomeDatabase;
         auto newWeatherPool = biomeDatabase->biomeWeathers(weatherBiome, celestialParameters->seed(), terrestrialParameters->threatLevel);
         newTerrestrialParameters->weatherPool = newWeatherPool;
 
@@ -759,7 +856,7 @@ void UniverseServer::updateShips() {
           auto oldShipLevel = jOldShipLevel.toUInt();
           if (oldShipLevel < newShipLevel) {
             for (size_t i = oldShipLevel + 1; i <= newShipLevel; ++i) {
-              auto shipStructure = WorldStructure(m_assets, speciesShips[i]);
+              auto shipStructure = WorldStructure(m_assets, m_materialDatabase, m_imageMetadataDatabase, speciesShips[i]);
               shipWorld->setCentralStructure(shipStructure);
               newShipUpgrades.apply(shipStructure.configValue("shipUpgrades"));
             }
@@ -1339,7 +1436,7 @@ void UniverseServer::doTriggeredStorage() {
       if (auto shipWorld = getWorld(ClientShipWorldId(p.second->playerUuid())))
         p.second->updateShipChunks(shipWorld->readChunks());
 
-      auto versioningDatabase = Root::singleton().versioningDatabase();
+      auto versioningDatabase = m_versioningDatabase;
       String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", p.second->playerUuid().hex()));
       VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", p.second->storeServerData()), clientContextFile);
     }
@@ -1355,7 +1452,7 @@ void UniverseServer::doTriggeredStorage() {
 
 void UniverseServer::saveSettings() {
   RecursiveMutexLocker locker(m_mainLock);
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
   auto versionedSettings = versioningDatabase->makeCurrentVersionedJson("UniverseSettings",
                                                                         m_universeSettings->toJson().set("time", m_universeClock->time()));
   VersionedJson::writeFile(versionedSettings, File::relativeTo(m_storageDirectory, "universe.dat"));
@@ -1369,7 +1466,7 @@ void UniverseServer::loadSettings() {
     m_universeSettings = make_shared<UniverseSettings>(m_assets);
   };
 
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
   auto storageFile = File::relativeTo(m_storageDirectory, "universe.dat");
   if (File::isFile(storageFile)) {
     try {
@@ -1474,7 +1571,7 @@ Maybe<CelestialCoordinate> UniverseServer::nextStarterWorld() {
 }
 
 void UniverseServer::loadTempWorldIndex() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
   auto storageFile = File::relativeTo(m_storageDirectory, "tempworlds.index");
   if (File::isFile(storageFile)) {
     try {
@@ -1510,7 +1607,7 @@ void UniverseServer::saveTempWorldIndex() {
     worldIndex.set(printWorldId(p.first), JsonArray{p.second.first, p.second.second});
   }
 
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
   auto versionedJson = versioningDatabase->makeCurrentVersionedJson("TempWorldIndex", worldIndex);
   VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, "tempworlds.index"));
 }
@@ -1658,8 +1755,8 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         if (action.is<WarpAlias>() || action.is<WarpToPlayer>()) {
           blocked = false;
         } else if (auto warpToWorld = action.ptr<WarpToWorld>()) {
-          if (warpToWorld->world.empty() || 
-              warpToWorld->world.is<ClientShipWorldId>() || 
+          if (warpToWorld->world.empty() ||
+              warpToWorld->world.is<ClientShipWorldId>() ||
               warpToWorld->world.is<CelestialWorldId>() ||
               warpToWorld->world.is<InstanceWorldId>()) {
             blocked = false;
@@ -1744,10 +1841,9 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 }
 
 void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress) {
-  auto& root = Root::singleton();
   auto assets = m_assets;
   auto configuration = m_configuration;
-  auto versioningDatabase = root.versioningDatabase();
+  auto versioningDatabase = m_versioningDatabase;
 
   int clientWaitLimit = assets->json("/universe_server.config:clientWaitLimit").toInt();
   String serverAssetsMismatchMessage = assets->json("/universe_server.config:serverAssetsMismatchMessage").toString();
@@ -2171,7 +2267,7 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     }
 
     // Write the final client context.
-    auto versioningDatabase = Root::singleton().versioningDatabase();
+    auto versioningDatabase = m_versioningDatabase;
     String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientContext->playerUuid().hex()));
     VersionedJson::writeFile(versioningDatabase->makeCurrentVersionedJson("ClientContext", clientContext->storeServerData()), clientContextFile);
 
@@ -2297,7 +2393,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     if (!shipChunks.empty()) {
       try {
         Logger::info("UniverseServer: Loading client ship world {}", clientShipWorldId);
-        shipWorld = make_shared<WorldServer>(shipChunks, m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+        shipWorld = make_shared<WorldServer>(shipChunks, worldServerServices());
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load client ship {}, resetting ship to default state! {}",
                       clientShipWorldId, outputException(e, false));
@@ -2307,11 +2403,11 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     if (!shipWorld) {
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
       auto& species = clientContext->shipSpecies();
-      auto shipStructure = WorldStructure(m_assets, speciesShips.get(species).first());
+      auto shipStructure = WorldStructure(m_assets, m_materialDatabase, m_imageMetadataDatabase, speciesShips.get(species).first());
       Vec2U worldSize(DefaultShipWorldDim, DefaultShipWorldDim);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))
         worldSize = jsonToVec2U(jWorldSize);
-      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile(), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile(), worldServerServices());
       shipStructure = shipWorld->setCentralStructure(shipStructure);
 
       ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
@@ -2374,7 +2470,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     if (File::isFile(storageFile)) {
       try {
         Logger::info("UniverseServer: Loading celestial world {}", celestialWorldId);
-        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), worldServerServices());
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
                       celestialWorldId, outputException(e, false));
@@ -2384,8 +2480,8 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
 
     if (!worldServer) {
       Logger::info("UniverseServer: Creating celestial world {}", celestialWorldId);
-      auto worldTemplate = make_shared<WorldTemplate>(m_assets, celestialWorldId, celestialDatabase);
-      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+      auto worldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, celestialWorldId, celestialDatabase);
+      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), worldServerServices());
     }
 
     worldServer->setUniverseSettings(m_universeSettings);
@@ -2432,7 +2528,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
     worldParameters->disableDeathDrops = worldConfig.getBool("disableDeathDrops", false);
 
     SkyParameters skyParameters = SkyParameters(worldConfig.get("skyParameters", Json()));
-    auto worldTemplate = make_shared<WorldTemplate>(m_assets, worldParameters, skyParameters, worldSeed);
+    auto worldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, worldParameters, skyParameters, worldSeed);
     Json worldProperties = worldConfig.get("worldProperties", JsonObject{});
     bool spawningEnabled = worldConfig.getBool("spawningEnabled", true);
     bool persistent = worldConfig.getBool("persistent", false);
@@ -2452,7 +2548,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (File::isFile(storageFile)) {
         try {
           Logger::info("UniverseServer: Loading persistent unique instance world {}", instanceWorldId.instance);
-          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), worldServerServices());
           worldExisted = true;
         } catch (std::exception const& e) {
           Logger::error("UniverseServer: Could not load persistent unique instance world {}, removing! Cause: {}",
@@ -2463,7 +2559,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
 
       if (!worldServer) {
         Logger::info("UniverseServer: Creating persistent unique instance world {}", instanceWorldId.instance);
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), worldServerServices());
       }
     } else {
       String storageFile = tempWorldFile(instanceWorldId);
@@ -2474,7 +2570,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
           if (file->size() > 0) {
             Logger::info("UniverseServer: Loading temporary instance world {} from storage", instanceWorldId);
             try {
-              worldServer = make_shared<WorldServer>(file, m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+              worldServer = make_shared<WorldServer>(file, worldServerServices());
               worldExisted = true;
             } catch (std::exception const& e) {
               Logger::error("UniverseServer: Could not load temporary instance world '{}', re-creating cause: {}",
@@ -2489,7 +2585,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (!worldServer) {
         Logger::info("UniverseServer: Creating temporary instance world '{}' with expiry time {}", instanceWorldId, deleteTime);
 
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite), worldServerServices());
         m_tempWorldIndex.set(instanceWorldId, pair<uint64_t, uint64_t>(m_universeClock->milliseconds(), deleteTime));
       }
     }
@@ -2531,11 +2627,11 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
     if (File::isFile(storageFile)) {
       Logger::info("UniverseServer: Loading system world {} from disk storage", location);
       try {
-        auto versioningDatabase = Root::singleton().versioningDatabase();
+        auto versioningDatabase = m_versioningDatabase;
         VersionedJson versionedStore = VersionedJson::readFile(storageFile);
         Json store = versioningDatabase->loadVersionedJson(versionedStore, "System");
 
-        systemWorld = make_shared<SystemWorldServer>(m_assets, store, m_universeClock, m_celestialDatabase);
+        systemWorld = make_shared<SystemWorldServer>(m_assets, store, m_universeClock, m_celestialDatabase, m_nameGenerator);
         loadedFromStorage = true;
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Failed to load system {} from disk storage, re-creating. Cause: {}", location, outputException(e, false));
@@ -2546,10 +2642,10 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
 
     if (!loadedFromStorage) {
       Logger::info("UniverseServer: Creating new system world at location {}", location);
-      systemWorld = make_shared<SystemWorldServer>(m_assets, location, m_universeClock, m_celestialDatabase);
+      systemWorld = make_shared<SystemWorldServer>(m_assets, location, m_universeClock, m_celestialDatabase, m_nameGenerator);
     }
 
-    auto systemThread = make_shared<SystemWorldServerThread>(location, systemWorld, storageFile);
+    auto systemThread = make_shared<SystemWorldServerThread>(location, systemWorld, storageFile, m_versioningDatabase);
     systemThread->setUpdateAction([this](SystemWorldServerThread* systemWorldServer) { return systemWorldUpdated(systemWorldServer); });
     systemThread->start();
     m_systemWorlds.set(location, systemThread);

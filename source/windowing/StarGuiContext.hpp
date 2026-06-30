@@ -4,7 +4,7 @@
 #include "StarTextPainter.hpp"
 #include "StarDrawablePainter.hpp"
 #include "StarAssetTextureGroup.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 #include "StarInputEvent.hpp"
 #include "StarDrawable.hpp"
 #include "StarThread.hpp"
@@ -24,7 +24,7 @@ using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 
 struct GuiContextServices {
   AssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  ConfigurationPtr configuration;
   ImageMetadataDatabaseConstPtr imageMetadata;
   ItemDatabaseConstPtr itemDatabase;
   function<void(ListenerWeakPtr)> registerReloadListener;
@@ -51,7 +51,7 @@ public:
   MixerPtr const& mixer() const;
   ApplicationControllerPtr const& applicationController() const;
   AssetsConstPtr const& assets() const;
-  IConfigurationPtr const& configuration() const;
+  ConfigurationPtr const& configuration() const;
   ImageMetadataDatabaseConstPtr const& imageMetadata() const;
   ItemDatabaseConstPtr const& itemDatabase() const;
   RendererPtr const& renderer() const;
@@ -158,7 +158,7 @@ private:
   MixerPtr m_mixer;
   ApplicationControllerPtr m_applicationController;
   AssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
   ItemDatabaseConstPtr m_itemDatabase;
   function<void(ListenerWeakPtr)> m_registerReloadListener;

@@ -1,8 +1,6 @@
 #include "StarParallax.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarDataStreamExtra.hpp"
 
@@ -129,7 +127,8 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
   return ds;
 }
 
-Parallax::Parallax(IAssetsConstPtr assets,
+Parallax::Parallax(AssetsConstPtr assets,
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase,
     String const& assetFile,
     uint64_t seed,
     float verticalOrigin,
@@ -140,6 +139,7 @@ Parallax::Parallax(IAssetsConstPtr assets,
   m_parallaxTreeVariant = parallaxTreeVariant;
   m_hueShift = hueShift;
   m_imageDirectory = "/parallax/images/";
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
 
   Json config = assets->json(assetFile);
 
@@ -212,7 +212,7 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   ParallaxLayer layer;
   RandomSource rnd(m_seed + m_layers.size());
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto imgMetadata = m_imageMetadataDatabase;
 
   int baseCount = layerSettings.getInt("baseCount", 1);
   int base = rnd.randInt(baseCount - 1) + 1;

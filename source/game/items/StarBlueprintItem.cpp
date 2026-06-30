@@ -5,7 +5,7 @@
 
 namespace Star {
 
-BlueprintItem::BlueprintItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+BlueprintItem::BlueprintItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
   : Item(assets, config, directory, data), SwingableItem(config) {
   if (!assets)
     throw ItemException("BlueprintItem requires assets service");

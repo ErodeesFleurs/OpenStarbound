@@ -1,34 +1,46 @@
 #pragma once
 
+#include "StarCellularLighting.hpp"
+#include "StarCellularLiquid.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarCollisionGenerator.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarInterpolationTracker.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarMonsterDatabase.hpp"
+#include "StarNetPackets.hpp"
+#include "StarNpcDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarProjectileDatabase.hpp"
+#include "StarRpcThreadPromise.hpp"
+#include "StarSpawner.hpp"
+#include "StarSpawnTypeDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStagehandDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarVersioningDatabase.hpp"
+#include "StarVehicleDatabase.hpp"
+#include "StarWarping.hpp"
+#include "StarWeather.hpp"
 #include "StarWorld.hpp"
-#include "StarWorldServerProperties.hpp"
+#include "StarWorldClientState.hpp"
+#include "StarWorldRenderData.hpp"
 #include "StarWorldServerCollision.hpp"
 #include "StarWorldServerDungeonProtection.hpp"
 #include "StarWorldServerLiquid.hpp"
+#include "StarWorldServerProperties.hpp"
 #include "StarWorldServerSpawnFinder.hpp"
-#include "StarWorldClientState.hpp"
-#include "StarCollisionGenerator.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
-#include "StarIMaterialDatabase.hpp"
-#include "StarIItemDatabase.hpp"
-#include "StarISpeciesDatabase.hpp"
-#include "StarIEntityFactory.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarILiquidsDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarSpawner.hpp"
-#include "StarNetPackets.hpp"
-#include "StarCellularLighting.hpp"
-#include "StarCellularLiquid.hpp"
-#include "StarWeather.hpp"
-#include "StarInterpolationTracker.hpp"
 #include "StarWorldStructure.hpp"
-#include "StarLuaRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarWorldRenderData.hpp"
-#include "StarWarping.hpp"
-#include "StarRpcThreadPromise.hpp"
 
 namespace Star {
 
@@ -36,6 +48,37 @@ class Player;
 using PlayerPtr = SharedPtr<Player>;
 class WorldTemplate;
 using WorldTemplatePtr = SharedPtr<WorldTemplate>;
+
+// Aggregate of all service dependencies required by WorldServer.
+// Construct via Root::makeWorldServerServices().
+struct WorldServerServices {
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
+  MaterialDatabaseConstPtr materialDatabase;
+  ItemDatabaseConstPtr itemDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+  ProjectileDatabaseConstPtr projectileDatabase;
+  PlantDatabaseConstPtr plantDatabase;
+  TreasureDatabaseConstPtr treasureDatabase;
+  NpcDatabaseConstPtr npcDatabase;
+  MonsterDatabaseConstPtr monsterDatabase;
+  SpawnTypeDatabaseConstPtr spawnTypeDatabase;
+  StagehandDatabaseConstPtr stagehandDatabase;
+  VehicleDatabaseConstPtr vehicleDatabase;
+  SpeciesDatabaseConstPtr speciesDatabase;
+  EntityFactoryConstPtr entityFactory;
+  LiquidsDatabaseConstPtr liquidsDatabase;
+  BiomeDatabaseConstPtr biomeDatabase;
+  VersioningDatabaseConstPtr versioningDatabase;
+  FunctionDatabaseConstPtr functionDatabase;
+  EffectSourceDatabaseConstPtr effectSourceDatabase;
+  ParticleDatabaseConstPtr particleDatabase;
+  TechDatabaseConstPtr techDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase;
+  DungeonDefinitionsConstPtr dungeonDefinitions;
+  BehaviorDatabaseConstPtr behaviorDatabase;
+};
 class Sky;
 using SkyPtr = SharedPtr<Sky>;
 struct SkyParameters;
@@ -59,8 +102,12 @@ using UniverseSettingsPtr = SharedPtr<UniverseSettings>;
 class UniverseServer;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class VehicleDatabase;
+using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
 
-struct WorldServerExceptionTag { static constexpr char const* typeName = "WorldServerException"; };
+struct WorldServerExceptionTag {
+  static constexpr char const* typeName = "WorldServerException";
+};
 using WorldServerException = TypedException<StarException, WorldServerExceptionTag>;
 
 // Describes the amount of optional processing that a call to update() in
@@ -81,13 +128,19 @@ public:
   using WorldPropertyListener = function<void(Json const&)>;
 
   // Create a new world with the given template, writing new storage file.
-  WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
-  // Synonym for WorldServer(make_shared<WorldTemplate>(assets, size), storage);
-  WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  WorldServer(WorldTemplatePtr const& worldTemplate,
+              IODevicePtr storage,
+              WorldServerServices services);
+  // Synonym for WorldServer(make_shared<WorldTemplate>(services.assets, size), storage, services);
+  WorldServer(Vec2U const& size,
+              IODevicePtr storage,
+              WorldServerServices services);
   // Load an existing world from the given storage files
-  WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  WorldServer(IODevicePtr const& storage,
+              WorldServerServices services);
   // Load an existing world from the given in-memory chunks
-  WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  WorldServer(WorldChunks const& chunks,
+              WorldServerServices services);
   // Load an existing world from an in-memory representation
   ~WorldServer();
 
@@ -96,9 +149,27 @@ public:
 
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
-  IAssetsConstPtr assets() const override;
-  IItemDatabaseConstPtr itemDatabase() const override;
+  AssetsConstPtr assets() const override;
+  MaterialDatabaseConstPtr materialDatabase() const override;
+  ItemDatabaseConstPtr itemDatabase() const override;
   ObjectDatabaseConstPtr objectDatabase() const override;
+  PlantDatabaseConstPtr plantDatabase() const override;
+  TreasureDatabaseConstPtr treasureDatabase() const override;
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
+  FunctionDatabaseConstPtr functionDatabase() const override;
+  BehaviorDatabaseConstPtr behaviorDatabase() const override;
+  NpcDatabaseConstPtr npcDatabase() const;
+  MonsterDatabaseConstPtr monsterDatabase() const;
+  ProjectileDatabaseConstPtr projectileDatabase() const;
+  SpawnTypeDatabaseConstPtr spawnTypeDatabase() const;
+  StagehandDatabaseConstPtr stagehandDatabase() const;
+  VehicleDatabaseConstPtr vehicleDatabase() const;
+  DungeonDefinitionsConstPtr dungeonDefinitions() const;
+  LiquidsDatabaseConstPtr liquidsDatabase() const override;
+  EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
+  ParticleDatabaseConstPtr particleDatabase() const override;
+  TechDatabaseConstPtr techDatabase() const override;
+  StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
 
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
@@ -314,13 +385,14 @@ public:
   // Returns the list of weather names available in this world
   StringList weatherList() const;
 
-
   // used to notify the universe server that the celestial planet type has changed
   Maybe<pair<String, String>> pullNewPlanetType();
 
 private:
+  void setServices(WorldServerServices services);
+
   struct ClientInfo {
-    ClientInfo(IAssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit);
+    ClientInfo(AssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit);
 
     List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
 
@@ -355,7 +427,7 @@ private:
     List<Vec2I> roots;
   };
 
-  using ServerTileGetter = function<ServerTile const& (Vec2I)>;
+  using ServerTileGetter = function<ServerTile const&(Vec2I)>;
 
   void init(bool firstTime);
 
@@ -393,14 +465,32 @@ private:
   void setupForceRegions();
 
   Json m_serverConfig;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
-  IMaterialDatabaseConstPtr m_materialDatabase;
-  IItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
-  ISpeciesDatabaseConstPtr m_speciesDatabase;
-  IEntityFactoryConstPtr m_entityFactory;
-  ILiquidsDatabaseConstPtr m_liquidsDatabase;
+  ProjectileDatabaseConstPtr m_projectileDatabase;
+  PlantDatabaseConstPtr m_plantDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  NpcDatabaseConstPtr m_npcDatabase;
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  SpawnTypeDatabaseConstPtr m_spawnTypeDatabase;
+  StagehandDatabaseConstPtr m_stagehandDatabase;
+  VehicleDatabaseConstPtr m_vehicleDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  EntityFactoryConstPtr m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  BehaviorDatabaseConstPtr m_behaviorDatabase;
+  EffectSourceDatabaseConstPtr m_effectSourceDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  DungeonDefinitionsConstPtr m_dungeonDefinitions;
 
   friend class WorldServerCollision;
   friend class WorldServerDungeonProtection;
@@ -472,4 +562,4 @@ private:
   GameTimer m_expiryTimer;
 };
 
-}
+}// namespace Star

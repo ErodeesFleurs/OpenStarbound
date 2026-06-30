@@ -13,7 +13,7 @@ using PlayerDeploymentPtr = SharedPtr<PlayerDeployment>;
 
 class PlayerDeployment {
 public:
-  PlayerDeployment(Json const& config, IAssetsConstPtr assets);
+  PlayerDeployment(Json const& config, AssetsConstPtr assets);
 
   void diskLoad(Json const& diskStore);
   Json diskStore() const;

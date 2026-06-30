@@ -6,7 +6,7 @@
 #include "StarEffectSourceItem.hpp"
 #include "StarPreviewableItem.hpp"
 #include "StarSwingableItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 namespace Star {
 
 enum class ArmorType : uint8_t {
@@ -19,6 +19,8 @@ extern EnumMap<ArmorType> ArmorTypeNames;
 
 class ArmorItem;
 using ArmorItemPtr = SharedPtr<ArmorItem>;
+class FunctionDatabase;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
 class HeadArmor;
 using HeadArmorPtr = SharedPtr<HeadArmor>;
 class ChestArmor;
@@ -30,7 +32,7 @@ using BackArmorPtr = SharedPtr<BackArmor>;
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
-  ArmorItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  ArmorItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ArmorItem() = default;
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
@@ -61,7 +63,8 @@ public:
   Maybe<String> const& techModule() const;
 
 protected:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  FunctionDatabaseConstPtr m_functionDatabase;
 
 private:
   void refreshIconDrawables();
@@ -84,7 +87,7 @@ private:
 
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
-  HeadArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  HeadArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~HeadArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -104,7 +107,7 @@ private:
 
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
-  ChestArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  ChestArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ChestArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -133,7 +136,7 @@ private:
 
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
-  LegsArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  LegsArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~LegsArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -152,7 +155,7 @@ private:
 
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
-  BackArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  BackArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~BackArmor() = default;
 
   virtual ItemPtr clone() const override;

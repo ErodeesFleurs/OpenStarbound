@@ -26,8 +26,46 @@ constexpr float MaxWarpSearchRadius = 1024;
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase)
-  : m_universe(universe), m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)) {
+CommandProcessor::CommandProcessor(UniverseServer* universe,
+    LuaRootPtr luaRoot,
+    AssetsConstPtr assets,
+    ConfigurationPtr configuration,
+    ItemDatabaseConstPtr itemDatabase,
+    TreasureDatabaseConstPtr treasureDatabase,
+    MonsterDatabaseConstPtr monsterDatabase,
+    NpcDatabaseConstPtr npcDatabase,
+    VehicleDatabaseConstPtr vehicleDatabase,
+    StagehandDatabaseConstPtr stagehandDatabase,
+    LiquidsDatabaseConstPtr liquidsDatabase)
+  : m_universe(universe),
+    m_assets(std::move(assets)),
+    m_configuration(std::move(configuration)),
+    m_itemDatabase(std::move(itemDatabase)),
+    m_treasureDatabase(std::move(treasureDatabase)),
+    m_monsterDatabase(std::move(monsterDatabase)),
+    m_npcDatabase(std::move(npcDatabase)),
+    m_vehicleDatabase(std::move(vehicleDatabase)),
+    m_stagehandDatabase(std::move(stagehandDatabase)),
+    m_liquidsDatabase(std::move(liquidsDatabase)) {
+  if (!m_assets)
+    throw StarException("CommandProcessor requires assets service");
+  if (!m_configuration)
+    throw StarException("CommandProcessor requires configuration service");
+  if (!m_itemDatabase)
+    throw StarException("CommandProcessor requires item database service");
+  if (!m_treasureDatabase)
+    throw StarException("CommandProcessor requires treasure database service");
+  if (!m_monsterDatabase)
+    throw StarException("CommandProcessor requires monster database service");
+  if (!m_npcDatabase)
+    throw StarException("CommandProcessor requires npc database service");
+  if (!m_vehicleDatabase)
+    throw StarException("CommandProcessor requires vehicle database service");
+  if (!m_stagehandDatabase)
+    throw StarException("CommandProcessor requires stagehand database service");
+  if (!m_liquidsDatabase)
+    throw StarException("CommandProcessor requires liquids database service");
+
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(m_assets->json("/universe_server.config:commandProcessorScripts")));
@@ -100,7 +138,6 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
 }
 
 String CommandProcessor::admin(ConnectionId connectionId, String const& argumentString) {
-  auto config = Root::singleton().configuration();
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
   ConnectionId targetClientId = connectionId;
@@ -122,7 +159,7 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
   if (targetClientId == ServerConnectionId)
     return "Invalid client state";
 
-  if (!config->get("allowAdminCommands").toBool())
+  if (!m_configuration->get("allowAdminCommands").toBool())
     return "Admin commands disabled on this server.";
 
   bool wasAdmin = m_universe->isAdmin(targetClientId);
@@ -409,8 +446,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
       level = lexicalCast<float>(arguments.at(1));
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
-        auto treasureDatabase = Root::singleton().treasureDatabase();
-        for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
+        for (auto const& treasureItem : m_treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
           world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition(), false, world->assets(), m_itemDatabase));
       });
 
@@ -437,7 +473,6 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto monsterDatabase = Root::singleton().monsterDatabase();
     MonsterPtr monster;
 
     float level = 1;
@@ -448,7 +483,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
     if (arguments.size() >= 3)
       parameters = parameters.setAll(Json::parse(arguments.at(2)).toObject());
 
-    monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(arguments.at(0), parameters.toObject()), level);
+    monster = m_monsterDatabase->createMonster(m_monsterDatabase->randomMonster(arguments.at(0), parameters.toObject()), level);
     bool done = m_universe->executeForClient(connectionId,
         [&](WorldServer* world, PlayerPtr const& player) {
           monster->setPosition(player->aimPosition());
@@ -469,7 +504,6 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
   try {
-    auto npcDatabase = Root::singleton().npcDatabase();
     float npcLevel = 1;
     uint64_t seed = Random::randu64();
     Json overrides;
@@ -484,7 +518,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
     if (arguments.size() >= 5)
       overrides = Json::parse(arguments.at(4)).toObject();
 
-    auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arguments.at(0), arguments.at(1), npcLevel, seed, overrides));
+    auto npc = m_npcDatabase->createNpc(m_npcDatabase->generateNpcVariant(arguments.at(0), arguments.at(1), npcLevel, seed, overrides));
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         npc->setPosition(player->aimPosition());
         world->addEntity(npc);
@@ -502,7 +536,6 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
     return *errorMsg;
 
   try {
-    auto vehicleDatabase = Root::singleton().vehicleDatabase();
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
     VehiclePtr vehicle;
@@ -513,7 +546,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
     if (arguments.size() >= 2)
       parameters = Json::parse(arguments.at(1)).toObject();
 
-    vehicle = vehicleDatabase->create(name, parameters);
+    vehicle = m_vehicleDatabase->create(name, parameters);
     bool done = m_universe->executeForClient(connectionId,
         [&](WorldServer* world, PlayerPtr const& player) {
           vehicle->setPosition(player->aimPosition());
@@ -534,13 +567,11 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto stagehandDatabase = Root::singleton().stagehandDatabase();
-
     Json parameters = JsonObject();
     if (arguments.size() >= 2)
       parameters = Json::parse(arguments.at(1)).toObject();
 
-    auto stagehand = stagehandDatabase->createStagehand(arguments.at(0), parameters);
+    auto stagehand = m_stagehandDatabase->createStagehand(arguments.at(0), parameters);
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr player) {
         stagehand->setPosition(player->aimPosition());
         world->addEntity(stagehand);
@@ -576,12 +607,10 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
   try {
     auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
-
-    if (!liquidsDatabase->isLiquidName(arguments.at(0)))
+    if (!m_liquidsDatabase->isLiquidName(arguments.at(0)))
       return strf("No such liquid {}", arguments.at(0));
 
-    LiquidId liquid = liquidsDatabase->liquidId(arguments.at(0));
+    LiquidId liquid = m_liquidsDatabase->liquidId(arguments.at(0));
 
     float quantity = 1.0f;
     if (arguments.size() > 1) {
@@ -1051,10 +1080,9 @@ Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String con
   if (connectionId == ServerConnectionId)
     return {};
 
-  auto config = Root::singleton().configuration();
-  if (!config->get("allowAdminCommands").toBool())
+  if (!m_configuration->get("allowAdminCommands").toBool())
     return {"Admin commands disabled on this server."};
-  if (!config->get("allowAdminCommandsFromAnyone").toBool()) {
+  if (!m_configuration->get("allowAdminCommandsFromAnyone").toBool()) {
     if (!m_universe->isAdmin(connectionId))
       return {strf("Insufficient privileges to {}.", commandDescription)};
   }

@@ -4,8 +4,8 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarParticle.hpp"
+#include "StarParticleDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -21,7 +21,7 @@ using EffectSourceDatabaseConstPtr = SharedPtr<EffectSourceDatabase const>;
 
 class EffectSource {
 public:
-  EffectSource(IAssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition);
+  EffectSource(AssetsConstPtr assets, String const& kind, String suggestedSpawnLocation, Json const& definition);
   String const& kind() const;
   void tick(float dt);
   bool expired() const;
@@ -33,7 +33,7 @@ public:
   String suggestedSpawnLocation() const;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_kind;
   Json m_config;
   bool m_loops;
@@ -54,12 +54,12 @@ private:
 
 class EffectSourceConfig {
 public:
-  EffectSourceConfig(IAssetsConstPtr assets, Json const& config);
+  EffectSourceConfig(AssetsConstPtr assets, Json const& config);
   String const& kind();
   EffectSourcePtr instance(String const& suggestedSpawnLocation);
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   String m_kind;
   Json m_config;
 };
@@ -74,7 +74,7 @@ private:
   StringMap<EffectSourceConfigPtr> m_sourceConfigs;
 };
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position = Vec2F());
-List<AudioInstancePtr> soundsFromDefinition(IAssetsConstPtr assets, Json const& config, Vec2F const& position = Vec2F());
+List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position = Vec2F(), ParticleDatabaseConstPtr particleDatabase = {});
+List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position = Vec2F());
 
 }

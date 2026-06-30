@@ -18,11 +18,11 @@ UniverseFlagAction parseUniverseFlagAction(Json const& json) {
   }
 }
 
-UniverseSettings::UniverseSettings(IAssetsConstPtr assets) {
+UniverseSettings::UniverseSettings(AssetsConstPtr assets) {
   loadFlagActions(std::move(assets));
 }
 
-UniverseSettings::UniverseSettings(IAssetsConstPtr assets, Json const& json) {
+UniverseSettings::UniverseSettings(AssetsConstPtr assets, Json const& json) {
   m_uuid = Uuid(json.getString("uuid"));
   m_flags = jsonToStringSet(json.get("flags"));
 
@@ -90,7 +90,7 @@ void UniverseSettings::resetFlags() {
   m_flags.clear();
 }
 
-void UniverseSettings::loadFlagActions(IAssetsConstPtr assets) {
+void UniverseSettings::loadFlagActions(AssetsConstPtr assets) {
   if (!assets)
     throw StarException("UniverseSettings requires assets service");
 

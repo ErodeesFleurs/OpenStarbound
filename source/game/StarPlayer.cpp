@@ -2,6 +2,7 @@
 #include "StarEncode.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
+#include "StarUniverseClient.hpp"
 #include "StarSongbook.hpp"
 #include "StarSongbookLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
@@ -32,6 +33,7 @@
 #include "StarPlayerLuaBindings.hpp"
 #include "StarQuestManager.hpp"
 #include "StarAiDatabase.hpp"
+#include "StarCollectionDatabase.hpp"
 #include "StarStatistics.hpp"
 #include "StarInspectionTool.hpp"
 #include "StarUtilityLuaBindings.hpp"
@@ -64,25 +66,61 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}
 };
 
-Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
   : m_scriptedAnimator(assets) {
 
   m_config = config;
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
-  m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
-  m_materialDatabase = Root::singleton().materialDatabase();
+  m_assets = std::move(assets);
+  m_configuration = std::move(configuration);
+  m_materialDatabase = std::move(materialDatabase);
   m_itemDatabase = std::move(itemDatabase);
   m_objectDatabase = std::move(objectDatabase);
   m_questTemplateDatabase = std::move(questTemplateDatabase);
   m_versioningDatabase = std::move(versioningDatabase);
+  m_codexDatabase = std::move(codexDatabase);
+  m_danceDatabase = std::move(danceDatabase);
+  m_emoteProcessor = std::move(emoteProcessor);
+  m_radioMessageDatabase = std::move(radioMessageDatabase);
+  m_aiDatabase = std::move(aiDatabase);
+  m_collectionDatabase = std::move(collectionDatabase);
+  m_speciesDatabase = std::move(speciesDatabase);
+  m_entityFactory = std::move(entityFactory);
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  m_techDatabase = std::move(techDatabase);
+  if (!m_assets)
+    throw PlayerException("Player requires assets service");
+  if (!m_configuration)
+    throw PlayerException("Player requires configuration service");
+  if (!m_materialDatabase)
+    throw PlayerException("Player requires material database service");
+  if (!m_itemDatabase)
+    throw PlayerException("Player requires item database service");
+  if (!m_objectDatabase)
+    throw PlayerException("Player requires object database service");
   if (!m_questTemplateDatabase)
     throw PlayerException("Player requires quest template database service");
   if (!m_versioningDatabase)
     throw PlayerException("Player requires versioning database service");
-  m_speciesDatabase = Root::singleton().speciesDatabase();
-  m_entityFactory = Root::singleton().entityFactory();
-  m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_techDatabase = Root::singleton().techDatabase();
+  if (!m_codexDatabase)
+    throw PlayerException("Player requires codex database service");
+  if (!m_danceDatabase)
+    throw PlayerException("Player requires dance database service");
+  if (!m_emoteProcessor)
+    throw PlayerException("Player requires emote processor service");
+  if (!m_radioMessageDatabase)
+    throw PlayerException("Player requires radio message database service");
+  if (!m_aiDatabase)
+    throw PlayerException("Player requires ai database service");
+  if (!m_collectionDatabase)
+    throw PlayerException("Player requires collection database service");
+  if (!m_speciesDatabase)
+    throw PlayerException("Player requires species database service");
+  if (!m_entityFactory)
+    throw PlayerException("Player requires entity factory service");
+  if (!m_liquidsDatabase)
+    throw PlayerException("Player requires liquids database service");
+  if (!m_techDatabase)
+    throw PlayerException("Player requires tech database service");
   m_client = nullptr;
 
   m_state = State::Idle;
@@ -118,16 +156,16 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_techController = make_shared<TechController>(this, m_movementController.get(), m_statusController.get());
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig, m_assets);
 
-  m_inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase);
+  m_inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase, m_configuration);
   m_inventory->setPlayer(this);
 
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
-  m_codexes = make_shared<PlayerCodexes>(m_assets);
+  m_codexes = make_shared<PlayerCodexes>(m_assets, m_codexDatabase);
   m_techs = make_shared<PlayerTech>(m_techDatabase);
   m_log = make_shared<PlayerLog>();
-  m_narrativeQueue = make_shared<PlayerNarrativeQueue>(this);
-  m_chatAndEmotes = make_shared<PlayerChatAndEmotes>(this);
+  m_narrativeQueue = make_shared<PlayerNarrativeQueue>(this, m_radioMessageDatabase, m_configuration, m_aiDatabase);
+  m_chatAndEmotes = make_shared<PlayerChatAndEmotes>(this, m_danceDatabase, m_emoteProcessor);
   m_damagePipeline = make_shared<PlayerDamagePipeline>(this);
   m_teleporter = make_shared<PlayerTeleporter>(this);
 
@@ -219,8 +257,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase)) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -240,8 +278,8 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
 }
 
 
-Player::Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
+Player::Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase)) {
   diskLoad(diskStore);
 }
 
@@ -255,7 +293,7 @@ void Player::diskLoad(Json const& diskStore) {
   if (m_clientContext)
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 
-  m_codexes = make_shared<PlayerCodexes>(m_assets, diskStore.get("codexes"));
+  m_codexes = make_shared<PlayerCodexes>(m_assets, m_codexDatabase, diskStore.get("codexes"));
   m_techs = make_shared<PlayerTech>(diskStore.get("techs"), m_techDatabase);
   m_appearance.m_identity = HumanoidIdentity(diskStore.get("identity"));
   m_appearance.identityUpdated() = true;
@@ -383,7 +421,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
       p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
       if (m_client)
-        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
+        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client, m_client->biomeDatabase()));
       p.second->init(world);
     }
 
@@ -816,7 +854,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
   } else if (message == "addCollectable") {
     auto collection = args.get(0).toString();
     auto collectable = args.get(1).toString();
-    if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
+    if (m_collectionDatabase->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
     Maybe<Json> result = m_tools->receiveMessage(message, localMessage, args);
@@ -1064,7 +1102,7 @@ void Player::update(float dt, uint64_t) {
 
   m_effectEmitter->setDirection(facingDirection);
 
-  m_effectEmitter->tick(dt, *entityMode());
+  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
 
   if (isClient) {
     bool calculateHeadRotation = isMaster();
@@ -1176,7 +1214,7 @@ void Player::render(RenderCallback* renderCallback) {
 
   m_tools->render(renderCallback, inToolRange(), m_shifting, renderLayer);
 
-  m_effectEmitter->render(renderCallback);
+  m_effectEmitter->render(renderCallback, world()->particleDatabase());
   m_songbook->render(renderCallback);
 
   if (isMaster())
@@ -1372,10 +1410,8 @@ bool Player::blueprintKnown(ItemDescriptor const& descriptor) const {
 
 bool Player::addCollectable(String const& collectionName, String const& collectableName) {
   if (m_log->addCollectable(collectionName, collectableName)) {
-    auto collectionDatabase = Root::singleton().collectionDatabase();
-
-    auto collection = collectionDatabase->collection(collectionName);
-    auto collectable = collectionDatabase->collectable(collectionName, collectableName);
+    auto collection = m_collectionDatabase->collection(collectionName);
+    auto collectable = m_collectionDatabase->collectable(collectionName, collectableName);
     queueUIMessage(m_assets->json("/player.config:collectableUnlock").toString().replace("<collectable>", collectable.title).replace("<collection>", collection.title));
     return true;
   } else {

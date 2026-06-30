@@ -11,6 +11,10 @@ class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
@@ -19,6 +23,26 @@ class QuestTemplateDatabase;
 using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
 class VersioningDatabase;
 using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
+class CodexDatabase;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
+class DanceDatabase;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+class EmoteProcessor;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
+class RadioMessageDatabase;
+using RadioMessageDatabaseConstPtr = SharedPtr<RadioMessageDatabase const>;
+class AiDatabase;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+class CollectionDatabase;
+using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
+class SpeciesDatabase;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+class EntityFactory;
+using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class TechDatabase;
+using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
 struct PlayerConfig;
 using PlayerConfigPtr = SharedPtr<PlayerConfig>;
 
@@ -28,7 +52,7 @@ using PlayerException = TypedException<StarException, PlayerExceptionTag>;
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.
 struct PlayerConfig {
-  PlayerConfig(JsonObject const& cfg, IAssetsConstPtr assets = {});
+  PlayerConfig(JsonObject const& cfg, AssetsConstPtr assets = {});
 
   HumanoidIdentity defaultIdentity;
   Humanoid::HumanoidTiming humanoidTiming;
@@ -69,7 +93,7 @@ struct PlayerConfig {
 
 class PlayerFactory {
 public:
-  PlayerFactory(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
 
   PlayerPtr create() const;
   PlayerPtr diskLoadPlayer(Json const& diskStore) const;
@@ -77,10 +101,22 @@ public:
 
 private:
   AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
+  MaterialDatabaseConstPtr m_materialDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
+  CodexDatabaseConstPtr m_codexDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  EmoteProcessorConstPtr m_emoteProcessor;
+  RadioMessageDatabaseConstPtr m_radioMessageDatabase;
+  AiDatabaseConstPtr m_aiDatabase;
+  CollectionDatabaseConstPtr m_collectionDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  function<EntityFactoryConstPtr()> m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  TechDatabaseConstPtr m_techDatabase;
   PlayerConfigPtr m_config;
 
   RebuilderPtr m_rebuilder;

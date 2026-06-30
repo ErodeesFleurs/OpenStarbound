@@ -13,9 +13,9 @@ using PacketPtr = SharedPtr<Packet>;
 class SystemWorldServer : public SystemWorld {
 public:
   // create new system world server
-  SystemWorldServer(IAssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorldServer(AssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
   // load system world server from storage
-  SystemWorldServer(IAssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorldServer(AssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
 
   void setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
 

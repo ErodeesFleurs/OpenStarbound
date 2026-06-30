@@ -21,8 +21,9 @@
 
 namespace Star {
 
-Monster::Monster(IAssetsConstPtr assets, MonsterVariant const& monsterVariant, Maybe<float> level)
+Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& monsterVariant, Maybe<float> level)
   : m_scriptedAnimator(assets) {
+  m_monsterDatabase = std::move(monsterDatabase);
   m_monsterLevel = level;
 
   m_damageOnTouch = false;
@@ -43,7 +44,7 @@ Monster::Monster(IAssetsConstPtr assets, MonsterVariant const& monsterVariant, M
   for (auto const& pair : m_monsterVariant.animatorPartTags)
     m_networkedAnimator.setPartTag(pair.first, "partImage", pair.second);
   m_networkedAnimator.setZoom(m_monsterVariant.animatorZoom);
-  auto colorSwap = m_monsterVariant.colorSwap.value(Root::singleton().monsterDatabase()->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
+  auto colorSwap = m_monsterVariant.colorSwap.value(m_monsterDatabase->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
   if (!colorSwap.empty())
     m_networkedAnimator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
 
@@ -72,8 +73,8 @@ Monster::Monster(IAssetsConstPtr assets, MonsterVariant const& monsterVariant, M
   setNetStates();
 }
 
-Monster::Monster(IAssetsConstPtr assets, Json const& diskStore)
-  : Monster(assets, Root::singleton().monsterDatabase()->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
+Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore)
+  : Monster(std::move(assets), monsterDatabase, monsterDatabase->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
   m_monsterLevel = diskStore.optFloat("monsterLevel");
   m_movementController->loadState(diskStore.get("movementState"));
   m_statusController->diskLoad(diskStore.get("statusController"));
@@ -103,7 +104,7 @@ Json Monster::diskStore() const {
     {"activeSkillName", m_activeSkillName},
     {"dropPool", m_dropPool},
     {"effectEmitter", m_effectEmitter.toJson()},
-    {"monsterVariant", Root::singleton().monsterDatabase()->writeMonsterVariantToJson(m_monsterVariant)},
+    {"monsterVariant", m_monsterDatabase->writeMonsterVariantToJson(m_monsterVariant)},
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
     {"uniqueId", jsonFromMaybe(uniqueId())},
     {"team", getTeam().toJson()}
@@ -111,7 +112,7 @@ Json Monster::diskStore() const {
 }
 
 ByteArray Monster::netStore(NetCompatibilityRules rules) {
-  return Root::singleton().monsterDatabase()->writeMonsterVariant(m_monsterVariant, rules);
+  return m_monsterDatabase->writeMonsterVariant(m_monsterVariant, rules);
 }
 
 EntityType Monster::entityType() const {
@@ -133,7 +134,7 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
     m_monsterLevel = world->threatLevel();
 
   if (isMaster()) {
-    auto functionDatabase = Root::singleton().functionDatabase();
+    auto functionDatabase = world->functionDatabase();
     float healthMultiplier = m_monsterVariant.healthMultiplier * functionDatabase->function(m_monsterVariant.healthLevelFunction)->evaluate(*m_monsterLevel);
     m_statusController->setPersistentEffects("innate", {StatModifier(StatBaseMultiplier{"maxHealth", healthMultiplier})});
 
@@ -144,7 +145,7 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_networkedAnimator));
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors, world->behaviorDatabase()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
     m_scriptComponent.init(world);
   }
@@ -283,7 +284,7 @@ List<DamageNotification> Monster::selfDamageNotifications() {
 List<DamageSource> Monster::damageSources() const {
   List<DamageSource> damageSources = m_damageSources.get();
 
-  float levelPowerMultiplier = Root::singleton().functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
+  float levelPowerMultiplier = world()->functionDatabase()->function(m_monsterVariant.powerLevelFunction)->evaluate(*m_monsterLevel);
   if (m_damageOnTouch && !m_monsterVariant.touchDamageConfig.isNull()) {
     DamageSource damageSource(m_monsterVariant.touchDamageConfig);
     if (auto damagePoly = damageSource.damageArea.ptr<PolyF>())
@@ -386,7 +387,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("die");
 
   if (isMaster() && !m_dropPool.isNull()) {
-    auto treasureDatabase = Root::singleton().treasureDatabase();
+    auto treasureDatabase = world()->treasureDatabase();
 
     String treasurePool;
     if (m_dropPool.isType(Json::Type::String)) {
@@ -504,7 +505,7 @@ void Monster::render(RenderCallback* renderCallback) {
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
-  m_effectEmitter.render(renderCallback);
+  m_effectEmitter.render(renderCallback, world()->particleDatabase());
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
     renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
@@ -554,7 +555,7 @@ void Monster::updateStatus(float dt) {
   m_effectEmitter.setSourcePosition("mouth", position() + mouthOffset());
   m_effectEmitter.setSourcePosition("feet", position() + feetOffset());
   m_effectEmitter.setDirection(m_movementController->facingDirection());
-  m_effectEmitter.tick(dt, *entityMode());
+  m_effectEmitter.tick(dt, *entityMode(), world()->effectSourceDatabase());
 }
 
 LuaCallbacks Monster::makeMonsterCallbacks() {
@@ -773,8 +774,7 @@ Monster::SkillInfo Monster::activeSkillInfo() const {
   SkillInfo skillInfo;
 
   if (!m_activeSkillName.empty()) {
-    auto monsterDatabase = Root::singleton().monsterDatabase();
-    auto monsterSkillInfo = monsterDatabase->skillInfo(m_activeSkillName);
+    auto monsterSkillInfo = m_monsterDatabase->skillInfo(m_activeSkillName);
     skillInfo.label = monsterSkillInfo.first;
     skillInfo.image = monsterSkillInfo.second;
   }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
@@ -42,7 +42,7 @@ public:
   // Automatically calls cancelAll();
   ~AmbientManager();
 
-  void setAssets(IAssetsConstPtr assets);
+  void setAssets(AssetsConstPtr assets);
   void setTrackSwitchGrace(float grace);
   void setTrackFadeInTime(float fadeInTime);
 
@@ -66,7 +66,7 @@ private:
   float m_delay = 0.0f;
   float m_duration = 0.0f;
   bool m_volumeChanged = false;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 };
 
 }

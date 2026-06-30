@@ -10,7 +10,7 @@
 
 namespace Star {
 
-QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+QuestManager::QuestManager(AssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
   : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("QuestManager requires assets service");
@@ -26,7 +26,7 @@ QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, ItemDatabaseC
   m_trackOnWorldQuests = false;
 }
 
-QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+QuestManager::QuestManager(AssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
   : QuestManager(std::move(assets), player, std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
   init(world);
 }
@@ -35,7 +35,7 @@ QuestTemplatePtr getTemplate(QuestTemplateDatabaseConstPtr const& questTemplateD
   return questTemplateDatabase->questTemplate(templateId);
 }
 
-StringMap<QuestPtr> readQuests(IAssetsConstPtr assets, Json const& json, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase) {
+StringMap<QuestPtr> readQuests(AssetsConstPtr assets, Json const& json, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase) {
   auto validateArc = [questTemplateDatabase](QuestArcDescriptor const& arc) {
       for (auto quest : arc.quests) {
         if (!questTemplateDatabase->questTemplate(quest.templateId))
@@ -79,7 +79,7 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
   m_client = client;
 }
 
-IAssetsConstPtr QuestManager::assets() const {
+AssetsConstPtr QuestManager::assets() const {
   return m_assets;
 }
 

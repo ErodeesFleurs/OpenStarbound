@@ -153,7 +153,7 @@ BiomeItemDistribution::BiomeItemDistribution() {
   m_priority = 0.0f;
 }
 
-BiomeItemDistribution::BiomeItemDistribution(IAssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift) {
+BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift) {
   RandomSource rand(seed);
 
   m_mode = BiomePlacementModeNames.getLeft(config.getString("mode", "floor"));

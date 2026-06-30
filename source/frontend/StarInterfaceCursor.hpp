@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarAnimation.hpp"
 #include "StarImageMetadataDatabase.hpp"
@@ -8,7 +8,7 @@
 namespace Star {
 
 struct InterfaceCursorServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   ImageMetadataDatabaseConstPtr imageMetadata;
 };
 
@@ -36,7 +36,7 @@ private:
   Vec2I m_size;
   unsigned int m_scale;
   MVariant<String, Animation> m_drawable;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
 };
 

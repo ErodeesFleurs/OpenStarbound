@@ -505,7 +505,7 @@ namespace LuaBindings {
         return serverWorld->worldTemplate()->store();
       });
       callbacks.registerCallback("setTemplate", [serverWorld](Json worldTemplate) {
-        auto newTemplate = make_shared<WorldTemplate>(serverWorld->assets(), worldTemplate);
+        auto newTemplate = make_shared<WorldTemplate>(serverWorld->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldTemplate);
         serverWorld->setTemplate(newTemplate);
       });
     }
@@ -964,7 +964,7 @@ namespace LuaBindings {
   List<EntityId> WorldCallbacks::spawnTreasure(
       World* world, Vec2F const& position, String const& pool, float level, Maybe<uint64_t> seed) {
     List<EntityId> entities;
-    auto treasureDatabase = Root::singleton().treasureDatabase();
+    auto treasureDatabase = world->treasureDatabase();
     try {
       for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
         ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position, false, world->assets(), world->itemDatabase());
@@ -981,7 +981,7 @@ namespace LuaBindings {
   Maybe<EntityId> WorldCallbacks::spawnMonster(
       World* world, String const& arg1, Vec2F const& arg2, Maybe<JsonObject> const& arg3) {
     Vec2F const spawnPosition = arg2;
-    auto monsterDatabase = Root::singleton().monsterDatabase();
+    auto monsterDatabase = as<WorldServer>(world) ? as<WorldServer>(world)->monsterDatabase() : Root::singleton().monsterDatabase();
 
     try {
       JsonObject parameters;
@@ -1024,7 +1024,7 @@ namespace LuaBindings {
 
     Json overrides = arg6 ? arg6 : JsonObject();
 
-    auto npcDatabase = Root::singleton().npcDatabase();
+    auto npcDatabase = as<WorldServer>(world) ? as<WorldServer>(world)->npcDatabase() : Root::singleton().npcDatabase();
     try {
       auto npc = npcDatabase->createNpc(npcDatabase->generateNpcVariant(arg2, typeName, level, seed, overrides));
       npc->setPosition(spawnPosition);
@@ -1041,7 +1041,7 @@ namespace LuaBindings {
 
   Maybe<EntityId> WorldCallbacks::spawnStagehand(
       World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) {
-    auto stagehandDatabase = Root::singleton().stagehandDatabase();
+    auto stagehandDatabase = as<WorldServer>(world) ? as<WorldServer>(world)->stagehandDatabase() : Root::singleton().stagehandDatabase();
     try {
       auto stagehand = stagehandDatabase->createStagehand(typeName, overrides);
       stagehand->setPosition(spawnPosition);
@@ -1063,7 +1063,7 @@ namespace LuaBindings {
       Json const& projectileParameters) {
 
     try {
-      auto projectileDatabase = Root::singleton().projectileDatabase();
+      auto projectileDatabase = as<WorldServer>(world) ? as<WorldServer>(world)->projectileDatabase() : Root::singleton().projectileDatabase();
       auto projectile = projectileDatabase->createProjectile(projectileType, projectileParameters ? projectileParameters : JsonObject());
       projectile->setInitialPosition(spawnPosition);
       projectile->setInitialDirection(projectileDirection.value());
@@ -1079,7 +1079,7 @@ namespace LuaBindings {
 
   Maybe<EntityId> WorldCallbacks::spawnVehicle(
       World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) {
-    auto vehicleDatabase = Root::singleton().vehicleDatabase();
+    auto vehicleDatabase = as<WorldServer>(world) ? as<WorldServer>(world)->vehicleDatabase() : Root::singleton().vehicleDatabase();
     auto vehicle = vehicleDatabase->create(vehicleName, extraConfig);
     vehicle->setPosition(pos);
     world->addEntity(vehicle);
@@ -1928,7 +1928,7 @@ namespace LuaBindings {
     } else if (materialId == EmptyMaterialId) {
       return false;
     } else {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world->materialDatabase();
       return engine.createString(materialDatabase->materialName(materialId));
     }
   }
@@ -1945,7 +1945,7 @@ namespace LuaBindings {
 
     auto modId = world->mod(Vec2I::floor(position), layer);
     if (isRealMod(modId)) {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world->materialDatabase();
       return engine.createString(materialDatabase->modName(modId));
     }
 
@@ -2074,7 +2074,7 @@ namespace LuaBindings {
       throw StarException(strf("Unsupported tile layer {}", layerName));
 
     auto materialName = arg3;
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->materialDatabase();
     if (!materialDatabase->materialNames().contains(materialName))
       throw StarException(strf("Unknown material name {}", materialName));
     placeMaterial.material = materialDatabase->materialId(materialName);
@@ -2117,7 +2117,7 @@ namespace LuaBindings {
     else
       throw StarException(strf("Unsupported tile layer {}", layerName));
 
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->materialDatabase();
     if (!materialDatabase->materialNames().contains(materialName))
       throw StarException(strf("Unknown material name {}", materialName));
     placeMaterial.material = materialDatabase->materialId(materialName);
@@ -2172,7 +2172,7 @@ namespace LuaBindings {
     }
 
     auto modName = arg3;
-    auto materialDatabase = Root::singleton().materialDatabase();
+    auto materialDatabase = world->materialDatabase();
     if (!materialDatabase->modNames().contains(modName))
       throw StarException(strf("Unknown mod name {}", modName));
     placeMod.mod = materialDatabase->modId(modName);

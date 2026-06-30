@@ -17,6 +17,7 @@ public:
   Vec2I environmentBiomeTrackPosition() const;
   AmbientNoisesDescriptionPtr currentAmbientNoises() const;
   AmbientNoisesDescriptionPtr currentMusicTrack() const;
+  AmbientNoisesDescriptionPtr currentAltMusicTrack() const;
 
   void playAltMusic(StringList const& newTracks, float fadeTime, int loops = -1);
   void stopAltMusic(float fadeTime);

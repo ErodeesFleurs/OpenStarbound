@@ -11,6 +11,7 @@
 #include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -493,7 +494,8 @@ void StatusController::tickMaster(float dt) {
   bool statusImmune = statPositive("statusImmunity");
 
   if (!statusImmune && m_movementController->liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    auto world = m_parentEntity ? m_parentEntity->worldPtr() : nullptr;
+    auto liquidsDatabase = world ? world->liquidsDatabase() : Root::singleton().liquidsDatabase();
     if (auto liquidSettings = liquidsDatabase->liquidSettings(m_movementController->liquidId())) {
       for (auto const& effect : liquidSettings->statusEffects)
         addEphemeralEffect(jsonToEphemeralStatusEffect(effect));
@@ -716,12 +718,15 @@ void StatusController::updatePersistentUniqueEffects() {
 }
 
 float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
-  return Root::singleton().statusEffectDatabase()->uniqueEffectConfig(effect).defaultDuration;
+  auto world = m_parentEntity ? m_parentEntity->worldPtr() : nullptr;
+  auto statusEffectDb = world ? world->statusEffectDatabase() : Root::singleton().statusEffectDatabase();
+  return statusEffectDb->uniqueEffectConfig(effect).defaultDuration;
 }
 
 bool StatusController::addUniqueEffect(
     UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId) {
-  auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
+  auto world = m_parentEntity ? m_parentEntity->worldPtr() : nullptr;
+  auto statusEffectDatabase = world ? world->statusEffectDatabase() : Root::singleton().statusEffectDatabase();
   if (statusEffectDatabase->isUniqueEffect(effect)) {
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
     if ((duration && statPositive("statusImmunity")) || (effectConfig.blockingStat && statPositive(*effectConfig.blockingStat)))

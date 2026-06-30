@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
@@ -24,8 +24,8 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ActionBarServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
@@ -56,8 +56,8 @@ private:
 
   MainInterfacePaneManager* m_paneManager;
   PlayerPtr m_player;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   Json m_config;

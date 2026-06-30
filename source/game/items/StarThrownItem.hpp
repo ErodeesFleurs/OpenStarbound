@@ -4,13 +4,13 @@
 #include "StarDrawable.hpp"
 #include "StarSwingableItem.hpp"
 #include "StarPreviewableItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
 class ThrownItem : public Item, public SwingableItem, public PreviewableItem {
 public:
-  ThrownItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  ThrownItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
   ItemPtr clone() const override;
 

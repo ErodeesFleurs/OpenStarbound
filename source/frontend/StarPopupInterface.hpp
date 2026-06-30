@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -10,7 +10,7 @@ using PopupInterfacePtr = SharedPtr<PopupInterface>;
 class PopupInterface : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   explicit PopupInterface(Services services);
@@ -20,7 +20,7 @@ public:
   void displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound = {});
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 };
 
 }

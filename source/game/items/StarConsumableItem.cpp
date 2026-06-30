@@ -6,7 +6,7 @@
 
 namespace Star {
 
-ConsumableItem::ConsumableItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+ConsumableItem::ConsumableItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
   : Item(std::move(assets), config, directory, data), SwingableItem(config) {
   setWindupTime(0);
   setCooldownTime(0.25f);

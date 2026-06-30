@@ -97,7 +97,7 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices servic
   } else {
     m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get()));
+    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get(), m_client->biomeDatabase()));
   }
 
   show();

@@ -8,7 +8,7 @@
 
 namespace Star {
 
-BeamItem::BeamItem(IAssetsConstPtr assets, Json config) {
+BeamItem::BeamItem(AssetsConstPtr assets, Json config) {
   if (!assets)
     throw ItemException("BeamItem requires assets service");
 

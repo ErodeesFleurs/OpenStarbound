@@ -313,14 +313,13 @@ namespace Dungeon {
     if (phase != Phase::WallPhase)
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
-    MaterialId material = materialDatabase->materialId(m_material);
+    MaterialId material = writer->materialId(m_material);
 
     ModId mod = NoModId;
     if (m_mod)
-      mod = materialDatabase->modId(*m_mod);
+      mod = writer->modId(*m_mod);
 
-    if (isSolidColliding(materialDatabase->materialCollisionKind(material)))
+    if (isSolidColliding(writer->materialCollisionKind(material)))
       writer->setLiquid(position, LiquidStore(EmptyLiquidId, 0.0f, 0.0f, false));
     writer->setForegroundMaterial(position, material, m_materialHue, m_materialColorVariant);
     if (isRealMod(mod)) {
@@ -340,12 +339,11 @@ namespace Dungeon {
     if (phase != Phase::WallPhase)
       return;
 
-    auto materialDatabase = Root::singleton().materialDatabase();
-    MaterialId material = materialDatabase->materialId(m_material);
+    MaterialId material = writer->materialId(m_material);
 
     ModId mod = NoModId;
     if (m_mod)
-      mod = materialDatabase->modId(*m_mod);
+      mod = writer->modId(*m_mod);
 
     writer->setBackgroundMaterial(position, material, m_materialHue, m_materialColorVariant);
     if (isRealMod(mod)) {
@@ -449,8 +447,7 @@ namespace Dungeon {
     }
     if (phase == Phase::ModsPhase) {
       if (m_mod.isValid()) {
-        auto materialDatabase = Root::singleton().materialDatabase();
-        writer->setForegroundMod(position, materialDatabase->modId(*m_mod), 0);
+        writer->setForegroundMod(position, writer->modId(*m_mod), 0);
       } else {
         if (writer->needsForegroundBiomeMod(position)) {
           writer->setForegroundMod(position, BiomeModId, 0);
@@ -470,8 +467,7 @@ namespace Dungeon {
     }
     if (phase == Phase::ModsPhase) {
       if (m_mod.isValid()) {
-        auto materialDatabase = Root::singleton().materialDatabase();
-        writer->setBackgroundMod(position, materialDatabase->modId(*m_mod), 0);
+        writer->setBackgroundMod(position, writer->modId(*m_mod), 0);
       } else {
         if (writer->needsBackgroundBiomeMod(position)) {
           writer->setBackgroundMod(position, BiomeModId, 0);
@@ -484,8 +480,7 @@ namespace Dungeon {
     : m_liquid(liquidName), m_quantity(quantity), m_source(source) {}
 
   void LiquidBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
-    LiquidId liquidId = liquidsDatabase->liquidId(m_liquid);
+    LiquidId liquidId = writer->liquidId(m_liquid);
     LiquidStore liquid(liquidId, m_quantity, 1.0f, m_source);
     if (phase == Phase::WallPhase) {
       writer->requestLiquid(position, liquid);
@@ -567,14 +562,14 @@ namespace Dungeon {
     return false;
   }
 
-  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, IAssetsConstPtr assets, Maybe<ImageTilesetConstPtr> tileset) {
+  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, Maybe<ImageTilesetConstPtr> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
       if (tileset.isNothing())
         throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
       return make_shared<const Part>(dungeon, definition, make_shared<ImagePartReader>(assets, *tileset));
     } else if (kind == "tmx")
-      return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>(assets));
+      return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>(assets, tilesetDatabase));
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
@@ -960,13 +955,38 @@ namespace Dungeon {
   }
 
   DungeonGeneratorWriter::DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
-    : m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
+    : m_facade(facade),
+      m_materialDatabase(m_facade->materialDatabase()),
+      m_liquidsDatabase(m_facade->liquidsDatabase()),
+      m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel),
+      m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
+    if (!m_materialDatabase)
+      throw DungeonException("DungeonGeneratorWriter requires material database service");
+    if (!m_liquidsDatabase)
+      throw DungeonException("DungeonGeneratorWriter requires liquids database service");
+
     m_currentBounds.setMin(Vec2I{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
     m_currentBounds.setMax(Vec2I{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min()});
   }
 
   Vec2I DungeonGeneratorWriter::wrapPosition(Vec2I const& pos) const {
     return m_facade->getWorldGeometry().xwrap(pos);
+  }
+
+  MaterialId DungeonGeneratorWriter::materialId(String const& materialName) const {
+    return m_materialDatabase->materialId(materialName);
+  }
+
+  ModId DungeonGeneratorWriter::modId(String const& modName) const {
+    return m_materialDatabase->modId(modName);
+  }
+
+  CollisionKind DungeonGeneratorWriter::materialCollisionKind(MaterialId material) const {
+    return m_materialDatabase->materialCollisionKind(material);
+  }
+
+  LiquidId DungeonGeneratorWriter::liquidId(String const& liquidName) const {
+    return m_liquidsDatabase->liquidId(liquidName);
   }
 
   void DungeonGeneratorWriter::setMarkDungeonId(Maybe<DungeonId> dungeonId) {
@@ -1306,7 +1326,7 @@ namespace Dungeon {
   }
 }
 
-DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets) : m_paths(), m_assets(std::move(assets)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
+DungeonDefinitions::DungeonDefinitions(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_paths(), m_assets(std::move(assets)), m_tilesetDatabase(std::move(tilesetDatabase)), m_cacheMutex(), m_definitionCache(DefinitionsCacheSize) {
   if (!m_assets)
     throw DungeonException("DungeonDefinitions requires assets service");
 
@@ -1333,13 +1353,13 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
 
 DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) const {
   try {
-    return make_shared<DungeonDefinition>(m_assets, m_assets->json(path).toObject(), AssetPath::directory(path));
+    return make_shared<DungeonDefinition>(m_assets, m_tilesetDatabase, m_assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
 }
 
-DungeonDefinition::DungeonDefinition(IAssetsConstPtr assets, JsonObject const& definition, String const& directory) {
+DungeonDefinition::DungeonDefinition(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, JsonObject const& definition, String const& directory) {
   m_directory = directory;
   m_metadata = definition.get("metadata").toObject();
   m_name = m_metadata.get("name").toString();
@@ -1360,7 +1380,7 @@ DungeonDefinition::DungeonDefinition(IAssetsConstPtr assets, JsonObject const& d
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, assets, tileset);
+    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, assets, tilesetDatabase, tileset);
     if (m_parts.contains(part->name()))
       throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);
@@ -1425,9 +1445,9 @@ int DungeonDefinition::extendSurfaceFreeSpace() const {
   return m_extendSurfaceFreeSpace;
 }
 
-DungeonGenerator::DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
+DungeonGenerator::DungeonGenerator(DungeonDefinitionsConstPtr dungeonDefinitions, String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
   : m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
-  m_def = Root::singleton().dungeonDefinitions()->get(dungeonName);
+  m_def = dungeonDefinitions->get(dungeonName);
 }
 
 Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {

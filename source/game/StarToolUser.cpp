@@ -17,7 +17,7 @@
 
 namespace Star {
 
-ToolUser::ToolUser(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
     m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
     m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
@@ -60,7 +60,7 @@ ToolUser::ToolUser(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, Ob
   m_altTimeFiringNetState.setInterpolator(interpolateTimer);
 }
 
-ToolUser::ToolUser(IAssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+ToolUser::ToolUser(AssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : ToolUser(std::move(assets), std::move(itemDatabase), std::move(objectDatabase)) {
   init(user);
 }

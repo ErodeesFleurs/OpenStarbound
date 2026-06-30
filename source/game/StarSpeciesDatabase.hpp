@@ -4,7 +4,6 @@
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
-#include "StarISpeciesDatabase.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarTtlCache.hpp"
@@ -110,13 +109,13 @@ private:
   friend class SpeciesDatabase;
 };
 
-class SpeciesDatabase : public ISpeciesDatabase {
+class SpeciesDatabase {
 public:
   SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator);
 
-  bool hasSpecies(String const& kind) const override;
-  SpeciesDefinitionPtr species(String const& kind) const override;
-  StringList speciesNames() const override;
+  bool hasSpecies(String const& kind) const;
+  SpeciesDefinitionPtr species(String const& kind) const;
+  StringList speciesNames() const;
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;

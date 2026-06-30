@@ -8,7 +8,7 @@ namespace Star {
 class CelestialParameters {
 public:
   CelestialParameters();
-  CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, IAssetsConstPtr assets = {});
+  CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, AssetsConstPtr assets = {});
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 

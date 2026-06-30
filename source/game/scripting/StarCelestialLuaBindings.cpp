@@ -8,7 +8,7 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
+LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client, BiomeDatabaseConstPtr biomeDatabase) {
   LuaCallbacks callbacks;
 
   auto systemWorld = client->systemWorldClient();
@@ -85,7 +85,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
   callbacks.registerCallback("clusterSize", [systemWorld](Json const& coords) -> float {
       return systemWorld->clusterSize(CelestialCoordinate(coords));
     });
-  callbacks.registerCallback("planetOres", [celestialDatabase](Json const& coords, float threatLevel) -> List<String> {
+  callbacks.registerCallback("planetOres", [celestialDatabase, biomeDatabase](Json const& coords, float threatLevel) -> List<String> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       auto parameters = celestialDatabase->parameters(coordinate);
       if (!parameters)
@@ -95,7 +95,6 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       if (!visitableParameters)
         return {};
 
-      auto biomeDatabase = Root::singleton().biomeDatabase();
       auto addOres = [biomeDatabase, threatLevel](StringSet& oreList, String const& biomeName) {
           oreList.addAll(biomeDatabase->biomeOres(biomeName, threatLevel));
         };

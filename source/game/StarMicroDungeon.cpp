@@ -21,6 +21,7 @@ MicroDungeonFactory::MicroDungeonFactory() {
 }
 
 Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
+    DungeonDefinitionsConstPtr dungeonDefinitions,
     String const& dungeonName,
     Vec2I const& position,
     uint64_t seed,
@@ -35,7 +36,7 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& 
   m_generating = true;
   auto generatingGuard = finally([this]() { m_generating = false; });
 
-  DungeonGenerator dungeonGenerator(dungeonName, seed, threatLevel, BiomeMicroDungeonId);
+  DungeonGenerator dungeonGenerator(dungeonDefinitions, dungeonName, seed, threatLevel, BiomeMicroDungeonId);
 
   try {
     // don't bother scanning around because its used in a bruteforce manner for now.

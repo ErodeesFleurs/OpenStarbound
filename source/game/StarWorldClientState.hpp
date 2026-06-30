@@ -3,7 +3,7 @@
 #include "StarRect.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -13,7 +13,7 @@ class WorldClientState;
 // and player entity id.
 class WorldClientState {
 public:
-  WorldClientState(IAssetsConstPtr assets);
+  WorldClientState(AssetsConstPtr assets);
 
   // Actual area of the client visible screen (rounded to nearest block)
   RectI window() const;

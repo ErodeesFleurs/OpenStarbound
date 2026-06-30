@@ -9,8 +9,8 @@
 
 namespace Star {
 
-BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase)
-  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)) {
+BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   if (!m_assets)
     throw BiomeException("BiomeDatabase requires assets service");
   if (!m_materialDatabase)
@@ -169,7 +169,7 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
 
     if (config.parameters.contains("parallax")) {
       auto parallaxFile = AssetPath::relativeTo(config.path, config.parameters.getString("parallax"));
-      biome->parallax = make_shared<Parallax>(m_assets, parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
+      biome->parallax = make_shared<Parallax>(m_assets, m_imageMetadataDatabase, parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
     }
 
     if (config.parameters.contains("musicTrack"))

@@ -5,8 +5,10 @@
 namespace Star {
 
 class WorldCamera;
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
 
 namespace LuaBindings {
-  LuaCallbacks makeCameraCallbacks(WorldCamera* camera);
+  LuaCallbacks makeCameraCallbacks(WorldCamera* camera, ConfigurationPtr configuration);
 }
 }

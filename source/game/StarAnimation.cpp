@@ -1,14 +1,29 @@
 #include "StarAnimation.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLexicalCast.hpp"
 
 namespace Star {
 
-Animation::Animation(Json config, String const& directory, IAssetsConstPtr assets) {
+Animation::Animation() {
+  m_mode = EndAndDisappear;
+  m_appendFrame = false;
+  m_frameNumber = 1;
+  m_animationCycle = 1.0f;
+  m_animationTime = 1.0f;
+  m_angle = 0.0f;
+  m_centered = true;
+  m_color = Color::White;
+  m_variantOffset = 0;
+  m_frame = 0;
+  m_animationTimer = 0.0f;
+  m_timeToLive = 0.0f;
+  m_completed = false;
+}
+
+Animation::Animation(Json config, String const& directory, AssetsConstPtr assets) {
   m_directory = directory;
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
@@ -19,7 +34,7 @@ Animation::Animation(Json config, String const& directory, IAssetsConstPtr asset
   if (config.isNull())
     config = JsonObject();
 
-  config = (assets ? std::move(assets) : Root::singleton().assets())->fetchJson(config);
+  config = assets->fetchJson(config);
 
   m_mode = AnimationModeNames.getLeft(config.getString("mode", "endAndDisappear"));
   m_base = config.getString("frames", "");

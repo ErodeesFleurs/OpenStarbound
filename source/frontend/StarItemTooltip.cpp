@@ -22,7 +22,7 @@
 namespace Star {
 
 namespace {
-IAssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
+AssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
   if (!services.assets)
     throw StarException("ItemTooltipBuilder requires assets service");
   return services.assets;

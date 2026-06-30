@@ -1,4 +1,5 @@
 #include "StarQuests.hpp"
+#include "StarUniverseClient.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarTime.hpp"
@@ -31,7 +32,7 @@ EnumMap<QuestState> const QuestStateNames {
   {QuestState::Failed, "Failed"}
 };
 
-Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
   : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
@@ -98,7 +99,7 @@ Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t 
   m_inited = false;
 }
 
-Quest::Quest(IAssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
   : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
@@ -588,7 +589,7 @@ void Quest::initScript() {
   m_scriptComponent.setUpdateDelta(questTemplate->updateDelta);
 
   m_scriptComponent.addCallbacks("quest", makeQuestCallbacks(m_player));
-  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client));
+  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client, m_client->biomeDatabase()));
   m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_player));
   m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
       return Json(getTemplate()->scriptConfig).query(name, def);

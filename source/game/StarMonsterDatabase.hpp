@@ -93,7 +93,7 @@ struct MonsterVariant {
   Maybe<ColorReplaceMap> colorSwap;
 };
 
-class MonsterDatabase {
+class MonsterDatabase : public enable_shared_from_this<MonsterDatabase> {
 public:
   MonsterDatabase(AssetsConstPtr assets);
 

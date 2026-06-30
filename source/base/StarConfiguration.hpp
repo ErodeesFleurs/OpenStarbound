@@ -3,17 +3,17 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-#include "StarIConfiguration.hpp"
 
 namespace Star {
 
 class Configuration;
 using ConfigurationPtr = SharedPtr<Configuration>;
+using ConfigurationConstPtr = SharedPtr<Configuration const>;
 
 struct ConfigurationExceptionTag { static constexpr char const* typeName = "ConfigurationException"; };
 using ConfigurationException = TypedException<StarException, ConfigurationExceptionTag>;
 
-class Configuration : public IConfiguration {
+class Configuration {
 public:
   Configuration(Json defaultConfiguration, Json currentConfiguration);
 

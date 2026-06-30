@@ -11,12 +11,13 @@
 
 namespace Star {
 
-WorldTemplate::WorldTemplate(IAssetsConstPtr assets, Vec2U const& size) : WorldTemplate(std::move(assets)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Vec2U const& size, DungeonDefinitionsConstPtr dungeonDefinitions)
+  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   m_geometry = size;
 }
 
-WorldTemplate::WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase)
-  : WorldTemplate(std::move(assets)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
+  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
   if (!celestialParameters)
     throw StarException("Celestial parameters for constructing WorldTemplate not found!");
@@ -31,17 +32,17 @@ WorldTemplate::WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& 
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, *terrestrialParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *terrestrialParameters, m_seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, *asteroidsParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *asteroidsParameters, m_seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, *floatingDungeonParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
 }
 
-WorldTemplate::WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed)
-  : WorldTemplate(std::move(assets)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed, DungeonDefinitionsConstPtr dungeonDefinitions)
+  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
@@ -51,16 +52,17 @@ WorldTemplate::WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersCon
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, *terrestrialParameters, seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *terrestrialParameters, seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, *asteroidsParameters, seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *asteroidsParameters, seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, *floatingDungeonParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, m_terrainDatabase, m_biomeDatabase, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
 }
 
-WorldTemplate::WorldTemplate(IAssetsConstPtr assets, Json const& store) : WorldTemplate(std::move(assets)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Json const& store, DungeonDefinitionsConstPtr dungeonDefinitions)
+  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   m_celestialParameters = jsonToMaybe<CelestialParameters>(store.get("celestialParameters", {}));
   m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
   m_skyParameters = SkyParameters(store.get("skyParameters"));
@@ -68,7 +70,7 @@ WorldTemplate::WorldTemplate(IAssetsConstPtr assets, Json const& store) : WorldT
   m_seed = store.getUInt("seed");
   m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
   if (auto regionData = store.opt("regionData"))
-    m_layout = make_shared<WorldLayout>(regionData.take());
+    m_layout = make_shared<WorldLayout>(regionData.take(), m_terrainDatabase, m_biomeDatabase);
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
       CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
@@ -570,7 +572,11 @@ uint64_t WorldTemplate::seedFor(int x, int y) const {
   return staticRandomU64(m_seed, m_geometry.xwrap(x), y, "Block");
 }
 
-WorldTemplate::WorldTemplate(IAssetsConstPtr assets) : m_assets(std::move(assets)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
+  : m_assets(std::move(assets))
+  , m_terrainDatabase(terrainDatabase ? std::move(terrainDatabase) : Root::singleton().terrainDatabase())
+  , m_biomeDatabase(biomeDatabase ? std::move(biomeDatabase) : Root::singleton().biomeDatabase())
+  , m_dungeonDefinitions(std::move(dungeonDefinitions)) {
   if (!m_assets)
     throw StarException("WorldTemplate requires assets service");
 
@@ -587,7 +593,7 @@ void WorldTemplate::determineWorldName() {
   if (m_celestialParameters)
     m_worldName = m_celestialParameters->name();
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_worldName = Root::singleton().dungeonDefinitions()->get(floatingDungeonParameters->primaryDungeon)->displayName();
+    m_worldName = (m_dungeonDefinitions ? m_dungeonDefinitions : Root::singleton().dungeonDefinitions())->get(floatingDungeonParameters->primaryDungeon)->displayName();
   else
     m_worldName = "";
 }

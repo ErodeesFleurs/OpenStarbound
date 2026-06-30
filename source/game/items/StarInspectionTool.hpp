@@ -5,7 +5,7 @@
 #include "StarToolUserItem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarInspectableEntity.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -23,7 +23,7 @@ public:
     Maybe<EntityId> entityId = {};
   };
 
-  InspectionTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  InspectionTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 

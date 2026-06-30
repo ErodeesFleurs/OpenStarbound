@@ -5,7 +5,7 @@
 #include "StarBiMap.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarAnimation.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarText.hpp"
 
 namespace Star {
@@ -15,7 +15,7 @@ using MainInterfaceConfigPtr = SharedPtr<MainInterfaceConfig>;
 using MainInterfaceConfigConstPtr = SharedPtr<MainInterfaceConfig const>;
 
 struct MainInterfaceConfigServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
 };
 
 enum class MainInterfacePanes {

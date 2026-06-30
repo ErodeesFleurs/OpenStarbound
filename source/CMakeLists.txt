@@ -319,6 +319,7 @@ function(star_add_config_compile_options config)
 endfunction()
 
 if(STAR_COMPILER_GNU)
+  target_compile_definitions(star_build_definitions INTERFACE "$<$<CONFIG:Debug>:XXH_NO_INLINE_HINTS=1>")
   star_add_c_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
   star_add_cxx_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
   target_link_options(star_build_options INTERFACE -rdynamic -no-pie)

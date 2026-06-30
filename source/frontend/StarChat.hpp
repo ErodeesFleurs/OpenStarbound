@@ -2,7 +2,7 @@
 
 #include "StarBaseScriptPane.hpp"
 #include "StarChatTypes.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -22,7 +22,7 @@ class Chat;
 using ChatPtr = SharedPtr<Chat>;
 
 struct ChatServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
 };
 
 class Chat : public BaseScriptPane {
@@ -69,7 +69,7 @@ private:
   void updateBottomButton();
 
   UniverseClientPtr m_client;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   bool m_scripted;
 
   TextBoxWidgetPtr m_textBox;

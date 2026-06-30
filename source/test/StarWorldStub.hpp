@@ -14,8 +14,20 @@ public:
   ConnectionId connection() const override { return ConnectionId(0); }
   WorldGeometry geometry() const override { return WorldGeometry(Vec2U(4096, 4096)); }
   uint64_t currentStep() const override { return 0; }
-  IAssetsConstPtr assets() const override { return {}; }
-  IItemDatabaseConstPtr itemDatabase() const override { return {}; }
+  AssetsConstPtr assets() const override { return {}; }
+  ItemDatabaseConstPtr itemDatabase() const override { return {}; }
+  ObjectDatabaseConstPtr objectDatabase() const override { return {}; }
+  MaterialDatabaseConstPtr materialDatabase() const override { return {}; }
+  LiquidsDatabaseConstPtr liquidsDatabase() const override { return {}; }
+  EffectSourceDatabaseConstPtr effectSourceDatabase() const override { return {}; }
+  ParticleDatabaseConstPtr particleDatabase() const override { return {}; }
+  TechDatabaseConstPtr techDatabase() const override { return {}; }
+  StatusEffectDatabaseConstPtr statusEffectDatabase() const override { return {}; }
+  PlantDatabaseConstPtr plantDatabase() const override { return {}; }
+  TreasureDatabaseConstPtr treasureDatabase() const override { return {}; }
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override { return {}; }
+  FunctionDatabaseConstPtr functionDatabase() const override { return {}; }
+  BehaviorDatabaseConstPtr behaviorDatabase() const override { return {}; }
 
   MaterialId material(Vec2I const&, TileLayer) const override { return EmptyMaterialId; }
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const&, TileLayer) const override { return {}; }

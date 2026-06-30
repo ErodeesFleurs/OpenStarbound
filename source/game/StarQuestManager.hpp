@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarQuests.hpp"
 
 namespace Star {
@@ -15,15 +15,15 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(IAssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  QuestManager(AssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
-  QuestManager(IAssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  QuestManager(AssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   void diskLoad(Json const& quests);
   Json diskStore();
 
   void setUniverseClient(UniverseClient* client);
-  IAssetsConstPtr assets() const;
+  AssetsConstPtr assets() const;
   ItemDatabaseConstPtr itemDatabase() const;
   ObjectDatabaseConstPtr objectDatabase() const;
   QuestTemplateDatabaseConstPtr questTemplateDatabase() const;
@@ -81,7 +81,7 @@ private:
   Player* m_player;
   World* m_world;
   UniverseClient* m_client;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   QuestTemplateDatabaseConstPtr m_questTemplateDatabase;

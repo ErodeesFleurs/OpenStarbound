@@ -60,7 +60,7 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
       }
       if (!configValue("treasurePools").isNull()) {
         String treasurePool = Random::randValueFrom(configValue("treasurePools").toArray()).toString();
-        Root::singleton().treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
+        world->treasureDatabase()->fillWithTreasure(m_items, treasurePool, level, ++seed);
       }
       itemsUpdated();
     }

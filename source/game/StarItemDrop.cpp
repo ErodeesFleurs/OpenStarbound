@@ -1,7 +1,6 @@
 #include "StarItemDrop.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
@@ -17,11 +16,13 @@ namespace Star {
 
 namespace {
 
-IAssetsConstPtr itemDropAssets(IAssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
+AssetsConstPtr itemDropAssets(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("ItemDrop requires assets service");
+  return assets;
 }
 
-IItemDatabaseConstPtr itemDropItemDatabase(IItemDatabaseConstPtr itemDatabase) {
+ItemDatabaseConstPtr itemDropItemDatabase(ItemDatabaseConstPtr itemDatabase) {
   if (!itemDatabase)
     throw StarException("ItemDrop requires item database service");
   return itemDatabase;
@@ -29,7 +30,7 @@ IItemDatabaseConstPtr itemDropItemDatabase(IItemDatabaseConstPtr itemDatabase) {
 
 }
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase) {
+ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase) {
   if (!item)
     return {};
 
@@ -44,7 +45,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& pos
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase) {
+ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase) {
   if (!descriptor || descriptor.isEmpty())
     return {};
 
@@ -52,7 +53,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
   return createRandomizedDrop(itemDatabase->item(descriptor), position, eternal, std::move(assets), std::move(itemDatabase));
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase) {
+ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase) {
   if (!item)
     return {};
 
@@ -68,7 +69,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase) {
+ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase) {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
@@ -76,7 +77,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
   return throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction, eternal, std::move(assets), std::move(itemDatabase));
 }
 
-ItemDrop::ItemDrop(ItemPtr item, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase)
+ItemDrop::ItemDrop(ItemPtr item, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   : ItemDrop(std::move(assets), std::move(itemDatabase)) {
   m_item = std::move(item);
   
@@ -90,7 +91,7 @@ ItemDrop::ItemDrop(ItemPtr item, IAssetsConstPtr assets, IItemDatabaseConstPtr i
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
-ItemDrop::ItemDrop(Json const& diskStore, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase)
+ItemDrop::ItemDrop(Json const& diskStore, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   : ItemDrop(std::move(assets), std::move(itemDatabase)) {
   m_item = m_itemDatabase->diskLoad(diskStore.get("item"));
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
@@ -106,7 +107,7 @@ ItemDrop::ItemDrop(Json const& diskStore, IAssetsConstPtr assets, IItemDatabaseC
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
-ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase) : ItemDrop(std::move(assets), std::move(itemDatabase)) {
+ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules, AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase) : ItemDrop(std::move(assets), std::move(itemDatabase)) {
   DataStreamBuffer ds(std::move(store));
   ds.setStreamCompatibilityVersion(rules);
 
@@ -459,7 +460,7 @@ Json ItemDrop::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config.query(name, def));
 }
 
-ItemDrop::ItemDrop(IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase)
+ItemDrop::ItemDrop(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   : m_itemDatabase(itemDropItemDatabase(std::move(itemDatabase))),
     m_movementController(MovementParameters(), itemDropAssets(assets)) {
   setPersistent(true);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 #include "StarWiring.hpp"
 
@@ -18,7 +18,7 @@ using WirePanePtr = SharedPtr<WirePane>;
 class WirePane : public Pane, public WireConnector {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services);
@@ -41,7 +41,7 @@ private:
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
   WorldPainterPtr m_worldPainter;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   Vec2I m_mousePos;
   bool m_connecting;
   WireDirection m_sourceDirection;

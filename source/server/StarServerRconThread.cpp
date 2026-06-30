@@ -1,14 +1,14 @@
 #include "StarServerRconThread.hpp"
 #include "StarLogging.hpp"
 #include "StarException.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarServerRconClient.hpp"
 #include "StarIterator.hpp"
 
 namespace Star {
 
-ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, IConfigurationPtr configuration)
+ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, ConfigurationPtr configuration)
   : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_rconPassword(), m_rconTimeout(0), m_stop(true) {
   if (!configuration)
     throw StarException("ServerRconThread requires configuration service");

@@ -6,8 +6,10 @@ namespace Star {
 
 class Root;
 class UniverseClient;
+class BiomeDatabase;
+using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
 
 namespace LuaBindings {
-  LuaCallbacks makeCelestialCallbacks(UniverseClient* client);
+  LuaCallbacks makeCelestialCallbacks(UniverseClient* client, BiomeDatabaseConstPtr biomeDatabase);
 }
 }

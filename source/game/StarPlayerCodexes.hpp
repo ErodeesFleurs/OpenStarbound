@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarUuid.hpp"
 #include "StarJson.hpp"
 
@@ -8,12 +8,14 @@ namespace Star {
 
 class Codex;
 using CodexConstPtr = SharedPtr<Codex const>;
+class CodexDatabase;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
 
 class PlayerCodexes {
 public:
   using CodexEntry = pair<CodexConstPtr, bool>;
 
-  PlayerCodexes(IAssetsConstPtr assets, Json const& json = {});
+  PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& json = {});
 
   Json toJson() const;
 
@@ -31,7 +33,8 @@ public:
   CodexConstPtr firstNewCodex() const;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  CodexDatabaseConstPtr m_codexDatabase;
   StringMap<CodexEntry> m_codexes;
 };
 

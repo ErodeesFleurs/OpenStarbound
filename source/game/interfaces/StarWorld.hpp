@@ -10,17 +10,29 @@
 #include "StarRpcPromise.hpp"
 #include "StarTileWorldInterface.hpp"
 #include "StarEntityWorldInterface.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarEffectSourceDatabase.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarStoredFunctions.hpp"
 
 namespace Star {
 
 class World;
-class IItemDatabase;
-using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class TileEntity;
 class ScriptedEntity;
+class BehaviorDatabase;
+using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
 
 using WorldAction = function<void(World*)>;
 
@@ -32,9 +44,20 @@ public:
   virtual ConnectionId connection() const = 0;
   virtual WorldGeometry geometry() const = 0;
   virtual uint64_t currentStep() const = 0;
-  virtual IAssetsConstPtr assets() const = 0;
-  virtual IItemDatabaseConstPtr itemDatabase() const = 0;
+  virtual AssetsConstPtr assets() const = 0;
+  virtual ItemDatabaseConstPtr itemDatabase() const = 0;
   virtual ObjectDatabaseConstPtr objectDatabase() const = 0;
+  virtual MaterialDatabaseConstPtr materialDatabase() const = 0;
+  virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
+  virtual EffectSourceDatabaseConstPtr effectSourceDatabase() const = 0;
+  virtual ParticleDatabaseConstPtr particleDatabase() const = 0;
+  virtual TechDatabaseConstPtr techDatabase() const = 0;
+  virtual StatusEffectDatabaseConstPtr statusEffectDatabase() const = 0;
+  virtual PlantDatabaseConstPtr plantDatabase() const = 0;
+  virtual TreasureDatabaseConstPtr treasureDatabase() const = 0;
+  virtual ImageMetadataDatabaseConstPtr imageMetadataDatabase() const = 0;
+  virtual FunctionDatabaseConstPtr functionDatabase() const = 0;
+  virtual BehaviorDatabaseConstPtr behaviorDatabase() const = 0;
 
   // Environment
   virtual float gravity(Vec2F const& pos) const = 0;

@@ -4,10 +4,11 @@
 #include "StarAssets.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarWorld.hpp"
+#include "StarWorldServer.hpp"
 
 namespace Star {
 
-ThrownItem::ThrownItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
+ThrownItem::ThrownItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
   : Item(std::move(assets), config, directory, itemParameters), SwingableItem(config) {
   m_projectileType = instanceValue("projectileType").toString();
   m_projectileConfig = instanceValue("projectileConfig", {});
@@ -39,7 +40,8 @@ void ThrownItem::fireTriggered() {
       return;
 
     if (consume(m_ammoUsage)) {
-      auto projectile = root.projectileDatabase()->createProjectile(m_projectileType, m_projectileConfig);
+      auto projectileDb = as<WorldServer>(world()) ? as<WorldServer>(world())->projectileDatabase() : root.projectileDatabase();
+      auto projectile = projectileDb->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);
       projectile->setInitialDirection(direction);
       projectile->setSourceEntity(owner()->entityId(), false);

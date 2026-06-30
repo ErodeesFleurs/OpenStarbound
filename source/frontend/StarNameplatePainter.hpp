@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarChatBubbleSeparation.hpp"
@@ -16,7 +16,7 @@ using NameplatePainterPtr = SharedPtr<NameplatePainter>;
 class NameplatePainter {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   explicit NameplatePainter(Services services);

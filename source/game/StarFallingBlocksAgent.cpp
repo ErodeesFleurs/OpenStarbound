@@ -2,7 +2,7 @@
 
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(IAssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
+FallingBlocksAgent::FallingBlocksAgent(AssetsConstPtr assets, FallingBlocksFacadePtr worldFacade)
   : m_facade(std::move(worldFacade)) {
   if (!assets)
     throw StarException("FallingBlocksAgent requires assets service");

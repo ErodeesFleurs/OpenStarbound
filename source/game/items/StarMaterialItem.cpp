@@ -18,14 +18,14 @@ const String AltBlockRadiusPropertyKey = "building.altBlockRadius";
 const String CollisionOverridePropertyKey = "building.collisionOverride";
 const String BlockSwapPropertyKey = "building.blockSwap";
 
-MaterialItem::MaterialItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
+MaterialItem::MaterialItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase)
   : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MaterialItem requires assets service");
 
   m_material = config.getInt("materialId");
   m_materialHueShift = materialHueFromDegrees(instanceValue("materialHueShift", 0).toFloat());
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabasePtr = materialDatabase ? std::move(materialDatabase) : Root::singleton().materialDatabase();
 
   if (materialHueShift() != MaterialHue()) {
     auto drawables = iconDrawables();
@@ -47,17 +47,17 @@ MaterialItem::MaterialItem(IAssetsConstPtr assets, Json const& config, String co
   m_collisionOverride = TileCollisionOverrideNames.maybeLeft(config.getString("collisionOverride", "None")).value(TileCollisionOverride::None);
   m_blockSwap = false;
 
-  m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabase->materialCollisionKind(m_material)));
+  m_multiplace = config.getBool("allowMultiplace", BlockCollisionSet.contains(materialDatabasePtr->materialCollisionKind(m_material)));
   m_placeSounds = jsonToStringList(config.get("placeSounds", JsonArray()));
   if (m_placeSounds.empty()) {
-    auto miningSound = materialDatabase->miningSound(m_material);
+    auto miningSound = materialDatabasePtr->miningSound(m_material);
     if (!miningSound.empty())
       m_placeSounds.append(std::move(miningSound));
-    auto stepSound = materialDatabase->footstepSound(m_material);
+    auto stepSound = materialDatabasePtr->footstepSound(m_material);
     if (!stepSound.empty())
       m_placeSounds.append(std::move(stepSound));
     else if (m_placeSounds.empty())
-      m_placeSounds.append(materialDatabase->defaultFootstepSound());
+      m_placeSounds.append(materialDatabasePtr->defaultFootstepSound());
   }
   m_shifting = false;
   m_lastTileAreaRadiusCache = 0.0f;
@@ -94,7 +94,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
     if (owner()->isMaster()) {
       Input& input = Input::singleton();
       if (auto presses = input.bindDown("opensb", "materialCollisionCycle")) {
-        CollisionKind baseKind = Root::singleton().materialDatabase()->materialCollisionKind(m_material);
+        CollisionKind baseKind = world()->materialDatabase()->materialCollisionKind(m_material);
         for (size_t i = 0; i != *presses; ++i) {
           constexpr auto limit = static_cast<uint8_t>(TileCollisionOverride::Block) + 1;
           while (true) {
@@ -210,7 +210,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
 
   CollisionKind collisionKind = m_collisionOverride != TileCollisionOverride::None
     ? collisionKindFromOverride(m_collisionOverride)
-    : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
+    : world()->materialDatabase()->materialCollisionKind(m_material);
 
   size_t total = 0;
 
@@ -307,7 +307,7 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   if (willDamage.empty())
     return success;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = world()->materialDatabase();
   String blockSound;
 
   for (auto pos : willDamage) {
@@ -361,7 +361,7 @@ List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
 
       List<Drawable> drawables;
       TileDrawer::Drawables tileDrawables;
-      bool isBlock = BlockCollisionSet.contains(Root::singleton().materialDatabase()->materialCollisionKind(m_material));
+      bool isBlock = BlockCollisionSet.contains(world()->materialDatabase()->materialCollisionKind(m_material));
       TileDrawer::TerrainLayer layer = isBlock ? TileDrawer::TerrainLayer::Foreground : TileDrawer::TerrainLayer::Midground;
       for (int x = 0; x != 3; ++x) {
         for (int y = 0; y != 3; ++y)

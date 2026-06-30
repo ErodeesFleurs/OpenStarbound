@@ -48,7 +48,7 @@ Particle::Particle() {
   flip = false;
 }
 
-Particle::Particle(Json const& config, String const& path, IAssetsConstPtr assets) {
+Particle::Particle(Json const& config, String const& path, AssetsConstPtr assetsPtr) {
   type = TypeNames.getLeft(config.getString("type", "variance"));
   if (type == Type::Variance) {
     size = 0.0f;
@@ -74,7 +74,8 @@ Particle::Particle(Json const& config, String const& path, IAssetsConstPtr asset
       directives.clear();
     else
       directives = string.substr(pathEnd);
-    initializeAnimation(std::move(assets));
+    this->assets = assetsPtr;
+    initializeAnimation(std::move(assetsPtr));
   }
 
   if (config.contains("color"))
@@ -180,7 +181,7 @@ void Particle::update(float dt, Vec2F const& wind) {
     destructionUpdate();
 
   if (type == Type::Animated) {
-    initializeAnimation();
+    initializeAnimation(assets);
     animation->update(dt);
   }
 }
@@ -241,9 +242,9 @@ void Particle::destructionUpdate() {
   }
 }
 
-void Particle::initializeAnimation(IAssetsConstPtr assets) {
+void Particle::initializeAnimation(AssetsConstPtr assetsPtr) {
   if (!animation) {
-    animation = Animation(AssetPath::removeDirectives(string), {}, std::move(assets));
+    animation = Animation(AssetPath::removeDirectives(string), {}, std::move(assetsPtr));
     animation->setProcessing(directives);
   }
 }

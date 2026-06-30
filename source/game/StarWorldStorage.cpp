@@ -5,7 +5,6 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
 #include "StarEntityMap.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarMaterialDatabase.hpp"
@@ -48,8 +47,8 @@ WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
   return chunks;
 }
 
-WorldStorage::WorldStorage(IAssetsConstPtr assets, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
-  : WorldStorage(std::move(assets)) {
+WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
+  : WorldStorage(std::move(assets), std::move(materialDatabase), std::move(liquidsDatabase), std::move(entityFactory)) {
   m_tileArray = make_shared<ServerTileSectorArray>(worldSize);
   m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
   m_generatorFacade = generatorFacade;
@@ -64,7 +63,7 @@ WorldStorage::WorldStorage(IAssetsConstPtr assets, Vec2U const& worldSize, IODev
   m_db.commit();
 }
 
-WorldStorage::WorldStorage(IAssetsConstPtr assets, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets)) {
+WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets), std::move(materialDatabase), std::move(liquidsDatabase), std::move(entityFactory)) {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -75,7 +74,7 @@ WorldStorage::WorldStorage(IAssetsConstPtr assets, IODevicePtr const& device, Wo
   m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
-WorldStorage::WorldStorage(IAssetsConstPtr assets, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets)) {
+WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory, WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage(std::move(assets), std::move(materialDatabase), std::move(liquidsDatabase), std::move(entityFactory)) {
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -287,7 +286,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
     // Loop over every loaded sector, figure out whether the sector needs to be
     // unloaded, kept alive by a keep-alive entity, or has any entities that need
     // to be stored because they moved into an entity-unloaded sector (zombies).
-    auto entityFactory = Root::singleton().entityFactory();
+    auto entityFactory = m_entityFactory;
     unsigned unloaded = 0, skipped = 0;
     for (auto const& p : m_sectorMetadata.pairs()) {
       auto const& sector = p.first;
@@ -494,10 +493,9 @@ ByteArray WorldStorage::tileSectorKey(Sector const& sector) {
   return ds.takeData();
 }
 
-WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data, IAssetsConstPtr assets) {
-  auto& root = Root::singleton();
-  auto matDatabase = root.materialDatabase();
-  auto liqDatabase = root.liquidsDatabase();
+WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data, AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase) {
+  auto matDatabase = std::move(materialDatabase);
+  auto liqDatabase = std::move(liquidsDatabase);
   auto storageConfig = assets->json("/worldstorage.config");
 
   DataStreamBuffer ds(uncompressData(data));
@@ -601,9 +599,19 @@ void WorldStorage::openDatabase(BTreeDatabase& db, IODevicePtr device) {
     throw WorldStorageException::format("World database format is too old or unrecognized!");
 }
 
-WorldStorage::WorldStorage(IAssetsConstPtr assets) : m_assets(std::move(assets)) {
+WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, EntityFactoryConstPtr entityFactory)
+  : m_assets(std::move(assets)),
+    m_materialDatabase(std::move(materialDatabase)),
+    m_liquidsDatabase(std::move(liquidsDatabase)),
+    m_entityFactory(std::move(entityFactory)) {
   if (!m_assets)
     throw WorldStorageException("WorldStorage requires assets service");
+  if (!m_materialDatabase)
+    throw WorldStorageException("WorldStorage requires material database service");
+  if (!m_liquidsDatabase)
+    throw WorldStorageException("WorldStorage requires liquids database service");
+  if (!m_entityFactory)
+    throw WorldStorageException("WorldStorage requires entity factory service");
 
   auto storageConfig = m_assets->json("/worldstorage.config");
   m_sectorTimeToLive = jsonToVec2F(storageConfig.get("sectorTimeToLive"));
@@ -668,7 +676,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
   if (!m_tileArray->sectorValid(sector))
     return;
 
-  auto entityFactory = Root::singleton().entityFactory();
+  auto entityFactory = m_entityFactory;
 
   auto& metadata = m_sectorMetadata[sector];
   if (metadata.loadLevel >= targetLoadLevel)
@@ -687,7 +695,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
 
     if (currentLoad == SectorLoadLevel::Tiles) {
       if (auto res = m_db.find(tileSectorKey(sector))) {
-        TileSectorStore sectorStore = readTileSector(*res, m_assets);
+        TileSectorStore sectorStore = readTileSector(*res, m_assets, m_materialDatabase, m_liquidsDatabase);
 
         m_tileArray->loadSector(sector, std::move(sectorStore.tiles));
 
@@ -738,7 +746,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
   auto& metadata = m_sectorMetadata[sector];
   bool entitiesOverlap = false;
   if (m_entityMap) {
-    auto entityFactory = Root::singleton().entityFactory();
+    auto entityFactory = m_entityFactory;
     List<EntityPtr> entitiesToStore;
     List<EntityPtr> entitiesToRemove;
 
@@ -822,7 +830,7 @@ void WorldStorage::syncSector(Sector const& sector) {
   if (!m_tileArray->sectorValid(sector))
     return;
 
-  auto entityFactory = Root::singleton().entityFactory();
+  auto entityFactory = m_entityFactory;
   auto& metadata = m_sectorMetadata[sector];
 
   // Only sync the levels that we know are loaded.  It is possible that this

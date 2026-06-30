@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"), root->assets(), root->configuration(), root->itemDatabase());
+      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"), root->assets(), root->configuration(), root->materialDatabase(), root->imageMetadataDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->nameGenerator(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase());
       server->setListeningTcp(true);
       server->start();
 

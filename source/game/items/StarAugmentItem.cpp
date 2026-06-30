@@ -8,7 +8,7 @@
 
 namespace Star {
 
-AugmentItem::AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters)
+AugmentItem::AugmentItem(AssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters)
   : Item(std::move(assets), config, directory, parameters), m_itemDatabase(itemDatabase) {}
 
 AugmentItem::AugmentItem(AugmentItem const& rhs) = default;

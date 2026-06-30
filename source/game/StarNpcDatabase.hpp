@@ -22,6 +22,10 @@ class PatternedNameGenerator;
 using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
 class FunctionDatabase;
 using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+class DanceDatabase;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+class EmoteProcessor;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
 class Npc;
 using NpcPtr = SharedPtr<Npc>;
 class NpcDatabase;
@@ -71,14 +75,16 @@ struct NpcVariant {
   EntitySplashConfig splashConfig;
 };
 
-class NpcDatabase {
+class NpcDatabase : public enable_shared_from_this<NpcDatabase> {
 public:
   NpcDatabase(AssetsConstPtr assets,
       ItemDatabaseConstPtr itemDatabase,
       ObjectDatabaseConstPtr objectDatabase,
       SpeciesDatabaseConstPtr speciesDatabase,
       PatternedNameGeneratorConstPtr nameGenerator,
-      FunctionDatabaseConstPtr functionDatabase);
+      FunctionDatabaseConstPtr functionDatabase,
+      DanceDatabaseConstPtr danceDatabase,
+      EmoteProcessorConstPtr emoteProcessor);
 
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
@@ -109,6 +115,8 @@ private:
   SpeciesDatabaseConstPtr m_speciesDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;
   FunctionDatabaseConstPtr m_functionDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  EmoteProcessorConstPtr m_emoteProcessor;
 
   StringMap<Json> m_npcTypes;
 };

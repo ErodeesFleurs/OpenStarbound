@@ -10,7 +10,7 @@ namespace Star {
 
 class SystemWorldClient : public SystemWorld {
 public:
-  SystemWorldClient(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr clientContext);
+  SystemWorldClient(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator, PlayerUniverseMapPtr clientContext);
 
   CelestialCoordinate currentSystem() const;
 

@@ -2,19 +2,21 @@
 #include "StarCodex.hpp"
 #include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
-PlayerCodexes::PlayerCodexes(IAssetsConstPtr assets, Json const& variant)
-  : m_assets(std::move(assets)) {
+PlayerCodexes::PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& variant)
+  : m_assets(std::move(assets)), m_codexDatabase(std::move(codexDatabase)) {
   if (!m_assets)
     throw StarException("PlayerCodexes requires assets service");
+  if (!m_codexDatabase)
+    throw StarException("PlayerCodexes requires codex database service");
 
   if (variant) {
     auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
     for (auto pair : codexData) {
-      if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
+      if (auto codex = m_codexDatabase->codex(pair.first)) {
         m_codexes[pair.first] = CodexEntry{codex, pair.second};
       } else {
         Logger::debug("Failed to load missing codex '{}'", pair.first);
@@ -44,7 +46,7 @@ bool PlayerCodexes::codexKnown(String const& codexId) const {
 
 CodexConstPtr PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
   if (!codexKnown(codexId)) {
-    if (auto codex = Root::singleton().codexDatabase()->codex(codexId)) {
+    if (auto codex = m_codexDatabase->codex(codexId)) {
       auto entry = CodexEntry{codex, markRead};
       m_codexes[codexId] = entry;
       return entry.first;

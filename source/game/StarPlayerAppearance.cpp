@@ -2,7 +2,6 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerChatAndEmotes.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarRoot.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarActorMovementController.hpp"
@@ -116,8 +115,7 @@ JsonObject PlayerAppearance::getHumanoidParameters() {
 }
 
 void PlayerAppearance::refreshHumanoidParameters() {
-  auto speciesDatabase = Root::singleton().speciesDatabase();
-  auto speciesDef = speciesDatabase->species(m_identity.species);
+  auto speciesDef = m_player->m_speciesDatabase->species(m_identity.species);
 
   if (m_player->isMaster() || !m_player->inWorld()) {
     m_refreshedHumanoidParameters.trigger();

@@ -416,7 +416,7 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
   m_techModules.clear();
   m_techAnimators.clearNetElements();
 
-  auto techDatabase = Root::singleton().techDatabase();
+  auto techDatabase = m_parentEntity->world()->techDatabase();
 
   for (auto const& moduleInit : moduleInits) {
     if (techDatabase->contains(get<0>(moduleInit))) {

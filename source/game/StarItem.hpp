@@ -4,7 +4,7 @@
 #include "StarDrawable.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarQuests.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -21,7 +21,7 @@ public:
   // Config here is the configuration loaded directly from assets, directory is
   // the asset path this config was found in, that other assets should be
   // loaded relative to.
-  Item(IAssetsConstPtr assets, Json config, String directory, Json parameters = JsonObject());
+  Item(AssetsConstPtr assets, Json config, String directory, Json parameters = JsonObject());
 
   // For items which do not come from files
   Item();
@@ -169,7 +169,7 @@ private:
 
 class GenericItem : public Item {
 public:
-  GenericItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters);
+  GenericItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters);
   virtual ItemPtr clone() const;
 };
 

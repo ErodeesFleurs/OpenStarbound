@@ -4,8 +4,8 @@
 #include "StarLuaComponents.hpp"
 #include "StarContainerInteractor.hpp"
 #include "StarGuiReader.hpp"
-#include "StarIAssets.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarAssets.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -24,8 +24,8 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ContainerPaneServices {
-  IItemDatabaseConstPtr itemDatabase;
-  IAssetsConstPtr assets;
+  ItemDatabaseConstPtr itemDatabase;
+  AssetsConstPtr assets;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
@@ -61,8 +61,8 @@ private:
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
-  IItemDatabaseConstPtr m_itemDatabase;
-  IAssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
   ItemBagPtr m_itemBag;

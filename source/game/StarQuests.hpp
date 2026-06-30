@@ -11,7 +11,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarWarping.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -44,9 +44,9 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
-  Quest(IAssetsConstPtr assets, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Quest(AssetsConstPtr assets, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
   Json diskStore() const;
 
   QuestTemplatePtr getTemplate() const;
@@ -184,7 +184,7 @@ private:
 
   String m_trackedIndicator;
   String m_untrackedIndicator;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   QuestTemplateDatabaseConstPtr m_questTemplateDatabase;

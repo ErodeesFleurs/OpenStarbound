@@ -9,7 +9,7 @@
 #include "StarEffectEmitter.hpp"
 #include "StarEntityRenderingTypes.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 
@@ -25,9 +25,9 @@ using ToolUserPtr = SharedPtr<ToolUser>;
 
 class ToolUser : public NetElementSyncGroup {
 public:
-  ToolUser(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
-  ToolUser(IAssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  ToolUser(AssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   Json diskStore() const;
   void diskLoad(Json const& diskStore);

@@ -2,7 +2,6 @@
 
 #include "StarThread.hpp"
 #include "StarItemRecipe.hpp"
-#include "StarIItemDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
 #include "StarTtlCache.hpp"
@@ -14,12 +13,20 @@ class RecipeDatabase;
 class AugmentItem;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class FunctionDatabase;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+class CodexDatabase;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
 
 class ItemDatabase;
 using ItemDatabasePtr = SharedPtr<ItemDatabase>;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 struct ItemDatabaseExceptionTag { static constexpr char const* typeName = "ItemDatabaseException"; };
 using ItemDatabaseException = TypedException<ItemException, ItemDatabaseExceptionTag>;
@@ -54,7 +61,7 @@ enum class ItemType {
 };
 extern EnumMap<ItemType> ItemTypeNames;
 
-class ItemDatabase : public IItemDatabase {
+class ItemDatabase {
 public:
   // During item loading, the ItemDatabase takes the ItemDescriptor and
   // produces a set of things from it:
@@ -81,9 +88,14 @@ public:
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
   static String guiFilterString(ItemPtr const& item);
 
-  ItemDatabase(AssetsConstPtr assets, function<ObjectDatabaseConstPtr()> objectDatabase);
+  ItemDatabase(AssetsConstPtr assets,
+      function<ObjectDatabaseConstPtr()> objectDatabase,
+      LiquidsDatabaseConstPtr liquidsDatabase,
+      FunctionDatabaseConstPtr functionDatabase,
+      CodexDatabaseConstPtr codexDatabase,
+      MaterialDatabaseConstPtr materialDatabase);
 
-  void cleanup() override;
+  void cleanup();
 
   // Load an item based on item descriptor.  If loadItem is called with a
   // live ptr, and the ptr matches the descriptor read, then no new item is
@@ -94,24 +106,24 @@ public:
   // default item.
   template <typename ItemT>
   bool loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const;
-  bool loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const override;
+  bool loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
   bool diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const;
 
-  ItemPtr diskLoad(Json const& diskStore) const override;
-  ItemPtr fromJson(Json const& spec) const override;
+  ItemPtr diskLoad(Json const& diskStore) const;
+  ItemPtr fromJson(Json const& spec) const;
 
-  Json diskStore(ItemConstPtr const& itemPtr) const override;
+  Json diskStore(ItemConstPtr const& itemPtr) const;
 
-  Json toJson(ItemConstPtr const& itemPtr) const override;
+  Json toJson(ItemConstPtr const& itemPtr) const;
 
-  bool hasItem(String const& itemName) const override;
+  bool hasItem(String const& itemName) const;
   ItemType itemType(String const& itemName) const;
   // Friendly name here can be different than the final friendly name, as it
   // can be modified by custom config or builder scripts.
-  String itemFriendlyName(String const& itemName) const override;
+  String itemFriendlyName(String const& itemName) const;
   StringSet itemTags(String const& itemName) const;
 
   // Generate an item config for the given itemName, parameters, level and seed.
@@ -127,9 +139,9 @@ public:
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const override;
+  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const override;
+  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
@@ -154,7 +166,7 @@ public:
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
   ItemPtr applyAugment(ItemPtr const item, AugmentItem* augment) const;
-  bool ageItem(ItemPtr& item, double aging) const override;
+  bool ageItem(ItemPtr& item, double aging) const;
 
   List<String> allItems() const;
 
@@ -188,6 +200,10 @@ private:
 
   AssetsConstPtr m_assets;
   function<ObjectDatabaseConstPtr()> m_objectDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  CodexDatabaseConstPtr m_codexDatabase;
+  MaterialDatabaseConstPtr m_materialDatabase;
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
 

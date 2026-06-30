@@ -1,21 +1,21 @@
 #include "StarCameraLuaBindings.hpp"
+#include "StarConfiguration.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarWorldCamera.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera) {
+LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera, ConfigurationPtr configuration) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<Vec2F>("position", [camera]() { return camera->centerWorldPosition(); });
   callbacks.registerCallbackWithSignature<float>("pixelRatio", [camera]() { return camera->pixelRatio(); });
-  callbacks.registerCallback("setPixelRatio", [camera](float pixelRatio, Maybe<bool> smooth) {
+  callbacks.registerCallback("setPixelRatio", [camera, configuration](float pixelRatio, Maybe<bool> smooth) {
     if (smooth.value())
       camera->setTargetPixelRatio(pixelRatio);
     else
       camera->setPixelRatio(pixelRatio);
-    Root::singleton().configuration()->set("zoomLevel", pixelRatio);
+    configuration->set("zoomLevel", pixelRatio);
   });
 
   callbacks.registerCallbackWithSignature<Vec2U>("screenSize", [camera]() { return camera->screenSize(); });

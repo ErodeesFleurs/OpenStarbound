@@ -202,7 +202,7 @@ Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
     emoteFrames = jsonToArrayU<EmoteSize>(config.get("emoteFrames"));
 }
 
-Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(IAssetsConstPtr assets) {
+Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(AssetsConstPtr assets) {
   if (!assets)
     throw StarException("HumanoidTiming requires assets service");
   return HumanoidTiming(assets->json("/humanoid.config:humanoidTiming"));
@@ -273,8 +273,11 @@ bool& Humanoid::globalHeadRotation() {
   return *s_headRotation;
 };
 
-Humanoid::Humanoid(IAssetsConstPtr assets) {
+Humanoid::Humanoid(AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_speciesDatabase = std::move(speciesDatabase);
+  m_danceDatabase = std::move(danceDatabase);
+  m_particleDatabase = std::move(particleDatabase);
   m_fashion = std::make_shared<Fashion>();
 
   m_twoHanded = false;
@@ -295,15 +298,17 @@ Humanoid::Humanoid(IAssetsConstPtr assets) {
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(Json const& config, IAssetsConstPtr assets) : Humanoid(std::move(assets)) {
+Humanoid::Humanoid(Json const& config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+  : Humanoid(std::move(assets), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
   m_baseConfig = config;
   loadConfig(JsonObject());
   loadAnimation();
 }
 
-Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, IAssetsConstPtr assets) : Humanoid(std::move(assets)) {
+Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+  : Humanoid(std::move(assets), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
   m_identity = identity;
-  m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(identity, parameters, config));
+  m_baseConfig = (m_speciesDatabase ? m_speciesDatabase->humanoidConfig(identity, parameters, config) : Root::singleton().speciesDatabase()->humanoidConfig(identity, parameters, config));
   loadConfig(JsonObject());
   loadAnimation();
   setIdentity(identity);
@@ -855,7 +860,7 @@ bool Humanoid::danceCyclicOrEnded() const {
   if (!m_dance)
     return false;
 
-  auto danceDatabase = Root::singleton().danceDatabase();
+  auto danceDatabase = m_danceDatabase ? m_danceDatabase : Root::singleton().danceDatabase();
   auto dance = danceDatabase->getDance(*m_dance);
   return dance->cyclic || m_danceTimer > dance->duration;
 }
@@ -1493,7 +1498,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
-      auto personality = Root::singleton().speciesDatabase()->species(m_identity.species)->personalities()[0];
+      auto personality = (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->personalities()[0];
       portraitAnimator.setLocalTag("personalityIdle", personality.idle);
       portraitAnimator.setLocalTag("personalityArmIdle", personality.armIdle);
       portraitAnimator.resetLocalTransformationGroup("personalityHeadOffset");
@@ -1545,7 +1550,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
     auto personality = m_identity.personality;
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
-      personality = Root::singleton().speciesDatabase()->species(m_identity.species)->personalities()[0];
+      personality = (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->personalities()[0];
 
     if (mode != PortraitMode::Head) {
       if (!m_backArmFrameset.empty()) {
@@ -1699,10 +1704,10 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
 List<Drawable> Humanoid::renderSkull() const {
   return {Drawable::makeImage(
-      Root::singleton().speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
+      (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
 }
 
-HumanoidPtr Humanoid::makeDummy(Gender, IAssetsConstPtr assets) {
+HumanoidPtr Humanoid::makeDummy(Gender, AssetsConstPtr assets) {
   assets = assets ? std::move(assets) : Root::singleton().assets();
   HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"), assets);
 
@@ -2120,7 +2125,7 @@ Maybe<DancePtr> Humanoid::getDance() const {
   if (m_dance.isNothing())
     return {};
 
-  auto danceDatabase = Root::singleton().danceDatabase();
+  auto danceDatabase = m_danceDatabase ? m_danceDatabase : Root::singleton().danceDatabase();
   return danceDatabase->getDance(*m_dance);
 }
 
@@ -2241,7 +2246,7 @@ String Humanoid::defaultDeathParticles() const {
 }
 
 List<Particle> Humanoid::particles(String const& name) const {
-  auto particleDatabase = Root::singleton().particleDatabase();
+  auto particleDatabase = m_particleDatabase ? m_particleDatabase : Root::singleton().particleDatabase();
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
   res.reserve(particles.size());
@@ -2314,11 +2319,14 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
   return m_baseConfig;
 }
 
-NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, IAssetsConstPtr assets) {
+NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_speciesDatabase = std::move(speciesDatabase);
+  m_danceDatabase = std::move(danceDatabase);
+  m_particleDatabase = std::move(particleDatabase);
   m_config = config;
   m_humanoidParameters.reset(parameters);
-  m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   setupNetElements();
 }
 

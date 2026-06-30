@@ -26,7 +26,7 @@ ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEnt
 
   m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
   m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-  m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get()));
+  m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get(), m_client->biomeDatabase()));
 }
 
 void ScriptPane::displayed() {

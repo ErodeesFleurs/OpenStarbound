@@ -4,7 +4,7 @@
 #include "StarTcp.hpp"
 #include "StarMap.hpp"
 #include "StarServerRconClient.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 
 namespace Star {
 
@@ -13,7 +13,7 @@ class ServerRconThread;
 
 class ServerRconThread : public Thread {
 public:
-  ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, IConfigurationPtr configuration);
+  ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, ConfigurationPtr configuration);
   ~ServerRconThread();
 
   void start();

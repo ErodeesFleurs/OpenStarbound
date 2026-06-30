@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarGameTimers.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 #include "StarAiTypes.hpp"
 #include "StarRadioMessageDatabase.hpp"
@@ -21,7 +21,7 @@ using RadioMessagePopupPtr = SharedPtr<RadioMessagePopup>;
 class RadioMessagePopup : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   explicit RadioMessagePopup(Services services);
@@ -68,7 +68,7 @@ private:
   float m_slideTime;
 
   AudioInstancePtr m_chatterSound;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 };
 
 }

@@ -7,7 +7,7 @@
 
 namespace Star {
 
-InspectionTool::InspectionTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+InspectionTool::InspectionTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(std::move(assets), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
@@ -174,7 +174,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
   // check the tile for foreground mod or material
   MaterialId fgMaterial = world()->material(Vec2I::floor(position), TileLayer::Foreground);
   MaterialId fgMod = world()->mod(Vec2I(position.floor()), TileLayer::Foreground);
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = world()->materialDatabase();
   if (isRealMaterial(fgMaterial)) {
     if (isRealMod(fgMod))
       return {materialDatabase->modDescription(fgMod, species), {}};
@@ -184,7 +184,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // check for liquid at the tile
   auto liquidLevel = world()->liquidLevel(Vec2I::floor(position));
-  auto liquidsDatabase = Root::singleton().liquidsDatabase();
+  auto liquidsDatabase = world()->liquidsDatabase();
   if (liquidLevel.liquid != EmptyLiquidId)
     return {liquidsDatabase->liquidDescription(liquidLevel.liquid, species), {}};
 

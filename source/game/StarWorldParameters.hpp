@@ -4,7 +4,7 @@
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarForceRegions.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -189,10 +189,10 @@ ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr cons
 VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
 
 TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed);
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(IAssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed);
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed);
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(IAssetsConstPtr assets, uint64_t seed);
+AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed);
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(IAssetsConstPtr assets, String const& dungeonWorldName);
+FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName);
 
 }

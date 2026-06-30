@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -57,7 +57,7 @@ public:
   // If 'config' is a string type, it is assumed to be a descriptor file,
   // otherwise it should contain map configuration data.
   explicit TileDamageParameters(Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
-  TileDamageParameters(IAssetsConstPtr assets, Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
+  TileDamageParameters(AssetsConstPtr assets, Json config, Maybe<float> healthOverride = {}, Maybe<unsigned> requiredHarvestLevelOverride = {});
 
   float damageDone(TileDamage const& damage) const;
   float recoveryPerSecond() const;

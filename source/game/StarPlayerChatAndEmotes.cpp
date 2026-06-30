@@ -1,17 +1,23 @@
 #include "StarPlayerChatAndEmotes.hpp"
 #include "StarPlayer.hpp"
-#include "StarRoot.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarActorMovementController.hpp"
 
 namespace Star {
 
-PlayerChatAndEmotes::PlayerChatAndEmotes(Player* player)
+PlayerChatAndEmotes::PlayerChatAndEmotes(Player* player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor)
   : m_player(player),
+    m_danceDatabase(std::move(danceDatabase)),
+    m_emoteProcessor(std::move(emoteProcessor)),
     m_emoteState(HumanoidEmote::Idle),
     m_chatMessageChanged(false),
-    m_chatMessageUpdated(false) {}
+    m_chatMessageUpdated(false) {
+  if (!m_danceDatabase)
+    throw StarException("PlayerChatAndEmotes requires dance database service");
+  if (!m_emoteProcessor)
+    throw StarException("PlayerChatAndEmotes requires emote processor service");
+}
 
 void PlayerChatAndEmotes::init(float emoteCooldown, Vec2F blinkInterval) {
   m_emoteCooldown = emoteCooldown;
@@ -37,12 +43,10 @@ void PlayerChatAndEmotes::addEmote(HumanoidEmote const& emote, Maybe<float> emot
 }
 
 void PlayerChatAndEmotes::setDance(Maybe<String> const& danceName) {
-  starAssert(!m_player->isSlave());
   m_dance = danceName;
 
   if (danceName.isValid()) {
-    auto danceDatabase = Root::singleton().danceDatabase();
-    DancePtr dance = danceDatabase->getDance(*danceName);
+    DancePtr dance = m_danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
   }
 }
@@ -73,7 +77,7 @@ void PlayerChatAndEmotes::tickChatAndEmotes(float dt) {
     m_dance = {};
 
   if (m_chatMessageUpdated) {
-    auto state = Root::singleton().emoteProcessor()->detectEmotes(m_chatMessage);
+    auto state = m_emoteProcessor->detectEmotes(m_chatMessage);
     if (state != HumanoidEmote::Idle)
       addEmote(state);
     m_chatMessageUpdated = false;
@@ -90,7 +94,7 @@ void PlayerChatAndEmotes::tickBlink(float dt) {
 }
 
 HumanoidEmote PlayerChatAndEmotes::detectEmotes(String const& chatter) {
-  return Root::singleton().emoteProcessor()->detectEmotes(chatter);
+  return m_emoteProcessor->detectEmotes(chatter);
 }
 
 HumanoidEmote PlayerChatAndEmotes::emoteState() const {
@@ -123,4 +127,3 @@ void PlayerChatAndEmotes::clearChatMessageChanged() {
 }
 
 }
-

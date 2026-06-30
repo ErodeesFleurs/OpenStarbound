@@ -2,7 +2,7 @@
 
 namespace Star {
 
-LuaRoot::LuaRoot(IAssetsConstPtr assets) {
+LuaRoot::LuaRoot(AssetsConstPtr assets) {
   auto& root = Root::singleton();
   m_assets = assets ? std::move(assets) : root.assets();
   m_scriptCache = make_shared<ScriptCache>(m_assets);
@@ -154,7 +154,7 @@ LuaEngine& LuaRoot::luaEngine() const {
   return *m_luaEngine;
 }
 
-LuaRoot::ScriptCache::ScriptCache(IAssetsConstPtr assets) : m_assets(std::move(assets)) {}
+LuaRoot::ScriptCache::ScriptCache(AssetsConstPtr assets) : m_assets(std::move(assets)) {}
 
 void LuaRoot::ScriptCache::loadScript(LuaEngine& engine, String const& assetPath) {
   RecursiveMutexLocker locker(mutex);

@@ -34,10 +34,73 @@ const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_clientState(m_assets), m_mainPlayer(std::move(mainPlayer)), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
+WorldClient::WorldClient(PlayerPtr mainPlayer,
+    LuaRootPtr luaRoot,
+    AssetsConstPtr assets,
+    ConfigurationPtr configuration,
+    MaterialDatabaseConstPtr materialDatabase,
+    ItemDatabaseConstPtr itemDatabase,
+    ObjectDatabaseConstPtr objectDatabase,
+    SpeciesDatabaseConstPtr speciesDatabase,
+    EntityFactoryConstPtr entityFactory,
+    LiquidsDatabaseConstPtr liquidsDatabase,
+    BiomeDatabaseConstPtr biomeDatabase,
+    FunctionDatabaseConstPtr functionDatabase,
+    BehaviorDatabaseConstPtr behaviorDatabase,
+    ParticleDatabaseConstPtr particleDatabase,
+    DamageDatabaseConstPtr damageDatabase,
+    EffectSourceDatabaseConstPtr effectSourceDatabase,
+    TechDatabaseConstPtr techDatabase,
+    StatusEffectDatabaseConstPtr statusEffectDatabase,
+    PlantDatabaseConstPtr plantDatabase,
+    TreasureDatabaseConstPtr treasureDatabase,
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+  : m_luaRoot(std::move(luaRoot)),
+    m_assets(std::move(assets)),
+    m_clientState(m_assets),
+    m_mainPlayer(std::move(mainPlayer)),
+    m_configuration(std::move(configuration)),
+    m_materialDatabase(std::move(materialDatabase)),
+    m_itemDatabase(std::move(itemDatabase)),
+    m_objectDatabase(std::move(objectDatabase)),
+    m_speciesDatabase(std::move(speciesDatabase)),
+    m_entityFactory(std::move(entityFactory)),
+    m_liquidsDatabase(std::move(liquidsDatabase)),
+    m_biomeDatabase(std::move(biomeDatabase)),
+    m_functionDatabase(std::move(functionDatabase)),
+    m_behaviorDatabase(std::move(behaviorDatabase)),
+    m_particleDatabase(std::move(particleDatabase)),
+    m_damageDatabase(std::move(damageDatabase)),
+    m_effectSourceDatabase(std::move(effectSourceDatabase)),
+    m_techDatabase(std::move(techDatabase)),
+    m_statusEffectDatabase(std::move(statusEffectDatabase)),
+    m_plantDatabase(std::move(plantDatabase)),
+    m_treasureDatabase(std::move(treasureDatabase)),
+    m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+  if (!m_assets)
+    throw WorldClientException("WorldClient requires assets service");
+  if (!m_configuration)
+    throw WorldClientException("WorldClient requires configuration service");
+  if (!m_materialDatabase)
+    throw WorldClientException("WorldClient requires material database service");
+  if (!m_itemDatabase)
+    throw WorldClientException("WorldClient requires item database service");
   if (!m_objectDatabase)
     throw WorldClientException("WorldClient requires object database service");
+  if (!m_speciesDatabase)
+    throw WorldClientException("WorldClient requires species database service");
+  if (!m_entityFactory)
+    throw WorldClientException("WorldClient requires entity factory service");
+  if (!m_liquidsDatabase)
+    throw WorldClientException("WorldClient requires liquids database service");
+  if (!m_biomeDatabase)
+    throw WorldClientException("WorldClient requires biome database service");
+  if (!m_functionDatabase)
+    throw WorldClientException("WorldClient requires function database service");
+  if (!m_particleDatabase)
+    throw WorldClientException("WorldClient requires particle database service");
+  if (!m_damageDatabase)
+    throw WorldClientException("WorldClient requires damage database service");
 
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
@@ -363,7 +426,7 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
   if (!inWorld())
     return {};
 
-  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, [this](Vec2I pos, TileModification) {
+  return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase, [this](Vec2I pos, TileModification) {
       return !isTileProtected(pos);
     }).first;
 }
@@ -382,10 +445,10 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
     for (size_t i = 0; i != list->size(); ++i) {
       auto& pair = list->at(i);
       if (!isTileProtected(pair.first)) {
-        auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction);
+        auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase);
 
         if (result.first) {
-          informTilePrediction(pair.first, pair.second);
+          m_tilePrediction.informTilePrediction(pair.first, pair.second);
           success.append(pair);
           yay = true;
           continue;
@@ -418,7 +481,7 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
   
   TileModificationList success, failures;
   for (auto const& pair : modificationList) {
-    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
+    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second, m_materialDatabase))
       success.append(pair);
     else
       failures.append(pair);
@@ -432,7 +495,7 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
 bool WorldClient::damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const {
   if (!inWorld())
     return false;
-  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage);
+  return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage, m_materialDatabase);
 }
 
 float WorldClient::gravity(Vec2F const& pos) const {
@@ -475,7 +538,7 @@ WorldClientState& WorldClient::clientState() {
 
 void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   if (!m_lighting.m_lightingThread && m_lighting.m_asyncLighting)
-    m_lighting.m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
+    m_lighting.m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&StarWorldClientLighting::lightingMain), &m_lighting);
 
   renderData.clear();
   if (!inWorld())
@@ -611,7 +674,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     if (m_lighting.m_asyncLighting)
       m_lighting.m_lightingCond.signal();
     else
-      lightingCalc();
+      m_lighting.lightingCalc();
   }
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
@@ -723,10 +786,9 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
   }
 
-  auto functionDatabase = Root::singleton().functionDatabase();
   for (auto& layer : renderData.parallaxLayers) {
     if (!layer.timeOfDayCorrelation.empty())
-      layer.alpha *= clamp(static_cast<float>(functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength())), 0.0f, 1.0f);
+      layer.alpha *= clamp(static_cast<float>(m_functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength())), 0.0f, 1.0f);
   }
 
   stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
@@ -748,11 +810,11 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 }
 
 List<AudioInstancePtr> WorldClient::pullPendingAudio() {
-  return take(m_audio.m_samples);
+  return m_audio.pullPendingAudio();
 }
 
 List<AudioInstancePtr> WorldClient::pullPendingMusic() {
-  return take(m_audio.m_music);
+  return m_audio.pullPendingMusic();
 }
 
 void WorldClient::dimWorld() {
@@ -760,11 +822,11 @@ void WorldClient::dimWorld() {
 }
 
 bool WorldClient::interactiveHighlightMode() const {
-  return m_lighting.m_interactiveHighlightMode;
+  return m_lighting.interactiveHighlightMode();
 }
 
 void WorldClient::setInteractiveHighlightMode(bool enabled) {
-  m_lighting.m_interactiveHighlightMode = enabled;
+  m_lighting.setInteractiveHighlightMode(enabled);
 }
 
 void WorldClient::setParallax(ParallaxPtr newParallax) {
@@ -791,19 +853,19 @@ void WorldClient::resetGravity() {
 }
 
 bool WorldClient::fullBright() const {
-  return m_lighting.m_fullBright;
+  return m_lighting.fullBright();
 }
 
 void WorldClient::setFullBright(bool fullBright) {
-  m_lighting.m_fullBright = fullBright;
+  m_lighting.setFullBright(fullBright);
 }
 
 bool WorldClient::asyncLighting() const {
-  return m_lighting.m_asyncLighting;
+  return m_lighting.asyncLighting();
 }
 
 void WorldClient::setAsyncLighting(bool asyncLighting) {
-  m_lighting.m_asyncLighting = asyncLighting;
+  m_lighting.setAsyncLighting(asyncLighting);
 }
 
 bool WorldClient::collisionDebug() const {
@@ -815,10 +877,9 @@ void WorldClient::setCollisionDebug(bool collisionDebug) {
 }
 
 void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
-  auto& root = Root::singleton();
-  auto materialDatabase = root.materialDatabase();
-  auto itemDatabase = root.itemDatabase();
-  auto entityFactory = root.entityFactory();
+  auto materialDatabase = m_materialDatabase;
+  auto itemDatabase = m_itemDatabase;
+  auto entityFactory = m_entityFactory;
 
   for (auto const& packet : packets) {
     if (!inWorld() && !is<WorldStartPacket>(packet))
@@ -901,12 +962,12 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
       for (int x = tileRegion.xMin(); x < tileRegion.xMax(); ++x) {
         for (int y = tileRegion.yMin(); y < tileRegion.yMax(); ++y)
-          readNetTile({x, y}, tileArrayUpdate->array(x - tileRegion.xMin(), y - tileRegion.yMin()), false);
+          m_tilePrediction.readNetTile({x, y}, tileArrayUpdate->array(x - tileRegion.xMin(), y - tileRegion.yMin()), false);
       }
       dirtyCollision(tileRegion);
 
     } else if (auto tileUpdate = as<TileUpdatePacket>(packet)) {
-      readNetTile(tileUpdate->position, tileUpdate->tile);
+      m_tilePrediction.readNetTile(tileUpdate->position, tileUpdate->tile);
 
     } else if (auto tileDamageUpdate = as<TileDamageUpdatePacket>(packet)) {
       if (ClientTile* tile = m_tileArray->modifyTile(tileDamageUpdate->position)) {
@@ -1149,23 +1210,7 @@ void WorldClient::update(float dt) {
   if (!inWorld())
     return;
 
-  auto assets = m_assets;
-
-  float expireTime = min(float(m_latency + 800), 2000.f);
-  auto now = Time::monotonicMilliseconds();
-  eraseWhere(m_tilePrediction.m_predictedTiles, [&](auto& pair) {
-    float expiry = static_cast<float>(now - pair.second.time) / expireTime;
-    auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
-    auto size = Vec2F::filled(0.875f - expiry * 0.875f);
-    auto poly = PolyF(RectF::withCenter(center, size));
-    SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
-    if (expiry >= 1.0f) {
-      dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
-      return true;
-    } else {
-      return false;
-    }
-  });
+  m_tilePrediction.expirePredictedTiles();
 
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
@@ -1226,7 +1271,7 @@ void WorldClient::update(float dt) {
   m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
 
   m_damageManager->update(dt);
-  handleDamageNotifications();
+  m_damageFX.handleDamageNotifications();
 
   m_sky->setAltitude(m_clientState.windowCenter()[1]);
   m_sky->update(dt);
@@ -1261,12 +1306,12 @@ void WorldClient::update(float dt) {
     m_requestedDrops.clear();
   }
 
-  sparkDamagedBlocks();
+  m_damageFX.sparkDamagedBlocks();
 
   m_particles->addParticles(m_weather.pullNewParticles());
   m_particles->update(dt, RectF(particleRegion), m_weather.wind());
 
-  if (auto audioSample = m_audio.m_ambientSounds.updateAmbient(currentAmbientNoises(), m_sky->isDayTime()))
+  if (auto audioSample = m_audio.m_ambientSounds.updateAmbient(m_audio.currentAmbientNoises(), m_sky->isDayTime()))
     m_audio.m_samples.append(audioSample);
   if (auto audioSample = m_audio.m_ambientSounds.updateWeather(currentWeatherNoises()))
     m_audio.m_samples.append(audioSample);
@@ -1295,15 +1340,15 @@ void WorldClient::update(float dt) {
 
   if (auto newAltMusic = m_mainPlayer->pullPendingAltMusic()) {
     if (newAltMusic->first)
-      playAltMusic(newAltMusic->first->first, newAltMusic->second, newAltMusic->first->second);
+      m_audio.playAltMusic(newAltMusic->first->first, newAltMusic->second, newAltMusic->first->second);
     else
-      stopAltMusic(newAltMusic->second);
+      m_audio.stopAltMusic(newAltMusic->second);
   }
 
-  if (auto audioSample = m_audio.m_altMusicTrack.updateAmbient(currentAltMusicTrack(), true))
+  if (auto audioSample = m_audio.m_altMusicTrack.updateAmbient(m_audio.currentAltMusicTrack(), true))
     m_audio.m_music.append(audioSample);
 
-  if (auto audioSample = m_audio.m_musicTrack.updateAmbient(currentMusicTrack(), m_sky->isDayTime()))
+  if (auto audioSample = m_audio.m_musicTrack.updateAmbient(m_audio.currentMusicTrack(), m_sky->isDayTime()))
     m_audio.m_music.append(audioSample);
 
   for (EntityId entityId : toRemove)
@@ -1354,16 +1399,60 @@ uint64_t WorldClient::currentStep() const {
   return m_currentStep;
 }
 
-IAssetsConstPtr WorldClient::assets() const {
+AssetsConstPtr WorldClient::assets() const {
   return m_assets;
 }
 
-IItemDatabaseConstPtr WorldClient::itemDatabase() const {
+ItemDatabaseConstPtr WorldClient::itemDatabase() const {
   return m_itemDatabase;
 }
 
 ObjectDatabaseConstPtr WorldClient::objectDatabase() const {
   return m_objectDatabase;
+}
+
+MaterialDatabaseConstPtr WorldClient::materialDatabase() const {
+  return m_materialDatabase;
+}
+
+LiquidsDatabaseConstPtr WorldClient::liquidsDatabase() const {
+  return m_liquidsDatabase;
+}
+
+ParticleDatabaseConstPtr WorldClient::particleDatabase() const {
+  return m_particleDatabase;
+}
+
+EffectSourceDatabaseConstPtr WorldClient::effectSourceDatabase() const {
+  return m_effectSourceDatabase;
+}
+
+TechDatabaseConstPtr WorldClient::techDatabase() const {
+  return m_techDatabase;
+}
+
+StatusEffectDatabaseConstPtr WorldClient::statusEffectDatabase() const {
+  return m_statusEffectDatabase;
+}
+
+PlantDatabaseConstPtr WorldClient::plantDatabase() const {
+  return m_plantDatabase;
+}
+
+TreasureDatabaseConstPtr WorldClient::treasureDatabase() const {
+  return m_treasureDatabase;
+}
+
+ImageMetadataDatabaseConstPtr WorldClient::imageMetadataDatabase() const {
+  return m_imageMetadataDatabase;
+}
+
+FunctionDatabaseConstPtr WorldClient::functionDatabase() const {
+  return m_functionDatabase;
+}
+
+BehaviorDatabaseConstPtr WorldClient::behaviorDatabase() const {
+  return m_behaviorDatabase;
 }
 
 MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
@@ -1504,22 +1593,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
 }
 
 bool WorldClient::waitForLighting(WorldRenderData* renderData) {
-  MutexLocker prepLocker(m_lighting.m_lightMapPrepMutex);
-  MutexLocker lightMapLocker(m_lighting.m_lightMapMutex);
-  if (renderData && !m_lighting.m_lightMap.empty()) {
-    for (auto& previewTile : m_previewTiles) {
-      if (previewTile.updateLight) {
-        Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lighting.m_lightMinPosition);
-        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < static_cast<int>(m_lighting.m_lightMap.width())
-         && lightArrayPos[1] >= 0 && lightArrayPos[1] < static_cast<int>(m_lighting.m_lightMap.height()))
-          m_lighting.m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
-      }
-    }
-    renderData->lightMap = std::move(m_lighting.m_lightMap);
-    renderData->lightMinPosition = m_lighting.m_lightMinPosition;
-    return true;
-  }
-  return false;
+  return m_lighting.waitForLighting(renderData);
 }
 
 WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
@@ -1573,127 +1647,6 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
     m_outgoingPackets.append(make_shared<DamageNotificationPacket>(std::move(remoteDamageNotification)));
 }
 
-void WorldClient::handleDamageNotifications() {
-  if (!inWorld())
-    return;
-
-  auto renderParticle = [&](Vec2F position, float amount, String const& damageNumberParticleKind) {
-    int displayValue = static_cast<int>(ceil(amount - 0.1f));
-    if (displayValue <= 0)
-      return;
-    Particle particle = Root::singleton().particleDatabase()->particle(damageNumberParticleKind);
-    particle.position += position;
-    particle.string = particle.string.replace("$dmg$", toString(displayValue));
-    m_particles->add(particle);
-  };
-
-  eraseWhere(m_damageFX.m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
-      if (Time::monotonicTime() - entry.second.timestamp > m_damageFX.m_damageNotificationBatchDuration) {
-        renderParticle(entry.second.position, entry.second.amount, entry.first.damageNumberParticleKind);
-        return true;
-      }
-      return false;
-    });
-
-  for (auto const& damageNotification : m_damageManager->pullPendingNotifications()) {
-    auto damageDatabase = Root::singleton().damageDatabase();
-    DamageKind const& damageKind = damageDatabase->damageKind(damageNotification.damageSourceKind);
-    ElementalType const& elementalType = damageDatabase->elementalType(damageKind.elementalType);
-
-    auto damageNumberParticleKind = elementalType.damageNumberParticles.get(damageNotification.hitType);
-    auto damageNumberKey = DamageNumberKey{ damageNumberParticleKind, damageNotification.sourceEntityId, damageNotification.targetEntityId};
-
-
-    DamageNumber number;
-    if (m_damageFX.m_damageNumbers.contains(damageNumberKey)) {
-      number = m_damageFX.m_damageNumbers.take(damageNumberKey);
-
-      if (damageNotification.hitType == HitType::Kill)
-        renderParticle(damageNotification.position,
-            damageNotification.damageDealt + number.amount,
-            damageNumberKey.damageNumberParticleKind);
-    } else {
-      if (damageNotification.hitType == HitType::Kill)
-        renderParticle(damageNotification.position, damageNotification.damageDealt, damageNumberParticleKind);
-      number.amount = 0;
-      number.timestamp = Time::monotonicTime();
-    }
-
-    if (damageNotification.hitType != HitType::Kill) {
-      number.position = damageNotification.position;
-      number.amount += damageNotification.damageDealt;
-      m_damageFX.m_damageNumbers[damageNumberKey] = number;
-    }
-
-    String material = damageNotification.targetMaterialKind;
-    if (!material.empty() && damageKind.effects.contains(material)) {
-      // default to normal hit
-      HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
-      m_audio.m_samples.appendAll(soundsFromDefinition(m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
-      
-      auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
-      
-      const List<Directives>* directives = nullptr;
-      if (auto& worldTemplate = m_worldTemplate) {
-        if (const auto& parameters = worldTemplate->worldParameters())
-          if (auto& globalDirectives = parameters->globalDirectives)
-            directives = &globalDirectives.get();
-      }
-      if (directives) {
-        int directiveIndex = unsigned(damageNotification.targetEntityId) % directives->size();
-        for (auto& p : hitParticles)
-          p.directives.append(directives->get(directiveIndex));
-      }
-      
-      m_particles->addParticles(hitParticles);
-    }
-  }
-}
-
-void WorldClient::sparkDamagedBlocks() {
-  if (!inWorld())
-    return;
-
-  auto materialDatabase = m_materialDatabase;
-
-  for (auto pos : m_damagedBlocks.values()) {
-    if (auto tile = m_tileArray->modifyTile(pos)) {
-      if (tile->backgroundDamage.healthy() && tile->foregroundDamage.healthy())
-        m_damagedBlocks.remove(pos);
-
-      if (isRealMaterial(tile->foreground) && tile->foregroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
-          && (Random::randf() < m_damageFX.m_blockDamageParticleProbability)) {
-        auto particle = m_damageFX.m_blockDamageParticle;
-        particle.color = materialDatabase->materialParticleColor(tile->foreground, tile->foregroundHueShift);
-
-        if (isTileProtected(pos))
-          particle = m_damageFX.m_blockDingParticle;
-
-        particle.position += centerOfTile(pos);
-        particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
-        particle.applyVariance(m_damageFX.m_blockDamageParticleVariance);
-        m_particles->add(particle);
-      }
-
-      if (isRealMaterial(tile->background) && tile->backgroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
-          && (Random::randf() < m_damageFX.m_blockDamageParticleProbability)) {
-        auto particle = m_damageFX.m_blockDamageParticle;
-        particle.color = materialDatabase->materialParticleColor(tile->background, tile->backgroundHueShift);
-
-        if (isTileProtected(pos))
-          particle = m_damageFX.m_blockDingParticle;
-
-        particle.position += centerOfTile(pos);
-        particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
-        particle.applyVariance(m_damageFX.m_blockDamageParticleVariance);
-        m_particles->add(particle);
-      }
-    }
-  }
-}
-
 InteractiveEntityPtr WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
   if (!inWorld())
     return {};
@@ -1728,100 +1681,6 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
   return pair.first;
 }
 
-void WorldClient::lightingTileGather() {
-  int64_t start = Time::monotonicMicroseconds();
-  Vec3F environmentLight = m_sky->environmentLight().toRgbF();
-  float undergroundLevel = m_worldTemplate->undergroundLevel();
-  auto liquidsDatabase = m_liquidsDatabase;
-  auto materialDatabase = m_materialDatabase;
-
-  // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
-
-  m_tileArray->tileEvalColumnsParallel(m_lighting.m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
-    size_t baseIndex = m_lighting.m_lightingCalculator.baseIndexFor(pos);
-    for (size_t y = 0; y < ySize; ++y) {
-      auto& tile = column[y];
-      Vec3F light;
-      if (tile.foreground != EmptyMaterialId || tile.foregroundMod != NoModId)
-        light += materialDatabase->radiantLight(tile.foreground, tile.foregroundMod);
-
-      if (tile.liquid.liquid != EmptyLiquidId && tile.liquid.level != 0.0f)
-        light += liquidsDatabase->radiantLight(tile.liquid);
-      if (tile.foregroundLightTransparent) {
-        if (tile.background != EmptyMaterialId || tile.backgroundMod != NoModId)
-          light += materialDatabase->radiantLight(tile.background, tile.backgroundMod);
-        if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
-          light += environmentLight;
-      }
-      m_lighting.m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
-    }
-  });
-  LogMap::set("client_render_world_async_light_gather", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
-}
-
-void WorldClient::lightingCalc() {
-  MutexLocker prepLocker(m_lighting.m_lightMapPrepMutex);
-  if (!m_lighting.m_pendingLightReady.load())
-    return;
-  m_lighting.m_pendingLightReady = false;
-  RectI lightRange = m_lighting.m_pendingLightRange;
-  List<LightSource> lights = std::move(m_lighting.m_pendingLights);
-  List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_lighting.m_pendingParticleLights);
-  auto& root = Root::singleton();
-  auto configuration = root.configuration();
-  bool newLighting = configuration->get("newLighting").optBool().value(true);
-  bool monochrome = configuration->get("monochromeLighting").toBool();
-  m_lighting.m_lightingCalculator.setParameters(m_lighting.m_lightingConfig.set("pointAdditive", newLighting));
-  m_lighting.m_lightingCalculator.setMonochrome(monochrome);
-  m_lighting.m_lightingCalculator.begin(lightRange);
-  lightingTileGather();
-
-  prepLocker.unlock();
-
-  for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lighting.m_lightingCalculator.calculationRegion().min()), light.position);
-    if (light.type == LightType::Spread)
-      m_lighting.m_lightingCalculator.addSpreadLight(position, light.color);
-    else {
-      if (light.type == LightType::PointAsSpread) {
-        if (!newLighting)
-          m_lighting.m_lightingCalculator.addSpreadLight(position, light.color);
-        else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
-          m_lighting.m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
-          m_lighting.m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
-        }
-      } else {
-        m_lighting.m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
-      }
-    }
-  }
-
-  for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lighting.m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lighting.m_lightingCalculator.addSpreadLight(position, lightPair.second);
-  }
-
-  m_lighting.m_lightingCalculator.calculate(m_lighting.m_pendingLightMap);
-  {
-    MutexLocker mapLocker(m_lighting.m_lightMapMutex);
-    m_lighting.m_lightMinPosition = lightRange.min();
-    m_lighting.m_lightMap = std::move(m_lighting.m_pendingLightMap);
-  }
-}
-
-void WorldClient::lightingMain() {
-  MutexLocker condLocker(m_lighting.m_lightingMutex);
-  while (true) {
-    m_lighting.m_lightingCond.wait(m_lighting.m_lightingMutex);
-    if (m_lighting.m_stopLightingThread)
-      return;
-
-    int64_t start = Time::monotonicMicroseconds();
-    lightingCalc();
-    LogMap::set("client_render_world_async_light_calc", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
-  }
-}
-
 void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   clearWorld();
   m_outgoingPackets.append(make_shared<WorldStartAcknowledgePacket>());
@@ -1836,7 +1695,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_clientId = startPacket.clientId;
   m_mainPlayer->clientContext()->setConnectionId(startPacket.clientId);
   auto entitySpace = connectionEntitySpace(startPacket.clientId);
-  m_worldTemplate = make_shared<WorldTemplate>(m_assets, startPacket.templateData);
+  m_worldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, startPacket.templateData);
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {
@@ -1877,7 +1736,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_weather.setup(m_geometry, [this](Vec2I const& pos) {
       auto const& tile = m_tileArray->tile(pos);
       return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
-    });
+    }, m_biomeDatabase);
   m_weather.readUpdate(startPacket.weatherData, m_clientState.netCompatibilityRules());
 
   m_lighting.m_lightingCalculator.setMonochrome(m_configuration->get("monochromeLighting").toBool());
@@ -1969,24 +1828,8 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
     auto firstNetState = entity->writeNetState(0, netRules);
     m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-      Root::singleton().entityFactory()->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
+      m_entityFactory->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
   }
-}
-
-Vec2I WorldClient::environmentBiomeTrackPosition() const {
-  if (!inWorld())
-    return {};
-
-  auto pos = Vec2I::floor(m_clientState.windowCenter());
-  return {m_geometry.xwrap(pos[0]), pos[1]};
-}
-
-AmbientNoisesDescriptionPtr WorldClient::currentAmbientNoises() const {
-  if (!inWorld())
-    return {};
-
-  Vec2I pos = environmentBiomeTrackPosition();
-  return m_worldTemplate->ambientNoises(pos[0], pos[1]);
 }
 
 WeatherNoisesDescriptionPtr WorldClient::currentWeatherNoises() const {
@@ -2000,107 +1843,12 @@ WeatherNoisesDescriptionPtr WorldClient::currentWeatherNoises() const {
     return make_shared<WeatherNoisesDescription>(std::move(trackOptions));
 }
 
-AmbientNoisesDescriptionPtr WorldClient::currentMusicTrack() const {
-  if (!inWorld())
-    return {};
-
-  Vec2I pos = environmentBiomeTrackPosition();
-  return m_worldTemplate->musicTrack(pos[0], pos[1]);
-}
-
-AmbientNoisesDescriptionPtr WorldClient::currentAltMusicTrack() const {
-  if (!inWorld())
-    return {};
-
-  return m_audio.m_altMusicTrackDescription;
-}
-
-void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime, int loops) {
-  auto newTrackGroup = AmbientTrackGroup(newTracks);
-  m_audio.m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
-  if (!m_audio.m_altMusicActive) {
-    m_audio.m_musicTrack.setVolume(0.0, 0.0, fadeTime);
-    m_audio.m_altMusicTrack.setVolume(1.0, 0.0, fadeTime);
-    m_audio.m_altMusicActive = true;
-  }
-}
-
-void WorldClient::stopAltMusic(float fadeTime) {
-  if (m_audio.m_altMusicActive) {
-    m_audio.m_musicTrack.setVolume(1.0, 0.0, fadeTime);
-    m_audio.m_altMusicTrack.setVolume(0.0, 0.0, fadeTime);
-    m_audio.m_altMusicActive = false;
-  }
-}
-
 BiomeConstPtr WorldClient::mainEnvironmentBiome() const {
   if (!inWorld())
     return {};
 
-  Vec2I pos = environmentBiomeTrackPosition();
+  Vec2I pos = m_audio.environmentBiomeTrackPosition();
   return m_worldTemplate->environmentBiome(pos[0], pos[1]);
-}
-
-bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) {
-  ClientTile* tile = m_tileArray->modifyTile(pos);
-  if (!tile)
-    return false;
-
-  if (!m_tilePrediction.m_predictedTiles.empty()) {
-    auto findPrediction = m_tilePrediction.m_predictedTiles.find(pos);
-    if (findPrediction != m_tilePrediction.m_predictedTiles.end()) {
-      auto& p = findPrediction->second;
-
-      if (p.collision && *p.collision == netTile.collision)
-        p.collision.reset();
-      if (p.foreground && (*p.foreground == StructureMaterialId || *p.foreground == netTile.foreground))
-        p.foreground.reset();
-      if (p.foregroundMod && *p.foregroundMod == netTile.foregroundMod)
-        p.foregroundMod.reset();
-      if (p.foregroundHueShift && *p.foregroundHueShift == netTile.foregroundHueShift)
-        p.foregroundHueShift.reset();
-      if (p.foregroundModHueShift && *p.foregroundModHueShift == netTile.foregroundModHueShift)
-        p.foregroundModHueShift.reset();
-
-      if (p.background && *p.background == netTile.background)
-        p.background.reset();
-      if (p.backgroundMod && *p.backgroundMod == netTile.backgroundMod)
-        p.backgroundMod.reset();
-      if (p.backgroundHueShift && *p.backgroundHueShift == netTile.backgroundHueShift)
-        p.backgroundHueShift.reset();
-      if (p.backgroundModHueShift && *p.backgroundModHueShift == netTile.backgroundModHueShift)
-        p.backgroundModHueShift.reset();
-
-      if (!p)
-        m_tilePrediction.m_predictedTiles.erase(findPrediction);
-    }
-  }
-
-  tile->background = netTile.background;
-  tile->backgroundHueShift = netTile.backgroundHueShift;
-  tile->backgroundColorVariant = netTile.backgroundColorVariant;
-  tile->backgroundMod = netTile.backgroundMod;
-  tile->backgroundModHueShift = netTile.backgroundModHueShift;
-  tile->foreground = netTile.foreground;
-  tile->foregroundHueShift = netTile.foregroundHueShift;
-  tile->foregroundColorVariant = netTile.foregroundColorVariant;
-  tile->foregroundMod = netTile.foregroundMod;
-  tile->foregroundModHueShift = netTile.foregroundModHueShift;
-  tile->collision = netTile.collision;
-  tile->blockBiomeIndex = netTile.blockBiomeIndex;
-  tile->environmentBiomeIndex = netTile.environmentBiomeIndex;
-  tile->liquid = netTile.liquid.liquidLevel();
-  tile->dungeonId = netTile.dungeonId;
-
-  auto materialDatabase = m_materialDatabase;
-  tile->backgroundLightTransparent = materialDatabase->backgroundLightTransparent(tile->background);
-  tile->foregroundLightTransparent =
-      materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
-
-  if (updateCollision)
-    dirtyCollision(RectI::withSize(pos, {1, 1}));
-
-  return true;
 }
 
 void WorldClient::dirtyCollision(RectI const& region) {
@@ -2118,7 +1866,7 @@ void WorldClient::freshenCollision(RectI const& region) {
 float WorldClient::lightLevel(Vec2F const& pos) const {
   if (!inWorld())
     return 0.0f;
-  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lighting.m_lightIntensityCalculator, pos);
+  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lighting.m_lightIntensityCalculator, pos, m_materialDatabase, m_liquidsDatabase);
 }
 
 bool WorldClient::breathable(Vec2F const& pos) const {
@@ -2395,50 +2143,6 @@ void WorldClient::renderCollisionDebug() {
         logPoly(pmc->collision, pmc->position, 1.0f, 1.0f, 1.0f);
       }
     }
-  }
-}
-
-void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const& modification) {
-  auto now = Time::monotonicMilliseconds();
-  auto& p = m_tilePrediction.m_predictedTiles[pos];
-  p.time = now;
-  if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
-    if (placeMaterial->layer == TileLayer::Foreground) {
-      auto materialDatabase = m_materialDatabase;
-      if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
-       && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
-        p.foreground = placeMaterial->material;
-        p.foregroundHueShift = placeMaterial->materialHueShift;
-      }
-      else
-        p.foreground = StructureMaterialId;
-      if (placeMaterial->collisionOverride != TileCollisionOverride::None)
-        p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
-      else
-        p.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
-      dirtyCollision(RectI::withSize(pos, { 1, 1 }));
-    } else {
-      p.background = placeMaterial->material;
-      p.backgroundHueShift = placeMaterial->materialHueShift;
-    }
-  }
-  else if (auto placeMod = modification.ptr<PlaceMod>()) {
-    if (placeMod->layer == TileLayer::Foreground)
-      p.foregroundMod = placeMod->mod;
-    else
-      p.backgroundMod = placeMod->mod;
-  }
-  else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
-    if (placeColor->layer == TileLayer::Foreground)
-      p.foregroundColorVariant = placeColor->color;
-    else
-      p.backgroundColorVariant = placeColor->color;
-  }
-  else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
-    if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
-      p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
-    else
-      p.liquid->level += placeLiquid->liquidLevel;
   }
 }
 

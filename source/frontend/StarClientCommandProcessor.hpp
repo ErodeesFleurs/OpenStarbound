@@ -1,9 +1,9 @@
 #pragma once
 
 #include "StarShellParser.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarUniverseClient.hpp"
@@ -21,8 +21,8 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ClientCommandProcessorServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
   ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
@@ -87,8 +87,8 @@ private:
   UniverseClientPtr m_universeClient;
   CinematicPtr m_cinematicOverlay;
   MainInterfacePaneManager* m_paneManager;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;

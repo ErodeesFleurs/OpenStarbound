@@ -69,7 +69,7 @@ InteractAction FarmableObject::interact(InteractRequest const&) {
 
 bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
-    for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
+    for (auto const& treasureItem : world()->treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
       world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
@@ -93,7 +93,7 @@ void FarmableObject::enterStage(int newStage) {
   // attempt to consume water from the soil if needed
   if (m_consumeSoilMoisture && newStage > m_stage) {
     if (auto orientation = currentOrientation()) {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = world()->materialDatabase();
       auto wetToDryMods = config()->assets->json("/farming.config:wetToDryMods");
 
       // try to transform all anchor spaces, back out and reset stage time if
@@ -121,7 +121,7 @@ void FarmableObject::enterStage(int newStage) {
     Vec2I position = tilePosition();
 
     TreeVariant tv;
-    auto plantDatabase = Root::singleton().plantDatabase();
+    auto plantDatabase = world()->plantDatabase();
     if (!foliageName.empty())
       tv = plantDatabase->buildTreeVariant(stemName, stemHueShift, foliageName, foliageHueShift);
     else

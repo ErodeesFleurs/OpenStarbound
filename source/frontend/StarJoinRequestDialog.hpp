@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 #include "StarRpcPromise.hpp"
 
@@ -12,7 +12,7 @@ using JoinRequestDialogPtr = SharedPtr<JoinRequestDialog>;
 class JoinRequestDialog : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
   };
 
   explicit JoinRequestDialog(Services services);
@@ -26,7 +26,7 @@ public:
 private:
   void reply(P2PJoinRequestReply reply);
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   function<void(P2PJoinRequestReply)> m_callback;
   bool m_confirmed;
 };

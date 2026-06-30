@@ -5,7 +5,7 @@
 #include "StarCelestialParameters.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarSkyRenderData.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -23,8 +23,8 @@ using SkyConstPtr = SharedPtr<Sky const>;
 // dividing by the pixel ratio.
 class Sky {
 public:
-  explicit Sky(IAssetsConstPtr assets);
-  Sky(SkyParameters const& skyParameters, bool inOrbit, IAssetsConstPtr assets);
+  explicit Sky(AssetsConstPtr assets);
+  Sky(SkyParameters const& skyParameters, bool inOrbit, AssetsConstPtr assets);
 
   // Controls the space sky "flight" system
   void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
@@ -124,7 +124,7 @@ private:
   void skyParametersUpdated();
  
   Json m_settings;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   SkyParameters m_skyParameters;
   bool m_skyParametersUpdated;
 

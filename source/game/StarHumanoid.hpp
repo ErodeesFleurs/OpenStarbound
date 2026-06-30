@@ -6,7 +6,7 @@
 #include "StarParticle.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarNetElement.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -19,6 +19,13 @@ class BackArmor;
 
 class Humanoid;
 using HumanoidPtr = SharedPtr<Humanoid>;
+
+class SpeciesDatabase;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+class DanceDatabase;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 
 struct Dance;
 using DancePtr = SharedPtr<Dance>;
@@ -127,14 +134,14 @@ public:
 
   static bool& globalHeadRotation();
 
-  explicit Humanoid(IAssetsConstPtr assets = {});
-  Humanoid(Json const& config, IAssetsConstPtr assets = {});
-  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), IAssetsConstPtr assets = {});
+  explicit Humanoid(AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  Humanoid(Json const& config, AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
     explicit HumanoidTiming(Json config = Json());
-    static HumanoidTiming sensibleDefaults(IAssetsConstPtr assets);
+    static HumanoidTiming sensibleDefaults(AssetsConstPtr assets);
 
     static bool cyclicState(State state);
     static bool cyclicEmoteState(HumanoidEmote state);
@@ -270,7 +277,7 @@ public:
 
   List<Drawable> renderSkull() const;
 
-  static HumanoidPtr makeDummy(Gender gender, IAssetsConstPtr assets = {});
+  static HumanoidPtr makeDummy(Gender gender, AssetsConstPtr assets = {});
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
   List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
@@ -369,7 +376,10 @@ private:
 
   Json m_baseConfig;
   Json m_mergeConfig;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
 
   Vec2F m_globalOffset;
   Vec2F m_headRunOffset;
@@ -496,7 +506,7 @@ private:
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : public NetElementSyncGroup {
 public:
-  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json(), IAssetsConstPtr assets = {});
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -512,7 +522,10 @@ private:
   void setupNetElements();
 
   Json m_config;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
   NetElementHashMap<String,Json> m_humanoidParameters;
   HumanoidPtr m_humanoid;
 };

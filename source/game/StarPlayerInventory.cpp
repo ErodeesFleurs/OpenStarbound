@@ -7,6 +7,7 @@
 #include "StarItemDatabase.hpp"
 #include "StarPointableItem.hpp"
 #include "StarItemBag.hpp"
+#include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 
@@ -37,13 +38,16 @@ bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot 
     return is<ArmorItem>(item);
 }
 
-PlayerInventory::PlayerInventory(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
+PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ConfigurationPtr configuration)
   : m_assets(std::move(assets)),
-    m_itemDatabase(std::move(itemDatabase)) {
+    m_itemDatabase(std::move(itemDatabase)),
+    m_configuration(std::move(configuration)) {
   if (!m_assets)
     throw InventoryException("PlayerInventory requires assets service");
   if (!m_itemDatabase)
     throw InventoryException("PlayerInventory requires item database service");
+  if (!m_configuration)
+    throw InventoryException("PlayerInventory requires configuration service");
 
   auto config = m_assets->json("/player.config:inventory");
 
@@ -969,8 +973,8 @@ void PlayerInventory::setPlayer(Player* player) {
 
 PlayerInventory const& PlayerInventory::blankInventory() const {
   static thread_local PlayerInventoryPtr inventory;
-  if (!inventory || inventory->m_assets != m_assets)
-    inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase);
+  if (!inventory || inventory->m_assets != m_assets || inventory->m_configuration != m_configuration)
+    inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase, m_configuration);
   return *inventory;
 }
 
@@ -1088,7 +1092,7 @@ void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
 }
 
 void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
-  if (!Root::singleton().configuration()->getPath("inventory.pickupToActionBar").toBool())
+  if (!m_configuration->getPath("inventory.pickupToActionBar").toBool())
     return;
 
   auto items = itemsAt(slot);

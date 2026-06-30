@@ -11,10 +11,14 @@
 namespace Star {
 
 class Player;
+class DanceDatabase;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+class EmoteProcessor;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
 
 class PlayerChatAndEmotes {
 public:
-  explicit PlayerChatAndEmotes(Player* player);
+  PlayerChatAndEmotes(Player* player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor);
 
   void init(float emoteCooldown, Vec2F blinkInterval);
 
@@ -40,6 +44,8 @@ private:
   HumanoidEmote detectEmotes(String const& chatter);
 
   Player* m_player;
+  DanceDatabaseConstPtr m_danceDatabase;
+  EmoteProcessorConstPtr m_emoteProcessor;
 
   HumanoidEmote m_emoteState;
   Maybe<String> m_dance;
@@ -57,4 +63,3 @@ private:
 };
 
 }
-

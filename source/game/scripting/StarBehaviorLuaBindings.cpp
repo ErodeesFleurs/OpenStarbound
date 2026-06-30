@@ -1,14 +1,12 @@
 #include "StarBehaviorLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
+LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list, BehaviorDatabaseConstPtr behaviorDatabase) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
-    auto behaviorDatabase = Root::singleton().behaviorDatabase();
+  callbacks.registerCallback("behavior", [list, behaviorDatabase](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
     Maybe<BlackboardWeakPtr> board = {};
     if (blackboard && blackboard->is<BlackboardWeakPtr>())
       board = blackboard->get<BlackboardWeakPtr>();

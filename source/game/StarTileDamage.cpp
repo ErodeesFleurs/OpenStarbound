@@ -69,7 +69,7 @@ TileDamageParameters::TileDamageParameters()
 TileDamageParameters::TileDamageParameters(Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride)
   : TileDamageParameters({}, std::move(config), healthOverride, harvestLevelOverride) {}
 
-TileDamageParameters::TileDamageParameters(IAssetsConstPtr assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
+TileDamageParameters::TileDamageParameters(AssetsConstPtr assets, Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride) {
   if (config.type() == Json::Type::String) {
     if (!assets)
       throw TileDamageException("TileDamageParameters requires assets service to load config path");

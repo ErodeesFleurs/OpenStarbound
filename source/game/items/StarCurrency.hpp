@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -9,7 +9,7 @@ class CurrencyItem;
 
 class CurrencyItem : public Item {
 public:
-  CurrencyItem(IAssetsConstPtr assets, Json const& config, String const& directory);
+  CurrencyItem(AssetsConstPtr assets, Json const& config, String const& directory);
 
   virtual ItemPtr clone() const override;
 

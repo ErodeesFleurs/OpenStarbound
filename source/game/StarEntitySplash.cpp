@@ -1,28 +1,27 @@
 #include "StarEntitySplash.hpp"
 #include "StarWorld.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
 EntitySplashConfig::EntitySplashConfig() {}
 
-EntitySplashConfig::EntitySplashConfig(Json const& config) {
+EntitySplashConfig::EntitySplashConfig(Json const& config, AssetsConstPtr assets) {
   splashSpeedMin = config.get("splashSpeedMin").toFloat();
   splashMinWaterLevel = config.get("splashMinWaterLevel").toFloat();
   splashBottomSensor = jsonToVec2F(config.get("splashBottomSensor"));
   splashTopSensor = jsonToVec2F(config.get("splashTopSensor"));
   numSplashParticles = config.get("numSplashParticles").toInt();
   splashYVelocityFactor = config.get("splashYVelocityFactor").toFloat();
-  splashParticle = Particle(config.get("splashParticle").toObject());
-  splashParticleVariance = Particle(config.get("splashParticleVariance").toObject());
+  splashParticle = Particle(config.get("splashParticle").toObject(), "/", assets);
+  splashParticleVariance = Particle(config.get("splashParticleVariance").toObject(), "/", assets);
 }
 
 List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World* world) const {
   List<Particle> particles;
   if (std::fabs(velocity[1]) >= splashSpeedMin) {
-    auto liquidDb = Root::singleton().liquidsDatabase();
+    auto liquidDb = world->liquidsDatabase();
     Vec2I bottom = Vec2I::floor(position + splashBottomSensor);
     Vec2I top = Vec2I::floor(position + splashTopSensor);
     if (world->liquidLevel(bottom).level - world->liquidLevel(top).level >= splashMinWaterLevel) {

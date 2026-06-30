@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -14,8 +14,8 @@ enum class HttpTrustReply {
 class HttpTrustDialog final : public Pane {
 public:
   struct Services {
-    IAssetsConstPtr assets;
-    IConfigurationPtr configuration;
+    AssetsConstPtr assets;
+    ConfigurationPtr configuration;
   };
 
   explicit HttpTrustDialog(Services services);
@@ -29,8 +29,8 @@ public:
 private:
   void reply(HttpTrustReply replyType);
 
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   String m_domain;
   bool m_confirmed;
   function<void(HttpTrustReply, bool)> m_callback;

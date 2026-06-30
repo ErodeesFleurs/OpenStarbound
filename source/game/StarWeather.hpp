@@ -3,7 +3,9 @@
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarProjectileDatabase.hpp"
 
 namespace Star {
 
@@ -22,8 +24,8 @@ class ServerWeather {
 public:
   ServerWeather();
 
-  void setup(IAssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
-      WeatherEffectsActiveQuery weatherEffectsActiveQuery);
+  void setup(AssetsConstPtr assets, WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
+      WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase, ProjectileDatabaseConstPtr projectileDatabase);
 
   void setReferenceClock(ClockConstPtr referenceClock = {});
 
@@ -60,7 +62,9 @@ private:
   void spawnWeatherProjectiles(float dt);
 
   WeatherPool m_weatherPool;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  ProjectileDatabaseConstPtr m_projectileDatabase;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
@@ -95,7 +99,7 @@ class ClientWeather {
 public:
   ClientWeather();
 
-  void setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery);
+  void setup(WorldGeometry worldGeometry, WeatherEffectsActiveQuery weatherEffectsActiveQuery, BiomeDatabaseConstPtr biomeDatabase);
 
   void readUpdate(ByteArray data, NetCompatibilityRules rules);
 
@@ -117,6 +121,7 @@ private:
   void spawnWeatherParticles(RectF newClientRegion, float dt);
 
   WeatherPool m_weatherPool;
+  BiomeDatabaseConstPtr m_biomeDatabase;
   float m_undergroundLevel;
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;

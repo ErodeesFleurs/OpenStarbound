@@ -8,8 +8,8 @@
 
 namespace Star {
 
-SystemWorldServer::SystemWorldServer(IAssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
   m_location = std::move(location);
 
   placeInitialObjects();
@@ -19,8 +19,8 @@ SystemWorldServer::SystemWorldServer(IAssetsConstPtr assets, Vec3I location, Clo
   spawnObjects();
 }
 
-SystemWorldServer::SystemWorldServer(IAssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase)) {
+SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
+  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {
@@ -290,7 +290,7 @@ void SystemWorldServer::handleIncomingPacket(ConnectionId, PacketPtr packet) {
   if (auto objectSpawn = as<SystemObjectSpawnPacket>(packet)) {
     RandomSource rand = RandomSource();
     Vec2F position = objectSpawn->position.value(randomObjectSpawnPosition(rand));
-    auto object = make_shared<SystemObject>(systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), objectSpawn->parameters);
+    auto object = make_shared<SystemObject>(systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), nameGenerator(), objectSpawn->parameters);
     addObject(object, objectSpawn->position.isValid());
   }
 }
@@ -332,7 +332,7 @@ void SystemWorldServer::placeInitialObjects() {
       auto objectConfig = systemObjectConfig(objectPool.select(rand), uuid);
       Vec2F position = randomObjectSpawnPosition(rand);
 
-      auto object = make_shared<SystemObject>(objectConfig, uuid, position, time());
+      auto object = make_shared<SystemObject>(objectConfig, uuid, position, time(), nameGenerator());
       object->enterOrbit(CelestialCoordinate(m_location), { 0.0, 0.0 }, time()); // orbit center of system
       m_objects.set(uuid, object);
     }
@@ -366,14 +366,14 @@ void SystemWorldServer::spawnObjects() {
 
         Vec2F targetPosition = planetPosition(target);
         Vec2F relativeOrbit = (position - targetPosition).normalized() * (clusterSize(target) / 2.0 + objectConfig.orbitDistance);
-        object = make_shared<SystemObject>(objectConfig, uuid, targetPosition + relativeOrbit, m_lastSpawn);
+        object = make_shared<SystemObject>(objectConfig, uuid, targetPosition + relativeOrbit, m_lastSpawn, nameGenerator());
 
         object->enterOrbit(target, planetPosition(target), m_lastSpawn);
       } else {
-        object = make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn);
+        object = make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn, nameGenerator());
       }
     } else {
-      object = make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn);
+      object = make_shared<SystemObject>(objectConfig, uuid, position, m_lastSpawn, nameGenerator());
     }
     addObject(object);
   }

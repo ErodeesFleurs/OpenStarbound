@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarVersion.hpp"
-#include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarPlayerStorage.hpp"
@@ -27,15 +26,81 @@ constexpr float MaxClientGlobalTimescale = 1024.0f;
 
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase) {
+UniverseClient::UniverseClient(PlayerStoragePtr playerStorage,
+    StatisticsPtr statistics,
+    AssetsConstPtr assets,
+    ConfigurationPtr configuration,
+    MaterialDatabaseConstPtr materialDatabase,
+    ItemDatabaseConstPtr itemDatabase,
+    ObjectDatabaseConstPtr objectDatabase,
+    SpeciesDatabaseConstPtr speciesDatabase,
+    EntityFactoryConstPtr entityFactory,
+    LiquidsDatabaseConstPtr liquidsDatabase,
+    BiomeDatabaseConstPtr biomeDatabase,
+    PatternedNameGeneratorConstPtr nameGenerator,
+    FunctionDatabaseConstPtr functionDatabase,
+    BehaviorDatabaseConstPtr behaviorDatabase,
+    ParticleDatabaseConstPtr particleDatabase,
+    DamageDatabaseConstPtr damageDatabase,
+    ProjectileDatabaseConstPtr projectileDatabase,
+    EffectSourceDatabaseConstPtr effectSourceDatabase,
+    TechDatabaseConstPtr techDatabase,
+    StatusEffectDatabaseConstPtr statusEffectDatabase,
+    PlantDatabaseConstPtr plantDatabase,
+    TreasureDatabaseConstPtr treasureDatabase,
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_assets = std::move(assets);
+  if (!m_assets)
+    throw StarException("UniverseClient requires assets service");
+  m_configuration = std::move(configuration);
+  if (!m_configuration)
+    throw StarException("UniverseClient requires configuration service");
+  m_materialDatabase = std::move(materialDatabase);
+  if (!m_materialDatabase)
+    throw StarException("UniverseClient requires material database service");
   m_itemDatabase = std::move(itemDatabase);
+  if (!m_itemDatabase)
+    throw StarException("UniverseClient requires item database service");
   m_objectDatabase = std::move(objectDatabase);
   if (!m_objectDatabase)
     throw StarException("UniverseClient requires object database service");
+  m_speciesDatabase = std::move(speciesDatabase);
+  if (!m_speciesDatabase)
+    throw StarException("UniverseClient requires species database service");
+  m_entityFactory = std::move(entityFactory);
+  if (!m_entityFactory)
+    throw StarException("UniverseClient requires entity factory service");
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  if (!m_liquidsDatabase)
+    throw StarException("UniverseClient requires liquids database service");
+  m_biomeDatabase = std::move(biomeDatabase);
+  if (!m_biomeDatabase)
+    throw StarException("UniverseClient requires biome database service");
+  m_nameGenerator = std::move(nameGenerator);
+  if (!m_nameGenerator)
+    throw StarException("UniverseClient requires name generator service");
+  m_functionDatabase = std::move(functionDatabase);
+  if (!m_functionDatabase)
+    throw StarException("UniverseClient requires function database service");
+  m_behaviorDatabase = std::move(behaviorDatabase);
+  m_particleDatabase = std::move(particleDatabase);
+  if (!m_particleDatabase)
+    throw StarException("UniverseClient requires particle database service");
+  m_damageDatabase = std::move(damageDatabase);
+  if (!m_damageDatabase)
+    throw StarException("UniverseClient requires damage database service");
+  m_projectileDatabase = std::move(projectileDatabase);
+  if (!m_projectileDatabase)
+    throw StarException("UniverseClient requires projectile database service");
+  m_effectSourceDatabase = std::move(effectSourceDatabase);
+  m_techDatabase = std::move(techDatabase);
+  m_statusEffectDatabase = std::move(statusEffectDatabase);
+  m_plantDatabase = std::move(plantDatabase);
+  m_treasureDatabase = std::move(treasureDatabase);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>(m_assets);
   reset();
@@ -71,8 +136,12 @@ PlayerPtr UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
-IAssetsConstPtr UniverseClient::assets() const {
+AssetsConstPtr UniverseClient::assets() const {
   return m_assets;
+}
+
+BiomeDatabaseConstPtr UniverseClient::biomeDatabase() const {
+  return m_biomeDatabase;
 }
 
 Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
@@ -165,13 +234,13 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_teamClient = make_shared<TeamClient>(assets, m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, m_assets, nullptr, m_itemDatabase, m_objectDatabase);
+    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_speciesDatabase, m_entityFactory, m_liquidsDatabase, m_biomeDatabase, m_functionDatabase, m_behaviorDatabase, m_particleDatabase, m_damageDatabase, m_effectSourceDatabase, m_techDatabase, m_statusEffectDatabase, m_plantDatabase, m_treasureDatabase, m_imageMetadataDatabase);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
 
     m_connection = std::move(connection);
     m_celestialDatabase = make_shared<CelestialSlaveDatabase>(assets, std::move(success->celestialInformation));
-    m_systemWorldClient = make_shared<SystemWorldClient>(assets, m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
+    m_systemWorldClient = make_shared<SystemWorldClient>(assets, m_universeClock, m_celestialDatabase, m_nameGenerator, m_mainPlayer->universeMap());
 
     Logger::info("UniverseClient: Joined {} server as client {}", legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
     return {};
@@ -550,7 +619,7 @@ void UniverseClient::restartLua() {
   m_luaRoot->restart();
   auto clientConfig = m_assets->json("/client.config");
   m_luaRoot->tuneAutoGarbageCollection(clientConfig.getFloat("luaGcPause"), clientConfig.getFloat("luaGcStepMultiplier"));
-  auto enableImGui = Root::singleton().configuration()->getPath("safe.enableImGui");
+  auto enableImGui = m_configuration->getPath("safe.enableImGui");
   if (enableImGui && enableImGui.toBool())
     m_luaRoot->luaEngine().addImGui();
 }
@@ -596,9 +665,8 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
     if (showIndicator) {
       // EntityCreatePacket for player entities can be pretty big.
       // We can show a loading projectile to other players while the create packet uploads.
-      auto projectileDb = Root::singleton().projectileDatabase();
-      auto config = projectileDb->projectileConfig("opensb:playerloading");
-      indicator = projectileDb->createProjectile("stationpartsound", config);
+      auto config = m_projectileDatabase->projectileConfig("opensb:playerloading");
+      indicator = m_projectileDatabase->createProjectile("stationpartsound", config);
       indicator->setInitialPosition(player->position());
       indicator->setInitialDirection({ 1.0f, 0.0f });
       world->addEntity(indicator);

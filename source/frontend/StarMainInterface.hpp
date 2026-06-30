@@ -8,14 +8,14 @@
 #include "StarListener.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarWarping.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
-#include "StarIMaterialDatabase.hpp"
-#include "StarIItemDatabase.hpp"
-#include "StarISpeciesDatabase.hpp"
-#include "StarIEntityFactory.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarILiquidsDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarLiquidsDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 
 namespace Star {
@@ -104,8 +104,8 @@ struct GuiMessage {
 };
 
 struct MainInterfaceServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
   ImageMetadataDatabaseConstPtr imageMetadata;
   FunctionDatabaseConstPtr functionDatabase;
   ItemDatabaseConstPtr itemDatabase;
@@ -228,8 +228,8 @@ private:
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
   GuiContext* m_guiContext{nullptr};
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
   FunctionDatabaseConstPtr m_functionDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
@@ -315,10 +315,10 @@ private:
 
   ContainerInteractorPtr m_containerInteractor;
 
-  IMaterialDatabaseConstPtr m_materialDatabase;
-  ISpeciesDatabaseConstPtr m_speciesDatabase;
-  IEntityFactoryConstPtr m_entityFactory;
-  ILiquidsDatabaseConstPtr m_liquidsDatabase;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  EntityFactoryConstPtr m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
 };
 
 }

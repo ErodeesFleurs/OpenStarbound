@@ -11,7 +11,7 @@
 
 namespace Star {
 
-PlayerStorage::PlayerStorage(String const& storageDir, IConfigurationPtr configuration, EntityFactoryConstPtr entityFactory)
+PlayerStorage::PlayerStorage(String const& storageDir, ConfigurationPtr configuration, EntityFactoryConstPtr entityFactory)
   : m_configuration(std::move(configuration)), m_entityFactory(std::move(entityFactory)) {
   if (!m_configuration)
     throw PlayerException("PlayerStorage requires configuration service");

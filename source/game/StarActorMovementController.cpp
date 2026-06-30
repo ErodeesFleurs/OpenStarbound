@@ -79,7 +79,7 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
   return ds;
 }
 
-ActorMovementParameters ActorMovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
+ActorMovementParameters ActorMovementParameters::sensibleDefaults(AssetsConstPtr assets) {
   if (!assets)
     throw ActorMovementControllerException("ActorMovementParameters requires assets service");
   return ActorMovementParameters(assets->json("/default_actor_movement.config").toObject());
@@ -421,7 +421,7 @@ DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementMod
   return ds;
 }
 
-ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters, IAssetsConstPtr assets)
+ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters, AssetsConstPtr assets)
   : MovementController(MovementParameters(), assets) {
   m_assets = std::move(assets);
   if (!m_assets)

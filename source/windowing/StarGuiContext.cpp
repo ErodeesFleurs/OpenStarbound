@@ -76,7 +76,7 @@ AssetsConstPtr const& GuiContext::assets() const {
   return m_assets;
 }
 
-IConfigurationPtr const& GuiContext::configuration() const {
+ConfigurationPtr const& GuiContext::configuration() const {
   return m_configuration;
 }
 

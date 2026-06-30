@@ -2,6 +2,7 @@
 
 #include "StarJson.hpp"
 #include "StarParticle.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -11,7 +12,7 @@ class EntitySplashHelper;
 
 struct EntitySplashConfig {
   EntitySplashConfig();
-  EntitySplashConfig(Json const& config);
+  EntitySplashConfig(Json const& config, AssetsConstPtr assets);
   float splashSpeedMin;
   Vec2F splashBottomSensor;
   Vec2F splashTopSensor;

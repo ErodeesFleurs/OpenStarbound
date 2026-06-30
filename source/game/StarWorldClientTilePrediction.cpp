@@ -1,6 +1,5 @@
 #include "StarWorldClientTilePrediction.hpp"
 #include "StarWorldClient.hpp"
-#include "StarRoot.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLogging.hpp"
 
@@ -15,7 +14,7 @@ void StarWorldClientTilePrediction::informTilePrediction(Vec2I const& pos, TileM
   p.time = now;
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (placeMaterial->layer == TileLayer::Foreground) {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = m_worldClient->m_materialDatabase;
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
        && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
         p.foreground = placeMaterial->material;
@@ -104,7 +103,7 @@ bool StarWorldClientTilePrediction::readNetTile(Vec2I const& pos, NetTile const&
   tile->liquid = netTile.liquid.liquidLevel();
   tile->dungeonId = netTile.dungeonId;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_worldClient->m_materialDatabase;
   tile->backgroundLightTransparent = materialDatabase->backgroundLightTransparent(tile->background);
   tile->foregroundLightTransparent =
       materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;

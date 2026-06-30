@@ -482,6 +482,15 @@ FinallyGuard<std::decay_t<Functor>> finally(Functor&& f) {
   return FinallyGuard<std::decay_t<Functor>>(std::forward<Functor>(f));
 }
 
+// Throws a StarException if the given shared pointer is null.  Collapses the
+// repetitive `if (!m_X) throw FooException("X requires Y service");` validation
+// boilerplate used throughout dependency-injection constructors.
+template <typename T>
+void requireNotNull(SharedPtr<T> const& ptr, char const* context, char const* serviceName) {
+  if (!ptr)
+    throw StarException(strf("{} requires {} service", context, serviceName));
+}
+
 // Generates compile time sequences of indexes from MinIndex to MaxIndex
 
 template <size_t...>

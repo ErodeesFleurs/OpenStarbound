@@ -5,15 +5,17 @@
 #include "StarBeamItem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarPreviewTileTool.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 class LiquidItem;
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
-  LiquidItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings);
+  LiquidItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase);
   virtual ~LiquidItem() = default;
 
   ItemPtr clone() const override;

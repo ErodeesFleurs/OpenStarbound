@@ -4,19 +4,42 @@
 #include "StarShellParser.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 
 namespace Star {
 
 class UniverseServer;
-class IItemDatabase;
-using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class TreasureDatabase;
+using TreasureDatabaseConstPtr = SharedPtr<TreasureDatabase const>;
+class MonsterDatabase;
+using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
+class NpcDatabase;
+using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
+class VehicleDatabase;
+using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
+class StagehandDatabase;
+using StagehandDatabaseConstPtr = SharedPtr<StagehandDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 class CommandProcessor;
 using CommandProcessorPtr = SharedPtr<CommandProcessor>;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase);
+  CommandProcessor(UniverseServer* universe,
+      LuaRootPtr luaRoot,
+      AssetsConstPtr assets,
+      ConfigurationPtr configuration,
+      ItemDatabaseConstPtr itemDatabase,
+      TreasureDatabaseConstPtr treasureDatabase,
+      MonsterDatabaseConstPtr monsterDatabase,
+      NpcDatabaseConstPtr npcDatabase,
+      VehicleDatabaseConstPtr vehicleDatabase,
+      StagehandDatabaseConstPtr stagehandDatabase,
+      LiquidsDatabaseConstPtr liquidsDatabase);
 
   String adminCommand(String const& command, String const& argumentString);
   String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
@@ -75,8 +98,15 @@ private:
   LuaCallbacks makeCommandCallbacks();
 
   UniverseServer* m_universe;
-  IAssetsConstPtr m_assets;
-  IItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
+  ItemDatabaseConstPtr m_itemDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  MonsterDatabaseConstPtr m_monsterDatabase;
+  NpcDatabaseConstPtr m_npcDatabase;
+  VehicleDatabaseConstPtr m_vehicleDatabase;
+  StagehandDatabaseConstPtr m_stagehandDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
   ShellParser m_parser;
 
   LuaBaseComponent m_scriptComponent;

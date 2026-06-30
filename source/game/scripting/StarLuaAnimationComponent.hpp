@@ -10,7 +10,7 @@
 #include "StarParticle.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarLuaConverters.hpp"
 
 namespace Star {
@@ -23,7 +23,7 @@ using LuaAnimationComponentException = TypedException<LuaComponentException, Lua
 template <typename Base>
 class LuaAnimationComponent : public Base {
 public:
-  LuaAnimationComponent(IAssetsConstPtr assets = {});
+  LuaAnimationComponent(AssetsConstPtr assets = {});
 
   List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
@@ -36,7 +36,7 @@ protected:
   void contextShutdown() override;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 
   List<Particle> m_pendingParticles;
   List<AudioInstancePtr> m_pendingAudios;
@@ -47,7 +47,7 @@ private:
 };
 
 template <typename Base>
-LuaAnimationComponent<Base>::LuaAnimationComponent(IAssetsConstPtr assets) {
+LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
 
   LuaCallbacks animationCallbacks;

@@ -7,7 +7,7 @@
 
 namespace Star {
 
-Item::Item(IAssetsConstPtr assets, Json config, String directory, Json parameters) {
+Item::Item(AssetsConstPtr assets, Json config, String directory, Json parameters) {
   if (!assets)
     throw ItemException("Item requires assets service");
 
@@ -328,7 +328,7 @@ StringMap<String> Item::collectablesOnPickup() const {
   return m_collectablesOnPickup;
 }
 
-GenericItem::GenericItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+GenericItem::GenericItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(std::move(assets), config, directory, parameters) {}
 
 ItemPtr GenericItem::clone() const {

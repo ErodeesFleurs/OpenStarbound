@@ -25,14 +25,14 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
-#include "StarIMaterialDatabase.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarISpeciesDatabase.hpp"
-#include "StarIEntityFactory.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarILiquidsDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarLiquidsDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarLiquidsDatabase.hpp"
@@ -59,6 +59,16 @@ class QuestTemplateDatabase;
 using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
 class VersioningDatabase;
 using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
+class CodexDatabase;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
+class DanceDatabase;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+class EmoteProcessor;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
+class AiDatabase;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+class CollectionDatabase;
+using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
 class PlayerCompanions;
 using PlayerCompanionsPtr = SharedPtr<PlayerCompanions>;
 class PlayerDeployment;
@@ -121,9 +131,9 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
-  Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
+  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
+  Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
 
   void diskLoad(Json const& diskStore);
 
@@ -608,16 +618,22 @@ private:
   PlayerInventoryPtr m_inventory;
   PlayerBlueprintsPtr m_blueprints;
   PlayerUniverseMapPtr m_universeMap;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
-  IMaterialDatabaseConstPtr m_materialDatabase;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
+  MaterialDatabaseConstPtr m_materialDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
-  ISpeciesDatabaseConstPtr m_speciesDatabase;
-  IEntityFactoryConstPtr m_entityFactory;
-  ILiquidsDatabaseConstPtr m_liquidsDatabase;
+  CodexDatabaseConstPtr m_codexDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  EmoteProcessorConstPtr m_emoteProcessor;
+  RadioMessageDatabaseConstPtr m_radioMessageDatabase;
+  AiDatabaseConstPtr m_aiDatabase;
+  CollectionDatabaseConstPtr m_collectionDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  EntityFactoryConstPtr m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
   TechDatabaseConstPtr m_techDatabase;
   PlayerCodexesPtr m_codexes;
   PlayerTechPtr m_techs;

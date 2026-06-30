@@ -10,7 +10,7 @@
 #include "StarMovementController.hpp"
 #include "StarParticle.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -24,8 +24,8 @@ using ProjectilePtr = SharedPtr<Projectile>;
 
 class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
-  Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters);
-  Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
+  Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters);
+  Projectile(AssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
 
@@ -117,7 +117,7 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(IAssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource);
+  static List<Particle> sparkBlock(AssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource);
 
   int getFrame() const;
   void setFrame(int frame);
@@ -132,7 +132,7 @@ private:
 
   void renderPendingRenderables(RenderCallback* renderCallback);
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ProjectileConfigPtr m_config;
   Json m_parameters;
 

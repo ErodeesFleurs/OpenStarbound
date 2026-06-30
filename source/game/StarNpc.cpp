@@ -31,13 +31,17 @@
 
 namespace Star {
 
-Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_scriptedAnimator(assets) {
 
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_npcDatabase = std::move(npcDatabase);
+  m_speciesDatabase = std::move(speciesDatabase);
+  m_danceDatabase = std::move(danceDatabase);
+  m_emoteProcessor = std::move(emoteProcessor);
   m_itemDatabase = std::move(itemDatabase);
   m_objectDatabase = std::move(objectDatabase);
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets, m_speciesDatabase, m_danceDatabase));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -76,7 +80,7 @@ Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConst
 
   m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings);
   m_statusController->setPersistentEffects("innate", m_npcVariant.innateStatusEffects);
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(species());
+  auto speciesDefinition = m_speciesDatabase->species(species());
   m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects());
   m_statusController->setStatusProperty("species", species());
   if (!m_statusController->statusProperty("effectDirectives"))
@@ -102,8 +106,8 @@ Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConst
   setupNetStates();
 }
 
-Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : Npc(assets, npcVariant, std::move(itemDatabase), std::move(objectDatabase)) {
+Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : Npc(std::move(assets), std::move(npcDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(emoteProcessor), npcVariant, std::move(itemDatabase), std::move(objectDatabase)) {
   m_movementController->loadState(diskStore.get("movementController"));
   m_statusController->diskLoad(diskStore.get("statusController"));
   auto aimPosition = jsonToVec2F(diskStore.get("aimPosition"));
@@ -139,7 +143,7 @@ Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& diskS
 
 Json Npc::diskStore() const {
   return JsonObject{
-    {"npcVariant", Root::singleton().npcDatabase()->writeNpcVariantToJson(m_npcVariant)},
+    {"npcVariant", m_npcDatabase->writeNpcVariantToJson(m_npcVariant)},
     {"movementController", m_movementController->storeState()},
     {"statusController", m_statusController->diskStore()},
     {"armor", m_armor->diskStore()},
@@ -162,7 +166,7 @@ Json Npc::diskStore() const {
 }
 
 ByteArray Npc::netStore(NetCompatibilityRules rules) {
-  return Root::singleton().npcDatabase()->writeNpcVariant(m_npcVariant, rules);
+  return m_npcDatabase->writeNpcVariant(m_npcVariant, rules);
 }
 
 EntityType Npc::entityType() const {
@@ -193,7 +197,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
             { return m_npcVariant.scriptConfig.query(name, def); }));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors, world->behaviorDatabase()));
     m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
@@ -383,7 +387,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("die");
 
   if (isMaster() && !m_dropPools.get().empty()) {
-    auto treasureDatabase = Root::singleton().treasureDatabase();
+    auto treasureDatabase = world()->treasureDatabase();
     for (auto const& treasureItem :
         treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
       world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), m_itemDatabase));
@@ -477,7 +481,7 @@ void Npc::update(float dt, uint64_t) {
       m_dance = {};
 
     if (m_chatMessageUpdated) {
-      auto state = Root::singleton().emoteProcessor()->detectEmotes(m_chatMessage.get());
+      auto state = m_emoteProcessor->detectEmotes(m_chatMessage.get());
       if (state != HumanoidEmote::Idle)
         addEmote(state);
       m_chatMessageUpdated = false;
@@ -540,7 +544,7 @@ void Npc::render(RenderCallback* renderCallback) {
 
   renderCallback->addDrawables(m_tools->renderObjectPreviews(aimPosition(), walkingDirection(), inToolRange(), favoriteColor()), renderLayer);
 
-  m_effectEmitter->render(renderCallback);
+  m_effectEmitter->render(renderCallback, world()->particleDatabase());
   m_songbook->render(renderCallback);
 }
 
@@ -625,7 +629,7 @@ void Npc::tickShared(float dt) {
   m_effectEmitter->setSourcePosition("backArmor", backArmorOffset() + position());
 
   m_effectEmitter->setDirection(humanoid()->facingDirection());
-  m_effectEmitter->tick(dt, *entityMode());
+  m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
 
   humanoid()->setMovingBackwards(m_movementController->movingDirection() != m_movementController->facingDirection());
   humanoid()->setFacingDirection(m_movementController->facingDirection());
@@ -1046,8 +1050,7 @@ void Npc::setDance(Maybe<String> const& danceName) {
   m_dance = danceName;
 
   if (danceName.isValid()) {
-    auto danceDatabase = Root::singleton().danceDatabase();
-    DancePtr dance = danceDatabase->getDance(*danceName);
+    auto dance = m_danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
   }
 }
@@ -1443,14 +1446,14 @@ HumanoidPtr Npc::humanoid() const {
 }
 
 void Npc::refreshHumanoidParameters() {
-  auto speciesDatabase = Root::singleton().speciesDatabase();
+  auto speciesDatabase = m_speciesDatabase;
   auto speciesDef = speciesDatabase->species(m_npcVariant.humanoidIdentity.species);
 
   if (isMaster()) {
     m_refreshedHumanoidParameters.trigger();
     m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json(), m_assets));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json(), m_assets, m_speciesDatabase, m_danceDatabase));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
   }else {
     m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();

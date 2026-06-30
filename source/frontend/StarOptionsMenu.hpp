@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 #include "StarConfiguration.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -26,8 +26,8 @@ class OptionsMenu;
 using OptionsMenuPtr = SharedPtr<OptionsMenu>;
 
 struct OptionsMenuServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
 };
 
 class OptionsMenu : public Pane {
@@ -86,8 +86,8 @@ private:
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
   PaneManager* m_paneManager;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
 };
 
 }

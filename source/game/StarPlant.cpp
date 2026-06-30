@@ -13,6 +13,10 @@ namespace Star {
 
 float const Plant::PlantScanThreshold = 0.1f;
 
+static ImageMetadataDatabaseConstPtr resolveImageMetadata(World* world) {
+  return world ? world->imageMetadataDatabase() : Root::singleton().imageMetadataDatabase();
+}
+
 EnumMap<Plant::RotationType> const Plant::RotationTypeNames{
   {Plant::RotationType::DontRotate, "dontRotate"},
   {Plant::RotationType::RotateBranch, "rotateBranch"},
@@ -35,7 +39,7 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(IAssetsConstPtr assets, TreeVariant const& config, uint64_t seed)
+Plant::Plant(AssetsConstPtr assets, TreeVariant const& config, uint64_t seed)
   : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
@@ -428,7 +432,7 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(IAssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
+Plant::Plant(AssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
   : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
@@ -450,7 +454,7 @@ Plant::Plant(IAssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
   // If this is a ceiling plant, offset the image so that the [0, 0] space is
   // at the top
   if (config.ceiling) {
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto imgMetadata = resolveImageMetadata(worldPtr());
     float imageHeight = imgMetadata->imageSize(imageName)[1];
     offset = Vec2F(0.0f, 1.0f - imageHeight / TilePixels);
   }
@@ -468,7 +472,7 @@ Plant::Plant(IAssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
   setupNetStates();
 }
 
-Plant::Plant(IAssetsConstPtr assets, BushVariant const& config, uint64_t seed)
+Plant::Plant(AssetsConstPtr assets, BushVariant const& config, uint64_t seed)
   : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
@@ -518,7 +522,7 @@ Plant::Plant(IAssetsConstPtr assets, BushVariant const& config, uint64_t seed)
   setupNetStates();
 }
 
-Plant::Plant(IAssetsConstPtr assets, Json const& diskStore)
+Plant::Plant(AssetsConstPtr assets, Json const& diskStore)
   : Plant(std::move(assets)) {
   m_tilePosition = jsonToVec2I(diskStore.get("tilePosition"));
   m_ceiling = diskStore.getBool("ceiling");
@@ -534,7 +538,7 @@ Plant::Plant(IAssetsConstPtr assets, Json const& diskStore)
   setupNetStates();
 }
 
-Plant::Plant(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
+Plant::Plant(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
   : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
@@ -563,7 +567,7 @@ Plant::Plant(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibility
   setupNetStates();
 }
 
-Plant::Plant(IAssetsConstPtr assets)
+Plant::Plant(AssetsConstPtr assets)
   : m_assets(std::move(assets)) {
   if (!m_assets)
     throw PlantException("Plant requires assets service");
@@ -679,7 +683,7 @@ RectF Plant::interactiveBoundBox() const {
 }
 
 void Plant::scanSpacesAndRoots() {
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
+  auto imageMetadataDatabase = resolveImageMetadata(worldPtr());
 
   // build spaces
   Set<Vec2I> spaces;
@@ -779,7 +783,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto config = Random::randValueFrom(particleOptions, {});
         if (config.isNull() || config.size() == 0)
           continue;
-        auto particle = Root::singleton().particleDatabase()->particle(config);
+        auto particle = world()->particleDatabase()->particle(config);
         particle.color.hueShift(hueshift);
         if (!particle.string.empty()) {
           particle.string = strf("{}?hueshift={}", particle.string, hueshift);

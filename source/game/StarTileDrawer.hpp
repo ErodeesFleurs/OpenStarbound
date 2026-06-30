@@ -4,7 +4,7 @@
 #include "StarWorldRenderData.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarDrawable.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -26,7 +26,7 @@ public:
   static TileDrawer* singletonPtr();
   static TileDrawer& singleton();
 
-  TileDrawer(IAssetsConstPtr assets);
+  TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase);
   ~TileDrawer();
 
   bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
@@ -54,7 +54,8 @@ private:
   Vec4B m_backgroundLayerColor;
   Vec4B m_foregroundLayerColor;
   Vec2F m_liquidDrawLevels;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  MaterialDatabaseConstPtr m_materialDatabase;
 
   WorldRenderData m_tempRenderData;
   Mutex m_tempRenderDataMutex;

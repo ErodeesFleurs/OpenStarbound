@@ -10,7 +10,7 @@ constexpr int MaxPvpTeamAssignmentAttempts = 256;
 
 namespace Star {
 
-TeamManager::TeamManager(IConfigurationPtr configuration) {
+TeamManager::TeamManager(ConfigurationPtr configuration) {
   if (!configuration)
     throw StarException("TeamManager requires configuration service");
   m_pvpTeamCounter = 1;

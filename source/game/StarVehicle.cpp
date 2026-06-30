@@ -12,7 +12,7 @@
 
 namespace Star {
 
-Vehicle::Vehicle(IAssetsConstPtr assets, Json baseConfig, String path, Json dynamicConfig)
+Vehicle::Vehicle(AssetsConstPtr assets, Json baseConfig, String path, Json dynamicConfig)
   : m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)), m_movementController(MovementParameters(), assets), m_scriptedAnimator(assets) {
 
   m_typeName = m_baseConfig.getString("name");

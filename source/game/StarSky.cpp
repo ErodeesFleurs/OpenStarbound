@@ -11,7 +11,7 @@
 
 namespace Star {
 
-Sky::Sky(IAssetsConstPtr assets) {
+Sky::Sky(AssetsConstPtr assets) {
   m_assets = std::move(assets);
   if (!m_assets)
     throw StarException("Sky requires assets service");
@@ -34,7 +34,7 @@ Sky::Sky(IAssetsConstPtr assets) {
   m_netGroup.setNeedsStoreCallback([this]() { return writeNetStates(); });
 }
 
-Sky::Sky(SkyParameters const& skyParameters, bool inOrbit, IAssetsConstPtr assets) : Sky(std::move(assets)) {
+Sky::Sky(SkyParameters const& skyParameters, bool inOrbit, AssetsConstPtr assets) : Sky(std::move(assets)) {
   m_skyParameters = skyParameters;
   skyParametersUpdated();
 

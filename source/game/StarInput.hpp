@@ -8,6 +8,9 @@
 
 namespace Star {
 
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
+
 class Input;
 using InputPtr = SharedPtr<Input>;
 struct InputExceptionTag { static constexpr char const* typeName = "InputException"; };
@@ -140,7 +143,7 @@ public:
   // is not initialized.
   static Input& singleton();
 
-  Input(AssetsConstPtr assets);
+  Input(AssetsConstPtr assets, ConfigurationPtr configuration);
   ~Input();
 
   Input(Input const&) = delete;
@@ -216,6 +219,7 @@ private:
 
   ListenerPtr m_rootReloadListener;
   AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
 
   // Per-frame input event storage for Lua.
   List<std::pair<InputEvent, bool>> m_inputEvents;

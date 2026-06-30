@@ -8,9 +8,12 @@
 #include "StarRenderableItem.hpp"
 #include "StarPreviewableItem.hpp"
 #include "StarCollisionBlock.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
+
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 class MaterialItem;
 class Player;
@@ -18,7 +21,7 @@ using PlayerPtr = SharedPtr<Player>;
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
-  MaterialItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings);
+  MaterialItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase = {});
   virtual ~MaterialItem() = default;
 
   ItemPtr clone() const override;
@@ -54,7 +57,7 @@ private:
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
   MaterialHue placementHueShift(Vec2I const& position) const;
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   MaterialId m_material;
   MaterialHue m_materialHueShift;
 

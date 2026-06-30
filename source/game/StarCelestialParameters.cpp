@@ -11,7 +11,7 @@ namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
-CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, IAssetsConstPtr assets)
+CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, AssetsConstPtr assets)
   : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
   assets = assets ? std::move(assets) : Root::singleton().assets();
 

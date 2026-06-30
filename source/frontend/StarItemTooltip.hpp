@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarString.hpp"
 #include "StarStatusTypes.hpp"
 
@@ -24,10 +24,10 @@ using PlayerPtr = SharedPtr<Player>;
 
 namespace ItemTooltipBuilder {
   struct Services {
-    Services(IAssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase)
+    Services(AssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase)
       : assets(std::move(assets)), objectDatabase(std::move(objectDatabase)), statusEffectDatabase(std::move(statusEffectDatabase)) {}
 
-    IAssetsConstPtr assets;
+    AssetsConstPtr assets;
     ObjectDatabaseConstPtr objectDatabase;
     StatusEffectDatabaseConstPtr statusEffectDatabase;
   };

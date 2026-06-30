@@ -19,7 +19,7 @@
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -43,8 +43,8 @@ public:
     String image;
   };
 
-  Monster(IAssetsConstPtr assets, MonsterVariant const& variant, Maybe<float> level = {});
-  Monster(IAssetsConstPtr assets, Json const& diskStore);
+  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& variant, Maybe<float> level = {});
+  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -159,6 +159,7 @@ private:
   NetElementData<Maybe<String>> m_uniqueIdNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
   MonsterVariant m_monsterVariant;
+  MonsterDatabaseConstPtr m_monsterDatabase;
   Maybe<float> m_monsterLevel;
 
   NetworkedAnimator m_networkedAnimator;

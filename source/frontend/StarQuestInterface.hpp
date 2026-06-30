@@ -3,7 +3,7 @@
 #include "StarQuestManager.hpp"
 #include "StarQuests.hpp"
 #include "StarPane.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -23,7 +23,7 @@ class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct QuestInterfaceServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
 };
@@ -52,7 +52,7 @@ private:
   PlayerPtr m_player;
   CinematicPtr m_cinematic;
   UniverseClientPtr m_client;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 
@@ -76,7 +76,7 @@ protected:
 
   QuestPtr m_quest;
   PlayerPtr m_player;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 };

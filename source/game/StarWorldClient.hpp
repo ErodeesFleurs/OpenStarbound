@@ -1,15 +1,27 @@
 #pragma once
 
 #include "StarWorldClientState.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
-#include "StarIMaterialDatabase.hpp"
-#include "StarIItemDatabase.hpp"
-#include "StarISpeciesDatabase.hpp"
-#include "StarIEntityFactory.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarILiquidsDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarStoredFunctions.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarEffectSourceDatabase.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarWorldClientLighting.hpp"
 #include "StarWorldClientAudio.hpp"
 #include "StarWorldClientDamageFX.hpp"
@@ -65,15 +77,46 @@ using WorldClientException = TypedException<StarException, WorldClientExceptionT
 
 class WorldClient : public World {
 public:
-  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  WorldClient(PlayerPtr mainPlayer,
+      LuaRootPtr luaRoot,
+      AssetsConstPtr assets,
+      ConfigurationPtr configuration,
+      MaterialDatabaseConstPtr materialDatabase,
+      ItemDatabaseConstPtr itemDatabase,
+      ObjectDatabaseConstPtr objectDatabase,
+      SpeciesDatabaseConstPtr speciesDatabase,
+      EntityFactoryConstPtr entityFactory,
+      LiquidsDatabaseConstPtr liquidsDatabase,
+      BiomeDatabaseConstPtr biomeDatabase,
+      FunctionDatabaseConstPtr functionDatabase,
+      BehaviorDatabaseConstPtr behaviorDatabase,
+      ParticleDatabaseConstPtr particleDatabase,
+      DamageDatabaseConstPtr damageDatabase,
+      EffectSourceDatabaseConstPtr effectSourceDatabase,
+      TechDatabaseConstPtr techDatabase,
+      StatusEffectDatabaseConstPtr statusEffectDatabase,
+      PlantDatabaseConstPtr plantDatabase,
+      TreasureDatabaseConstPtr treasureDatabase,
+      ImageMetadataDatabaseConstPtr imageMetadataDatabase);
   ~WorldClient();
 
   ConnectionId connection() const override;
   WorldGeometry geometry() const override;
   uint64_t currentStep() const override;
-  IAssetsConstPtr assets() const override;
-  IItemDatabaseConstPtr itemDatabase() const override;
+  AssetsConstPtr assets() const override;
+  ItemDatabaseConstPtr itemDatabase() const override;
   ObjectDatabaseConstPtr objectDatabase() const override;
+  MaterialDatabaseConstPtr materialDatabase() const override;
+  LiquidsDatabaseConstPtr liquidsDatabase() const override;
+  ParticleDatabaseConstPtr particleDatabase() const override;
+  EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
+  TechDatabaseConstPtr techDatabase() const override;
+  StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
+  PlantDatabaseConstPtr plantDatabase() const override;
+  TreasureDatabaseConstPtr treasureDatabase() const override;
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase() const override;
+  FunctionDatabaseConstPtr functionDatabase() const override;
+  BehaviorDatabaseConstPtr behaviorDatabase() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
@@ -233,14 +276,7 @@ private:
     List<OverheadBar> overheadBars;
   };
 
-  using DamageNumber = StarWorldClientDamageFX::DamageNumber;
-  using DamageNumberKey = StarWorldClientDamageFX::DamageNumberKey;
-
   using ClientTileGetter = function<ClientTile const& (Vec2I)>;
-
-  void lightingTileGather();
-  void lightingCalc();
-  void lightingMain();
 
   void initWorld(WorldStartPacket const& packet);
   void clearWorld();
@@ -250,29 +286,14 @@ private:
 
   // Queues pending (step based) updates to server,
   void queueUpdatePackets(bool sendEntityUpdates);
-  void handleDamageNotifications();
 
-  void sparkDamagedBlocks();
-
-  Vec2I environmentBiomeTrackPosition() const;
-  AmbientNoisesDescriptionPtr currentAmbientNoises() const;
   WeatherNoisesDescriptionPtr currentWeatherNoises() const;
-  AmbientNoisesDescriptionPtr currentMusicTrack() const;
-  AmbientNoisesDescriptionPtr currentAltMusicTrack() const;
-
-  void playAltMusic(StringList const& newTracks, float fadeTime, int loops = -1);
-  void stopAltMusic(float fadeTime);
 
   BiomeConstPtr mainEnvironmentBiome() const;
 
-  // Populates foregroundTransparent / backgroundTransparent flag on ClientTile
-  // based on transparency rules.
-  bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
   void dirtyCollision(RectI const& region);
   void freshenCollision(RectI const& region);
   void renderCollisionDebug();
-
-  void informTilePrediction(Vec2I const& pos, TileModification const& modification);
 
   void setTileProtection(DungeonId dungeonId, bool isProtected);
 
@@ -309,7 +330,7 @@ private:
 
   SkyPtr m_sky;
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 
   CollisionGenerator m_collisionGenerator;
   HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
@@ -318,13 +339,24 @@ private:
   Maybe<ConnectionId> m_clientId;
 
   PlayerPtr m_mainPlayer;
-  IConfigurationPtr m_configuration;
-  IMaterialDatabaseConstPtr m_materialDatabase;
-  IItemDatabaseConstPtr m_itemDatabase;
+  ConfigurationPtr m_configuration;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
-  ISpeciesDatabaseConstPtr m_speciesDatabase;
-  IEntityFactoryConstPtr m_entityFactory;
-  ILiquidsDatabaseConstPtr m_liquidsDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  EntityFactoryConstPtr m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  BehaviorDatabaseConstPtr m_behaviorDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  DamageDatabaseConstPtr m_damageDatabase;
+  EffectSourceDatabaseConstPtr m_effectSourceDatabase;
+  TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  PlantDatabaseConstPtr m_plantDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   bool m_collisionDebug;
   float m_interactivePulseAmount;
@@ -364,21 +396,9 @@ private:
 
   Set<EntityId> m_requestedDrops;
 
-  Particle m_blockDamageParticle;
-  Particle m_blockDamageParticleVariance;
-  float m_blockDamageParticleProbability;
-
-  Particle m_blockDingParticle;
-  Particle m_blockDingParticleVariance;
-  float m_blockDingParticleProbability;
-
   HashSet<Vec2I> m_damagedBlocks;
 
-
   List<pair<float, WorldAction>> m_timers;
-
-  Map<DamageNumberKey, DamageNumber> m_damageNumbers;
-  float m_damageNotificationBatchDuration;
 
   AudioInstancePtr m_spaceSound;
   String m_activeSpaceSound;
@@ -386,8 +406,6 @@ private:
   AmbientNoisesDescriptionPtr m_altMusicTrackDescription;
   bool m_altMusicActive;
 
-  int m_modifiedTilePredictionTimeout;
-  HashMap<Vec2I, PredictedTile> m_predictedTiles;
   HashSet<EntityId> m_startupHiddenEntities;
 
   HashMap<DungeonId, float> m_dungeonIdGravity;

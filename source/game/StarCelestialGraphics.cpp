@@ -15,7 +15,7 @@ namespace Star {
 
 namespace {
 
-IAssetsConstPtr celestialGraphicsAssets(IAssetsConstPtr assets) {
+AssetsConstPtr celestialGraphicsAssets(AssetsConstPtr assets) {
   return assets ? std::move(assets) : Root::singleton().assets();
 }
 
@@ -30,7 +30,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialPara
 }
 
 List<pair<String, float>> CelestialGraphics::drawWorld(
-    CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters, IAssetsConstPtr assets) {
+    CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters, AssetsConstPtr assets) {
   auto& root = Root::singleton();
   assets = celestialGraphicsAssets(std::move(assets));
   auto liquidsDatabase = root.liquidsDatabase();
@@ -142,7 +142,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
   return layers;
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters, IAssetsConstPtr assets) {
+List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets) {
   auto& root = Root::singleton();
   assets = celestialGraphicsAssets(std::move(assets));
   auto liquidsDatabase = root.liquidsDatabase();
@@ -224,7 +224,7 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
   return res;
 }
 
-int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters, IAssetsConstPtr assets) {
+int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters, AssetsConstPtr assets) {
   if (parameters.coordinate().isPlanetaryBody())
     return staticRandomU32(parameters.seed(), "RadialNumber") % planetRadialPositions(std::move(assets));
   if (parameters.coordinate().isSatelliteBody())
@@ -232,15 +232,15 @@ int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters
   return 0;
 }
 
-int CelestialGraphics::planetRadialPositions(IAssetsConstPtr assets) {
+int CelestialGraphics::planetRadialPositions(AssetsConstPtr assets) {
   return celestialGraphicsAssets(std::move(assets))->json("/celestial.config:planetRadialSlots").toInt();
 }
 
-int CelestialGraphics::satelliteRadialPositions(IAssetsConstPtr assets) {
+int CelestialGraphics::satelliteRadialPositions(AssetsConstPtr assets) {
   return celestialGraphicsAssets(std::move(assets))->json("/celestial.config:satelliteRadialSlots").toInt();
 }
 
-List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double time, IAssetsConstPtr assets) {
+List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double time, AssetsConstPtr assets) {
   auto parameters = celestialDatabase->parameters(system);
   if (!parameters)
     return {};
@@ -270,7 +270,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialData
   return {};
 }
 
-List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, IAssetsConstPtr assets) {
+List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets) {
   auto params = celestialDatabase->parameters(coordinate);
   if (!params)
     return {};
@@ -281,13 +281,13 @@ List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr cele
     return drawWorld(params.take(), {}, std::move(assets));
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, IAssetsConstPtr assets) {
+List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets) {
   if (auto params = celestialDatabase->parameters(coordinate))
     return worldHorizonImages(params.take(), std::move(assets));
   return {};
 }
 
-int CelestialGraphics::worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, IAssetsConstPtr assets) {
+int CelestialGraphics::worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets) {
   if (auto params = celestialDatabase->parameters(coordinate))
     return worldRadialPosition(params.take(), std::move(assets));
   return 0;

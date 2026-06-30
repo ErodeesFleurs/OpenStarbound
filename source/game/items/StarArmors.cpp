@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarHumanoid.hpp"
-#include "StarRoot.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarPlayer.hpp"
 #include "StarDirectives.hpp"
@@ -17,8 +16,11 @@ EnumMap<ArmorType> ArmorTypeNames{
   {ArmorType::Back, "Back"}
 };
 
-ArmorItem::ArmorItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data) : Item(assets, config, directory, data), SwingableItem(config) {
+ArmorItem::ArmorItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : Item(assets, config, directory, data), SwingableItem(config), m_functionDatabase(std::move(functionDatabase)) {
   m_assets = std::move(assets);
+  if (!m_functionDatabase)
+    throw ItemException("ArmorItem requires function database service");
 
   refreshStatusEffects();
   m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));
@@ -150,10 +152,9 @@ void ArmorItem::refreshStatusEffects() {
   m_statusEffects = instanceValue("statusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   m_cosmeticStatusEffects = instanceValue("cosmeticStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   if (auto leveledStatusEffects = instanceValue("leveledStatusEffects", Json())) {
-    auto functionDatabase = Root::singleton().functionDatabase();
     float level = instanceValue("level", 1).toFloat();
     for (auto effectConfig : leveledStatusEffects.iterateArray()) {
-      float levelFunctionFactor = functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
+      float levelFunctionFactor = m_functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
       auto statModifier = jsonToStatModifier(effectConfig);
       if (auto p = statModifier.ptr<StatBaseMultiplier>())
         p->baseMultiplier = 1 + (p->baseMultiplier - 1) * levelFunctionFactor;
@@ -168,8 +169,8 @@ void ArmorItem::refreshStatusEffects() {
     m_statusEffects.appendAll(augmentConfig.getArray("effects", JsonArray()).transformed(jsonToPersistentStatusEffect));
 }
 
-HeadArmor::HeadArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(std::move(assets), config, directory, data) {
+HeadArmor::HeadArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 
@@ -205,8 +206,8 @@ List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
-ChestArmor::ChestArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(std::move(assets), config, directory, data) {
+ChestArmor::ChestArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
   Json maleImages = config.get("maleFrames");
   m_maleBodyImage = AssetPath::relativeTo(directory, maleImages.getString("body"));
   m_maleFrontSleeveImage = AssetPath::relativeTo(directory, maleImages.getString("frontSleeve"));
@@ -253,8 +254,8 @@ List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
-LegsArmor::LegsArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(std::move(assets), config, directory, data) {
+LegsArmor::LegsArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
@@ -280,8 +281,8 @@ List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
-BackArmor::BackArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : ArmorItem(std::move(assets), config, directory, data) {
+BackArmor::BackArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }

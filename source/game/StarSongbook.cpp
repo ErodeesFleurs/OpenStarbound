@@ -12,7 +12,7 @@ namespace Star {
 Mutex Songbook::s_timeSourcesMutex;
 StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
-Songbook::Songbook(IAssetsConstPtr assets, String const& species) {
+Songbook::Songbook(AssetsConstPtr assets, String const& species) {
   if (!assets)
     throw StarException("Songbook requires assets service");
 

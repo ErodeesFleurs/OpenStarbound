@@ -1,6 +1,5 @@
 #include "StarCompression.hpp"
 #include "StarEncode.hpp"
-#include "StarRoot.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
@@ -189,14 +188,14 @@ namespace Dungeon {
       throw StarException("TMXTileLayer data length was inconsistent with width/height");
   }
 
-  TMXMap::TMXMap(Json const& tmx) {
+  TMXMap::TMXMap(Json const& tmx, TilesetDatabaseConstPtr tilesetDatabase) {
     if (tmx.getUInt("tileheight") != 8 || tmx.getUInt("tilewidth") != 8)
       throw StarException("Invalid tile size");
 
     m_width = tmx.getUInt("width");
     m_height = tmx.getUInt("height");
 
-    m_tilesets = make_shared<TMXTilesets>(tmx.getArray("tilesets"));
+    m_tilesets = make_shared<TMXTilesets>(tmx.getArray("tilesets"), tilesetDatabase);
 
     for (Json const& tmxLayer : tmx.get("layers").iterateArray()) {
       String layerType = tmxLayer.getString("type");
@@ -243,13 +242,13 @@ namespace Dungeon {
     return relativePath.slice(i);
   }
 
-  TMXTilesets::TMXTilesets(Json const& tmx) {
+  TMXTilesets::TMXTilesets(Json const& tmx, TilesetDatabaseConstPtr tilesetDatabase) {
     for (Json const& tilesetJson : tmx.iterateArray()) {
       if (!tilesetJson.contains("source"))
         throw StarException::format("Tiled map has embedded tileset {}", tilesetJson.optString("name"));
 
       String sourcePath = tilesetAssetPath(tilesetJson.getString("source"));
-      Tiled::TilesetConstPtr tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
+      Tiled::TilesetConstPtr tileset = tilesetDatabase->get(sourcePath);
       m_tilesets.append(tileset);
 
       size_t firstGid = tilesetJson.getUInt("firstgid");
@@ -433,7 +432,7 @@ namespace Dungeon {
   }
 
   void TMXPartReader::readAsset(String const& asset) {
-    m_maps.append(make_pair(asset, make_shared<const TMXMap>(m_assets->json(asset))));
+    m_maps.append(make_pair(asset, make_shared<const TMXMap>(m_assets->json(asset), m_tilesetDatabase)));
   }
 
   Vec2U TMXPartReader::size() const {

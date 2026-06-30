@@ -44,7 +44,7 @@ AmbientManager::~AmbientManager() {
   cancelAll();
 }
 
-void AmbientManager::setAssets(IAssetsConstPtr assets) {
+void AmbientManager::setAssets(AssetsConstPtr assets) {
   m_assets = std::move(assets);
 }
 

@@ -9,14 +9,14 @@
 
 namespace Star {
 
-class IConfiguration;
-using IConfigurationPtr = SharedPtr<IConfiguration>;
+class Configuration;
+using ConfigurationPtr = SharedPtr<Configuration>;
 class EntityFactory;
 using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
 
 class PlayerStorage {
 public:
-  PlayerStorage(String const& storageDir, IConfigurationPtr configuration, EntityFactoryConstPtr entityFactory);
+  PlayerStorage(String const& storageDir, ConfigurationPtr configuration, EntityFactoryConstPtr entityFactory);
   ~PlayerStorage();
 
   size_t playerCount() const;
@@ -56,7 +56,7 @@ private:
   mutable RecursiveMutex m_mutex;
   String m_storageDirectory;
   String m_backupDirectory;
-  IConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration;
   EntityFactoryConstPtr m_entityFactory;
   OrderedHashMap<Uuid, Json> m_savedPlayersCache;
   BiMap<Uuid, String> m_playerFileNames;

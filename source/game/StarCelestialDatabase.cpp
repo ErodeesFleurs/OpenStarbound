@@ -53,11 +53,13 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
   return RectI(chunkIndex * m_baseInformation.chunkSize, (chunkIndex + Vec2I(1, 1)) * m_baseInformation.chunkSize);
 }
 
-CelestialMasterDatabase::CelestialMasterDatabase(IAssetsConstPtr assets, Maybe<String> databaseFile) {
+CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile) {
   if (!assets)
     throw CelestialException("CelestialMasterDatabase requires assets service");
 
   m_assets = std::move(assets);
+  if (versioningDatabase)
+    m_versioningDatabase = std::move(*versioningDatabase);
   auto config = m_assets->json("/celestial.config");
 
   m_baseInformation.planetOrbitalLevels = config.getInt("planetOrbitalLevels");
@@ -370,8 +372,7 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
   }
 
   if (updated && m_database.isOpen()) {
-    auto versioningDatabase = Root::singleton().versioningDatabase();
-    auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", chunk.toJson());
+    auto versionedChunk = m_versioningDatabase->makeCurrentVersionedJson("CelestialChunk", chunk.toJson());
     DataStreamBuffer ds;
     ds.write(versionedChunk);
     VersionedJson::writeSubVersioning(ds, versionedChunk);
@@ -397,7 +398,7 @@ Maybe<CelestialOrbitRegion> CelestialMasterDatabase::orbitRegion(
 
 CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex, UnlockDuringFunction unlockDuring) {
   return m_chunkCache.get(chunkIndex, [&](Vec2I const& chunkIndex) -> CelestialChunk {
-      auto versioningDatabase = Root::singleton().versioningDatabase();
+      auto versioningDatabase = m_versioningDatabase;
 
       if (m_database.isOpen()) {
         if (auto chunkData = m_database.find(DataStreamBuffer::serialize(chunkIndex))) {
@@ -637,7 +638,7 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
   return constellations;
 }
 
-CelestialSlaveDatabase::CelestialSlaveDatabase(IAssetsConstPtr assets, CelestialBaseInformation baseInformation) {
+CelestialSlaveDatabase::CelestialSlaveDatabase(AssetsConstPtr assets, CelestialBaseInformation baseInformation) {
   if (!assets)
     throw CelestialException("CelestialSlaveDatabase requires assets service");
 

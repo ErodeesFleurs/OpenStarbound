@@ -4,7 +4,7 @@
 #include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -19,7 +19,7 @@ class RenderCallback;
 
 class Songbook : public NetElementSyncGroup {
 public:
-  Songbook(IAssetsConstPtr assets, String const& species);
+  Songbook(AssetsConstPtr assets, String const& species);
   ~Songbook();
 
   void update(EntityMode mode, World* world);
@@ -77,7 +77,7 @@ private:
   static Mutex s_timeSourcesMutex;
 
   String m_species;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   Vec2F m_position;
 
   bool m_serverMode;

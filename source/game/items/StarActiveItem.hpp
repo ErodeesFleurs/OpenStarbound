@@ -9,7 +9,7 @@
 #include "StarNetworkedAnimator.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarDurabilityItem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -23,7 +23,7 @@ class ActiveItem :
   public virtual ToolUserItem,
   public virtual NetElementGroup {
 public:
-  ActiveItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  ActiveItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
   ItemPtr clone() const override;
@@ -68,7 +68,7 @@ private:
   LuaCallbacks makeActiveItemCallbacks();
   LuaCallbacks makeScriptedAnimationCallbacks();
 
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
 
   mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
 

@@ -24,7 +24,7 @@
 #include "StarObjectDatabase.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -50,9 +50,8 @@ class Npc
     public virtual PhysicsEntity,
     public virtual EmoteEntity {
 public:
-  Npc(ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
-  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -250,7 +249,11 @@ private:
   void refreshHumanoidParameters();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  NpcDatabaseConstPtr m_npcDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  DanceDatabaseConstPtr m_danceDatabase;
+  EmoteProcessorConstPtr m_emoteProcessor;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;

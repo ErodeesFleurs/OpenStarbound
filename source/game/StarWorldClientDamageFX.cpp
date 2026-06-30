@@ -2,7 +2,6 @@
 #include "StarParticleManager.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarWorldClient.hpp"
-#include "StarRoot.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
@@ -27,7 +26,7 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
     int displayValue = static_cast<int>(ceil(amount - 0.1f));
     if (displayValue <= 0)
       return;
-    Particle particle = Root::singleton().particleDatabase()->particle(damageNumberParticleKind);
+    Particle particle = m_worldClient->m_particleDatabase->particle(damageNumberParticleKind);
     particle.position += position;
     particle.string = particle.string.replace("$dmg$", toString(displayValue));
     m_worldClient->m_particles->add(particle);
@@ -42,7 +41,7 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
     });
 
   for (auto const& damageNotification : m_worldClient->m_damageManager->pullPendingNotifications()) {
-    auto damageDatabase = Root::singleton().damageDatabase();
+    auto damageDatabase = m_worldClient->m_damageDatabase;
     DamageKind const& damageKind = damageDatabase->damageKind(damageNotification.damageSourceKind);
     ElementalType const& elementalType = damageDatabase->elementalType(damageKind.elementalType);
 
@@ -76,7 +75,7 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
       m_worldClient->m_samples.appendAll(soundsFromDefinition(m_worldClient->m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
 
-      auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
+      auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position, m_worldClient->particleDatabase());
 
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldClient->m_worldTemplate) {
@@ -99,7 +98,7 @@ void StarWorldClientDamageFX::sparkDamagedBlocks() {
   if (!m_worldClient->inWorld())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_worldClient->m_materialDatabase;
 
   for (auto pos : m_worldClient->m_damagedBlocks.values()) {
     if (auto tile = m_worldClient->m_tileArray->modifyTile(pos)) {

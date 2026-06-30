@@ -11,7 +11,7 @@
 namespace Star {
 
 TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
-  : TileDrawer(assets) {
+  : TileDrawer(assets, materialDatabase) {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 

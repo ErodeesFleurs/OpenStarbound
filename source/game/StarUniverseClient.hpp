@@ -10,7 +10,24 @@
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarNameGenerator.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarProjectileDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarEffectSourceDatabase.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -51,19 +68,42 @@ class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 class LuaRoot;
 using LuaRootPtr = SharedPtr<LuaRoot>;
-class IItemDatabase;
-using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 
 class UniverseClient {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  UniverseClient(PlayerStoragePtr playerStorage,
+      StatisticsPtr statistics,
+      AssetsConstPtr assets,
+      ConfigurationPtr configuration,
+      MaterialDatabaseConstPtr materialDatabase,
+      ItemDatabaseConstPtr itemDatabase,
+      ObjectDatabaseConstPtr objectDatabase,
+      SpeciesDatabaseConstPtr speciesDatabase,
+      EntityFactoryConstPtr entityFactory,
+      LiquidsDatabaseConstPtr liquidsDatabase,
+      BiomeDatabaseConstPtr biomeDatabase,
+      PatternedNameGeneratorConstPtr nameGenerator,
+      FunctionDatabaseConstPtr functionDatabase,
+      BehaviorDatabaseConstPtr behaviorDatabase,
+      ParticleDatabaseConstPtr particleDatabase,
+      DamageDatabaseConstPtr damageDatabase,
+      ProjectileDatabaseConstPtr projectileDatabase,
+      EffectSourceDatabaseConstPtr effectSourceDatabase,
+      TechDatabaseConstPtr techDatabase,
+      StatusEffectDatabaseConstPtr statusEffectDatabase,
+      PlantDatabaseConstPtr plantDatabase,
+      TreasureDatabaseConstPtr treasureDatabase,
+      ImageMetadataDatabaseConstPtr imageMetadataDatabase);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
   PlayerPtr mainPlayer() const;
-  IAssetsConstPtr assets() const;
+  AssetsConstPtr assets() const;
+  BiomeDatabaseConstPtr biomeDatabase() const;
 
   // Returns error if connection failed
   Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
@@ -151,9 +191,27 @@ private:
 
   PlayerStoragePtr m_playerStorage;
   StatisticsPtr m_statistics;
-  IAssetsConstPtr m_assets;
-  IItemDatabaseConstPtr m_itemDatabase;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  EntityFactoryConstPtr m_entityFactory;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  PatternedNameGeneratorConstPtr m_nameGenerator;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  BehaviorDatabaseConstPtr m_behaviorDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  DamageDatabaseConstPtr m_damageDatabase;
+  ProjectileDatabaseConstPtr m_projectileDatabase;
+  EffectSourceDatabaseConstPtr m_effectSourceDatabase;
+  TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  PlantDatabaseConstPtr m_plantDatabase;
+  TreasureDatabaseConstPtr m_treasureDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   PlayerPtr m_mainPlayer;
 
   bool m_pause;

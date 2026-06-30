@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
 #include "StarString.hpp"
 
 namespace Star {
@@ -9,7 +9,7 @@ class Pane;
 using PanePtr = SharedPtr<Pane>;
 
 struct SimpleTooltipServices {
-  IAssetsConstPtr assets;
+  AssetsConstPtr assets;
 };
 
 namespace SimpleTooltipBuilder {

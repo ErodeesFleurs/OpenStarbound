@@ -11,7 +11,6 @@
 #include "StarRandom.hpp"
 #include "StarItemDrop.hpp"
 #include "StarNpc.hpp"
-#include "StarRoot.hpp"
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
 
@@ -30,18 +29,25 @@ EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
   {EntityType::Vehicle, "VehicleEntity"}
 };
 
-EntityFactory::EntityFactory(IAssetsConstPtr assets) {
-  auto& root = Root::singleton();
-  m_playerFactory = root.playerFactory();
-  m_monsterDatabase = root.monsterDatabase();
-  m_objectDatabase = root.objectDatabase();
-  m_projectileDatabase = root.projectileDatabase();
-  m_npcDatabase = root.npcDatabase();
-  m_vehicleDatabase = root.vehicleDatabase();
-  m_versioningDatabase = root.versioningDatabase();
-  m_assets = assets ? std::move(assets) : root.assets();
-  m_itemDatabase = root.itemDatabase();
-}
+EntityFactory::EntityFactory(
+    AssetsConstPtr assets,
+    PlayerFactoryConstPtr playerFactory,
+    MonsterDatabaseConstPtr monsterDatabase,
+    ObjectDatabaseConstPtr objectDatabase,
+    ProjectileDatabaseConstPtr projectileDatabase,
+    NpcDatabaseConstPtr npcDatabase,
+    VehicleDatabaseConstPtr vehicleDatabase,
+    VersioningDatabaseConstPtr versioningDatabase,
+    ItemDatabaseConstPtr itemDatabase)
+  : m_playerFactory(std::move(playerFactory))
+  , m_monsterDatabase(std::move(monsterDatabase))
+  , m_objectDatabase(std::move(objectDatabase))
+  , m_projectileDatabase(std::move(projectileDatabase))
+  , m_npcDatabase(std::move(npcDatabase))
+  , m_vehicleDatabase(std::move(vehicleDatabase))
+  , m_versioningDatabase(std::move(versioningDatabase))
+  , m_assets(std::move(assets))
+  , m_itemDatabase(std::move(itemDatabase)) {}
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
   RecursiveMutexLocker locker(m_mutex);

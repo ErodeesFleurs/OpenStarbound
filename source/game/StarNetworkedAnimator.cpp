@@ -65,7 +65,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
     });
 }
 
-NetworkedAnimator::NetworkedAnimator(IAssetsConstPtr assets) {
+NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
   m_zoom.set(1.0f);
   m_flipped.set(false);
@@ -75,7 +75,7 @@ NetworkedAnimator::NetworkedAnimator(IAssetsConstPtr assets) {
   setupNetStates();
 }
 
-NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, IAssetsConstPtr assets) : NetworkedAnimator(std::move(assets)) {
+NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets) : NetworkedAnimator(std::move(assets)) {
   if (config.isNull())
     return;
 

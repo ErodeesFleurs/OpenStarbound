@@ -10,7 +10,7 @@ namespace Star {
 
 namespace {
 
-IAssetsConstPtr worldParameterAssets() {
+AssetsConstPtr worldParameterAssets() {
   return Root::singleton().assets();
 }
 
@@ -472,7 +472,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   return generateTerrestrialWorldParameters(worldParameterAssets(), typeName, sizeName, seed);
 }
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(IAssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed) {
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed) {
   if (!assets)
     throw StarException("generateTerrestrialWorldParameters requires assets service");
 
@@ -654,7 +654,7 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
   return generateAsteroidsWorldParameters(worldParameterAssets(), seed);
 }
 
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(IAssetsConstPtr assets, uint64_t seed) {
+AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed) {
   if (!assets)
     throw StarException("generateAsteroidsWorldParameters requires assets service");
 
@@ -689,7 +689,7 @@ FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String 
   return generateFloatingDungeonWorldParameters(worldParameterAssets(), dungeonWorldName);
 }
 
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(IAssetsConstPtr assets, String const& dungeonWorldName) {
+FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName) {
   if (!assets)
     throw StarException("generateFloatingDungeonWorldParameters requires assets service");
 

@@ -4,8 +4,8 @@
 #include "StarWorldClient.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarPane.hpp"
-#include "StarIAssets.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
@@ -31,8 +31,8 @@ class CraftingPane;
 using CraftingPanePtr = SharedPtr<CraftingPane>;
 
 struct CraftingPaneServices {
-  IAssetsConstPtr assets;
-  IConfigurationPtr configuration;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
   ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
@@ -79,8 +79,8 @@ private:
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
   PlayerBlueprintsPtr m_blueprints;
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
+  AssetsConstPtr m_assets;
+  ConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;

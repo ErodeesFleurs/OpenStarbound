@@ -8,7 +8,7 @@
 #include "StarThread.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarApplicationController.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 
 #include <queue>
 
@@ -38,7 +38,7 @@ class ApplicationController;
 using ApplicationControllerPtr = SharedPtr<ApplicationController>;
 
 struct VoiceServices {
-  IConfigurationPtr configuration;
+  ConfigurationPtr configuration;
 };
 
 struct VoiceAudioChunk {
@@ -215,7 +215,7 @@ private:
   std::vector<int16_t> m_resampleBuffer;
 
   ApplicationControllerPtr m_applicationController;
-  IConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration;
 
   struct EncodedChunk {
     std::unique_ptr<unsigned char[]> data;

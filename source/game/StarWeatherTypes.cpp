@@ -8,7 +8,7 @@ WeatherType::WeatherType() {
   maximumWind = 0;
 }
 
-WeatherType::WeatherType(IAssetsConstPtr assets, Json config, String path) {
+WeatherType::WeatherType(AssetsConstPtr assets, Json config, String path) {
   if (config.isType(Json::Type::String)) {
     if (!assets)
       throw StarException("WeatherType requires assets service to load config path");
@@ -21,7 +21,7 @@ WeatherType::WeatherType(IAssetsConstPtr assets, Json config, String path) {
 
   for (auto v : config.getArray("particles", JsonArray())) {
     ParticleConfig particleConfig;
-    particleConfig.particle = Particle(v.get("particle"), path);
+    particleConfig.particle = Particle(v.get("particle"), path, assets);
     particleConfig.density = v.getFloat("density");
     particleConfig.autoRotate = v.getBool("autoRotate", false);
     particles.append(std::move(particleConfig));

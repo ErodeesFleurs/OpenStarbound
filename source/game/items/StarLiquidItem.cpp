@@ -1,17 +1,18 @@
 #include "StarLiquidItem.hpp"
 #include "StarJson.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarWorld.hpp"
 
 namespace Star {
 
-LiquidItem::LiquidItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
+LiquidItem::LiquidItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase)
   : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config) {
   if (!assets)
     throw ItemException("LiquidItem requires assets service");
+  if (!liquidsDatabase)
+    throw ItemException("LiquidItem requires liquids database service");
 
-  m_liquidId = Root::singleton().liquidsDatabase()->liquidId(config.getString("liquid"));
+  m_liquidId = liquidsDatabase->liquidId(config.getString("liquid"));
 
   setTwoHanded(config.getBool("twoHanded", true));
 

@@ -14,7 +14,7 @@
 
 namespace Star {
 
-ActiveItem::ActiveItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+ActiveItem::ActiveItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
   : Item(assets, config, directory, parameters), m_assets(std::move(assets)), m_scriptedAnimator(m_assets) {
   if (!m_assets)
     throw ItemException("ActiveItem requires assets service");

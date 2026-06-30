@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
       }
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
-      auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
+      auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters, SkyParameters(), 1234);
+      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
     }
 
     coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);

@@ -8,7 +8,8 @@
 #include "StarSkyParameters.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarNameGenerator.hpp"
 
 namespace Star {
 
@@ -74,11 +75,12 @@ struct SystemWorldConfig {
 
 class SystemWorld {
 public:
-  SystemWorld(IAssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorld(AssetsConstPtr assets, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
 
   virtual ~SystemWorld() = default;
 
-  IAssetsConstPtr assets() const;
+  AssetsConstPtr assets() const;
+  PatternedNameGeneratorConstPtr nameGenerator() const;
   SystemWorldConfig const& systemConfig() const;
   double time() const;
   Vec3I location() const;
@@ -101,15 +103,16 @@ public:
   virtual SystemObjectPtr getObject(Uuid const& uuid) const = 0;
 
   SystemObjectConfig systemObjectConfig(String const& name, Uuid const& uuid) const;
-  static Json systemObjectTypeConfig(IAssetsConstPtr assets, String const& typeName);
+  static Json systemObjectTypeConfig(AssetsConstPtr assets, String const& typeName);
 
 protected:
   Vec3I m_location;
   CelestialDatabasePtr m_celestialDatabase;
 
 private:
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
   ClockConstPtr m_universeClock;
+  PatternedNameGeneratorConstPtr m_nameGenerator;
   SystemWorldConfig m_config;
 };
 
@@ -134,7 +137,7 @@ struct SystemObjectConfig {
 class SystemObject {
 public:
   SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
-  SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters = {});
+  SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, PatternedNameGeneratorConstPtr nameGenerator, JsonObject parameters = {});
   SystemObject(SystemWorld* system, Json const& diskStore);
 
   void init();

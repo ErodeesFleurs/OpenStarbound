@@ -7,9 +7,14 @@
 #include "StarCelestialDatabase.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarAmbient.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarTerrainDatabase.hpp"
+#include "StarBiomeDatabase.hpp"
 
 namespace Star {
+
+class DungeonDefinitions;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
 
 class WorldTemplate;
 using WorldTemplatePtr = SharedPtr<WorldTemplate>;
@@ -72,13 +77,13 @@ public:
   };
 
   // Creates a blank world with the given size
-  WorldTemplate(IAssetsConstPtr assets, Vec2U const& size);
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Vec2U const& size, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Load a world template from the given stored data.
-  WorldTemplate(IAssetsConstPtr assets, Json const& store);
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Json const& store, DungeonDefinitionsConstPtr dungeonDefinitions = {});
 
   Json store() const;
 
@@ -180,7 +185,7 @@ private:
     bool solid;
   };
 
-  WorldTemplate(IAssetsConstPtr assets);
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, DungeonDefinitionsConstPtr dungeonDefinitions);
 
   void determineWorldName();
 
@@ -190,7 +195,10 @@ private:
   BlockInfo getBlockInfo(uint32_t x, uint32_t y) const;
 
   Json m_templateConfig;
-  IAssetsConstPtr m_assets;
+  AssetsConstPtr m_assets;
+  TerrainDatabaseConstPtr m_terrainDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  DungeonDefinitionsConstPtr m_dungeonDefinitions;
   float m_customTerrainBlendSize;
   float m_customTerrainBlendWeight;
 

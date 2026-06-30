@@ -6,7 +6,6 @@
 #include "StarGameTypes.hpp"
 #include "StarList.hpp"
 #include "StarCellularLiquid.hpp"
-#include "StarILiquidsDatabase.hpp"
 #include "StarItemDescriptor.hpp"
 
 namespace Star {
@@ -42,7 +41,7 @@ struct LiquidSettings {
   HashMap<LiquidId, Maybe<LiquidInteractionResult>> interactions;
 };
 
-class LiquidsDatabase : public ILiquidsDatabase {
+class LiquidsDatabase {
 public:
   LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase);
 

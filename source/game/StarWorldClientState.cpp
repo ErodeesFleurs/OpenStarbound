@@ -3,7 +3,7 @@
 
 namespace Star {
 
-WorldClientState::WorldClientState(IAssetsConstPtr assets) {
+WorldClientState::WorldClientState(AssetsConstPtr assets) {
   auto clientConfig = assets->json("/client.config");
   m_windowMonitoringBorder = clientConfig.getInt("windowMonitoringBorder");
   m_presenceEntityMonitoringBorder = clientConfig.getInt("presenceEntityMonitoringBorder");

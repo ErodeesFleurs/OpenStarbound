@@ -4,7 +4,9 @@
 #include "StarWeatherTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCelestialParameters.hpp"
-#include "StarIAssets.hpp"
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarTerrainDatabase.hpp"
 
 namespace Star {
 
@@ -81,12 +83,12 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(IAssetsConstPtr assets, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(IAssetsConstPtr assets, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
+  static WorldLayout buildTerrestrialLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
+  static WorldLayout buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
+  static WorldLayout buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
 
   WorldLayout();
-  WorldLayout(Json const& store);
+  WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase = {}, BiomeDatabaseConstPtr biomeDatabase = {});
 
   Json toJson() const;
 
@@ -164,6 +166,9 @@ private:
   Maybe<BlockNoise> m_blockNoise;
   Maybe<PerlinF> m_blendNoise;
   List<RectI> m_playerStartSearchRegions;
+
+  TerrainDatabaseConstPtr m_terrainDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
 };
 
 DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);

@@ -5,10 +5,10 @@
 
 namespace Star {
 
-class Root;
-class UniverseClient;
+class BehaviorDatabase;
+using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
 
 namespace LuaBindings {
-  LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>* list);
+  LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>* list, BehaviorDatabaseConstPtr behaviorDatabase);
 }
 }

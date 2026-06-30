@@ -233,7 +233,7 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
 }
 
 void Input::BindEntry::updated() {
-  auto config = Root::singleton().configuration();
+  auto config = Input::singleton().m_configuration;
 
   JsonArray array;
   array.reserve(customBinds.size());
@@ -280,7 +280,7 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig)
   config = categoryConfig;
   name = config.getString("name", id);
 
-  ConfigurationPtr userConfig = Root::singletonPtr()->configuration();
+  ConfigurationPtr userConfig = Input::singleton().m_configuration;
   auto userBindings = userConfig->get(InputBindingConfigRoot);
 
   for (auto& pair : config.getObject("binds", {})) {
@@ -365,8 +365,8 @@ Input& Input::singleton() {
     return *s_singleton;
 }
 
-Input::Input(AssetsConstPtr assets)
-  : m_assets(std::move(assets)) {
+Input::Input(AssetsConstPtr assets, ConfigurationPtr configuration)
+  : m_assets(std::move(assets)), m_configuration(std::move(configuration)) {
   if (s_singleton)
     throw InputException("Singleton Input has been constructed twice");
   if (!m_assets)

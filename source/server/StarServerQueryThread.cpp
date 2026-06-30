@@ -1,14 +1,14 @@
 #include "StarServerQueryThread.hpp"
 #include "StarLogging.hpp"
 #include "StarException.hpp"
-#include "StarIConfiguration.hpp"
+#include "StarConfiguration.hpp"
 #include "StarVersion.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarIterator.hpp"
 
 namespace Star {
 
-ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, IConfigurationPtr configuration)
+ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration)
   : Thread("QueryServer"),
     m_universe(universe),
     m_queryServer(bindAddress),

@@ -10,7 +10,7 @@
 #include "StarClientContext.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarSystemWorld.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -24,7 +24,7 @@ using ServerClientContextPtr = SharedPtr<ServerClientContext>;
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, IItemDatabaseConstPtr itemDatabase);
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, ItemDatabaseConstPtr itemDatabase);
 
   ConnectionId clientId() const;
   Maybe<HostAddress> const& remoteAddress() const;
@@ -100,7 +100,7 @@ private:
   String const m_playerName;
   String m_shipSpecies;
   bool const m_canBecomeAdmin;
-  IItemDatabaseConstPtr m_itemDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
 
   mutable RecursiveMutex m_mutex;
 
