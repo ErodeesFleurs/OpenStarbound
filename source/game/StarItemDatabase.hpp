@@ -8,11 +8,14 @@
 
 namespace Star {
 
-STAR_CLASS(RecipeDatabase);
-STAR_CLASS(AugmentItem);
+class RecipeDatabase;
+class AugmentItem;
 
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(Rebuilder);
+class ItemDatabase;
+using ItemDatabasePtr = SharedPtr<ItemDatabase>;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
 
 struct ItemDatabaseExceptionTag { static constexpr char const* typeName = "ItemDatabaseException"; };
 using ItemDatabaseException = TypedException<ItemException, ItemDatabaseExceptionTag>;
@@ -86,11 +89,11 @@ public:
   // spawning the new item, it will be logged and the itemPtr will be set to a
   // default item.
   template <typename ItemT>
-  bool loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>& itemPtr) const;
+  bool loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
-  bool diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) const;
+  bool diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const;
 
   ItemPtr diskLoad(Json const& diskStore) const;
   ItemPtr fromJson(Json const& spec) const;
@@ -192,7 +195,7 @@ private:
 };
 
 template <typename ItemT>
-bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>& itemPtr) const {
+bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const {
   if (descriptor.isNull()) {
     if (itemPtr) {
       itemPtr.reset();
@@ -211,7 +214,7 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>&
 }
 
 template <typename ItemT>
-bool ItemDatabase::diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) const {
+bool ItemDatabase::diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const {
   try {
     return loadItem(ItemDescriptor::loadStore(diskStore), itemPtr);
   } catch (StarException const&) {

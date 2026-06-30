@@ -18,7 +18,8 @@ enum class LogLevel {
 };
 extern EnumMap<LogLevel> const LogLevelNames;
 
-STAR_CLASS(LogSink);
+class LogSink;
+using LogSinkPtr = SharedPtr<LogSink>;
 
 // A sink for Logger messages.
 class LogSink {
@@ -84,7 +85,7 @@ public:
   static void refreshLoggable();
 private:
 
-  static shared_ptr<StdoutLogSink> s_stdoutSink;
+  static SharedPtr<StdoutLogSink> s_stdoutSink;
   static HashSet<LogSinkPtr> s_sinks;
   static Array<bool, 4> s_loggable;
   static Mutex s_mutex;

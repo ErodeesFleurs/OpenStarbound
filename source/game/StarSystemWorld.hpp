@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarCelestialDatabase.hpp"
 #include "StarCelestialParameters.hpp"
 #include "StarCelestialCoordinate.hpp"
 #include "StarUuid.hpp"
@@ -10,16 +11,15 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(Celestial);
-STAR_CLASS(Clock);
-STAR_CLASS(ClientContext);
-STAR_CLASS(SystemWorld);
-STAR_CLASS(SystemWorldServer);
-STAR_CLASS(SystemClientShip);
-STAR_CLASS(SystemObject);
-
-STAR_STRUCT(SystemObjectConfig);
+class Clock;
+using ClockConstPtr = SharedPtr<Clock const>;
+class SystemWorldServer;
+using SystemWorldServerPtr = SharedPtr<SystemWorldServer>;
+class SystemClientShip;
+using SystemClientShipPtr = SharedPtr<SystemClientShip>;
+class SystemObject;
+using SystemObjectPtr = SharedPtr<SystemObject>;
+struct SystemObjectConfig;
 
 struct CelestialOrbit {
   static CelestialOrbit fromJson(Json const& json);

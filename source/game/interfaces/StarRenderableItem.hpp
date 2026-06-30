@@ -4,7 +4,7 @@
 
 namespace Star {
 
-  STAR_CLASS(RenderableItem);
+  class RenderableItem;
 
   class RenderableItem {
   public:

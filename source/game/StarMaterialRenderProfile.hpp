@@ -16,7 +16,8 @@ using MaterialRenderProfileException = TypedException<StarException, MaterialRen
 enum class MaterialJoinType : uint8_t { All, Any };
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;
 
-STAR_STRUCT(MaterialRule);
+struct MaterialRule;
+using MaterialRuleConstPtr = SharedPtr<MaterialRule const>;
 
 struct MaterialRule {
   struct RuleEmpty {};
@@ -50,7 +51,8 @@ struct MaterialMatchPoint {
   MaterialRuleConstPtr rule;
 };
 
-STAR_STRUCT(MaterialRenderPiece);
+struct MaterialRenderPiece;
+using MaterialRenderPieceConstPtr = SharedPtr<MaterialRenderPiece const>;
 
 struct MaterialRenderPiece {
   size_t pieceId;
@@ -60,7 +62,9 @@ struct MaterialRenderPiece {
   HashMap<MaterialColorVariant, List<RectF>> variants;
 };
 
-STAR_STRUCT(MaterialRenderMatch);
+struct MaterialRenderMatch;
+using MaterialRenderMatchPtr = SharedPtr<MaterialRenderMatch>;
+using MaterialRenderMatchConstPtr = SharedPtr<MaterialRenderMatch const>;
 using MaterialRenderMatchList = List<MaterialRenderMatchConstPtr>;
 
 struct MaterialRenderMatch {
@@ -86,7 +90,8 @@ using MatchMap = StringMap<MaterialRenderMatchList>;
 // rendered tile in the center.
 int const MaterialRenderProfileMaxNeighborDistance = 2;
 
-STAR_STRUCT(MaterialRenderProfile);
+struct MaterialRenderProfile;
+using MaterialRenderProfileConstPtr = SharedPtr<MaterialRenderProfile const>;
 
 struct MaterialRenderProfile {
   RuleMap rules;

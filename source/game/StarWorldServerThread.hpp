@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(WorldServerThread);
+class WorldServerThread;
+using WorldServerThreadPtr = SharedPtr<WorldServerThread>;
 
 // Runs a WorldServer in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -29,7 +30,7 @@ public:
   void start();
   // Signals the WorldServerThread to stop and then joins it
   void stop();
-  void setPause(shared_ptr<const atomic<bool>> pause);
+  void setPause(SharedPtr<atomic<bool> const> pause);
 
   // An exception occurred from the actual WorldServer itself and the
   // WorldServerThread has stopped running.
@@ -101,7 +102,7 @@ private:
   List<Message> m_messages;
 
   atomic<bool> m_stop;
-  shared_ptr<const atomic<bool>> m_pause;
+  SharedPtr<atomic<bool> const> m_pause;
   mutable atomic<bool> m_errorOccurred;
   mutable atomic<bool> m_shouldExpire;
 };

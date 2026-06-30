@@ -12,12 +12,13 @@
 
 namespace Star {
 
-STAR_CLASS(ObjectItem);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(Item);
-STAR_CLASS(World);
-
-STAR_CLASS(ToolUser);
+class ObjectItem;
+using ObjectItemPtr = SharedPtr<ObjectItem>;
+class ToolUserEntity;
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ToolUser;
+using ToolUserPtr = SharedPtr<ToolUser>;
 
 class ToolUser : public NetElementSyncGroup {
 public:

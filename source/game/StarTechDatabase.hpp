@@ -9,7 +9,9 @@ namespace Star {
 struct TechDatabaseExceptionTag { static constexpr char const* typeName = "TechDatabaseException"; };
 using TechDatabaseException = TypedException<StarException, TechDatabaseExceptionTag>;
 
-STAR_CLASS(TechDatabase);
+class TechDatabase;
+using TechDatabasePtr = SharedPtr<TechDatabase>;
+using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
 
 enum class TechType {
   Head,

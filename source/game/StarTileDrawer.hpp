@@ -7,9 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TileDrawer);
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 class TileDrawer {
 public:

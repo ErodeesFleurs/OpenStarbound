@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(TileEntity);
+class TileEntity;
+using TileEntityPtr = SharedPtr<TileEntity>;
 
 struct MaterialSpace {
   MaterialSpace();

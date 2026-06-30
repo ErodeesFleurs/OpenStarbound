@@ -9,10 +9,14 @@
 
 namespace Star {
 
-STAR_CLASS(PacketSocket);
-STAR_CLASS(LocalPacketSocket);
-STAR_CLASS(TcpPacketSocket);
-STAR_CLASS(P2PPacketSocket);
+class PacketSocket;
+using PacketSocketUPtr = UniquePtr<PacketSocket>;
+class LocalPacketSocket;
+using LocalPacketSocketUPtr = UniquePtr<LocalPacketSocket>;
+class TcpPacketSocket;
+using TcpPacketSocketUPtr = UniquePtr<TcpPacketSocket>;
+class P2PPacketSocket;
+using P2PPacketSocketUPtr = UniquePtr<P2PPacketSocket>;
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;

@@ -6,8 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(TcpSocket);
-STAR_CLASS(TcpServer);
+class TcpSocket;
+using TcpSocketPtr = SharedPtr<TcpSocket>;
+class TcpServer;
+using TcpServerPtr = SharedPtr<TcpServer>;
 
 class TcpSocket : public Socket {
 public:

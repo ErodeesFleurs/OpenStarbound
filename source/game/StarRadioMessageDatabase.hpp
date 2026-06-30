@@ -7,8 +7,10 @@ namespace Star {
 
 struct RadioMessageDatabaseExceptionTag { static constexpr char const* typeName = "RadioMessageDatabaseException"; };
 using RadioMessageDatabaseException = TypedException<StarException, RadioMessageDatabaseExceptionTag>;
-STAR_STRUCT(RadioMessage);
-STAR_CLASS(RadioMessageDatabase);
+
+class RadioMessageDatabase;
+using RadioMessageDatabasePtr = SharedPtr<RadioMessageDatabase>;
+using RadioMessageDatabaseConstPtr = SharedPtr<RadioMessageDatabase const>;
 
 enum class RadioMessageType { Generic, Mission, Quest, Tutorial };
 extern EnumMap<RadioMessageType> const RadioMessageTypeNames;

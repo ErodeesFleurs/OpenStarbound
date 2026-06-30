@@ -16,11 +16,16 @@ enum class ArmorType : uint8_t {
 };
 extern EnumMap<ArmorType> ArmorTypeNames;
 
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class ArmorItem;
+using ArmorItemPtr = SharedPtr<ArmorItem>;
+class HeadArmor;
+using HeadArmorPtr = SharedPtr<HeadArmor>;
+class ChestArmor;
+using ChestArmorPtr = SharedPtr<ChestArmor>;
+class LegsArmor;
+using LegsArmorPtr = SharedPtr<LegsArmor>;
+class BackArmor;
+using BackArmorPtr = SharedPtr<BackArmor>;
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:

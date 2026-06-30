@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(DamageBarEntity);
+class DamageBarEntity;
+using DamageBarEntityPtr = SharedPtr<DamageBarEntity>;
 
 enum class DamageBarType : uint8_t {
   Default,

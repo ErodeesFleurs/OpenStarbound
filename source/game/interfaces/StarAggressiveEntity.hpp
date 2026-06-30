@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(AggressiveEntity);
+class AggressiveEntity;
 
 class AggressiveEntity : public virtual Entity {
 public:

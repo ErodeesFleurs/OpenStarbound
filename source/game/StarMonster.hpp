@@ -22,8 +22,10 @@
 
 namespace Star {
 
-STAR_CLASS(Monster);
-STAR_CLASS(StatusController);
+class Monster;
+using MonsterPtr = SharedPtr<Monster>;
+class StatusController;
+using StatusControllerPtr = SharedPtr<StatusController>;
 
 class Monster
   : public virtual DamageBarEntity,

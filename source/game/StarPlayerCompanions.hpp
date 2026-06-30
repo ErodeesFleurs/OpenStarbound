@@ -8,8 +8,10 @@
 
 namespace Star {
 
-STAR_CLASS(Companion);
-STAR_CLASS(PlayerCompanions);
+class Companion;
+using CompanionPtr = SharedPtr<Companion>;
+class PlayerCompanions;
+using PlayerCompanionsPtr = SharedPtr<PlayerCompanions>;
 
 class Companion {
 public:

@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(StatSet);
+class StatSet;
 
 // Manages a collection of Stats and Resources.
 //

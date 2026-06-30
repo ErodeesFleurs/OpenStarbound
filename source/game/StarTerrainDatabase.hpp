@@ -5,8 +5,11 @@
 
 namespace Star {
 
-STAR_STRUCT(TerrainSelector);
-STAR_CLASS(TerrainDatabase);
+struct TerrainSelector;
+using TerrainSelectorConstPtr = SharedPtr<TerrainSelector const>;
+class TerrainDatabase;
+using TerrainDatabasePtr = SharedPtr<TerrainDatabase>;
+using TerrainDatabaseConstPtr = SharedPtr<TerrainDatabase const>;
 
 struct TerrainExceptionTag { static constexpr char const* typeName = "TerrainException"; };
 using TerrainException = TypedException<StarException, TerrainExceptionTag>;

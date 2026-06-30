@@ -10,7 +10,8 @@
 
 namespace Star {
 
-STAR_CLASS(NetworkedAnimator);
+class NetworkedAnimator;
+using NetworkedAnimatorPtr = SharedPtr<NetworkedAnimator>;
 struct NetworkedAnimatorExceptionTag { static constexpr char const* typeName = "NetworkedAnimatorException"; };
 using NetworkedAnimatorException = TypedException<StarException, NetworkedAnimatorExceptionTag>;
 

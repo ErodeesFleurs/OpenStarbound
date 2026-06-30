@@ -9,21 +9,25 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PlayerStorage);
-STAR_CLASS(CharCreationPane);
-STAR_CLASS(CharSelectionPane);
-STAR_CLASS(OptionsMenu);
-STAR_CLASS(ModsMenu);
-STAR_CLASS(GuiContext);
-STAR_CLASS(Pane);
-STAR_CLASS(PaneManager);
-STAR_CLASS(Mixer);
-STAR_CLASS(EnvironmentPainter);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(ButtonWidget);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class PlayerStorage;
+using PlayerStoragePtr = SharedPtr<PlayerStorage>;
+class GuiContext;
+using GuiContextPtr = SharedPtr<GuiContext>;
+class Pane;
+using PanePtr = SharedPtr<Pane>;
+class Mixer;
+using MixerPtr = SharedPtr<Mixer>;
+class EnvironmentPainter;
+using EnvironmentPainterPtr = SharedPtr<EnvironmentPainter>;
+class CelestialMasterDatabase;
+using CelestialMasterDatabasePtr = SharedPtr<CelestialMasterDatabase>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
 
-STAR_CLASS(TitleScreen);
+class TitleScreen;
+using TitleScreenPtr = SharedPtr<TitleScreen>;
 
 enum class TitleState {
   Main,
@@ -103,7 +107,7 @@ private:
   unsigned windowWidth() const;
 
   using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
-  shared_ptr<ScriptComponent> m_scriptComponent;
+  SharedPtr<ScriptComponent> m_scriptComponent;
 
   GuiContext* m_guiContext;
 

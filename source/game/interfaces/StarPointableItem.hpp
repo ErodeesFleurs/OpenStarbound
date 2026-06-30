@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(PointableItem);
+class PointableItem;
 
 class PointableItem {
 public:

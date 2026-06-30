@@ -13,9 +13,12 @@
 
 namespace Star {
 
-STAR_CLASS(WorldServerThread);
-STAR_CLASS(SystemWorldServerThread);
-STAR_CLASS(ServerClientContext);
+class WorldServerThread;
+using WorldServerThreadPtr = SharedPtr<WorldServerThread>;
+class SystemWorldServerThread;
+using SystemWorldServerThreadPtr = SharedPtr<SystemWorldServerThread>;
+class ServerClientContext;
+using ServerClientContextPtr = SharedPtr<ServerClientContext>;
 
 class ServerClientContext {
 public:

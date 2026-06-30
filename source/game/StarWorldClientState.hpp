@@ -6,7 +6,7 @@
 
 namespace Star {
 
-STAR_CLASS(WorldClientState);
+class WorldClientState;
 
 // Class to aid in network syncronization of client state such as viewing area
 // and player entity id.

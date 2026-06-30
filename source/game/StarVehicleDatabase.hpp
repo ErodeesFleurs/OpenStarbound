@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
 
 struct VehicleDatabaseExceptionTag { static constexpr char const* typeName = "VehicleDatabaseException"; };
 using VehicleDatabaseException = TypedException<StarException, VehicleDatabaseExceptionTag>;

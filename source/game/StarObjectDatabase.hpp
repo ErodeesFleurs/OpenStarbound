@@ -14,16 +14,23 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Image);
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(RecipeDatabase);
-STAR_CLASS(Object);
-STAR_STRUCT(ObjectOrientation);
-STAR_STRUCT(ObjectConfig);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
+class World;
+class Image;
+using ImageConstPtr = SharedPtr<Image const>;
+class ItemDatabase;
+class RecipeDatabase;
+class Object;
+using ObjectPtr = SharedPtr<Object>;
+struct ObjectOrientation;
+using ObjectOrientationPtr = SharedPtr<ObjectOrientation>;
+struct ObjectConfig;
+using ObjectConfigPtr = SharedPtr<ObjectConfig>;
+class ObjectDatabase;
+using ObjectDatabasePtr = SharedPtr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class LuaRoot;
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
 
 struct ObjectExceptionTag { static constexpr char const* typeName = "ObjectException"; };
 using ObjectException = TypedException<StarException, ObjectExceptionTag>;

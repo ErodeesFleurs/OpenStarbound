@@ -30,10 +30,15 @@ enum class WorldEdgeForceRegionType : uint8_t {
 };
 extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames;
 
-STAR_STRUCT(VisitableWorldParameters);
-STAR_STRUCT(TerrestrialWorldParameters);
-STAR_STRUCT(AsteroidsWorldParameters);
-STAR_STRUCT(FloatingDungeonWorldParameters);
+struct VisitableWorldParameters;
+using VisitableWorldParametersPtr = SharedPtr<VisitableWorldParameters>;
+using VisitableWorldParametersConstPtr = SharedPtr<VisitableWorldParameters const>;
+struct TerrestrialWorldParameters;
+using TerrestrialWorldParametersPtr = SharedPtr<TerrestrialWorldParameters>;
+struct AsteroidsWorldParameters;
+using AsteroidsWorldParametersPtr = SharedPtr<AsteroidsWorldParameters>;
+struct FloatingDungeonWorldParameters;
+using FloatingDungeonWorldParametersPtr = SharedPtr<FloatingDungeonWorldParameters>;
 
 struct VisitableWorldParameters {
   VisitableWorldParameters() = default;

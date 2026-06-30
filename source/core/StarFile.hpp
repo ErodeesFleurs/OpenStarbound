@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(File);
+class File;
+using FilePtr = SharedPtr<File>;
 
 // All file methods are thread safe.
 class File : public IODevice {

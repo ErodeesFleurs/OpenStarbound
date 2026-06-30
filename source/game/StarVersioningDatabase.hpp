@@ -8,8 +8,9 @@
 
 namespace Star {
 
-STAR_STRUCT(VersionedJson);
-STAR_CLASS(VersioningDatabase);
+class VersioningDatabase;
+using VersioningDatabasePtr = SharedPtr<VersioningDatabase>;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 
 struct VersionedJsonExceptionTag { static constexpr char const* typeName = "VersionedJsonException"; };
 using VersionedJsonException = TypedException<StarException, VersionedJsonExceptionTag>;

@@ -7,8 +7,6 @@
 
 namespace Star {
 
-STAR_CLASS(CollisionGenerator);
-
 // Turns cell geometry into "smoothed" polygonal geometry.  Used by World to
 // generate ramps and slopes based on tiles.
 class CollisionGenerator {

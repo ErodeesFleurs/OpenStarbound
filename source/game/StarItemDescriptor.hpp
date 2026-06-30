@@ -6,9 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(ItemDescriptor);
-STAR_CLASS(Item);
-STAR_STRUCT(VersionedJson);
+class Item;
+using ItemConstPtr = SharedPtr<Item const>;
 
 class ItemDescriptor {
 public:

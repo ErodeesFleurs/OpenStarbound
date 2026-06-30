@@ -3,9 +3,12 @@
 
 namespace Star {
 
-STAR_STRUCT(Tile);
-STAR_CLASS(TileDatabase);
-STAR_CLASS(Tileset);
+struct Tile;
+using TilePtr = SharedPtr<Tile>;
+class TileDatabase;
+using TileDatabasePtr = SharedPtr<TileDatabase>;
+class Tileset;
+using TilesetPtr = SharedPtr<Tileset>;
 
 struct Tile {
   String source, database, tileset, name;

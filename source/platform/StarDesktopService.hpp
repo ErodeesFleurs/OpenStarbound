@@ -2,7 +2,8 @@
 
 namespace Star {
 
-STAR_CLASS(DesktopService);
+class DesktopService;
+using DesktopServicePtr = SharedPtr<DesktopService>;
 
 class DesktopService {
 public:

@@ -9,8 +9,8 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(Plant);
+class RenderCallback;
+class Plant;
 
 struct PlantExceptionTag { static constexpr char const* typeName = "PlantException"; };
 using PlantException = TypedException<StarException, PlantExceptionTag>;

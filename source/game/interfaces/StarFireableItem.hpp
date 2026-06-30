@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(FireableItem);
+class FireableItem;
+using FireableItemPtr = SharedPtr<FireableItem>;
 
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:

@@ -4,9 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ListWidget);
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
 
 class ModsMenu : public Pane {
 public:

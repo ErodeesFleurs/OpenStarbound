@@ -10,8 +10,10 @@ namespace Star {
 struct SocketClosedExceptionTag { static constexpr char const* typeName = "SocketClosedException"; };
 using SocketClosedException = TypedException<NetworkException, SocketClosedExceptionTag>;
 
-STAR_STRUCT(SocketImpl);
-STAR_CLASS(Socket);
+struct SocketImpl;
+using SocketImplPtr = SharedPtr<SocketImpl>;
+class Socket;
+using SocketPtr = SharedPtr<Socket>;
 
 enum class SocketMode {
   Closed,

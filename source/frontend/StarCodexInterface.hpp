@@ -17,9 +17,6 @@ class ButtonWidget;
 using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
 class ButtonGroupWidget;
 using ButtonGroupWidgetPtr = SharedPtr<ButtonGroupWidget>;
-class Codex;
-using CodexConstPtr = SharedPtr<Codex const>;
-
 class CodexInterface;
 using CodexInterfacePtr = SharedPtr<CodexInterface>;
 class CodexInterface : public Pane {

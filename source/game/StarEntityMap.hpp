@@ -5,9 +5,12 @@
 
 namespace Star {
 
-STAR_CLASS(EntityMap);
-STAR_CLASS(TileEntity);
-STAR_CLASS(InteractiveEntity);
+class EntityMap;
+using EntityMapPtr = SharedPtr<EntityMap>;
+class TileEntity;
+using TileEntityPtr = SharedPtr<TileEntity>;
+class InteractiveEntity;
+using InteractiveEntityPtr = SharedPtr<InteractiveEntity>;
 
 struct EntityMapExceptionTag { static constexpr char const* typeName = "EntityMapException"; };
 using EntityMapException = TypedException<StarException, EntityMapExceptionTag>;
@@ -96,25 +99,25 @@ public:
   // with pointers to a derived entity type.
 
   template <typename EntityT>
-  shared_ptr<EntityT> get(EntityId entityId) const;
+  SharedPtr<EntityT> get(EntityId entityId) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> getUnique(String const& uniqueId) const;
+  SharedPtr<EntityT> getUnique(String const& uniqueId) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter = {}) const;
+  List<SharedPtr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> all(EntityFilterOf<EntityT> const& filter = {}) const;
+  List<SharedPtr<EntityT>> all(EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter = {}) const;
+  List<SharedPtr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter = {}) const;
+  SharedPtr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+  List<SharedPtr<EntityT>> atTile(Vec2I const& pos) const;
 
 private:
   using SpatialMap = SpatialHash2D<EntityId, float, EntityPtr>;
@@ -132,18 +135,18 @@ private:
 };
 
 template <typename EntityT>
-shared_ptr<EntityT> EntityMap::get(EntityId entityId) const {
+SharedPtr<EntityT> EntityMap::get(EntityId entityId) const {
   return as<EntityT>(entity(entityId));
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> EntityMap::getUnique(String const& uniqueId) const {
+SharedPtr<EntityT> EntityMap::getUnique(String const& uniqueId) const {
   return as<EntityT>(uniqueEntity(uniqueId));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> EntityMap::query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter) const {
-  List<shared_ptr<EntityT>> entities;
+List<SharedPtr<EntityT>> EntityMap::query(RectF const& boundBox, EntityFilterOf<EntityT> const& filter) const {
+  List<SharedPtr<EntityT>> entities;
   for (auto const& entity : entityQuery(boundBox, entityTypeFilter(filter)))
     entities.append(as<EntityT>(entity));
 
@@ -151,8 +154,8 @@ List<shared_ptr<EntityT>> EntityMap::query(RectF const& boundBox, EntityFilterOf
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
-  List<shared_ptr<EntityT>> entities;
+List<SharedPtr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
+  List<SharedPtr<EntityT>> entities;
   forAllEntities([&](EntityPtr const& entity) {
     if (auto e = as<EntityT>(entity)) {
       if (!filter || filter(e))
@@ -164,8 +167,8 @@ List<shared_ptr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) 
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> EntityMap::lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter) const {
-  List<shared_ptr<EntityT>> entities;
+List<SharedPtr<EntityT>> EntityMap::lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> const& filter) const {
+  List<SharedPtr<EntityT>> entities;
   for (auto const& entity : entityLineQuery(begin, end, entityTypeFilter(filter)))
     entities.append(as<EntityT>(entity));
 
@@ -173,13 +176,13 @@ List<shared_ptr<EntityT>> EntityMap::lineQuery(Vec2F const& begin, Vec2F const& 
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> EntityMap::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter) const {
+SharedPtr<EntityT> EntityMap::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> const& filter) const {
   return as<EntityT>(closestEntity(center, radius, entityTypeFilter(filter)));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
-  List<shared_ptr<EntityT>> list;
+List<SharedPtr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
+  List<SharedPtr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
       if (auto e = as<EntityT>(entity))
         list.append(std::move(e));

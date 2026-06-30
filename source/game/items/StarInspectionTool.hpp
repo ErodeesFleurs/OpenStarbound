@@ -8,7 +8,7 @@
 
 namespace Star {
 
-STAR_CLASS(InspectionTool);
+class InspectionTool;
 
 class InspectionTool
   : public Item,

@@ -19,11 +19,17 @@
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(ObjectDatabase);
-STAR_STRUCT(ObjectConfig);
-STAR_STRUCT(ObjectOrientation);
-STAR_CLASS(Object);
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class ObjectDatabase;
+using ObjectDatabasePtr = SharedPtr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+struct ObjectConfig;
+using ObjectConfigConstPtr = SharedPtr<ObjectConfig const>;
+struct ObjectOrientation;
+using ObjectOrientationPtr = SharedPtr<ObjectOrientation>;
+class Object;
+using ObjectPtr = SharedPtr<Object>;
 
 class Object
   : public virtual TileEntity,

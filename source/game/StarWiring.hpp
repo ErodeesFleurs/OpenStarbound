@@ -6,9 +6,6 @@
 
 namespace Star {
 
-STAR_CLASS(WireCoordinator);
-STAR_CLASS(WireConnector);
-
 enum class WireDirection {
   Input,
   Output

@@ -6,9 +6,11 @@
 
 namespace Star {
 
-STAR_STRUCT(DamageKind);
-STAR_CLASS(DamageDatabase);
-STAR_STRUCT(ElementalType);
+struct DamageKind;
+class DamageDatabase;
+using DamageDatabasePtr = SharedPtr<DamageDatabase>;
+using DamageDatabaseConstPtr = SharedPtr<DamageDatabase const>;
+struct ElementalType;
 
 using TargetMaterial = String;
 

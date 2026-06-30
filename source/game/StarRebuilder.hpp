@@ -4,8 +4,9 @@
 
 namespace Star {
 
-STAR_CLASS(LuaContext);
-STAR_CLASS(LuaRoot);
+class LuaContext;
+class LuaRoot;
+using LuaRootPtr = SharedPtr<LuaRoot>;
 
 class Rebuilder {
 public:
@@ -18,7 +19,7 @@ public:
 private:
   LuaRootPtr m_luaRoot;
   mutable RecursiveMutex m_luaMutex;
-  shared_ptr<List<LuaContext>> m_contexts; // this is a ptr to avoid having to include Lua.hpp here
+  SharedPtr<List<LuaContext>> m_contexts; // this is a ptr to avoid having to include Lua.hpp here
 };
 
 }

@@ -11,9 +11,9 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(TileEntity);
-STAR_CLASS(ScriptedEntity);
+class World;
+class TileEntity;
+class ScriptedEntity;
 
 using WorldAction = function<void(World*)>;
 
@@ -191,32 +191,32 @@ public:
   // type, and casts them to the appropriate pointer type.
 
   template <typename EntityT>
-  shared_ptr<EntityT> get(EntityId entityId) const;
+  SharedPtr<EntityT> get(EntityId entityId) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
+  List<SharedPtr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
+  SharedPtr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
+  SharedPtr<EntityT> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
+  List<SharedPtr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+  List<SharedPtr<EntityT>> atTile(Vec2I const& pos) const;
 };
 
 template <typename EntityT>
-shared_ptr<EntityT> World::get(EntityId entityId) const {
+SharedPtr<EntityT> World::get(EntityId entityId) const {
   return as<EntityT>(entity(entityId));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
-  List<shared_ptr<EntityT>> list;
+List<SharedPtr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
+  List<SharedPtr<EntityT>> list;
   forEachEntity(boundBox, [&](EntityPtr const& entity) {
       if (auto e = as<EntityT>(entity)) {
         if (!selector || selector(e))
@@ -228,20 +228,20 @@ List<shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<Ent
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
+SharedPtr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
   return as<EntityT>(closestEntity(center, radius, entityTypeFilter<EntityT>(selector)));
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> World::closestInSight(
+SharedPtr<EntityT> World::closestInSight(
     Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector) const {
   return as<EntityT>(closestEntityInSight(center, radius, collisionSet, entityTypeFilter<EntityT>(selector)));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::lineQuery(
+List<SharedPtr<EntityT>> World::lineQuery(
     Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
-  List<shared_ptr<EntityT>> list;
+  List<SharedPtr<EntityT>> list;
   forEachEntityLine(begin, end, [&](EntityPtr entity) {
       if (auto e = as<EntityT>(std::move(entity))) {
         if (!selector || selector(e))
@@ -253,8 +253,8 @@ List<shared_ptr<EntityT>> World::lineQuery(
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
-  List<shared_ptr<EntityT>> list;
+List<SharedPtr<EntityT>> World::atTile(Vec2I const& pos) const {
+  List<SharedPtr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
       if (auto e = as<EntityT>(entity))
         list.append(std::move(e));

@@ -6,8 +6,11 @@
 
 namespace Star {
 
-STAR_STRUCT(Tenant);
-STAR_CLASS(TenantDatabase);
+struct Tenant;
+using TenantPtr = SharedPtr<Tenant>;
+class TenantDatabase;
+using TenantDatabasePtr = SharedPtr<TenantDatabase>;
+using TenantDatabaseConstPtr = SharedPtr<TenantDatabase const>;
 
 struct TenantExceptionTag { static constexpr char const* typeName = "TenantException"; };
 using TenantException = TypedException<StarException, TenantExceptionTag>;

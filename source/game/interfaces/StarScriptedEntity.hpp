@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(ScriptedEntity);
+class ScriptedEntity;
+using ScriptedEntityPtr = SharedPtr<ScriptedEntity>;
 
 // All ScriptedEntity methods should only be called on master entities
 class ScriptedEntity : public virtual Entity {

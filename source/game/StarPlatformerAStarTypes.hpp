@@ -8,7 +8,8 @@
 namespace Star {
 namespace PlatformerAStar {
 
-STAR_CLASS(PathFinder);
+class PathFinder;
+using PathFinderPtr = SharedPtr<PathFinder>;
 
 struct Node {
   Node withVelocity(Vec2F velocity) const;

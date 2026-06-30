@@ -5,20 +5,23 @@
 
 namespace Star {
 
-STAR_CLASS(BehaviorDatabase);
-STAR_STRUCT(ActionNode);
-STAR_STRUCT(DecoratorNode);
-STAR_STRUCT(SequenceNode);
-STAR_STRUCT(SelectorNode);
-STAR_STRUCT(ParallelNode);
-STAR_STRUCT(DynamicNode);
-STAR_STRUCT(RandomizeNode);
-STAR_STRUCT(BehaviorTree);
+class BehaviorDatabase;
+using BehaviorDatabasePtr = SharedPtr<BehaviorDatabase>;
+using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
+struct ActionNode;
+struct DecoratorNode;
+struct SequenceNode;
+struct SelectorNode;
+struct ParallelNode;
+struct DynamicNode;
+struct RandomizeNode;
+struct BehaviorTree;
+using BehaviorTreeConstPtr = SharedPtr<BehaviorTree const>;
 
 using CompositeNode = Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode>;
 
 using BehaviorNode = Variant<ActionNode, DecoratorNode, CompositeNode, BehaviorTreeConstPtr>;
-using BehaviorNodeConstPtr = std::shared_ptr<const BehaviorNode>;
+using BehaviorNodeConstPtr = SharedPtr<BehaviorNode const>;
 
 enum class NodeParameterType : uint8_t {
   Json,

@@ -8,7 +8,7 @@ namespace Star {
 struct NetworkExceptionTag { static constexpr char const* typeName = "NetworkException"; };
 using NetworkException = TypedException<IOException, NetworkExceptionTag>;
 
-STAR_CLASS(HostAddress);
+class HostAddress;
 
 enum class NetworkMode {
   IPv4,

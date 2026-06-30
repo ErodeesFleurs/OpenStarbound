@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(FireableItem);
+class FireableItem;
 
 namespace LuaBindings {
   LuaCallbacks makeFireableItemCallbacks(FireableItem* fireableItem);

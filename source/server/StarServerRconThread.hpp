@@ -7,8 +7,9 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
-STAR_CLASS(ServerRconThread);
+class UniverseServer;
+class ServerRconThread;
+using ServerRconThreadUPtr = UniquePtr<ServerRconThread>;
 
 class ServerRconThread : public Thread {
 public:

@@ -6,9 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
+class RenderCallback;
 
-STAR_CLASS(PlayerDeployment);
+class PlayerDeployment;
+using PlayerDeploymentPtr = SharedPtr<PlayerDeployment>;
 
 class PlayerDeployment {
 public:

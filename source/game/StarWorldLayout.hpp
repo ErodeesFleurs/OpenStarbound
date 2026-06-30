@@ -7,10 +7,14 @@
 
 namespace Star {
 
-STAR_STRUCT(Biome);
-STAR_STRUCT(TerrainSelector);
-STAR_STRUCT(WorldRegion);
-STAR_CLASS(WorldLayout);
+struct Biome;
+using BiomeConstPtr = SharedPtr<Biome const>;
+struct TerrainSelector;
+using TerrainSelectorConstPtr = SharedPtr<TerrainSelector const>;
+struct WorldRegion;
+using WorldRegionPtr = SharedPtr<WorldRegion>;
+class WorldLayout;
+using WorldLayoutPtr = SharedPtr<WorldLayout>;
 
 using BiomeIndex = uint8_t;
 BiomeIndex const NullBiomeIndex = 0;

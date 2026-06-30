@@ -9,8 +9,6 @@
 namespace Star {
 namespace PlatformerAStar {
 
-  STAR_CLASS(PathFinder);
-
   class PathFinder {
   public:
     PathFinder(World* world,

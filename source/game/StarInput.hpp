@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(Input);
+class Input;
+using InputPtr = SharedPtr<Input>;
 struct InputExceptionTag { static constexpr char const* typeName = "InputException"; };
 using InputException = TypedException<StarException, InputExceptionTag>;
 

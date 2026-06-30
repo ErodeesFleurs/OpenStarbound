@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_STRUCT(SignalHandlerImpl);
+struct SignalHandlerImpl;
+using SignalHandlerImplUPtr = UniquePtr<SignalHandlerImpl>;
 
 // Singleton signal handler that registers handlers for segfault, fpe,
 // illegal instructions etc as well as non-fatal interrupts.

@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(DurabilityItem);
+class DurabilityItem;
 
 class DurabilityItem {
 public:

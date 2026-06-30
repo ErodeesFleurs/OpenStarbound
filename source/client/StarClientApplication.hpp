@@ -10,12 +10,14 @@
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
+#include "StarInput.hpp"
 #include "StarMainApplication.hpp"
 
 namespace Star {
 
-STAR_CLASS(Input);
-STAR_CLASS(Voice);
+class Input;
+class Voice;
+using VoicePtr = SharedPtr<Voice>;
 
 class ClientApplication : public Application {
 public:

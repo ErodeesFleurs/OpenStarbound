@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(Input);
+class Input;
 
 namespace LuaBindings {
   LuaCallbacks makeInputCallbacks();

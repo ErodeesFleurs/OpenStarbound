@@ -5,9 +5,10 @@
 
 namespace Star {
 
-STAR_CLASS(SystemWorldServer);
+class SystemWorldServer;
 
-STAR_STRUCT(Packet);
+struct Packet;
+using PacketPtr = SharedPtr<Packet>;
 
 class SystemWorldServer : public SystemWorld {
 public:

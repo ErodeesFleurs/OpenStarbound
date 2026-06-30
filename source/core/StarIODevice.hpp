@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(IODevice);
+class IODevice;
+using IODevicePtr = SharedPtr<IODevice>;
 
 struct EofExceptionTag { static constexpr char const* typeName = "EofException"; };
 using EofException = TypedException<IOException, EofExceptionTag>;

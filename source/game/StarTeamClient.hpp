@@ -7,9 +7,12 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(ClientContext);
-STAR_CLASS(TeamClient);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class ClientContext;
+using ClientContextPtr = SharedPtr<ClientContext>;
+class TeamClient;
+using TeamClientPtr = SharedPtr<TeamClient>;
 
 class TeamClient {
 public:

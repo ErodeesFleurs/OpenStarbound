@@ -4,10 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_STRUCT(AmbientTrackGroup);
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(AmbientManager);
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+struct AmbientNoisesDescription;
+using AmbientNoisesDescriptionPtr = SharedPtr<AmbientNoisesDescription>;
 
 struct AmbientTrackGroup {
   AmbientTrackGroup();
@@ -33,7 +33,7 @@ struct AmbientNoisesDescription {
 };
 
 using WeatherNoisesDescription = AmbientTrackGroup;
-using WeatherNoisesDescriptionPtr = shared_ptr<WeatherNoisesDescription>;
+using WeatherNoisesDescriptionPtr = SharedPtr<WeatherNoisesDescription>;
 
 // manages the running ambient sounds
 class AmbientManager {

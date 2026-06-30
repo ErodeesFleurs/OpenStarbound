@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_CLASS(TeamManager);
+class TeamManager;
+using TeamManagerPtr = SharedPtr<TeamManager>;
 
 class TeamManager {
 public:

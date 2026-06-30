@@ -13,11 +13,13 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(RenderCallback);
-STAR_STRUCT(ProjectileConfig);
+class World;
+class RenderCallback;
+struct ProjectileConfig;
+using ProjectileConfigPtr = SharedPtr<ProjectileConfig>;
 
-STAR_CLASS(Projectile);
+class Projectile;
+using ProjectilePtr = SharedPtr<Projectile>;
 
 class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:

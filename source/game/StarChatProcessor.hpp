@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(ChatProcessor);
+class ChatProcessor;
+using ChatProcessorPtr = SharedPtr<ChatProcessor>;
 
 // Handles all chat routing and command parsing for client / server chat.
 // Thread safe.

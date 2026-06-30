@@ -9,7 +9,7 @@
 
 namespace Star {
 
-STAR_CLASS(PhysicsEntity);
+class PhysicsEntity;
 
 struct PhysicsMovingCollision {
   static PhysicsMovingCollision fromJson(Json const& json);

@@ -9,10 +9,13 @@
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Item);
-STAR_CLASS(Npc);
-STAR_CLASS(NpcDatabase);
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
+class Npc;
+using NpcPtr = SharedPtr<Npc>;
+class NpcDatabase;
+using NpcDatabasePtr = SharedPtr<NpcDatabase>;
+using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
 
 struct NpcExceptionTag { static constexpr char const* typeName = "NpcException"; };
 using NpcException = TypedException<StarException, NpcExceptionTag>;

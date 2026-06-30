@@ -7,8 +7,9 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
-STAR_CLASS(CommandProcessor);
+class UniverseServer;
+class CommandProcessor;
+using CommandProcessorPtr = SharedPtr<CommandProcessor>;
 
 class CommandProcessor {
 public:

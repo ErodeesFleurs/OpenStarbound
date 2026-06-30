@@ -10,8 +10,10 @@ namespace Star {
 struct ActorMovementControllerExceptionTag { static constexpr char const* typeName = "ActorMovementControllerException"; };
 using ActorMovementControllerException = TypedException<MovementControllerException, ActorMovementControllerExceptionTag>;
 
-STAR_CLASS(ActorMovementController);
-STAR_CLASS(PathController);
+class ActorMovementController;
+using ActorMovementControllerPtr = SharedPtr<ActorMovementController>;
+class PathController;
+using PathControllerPtr = SharedPtr<PathController>;
 
 struct ActorJumpProfile {
   ActorJumpProfile();

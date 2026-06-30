@@ -7,13 +7,15 @@
 
 namespace Star {
 
-STAR_CLASS(ContainerEntity);
-STAR_CLASS(Player);
-STAR_CLASS(WorldClient);
-STAR_CLASS(Item);
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerPane);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class ItemGridWidget;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
+class ContainerPane;
+using ContainerPanePtr = SharedPtr<ContainerPane>;
 
 class ContainerPane : public Pane {
 public:

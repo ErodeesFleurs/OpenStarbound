@@ -8,11 +8,16 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerObject);
-STAR_CLASS(TreasureDatabase);
+class World;
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
+class ContainerObject;
+using ContainerObjectPtr = SharedPtr<ContainerObject>;
+class TreasureDatabase;
+using TreasureDatabasePtr = SharedPtr<TreasureDatabase>;
+using TreasureDatabaseConstPtr = SharedPtr<TreasureDatabase const>;
 
 struct TreasureExceptionTag { static constexpr char const* typeName = "TreasureException"; };
 using TreasureException = TypedException<StarException, TreasureExceptionTag>;

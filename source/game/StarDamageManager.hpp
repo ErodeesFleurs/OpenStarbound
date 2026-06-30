@@ -5,9 +5,11 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Entity);
-STAR_CLASS(DamageManager);
+class World;
+class Entity;
+using EntityPtr = SharedPtr<Entity>;
+class DamageManager;
+using DamageManagerPtr = SharedPtr<DamageManager>;
 
 struct RemoteHitRequest {
   ConnectionId destinationConnection() const;

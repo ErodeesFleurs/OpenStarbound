@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(WarpTargetEntity);
+class WarpTargetEntity;
 
 class WarpTargetEntity : public virtual TileEntity {
 public:

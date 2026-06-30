@@ -5,8 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(Root);
-STAR_CLASS(UniverseClient);
+class Root;
+class UniverseClient;
 
 namespace LuaBindings {
   LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>* list);

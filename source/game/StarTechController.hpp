@@ -9,8 +9,9 @@
 
 namespace Star {
 
-STAR_CLASS(TechController);
-STAR_CLASS(StatusController);
+class TechController;
+using TechControllerPtr = SharedPtr<TechController>;
+class StatusController;
 
 // Class that acts as a movement controller for the parent entity that supports
 // a variety scriptable "Tech" that the entity can use that affect movement,

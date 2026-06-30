@@ -7,9 +7,12 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerEntity);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemBag;
+using ItemBagConstPtr = SharedPtr<ItemBag const>;
+class ContainerEntity;
+using ContainerEntityPtr = SharedPtr<ContainerEntity>;
 
 // All container methods may be called on both master and slave entities.
 class ContainerEntity : public virtual TileEntity {

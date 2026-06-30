@@ -1,12 +1,12 @@
 #pragma once
 
+#include "StarQuestManager.hpp"
 #include "StarQuests.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
 
 class QuestManager;
-using QuestManagerPtr = SharedPtr<QuestManager>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
 class Cinematic;

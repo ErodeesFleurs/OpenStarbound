@@ -8,7 +8,7 @@
 
 namespace Star {
 
-STAR_CLASS(ContainerObject);
+class ContainerObject;
 
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:

@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(Codex);
+class Codex;
+using CodexConstPtr = SharedPtr<Codex const>;
 
 class Codex {
 public:

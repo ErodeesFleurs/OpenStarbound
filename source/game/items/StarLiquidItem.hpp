@@ -8,7 +8,7 @@
 
 namespace Star {
 
-STAR_CLASS(LiquidItem);
+class LiquidItem;
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:

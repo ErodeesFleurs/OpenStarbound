@@ -4,8 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(UdpSocket);
-STAR_CLASS(UdpServer);
+class UdpSocket;
+using UdpSocketPtr = SharedPtr<UdpSocket>;
 
 // A Good default assumption for a maximum size of a UDP datagram without
 // fragmentation

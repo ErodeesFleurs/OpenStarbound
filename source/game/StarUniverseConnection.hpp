@@ -4,8 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseConnection);
-STAR_CLASS(UniverseConnectionServer);
+class UniverseConnectionServer;
+using UniverseConnectionServerPtr = SharedPtr<UniverseConnectionServer>;
 
 struct UniverseConnectionExceptionTag { static constexpr char const* typeName = "UniverseConnectionException"; };
 using UniverseConnectionException = TypedException<StarException, UniverseConnectionExceptionTag>;

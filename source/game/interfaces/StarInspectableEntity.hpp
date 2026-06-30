@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(InspectableEntity);
+class InspectableEntity;
+using InspectableEntityPtr = SharedPtr<InspectableEntity>;
 
 class InspectableEntity : public virtual Entity {
 public:

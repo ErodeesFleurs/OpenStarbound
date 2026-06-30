@@ -6,8 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(Root);
-STAR_CLASS(Image);
+class Root;
+class Image;
 
 namespace LuaBindings {
   LuaCallbacks makeRootCallbacks();

@@ -4,10 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(WireEntity);
-STAR_CLASS(WorldStorage);
+class WireEntity;
+class WorldStorage;
+using WorldStoragePtr = SharedPtr<WorldStorage>;
 
-STAR_CLASS(WireProcessor);
+class WireProcessor;
+using WireProcessorPtr = SharedPtr<WireProcessor>;
 
 // Propogates WireEntity signals, and keeps networks of WireEntities alive
 // together.

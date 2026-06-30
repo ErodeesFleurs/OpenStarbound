@@ -11,8 +11,9 @@
 
 namespace Star {
 
-STAR_CLASS(MaterialItem);
-STAR_CLASS(Player);
+class MaterialItem;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:

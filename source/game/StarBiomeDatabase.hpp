@@ -6,7 +6,9 @@
 
 namespace Star {
 
-STAR_CLASS(BiomeDatabase);
+class BiomeDatabase;
+using BiomeDatabasePtr = SharedPtr<BiomeDatabase>;
+using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
 
 class BiomeDatabase {
 public:

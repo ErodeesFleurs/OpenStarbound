@@ -4,8 +4,6 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-
 // Functions for generating and drawing worlds from a celestial database.
 // Guards against drawing unloaded celestial objects, will return empty if no
 // information is returned from the celestial database.

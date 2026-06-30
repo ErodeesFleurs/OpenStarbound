@@ -11,7 +11,8 @@ namespace Star {
 struct MovementControllerExceptionTag { static constexpr char const* typeName = "MovementControllerException"; };
 using MovementControllerException = TypedException<StarException, MovementControllerExceptionTag>;
 
-STAR_CLASS(MovementController);
+class MovementController;
+using MovementControllerPtr = SharedPtr<MovementController>;
 
 // List of all movement parameters that define a specific sort of movable
 // object.  Each parameter is optional so that this structure can be used to

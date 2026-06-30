@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(Animation);
+class Animation;
+using AnimationPtr = SharedPtr<Animation>;
 
 class Animation {
 public:

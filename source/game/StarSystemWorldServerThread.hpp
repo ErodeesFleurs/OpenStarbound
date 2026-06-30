@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(SystemWorldServerThread);
+class SystemWorldServerThread;
+using SystemWorldServerThreadPtr = SharedPtr<SystemWorldServerThread>;
 
 using ClientShipAction = function<void(SystemClientShip*)>;
 
@@ -21,7 +22,7 @@ public:
   void addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location);
   void removeClient(ConnectionId clientId);
 
-  void setPause(shared_ptr<const atomic<bool>> pause);
+  void setPause(SharedPtr<atomic<bool> const> pause);
   void run() override;
   void stop();
 
@@ -52,7 +53,7 @@ private:
   bool m_triggerStorage{ false};
   String m_storageFile;
 
-  shared_ptr<const atomic<bool>> m_pause;
+  SharedPtr<atomic<bool> const> m_pause;
   function<void(SystemWorldServerThread*)> m_updateAction;
 
   ReadersWriterMutex m_mutex;

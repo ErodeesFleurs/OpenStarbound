@@ -6,11 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(Projectile);
-
-STAR_CLASS(ServerWeather);
-STAR_CLASS(ClientWeather);
+class Clock;
+using ClockConstPtr = SharedPtr<Clock const>;
+class Projectile;
+using ProjectilePtr = SharedPtr<Projectile>;
 
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as

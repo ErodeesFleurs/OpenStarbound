@@ -5,11 +5,15 @@
 
 namespace Star {
 
-STAR_CLASS(Blackboard);
-STAR_CLASS(BehaviorState);
-STAR_STRUCT(ActionState);
-STAR_STRUCT(DecoratorState);
-STAR_STRUCT(CompositeState);
+class Blackboard;
+using BlackboardPtr = SharedPtr<Blackboard>;
+using BlackboardWeakPtr = WeakPtr<Blackboard>;
+class BehaviorState;
+using BehaviorStatePtr = SharedPtr<BehaviorState>;
+using BehaviorStateWeakPtr = WeakPtr<BehaviorState>;
+struct ActionState;
+struct DecoratorState;
+struct CompositeState;
 
 struct BehaviorExceptionTag { static constexpr char const* typeName = "BehaviorException"; };
 using BehaviorException = TypedException<StarException, BehaviorExceptionTag>;
@@ -44,7 +48,7 @@ private:
 };
 
 using NodeState = Maybe<Variant<ActionState,DecoratorState,CompositeState>>;
-using NodeStatePtr = shared_ptr<NodeState>;
+using NodeStatePtr = SharedPtr<NodeState>;
 
 using Coroutine = pair<LuaFunction, LuaThread>;
 

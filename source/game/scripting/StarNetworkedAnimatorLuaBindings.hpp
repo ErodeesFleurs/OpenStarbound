@@ -6,7 +6,7 @@
 
 namespace Star {
 
-STAR_CLASS(NetworkedAnimator);
+class NetworkedAnimator;
 
 namespace LuaBindings {
   LuaCallbacks makeNetworkedAnimatorCallbacks(NetworkedAnimator* networkedAnimator);

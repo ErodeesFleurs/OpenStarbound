@@ -7,10 +7,15 @@
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(EffectSource);
-STAR_CLASS(EffectSourceConfig);
-STAR_CLASS(EffectSourceDatabase);
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class EffectSource;
+using EffectSourcePtr = SharedPtr<EffectSource>;
+class EffectSourceConfig;
+using EffectSourceConfigPtr = SharedPtr<EffectSourceConfig>;
+class EffectSourceDatabase;
+using EffectSourceDatabasePtr = SharedPtr<EffectSourceDatabase>;
+using EffectSourceDatabaseConstPtr = SharedPtr<EffectSourceDatabase const>;
 
 class EffectSource {
 public:

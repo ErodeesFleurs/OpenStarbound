@@ -10,8 +10,9 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
-STAR_CLASS(ServerQueryThread);
+class UniverseServer;
+class ServerQueryThread;
+using ServerQueryThreadUPtr = UniquePtr<ServerQueryThread>;
 
 class ServerQueryThread : public Thread {
 public:
@@ -96,7 +97,7 @@ private:
   uint16_t m_serverPort;
   uint8_t m_maxPlayers;
   String m_serverName;
-  HashMap<HostAddress, shared_ptr<RequestChallenge>> m_validChallenges;
+  HashMap<HostAddress, SharedPtr<RequestChallenge>> m_validChallenges;
   int64_t m_lastChallengeCheck;
   int64_t m_lastPlayersResponse;
   int64_t m_lastRulesResponse;

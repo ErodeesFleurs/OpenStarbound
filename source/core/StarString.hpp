@@ -10,9 +10,10 @@
 
 namespace Star {
 
-STAR_CLASS(StringList);
-STAR_CLASS(String);
-STAR_CLASS(StringView);
+class StringList;
+class String;
+using StringConstPtr = SharedPtr<String const>;
+class StringView;
 
 struct StringExceptionTag { static constexpr char const* typeName = "StringException"; };
 using StringException = TypedException<StarException, StringExceptionTag>;

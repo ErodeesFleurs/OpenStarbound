@@ -9,8 +9,6 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-
 // Callback interface for entities to produce light sources, particles,
 // drawables, and sounds on render.  Everything added is expected to already be
 // translated into world space.
