@@ -48,10 +48,8 @@ endif()
 target_compile_features(star_application PUBLIC cxx_std_20)
 target_include_directories(star_application PUBLIC
     ${STAR_APPLICATION_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
-target_link_libraries(star_application PUBLIC star_build_definitions)
+    ${STAR_PLATFORM_INCLUDES})
+target_link_libraries(star_application PUBLIC star_core star_build_definitions)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_application REUSE_FROM star_core)

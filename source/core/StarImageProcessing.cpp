@@ -267,59 +267,59 @@ ImageOperation imageOperationFromString(StringView string) {
 }
 
 String imageOperationToString(ImageOperation const& operation) {
-  if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    return strf("hueshift={}", op->hueShiftAmount * 360.0f);
-  } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    return strf("saturation={}", op->saturationShiftAmount * 100.0f);
-  } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    return strf("brightness={}", (op->brightnessMultiply - 1.0f) * 100.0f);
-  } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
-    return strf("fade={}={}", Color::rgb(op->color).toHex(), op->amount);
-  } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
+  if (auto hueShiftOp = operation.ptr<HueShiftImageOperation>()) {
+    return strf("hueshift={}", hueShiftOp->hueShiftAmount * 360.0f);
+  } else if (auto saturationOp = operation.ptr<SaturationShiftImageOperation>()) {
+    return strf("saturation={}", saturationOp->saturationShiftAmount * 100.0f);
+  } else if (auto brightnessOp = operation.ptr<BrightnessMultiplyImageOperation>()) {
+    return strf("brightness={}", (brightnessOp->brightnessMultiply - 1.0f) * 100.0f);
+  } else if (auto fadeOp = operation.ptr<FadeToColorImageOperation>()) {
+    return strf("fade={}={}", Color::rgb(fadeOp->color).toHex(), fadeOp->amount);
+  } else if (auto scanLinesOp = operation.ptr<ScanLinesImageOperation>()) {
     return strf("scanlines={}={}={}={}",
-        Color::rgb(op->fade1.color).toHex(),
-        op->fade1.amount,
-        Color::rgb(op->fade2.color).toHex(),
-        op->fade2.amount);
-  } else if (auto op = operation.ptr<SetColorImageOperation>()) {
-    return strf("setcolor={}", Color::rgb(op->color).toHex());
-  } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
+        Color::rgb(scanLinesOp->fade1.color).toHex(),
+        scanLinesOp->fade1.amount,
+        Color::rgb(scanLinesOp->fade2.color).toHex(),
+        scanLinesOp->fade2.amount);
+  } else if (auto setColorOp = operation.ptr<SetColorImageOperation>()) {
+    return strf("setcolor={}", Color::rgb(setColorOp->color).toHex());
+  } else if (auto colorReplaceOp = operation.ptr<ColorReplaceImageOperation>()) {
     String str = "replace";
-    for (auto const& pair : op->colorReplaceMap)
+    for (auto const& pair : colorReplaceOp->colorReplaceMap)
       str += strf(";{}={}", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
     return str;
-  } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
-    if (op->mode == AlphaMaskImageOperation::Additive)
-      return strf("addmask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
-    else if (op->mode == AlphaMaskImageOperation::Subtractive)
-      return strf("submask={};{};{}", op->maskImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = operation.ptr<BlendImageOperation>()) {
-    if (op->mode == BlendImageOperation::Multiply)
-      return strf("blendmult={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
-    else if (op->mode == BlendImageOperation::Screen)
-      return strf("blendscreen={};{};{}", op->blendImages.join("+"), op->offset[0], op->offset[1]);
-  } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
-    return strf("multiply={}", Color::rgba(op->color).toHex());
-  } else if (auto op = operation.ptr<BorderImageOperation>()) {
-    if (op->outlineOnly)
-      return strf("outline={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
+  } else if (auto alphaMaskOp = operation.ptr<AlphaMaskImageOperation>()) {
+    if (alphaMaskOp->mode == AlphaMaskImageOperation::Additive)
+      return strf("addmask={};{};{}", alphaMaskOp->maskImages.join("+"), alphaMaskOp->offset[0], alphaMaskOp->offset[1]);
+    else if (alphaMaskOp->mode == AlphaMaskImageOperation::Subtractive)
+      return strf("submask={};{};{}", alphaMaskOp->maskImages.join("+"), alphaMaskOp->offset[0], alphaMaskOp->offset[1]);
+  } else if (auto blendOp = operation.ptr<BlendImageOperation>()) {
+    if (blendOp->mode == BlendImageOperation::Multiply)
+      return strf("blendmult={};{};{}", blendOp->blendImages.join("+"), blendOp->offset[0], blendOp->offset[1]);
+    else if (blendOp->mode == BlendImageOperation::Screen)
+      return strf("blendscreen={};{};{}", blendOp->blendImages.join("+"), blendOp->offset[0], blendOp->offset[1]);
+  } else if (auto multiplyOp = operation.ptr<MultiplyImageOperation>()) {
+    return strf("multiply={}", Color::rgba(multiplyOp->color).toHex());
+  } else if (auto borderOp = operation.ptr<BorderImageOperation>()) {
+    if (borderOp->outlineOnly)
+      return strf("outline={};{};{}", borderOp->pixels, Color::rgba(borderOp->startColor).toHex(), Color::rgba(borderOp->endColor).toHex());
     else
-      return strf("border={};{};{}", op->pixels, Color::rgba(op->startColor).toHex(), Color::rgba(op->endColor).toHex());
-  } else if (auto op = operation.ptr<ScaleImageOperation>()) {
-    if (op->mode == ScaleImageOperation::Nearest)
-      return strf("scalenearest={}", op->scale);
-    else if (op->mode == ScaleImageOperation::Bilinear)
-      return strf("scalebilinear={}", op->scale);
-    else if (op->mode == ScaleImageOperation::Bicubic)
-      return strf("scalebicubic={}", op->scale);
-  } else if (auto op = operation.ptr<CropImageOperation>()) {
-    return strf("crop={};{};{};{}", op->subset.xMin(), op->subset.xMax(), op->subset.yMin(), op->subset.yMax());
-  } else if (auto op = operation.ptr<FlipImageOperation>()) {
-    if (op->mode == FlipImageOperation::FlipX)
+      return strf("border={};{};{}", borderOp->pixels, Color::rgba(borderOp->startColor).toHex(), Color::rgba(borderOp->endColor).toHex());
+  } else if (auto scaleOp = operation.ptr<ScaleImageOperation>()) {
+    if (scaleOp->mode == ScaleImageOperation::Nearest)
+      return strf("scalenearest={}", scaleOp->scale);
+    else if (scaleOp->mode == ScaleImageOperation::Bilinear)
+      return strf("scalebilinear={}", scaleOp->scale);
+    else if (scaleOp->mode == ScaleImageOperation::Bicubic)
+      return strf("scalebicubic={}", scaleOp->scale);
+  } else if (auto cropOp = operation.ptr<CropImageOperation>()) {
+    return strf("crop={};{};{};{}", cropOp->subset.xMin(), cropOp->subset.xMax(), cropOp->subset.yMin(), cropOp->subset.yMax());
+  } else if (auto flipOp = operation.ptr<FlipImageOperation>()) {
+    if (flipOp->mode == FlipImageOperation::FlipX)
       return "flipx";
-    else if (op->mode == FlipImageOperation::FlipY)
+    else if (flipOp->mode == FlipImageOperation::FlipY)
       return "flipy";
-    else if (op->mode == FlipImageOperation::FlipXY)
+    else if (flipOp->mode == FlipImageOperation::FlipXY)
       return "flipxy";
   }
 
@@ -348,10 +348,10 @@ String printImageOperations(List<ImageOperation> const& list) {
 }
 
 void addImageOperationReferences(ImageOperation const& operation, StringList& out) {
-  if (auto op = operation.ptr<AlphaMaskImageOperation>())
-    out.appendAll(op->maskImages);
-  else if (auto op = operation.ptr<BlendImageOperation>())
-    out.appendAll(op->blendImages);
+  if (auto alphaMaskOp = operation.ptr<AlphaMaskImageOperation>())
+    out.appendAll(alphaMaskOp->maskImages);
+  else if (auto blendOp = operation.ptr<BlendImageOperation>())
+    out.appendAll(blendOp->blendImages);
 }
 
 StringList imageOperationReferences(List<ImageOperation> const& operations) {
@@ -385,73 +385,73 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     // Convert to an image format that has alpha so certain operations function properly
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
-  if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+  if (auto hueShiftOp = operation.ptr<HueShiftImageOperation>()) {
+    image.forEachPixel([&hueShiftOp](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0)
-        pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
+        pixel = Color::hueShiftVec4B(pixel, hueShiftOp->hueShiftAmount);
     });
-  } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
-    processSaturationShift(image, op);
-  } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+  } else if (auto saturationOp = operation.ptr<SaturationShiftImageOperation>()) {
+    processSaturationShift(image, saturationOp);
+  } else if (auto brightnessOp = operation.ptr<BrightnessMultiplyImageOperation>()) {
+    image.forEachPixel([&brightnessOp](unsigned, unsigned, Vec4B& pixel) {
       if (pixel[3] != 0) {
         Color color = Color::rgba(pixel);
-        color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
+        color.setValue(clamp(color.value() * brightnessOp->brightnessMultiply, 0.0f, 1.0f));
         pixel = color.toRgba();
       }
     });
-  } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel[0] = op->rTable[pixel[0]];
-      pixel[1] = op->gTable[pixel[1]];
-      pixel[2] = op->bTable[pixel[2]];
+  } else if (auto fadeOp = operation.ptr<FadeToColorImageOperation>()) {
+    image.forEachPixel([&fadeOp](unsigned, unsigned, Vec4B& pixel) {
+      pixel[0] = fadeOp->rTable[pixel[0]];
+      pixel[1] = fadeOp->gTable[pixel[1]];
+      pixel[2] = fadeOp->bTable[pixel[2]];
     });
-  } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
+  } else if (auto scanLinesOp = operation.ptr<ScanLinesImageOperation>()) {
+    image.forEachPixel([&scanLinesOp](unsigned, unsigned y, Vec4B& pixel) {
       if (y % 2 == 0) {
-        pixel[0] = op->fade1.rTable[pixel[0]];
-        pixel[1] = op->fade1.gTable[pixel[1]];
-        pixel[2] = op->fade1.bTable[pixel[2]];
+        pixel[0] = scanLinesOp->fade1.rTable[pixel[0]];
+        pixel[1] = scanLinesOp->fade1.gTable[pixel[1]];
+        pixel[2] = scanLinesOp->fade1.bTable[pixel[2]];
       } else {
-        pixel[0] = op->fade2.rTable[pixel[0]];
-        pixel[1] = op->fade2.gTable[pixel[1]];
-        pixel[2] = op->fade2.bTable[pixel[2]];
+        pixel[0] = scanLinesOp->fade2.rTable[pixel[0]];
+        pixel[1] = scanLinesOp->fade2.gTable[pixel[1]];
+        pixel[2] = scanLinesOp->fade2.bTable[pixel[2]];
       }
     });
-  } else if (auto op = operation.ptr<SetColorImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel[0] = op->color[0];
-      pixel[1] = op->color[1];
-      pixel[2] = op->color[2];
+  } else if (auto setColorOp = operation.ptr<SetColorImageOperation>()) {
+    image.forEachPixel([&setColorOp](unsigned, unsigned, Vec4B& pixel) {
+      pixel[0] = setColorOp->color[0];
+      pixel[1] = setColorOp->color[1];
+      pixel[2] = setColorOp->color[2];
     });
-  } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      if (auto m = op->colorReplaceMap.maybe(pixel))
+  } else if (auto colorReplaceOp = operation.ptr<ColorReplaceImageOperation>()) {
+    image.forEachPixel([&colorReplaceOp](unsigned, unsigned, Vec4B& pixel) {
+      if (auto m = colorReplaceOp->colorReplaceMap.maybe(pixel))
         pixel = *m;
     });
 
-  } else if (auto op = operation.ptr<AlphaMaskImageOperation>()) {
-    if (op->maskImages.empty())
+  } else if (auto alphaMaskOp = operation.ptr<AlphaMaskImageOperation>()) {
+    if (alphaMaskOp->maskImages.empty())
       return;
 
     if (!refCallback)
       throw StarException("Missing image ref callback during AlphaMaskImageOperation in ImageProcessor::process");
 
     List<Image const*> maskImages;
-    for (auto const& reference : op->maskImages)
+    for (auto const& reference : alphaMaskOp->maskImages)
       maskImages.append(refCallback(reference));
 
-    image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
+    image.forEachPixel([&alphaMaskOp, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
       uint8_t maskAlpha = 0;
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+      Vec2U pos = Vec2U(Vec2I(x, y) + alphaMaskOp->offset);
       for (auto mask : maskImages) {
         if (pos[0] < mask->width() && pos[1] < mask->height()) {
-          if (op->mode == AlphaMaskImageOperation::Additive) {
+          if (alphaMaskOp->mode == AlphaMaskImageOperation::Additive) {
             // We produce our mask alpha from the maximum alpha of any of
             // the
             // mask images.
             maskAlpha = std::max(maskAlpha, mask->get(pos)[3]);
-          } else if (op->mode == AlphaMaskImageOperation::Subtractive) {
+          } else if (alphaMaskOp->mode == AlphaMaskImageOperation::Subtractive) {
             // We produce our mask alpha from the minimum alpha of any of
             // the
             // mask images.
@@ -462,47 +462,47 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       pixel[3] = std::min(pixel[3], maskAlpha);
     });
 
-  } else if (auto op = operation.ptr<BlendImageOperation>()) {
-    if (op->blendImages.empty())
+  } else if (auto blendOp = operation.ptr<BlendImageOperation>()) {
+    if (blendOp->blendImages.empty())
       return;
 
     if (!refCallback)
       throw StarException("Missing image ref callback during BlendImageOperation in ImageProcessor::process");
 
     List<Image const*> blendImages;
-    for (auto const& reference : op->blendImages)
+    for (auto const& reference : blendOp->blendImages)
       blendImages.append(refCallback(reference));
 
-    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
-      Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
+    image.forEachPixel([&blendOp, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
+      Vec2U pos = Vec2U(Vec2I(x, y) + blendOp->offset);
       Vec4F fpixel = Color::v4bToFloat(pixel);
       for (auto blend : blendImages) {
         if (pos[0] < blend->width() && pos[1] < blend->height()) {
           Vec4F blendPixel = Color::v4bToFloat(blend->get(pos));
-          if (op->mode == BlendImageOperation::Multiply)
+          if (blendOp->mode == BlendImageOperation::Multiply)
             fpixel = fpixel.piecewiseMultiply(blendPixel);
-          else if (op->mode == BlendImageOperation::Screen)
+          else if (blendOp->mode == BlendImageOperation::Screen)
             fpixel = Vec4F::filled(1.0f) - (Vec4F::filled(1.0f) - fpixel).piecewiseMultiply(Vec4F::filled(1.0f) - blendPixel);
         }
       }
       pixel = Color::v4fToByte(fpixel);
     });
 
-  } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
+  } else if (auto multiplyOp = operation.ptr<MultiplyImageOperation>()) {
+    image.forEachPixel([&multiplyOp](unsigned, unsigned, Vec4B& pixel) {
+      pixel = pixel.combine(multiplyOp->color, [](uint8_t a, uint8_t b) -> uint8_t {
           return static_cast<uint8_t>((static_cast<int>(a) * static_cast<int>(b)) / 255);
         });
     });
 
-  } else if (auto op = operation.ptr<BorderImageOperation>()) {
-    Image borderImage(image.size() + Vec2U::filled(op->pixels * 2), PixelFormat::RGBA32);
-    borderImage.copyInto(Vec2U::filled(op->pixels), image);
+  } else if (auto borderOp = operation.ptr<BorderImageOperation>()) {
+    Image borderImage(image.size() + Vec2U::filled(borderOp->pixels * 2), PixelFormat::RGBA32);
+    borderImage.copyInto(Vec2U::filled(borderOp->pixels), image);
     Vec2I borderImageSize = Vec2I(borderImage.size());
 
-    borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
-      int pixels = op->pixels;
-      bool includeTransparent = op->includeTransparent;
+    borderImage.forEachPixel([&borderOp, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
+      int pixels = borderOp->pixels;
+      bool includeTransparent = borderOp->includeTransparent;
       if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
         int dist = std::numeric_limits<int>::max();
         for (int j = -pixels; j < pixels + 1; j++) {
@@ -521,8 +521,8 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
         if (dist < std::numeric_limits<int>::max()) {
           float percent = (dist - 1) / (2.0f * pixels - 1);
           if (pixel[3] != 0) {
-            Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
-            if (op->outlineOnly) {
+            Color color = Color::rgba(borderOp->startColor).mix(Color::rgba(borderOp->endColor), percent);
+            if (borderOp->outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
               color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
             }
@@ -538,34 +538,34 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             }
             pixel = color.toRgba();
           } else {
-            pixel = Vec4B(Vec4F(op->startColor) * (1 - percent) + Vec4F(op->endColor) * percent);
+            pixel = Vec4B(Vec4F(borderOp->startColor) * (1 - percent) + Vec4F(borderOp->endColor) * percent);
           }
         }
-      } else if (op->outlineOnly) {
+      } else if (borderOp->outlineOnly) {
         pixel = Vec4B(0, 0, 0, 0);
       }
     });
 
     image = borderImage;
 
-  } else if (auto op = operation.ptr<ScaleImageOperation>()) {
-    auto scale = op->scale;
+  } else if (auto scaleOp = operation.ptr<ScaleImageOperation>()) {
+    auto scale = scaleOp->scale;
     if (scale[0] < 0.0f || scale[1] < 0.0f) {
       Logger::warn("Negative scale in ScaleImageOperation ({})", scale);
       scale = scale.piecewiseMax(Vec2F::filled(0.f));
     }
-    if (op->mode == ScaleImageOperation::Nearest)
+    if (scaleOp->mode == ScaleImageOperation::Nearest)
       image = scaleNearest(image, scale);
-    else if (op->mode == ScaleImageOperation::Bilinear)
+    else if (scaleOp->mode == ScaleImageOperation::Bilinear)
       image = scaleBilinear(image, scale);
-    else if (op->mode == ScaleImageOperation::Bicubic)
+    else if (scaleOp->mode == ScaleImageOperation::Bicubic)
       image = scaleBicubic(image, scale);
 
-  } else if (auto op = operation.ptr<CropImageOperation>()) {
-    image = image.subImage(Vec2U(op->subset.min()), Vec2U(op->subset.size()));
+  } else if (auto cropOp = operation.ptr<CropImageOperation>()) {
+    image = image.subImage(Vec2U(cropOp->subset.min()), Vec2U(cropOp->subset.size()));
 
-  } else if (auto op = operation.ptr<FlipImageOperation>()) {
-    if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
+  } else if (auto flipOp = operation.ptr<FlipImageOperation>()) {
+    if (flipOp->mode == FlipImageOperation::FlipX || flipOp->mode == FlipImageOperation::FlipXY) {
       for (size_t y = 0; y < image.height(); ++y) {
         for (size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
           size_t xRight = image.width() - 1 - xLeft;
@@ -579,7 +579,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       }
     }
 
-    if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
+    if (flipOp->mode == FlipImageOperation::FlipY || flipOp->mode == FlipImageOperation::FlipXY) {
       for (size_t x = 0; x < image.width(); ++x) {
         for (size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
           size_t yBottom = image.height() - 1 - yTop;

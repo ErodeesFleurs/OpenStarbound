@@ -72,8 +72,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
-  // m_entityFactory initialized via singleton
-  // m_liquidsDatabase initialized via singleton
+  m_entityFactory = Root::singleton().entityFactory();
+  m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_client = nullptr;
 
   m_state = State::Idle;

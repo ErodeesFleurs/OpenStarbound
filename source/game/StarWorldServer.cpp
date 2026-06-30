@@ -43,8 +43,8 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
-  // m_entityFactory initialized via singleton
-  // m_liquidsDatabase initialized via singleton
+  m_entityFactory = Root::singleton().entityFactory();
+  m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_worldTemplate = worldTemplate;
   m_worldStorage = make_shared<WorldStorage>(m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this));
   m_spawnFinder.m_adjustPlayerStart = true;
@@ -59,7 +59,7 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
 }
 
 WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
-  : WorldServer(make_shared<WorldTemplate>(size), storage, assets) {}
+  : WorldServer(make_shared<WorldTemplate>(size), storage, assets, configuration) {}
 
 WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration) {
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
@@ -67,8 +67,8 @@ WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, ICo
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
-  // m_entityFactory initialized via singleton
-  // m_liquidsDatabase initialized via singleton
+  m_entityFactory = Root::singleton().entityFactory();
+  m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_worldStorage = make_shared<WorldStorage>(storage, make_shared<WorldGenerator>(this));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)
@@ -88,8 +88,8 @@ WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, ICon
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
-  // m_entityFactory initialized via singleton
-  // m_liquidsDatabase initialized via singleton
+  m_entityFactory = Root::singleton().entityFactory();
+  m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_worldStorage = make_shared<WorldStorage>(chunks, make_shared<WorldGenerator>(this));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)

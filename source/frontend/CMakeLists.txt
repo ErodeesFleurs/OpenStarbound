@@ -106,16 +106,8 @@ target_sources(star_frontend PRIVATE
 
 target_compile_features(star_frontend PUBLIC cxx_std_20)
 target_include_directories(star_frontend PUBLIC
-    ${STAR_FRONTEND_INCLUDES}
-    ${STAR_WINDOWING_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
-target_link_libraries(star_frontend PUBLIC star_build_definitions)
+    ${STAR_FRONTEND_INCLUDES})
+target_link_libraries(star_frontend PUBLIC star_windowing star_rendering star_application star_game star_build_definitions)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_frontend REUSE_FROM star_core)

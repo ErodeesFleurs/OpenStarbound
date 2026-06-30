@@ -13,6 +13,7 @@ add_executable(core_tests
   color_test.cpp
   container_test.cpp
   encode_test.cpp
+  exception_test.cpp
   file_test.cpp
   hash_test.cpp
   host_address_test.cpp
@@ -63,6 +64,7 @@ add_executable(game_tests
   assets_test.cpp
   function_test.cpp
   item_test.cpp
+  plant_test.cpp
   root_test.cpp
   server_test.cpp
   spawn_test.cpp

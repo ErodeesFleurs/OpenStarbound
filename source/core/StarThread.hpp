@@ -5,6 +5,18 @@
 
 #include <shared_mutex>
 
+#ifdef STAR_COMPILER_CLANG
+#define STAR_THREAD_CAPABILITY(name) [[clang::capability(name)]]
+#define STAR_THREAD_ACQUIRE_CAPABILITY [[clang::acquire_capability]]
+#define STAR_THREAD_TRY_ACQUIRE_CAPABILITY(...) [[clang::try_acquire_capability(__VA_ARGS__)]]
+#define STAR_THREAD_RELEASE_CAPABILITY [[clang::release_capability]]
+#else
+#define STAR_THREAD_CAPABILITY(name)
+#define STAR_THREAD_ACQUIRE_CAPABILITY
+#define STAR_THREAD_TRY_ACQUIRE_CAPABILITY(...)
+#define STAR_THREAD_RELEASE_CAPABILITY
+#endif
+
 namespace Star {
 
 inline constexpr bool LogRecursiveMutex = false;
@@ -145,7 +157,7 @@ private:
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
-class [[clang::capability("mutex")]] Mutex {
+class STAR_THREAD_CAPABILITY("mutex") Mutex {
 public:
   Mutex();
   Mutex(Mutex&&);
@@ -153,12 +165,12 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  [[clang::acquire_capability]] void lock();
+  STAR_THREAD_ACQUIRE_CAPABILITY void lock();
 
   // Attempt to acquire the mutex without blocking.
-  [[clang::try_acquire_capability(true)]] bool tryLock();
+  STAR_THREAD_TRY_ACQUIRE_CAPABILITY(true) bool tryLock();
 
-  [[clang::release_capability]] void unlock();
+  STAR_THREAD_RELEASE_CAPABILITY void unlock();
 
 private:
   friend struct ConditionVariableImpl;

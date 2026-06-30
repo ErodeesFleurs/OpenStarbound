@@ -75,7 +75,8 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   , m_worldPainter(std::move(painter))
   , m_cinematicOverlay(std::move(cinematicOverlay))
   , m_containerInteractor(make_shared<ContainerInteractor>())
-  , m_assets(std::move(assets)), m_configuration(configuration ? std::move(configuration) : m_configuration)
+  , m_assets(std::move(assets))
+  , m_configuration(configuration ? std::move(configuration) : Root::singleton().configuration())
 {
   GuiReader itemSlotReader;
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
@@ -1418,7 +1419,6 @@ void MainInterface::renderDebug() {
   SpatialLogger::setObserved(true);
 
   if (m_clientCommandProcessor->debugHudEnabled()) {
-    auto const& assets = m_assets;
     m_guiContext->setTextStyle(m_config->debugTextStyle);
     m_guiContext->setLineSpacing(0.5f);
 

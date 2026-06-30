@@ -115,7 +115,7 @@ StarException::StarException(char const* type, std::string message, std::excepti
 
   std::function<void(std::ostream&, bool)> printCause;
   if (auto starException = as<StarException>(&cause)) {
-    printCause = [starException](std::ostream& os, bool fullStacktrace) { starException->m_printException(os, fullStacktrace); };
+    printCause = starException->m_printException;
   } else {
     printCause = [causeWhat = std::string(cause.what())](std::ostream& os, bool) {
       os << "std::exception: " << causeWhat;
@@ -141,10 +141,12 @@ void printException(std::ostream& os, std::exception const& e, bool fullStacktra
 }
 
 OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
-  if (auto starException = as<StarException>(&e))
-    return OutputProxy([starException, fullStacktrace](std::ostream& os) { starException->m_printException(os, fullStacktrace); });
-  else
+  if (auto starException = as<StarException>(&e)) {
+    auto printException = starException->m_printException;
+    return OutputProxy([printException = std::move(printException), fullStacktrace](std::ostream& os) { printException(os, fullStacktrace); });
+  } else {
     return OutputProxy([what = std::string(e.what())](std::ostream& os) { os << "std::exception: " << what; });
+  }
 }
 
 void printStack(char const* message) {

@@ -35,7 +35,7 @@ const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
 WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
-  : m_mainPlayer(std::move(mainPlayer)), m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
+  : m_luaRoot(std::move(luaRoot)), m_mainPlayer(std::move(mainPlayer)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
 
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");

@@ -64,12 +64,5 @@ target_sources(star_windowing PRIVATE
 
 target_compile_features(star_windowing PUBLIC cxx_std_20)
 target_include_directories(star_windowing PUBLIC
-    ${STAR_WINDOWING_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
-target_link_libraries(star_windowing PUBLIC star_build_definitions)
+    ${STAR_WINDOWING_INCLUDES})
+target_link_libraries(star_windowing PUBLIC star_rendering star_application star_game star_build_definitions)

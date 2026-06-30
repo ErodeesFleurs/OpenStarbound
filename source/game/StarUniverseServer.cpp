@@ -36,8 +36,8 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
-  // m_entityFactory initialized via singleton
-  // m_liquidsDatabase initialized via singleton
+  m_entityFactory = Root::singleton().entityFactory();
+  m_liquidsDatabase = Root::singleton().liquidsDatabase();
   String const LockFile = "universe.lock";
 
   m_storageDirectory = storageDir;
