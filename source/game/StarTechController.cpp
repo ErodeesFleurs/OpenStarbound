@@ -285,9 +285,9 @@ List<Drawable> TechController::backDrawables() {
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
-        if (piece.second < 0.0f)
-          drawables.append(std::move(piece.first));
+      for (auto& [drawable, zLevel] : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (zLevel < 0.0f)
+          drawables.append(std::move(drawable));
       }
     }
   }
@@ -300,9 +300,9 @@ List<Drawable> TechController::frontDrawables() {
 
   for (auto const& animator : m_techAnimators.netElements()) {
     if (animator->isVisible()) {
-      for (auto& piece : animator->animator.drawablesWithZLevel(m_movementController->position())) {
-        if (piece.second >= 0.0f)
-          drawables.append(std::move(piece.first));
+      for (auto& [drawable, zLevel] : animator->animator.drawablesWithZLevel(m_movementController->position())) {
+        if (zLevel >= 0.0f)
+          drawables.append(std::move(drawable));
       }
     }
   }
@@ -448,8 +448,8 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
       module.toolUsageSuppressed = false;
 
       auto moduleAnimator = make_shared<TechAnimator>(module.config.animationConfig, m_assets, m_particleDatabase, m_imageMetadataDatabase);
-      for (auto const& pair : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
-        moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
+      for (auto const& [partName, partImage] : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
+        moduleAnimator->animator.setPartTag(partName, "partImage", partImage.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
     } else {
       Logger::warn("Tech module '{}' not found in tech database", get<0>(moduleInit));

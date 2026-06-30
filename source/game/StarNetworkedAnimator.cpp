@@ -33,35 +33,36 @@ List<Particle> NetworkedAnimator::DynamicTarget::pullNewParticles() {
 }
 
 void NetworkedAnimator::DynamicTarget::stopAudio() {
-  for (auto const& pair : currentAudioBasePositions) {
-    if (pair.first->loops() != 0)
-      pair.first->stop();
+  for (auto const& [audio, _] : currentAudioBasePositions) {
+    if (audio->loops() != 0)
+      audio->stop();
   }
 }
 
 void NetworkedAnimator::DynamicTarget::updatePosition(Vec2F const& p) {
   clearFinishedAudio();
   position = p;
-  for (auto& audioPair : currentAudioBasePositions)
-    audioPair.first->setPosition(audioPair.second + p);
+  for (auto& [audio, basePosition] : currentAudioBasePositions)
+    audio->setPosition(basePosition + p);
 }
 
 void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
-  for (auto& p : statePersistentSounds) {
-    if (p.second.audio && p.second.audio->finished())
-      p.second.audio.reset();
+  for ([[maybe_unused]] auto& [soundName, sound] : statePersistentSounds) {
+    if (sound.audio && sound.audio->finished())
+      sound.audio.reset();
   }
 
-  for (auto& p : stateImmediateSounds) {
-    if (p.second.audio && p.second.audio->finished())
-      p.second.audio.reset();
+  for ([[maybe_unused]] auto& [soundName, sound] : stateImmediateSounds) {
+    if (sound.audio && sound.audio->finished())
+      sound.audio.reset();
   }
 
-  for (auto& p : independentSounds)
-    eraseWhere(p.second, [](AudioInstancePtr const& audio) { return audio->finished(); });
+  for ([[maybe_unused]] auto& [soundName, sounds] : independentSounds)
+    eraseWhere(sounds, [](AudioInstancePtr const& audio) { return audio->finished(); });
 
-  eraseWhere(currentAudioBasePositions, [](pair<AudioInstancePtr, Vec2F> const& pair) {
-    return pair.first->finished();
+  eraseWhere(currentAudioBasePositions, [](auto const& audioBasePosition) {
+    [[maybe_unused]] auto const& [audio, basePosition] = audioBasePosition;
+    return audio->finished();
   });
 }
 
@@ -116,35 +117,30 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
   m_animatedParts = AnimatedPartSet(config.get("animatedParts", JsonObject()), version());
   m_relativePath = AssetPath::directory(relativePath);
 
-  for (auto const& pair : config.get("globalTagDefaults", JsonObject()).iterateObject())
-    setGlobalTag(pair.first, pair.second.toString());
+  for (auto const& [tagName, tagValue] : config.get("globalTagDefaults", JsonObject()).iterateObject())
+    setGlobalTag(tagName, tagValue.toString());
 
-  for (auto const& part : config.get("partTagDefaults", JsonObject()).iterateObject()) {
-    for (auto const& tag : part.second.iterateObject())
-      setPartTag(part.first, tag.first, tag.second.toString());
+  for (auto const& [partName, partTags] : config.get("partTagDefaults", JsonObject()).iterateObject()) {
+    for (auto const& [tagName, tagValue] : partTags.iterateObject())
+      setPartTag(partName, tagName, tagValue.toString());
   }
 
-  for (auto const& pair : config.get("transformationGroups", JsonObject()).iterateObject()) {
-    auto& tg = m_transformationGroups[pair.first];
-    tg.interpolated = pair.second.getBool("interpolated", false);
+  for (auto const& [transformationGroupName, transformationGroupConfig] : config.get("transformationGroups", JsonObject()).iterateObject()) {
+    auto& tg = m_transformationGroups[transformationGroupName];
+    tg.interpolated = transformationGroupConfig.getBool("interpolated", false);
     tg.setAffineTransform(Mat3F::identity());
     tg.setAnimationAffineTransform(Mat3F::identity());
     tg.setLocalAffineTransform(Mat3F::identity());
   }
 
-  for (auto const& pair : config.get("rotationGroups", JsonObject()).iterateObject()) {
-    String rotationGroupName = pair.first;
-    Json rotationGroupConfig = pair.second;
-    RotationGroup& rotationGroup = m_rotationGroups[std::move(rotationGroupName)];
+  for (auto const& [rotationGroupName, rotationGroupConfig] : config.get("rotationGroups", JsonObject()).iterateObject()) {
+    RotationGroup& rotationGroup = m_rotationGroups[rotationGroupName];
     rotationGroup.angularVelocity = rotationGroupConfig.getFloat("angularVelocity", 0.0f);
     rotationGroup.rotationCenter = jsonToVec2F(rotationGroupConfig.get("rotationCenter", JsonArray{0, 0}));
   }
 
-  for (auto const& pair : config.get("particleEmitters", JsonObject()).iterateObject()) {
-    String particleEmitterName = pair.first;
-    Json particleEmitterConfig = pair.second;
-
-    ParticleEmitter& emitter = m_particleEmitters[std::move(particleEmitterName)];
+  for (auto const& [particleEmitterName, particleEmitterConfig] : config.get("particleEmitters", JsonObject()).iterateObject()) {
+    ParticleEmitter& emitter = m_particleEmitters[particleEmitterName];
     emitter.emissionRate.set(particleEmitterConfig.getFloat("emissionRate", 1.0f));
     emitter.emissionRateVariance = particleEmitterConfig.getFloat("emissionRateVariance", 0.0f);
     emitter.offsetRegion.set(particleEmitterConfig.opt("offsetRegion").apply(jsonToRectF).value(RectF::null()));
@@ -170,11 +166,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
     emitter.active.set(particleEmitterConfig.getBool("active", false));
   }
 
-  for (auto const& pair : config.get("lights", JsonObject()).iterateObject()) {
-    String lightName = pair.first;
-    Json lightConfig = pair.second;
-
-    Light& light = m_lights[std::move(lightName)];
+  for (auto const& [lightName, lightConfig] : config.get("lights", JsonObject()).iterateObject()) {
+    Light& light = m_lights[lightName];
     light.active.set(lightConfig.getBool("active", true));
     auto lightPosition = lightConfig.opt("position").apply(jsonToVec2F).value();
     light.xPosition.set(lightPosition[0]);
@@ -200,10 +193,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
     light.beamAmbience = lightConfig.getFloat("beamAmbience", 0.0f);
   }
 
-  for (auto const& pair : config.get("sounds", JsonObject()).iterateObject()) {
-    String soundName = pair.first;
-    Json soundConfig = pair.second;
-    Sound& sound = m_sounds[std::move(soundName)];
+  for (auto const& [soundName, soundConfig] : config.get("sounds", JsonObject()).iterateObject()) {
+    Sound& sound = m_sounds[soundName];
     if (soundConfig.isType(Json::Type::Array)) {
       sound.rangeMultiplier = 1.0f;
       sound.soundPool.set(jsonToStringList(soundConfig).transformed([path = m_relativePath](String const& s) { return AssetPath::relativeTo(path, s); }));
@@ -228,10 +219,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
     }
   }
 
-  for (auto const& pair : config.get("effects", JsonObject()).iterateObject()) {
-    String effectName = pair.first;
-    Json effectConfig = pair.second;
-
+  for (auto const& [effectName, effectConfig] : config.get("effects", JsonObject()).iterateObject()) {
     Effect& effect = m_effects[effectName];
     effect.type = effectConfig.getString("type");
     effect.time = effectConfig.getFloat("time", 0.0f);
@@ -540,10 +528,10 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
-      if (auto p = activeState.properties.ptr("animationTags")) {
-        for (auto tag : p->iterateObject())
-          if (!animationTags.contains(tag.first))
-            animationTags.set(tag.first, tag.second.toString());
+      if (auto stateAnimationTags = activeState.properties.ptr("animationTags")) {
+        for (auto const& [tagName, tagValue] : stateAnimationTags->iterateObject())
+          if (!animationTags.contains(tagName))
+            animationTags.set(tagName, tagValue.toString());
       }
     }
   }
@@ -555,12 +543,12 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
     } else if (tag == "frameIndex") {
       if (frame)
         return frameIndexStr;
-    } else if (auto p = animationTags.ptr(tag)) {
-      return StringView(*p);
-    } else if (auto pPart = partTags.ptr(tag)) {
-      return StringView(*pPart);
-    } else if (auto pGlobal = m_globalTags.ptr(tag)) {
-      return StringView(*pGlobal);
+    } else if (auto animationTag = animationTags.ptr(tag)) {
+      return StringView(*animationTag);
+    } else if (auto partTag = partTags.ptr(tag)) {
+      return StringView(*partTag);
+    } else if (auto globalTag = m_globalTags.ptr(tag)) {
+      return StringView(*globalTag);
     }
     return StringView();
   });
@@ -791,8 +779,8 @@ void NetworkedAnimator::setEffectEnabled(String const& effect, bool enabled) {
 
 List<Drawable> NetworkedAnimator::drawables(Vec2F const& position) const {
   List<Drawable> drawables;
-  for (auto& p : drawablesWithZLevel(position))
-    drawables.append(std::move(p.first));
+  for ([[maybe_unused]] auto& [drawable, zLevel] : drawablesWithZLevel(position))
+    drawables.append(std::move(drawable));
   return drawables;
 }
 
@@ -802,11 +790,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     return {};
 
   List<Directives> baseProcessingDirectives = {m_processingDirectives.get()};
-  for (auto& pair : m_effects) {
-    auto const& effectState = pair.second;
-
+  for (auto& [effectName, effectState] : m_effects) {
     if (effectState.enabled.get()) {
-      auto const& effect = m_effects.get(pair.first);
+      auto const& effect = m_effects.get(effectName);
       if (effect.type == "flash") {
         if (effectState.timer > effect.time / 2) {
           baseProcessingDirectives.append(effect.directives);
@@ -837,10 +823,10 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
-      if (auto p = activeState.properties.ptr("animationTags")) {
-        for (auto tag : p->iterateObject())
-          if (!animationTags.contains(tag.first))
-            animationTags.set(tag.first, tag.second.toString());
+      if (auto stateAnimationTags = activeState.properties.ptr("animationTags")) {
+        for (auto const& [tagName, tagValue] : stateAnimationTags->iterateObject())
+          if (!animationTags.contains(tagName))
+            animationTags.set(tagName, tagValue.toString());
       }
     }
   }
@@ -889,12 +875,12 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     if (auto directives = activePart.properties.value("processingDirectives").optString()) {
       if (version() > 0) {
         directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
-          if (auto p = animationTags.ptr(tag)) {
-            return StringView(*p);
-          } else if (auto pPart = partTags.ptr(tag)) {
-            return StringView(*pPart);
-          } else if (auto pGlobal = m_globalTags.ptr(tag)) {
-            return StringView(*pGlobal);
+          if (auto animationTag = animationTags.ptr(tag)) {
+            return StringView(*animationTag);
+          } else if (auto partTag = partTags.ptr(tag)) {
+            return StringView(*partTag);
+          } else if (auto globalTag = m_globalTags.ptr(tag)) {
+            return StringView(*globalTag);
           }
           return StringView("default");
         });
@@ -914,12 +900,12 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
         if (version() > 0) {
           directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
-            if (auto p = animationTags.ptr(tag)) {
-              return StringView(*p);
-            } else if (auto pPart = partTags.ptr(tag)) {
-              return StringView(*pPart);
-            } else if (auto pGlobal = m_globalTags.ptr(tag)) {
-              return StringView(*pGlobal);
+            if (auto animationTag = animationTags.ptr(tag)) {
+              return StringView(*animationTag);
+            } else if (auto partTag = partTags.ptr(tag)) {
+              return StringView(*partTag);
+            } else if (auto globalTag = m_globalTags.ptr(tag)) {
+              return StringView(*globalTag);
             }
             return StringView("default");
           });
@@ -935,12 +921,12 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       } else if (tag == "frameIndex") {
         if (frame)
           return frameIndexStr;
-      } else if (auto p = animationTags.ptr(tag)) {
-        return StringView(*p);
-      } else if (auto pPart = partTags.ptr(tag)) {
-        return StringView(*pPart);
-      } else if (auto pGlobal = m_globalTags.ptr(tag)) {
-        return StringView(*pGlobal);
+      } else if (auto animationTag = animationTags.ptr(tag)) {
+        return StringView(*animationTag);
+      } else if (auto partTag = partTags.ptr(tag)) {
+        return StringView(*partTag);
+      } else if (auto globalTag = m_globalTags.ptr(tag)) {
+        return StringView(*globalTag);
       }
       return StringView("default");
     });
@@ -952,21 +938,29 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
       size_t hash = hashOf(usedImage);
       auto find = m_cachedPartDrawables.find(partName);
-      if (find == m_cachedPartDrawables.end() || find->second.first != hash) {
+      bool missingCachedDrawable = find == m_cachedPartDrawables.end();
+      bool staleCachedDrawable = false;
+      if (!missingCachedDrawable) {
+        auto const& [cachedHash, cachedDrawable] = find->second;
+        staleCachedDrawable = cachedHash != hash;
+      }
+      if (missingCachedDrawable || staleCachedDrawable) {
         String relativeImage;
         if (usedImage[0] != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
         Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F(), m_imageMetadataDatabase);
-        if (find == m_cachedPartDrawables.end())
+        if (missingCachedDrawable)
           find = m_cachedPartDrawables.emplace(partName, std::pair{hash, std::move(drawable)}).first;
         else {
-          find->second.first = hash;
-          find->second.second = std::move(drawable);
+          auto& [cachedHash, cachedDrawable] = find->second;
+          cachedHash = hash;
+          cachedDrawable = std::move(drawable);
         }
       }
 
-      Drawable drawable = find->second.second;
+      [[maybe_unused]] auto const& [cachedHash, cachedDrawable] = find->second;
+      Drawable drawable = cachedDrawable;
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
         imagePart.addDirectives(directives, centered, m_imageMetadataDatabase);
@@ -991,22 +985,22 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
 List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const {
   List<LightSource> lightSources;
-  for (auto const& pair : m_lights) {
-    if (!pair.second.active.get())
+  for (auto const& [_, light] : m_lights) {
+    if (!light.active.get())
       continue;
 
-    Vec2F position = {pair.second.xPosition.get(), pair.second.yPosition.get()};
-    float pointAngle = constrainAngle(pair.second.pointAngle.get());
+    Vec2F position = {light.xPosition.get(), light.yPosition.get()};
+    float pointAngle = constrainAngle(light.pointAngle.get());
     Mat3F transformation = Mat3F::identity();
-    if (pair.second.anchorPart)
-      transformation = partTransformation(*pair.second.anchorPart);
-    transformation = groupTransformation(pair.second.transformationGroups) * transformation;
+    if (light.anchorPart)
+      transformation = partTransformation(*light.anchorPart);
+    transformation = groupTransformation(light.transformationGroups) * transformation;
     position = transformation.transformVec2(position);
     pointAngle = transformation.transformAngle(pointAngle);
-    if (pair.second.rotationGroup) {
-      auto const& rg = m_rotationGroups.get(*pair.second.rotationGroup);
-      position = (position - pair.second.rotationCenter.value(rg.rotationCenter)).rotate(rg.currentAngle)
-        + pair.second.rotationCenter.value(rg.rotationCenter);
+    if (light.rotationGroup) {
+      auto const& rg = m_rotationGroups.get(*light.rotationGroup);
+      position = (position - light.rotationCenter.value(rg.rotationCenter)).rotate(rg.currentAngle)
+        + light.rotationCenter.value(rg.rotationCenter);
       pointAngle += rg.currentAngle;
     }
     position = globalTransformation().transformVec2(position);
@@ -1017,17 +1011,17 @@ List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const 
         pointAngle = -Constants::pi / 2 - constrainAngle(pointAngle + Constants::pi / 2);
     }
 
-    Color color = pair.second.color.get();
-    if (pair.second.flicker)
-      color.setValue(clamp(color.value() * pair.second.flicker->value(SinWeightOperator<float>()), 0.0f, 1.0f));
+    Color color = light.color.get();
+    if (light.flicker)
+      color.setValue(clamp(color.value() * light.flicker->value(SinWeightOperator<float>()), 0.0f, 1.0f));
 
     lightSources.append(LightSource{
       position + translate,
       color.toRgbF(),
-      pair.second.pointLight ? LightType::Point : LightType::Spread,
-      pair.second.pointBeam,
+      light.pointLight ? LightType::Point : LightType::Spread,
+      light.pointBeam,
       pointAngle,
-      pair.second.beamAmbience});
+      light.beamAmbience});
   }
   return lightSources;
 }
@@ -1117,38 +1111,38 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
   });
   if (version() > 0) {
     auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
-      for (auto const& v : transforms) {
-        auto action = v.getString(0);
+      for (auto const& transform : transforms) {
+        auto action = transform.getString(0);
         if (action == "reset") {
           mat = Mat3F::identity();
         } else if (action == "translate") {
-          mat.translate(jsonToVec2F(v.getArray(1)));
+          mat.translate(jsonToVec2F(transform.getArray(1)));
         } else if (action == "rotate") {
-          mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
+          mat.rotate(transform.getFloat(1), jsonToVec2F(transform.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
         } else if (action == "rotateDegrees") {// because radians are fucking annoying
-          mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
+          mat.rotate(transform.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(transform.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
         } else if (action == "scale") {
-          mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0, 0})).toArray())));
+          mat.scale(jsonToVec2F(transform.getArray(1)), jsonToVec2F(transform.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0, 0})).toArray())));
         } else if (action == "transform") {
-          mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
+          mat = Mat3F(transform.getFloat(1), transform.getFloat(2), transform.getFloat(3), transform.getFloat(4), transform.getFloat(5), transform.getFloat(6), 0, 0, 1) * mat;
         }
       }
       return mat;
     };
-    for (auto& pair : m_transformationGroups) {
+    for (auto& [groupName, transformationGroup] : m_transformationGroups) {
       for (auto& stateTypeName : m_animatedParts.stateTypes()) {
         auto& activeState = m_animatedParts.activeState(stateTypeName);
-        if (auto transforms = activeState.properties.ptr(pair.first)) {
-          auto mat = processTransforms(pair.second.animationAffineTransform(), transforms->toArray(), activeState.properties);
-          if (pair.second.interpolated) {
-            if (auto nextTransforms = activeState.nextProperties.ptr(pair.first)) {
-              auto nextMat = processTransforms(pair.second.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
-              pair.second.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
+        if (auto transforms = activeState.properties.ptr(groupName)) {
+          auto mat = processTransforms(transformationGroup.animationAffineTransform(), transforms->toArray(), activeState.properties);
+          if (transformationGroup.interpolated) {
+            if (auto nextTransforms = activeState.nextProperties.ptr(groupName)) {
+              auto nextMat = processTransforms(transformationGroup.animationAffineTransform(), nextTransforms->toArray(), activeState.nextProperties);
+              transformationGroup.setAnimationAffineTransform(mat, nextMat, activeState.frameProgress);
             } else {
-              pair.second.setAnimationAffineTransform(mat);
+              transformationGroup.setAnimationAffineTransform(mat);
             }
           } else {
-            pair.second.setAnimationAffineTransform(mat);
+            transformationGroup.setAnimationAffineTransform(mat);
           }
           break;//we got one with the highest priority so break the loop
         }
@@ -1156,8 +1150,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
     }
   }
 
-  for (auto& pair : m_rotationGroups) {
-    auto& rotationGroup = pair.second;
+  for (auto& [rotationGroupName, rotationGroup] : m_rotationGroups) {
     if (rotationGroup.angularVelocity == 0.0f)
       rotationGroup.currentAngle = rotationGroup.targetAngle.get();
     else
@@ -1193,15 +1186,15 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       }
     };
 
-    for (auto& pair : m_particleEmitters) {
+    for (auto& [emitterName, particleEmitter] : m_particleEmitters) {
       Mat3F transformation = Mat3F::identity();
-      if (pair.second.anchorPart)
-        transformation = partTransformation(*pair.second.anchorPart);
-      transformation = groupTransformation(pair.second.transformationGroups) * transformation;
+      if (particleEmitter.anchorPart)
+        transformation = partTransformation(*particleEmitter.anchorPart);
+      transformation = groupTransformation(particleEmitter.transformationGroups) * transformation;
 
-      if (pair.second.rotationGroup) {
-        auto const& rg = m_rotationGroups.get(*pair.second.rotationGroup);
-        Vec2F rotationCenter = pair.second.rotationCenter.value(rg.rotationCenter);
+      if (particleEmitter.rotationGroup) {
+        auto const& rg = m_rotationGroups.get(*particleEmitter.rotationGroup);
+        Vec2F rotationCenter = particleEmitter.rotationCenter.value(rg.rotationCenter);
         transformation = Mat3F::rotation(rg.currentAngle, rotationCenter) * transformation;
       }
 
@@ -1210,31 +1203,31 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       // assume we emit no particles
       unsigned numEmissionCycles = 0;
 
-      if (pair.second.active.get()) {
-        pair.second.timer = min(pair.second.timer, 1.0f / (pair.second.emissionRate.get() + pair.second.emissionRateVariance));
-        if (pair.second.timer <= 0.0f) {
+      if (particleEmitter.active.get()) {
+        particleEmitter.timer = min(particleEmitter.timer, 1.0f / (particleEmitter.emissionRate.get() + particleEmitter.emissionRateVariance));
+        if (particleEmitter.timer <= 0.0f) {
           // timer causes us to emit one set
           ++numEmissionCycles;
-          pair.second.timer = 1.0f / (pair.second.emissionRate.get() + Random::randf(-pair.second.emissionRateVariance, pair.second.emissionRateVariance));
+          particleEmitter.timer = 1.0f / (particleEmitter.emissionRate.get() + Random::randf(-particleEmitter.emissionRateVariance, particleEmitter.emissionRateVariance));
         } else {
-          pair.second.timer -= dt;
+          particleEmitter.timer -= dt;
         }
       }
 
-      auto bursts = pair.second.burstEvent.pullOccurrences();
+      auto bursts = particleEmitter.burstEvent.pullOccurrences();
       for (uint64_t i = 0; i < bursts; ++i)
-        numEmissionCycles += pair.second.burstCount.get();
+        numEmissionCycles += particleEmitter.burstCount.get();
 
       if (numEmissionCycles > 0) {
-        RectF rect = pair.second.offsetRegion.get();
-        unsigned numToSelect = pair.second.randomSelectCount.get();
+        RectF rect = particleEmitter.offsetRegion.get();
+        unsigned numToSelect = particleEmitter.randomSelectCount.get();
 
         for (unsigned i = 0; i < numEmissionCycles; ++i) {
-          if (numToSelect >= pair.second.particleList.size()) {
-            for (auto const& particleConfig : pair.second.particleList)
+          if (numToSelect >= particleEmitter.particleList.size()) {
+            for (auto const& particleConfig : particleEmitter.particleList)
               addParticles(particleConfig, rect, transformation);
           } else {
-            List<ParticleEmitter::ParticleConfig> shuffledList = pair.second.particleList;
+            List<ParticleEmitter::ParticleConfig> shuffledList = particleEmitter.particleList;
             Random::shuffle(shuffledList);
 
             for (unsigned j = 0; j < numToSelect; ++j)
@@ -1244,10 +1237,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       }
     }
 
-    for (auto& pair : m_sounds) {
-      auto const& soundName = pair.first;
-      auto& soundEntry = pair.second;
-
+    for (auto& [soundName, soundEntry] : m_sounds) {
       for (auto signal : soundEntry.signals.receive()) {
         if (signal == SoundSignal::StopAll) {
           for (auto& sound : take(dynamicTarget->independentSounds[soundName]))
@@ -1277,14 +1267,13 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
     }
   }
 
-  for (auto& pair : m_lights) {
-    if (pair.second.flicker)
-      pair.second.flicker->update(dt);
+  for (auto& [lightName, light] : m_lights) {
+    if (light.flicker)
+      light.flicker->update(dt);
   }
 
-  for (auto& pair : m_effects) {
-    if (pair.second.enabled.get()) {
-      auto& effect = pair.second;
+  for (auto& [effectName, effect] : m_effects) {
+    if (effect.enabled.get()) {
       if (effect.timer <= 0.0f)
         effect.timer = effect.time;
       else
@@ -1361,103 +1350,103 @@ void NetworkedAnimator::setupNetStates() {
   for (auto const& part : sorted(m_animatedParts.partNames()))
     addNetElement(&m_partTags[part]);
 
-  for (auto& pair : m_stateInfo) {
-    pair.second.reverse.setCompatibilityVersion(10);
-    addNetElement(&pair.second.reverse);
-    addNetElement(&pair.second.stateIndex);
-    addNetElement(&pair.second.startedEvent);
+  for (auto& [stateName, stateInfo] : m_stateInfo) {
+    stateInfo.reverse.setCompatibilityVersion(10);
+    addNetElement(&stateInfo.reverse);
+    addNetElement(&stateInfo.stateIndex);
+    addNetElement(&stateInfo.startedEvent);
   }
 
-  for (auto& pair : m_transformationGroups) {
-    addNetElement(&pair.second.xTranslation);
-    addNetElement(&pair.second.yTranslation);
-    addNetElement(&pair.second.xScale);
-    addNetElement(&pair.second.yScale);
-    addNetElement(&pair.second.xShear);
-    addNetElement(&pair.second.yShear);
+  for (auto& [groupName, transformationGroup] : m_transformationGroups) {
+    addNetElement(&transformationGroup.xTranslation);
+    addNetElement(&transformationGroup.yTranslation);
+    addNetElement(&transformationGroup.xScale);
+    addNetElement(&transformationGroup.yScale);
+    addNetElement(&transformationGroup.xShear);
+    addNetElement(&transformationGroup.yShear);
 
-    if (pair.second.interpolated) {
-      pair.second.xTranslation.setInterpolator(lerp<float, float>);
-      pair.second.yTranslation.setInterpolator(lerp<float, float>);
-      pair.second.xScale.setInterpolator(lerp<float, float>);
-      pair.second.yScale.setInterpolator(lerp<float, float>);
-      pair.second.xShear.setInterpolator(angleLerp<float, float>);
-      pair.second.yShear.setInterpolator(angleLerp<float, float>);
+    if (transformationGroup.interpolated) {
+      transformationGroup.xTranslation.setInterpolator(lerp<float, float>);
+      transformationGroup.yTranslation.setInterpolator(lerp<float, float>);
+      transformationGroup.xScale.setInterpolator(lerp<float, float>);
+      transformationGroup.yScale.setInterpolator(lerp<float, float>);
+      transformationGroup.xShear.setInterpolator(angleLerp<float, float>);
+      transformationGroup.yShear.setInterpolator(angleLerp<float, float>);
     }
   }
 
-  for (auto& pair : m_rotationGroups) {
-    addNetElement(&pair.second.targetAngle);
-    addNetElement(&pair.second.netImmediateEvent);
+  for (auto& [rotationGroupName, rotationGroup] : m_rotationGroups) {
+    addNetElement(&rotationGroup.targetAngle);
+    addNetElement(&rotationGroup.netImmediateEvent);
   }
 
-  for (auto& pair : m_particleEmitters) {
-    addNetElement(&pair.second.emissionRate);
-    addNetElement(&pair.second.burstCount);
-    addNetElement(&pair.second.randomSelectCount);
-    addNetElement(&pair.second.offsetRegion);
-    addNetElement(&pair.second.active);
-    addNetElement(&pair.second.burstEvent);
+  for (auto& [emitterName, particleEmitter] : m_particleEmitters) {
+    addNetElement(&particleEmitter.emissionRate);
+    addNetElement(&particleEmitter.burstCount);
+    addNetElement(&particleEmitter.randomSelectCount);
+    addNetElement(&particleEmitter.offsetRegion);
+    addNetElement(&particleEmitter.active);
+    addNetElement(&particleEmitter.burstEvent);
 
-    pair.second.burstEvent.setIgnoreOccurrencesOnNetLoad(true);
+    particleEmitter.burstEvent.setIgnoreOccurrencesOnNetLoad(true);
   }
 
-  for (auto& pair : m_lights) {
-    addNetElement(&pair.second.active);
-    addNetElement(&pair.second.xPosition);
-    addNetElement(&pair.second.yPosition);
-    addNetElement(&pair.second.color);
-    addNetElement(&pair.second.pointAngle);
+  for (auto& [lightName, light] : m_lights) {
+    addNetElement(&light.active);
+    addNetElement(&light.xPosition);
+    addNetElement(&light.yPosition);
+    addNetElement(&light.color);
+    addNetElement(&light.pointAngle);
 
-    pair.second.xPosition.setFixedPointBase(0.0125f);
-    pair.second.yPosition.setFixedPointBase(0.0125f);
-    pair.second.pointAngle.setFixedPointBase(0.01f);
+    light.xPosition.setFixedPointBase(0.0125f);
+    light.yPosition.setFixedPointBase(0.0125f);
+    light.pointAngle.setFixedPointBase(0.01f);
 
-    pair.second.xPosition.setInterpolator(lerp<float, float>);
-    pair.second.yPosition.setInterpolator(lerp<float, float>);
-    pair.second.pointAngle.setInterpolator(angleLerp<float, float>);
+    light.xPosition.setInterpolator(lerp<float, float>);
+    light.yPosition.setInterpolator(lerp<float, float>);
+    light.pointAngle.setInterpolator(angleLerp<float, float>);
   }
 
-  for (auto& pair : m_sounds) {
-    addNetElement(&pair.second.soundPool);
-    addNetElement(&pair.second.xPosition);
-    addNetElement(&pair.second.yPosition);
-    addNetElement(&pair.second.volumeTarget);
-    addNetElement(&pair.second.volumeRampTime);
-    addNetElement(&pair.second.pitchMultiplierTarget);
-    addNetElement(&pair.second.pitchMultiplierRampTime);
-    addNetElement(&pair.second.loops);
-    addNetElement(&pair.second.signals);
+  for (auto& [soundName, sound] : m_sounds) {
+    addNetElement(&sound.soundPool);
+    addNetElement(&sound.xPosition);
+    addNetElement(&sound.yPosition);
+    addNetElement(&sound.volumeTarget);
+    addNetElement(&sound.volumeRampTime);
+    addNetElement(&sound.pitchMultiplierTarget);
+    addNetElement(&sound.pitchMultiplierRampTime);
+    addNetElement(&sound.loops);
+    addNetElement(&sound.signals);
 
-    pair.second.xPosition.setFixedPointBase(0.0125f);
-    pair.second.yPosition.setFixedPointBase(0.0125f);
+    sound.xPosition.setFixedPointBase(0.0125f);
+    sound.yPosition.setFixedPointBase(0.0125f);
 
-    pair.second.xPosition.setInterpolator(lerp<float, float>);
-    pair.second.yPosition.setInterpolator(lerp<float, float>);
+    sound.xPosition.setInterpolator(lerp<float, float>);
+    sound.yPosition.setInterpolator(lerp<float, float>);
   }
 
-  for (auto& pair : m_effects)
-    addNetElement(&pair.second.enabled);
+  for (auto& [effectName, effect] : m_effects)
+    addNetElement(&effect.enabled);
 }
 
 void NetworkedAnimator::netElementsNeedLoad(bool initial) {
-  for (auto& pair : m_stateInfo) {
-    if (pair.second.startedEvent.pullOccurred() || initial)
-      m_animatedParts.setActiveStateIndex(pair.first, pair.second.stateIndex.get(), true, pair.second.reverse.get());
+  for (auto& [stateName, stateInfo] : m_stateInfo) {
+    if (stateInfo.startedEvent.pullOccurred() || initial)
+      m_animatedParts.setActiveStateIndex(stateName, stateInfo.stateIndex.get(), true, stateInfo.reverse.get());
   }
 
-  for (auto& pair : m_rotationGroups) {
-    if (pair.second.netImmediateEvent.pullOccurred() || initial)
-      pair.second.currentAngle = pair.second.targetAngle.get();
+  for (auto& [rotationGroupName, rotationGroup] : m_rotationGroups) {
+    if (rotationGroup.netImmediateEvent.pullOccurred() || initial)
+      rotationGroup.currentAngle = rotationGroup.targetAngle.get();
   }
 }
 
 void NetworkedAnimator::netElementsNeedStore() {
-  for (auto& pair : m_stateInfo) {
-    if (pair.second.wasUpdated || (version() < 1)) {
-      pair.second.wasUpdated = false;
-      pair.second.stateIndex.set(m_animatedParts.activeStateIndex(pair.first));
-      pair.second.reverse.set(m_animatedParts.activeStateReverse(pair.first));
+  for (auto& [stateName, stateInfo] : m_stateInfo) {
+    if (stateInfo.wasUpdated || (version() < 1)) {
+      stateInfo.wasUpdated = false;
+      stateInfo.stateIndex.set(m_animatedParts.activeStateIndex(stateName));
+      stateInfo.reverse.set(m_animatedParts.activeStateReverse(stateName));
     }
   }
 }

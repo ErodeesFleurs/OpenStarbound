@@ -181,9 +181,9 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   StringList buttonText;
 
-  for (auto const& entry : base.get(key).iterateArray()) {
+  for (auto const& bindingConfig : base.get(key).iterateArray()) {
     try {
-      auto stored = inputDescriptorFromJson(entry);
+      auto stored = inputDescriptorFromJson(bindingConfig);
       buttonText.push_back(printInputDescriptor(stored));
     } catch (StarException const& e) {
       buttonText.push_back("unknown");

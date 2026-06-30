@@ -204,8 +204,9 @@ void Pane::update(float dt) {
 }
 
 void Pane::tick(float) {
-  m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
-    return p.second->finished() == false;
+  m_playingSounds.filter([](auto const& playingSound) {
+    auto const& [audioName, audioInstance] = playingSound;
+    return audioInstance->finished() == false;
   });
 }
 
@@ -372,9 +373,10 @@ LuaCallbacks Pane::makePaneCallbacks() {
     });
 
   callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
-      m_playingSounds.filter([audio](pair<String, AudioInstancePtr> const& p) {
-        if (!audio || p.first == *audio) {
-          p.second->stop();
+      m_playingSounds.filter([audio](auto const& playingSound) {
+        auto const& [audioName, audioInstance] = playingSound;
+        if (!audio || audioName == *audio) {
+          audioInstance->stop();
           return false;
         }
         return true;

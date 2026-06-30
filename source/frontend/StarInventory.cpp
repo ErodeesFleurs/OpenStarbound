@@ -172,10 +172,9 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
       });
   };
 
-  for (auto const p : EquipmentSlotNames) {
-    EquipmentSlot slot = p.first;
-    registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*) {
+  for (auto const& [slot, widgetName] : EquipmentSlotNames) {
+    registerSlotCallbacks(widgetName, slot);
+    invWindowReader.registerCallback(widgetName + ".middle", [slot, this](Widget*) {
       auto inventory = m_player->inventory();
       inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
     });
@@ -191,12 +190,12 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
   m_disabledTechOverlays.append(fetchChild<ImageWidget>("techBodyDisabled"));
   m_disabledTechOverlays.append(fetchChild<ImageWidget>("techLegsDisabled"));
 
-  for (auto const p : EquipmentSlotNames) {
-    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-      itemSlot->setItem(m_player->inventory()->itemsAt(p.first));
+  for (auto const& [slot, widgetName] : EquipmentSlotNames) {
+    if (auto itemSlot = fetchChild<ItemSlotWidget>(widgetName)) {
+      itemSlot->setItem(m_player->inventory()->itemsAt(slot));
       if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
-        indicator->setVisibility(!m_player->inventory()->equipmentVisibility(p.first));
-      if (p.first >= EquipmentSlot::Cosmetic1)
+        indicator->setVisibility(!m_player->inventory()->equipmentVisibility(slot));
+      if (slot >= EquipmentSlot::Cosmetic1)
         itemSlot->hide();
     }
   }
@@ -219,9 +218,9 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
   setTitle(portrait, m_player->name(), m_config.getString("subtitle"));
 
   if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = m_config.getBool("alwaysDisplayCosmetics", false))) {
-    for (auto const& p : EquipmentSlotNames) {
-      if (p.first >= EquipmentSlot::Cosmetic1) {
-        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+    for (auto const& [equipmentSlot, widgetName] : EquipmentSlotNames) {
+      if (equipmentSlot >= EquipmentSlot::Cosmetic1) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(widgetName))
           itemSlot->setVisibility(true);
       }
     }
@@ -241,8 +240,8 @@ void InventoryPane::displayed() {
   Pane::displayed();
   m_expectingSwap = false;
 
-  for (auto grid : m_itemGrids)
-    grid.second->updateItemState();
+  for (auto const& [tabName, grid] : m_itemGrids)
+    grid->updateItemState();
   m_itemGrids[m_selectedTab]->indicateChangedSlots();
 }
 
@@ -265,10 +264,10 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
   if (item)
     return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
 
-  for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
+  for (auto const& [techType, techName] : TechTypeNames) {
+    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", techName))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
-        if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
+        if (auto techModule = m_player->techs()->equippedTechs().maybe(techType))
           if (m_techDatabase->contains(*techModule))
             return SimpleTooltipBuilder::buildTooltip(m_techDatabase->tech(*techModule).description, SimpleTooltipServices{m_assets, context()});
       }
@@ -284,9 +283,9 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
 
   if (auto mousePosition = Widget::context().mousePosition(event)) {
     bool displayingCosmetics = false;
-    for (auto const& p : EquipmentSlotNames) {
-      if (p.first >= EquipmentSlot::HeadCosmetic) {
-        if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
+    for (auto const& [equipmentSlot, widgetName] : EquipmentSlotNames) {
+      if (equipmentSlot >= EquipmentSlot::HeadCosmetic) {
+        if (auto itemSlot = fetchChild<ItemSlotWidget>(widgetName)) {
           if ((displayingCosmetics = itemSlot->inMember(*mousePosition)))
             break;
         }
@@ -294,9 +293,9 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
     }
 
     if (m_displayingCosmetics != displayingCosmetics) {
-      for (auto const& p : EquipmentSlotNames) {
-        if (p.first >= EquipmentSlot::Cosmetic1) {
-          if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
+      for (auto const& [equipmentSlot, widgetName] : EquipmentSlotNames) {
+        if (equipmentSlot >= EquipmentSlot::Cosmetic1) {
+          if (auto itemSlot = fetchChild<ItemSlotWidget>(widgetName))
             itemSlot->setVisibility(displayingCosmetics);
         }
       }
@@ -325,22 +324,22 @@ bool InventoryPane::giveContainerResult(ContainerResult result) {
 }
 
 void InventoryPane::updateItems() {
-  for (auto& p : m_itemGrids)
-    p.second->updateItemState();
+  for (auto& [_, itemGrid] : m_itemGrids)
+    itemGrid->updateItemState();
 }
 
 bool InventoryPane::containsNewItems() const {
-  for (auto& p : m_itemGrids) {
-    if (p.second->slotsChanged())
+  for (auto const& [_, itemGrid] : m_itemGrids) {
+    if (itemGrid->slotsChanged())
       return true;
   }
   return false;
 }
 
 void InventoryPane::clearChangedSlots() {
-  for (auto& p : m_itemGrids) {
-    p.second->updateItemState();
-    p.second->clearChangedSlots();
+  for (auto& [_, itemGrid] : m_itemGrids) {
+    itemGrid->updateItemState();
+    itemGrid->clearChangedSlots();
   }
 }
 
@@ -376,18 +375,18 @@ void InventoryPane::update(float dt) {
   }
   m_trashSlot->setProgress(m_trashBurn.timer / m_trashBurn.time);
 
-  for (auto const& p : EquipmentSlotNames) {
-    if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second)) {
-      itemSlot->setItem(inventory->itemsAt(p.first));
+  for (auto const& [equipmentSlot, widgetName] : EquipmentSlotNames) {
+    if (auto itemSlot = fetchChild<ItemSlotWidget>(widgetName)) {
+      itemSlot->setItem(inventory->itemsAt(equipmentSlot));
       itemSlot->showLinkIndicator(customBarItems.contains(itemSlot->item()));
       if (auto indicator = itemSlot->findChild<ImageWidget>("hidden"))
-        indicator->setVisibility(!inventory->equipmentVisibility(p.first));
+        indicator->setVisibility(!inventory->equipmentVisibility(equipmentSlot));
     }
   }
 
-  for (auto const& p : TechTypeNames) {
-    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
-      if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
+  for (auto const& [techType, techName] : TechTypeNames) {
+    if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", techName))) {
+      if (auto techModule = m_player->techs()->equippedTechs().maybe(techType)) {
         if (m_techDatabase->contains(*techModule)) {
           techIcon->setImage(m_techDatabase->tech(*techModule).icon);
           continue;
@@ -399,32 +398,32 @@ void InventoryPane::update(float dt) {
 
   if (ItemPtr swapSlot = inventory->swapSlotItem()) {
     if (!inventory->itemAllowedInBag(swapSlot, m_selectedTab)) {
-      for (auto& pair : m_itemGrids) {
-        if (pair.first != m_selectedTab && inventory->itemAllowedInBag(swapSlot, pair.first)) {
-          selectTab(pair.first);
+      for (auto& [bagName, itemGrid] : m_itemGrids) {
+        if (bagName != m_selectedTab && inventory->itemAllowedInBag(swapSlot, bagName)) {
+          selectTab(bagName);
           break;
         }
       }
     }
   }
 
-  for (auto p : m_itemGrids) {
-    p.second->updateItemState();
-    for (size_t i = 0; i < p.second->itemSlots(); ++i) {
-      if (auto itemWidget = p.second->itemWidgetAt(i))
+  for (auto const& [bagName, itemGrid] : m_itemGrids) {
+    itemGrid->updateItemState();
+    for (size_t i = 0; i < itemGrid->itemSlots(); ++i) {
+      if (auto itemWidget = itemGrid->itemWidgetAt(i))
         itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
       else
-        Logger::warn("Could not find item widget {} in item grid {}!", i, p.first);
+        Logger::warn("Could not find item widget {} in item grid {}!", i, bagName);
     }
   }
 
   m_itemGrids[m_selectedTab]->clearChangedSlots();
 
-  for (auto& pair : m_newItemMarkers) {
-    if (m_itemGrids[pair.first]->slotsChanged())
-      pair.second->show();
+  for (auto& [bagName, marker] : m_newItemMarkers) {
+    if (m_itemGrids[bagName]->slotsChanged())
+      marker->show();
     else
-      pair.second->hide();
+      marker->hide();
   }
 
   for (auto& techOverlay : m_disabledTechOverlays)
@@ -532,8 +531,8 @@ void InventoryPane::update(float dt) {
 }
 
 void InventoryPane::selectTab(String const& selected) {
-  for (auto grid : m_itemGrids)
-    grid.second->hide();
+  for (auto const& [tabName, grid] : m_itemGrids)
+    grid->hide();
   m_selectedTab = selected;
   m_itemGrids[m_selectedTab]->show();
   m_itemGrids[m_selectedTab]->indicateChangedSlots();

@@ -140,11 +140,11 @@ void PlayerAppearance::refreshHumanoidParameters() {
 
   if (m_player.inWorld()) {
     if (m_player.isMaster()) {
-      for (auto& p : m_player.m_genericScriptContexts) {
-        if (p.second->initialized()) {
-          p.second->removeCallbacks("animator");
-          p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
-          p.second->invoke("refreshHumanoidParameters");
+      for (auto& [contextName, scriptContext] : m_player.m_genericScriptContexts) {
+        if (scriptContext->initialized()) {
+          scriptContext->removeCallbacks("animator");
+          scriptContext->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
+          scriptContext->invoke("refreshHumanoidParameters");
         }
       }
     }

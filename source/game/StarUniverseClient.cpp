@@ -334,8 +334,8 @@ void UniverseClient::update(float dt) {
 
   if (!m_pause) {
     m_worldClient->update(dt);
-    for (auto& p : m_scriptContexts)
-      p.second->update();
+    for (auto& [contextName, scriptContext] : m_scriptContexts)
+      scriptContext->update();
   }
   m_connection->push(m_worldClient->getOutgoingPackets());
 
@@ -603,19 +603,19 @@ void UniverseClient::restartLua() {
 
 void UniverseClient::startLuaScripts() {
   auto assets = m_assets;
-  for (auto const& p : assets->json("/client.config:universeScriptContexts").iterateObject()) {
+  for (auto const& [contextName, contextScripts] : assets->json("/client.config:universeScriptContexts").iterateObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
-    scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    scriptComponent->setScripts(jsonToStringList(contextScripts.toArray()));
 
-    m_scriptContexts.set(p.first, scriptComponent);
+    m_scriptContexts.set(contextName, scriptComponent);
     scriptComponent->init();
   }
 }
 
 void UniverseClient::stopLua() {
-  for (auto& p : m_scriptContexts)
-    p.second->uninit();
+  for (auto& [contextName, scriptContext] : m_scriptContexts)
+    scriptContext->uninit();
 
   m_scriptContexts.clear();
 }

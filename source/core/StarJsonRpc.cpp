@@ -15,8 +15,8 @@ void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func)
 }
 
 void JsonRpc::registerHandlers(JsonRpcHandlers const& handlers) {
-  for (auto const& pair : handlers)
-    registerHandler(pair.first, pair.second);
+  for (auto const& [handlerName, handler] : handlers)
+    registerHandler(handlerName, handler);
 }
 
 void JsonRpc::removeHandler(String const& handler) {

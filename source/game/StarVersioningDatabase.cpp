@@ -42,8 +42,8 @@ void VersionedJson::writeFile(VersionedJson const& versionedJson, String const& 
 void VersionedJson::writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson) {
   ds.write(VersionedJson::SubVersioning);
   JsonObject subVersionsOut;
-  for (auto const& p : versionedJson.subVersions)
-    subVersionsOut.set(p.first, p.second);
+  for (auto const& [identifier, subVersion] : versionedJson.subVersions)
+    subVersionsOut.set(identifier, subVersion);
   ds.write(JsonObject{
     {"subVersions", subVersionsOut}});
 }
@@ -59,15 +59,15 @@ void VersionedJson::readSubVersioning(DataStream& ds, VersionedJson& versionedJs
   }
   if (extraVersioning == 1) {
     JsonObject source = ds.read<JsonObject>();
-    for (auto const& p : source.get("subVersions").iterateObject())
-      versionedJson.subVersions[p.first] = p.second.toUInt();
+    for (auto const& [identifier, subVersion] : source.get("subVersions").iterateObject())
+      versionedJson.subVersions[identifier] = subVersion.toUInt();
   }
 }
 
 Json VersionedJson::toJson() const {
   JsonObject subVersionsOut;
-  for (auto const& p : subVersions)
-    subVersionsOut.set(p.first, p.second);
+  for (auto const& [identifier, subVersion] : subVersions)
+    subVersionsOut.set(identifier, subVersion);
   return JsonObject{
     {"id", identifier},
     {"version", version},
@@ -83,8 +83,8 @@ VersionedJson VersionedJson::fromJson(Json const& source) {
   auto version = source.optUInt("version").orMaybe(source.optUInt("__version"));
   auto content = source.opt("content").orMaybe(source.opt("__content"));
   StringMap<VersionNumber> subVersions;
-  for (auto const& p : source.getObject("subVersions", JsonObject()))
-    subVersions[p.first] = p.second.toUInt();
+  for (auto const& [identifier, subVersion] : source.getObject("subVersions", JsonObject()))
+    subVersions[identifier] = subVersion.toUInt();
 
   return {*id, static_cast<VersionNumber>(*version), *content, subVersions};
 }
@@ -108,8 +108,8 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
 
   // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
   if (versionedJson.content.isType(Json::Type::Object) && versionedJson.content.contains("subVersions")) {
-    for (auto const& p : versionedJson.content.getObject("subVersions", JsonObject()))
-      versionedJson.subVersions[p.first] = p.second.toUInt();
+    for (auto const& [identifier, subVersion] : versionedJson.content.getObject("subVersions", JsonObject()))
+      versionedJson.subVersions[identifier] = subVersion.toUInt();
     versionedJson.content = versionedJson.content.eraseKey("subVersions");
   }
   return ds;
@@ -128,12 +128,12 @@ VersioningDatabase::VersioningDatabase(AssetsConstPtr assets, LiquidsDatabaseCon
       m_liquidsDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(liquidsDatabase), "VersioningDatabase", "liquids database")),
       m_biomeDatabase(requireServiceValueAs<VersioningDatabaseException>(std::move(biomeDatabase), "VersioningDatabase", "biome database")),
       m_toStoragePath(requireServiceValueAs<VersioningDatabaseException>(std::move(toStoragePath), "VersioningDatabase", "storage path")) {
-  for (auto const& pair : m_assets->json("/versioning.config").iterateObject())
-    m_currentVersions[pair.first] = pair.second.toUInt();
+  for (auto const& [identifier, version] : m_assets->json("/versioning.config").iterateObject())
+    m_currentVersions[identifier] = version.toUInt();
 
-  for (auto const& pair : m_assets->json("/versioning/subVersioning.config").iterateObject())
-    for (auto const& p : pair.second.iterateObject())
-      m_currentSubVersions[pair.first][p.first] = p.second.toUInt();
+  for (auto const& [identifier, subVersionConfig] : m_assets->json("/versioning/subVersioning.config").iterateObject())
+    for (auto const& [subIdentifier, subVersion] : subVersionConfig.iterateObject())
+      m_currentSubVersions[identifier][subIdentifier] = subVersion.toUInt();
 
   for (auto const& scriptFile : m_assets->scan("/versioning/", ".lua")) {
     try {
@@ -164,18 +164,18 @@ VersioningDatabase::VersioningDatabase(AssetsConstPtr assets, LiquidsDatabaseCon
   // Sort each set of update scripts first by fromVersion, and then in
   // *reverse* order of toVersion.  This way, the first matching script for a
   // given fromVersion should take the json to the *furthest* toVersion.
-  for (auto& pair : m_versionUpdateScripts) {
-    pair.second.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
+  for (auto& [versionedJsonIdentifier, updateScripts] : m_versionUpdateScripts) {
+    updateScripts.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
       if (lhs.fromVersion != rhs.fromVersion)
         return lhs.fromVersion < rhs.fromVersion;
       else
         return lhs.toVersion < rhs.toVersion;
     });
   }
-  for (auto& p : m_subVersionUpdateScripts)
-    for (auto& version : p.second)
-      for (auto& pair : version.second) {
-        pair.second.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
+  for (auto& [versionedJsonIdentifier, versions] : m_subVersionUpdateScripts)
+    for (auto& [version, paths] : versions)
+      for (auto& [path, updateScripts] : paths) {
+        updateScripts.sort([](VersionUpdateScript const& lhs, VersionUpdateScript const& rhs) {
           if (lhs.fromVersion != rhs.fromVersion)
             return lhs.fromVersion < rhs.fromVersion;
           else

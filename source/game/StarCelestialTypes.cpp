@@ -52,20 +52,20 @@ CelestialChunk::CelestialChunk(Json const& store) {
     constellations.append(std::move(constellation));
   }
 
-  for (auto const& p : store.getArray("systemParameters"))
-    systemParameters[jsonToVec3I(p.get(0))] = CelestialParameters(p.get(1));
+  for (auto const& systemStore : store.getArray("systemParameters"))
+    systemParameters[jsonToVec3I(systemStore.get(0))] = CelestialParameters(systemStore.get(1));
 
-  for (auto const& p : store.getArray("systemObjects")) {
+  for (auto const& systemStore : store.getArray("systemObjects")) {
     HashMap<int, CelestialPlanet> celestialSystemObjects;
-    for (auto const& planetPair : p.getArray(1)) {
+    for (auto const& planetStore : systemStore.getArray(1)) {
       CelestialPlanet planet;
-      planet.planetParameters = CelestialParameters(planetPair.get(1).get("parameters"));
-      for (auto const& satellitePair : planetPair.get(1).getArray("satellites"))
-        planet.satelliteParameters.add(satellitePair.getInt(0), CelestialParameters(satellitePair.get(1)));
-      celestialSystemObjects.add(planetPair.getInt(0), std::move(planet));
+      planet.planetParameters = CelestialParameters(planetStore.get(1).get("parameters"));
+      for (auto const& satelliteStore : planetStore.get(1).getArray("satellites"))
+        planet.satelliteParameters.add(satelliteStore.getInt(0), CelestialParameters(satelliteStore.get(1)));
+      celestialSystemObjects.add(planetStore.getInt(0), std::move(planet));
     }
 
-    systemObjects[jsonToVec3I(p.get(0))] = std::move(celestialSystemObjects);
+    systemObjects[jsonToVec3I(systemStore.get(0))] = std::move(celestialSystemObjects);
   }
 }
 
@@ -75,32 +75,32 @@ Json CelestialChunk::toJson() const {
   for (auto const& constellation : constellations) {
     JsonArray lines;
     lines.reserve(constellation.size());
-    for (auto const& p : constellation)
-      lines.append(JsonArray{jsonFromVec2I(p.first), jsonFromVec2I(p.second)});
+    for (auto const& [start, end] : constellation)
+      lines.append(JsonArray{jsonFromVec2I(start), jsonFromVec2I(end)});
     constellationStore.append(lines);
   }
 
   JsonArray systemParametersStore;
   systemParametersStore.reserve(systemParameters.size());
-  for (auto const& p : systemParameters)
-    systemParametersStore.append(JsonArray{jsonFromVec3I(p.first), p.second.diskStore()});
+  for (auto const& [systemLocation, parameters] : systemParameters)
+    systemParametersStore.append(JsonArray{jsonFromVec3I(systemLocation), parameters.diskStore()});
 
   JsonArray systemObjectsStore;
   systemObjectsStore.reserve(systemObjects.size());
-  for (auto const& systemObjectPair : systemObjects) {
+  for (auto const& [systemLocation, planets] : systemObjects) {
     JsonArray planetsStore;
-    planetsStore.reserve(systemObjectPair.second.size());
-    for (auto const& planetPair : systemObjectPair.second) {
+    planetsStore.reserve(planets.size());
+    for (auto const& [orbitNumber, planet] : planets) {
       JsonArray satellitesStore;
-      satellitesStore.reserve(planetPair.second.satelliteParameters.size());
-      for (auto const& satellitePair : planetPair.second.satelliteParameters)
-        satellitesStore.append(JsonArray{satellitePair.first, satellitePair.second.diskStore()});
+      satellitesStore.reserve(planet.satelliteParameters.size());
+      for (auto const& [satelliteNumber, satelliteParameters] : planet.satelliteParameters)
+        satellitesStore.append(JsonArray{satelliteNumber, satelliteParameters.diskStore()});
 
-      planetsStore.append(JsonArray{planetPair.first,
+      planetsStore.append(JsonArray{orbitNumber,
           JsonObject{
-              {"parameters", planetPair.second.planetParameters.diskStore()}, {"satellites", std::move(satellitesStore)}}});
+              {"parameters", planet.planetParameters.diskStore()}, {"satellites", std::move(satellitesStore)}}});
     }
-    systemObjectsStore.append(JsonArray{jsonFromVec3I(systemObjectPair.first), std::move(planetsStore)});
+    systemObjectsStore.append(JsonArray{jsonFromVec3I(systemLocation), std::move(planetsStore)});
   }
 
   return JsonObject{{"chunkIndex", jsonFromVec2I(chunkIndex)},

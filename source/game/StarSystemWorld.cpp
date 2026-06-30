@@ -93,8 +93,8 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
     config.planetSizes.set(size.getUInt(0), size.getFloat(1));
   config.emptyOrbitSize = json.getFloat("emptyOrbitSize");
   config.unvisitablePlanetSize = json.getFloat("unvisitablePlanetSize");
-  for (auto p : json.getObject("floatingDungeonWorldSizes"))
-    config.floatingDungeonWorldSizes.set(p.first, p.second.toFloat());
+  for (auto const& [dungeonWorldName, dungeonWorldSize] : json.getObject("floatingDungeonWorldSizes"))
+    config.floatingDungeonWorldSizes.set(dungeonWorldName, dungeonWorldSize.toFloat());
 
   config.starSize = json.getFloat("starSize");
   config.planetaryOrbitPadding = jsonToVec2F(json.get("planetaryOrbitPadding"));
@@ -274,8 +274,8 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   object.parameters = config.getObject("parameters");
 
   if (config.contains("generatedParameters")) {
-    for (auto p : config.getObject("generatedParameters"))
-      object.generatedParameters[p.first] = p.second.toString();
+    for (auto const& [parameterName, generatorName] : config.getObject("generatedParameters"))
+      object.generatedParameters[parameterName] = generatorName.toString();
   }
 
   return object;
@@ -338,9 +338,9 @@ SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& po
   : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
   nameGenerator = requireServiceValueAs<StarException>(std::move(nameGenerator), "SystemObject", "name generator");
   setPosition(position);
-  for (auto p : m_config.generatedParameters) {
-    if (!m_parameters.contains(p.first))
-      m_parameters[p.first] = nameGenerator->generateName(p.second);
+  for (auto const& [parameterName, generatorName] : m_config.generatedParameters) {
+    if (!m_parameters.contains(parameterName))
+      m_parameters[parameterName] = nameGenerator->generateName(generatorName);
   }
   init();
 }

@@ -35,8 +35,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
   if (jOrientations && jOrientations->isType(Json::Type::Array)) {
     JsonArray base = m_config->config.get("orientations").toArray();
     auto orientations = jOrientations->toArray();
-    for (auto const& orientationAndIndex : enumerateIterator(orientations))
-      base.set(orientationAndIndex.second, jsonMergeNulling(base.get(orientationAndIndex.second), orientationAndIndex.first));
+    for (auto const& [orientation, orientationIndex] : enumerateIterator(orientations))
+      base.set(orientationIndex, jsonMergeNulling(base.get(orientationIndex), orientation));
     m_orientations = ObjectDatabase::parseOrientations(m_config->assets, m_config->materialDatabase, m_config->imageMetadataDatabase, m_config->path, base, m_config->config);
   }
 
@@ -87,8 +87,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
 
   auto colorName = configValue("color", "default").toString().takeUtf8();
   m_imageKeys.set("color", colorName);
-  for (auto const& p : configValue("imageKeys", JsonObject()).iterateObject())
-    m_imageKeys.set(p.first, p.second.toString());
+  for (auto const& [imageKey, imageValue] : configValue("imageKeys", JsonObject()).iterateObject())
+    m_imageKeys.set(imageKey, imageValue.toString());
 
   setUniqueId(configValue("uniqueId").optString());
 
@@ -195,8 +195,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
-    for (auto const& p : configValue("imageKeys", JsonObject()).iterateObject())
-      setImageKey(p.first, p.second.toString());
+    for (auto const& [imageKey, imageValue] : configValue("imageKeys", JsonObject()).iterateObject())
+      setImageKey(imageKey, imageValue.toString());
 
     if (m_config->lightColors.contains(colorName))
       m_lightSourceColor.set(m_config->lightColors.get(colorName));
@@ -241,8 +241,8 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   // Compute all the relevant animation information after the final orientation
   // has been selected and after the script is initialized
 
-  for (auto const& pair : configValue("animationParts", JsonObject()).iterateObject())
-    m_networkedAnimator->setPartTag(pair.first, "partImage", pair.second.toString());
+  for (auto const& [partName, partImage] : configValue("animationParts", JsonObject()).iterateObject())
+    m_networkedAnimator->setPartTag(partName, "partImage", partImage.toString());
 
   m_animationPosition = jsonToVec2F(configValue("animationPosition", JsonArray{0, 0})) / TilePixels;
 
@@ -435,10 +435,10 @@ void Object::render(RenderCallback* renderCallback) {
   renderParticles(renderCallback);
   renderSounds(renderCallback);
 
-  for (auto const& imageKeyPair : m_imageKeys) {
-    auto currentTag = m_networkedAnimator->globalTagPtr(imageKeyPair.first);
-    if (!currentTag || *currentTag != imageKeyPair.second)
-      m_networkedAnimator->setGlobalTag(imageKeyPair.first, imageKeyPair.second);
+  for (auto const& [imageKey, imageTag] : m_imageKeys) {
+    auto currentTag = m_networkedAnimator->globalTagPtr(imageKey);
+    if (!currentTag || *currentTag != imageTag)
+      m_networkedAnimator->setGlobalTag(imageKey, imageTag);
   }
 
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
@@ -622,9 +622,9 @@ List<Drawable> Object::cursorHintDrawables() const {
       // orientation.
       List<Drawable> result;
       auto& orientations = getOrientations();
-      for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
-        if (orientationAndIndex.first->directionAffinity && *orientationAndIndex.first->directionAffinity == m_direction.get()) {
-          result = orientationDrawables(orientationAndIndex.second);
+      for (auto const& [orientation, orientationIndex] : enumerateIterator(orientations)) {
+        if (orientation->directionAffinity && *orientation->directionAffinity == m_direction.get()) {
+          result = orientationDrawables(orientationIndex);
           break;
         }
       }

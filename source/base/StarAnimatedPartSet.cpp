@@ -9,9 +9,7 @@ AnimatedPartSet::AnimatedPartSet() = default;
 
 AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   m_animatorVersion = animatorVersion;
-  for (auto const& stateTypePair : config.get("stateTypes", JsonObject()).iterateObject()) {
-    auto const& stateTypeName = stateTypePair.first;
-    auto const& stateTypeConfig = stateTypePair.second;
+  for (auto const& [stateTypeName, stateTypeConfig] : config.get("stateTypes", JsonObject()).iterateObject()) {
     if ((version() > 0) && !stateTypeConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
       continue;
 
@@ -21,9 +19,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
     newStateType.defaultState = stateTypeConfig.getString("default", "");
     newStateType.stateTypeProperties = stateTypeConfig.getObject("properties", {});
 
-    for (auto const& statePair : stateTypeConfig.get("states", JsonObject()).iterateObject()) {
-      auto const& stateName = statePair.first;
-      auto const& stateConfig = statePair.second;
+    for (auto const& [stateName, stateConfig] : stateTypeConfig.get("states", JsonObject()).iterateObject()) {
       if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
         continue;
 
@@ -50,27 +46,25 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   }
 
   // Sort state types by decreasing priority.
-  m_stateTypes.sort([](pair<String, StateType> const& a, pair<String, StateType> const& b) {
-      return b.second.priority < a.second.priority;
+  m_stateTypes.sort([](pair<String, StateType> const& lhs, pair<String, StateType> const& rhs) {
+      auto const& [lhsName, lhsStateType] = lhs;
+      auto const& [rhsName, rhsStateType] = rhs;
+      return rhsStateType.priority < lhsStateType.priority;
     });
 
-  for (auto const& partPair : config.get("parts", JsonObject()).iterateObject()) {
-    auto const& partName = partPair.first;
-    auto const& partConfig = partPair.second;
+  for (auto const& [partName, partConfig] : config.get("parts", JsonObject()).iterateObject()) {
     if ((version() > 0) && !partConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
       continue;
 
     Part newPart;
     newPart.partProperties = partConfig.getObject("properties", {});
 
-    for (auto const& partStateTypePair : partConfig.get("partStates", JsonObject()).iterateObject()) {
-      auto const& stateTypeName = partStateTypePair.first;
+    for (auto const& [stateTypeName, partStateTypeConfig] : partConfig.get("partStates", JsonObject()).iterateObject()) {
 
-      for (auto const& partStatePair : partStateTypePair.second.iterateObject()) {
-        auto const& stateName = partStatePair.first;
-        auto stateConfig = partStatePair.second;
+      for (auto const& [stateName, partStateValue] : partStateTypeConfig.iterateObject()) {
+        auto stateConfig = partStateValue;
         if ((version() > 0) && stateConfig.isType(Json::Type::String))
-          stateConfig = partStateTypePair.second.get(stateConfig.toString());
+          stateConfig = partStateTypeConfig.get(stateConfig.toString());
 
         if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
           continue;
@@ -79,15 +73,15 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
         newPart.partStates[stateTypeName][stateName] = std::move(partState);
       }
     }
-    newPart.activePart.partName = partPair.first;
+    newPart.activePart.partName = partName;
     newPart.activePart.setAnimationAffineTransform(Mat3F::identity());
     newPart.activePartDirty = true;
 
     m_parts[partName] = std::move(newPart);
   }
 
-  for (auto const& pair : m_stateTypes)
-    setActiveState(pair.first, pair.second.defaultState, true, false);
+  for (auto const& [stateTypeName, stateType] : m_stateTypes)
+    setActiveState(stateTypeName, stateType.defaultState, true, false);
 }
 
 StringList AnimatedPartSet::stateTypes() const {
@@ -98,20 +92,20 @@ void AnimatedPartSet::setStateTypeEnabled(String const& stateTypeName, bool enab
   auto& stateType = m_stateTypes.get(stateTypeName);
   if (stateType.enabled != enabled) {
     stateType.enabled = enabled;
-    for (auto& pair : m_parts)
-      pair.second.activePartDirty = true;
+    for (auto& [partName, part] : m_parts)
+      part.activePartDirty = true;
   }
 }
 
 void AnimatedPartSet::setEnabledStateTypes(StringList const& stateTypeNames) {
-  for (auto& pair : m_stateTypes)
-    pair.second.enabled = false;
+  for (auto& [stateTypeName, stateType] : m_stateTypes)
+    stateType.enabled = false;
 
   for (auto const& stateTypeName : stateTypeNames)
     m_stateTypes.get(stateTypeName).enabled = true;
 
-  for (auto& pair : m_parts)
-    pair.second.activePartDirty = true;
+  for (auto& [partName, part] : m_parts)
+    part.activePartDirty = true;
 }
 
 bool AnimatedPartSet::stateTypeEnabled(String const& stateTypeName) const {
@@ -136,8 +130,8 @@ bool AnimatedPartSet::setActiveState(String const& stateTypeName, String const& 
     stateType.activeStatePointer = stateType.states.get(stateName).get();
 
     stateType.activeStateDirty = true;
-    for (auto& pair : m_parts)
-      pair.second.activePartDirty = true;
+    for (auto& [partName, part] : m_parts)
+      part.activePartDirty = true;
 
     return true;
   } else {
@@ -150,8 +144,8 @@ void AnimatedPartSet::restartState(String const& stateTypeName) {
   stateType.activeState.timer = 0.0f;
 
   stateType.activeStateDirty = true;
-  for (auto& pair : m_parts)
-    pair.second.activePartDirty = true;
+  for (auto& [partName, part] : m_parts)
+    part.activePartDirty = true;
 }
 
 AnimatedPartSet::ActiveStateInformation const& AnimatedPartSet::activeState(String const& stateTypeName) const {
@@ -179,16 +173,16 @@ StringMap<AnimatedPartSet::Part>& AnimatedPartSet::parts() {
 }
 
 void AnimatedPartSet::forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const {
-  for (auto const& p : m_stateTypes) {
-    const_cast<AnimatedPartSet*>(this)->freshenActiveState(const_cast<StateType&>(p.second));
-    callback(p.first, p.second.activeState);
+  for (auto const& [stateTypeName, stateType] : m_stateTypes) {
+    const_cast<AnimatedPartSet*>(this)->freshenActiveState(const_cast<StateType&>(stateType));
+    callback(stateTypeName, stateType.activeState);
   }
 }
 
 void AnimatedPartSet::forEachActivePart(function<void(String const&, ActivePartInformation const&)> callback) const {
-  for (auto const& p : m_parts) {
-    const_cast<AnimatedPartSet*>(this)->freshenActivePart(const_cast<Part&>(p.second));
-    callback(p.first, p.second.activePart);
+  for (auto const& [partName, part] : m_parts) {
+    const_cast<AnimatedPartSet*>(this)->freshenActivePart(const_cast<Part&>(part));
+    callback(partName, part.activePart);
   }
 }
 
@@ -208,8 +202,7 @@ bool AnimatedPartSet::setActiveStateIndex(String const& stateTypeName, size_t st
 }
 
 void AnimatedPartSet::update(float dt) {
-  for (auto& pair : m_stateTypes) {
-    auto& stateType = pair.second;
+  for (auto& [stateTypeName, stateType] : m_stateTypes) {
     auto const& state = *stateType.activeStatePointer;
 
     stateType.activeState.timer += dt;
@@ -228,14 +221,12 @@ void AnimatedPartSet::update(float dt) {
     stateType.activeStateDirty = true;
   }
 
-  for (auto& pair : m_parts)
-    pair.second.activePartDirty = true;
+  for (auto& [partName, part] : m_parts)
+    part.activePartDirty = true;
 }
 
 void AnimatedPartSet::finishAnimations() {
-  for (auto& pair : m_stateTypes) {
-    auto& stateType = pair.second;
-
+  for (auto& [stateTypeName, stateType] : m_stateTypes) {
     while (true) {
       auto const& state = *stateType.activeStatePointer;
 
@@ -253,8 +244,8 @@ void AnimatedPartSet::finishAnimations() {
     stateType.activeStateDirty = true;
   }
 
-  for (auto& pair : m_parts)
-    pair.second.activePartDirty = true;
+  for (auto& [partName, part] : m_parts)
+    part.activePartDirty = true;
 }
 
 AnimatedPartSet::AnimationMode AnimatedPartSet::stringToAnimationMode(String const& string) {
@@ -298,11 +289,11 @@ void AnimatedPartSet::freshenActiveState(StateType& stateType) {
     activeState.nextProperties = stateType.stateTypeProperties;
     activeState.nextProperties.merge(state.stateProperties, true);
 
-    for (auto const& pair : state.stateFrameProperties) {
-      if (activeState.frame < pair.second.size())
-        activeState.properties[pair.first] = pair.second.get(activeState.frame);
-      if (activeState.nextFrame < pair.second.size())
-        activeState.nextProperties[pair.first] = pair.second.get(activeState.nextFrame);
+    for (auto const& [propertyName, frameProperties] : state.stateFrameProperties) {
+      if (activeState.frame < frameProperties.size())
+        activeState.properties[propertyName] = frameProperties.get(activeState.frame);
+      if (activeState.nextFrame < frameProperties.size())
+        activeState.nextProperties[propertyName] = frameProperties.get(activeState.nextFrame);
     }
 
     stateType.activeStateDirty = false;
@@ -320,10 +311,7 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 
     // Then go through each of the state types and states and look for a part
     // state match in order of priority.
-    for (auto& stateTypePair : m_stateTypes) {
-      auto const& stateTypeName = stateTypePair.first;
-      auto& stateType = stateTypePair.second;
-
+    for (auto& [stateTypeName, stateType] : m_stateTypes) {
       // Skip disabled state types
       if (!stateType.enabled)
         continue;
@@ -349,11 +337,11 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 
       activePart.nextProperties.merge(partState->partStateProperties, true);
 
-      for (auto const& pair : partState->partStateFrameProperties) {
-        if (frame < pair.second.size())
-          activePart.properties[pair.first] = pair.second.get(frame);
-        if (nextFrame < pair.second.size())
-          activePart.nextProperties[pair.first] = pair.second.get(nextFrame);
+      for (auto const& [propertyName, frameProperties] : partState->partStateFrameProperties) {
+        if (frame < frameProperties.size())
+          activePart.properties[propertyName] = frameProperties.get(frame);
+        if (nextFrame < frameProperties.size())
+          activePart.nextProperties[propertyName] = frameProperties.get(nextFrame);
       }
 
       // Each part can only have one state type x state match, so we are done.

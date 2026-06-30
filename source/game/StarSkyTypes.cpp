@@ -42,8 +42,9 @@ SkyColoring::SkyColoring(Json const& variant) {
 }
 
 Json SkyColoring::toJson() const {
-  auto makeColorPair = [](pair<Color, Color> const& p) {
-    return JsonArray{jsonFromColor(p.first), jsonFromColor(p.second)};
+  auto makeColorPair = [](pair<Color, Color> const& colors) {
+    auto const& [topColor, bottomColor] = colors;
+    return JsonArray{jsonFromColor(topColor), jsonFromColor(bottomColor)};
   };
 
   return JsonObject{{"mainColor", jsonFromColor(mainColor)},

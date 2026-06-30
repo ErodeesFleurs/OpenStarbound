@@ -45,15 +45,15 @@ void StatusPane::renderImpl() {
 
   String statusIconDarkenImage = m_assets->json("/interface.config:statusIconDarkenImage").toString();
 
-  for (auto const& entry : m_statusIndicators) {
-    String image = entry.icon;
-    if (entry.durationPercentage) {
+  for (auto const& statusIndicator : m_statusIndicators) {
+    String image = statusIndicator.icon;
+    if (statusIndicator.durationPercentage) {
       int imageHeight = m_imageMetadataDatabase->imageSize(image)[1];
-      int yOffset = -(int)(*entry.durationPercentage * imageHeight);
+      int yOffset = -(int)(*statusIndicator.durationPercentage * imageHeight);
       image += "?" + imageOperationToString(BlendImageOperation{
                          BlendImageOperation::Multiply, {statusIconDarkenImage}, Vec2I(0, yOffset)});
     }
-    m_guiContext.drawQuad(image, entry.screenRect.min(), interfaceScale);
+    m_guiContext.drawQuad(image, statusIndicator.screenRect.min(), interfaceScale);
   }
 }
 
@@ -70,12 +70,12 @@ void StatusPane::update(float dt) {
   RectF boundRect = RectF::null();
 
   m_statusIndicators.clear();
-  for (auto const& pair : m_player->activeUniqueStatusEffectSummary()) {
-    auto effectConfig = m_statusEffectDatabase->uniqueEffectConfig(pair.first);
+  for (auto const& [effectName, duration] : m_player->activeUniqueStatusEffectSummary()) {
+    auto effectConfig = m_statusEffectDatabase->uniqueEffectConfig(effectName);
     if (effectConfig.icon) {
       RectF rect = RectF::withSize(Vec2F(statusIconPos), Vec2F(m_imageMetadataDatabase->imageSize(*effectConfig.icon)) * interfaceScale);
       boundRect.combine(rect);
-      m_statusIndicators.append(StatusEffectIndicator{*effectConfig.icon, pair.second, effectConfig.label, rect});
+      m_statusIndicators.append(StatusEffectIndicator{*effectConfig.icon, duration, effectConfig.label, rect});
       statusIconPos += statusIconShift;
     }
   }

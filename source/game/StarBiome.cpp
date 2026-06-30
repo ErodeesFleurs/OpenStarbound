@@ -69,8 +69,9 @@ Json Biome::toJson() const {
       {"mainBlock", mainBlock},
       {"subBlocks", subBlocks.transformed(construct<Json>())},
       {"ores",
-          ores.transformed([](pair<ModId, float> const& p) -> Json {
-            return JsonArray{p.first, p.second};
+          ores.transformed([](pair<ModId, float> const& ore) -> Json {
+            auto const& [modId, weight] = ore;
+            return JsonArray{modId, weight};
           })},
       {"hueShift", hueShift},
       {"materialHueShift", materialHueShift},

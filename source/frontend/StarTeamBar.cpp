@@ -91,8 +91,8 @@ void TeamBar::update(float dt) {
 
   if (!m_teamInvitation->active()) {
     if (teamClient->hasInvitationPending()) {
-      auto invitation = teamClient->pullInvitation();
-      m_teamInvitation->open(invitation.first, invitation.second);
+      auto [inviterUuid, inviterName] = teamClient->pullInvitation();
+      m_teamInvitation->open(inviterUuid, inviterName);
       if (!m_teamInvitation->isDisplayed())
         m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamInvitation);
     }

@@ -52,9 +52,10 @@ Json jsonFromInventorySlot(InventorySlot const& slot) {
     return JsonObject{{"type", "trash"}};
   } else {
     auto bagSlot = slot.get<BagSlot>();
+    auto const& [bagType, bagLocation] = bagSlot;
     return JsonObject{
-      {"type", bagSlot.first},
-      {"location", bagSlot.second}
+      {"type", bagType},
+      {"location", bagLocation}
     };
   }
 }

@@ -103,13 +103,13 @@ PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
       item = isw->item();
   };
 
-  for (auto const& p : m_customBarWidgets) {
-    tryItemWidget(p.left);
-    tryItemWidget(p.right);
+  for (auto const& customBarWidgets : m_customBarWidgets) {
+    tryItemWidget(customBarWidgets.left);
+    tryItemWidget(customBarWidgets.right);
   }
 
-  for (auto const& w : m_essentialBarWidgets)
-    tryItemWidget(w);
+  for (auto const& essentialBarWidget : m_essentialBarWidgets)
+    tryItemWidget(essentialBarWidget);
 
   if (!item)
     return {};

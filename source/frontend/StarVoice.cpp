@@ -254,7 +254,8 @@ Voice::SpeakerPtr Voice::setLocalSpeaker(SpeakerId speakerId) {
     m_speakers.remove(m_speakerId);
 
   m_clientSpeaker->speakerId = m_speakerId = speakerId;
-  return m_speakers.insert(m_speakerId, m_clientSpeaker).first->second;
+  auto [speakerIt, inserted] = m_speakers.insert(m_speakerId, m_clientSpeaker);
+  return speakerIt->second;
 }
 
 Voice::SpeakerPtr Voice::localSpeaker() {
@@ -267,8 +268,10 @@ Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
   else {
     if (SpeakerPtr const* ptr = m_speakers.ptr(speakerId))
       return *ptr;
-    else
-      return m_speakers.emplace(speakerId, make_shared<Speaker>(speakerId)).first->second;
+    else {
+      auto [speakerIt, inserted] = m_speakers.emplace(speakerId, make_shared<Speaker>(speakerId));
+      return speakerIt->second;
+    }
   }
 }
 
@@ -286,9 +289,9 @@ List<Voice::SpeakerPtr> Voice::sortedSpeakers(bool onlyPlaying) {
       return a->speakerId < b->speakerId;
   };
 
-  for (auto& p : m_speakers) {
-    if (!onlyPlaying || p.second->playing)
-      result.insertSorted(p.second, sorter);
+  for (auto& [_, speaker] : m_speakers) {
+    if (!onlyPlaying || speaker->playing)
+      result.insertSorted(speaker, sorter);
   }
 
   return result;
@@ -425,8 +428,8 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 }
 
 void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
-  for (auto& entry : m_speakers) {
-    if (SpeakerPtr& speaker = entry.second) {
+  for (auto& [_, speaker] : m_speakers) {
+    if (speaker) {
       Vec2F newChannelVolumes = positionalAttenuationFunction ? Vec2F{
           1.0f - positionalAttenuationFunction(0, speaker->position, 1.0f),
           1.0f - positionalAttenuationFunction(1, speaker->position, 1.0f)

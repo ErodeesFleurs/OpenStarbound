@@ -49,9 +49,9 @@ Maybe<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const&
 LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) {
   auto collisionTable = engine.createTable();
   int i = 1;
-  for (auto const& v : CollisionKindNames) {
-    if (s.contains(v.first)) {
-      collisionTable.set(i++, v.second);
+  for (auto const& [collisionKind, collisionName] : CollisionKindNames) {
+    if (s.contains(collisionKind)) {
+      collisionTable.set(i++, collisionName);
     }
   }
   return collisionTable;

@@ -107,13 +107,13 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
       ? nullptr
       : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
     drawList.reserve(drawList.size() + pieces.size());
-    for (auto const& piecePair : pieces) {
-      auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+    for (auto const& [piece, offset] : pieces) {
+      auto variant = piece->variants.ptr(materialColorVariant);
+      if (!variant) variant = piece->variants.ptr(0);
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
-      auto image = getPieceImage(piecePair.first, textureCoords, materialHue, directives);
-      drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      auto image = getPieceImage(piece, textureCoords, materialHue, directives);
+      drawList.emplace_back(Drawable::makeImage(image, scale, false, offset * scale + Vec2F(pos), color));
     }
   }
 
@@ -129,21 +129,22 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
       ? nullptr
       : &modRenderProfile->colorDirectives.wrap(modColorVariant);
     drawList.reserve(drawList.size() + pieces.size());
-    for (auto const& piecePair : pieces) {
-      auto variant = piecePair.first->variants.ptr(modColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+    for (auto const& [piece, offset] : pieces) {
+      auto variant = piece->variants.ptr(modColorVariant);
+      if (!variant) variant = piece->variants.ptr(0);
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
-      auto image = getPieceImage(piecePair.first, textureCoords, modHue, directives);
-      drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
+      auto image = getPieceImage(piece, textureCoords, modHue, directives);
+      drawList.emplace_back(Drawable::makeImage(image, scale, false, offset * scale + Vec2F(pos), color));
     }
   }
 
   if (materialRenderProfile && damageLevel > 0 && isBlock) {
     auto& drawList = drawables[damageZLevel()];
     auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
+    auto const& [crackingImagePath, crackingImageOffset] = crackingImage;
 
-    drawList.emplace_back(Drawable::makeImage(crackingImage.first, scale, false, crackingImage.second * scale + Vec2F(pos), color));
+    drawList.emplace_back(Drawable::makeImage(crackingImagePath, scale, false, crackingImageOffset * scale + Vec2F(pos), color));
   }
 
   return occlude;
@@ -293,8 +294,8 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
 
       subMatchResult = true;
 
-      for (auto const& piecePair : match->resultingPieces)
-        resultList.append({piecePair.first, piecePair.second});
+      for (auto const& [piece, offset] : match->resultingPieces)
+        resultList.append({piece, offset});
 
       if (determineMatchingPieces(resultList, occlude, materialDb, match->subMatches, renderData, basePos, layer, isMod) && match->haltOnSubMatch)
         break;

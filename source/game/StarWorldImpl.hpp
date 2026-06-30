@@ -186,11 +186,11 @@ namespace WorldImpl {
     float totalLiquidLevel = 0.0f;
     float maximumLiquidLevel = 0.0f;
     LiquidId maximumLiquidId = EmptyLiquidId;
-    for (auto const& p : totals) {
-      totalLiquidLevel += p.second;
-      if (p.second > maximumLiquidLevel) {
-        maximumLiquidLevel = p.second;
-        maximumLiquidId = p.first;
+    for (auto const& [liquidId, liquidLevel] : totals) {
+      totalLiquidLevel += liquidLevel;
+      if (liquidLevel > maximumLiquidLevel) {
+        maximumLiquidLevel = liquidLevel;
+        maximumLiquidId = liquidId;
       }
     }
     return LiquidLevel(maximumLiquidId, totalLiquidLevel / totalSpace);
@@ -396,18 +396,18 @@ namespace WorldImpl {
     TileModificationList success;
     TileModificationList unknown;
     TileModificationList failures;
-    for (auto const& pair : modificationList) {
+    for (auto const& [position, modification] : modificationList) {
 
       bool good = false, perhaps = false;
-      if (!extraCheck || extraCheck(pair.first, pair.second))
-        std::tie(good, perhaps) = validateTileModification(entityMap, pair.first, pair.second, allowEntityOverlap, getTile, materialDatabase);
+      if (!extraCheck || extraCheck(position, modification))
+        std::tie(good, perhaps) = validateTileModification(entityMap, position, modification, allowEntityOverlap, getTile, materialDatabase);
 
       if (good)
-        success.append(pair);
+        success.append({position, modification});
       else if (perhaps)
-        unknown.append(pair);
+        unknown.append({position, modification});
       else
-        failures.append(pair);
+        failures.append({position, modification});
     }
 
     if (!success.empty())

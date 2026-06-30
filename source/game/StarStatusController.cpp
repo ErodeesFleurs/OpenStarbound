@@ -102,21 +102,21 @@ Json StatusController::diskStore() const {
   }
 
   JsonObject persistentEffectCategories;
-  for (auto const& pair : m_persistentEffects) {
+  for (auto const& [category, persistentEffectCategory] : m_persistentEffects) {
     List<PersistentStatusEffect> persistentEffects;
-    persistentEffects.appendAll(pair.second.statModifiers.transformed(construct<PersistentStatusEffect>()));
-    persistentEffects.appendAll(pair.second.uniqueEffects.values().transformed(construct<PersistentStatusEffect>()));
-    persistentEffectCategories[pair.first] = persistentEffects.transformed(jsonFromPersistentStatusEffect);
+    persistentEffects.appendAll(persistentEffectCategory.statModifiers.transformed(construct<PersistentStatusEffect>()));
+    persistentEffects.appendAll(persistentEffectCategory.uniqueEffects.values().transformed(construct<PersistentStatusEffect>()));
+    persistentEffectCategories[category] = persistentEffects.transformed(jsonFromPersistentStatusEffect);
   }
 
   JsonArray ephemeralEffects;
-  for (auto const& pair : m_uniqueEffects) {
+  for (auto const& [effectName, uniqueEffect] : m_uniqueEffects) {
     // Store ephemeral effects in the disk store based on remaining duration.
     // TODO: Need to store maximum duration as well in the store, otherwise the
     // effect will always appear "full" on reload (but just last less time)
-    auto metadata = m_uniqueEffectMetadata.getNetElement(pair.second.metadataId);
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (metadata->duration)
-      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{pair.first, *metadata->duration}));
+      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{effectName, *metadata->duration}));
   }
 
   return JsonObject{
@@ -134,19 +134,19 @@ void StatusController::diskLoad(Json const& store) {
 
   m_statusProperties.reset(store.getObject("statusProperties"));
 
-  for (auto const& p : store.getObject("persistentEffectCategories", {}))
-    addPersistentEffects(p.first, p.second.toArray().transformed(jsonToPersistentStatusEffect));
+  for (auto const& [categoryName, categoryEffects] : store.getObject("persistentEffectCategories", {}))
+    addPersistentEffects(categoryName, categoryEffects.toArray().transformed(jsonToPersistentStatusEffect));
 
   addEphemeralEffects(store.getArray("ephemeralEffects").transformed(jsonToEphemeralStatusEffect));
 
-  for (auto const& p : store.getObject("resourceValues", {})) {
-    if (isResource(p.first))
-      setResource(p.first, p.second.toFloat());
+  for (auto const& [resourceName, resourceValue] : store.getObject("resourceValues", {})) {
+    if (isResource(resourceName))
+      setResource(resourceName, resourceValue.toFloat());
   }
 
-  for (auto const& p : store.getObject("resourcesLocked", {})) {
-    if (isResource(p.first))
-      setResourceLocked(p.first, p.second.toBool());
+  for (auto const& [resourceName, resourceLocked] : store.getObject("resourcesLocked", {})) {
+    if (isResource(resourceName))
+      setResourceLocked(resourceName, resourceLocked.toBool());
   }
 }
 
@@ -543,9 +543,9 @@ void StatusController::tickMaster(float dt) {
   }
 
   m_primaryScript.update(m_primaryScript.updateDt(dt));
-  for (auto& p : m_uniqueEffects) {
-    p.second.script.update(p.second.script.updateDt(dt));
-    auto metadata = m_uniqueEffectMetadata.getNetElement(p.second.metadataId);
+  for (auto& [_, uniqueEffect] : m_uniqueEffects) {
+    uniqueEffect.script.update(uniqueEffect.script.updateDt(dt));
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (metadata->duration)
       *metadata->duration -= dt;
   }
@@ -561,8 +561,8 @@ void StatusController::tickMaster(float dt) {
 
   DirectivesGroup parentDirectives;
   parentDirectives.append(m_primaryDirectives);
-  for (auto const& pair : m_uniqueEffects)
-    parentDirectives.append(pair.second.parentDirectives);
+  for (auto const& [_, uniqueEffect] : m_uniqueEffects)
+    parentDirectives.append(uniqueEffect.parentDirectives);
 
   m_parentDirectives.set(std::move(parentDirectives));
 
@@ -618,8 +618,8 @@ List<Particle> StatusController::pullNewParticles() {
 
 Maybe<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   Maybe<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
-  for (auto& p : m_uniqueEffects)
-    result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
+  for (auto& [_, uniqueEffect] : m_uniqueEffects)
+    result = result.orMaybe(uniqueEffect.script.handleMessage(message, localMessage, args));
   return result;
 }
 
@@ -911,8 +911,8 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
       return;
     uniqueEffect.toolUsageSuppressed = suppressed;
     bool anySuppressed = false;
-    for (auto& p : m_uniqueEffects)
-      anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
+    for (auto& [_, effect] : m_uniqueEffects)
+      anySuppressed = anySuppressed || effect.toolUsageSuppressed;
     m_toolUsageSuppressed.set(anySuppressed);
   });
 

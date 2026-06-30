@@ -427,10 +427,10 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
   float choice = Random::randf() * sum;
   idx = 0;
   while (idx < options.size()) {
-    auto const& entry = options[idx];
-    if (entry.first >= choice)
-      return entry.second;
-    choice -= entry.first;
+    auto const& [weight, value] = options[idx];
+    if (weight >= choice)
+      return value;
+    choice -= weight;
     idx++;
   }
   return options[options.size() - 1].second;

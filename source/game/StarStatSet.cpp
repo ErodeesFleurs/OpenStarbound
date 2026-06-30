@@ -118,8 +118,8 @@ float StatSet::statEffectiveValue(String const& statName) const {
 }
 
 void StatSet::addResource(String resourceName, MVariant<String, float> max, MVariant<String, float> delta) {
-  auto pair = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
-  if (!pair.second)
+  auto [_, inserted] = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
+  if (!inserted)
     throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
   update(0.0f);
 }
@@ -226,14 +226,14 @@ void StatSet::update(float dt) {
   // Then we do all the StatValueModifiers and StatBaseMultipliers and
   // compute the baseModifiedValue
 
-  for (auto& p : m_baseStats) {
-    auto& stat = m_effectiveStats[p.first];
-    stat.baseValue = p.second;
+  for (auto& [statName, baseValue] : m_baseStats) {
+    auto& stat = m_effectiveStats[statName];
+    stat.baseValue = baseValue;
     stat.baseModifiedValue = stat.baseValue;
   }
 
-  for (auto const& p : m_statModifierGroups) {
-    for (auto const& modifier : p.second) {
+  for (auto const& [_, modifiers] : m_statModifierGroups) {
+    for (auto const& modifier : modifiers) {
       if (auto baseMultiplier = modifier.ptr<StatBaseMultiplier>()) {
         auto& stat = m_effectiveStats[baseMultiplier->statName];
         stat.baseModifiedValue += (baseMultiplier->baseMultiplier - 1.0f) * stat.baseValue;
@@ -247,11 +247,11 @@ void StatSet::update(float dt) {
   // Then we do all the StatEffectiveMultipliers and compute the
   // final effectiveModifiedValue
 
-  for (auto& p : m_effectiveStats)
-    p.second.effectiveModifiedValue = p.second.baseModifiedValue;
+  for (auto& [_, stat] : m_effectiveStats)
+    stat.effectiveModifiedValue = stat.baseModifiedValue;
 
-  for (auto const& p : m_statModifierGroups) {
-    for (auto const& modifier : p.second) {
+  for (auto const& [_, modifiers] : m_statModifierGroups) {
+    for (auto const& modifier : modifiers) {
       if (auto effectiveMultiplier = modifier.ptr<StatEffectiveMultiplier>()) {
         auto& stat = m_effectiveStats[effectiveMultiplier->statName];
         stat.effectiveModifiedValue *= effectiveMultiplier->effectiveMultiplier;
@@ -262,30 +262,30 @@ void StatSet::update(float dt) {
   // Then update all the resources due to charging and percentage tracking,
   // after updating the stats.
 
-  for (auto& p : m_resources) {
+  for (auto& [_, resource] : m_resources) {
     Maybe<float> newMaxValue;
-    if (p.second.max.is<String>())
-      newMaxValue = statEffectiveValue(p.second.max.get<String>());
-    else if (p.second.max.is<float>())
-      newMaxValue = p.second.max.get<float>();
+    if (resource.max.is<String>())
+      newMaxValue = statEffectiveValue(resource.max.get<String>());
+    else if (resource.max.is<float>())
+      newMaxValue = resource.max.get<float>();
 
     // If the resource has a maximum value, rather than keeping the absolute
     // value of the resource the same between updates, the resource value
     // should instead track the percentage.
-    if (p.second.maxValue && newMaxValue && *p.second.maxValue > 0.0f)
-      p.second.value *= *newMaxValue / *p.second.maxValue;
+    if (resource.maxValue && newMaxValue && *resource.maxValue > 0.0f)
+      resource.value *= *newMaxValue / *resource.maxValue;
 
-    p.second.maxValue = newMaxValue;
-    if (p.second.maxValue)
-      p.second.value = clamp(p.second.value, 0.0f, *p.second.maxValue);
+    resource.maxValue = newMaxValue;
+    if (resource.maxValue)
+      resource.value = clamp(resource.value, 0.0f, *resource.maxValue);
 
     if (dt != 0.0f) {
       float delta = 0.0f;
-      if (p.second.delta.is<String>())
-        delta = statEffectiveValue(p.second.delta.get<String>());
-      else if (p.second.delta.is<float>())
-        delta = p.second.delta.get<float>();
-      p.second.setValue(p.second.value + delta * dt);
+      if (resource.delta.is<String>())
+        delta = statEffectiveValue(resource.delta.get<String>());
+      else if (resource.delta.is<float>())
+        delta = resource.delta.get<float>();
+      resource.setValue(resource.value + delta * dt);
     }
   }
 }

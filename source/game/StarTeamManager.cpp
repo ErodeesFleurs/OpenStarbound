@@ -68,26 +68,26 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
 
 TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
   RecursiveMutexLocker lock(m_mutex);
-  for (auto const& teamPair : m_teams) {
-    if (teamPair.second.members.contains(playerUuid))
-      return teamPair.second.pvpTeamNumber;
+  for (auto const& [_, team] : m_teams) {
+    if (team.members.contains(playerUuid))
+      return team.pvpTeamNumber;
   }
   return 0;
 }
 
 HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   HashMap<Uuid, TeamNumber> result;
-  for (auto const& teamPair : m_teams) {
-    for (auto const& memberPair : teamPair.second.members)
-      result[memberPair.first] = teamPair.second.pvpTeamNumber;
+  for (auto const& [_, team] : m_teams) {
+    for (auto const& [memberUuid, _] : team.members)
+      result[memberUuid] = team.pvpTeamNumber;
   }
   return result;
 }
 
 Maybe<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
-  for (auto const& teamPair : m_teams) {
-    if (teamPair.second.members.contains(playerUuid))
-      return teamPair.first;
+  for (auto const& [teamUuid, team] : m_teams) {
+    if (team.members.contains(playerUuid))
+      return teamUuid;
   }
   return {};
 }
@@ -99,23 +99,26 @@ void TeamManager::purgeInvitationsFor(Uuid const& playerUuid) {
 
 void TeamManager::purgeInvitationsFrom(Uuid const& playerUuid) {
   eraseWhere(m_invitations, [playerUuid](auto const& invitation) {
-    return invitation.second.inviterUuid == playerUuid;
+    auto const& [inviteeUuid, invitationInfo] = invitation;
+    return invitationInfo.inviterUuid == playerUuid;
   });
   eraseWhere(m_polledInvitations, [playerUuid](auto const& polled) {
-    return polled.second.inviterUuid == playerUuid;
+    auto const& [inviteeUuid, invitationInfo] = polled;
+    return invitationInfo.inviterUuid == playerUuid;
   });
 }
 
 void TeamManager::expirePolledInvitations() {
   double now = Time::monotonicTime();
   eraseWhere(m_polledInvitations, [&](auto const& entry) {
-    return (now - entry.second.polledAt) >= m_polledInvitationTimeout;
+    auto const& [inviteeUuid, invitationInfo] = entry;
+    return (now - invitationInfo.polledAt) >= m_polledInvitationTimeout;
   });
 }
 
 bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
-  for (auto const& p : m_connectedPlayers) {
-    if (p.second.contains(playerUuid))
+  for (auto const& [_, connectedPlayers] : m_connectedPlayers) {
+    if (connectedPlayers.contains(playerUuid))
       return true;
   }
   return false;
@@ -170,13 +173,13 @@ bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
 
   purgeInvitationsFor(playerUuid);
 
-  for (auto otherTeam : m_teams) {
-    List<Uuid> alreadyMemberOf;
-    if (otherTeam.second.members.contains(playerUuid))
-      alreadyMemberOf.append(otherTeam.first);
-    for (auto leaveTeamUuid : alreadyMemberOf)
-      removeFromTeam(playerUuid, leaveTeamUuid);
+  List<Uuid> alreadyMemberOf;
+  for (auto const& [otherTeamUuid, otherTeam] : m_teams) {
+    if (otherTeam.members.contains(playerUuid))
+      alreadyMemberOf.append(otherTeamUuid);
   }
+  for (auto leaveTeamUuid : alreadyMemberOf)
+    removeFromTeam(playerUuid, leaveTeamUuid);
 
   team.members.insert(playerUuid, TeamMember());
 
@@ -224,20 +227,19 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
     result["leader"] = team.leaderUuid.hex();
     JsonArray members;
     members.reserve(team.members.size());
-    for (auto const& m : team.members) {
+    for (auto const& [memberUuid, teamMember] : team.members) {
       JsonObject member;
-      auto const& mem = m.second;
-      member["name"] = mem.name;
-      member["uuid"] = m.first.hex();
-      member["leader"] = m.first == team.leaderUuid;
-      member["entity"] = mem.entity;
-      member["health"] = mem.healthPercentage;
-      member["energy"] = mem.energyPercentage;
-      member["x"] = mem.position[0];
-      member["y"] = mem.position[1];
-      member["world"] = printWorldId(mem.world);
-      member["warpMode"] = WarpModeNames.getRight(mem.warpMode);
-      member["portrait"] = jsonFromList(mem.portrait, mem_fn(&Drawable::toJson));
+      member["name"] = teamMember.name;
+      member["uuid"] = memberUuid.hex();
+      member["leader"] = memberUuid == team.leaderUuid;
+      member["entity"] = teamMember.entity;
+      member["health"] = teamMember.healthPercentage;
+      member["energy"] = teamMember.energyPercentage;
+      member["x"] = teamMember.position[0];
+      member["y"] = teamMember.position[1];
+      member["world"] = printWorldId(teamMember.world);
+      member["warpMode"] = WarpModeNames.getRight(teamMember.warpMode);
+      member["portrait"] = jsonFromList(teamMember.portrait, mem_fn(&Drawable::toJson));
       members.push_back(member);
     }
     result["members"] = members;
@@ -295,17 +297,17 @@ Json TeamManager::invite(Json const& arguments) {
   }
 
   JsonArray invited;
-  for (auto& entry : m_connectedPlayers) {
-    if (!Text::stripEscapeCodes(entry.first).beginsWith(inviteeName, String::CaseInsensitive))
+  for (auto& [connectedPlayerName, connectedPlayerUuids] : m_connectedPlayers) {
+    if (!Text::stripEscapeCodes(connectedPlayerName).beginsWith(inviteeName, String::CaseInsensitive))
       continue;
 
-    for (auto& inviteeUuid : entry.second) {
+    for (auto& inviteeUuid : connectedPlayerUuids) {
       Invitation invitation;
       invitation.inviterUuid = inviterUuid;
       invitation.inviterName = arguments.getString("inviterName");
       m_invitations[inviteeUuid] = invitation;
       m_polledInvitations.remove(inviteeUuid);
-      invited.append(JsonArray{entry.first, inviteeUuid.hex()});
+      invited.append(JsonArray{connectedPlayerName, inviteeUuid.hex()});
     }
   }
 

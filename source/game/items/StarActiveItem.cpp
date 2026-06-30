@@ -24,8 +24,8 @@ ActiveItem::ActiveItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imag
   if (auto customConfig = instanceValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);
   m_itemAnimator = NetworkedAnimator(animationConfig, directory, m_assets, m_imageMetadataDatabase, m_particleDatabase);
-  for (auto const& pair : instanceValue("animationParts", JsonObject()).iterateObject())
-    m_itemAnimator.setPartTag(pair.first, "partImage", pair.second.toString());
+  for (auto const& [partName, partImage] : instanceValue("animationParts", JsonObject()).iterateObject())
+    m_itemAnimator.setPartTag(partName, "partImage", partImage.toString());
   m_scriptedAnimationParameters.reset(config.getObject("scriptedAnimationParameters", {}));
 
   addNetElement(&m_itemAnimator);

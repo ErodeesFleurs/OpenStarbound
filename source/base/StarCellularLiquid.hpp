@@ -236,8 +236,8 @@ void LiquidCellEngine<LiquidId>::update() {
 template <typename LiquidId>
 size_t LiquidCellEngine<LiquidId>::activeCells() const {
   size_t totalSize = 0;
-  for (auto const& p : m_activeCells)
-    totalSize += p.second.size();
+  for (auto const& [_, activeCells] : m_activeCells)
+    totalSize += activeCells.size();
   return totalSize;
 }
 
@@ -248,8 +248,8 @@ size_t LiquidCellEngine<LiquidId>::activeCells(LiquidId liquid) const {
 
 template <typename LiquidId>
 bool LiquidCellEngine<LiquidId>::isActive(Vec2I const& pos) const {
-  for (auto const& p : m_activeCells) {
-    if (p.second.contains(pos))
+  for (auto const& [_, activeCells] : m_activeCells) {
+    if (activeCells.contains(pos))
       return true;
   }
   return false;
@@ -262,13 +262,13 @@ void LiquidCellEngine<LiquidId>::setup() {
   m_workingCells.clear();
   m_currentActiveCells.clear();
 
-  for (auto& activeCellsPair : m_activeCells) {
-    unsigned tickDelta = liquidTickDelta(activeCellsPair.first);
+  for (auto& [liquid, activeCells] : m_activeCells) {
+    unsigned tickDelta = liquidTickDelta(liquid);
     if (tickDelta == 0 || m_step % tickDelta != 0)
       continue;
 
     size_t limitedCellNumber = 0;
-    for (auto const& pos : activeCellsPair.second.values()) {
+    for (auto const& pos : activeCells.values()) {
       if (m_processingLimit) {
         bool foundInUnlimitedRegion = false;
         for (auto const& region : m_noProcessingLimitRegions) {
@@ -287,11 +287,11 @@ void LiquidCellEngine<LiquidId>::setup() {
       }
 
       auto cell = workingCell(pos);
-      if (!cell || cell->liquid != activeCellsPair.first) {
-        activeCellsPair.second.remove(pos);
+      if (!cell || cell->liquid != liquid) {
+        activeCells.remove(pos);
       } else {
         m_currentActiveCells.append(cell);
-        activeCellsPair.second.remove(pos);
+        activeCells.remove(pos);
       }
     }
   }
@@ -480,21 +480,21 @@ template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::finish() {
   m_currentActiveCells.clear();
 
-  for (auto& workingCellPair : take(m_workingCells)) {
-    if (workingCellPair.second && !workingCellPair.second->sourceCell) {
-      if (workingCellPair.second->liquid) {
-        if (workingCellPair.second->level < m_engineParameters.minimumLiquidLevel)
-          workingCellPair.second->level = 0.0f;
+  for (auto& [_, workingCell] : take(m_workingCells)) {
+    if (workingCell && !workingCell->sourceCell) {
+      if (workingCell->liquid) {
+        if (workingCell->level < m_engineParameters.minimumLiquidLevel)
+          workingCell->level = 0.0f;
       } else {
-        workingCellPair.second->level = 0.0f;
+        workingCell->level = 0.0f;
       }
 
-      if (workingCellPair.second->level == 0.0f) {
-        workingCellPair.second->liquid = {};
-        workingCellPair.second->pressure = 0.0f;
+      if (workingCell->level == 0.0f) {
+        workingCell->liquid = {};
+        workingCell->pressure = 0.0f;
       }
 
-      m_cellWorld->setFlow(workingCellPair.second->position, CellularLiquidFlowCell<LiquidId>{workingCellPair.second->liquid, workingCellPair.second->level, workingCellPair.second->pressure});
+      m_cellWorld->setFlow(workingCell->position, CellularLiquidFlowCell<LiquidId>{workingCell->liquid, workingCell->level, workingCell->pressure});
     }
   }
 

@@ -54,9 +54,9 @@ int ButtonGroup::id(ButtonWidget* button) const {
 }
 
 ButtonWidget* ButtonGroup::checkedButton() const {
-  for (auto const& pair : m_buttons) {
-    if (pair.second->isChecked())
-      return pair.second;
+  for (auto const& button : m_buttons.values()) {
+    if (button->isChecked())
+      return button;
   }
   return {};
 }
@@ -72,9 +72,9 @@ void ButtonGroup::select(int id) {
 }
 
 void ButtonGroup::wasChecked(ButtonWidget* self) {
-  for (auto const& pair : m_buttons) {
-    if (pair.second != self)
-      pair.second->setChecked(false);
+  for (auto const& button : m_buttons.values()) {
+    if (button != self)
+      button->setChecked(false);
   }
 
   if (m_callback)

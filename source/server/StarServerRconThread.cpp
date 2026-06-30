@@ -28,8 +28,7 @@ ServerRconThread::~ServerRconThread() {
 void ServerRconThread::clearClients(bool all) {
   auto it = makeSMutableMapIterator(m_clients);
   while (it.hasNext()) {
-    auto const& pair = it.next();
-    auto client = pair.second;
+    auto const& [clientId, client] = it.next();
     if (all)
       client->stop();
     else if (!client->isRunning())

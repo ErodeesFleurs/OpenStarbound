@@ -823,16 +823,16 @@ WorldRegion WorldLayout::buildRegion(uint64_t seed, RegionParams const& regionPa
       }
     }
 
-    for (auto const& p : enumerateIterator(biome->ores)) {
-      auto oreSelectorTerrainParameters = terrainSelectorParameters.withCommonality(p.first.second);
+    for (auto const& [ore, oreIndex] : enumerateIterator(biome->ores)) {
+      auto oreSelectorTerrainParameters = terrainSelectorParameters.withCommonality(ore.second);
 
       if (regionParams.fgOreSelector) {
-        auto fgSelector = m_terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, p.second, "FGOreSelector")));
+        auto fgSelector = m_terrainDatabase->createNamedSelector(*regionParams.fgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, oreIndex, "FGOreSelector")));
         region.foregroundOreSelectorIndexes.append(registerTerrainSelector(fgSelector));
       }
 
       if (regionParams.bgOreSelector) {
-        auto bgSelector = m_terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, p.second, "BGOreSelector")));
+        auto bgSelector = m_terrainDatabase->createNamedSelector(*regionParams.bgOreSelector, oreSelectorTerrainParameters.withSeed(staticRandomU64(seed, oreIndex, "BGOreSelector")));
         region.backgroundOreSelectorIndexes.append(registerTerrainSelector(bgSelector));
       }
     }

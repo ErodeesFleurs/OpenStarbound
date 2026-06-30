@@ -18,9 +18,7 @@ namespace Dungeon {
   }
 
   void ImagePartReader::forEachTile(TileCallback const& callback) const {
-    for (auto const& entry : m_images) {
-      String const& file = entry.first;
-      ImageConstPtr const& image = entry.second;
+    for (auto const& [file, image] : m_images) {
       for (size_t y = 0; y < image->height(); y++) {
         for (size_t x = 0; x < image->width(); x++) {
 
@@ -45,9 +43,7 @@ namespace Dungeon {
   }
 
   void ImagePartReader::forEachTileAt(Vec2I pos, TileCallback const& callback) const {
-    for (auto const& entry : m_images) {
-      String const& file = entry.first;
-      ImageConstPtr const& image = entry.second;
+    for (auto const& [file, image] : m_images) {
       Vec4B tileColor = image->get(pos.x(), pos.y());
 
       if (auto const& tile = m_tileset->getTile(tileColor)) {

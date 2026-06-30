@@ -84,8 +84,9 @@ void Spawner::update(float dt) {
       activateRegion(window.padded(m_windowActivationBorder));
   }
 
-  eraseWhere(m_activeSpawnCells, [dt](auto& p) {
-    return (p.second -= dt) < 0.0f;
+  eraseWhere(m_activeSpawnCells, [dt](auto& activeSpawnCell) {
+    auto& [cell, lifetime] = activeSpawnCell;
+    return (lifetime -= dt) < 0.0f;
   });
 
   eraseWhere(m_spawnedEntities, [this](EntityId entityId) {
@@ -252,9 +253,9 @@ Maybe<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& b
   }
 
   Random::shuffle(tryPositions);
-  for (auto const& p : tryPositions) {
-    if (checkPosition(p))
-      return p;
+  for (auto const& tryPosition : tryPositions) {
+    if (checkPosition(tryPosition))
+      return tryPosition;
   }
 
   return {};
@@ -317,8 +318,9 @@ void Spawner::spawnInCell(Vec2I const& cell) {
 }
 
 void Spawner::debugShowSpawnCells() {
-  eraseWhere(m_debugSpawnInfo, [this](auto& p) {
-      return !m_activeSpawnCells.contains(p.first);
+  eraseWhere(m_debugSpawnInfo, [this](auto& debugSpawnInfo) {
+      auto& [cell, spawnInfo] = debugSpawnInfo;
+      return !m_activeSpawnCells.contains(cell);
     });
 
   auto regionVisibleToClient = [this](RectF const& region) {

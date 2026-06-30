@@ -17,10 +17,10 @@ QuestTemplate::QuestTemplate(Json const& config) {
 
   parameterTypes = {};
   parameterExamples = {};
-  for (auto entry : config.getObject("parameters", JsonObject{})) {
-    parameterTypes[entry.first] = entry.second.getString("type");
-    if (entry.second.contains("example"))
-      parameterExamples[entry.first] = entry.second.get("example");
+  for (auto const& [parameterName, parameterConfig] : config.getObject("parameters", JsonObject{})) {
+    parameterTypes[parameterName] = parameterConfig.getString("type");
+    if (parameterConfig.contains("example"))
+      parameterExamples[parameterName] = parameterConfig.get("example");
   }
 
   moneyRange = jsonToVec2U(config.get("moneyRange", JsonArray{0, 0}));

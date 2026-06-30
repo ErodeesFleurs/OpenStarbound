@@ -285,14 +285,11 @@ void CharCreationPane::changed() {
   setLabel("labelMode", modeButton->data().getString("description", "fail"));
 
   // Update the gender images for the new species
-  for (auto const& genderOptionAndIndex : enumerateIterator(species.genderOptions))
-    if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", genderOptionAndIndex.second)))
-      button->setOverlayImage(genderOptionAndIndex.first.image);
+  for (auto const& [genderOption, genderIndex] : enumerateIterator(species.genderOptions))
+    if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", genderIndex)))
+      button->setOverlayImage(genderOption.image);
 
-  for (auto const& nameDefPair : m_speciesDatabase->allSpecies()) {
-    String name;
-    SpeciesDefinitionPtr def;
-    std::tie(name, def) = nameDefPair;
+  for (auto const& [name, def] : m_speciesDatabase->allSpecies()) {
     // NOTE: Probably not hot enough to matter, but this contains and indexOf makes this loop
     // O(n^2).  This is less than ideal.
     if (m_speciesList.contains(name)) {
@@ -328,11 +325,11 @@ void CharCreationPane::changed() {
   m_previewPlayer->setHumanoidParameters(results.humanoidParameters);
   m_previewPlayer->setIdentity(results.identity);
   m_previewPlayer->refreshHumanoidParameters();
-  for (auto p : EquipmentSlotNames) {
-    if (auto equipment = results.armor.maybe(p.second)) {
-      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), m_itemDatabase->item(ItemDescriptor(equipment.value())));
+  for (auto const& [slot, slotName] : EquipmentSlotNames) {
+    if (auto equipment = results.armor.maybe(slotName)) {
+      m_previewPlayer->inventory()->setItem(InventorySlot(slot), m_itemDatabase->item(ItemDescriptor(equipment.value())));
     } else {
-      m_previewPlayer->inventory()->consumeSlot(InventorySlot(p.first));
+      m_previewPlayer->inventory()->consumeSlot(InventorySlot(slot));
     }
   }
   m_previewPlayer->refreshEquipment();

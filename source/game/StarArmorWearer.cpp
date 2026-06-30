@@ -20,9 +20,7 @@ namespace Star {
 ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
     : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ArmorWearer", "item database")),
       m_lastNude(true) {
-  for (auto armorAndSlot : enumerateIterator(m_armors)) {
-    auto& armor = armorAndSlot.first;
-    size_t slot = armorAndSlot.second;
+  for (auto&& [armor, slot] : enumerateIterator(m_armors)) {
     armor.isCosmetic = slot >= 4;
     if (slot >= 8)
       armor.netState.setCompatibilityVersion(9);
@@ -45,9 +43,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   bool allNeedsSync = genderChanged;
   bool anyNeedsSync = allNeedsSync;
   Array<uint8_t, 4> wornCosmeticTypes;
-  for (auto armorAndSlot : enumerateIterator(m_armors)) {
-    auto& armor = armorAndSlot.first;
-    size_t slot = armorAndSlot.second;
+  for (auto&& [armor, slot] : enumerateIterator(m_armors)) {
     auto& item = armor.item;
     if (armor.needsSync)
       anyNeedsSync = true;
@@ -75,9 +71,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   std::exception_ptr configException;
   bool movementParametersChanged = false;
   if (anyNeedsSync) {
-    for (auto armorAndSlot : enumerateIterator(m_armors)) {
-      Armor& armor = armorAndSlot.first;
-      size_t slot = armorAndSlot.second;
+    for (auto&& [armor, slot] : enumerateIterator(m_armors)) {
       auto& item = armor.item;
       bool allowed = true;
       if (!armor.visible || !item || !item->visible(slot >= 8) || (forceNude && !item->bypassNude())) {
@@ -203,9 +197,7 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
 List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const {
   List<PersistentStatusEffect> statusEffects;
 
-  for (auto const& armorAndSlot : enumerateIterator(m_armors)) {
-    auto const& armor = armorAndSlot.first;
-    size_t slot = armorAndSlot.second;
+  for (auto const& [armor, slot] : enumerateIterator(m_armors)) {
     if (!armor.item)
       continue;
     if (!cosmeticOnly && ((slot < 4) || armor.item->statusEffectsInCosmeticSlot()))

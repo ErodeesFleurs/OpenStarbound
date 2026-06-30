@@ -346,8 +346,8 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType)));
     m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType)));
 
-    for (auto const& p : m_identityFramesetTags) {
-      m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", p.first), m_networkedAnimator.applyPartTags("anchor", p.second));
+    for (auto const& [tagName, frameset] : m_identityFramesetTags) {
+      m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", tagName), m_networkedAnimator.applyPartTags("anchor", frameset));
     }
   }
 }
@@ -397,14 +397,14 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
   m_armRunSeq = jsonToIntList(config.get("armRunSeq"));
 
   m_walkBob.clear();
-  for (auto const& v : config.get("walkBob").toArray())
-    m_walkBob.append(v.toDouble() / TilePixels);
+  for (auto const& bobOffset : config.get("walkBob").toArray())
+    m_walkBob.append(bobOffset.toDouble() / TilePixels);
   m_runBob.clear();
-  for (auto const& v : config.get("runBob").toArray())
-    m_runBob.append(v.toDouble() / TilePixels);
+  for (auto const& bobOffset : config.get("runBob").toArray())
+    m_runBob.append(bobOffset.toDouble() / TilePixels);
   m_swimBob.clear();
-  for (auto const& v : config.get("swimBob").toArray())
-    m_swimBob.append(v.toDouble() / TilePixels);
+  for (auto const& bobOffset : config.get("swimBob").toArray())
+    m_swimBob.append(bobOffset.toDouble() / TilePixels);
 
   m_jumpBob = config.get("jumpBob").toDouble() / TilePixels;
   m_frontArmRotationCenter = jsonToVec2F(config.get("frontArmRotationCenter")) / TilePixels;
@@ -464,37 +464,37 @@ void Humanoid::loadAnimation() {
 
     m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
 
-    for (auto const& pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
+    for (auto const& [stateName, stateAnimations] : m_baseConfig.getObject("stateAnimations", JsonObject())) {
       HashMap<String, AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()) {
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      for (auto const& [animationName, animationConfig] : stateAnimations.iterateObject()) {
+        auto args = animationConfig.toArray();
+        animations.set(animationName, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
-      m_animationStates.set(StateNames.getLeft(pair.first), animations);
+      m_animationStates.set(StateNames.getLeft(stateName), animations);
     }
-    for (auto const& pair : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
+    for (auto const& [stateName, stateAnimations] : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
       HashMap<String, AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()) {
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      for (auto const& [animationName, animationConfig] : stateAnimations.iterateObject()) {
+        auto args = animationConfig.toArray();
+        animations.set(animationName, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
-      m_animationStatesBackwards.set(StateNames.getLeft(pair.first), animations);
+      m_animationStatesBackwards.set(StateNames.getLeft(stateName), animations);
     }
-    for (auto const& pair : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
+    for (auto const& [emoteName, emoteAnimations] : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
       HashMap<String, AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()) {
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      for (auto const& [animationName, animationConfig] : emoteAnimations.iterateObject()) {
+        auto args = animationConfig.toArray();
+        animations.set(animationName, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
-      m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(pair.first), animations);
+      m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(emoteName), animations);
     }
-    for (auto const& pair : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
+    for (auto const& [portraitModeName, portraitAnimations] : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
       HashMap<String, AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()) {
-        auto args = anim.second.toArray();
-        animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
+      for (auto const& [animationName, animationConfig] : portraitAnimations.iterateObject()) {
+        auto args = animationConfig.toArray();
+        animations.set(animationName, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
-      m_portraitAnimationStates.set(PortraitModeNames.getLeft(pair.first), animations);
+      m_portraitAnimationStates.set(PortraitModeNames.getLeft(portraitModeName), animations);
     }
   }
 }

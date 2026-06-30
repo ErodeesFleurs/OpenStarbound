@@ -390,10 +390,10 @@ WidgetPtr Widget::findChild(String const& name) {
 }
 
 WidgetPtr Widget::childPtr(Widget const* child) const {
-  for (auto const& m : m_members) {
-    if (m.get() == child)
-      return m;
-    if (auto c = m->childPtr(child))
+  for (auto const& member : m_members) {
+    if (member.get() == child)
+      return member;
+    if (auto c = member->childPtr(child))
       return c;
   }
   return {};

@@ -397,8 +397,8 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   size_t price = recipe.currencyInputs.value("money", 0);
 
   if (!m_player->isAdmin()) {
-    for (auto const& p : recipe.currencyInputs) {
-      if (m_player->currency(p.first) < p.second)
+    for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+      if (m_player->currency(currencyName) < currencyCount)
         unavailable = true;
     }
 
@@ -474,10 +474,10 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
     };
 
   auto currenciesConfig = m_assets->json("/currencies.config");
-  for (auto const& p : recipe.currencyInputs) {
-    if (p.second > 0) {
-      auto currencyItem = m_itemDatabase->itemShared(ItemDescriptor(currenciesConfig.get(p.first).getString("representativeItem")));
-      addIngredient(currencyItem, m_player->currency(p.first), p.second);
+  for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+    if (currencyCount > 0) {
+      auto currencyItem = m_itemDatabase->itemShared(ItemDescriptor(currenciesConfig.get(currencyName).getString("representativeItem")));
+      addIngredient(currencyItem, m_player->currency(currencyName), currencyCount);
     }
   }
 
@@ -503,9 +503,9 @@ bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
   auto availableCurrencies = m_player->inventory()->availableCurrencies();
 
   // make sure we still have the currencies and items avaialable
-  for (auto const& p : recipe.currencyInputs) {
-    uint64_t countRequired = p.second * count;
-    if (availableCurrencies.value(p.first) < countRequired) {
+  for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+    uint64_t countRequired = currencyCount * count;
+    if (availableCurrencies.value(currencyName) < countRequired) {
       updateAvailableRecipes();
       return false;
     }
@@ -519,9 +519,9 @@ bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
   }
 
   // actually consume the currencies and items
-  for (auto const& p : recipe.currencyInputs) {
-    if (p.second > 0)
-      m_player->inventory()->consumeCurrency(p.first, p.second * count);
+  for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+    if (currencyCount > 0)
+      m_player->inventory()->consumeCurrency(currencyName, currencyCount * count);
   }
   for (auto input : recipe.inputs) {
     if (count > 0)
@@ -572,8 +572,8 @@ void CraftingPane::craft(int count) {
       remainingItemCount -= craftedItem->count();
       m_player->giveItem(craftedItem);
 
-      for (auto& collectable : recipe.collectables)
-        m_player->addCollectable(collectable.first, collectable.second);
+      for (auto const& [collectableName, collectableAmount] : recipe.collectables)
+        m_player->addCollectable(collectableName, collectableAmount);
     }
 
     m_blueprints->markAsRead(recipe.output.singular());

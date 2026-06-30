@@ -364,8 +364,8 @@ void DataStream::readContainer(Container& container, ReadFunction function) {
 template <typename Container, typename WriteFunction>
 void DataStream::writeMapContainer(Container& map, WriteFunction function) {
   writeVlqU(map.size());
-  for (auto const& elem : map)
-    function(*this, elem.first, elem.second);
+  for (auto const& [key, value] : map)
+    function(*this, key, value);
 }
 
 template <typename Container, typename ReadFunction>

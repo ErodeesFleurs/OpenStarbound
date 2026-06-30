@@ -156,9 +156,9 @@ void ServerQueryThread::buildPlayerResponse() {
   m_playersResponse << A2S_HEAD_INT << A2S_PLAYER_REPLY << cnt;
 
   uint8_t i = 0;
-  for (auto& pair : clientIds) {
-    auto timeConnected = float(now - pair.second) / 1000.f;
-    m_playersResponse << i++ << m_universe.clientNick(pair.first) << kills << timeConnected;
+  for (auto& [clientId, creationTime] : clientIds) {
+    auto timeConnected = float(now - creationTime) / 1000.f;
+    m_playersResponse << i++ << m_universe.clientNick(clientId) << kills << timeConnected;
   }
 
   m_lastPlayersResponse = now;
@@ -196,8 +196,8 @@ void ServerQueryThread::pruneChallenges() {
   auto expire = now - challengeCheckInterval;
   auto it = makeSMutableMapIterator(m_validChallenges);
   while (it.hasNext()) {
-    auto const& pair = it.next();
-    if (pair.second->before(expire)) {
+    auto const& [address, challenge] = it.next();
+    if (challenge->before(expire)) {
       it.remove();
     }
   }

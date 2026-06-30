@@ -46,15 +46,15 @@ Json Bookmark<T>::toJson() const {
 
 PlayerUniverseMap::PlayerUniverseMap(Json const& json) {
   if (auto maps = json.optObject()) {
-    for (auto p : *maps)
-      m_universeMaps.set(Uuid(p.first), UniverseMap::fromJson(p.second));
+    for (auto const& [serverUuid, universeMap] : *maps)
+      m_universeMaps.set(Uuid(serverUuid), UniverseMap::fromJson(universeMap));
   }
 }
 
 Json PlayerUniverseMap::toJson() const {
   JsonObject json;
-  for (auto const& p : m_universeMaps)
-    json.set(p.first.hex(), p.second.toJson());
+  for (auto const& [serverUuid, universeMap] : m_universeMaps)
+    json.set(serverUuid.hex(), universeMap.toJson());
   return json;
 }
 
@@ -63,9 +63,9 @@ List<pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
     return {};
 
   List<pair<Vec3I, OrbitBookmark>> bookmarks;
-  for (auto const& p : universeMap().systems) {
-    bookmarks.appendAll(p.second.bookmarks.values().transformed([&p](OrbitBookmark const& b) {
-      return pair<Vec3I, OrbitBookmark>(p.first, b);
+  for (auto const& [systemLocation, mappedSystem] : universeMap().systems) {
+    bookmarks.appendAll(mappedSystem.bookmarks.values().transformed([&systemLocation](OrbitBookmark const& b) {
+      return pair<Vec3I, OrbitBookmark>(systemLocation, b);
     }));
   }
   return bookmarks;
@@ -260,8 +260,8 @@ Json PlayerUniverseMap::UniverseMap::toJson() const {
 
   JsonArray s;
   s.reserve(systems.size());
-  for (auto const& p : systems) {
-    s.append(JsonArray{jsonFromVec3I(p.first), p.second.toJson()});
+  for (auto const& [systemLocation, mappedSystem] : systems) {
+    s.append(JsonArray{jsonFromVec3I(systemLocation), mappedSystem.toJson()});
   }
   json.set("systems", s);
 

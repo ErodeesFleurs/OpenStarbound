@@ -35,7 +35,9 @@ Json variantFromBiomeItem(BiomeItem const& biomeItem) {
     return JsonArray{"treePair", JsonArray{treePair->first.toJson(), treePair->second.toJson()}};
   } else if (auto objectPool = biomeItem.ptr<ObjectPool>()) {
     return JsonArray{"objectPool", transform<JsonArray>(objectPool->items(), [](pair<double, pair<String, Json>> const& p) {
-        return JsonArray{p.first, JsonArray{p.second.first, p.second.second}};
+        auto const& [weight, item] = p;
+        auto const& [objectName, objectConfig] = item;
+        return JsonArray{weight, JsonArray{objectName, objectConfig}};
       })};
   } else if (auto treasureBoxSet = biomeItem.ptr<TreasureBoxSet>()) {
     return JsonArray{"treasureBoxSet", String(*treasureBoxSet)};
@@ -121,11 +123,11 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDa
     ObjectPool objectPool;
 
     Json objectParameters = objectPoolConfig.get("parameters", JsonObject());
-    for (auto const& pair : objectPoolConfig.getArray("pool")) {
-      if (pair.size() != 2)
+    for (auto const& objectEntry : objectPoolConfig.getArray("pool")) {
+      if (objectEntry.size() != 2)
         throw BiomeException("Wrong size for objects weight / list pair in biome items");
 
-      objectPool.add(pair.getFloat(0), {pair.getString(1), objectParameters});
+      objectPool.add(objectEntry.getFloat(0), {objectEntry.getString(1), objectParameters});
     }
 
     return BiomeItem{objectPool};
@@ -232,8 +234,9 @@ Json BiomeItemDistribution::toJson() const {
     {"modulusDistortion", m_modulusDistortion.toJson()},
     {"modulus", m_modulus},
     {"modulusOffset", m_modulusOffset},
-    {"weightedItems", m_weightedItems.transformed([](pair<BiomeItem, PerlinF> const& p) -> Json {
-        return JsonArray{variantFromBiomeItem(p.first), p.second.toJson()};
+    {"weightedItems", m_weightedItems.transformed([](pair<BiomeItem, PerlinF> const& weightedItem) -> Json {
+        auto const& [biomeItem, perlin] = weightedItem;
+        return JsonArray{variantFromBiomeItem(biomeItem), perlin.toJson()};
       })},
   };
 }
@@ -247,8 +250,8 @@ List<BiomeItem> BiomeItemDistribution::allItems() const {
     return m_randomItems;
   } else if (m_distribution == DistributionType::Periodic) {
     List<BiomeItem> items;
-    for (auto const& pair : m_weightedItems)
-      items.append(pair.first);
+    for (auto const& [item, _] : m_weightedItems)
+      items.append(item);
     return items;
   } else {
     return {};

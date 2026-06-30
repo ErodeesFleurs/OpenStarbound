@@ -23,7 +23,8 @@ void Statistics::writeStatistics() {
   String filename = File::relativeTo(m_storageDirectory, "statistics");
 
   Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
-      return make_pair(entry.first, entry.second.toJson());
+      auto const& [statName, stat] = entry;
+      return make_pair(statName, stat.toJson());
     }));
   JsonObject storage = {
       { "stats", stats },
@@ -83,8 +84,8 @@ void Statistics::update() {
     }
   }
 
-  for (auto event : m_pendingEvents) {
-    processEvent(event.first, event.second);
+  for (auto const& [eventName, eventFields] : m_pendingEvents) {
+    processEvent(eventName, eventFields);
   }
 
   for (String const& achievement : m_pendingAchievementChecks) {
@@ -156,7 +157,8 @@ void Statistics::readStatistics() {
       Json storage = m_versioningDatabase->loadVersionedJson(VersionedJson::readFile(filename), "Statistics");
 
       m_stats = StringMap<Stat>::from(storage.getObject("stats", {}).pairs().transformed([](auto const& entry) {
-          return make_pair(entry.first, Stat::fromJson(entry.second));
+          auto const& [statName, statJson] = entry;
+          return make_pair(statName, Stat::fromJson(statJson));
         }));
       m_achievements = jsonToStringSet(storage.get("achievements", JsonArray{}));
 
@@ -179,8 +181,8 @@ void Statistics::mergeServiceStatistics() {
 
   // Publish our local statistics, in case we made progress while the service
   // was unavailable.
-  for (auto const& stat : m_stats) {
-    m_service->setStat(stat.first, stat.second.type, stat.second.value);
+  for (auto const& [statName, stat] : m_stats) {
+    m_service->setStat(statName, stat.type, stat.value);
   }
 
   // However, don't _pull_ stats from the service - not all stats are recorded

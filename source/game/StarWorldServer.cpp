@@ -119,8 +119,8 @@ WorldServer::WorldServer(IODevicePtr const& storage,
       m_spawner(m_assets, m_monsterDatabase, m_spawnTypeDatabase) {
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, storage, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
-    for (auto const& pair : m_clientInfo)
-      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
+    for (auto const& [_, clientInfo] : m_clientInfo)
+      clientInfo->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
   });
   m_dungeonProtection.m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>(m_assets);
@@ -163,8 +163,8 @@ WorldServer::WorldServer(WorldChunks const& chunks,
       m_spawner(m_assets, m_monsterDatabase, m_spawnTypeDatabase) {
   m_worldStorage = make_shared<WorldStorage>(m_assets, m_materialDatabase, m_liquidsDatabase, m_entityFactory, chunks, make_shared<WorldGenerator>(*this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
-    for (auto const& pair : m_clientInfo)
-      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
+    for (auto const& [_, clientInfo] : m_clientInfo)
+      clientInfo->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
   });
   m_dungeonProtection.m_tileProtectionEnabled = true;
   m_universeSettings = make_shared<UniverseSettings>(m_assets);
@@ -175,8 +175,8 @@ WorldServer::WorldServer(WorldChunks const& chunks,
 }
 
 WorldServer::~WorldServer() {
-  for (auto& p : m_scriptContexts)
-    p.second->uninit();
+  for (auto const& scriptContext : m_scriptContexts.values())
+    scriptContext->uninit();
 
   m_scriptContexts.clear();
   m_spawner.uninit();
@@ -216,11 +216,11 @@ void WorldServer::setPause(bool pause) {
 void WorldServer::initLua(UniverseServer& universe) {
   m_luaRoot->addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(universe));
   auto assets = m_assets;
-  for (auto const& p : assets->json("/worldserver.config:scriptContexts").iterateObject()) {
+  for (auto const& [contextName, contextScripts] : assets->json("/worldserver.config:scriptContexts").iterateObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
-    scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+    scriptComponent->setScripts(jsonToStringList(contextScripts.toArray()));
 
-    m_scriptContexts.set(p.first, scriptComponent);
+    m_scriptContexts.set(contextName, scriptComponent);
     scriptComponent->init(*this);
   }
 }
@@ -269,8 +269,8 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
       addEntity(object);
   }
 
-  for (auto const& pair : m_clientInfo)
-    pair.second->outgoingPackets.append(make_shared<CentralStructureUpdatePacket>(m_centralStructure.store()));
+  for (auto const& [_, clientInfo] : m_clientInfo)
+    clientInfo->outgoingPackets.append(make_shared<CentralStructureUpdatePacket>(m_centralStructure.store()));
 
   return m_centralStructure;
 }
@@ -386,8 +386,8 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 
   clientInfo->outgoingPackets.append(make_shared<CentralStructureUpdatePacket>(m_centralStructure.store()));
 
-  for (auto& p : m_scriptContexts)
-    p.second->invoke("addClient", clientId, isLocal);
+  for (auto const& scriptContext : m_scriptContexts.values())
+    scriptContext->invoke("addClient", clientId, isLocal);
 
   return true;
 }
@@ -401,8 +401,8 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
   }
 
   for (auto const& uuid : m_entityMessageResponses.keys()) {
-    if (m_entityMessageResponses[uuid].first == clientId) {
-      auto response = m_entityMessageResponses[uuid].second;
+    auto& [responseClientId, response] = m_entityMessageResponses[uuid];
+    if (responseClientId == clientId) {
       if (response.is<ConnectionId>()) {
         if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
           clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
@@ -418,8 +418,8 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
 
   packets.append(make_shared<WorldStopPacket>("Removed"));
 
-  for (auto& p : m_scriptContexts)
-    p.second->invoke("removeClient", clientId);
+  for (auto const& scriptContext : m_scriptContexts.values())
+    scriptContext->invoke("removeClient", clientId);
 
   return packets;
 }
@@ -450,8 +450,8 @@ PlayerPtr WorldServer::clientPlayer(ConnectionId clientId) const {
 
 List<EntityId> WorldServer::players() const {
   List<EntityId> playerIds;
-  for (auto const& pair : m_clientInfo)
-    playerIds.append(pair.second->clientState.playerId());
+  for (auto const& [_, clientInfo] : m_clientInfo)
+    playerIds.append(clientInfo->clientState.playerId());
   return playerIds;
 }
 
@@ -529,9 +529,9 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto damageNotify = as<DamageNotificationPacket>(packet)) {
       m_damageManager->pushRemoteDamageNotification(damageNotify->remoteDamageNotification);
-      for (auto const& pair : m_clientInfo) {
-        if (pair.first != clientId && pair.second->needsDamageNotification(damageNotify->remoteDamageNotification))
-          pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(damageNotify->remoteDamageNotification));
+      for (auto const& [otherClientId, otherClientInfo] : m_clientInfo) {
+        if (otherClientId != clientId && otherClientInfo->needsDamageNotification(damageNotify->remoteDamageNotification))
+          otherClientInfo->outgoingPackets.append(makePooled<DamageNotificationPacket>(damageNotify->remoteDamageNotification));
       }
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
@@ -636,7 +636,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       if (!m_entityMessageResponses.contains(entityMessageResponsePacket->uuid))
         Logger::warn("EntityMessageResponse received for unknown context [{}]!", entityMessageResponsePacket->uuid.hex());
       else {
-        auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid).second;
+        [[maybe_unused]] auto [responseClientId, response] = m_entityMessageResponses.take(entityMessageResponsePacket->uuid);
         if (response.is<ConnectionId>()) {
           if (auto responseClientInfo = m_clientInfo.value(response.get<ConnectionId>()))
             responseClientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
@@ -652,14 +652,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
       // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
-      for (auto& pair : updateWorldProperties->updatedProperties) {
-        if (pair.second.isNull())
-          m_worldProperties.properties().erase(pair.first);
+      for (auto& [propertyName, propertyValue] : updateWorldProperties->updatedProperties) {
+        if (propertyValue.isNull())
+          m_worldProperties.properties().erase(propertyName);
         else
-          m_worldProperties.properties()[pair.first] = pair.second;
+          m_worldProperties.properties()[propertyName] = propertyValue;
       }
-      for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
+      for (auto const& [_, otherClientInfo] : m_clientInfo)
+        otherClientInfo->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
     } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
       if (!clientInfo->admin)
@@ -691,8 +691,8 @@ bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
 
 Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   Maybe<Json> result;
-  for (auto& p : m_scriptContexts) {
-    result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
+  for (auto const& scriptContext : m_scriptContexts.values()) {
+    result = scriptContext->handleMessage(message, fromConnection == ServerConnectionId, args);
     if (result)
       break;
   }
@@ -728,13 +728,14 @@ float WorldServer::expiryTime() {
 void WorldServer::update(float dt) {
   m_currentTime += dt;
   ++m_currentStep;
-  for (auto const& pair : m_clientInfo)
-    pair.second->interpolationTracker.update(m_currentTime);
+  for (auto const& [_, clientInfo] : m_clientInfo)
+    clientInfo->interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
   eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-    if ((timer.first -= dt) <= 0) {
-      triggeredActions.append(timer.second);
+    auto& [remainingTime, action] = timer;
+    if ((remainingTime -= dt) <= 0) {
+      triggeredActions.append(action);
       return true;
     }
     return false;
@@ -751,8 +752,8 @@ void WorldServer::update(float dt) {
   List<EntityId> toRemove;
 
   HashSet<Vec2S> activeSectors;
-  for (auto const& pair : m_clientInfo) {
-    auto window = pair.second->clientState.window().padded(WorldSectorSize);
+  for (auto const& [_, clientInfo] : m_clientInfo) {
+    auto window = clientInfo->clientState.window().padded(WorldSectorSize);
     activeSectors.addAll(m_tileArray->validSectorsFor(window));
   }
 
@@ -774,8 +775,8 @@ void WorldServer::update(float dt) {
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId()); }, [](EntityPtr const& a, EntityPtr const& b) { return a->entityType() < b->entityType(); });
 
-  for (auto& pair : m_scriptContexts)
-    pair.second->update(pair.second->updateDt(dt));
+  for (auto& scriptContext : m_scriptContexts.values())
+    scriptContext->update(scriptContext->updateDt(dt));
 
   updateDamage(dt);
   if (shouldRunThisStep("wiringUpdate"))
@@ -785,9 +786,9 @@ void WorldServer::update(float dt) {
 
   List<RectI> clientWindows;
   List<RectI> clientMonitoringRegions;
-  for (auto const& pair : m_clientInfo) {
-    clientWindows.append(pair.second->clientState.window());
-    for (auto const& region : pair.second->monitoringRegions(m_entityMap))
+  for (auto const& [_, clientInfo] : m_clientInfo) {
+    clientWindows.append(clientInfo->clientState.window());
+    for (auto const& region : clientInfo->monitoringRegions(m_entityMap))
       clientMonitoringRegions.appendAll(m_geometry.splitRect(region));
   }
 
@@ -816,8 +817,8 @@ void WorldServer::update(float dt) {
       auto distanceToClosestPlayer = [this](WorldStorage::Sector sector) {
         Vec2F sectorCenter = RectF(*m_worldStorage->regionForSector(sector)).center();
         float distance = highest<float>();
-        for (auto const& pair : m_clientInfo) {
-          if (auto player = get<Player>(pair.second->clientState.playerId()))
+        for (auto const& [_, clientInfo] : m_clientInfo) {
+          if (auto player = get<Player>(clientInfo->clientState.playerId()))
             distance = min(vmag(sectorCenter - player->position()), distance);
         }
         return distance;
@@ -831,15 +832,15 @@ void WorldServer::update(float dt) {
     removeEntity(entityId, true);
 
   bool sendRemoteUpdates = m_entityUpdateTimer.wrapTick(dt);
-  for (auto const& pair : m_clientInfo) {
-    for (auto const& monitoredRegion : pair.second->monitoringRegions(m_entityMap))
+  for (auto const& [clientId, clientInfo] : m_clientInfo) {
+    for (auto const& monitoredRegion : clientInfo->monitoringRegions(m_entityMap))
       signalRegion(monitoredRegion.padded(jsonToVec2I(m_serverConfig.get("playerActiveRegionPad"))));
-    queueUpdatePackets(pair.first, sendRemoteUpdates);
+    queueUpdatePackets(clientId, sendRemoteUpdates);
   }
   m_netStateCache.clear();
 
-  for (auto& pair : m_clientInfo)
-    pair.second->pendingForward = false;
+  for (auto& [_, clientInfo] : m_clientInfo)
+    clientInfo->pendingForward = false;
 
   m_expiryTimer.tick(dt);
 
@@ -1059,49 +1060,49 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
     List<Vec2I> toDamage;
     TileLayer layer;
 
-    for (auto const& pair : modificationList) {
-      if (auto placeMaterial = pair.second.ptr<PlaceMaterial>()) {
+    for (auto const& [position, modification] : modificationList) {
+      if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
         layer = placeMaterial->layer;
 
-        if (placeMaterial->material == material(pair.first, layer)) {
-          failures.append(pair);
+        if (placeMaterial->material == material(position, layer)) {
+          failures.append({position, modification});
           continue;
         }
 
-        if (damageWouldDestroy(pair.first, layer, tileDamage)) {
-          if (replaceTile(pair.first, pair.second, tileDamage))
-            success.append(pair);
+        if (damageWouldDestroy(position, layer, tileDamage)) {
+          if (replaceTile(position, modification, tileDamage))
+            success.append({position, modification});
           else
-            failures.append(pair);
+            failures.append({position, modification});
           continue;
         }
 
-        toDamage.append(pair.first);
-        success.append(pair);
+        toDamage.append(position);
+        success.append({position, modification});
         continue;
       }
 
-      failures.append(pair);
+      failures.append({position, modification});
     }
 
     if (!toDamage.empty())
       damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
 
   } else {
-    for (auto const& pair : modificationList) {
-      if (replaceTile(pair.first, pair.second, tileDamage))
-        success.append(pair);
+    for (auto const& [position, modification] : modificationList) {
+      if (replaceTile(position, modification, tileDamage))
+        success.append({position, modification});
       else
-        failures.append(pair);
+        failures.append({position, modification});
     }
   }
 
   failures.appendAll(doApplyTileModifications(success, true, false, false));
 
-  for (auto const& pair : success) {
-    checkEntityBreaks(RectF::withSize(Vec2F(pair.first), Vec2F(1, 1)));
-    m_liquid.liquidEngine()->visitLocation(pair.first);
-    m_fallingBlocksAgent->visitLocation(pair.first);
+  for (auto const& [position, _] : success) {
+    checkEntityBreaks(RectF::withSize(Vec2F(position), Vec2F(1, 1)));
+    m_liquid.liquidEngine()->visitLocation(position);
+    m_fallingBlocksAgent->visitLocation(position);
   }
 
   return failures;
@@ -1256,9 +1257,9 @@ ItemDescriptor WorldServer::collectLiquid(List<Vec2I> const& tilePositions, Liqu
         maybeDrainTiles.append(tile);
       }
 
-      for (auto const& pair : m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_tileArray->sectorFor(pos)))
-          pair.second->pendingLiquidUpdates.add(pos);
+      for (auto const& [_, clientInfo] : m_clientInfo) {
+        if (clientInfo->activeSectors.contains(m_tileArray->sectorFor(pos)))
+          clientInfo->pendingLiquidUpdates.add(pos);
       }
       m_liquid.liquidEngine()->visitLocation(pos);
     }
@@ -1355,8 +1356,8 @@ void WorldServer::setLayerEnvironmentBiome(Vec2I const& position) {
   auto biomeName = m_worldTemplate->worldLayout()->setLayerEnvironmentBiome(position);
 
   auto layoutJson = m_worldTemplate->worldLayout()->toJson();
-  for (auto const& pair : m_clientInfo)
-    pair.second->outgoingPackets.append(make_shared<WorldLayoutUpdatePacket>(layoutJson));
+  for (auto const& [_, clientInfo] : m_clientInfo)
+    clientInfo->outgoingPackets.append(make_shared<WorldLayoutUpdatePacket>(layoutJson));
 }
 
 void WorldServer::setPlanetType(String const& planetType, String const& primaryBiomeName) {
@@ -1381,8 +1382,8 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
 
       m_worldTemplate->setWorldParameters(newTerrestrialParameters);
 
-      for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(make_shared<WorldParametersUpdatePacket>(netStoreVisitableWorldParameters(newTerrestrialParameters)));
+      for (auto const& [_, clientInfo] : m_clientInfo)
+        clientInfo->outgoingPackets.append(make_shared<WorldParametersUpdatePacket>(netStoreVisitableWorldParameters(newTerrestrialParameters)));
 
       auto newSkyParameters = SkyParameters(m_worldTemplate->skyParameters(), newTerrestrialParameters);
       m_worldTemplate->setSkyParameters(newSkyParameters);
@@ -1435,8 +1436,8 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
   }
 
   if (updated) {
-    for (auto const& pair : m_clientInfo)
-      pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
+    for (auto const& [_, clientInfo] : m_clientInfo)
+      clientInfo->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
 
     Logger::info("Protected dungeonIds for world set to {}", m_dungeonProtection.m_protectedDungeonIds);
   }
@@ -1452,8 +1453,8 @@ size_t WorldServer::setTileProtection(List<DungeonId> const& dungeonIds, bool is
   if (updates.empty())
     return 0;
 
-  for (auto const& pair : m_clientInfo)
-    pair.second->outgoingPackets.appendAll(updates);
+  for (auto const& [_, clientInfo] : m_clientInfo)
+    clientInfo->outgoingPackets.appendAll(updates);
 
   auto newDungeonIds = m_dungeonProtection.m_protectedDungeonIds.values();
   sort(newDungeonIds);
@@ -1485,8 +1486,8 @@ void WorldServer::setDungeonGravity(DungeonId dungeonId, Maybe<float> gravity) {
     else
       m_dungeonProtection.m_dungeonIdGravity.remove(dungeonId);
 
-    for (auto const& p : m_clientInfo)
-      p.second->outgoingPackets.append(make_shared<SetDungeonGravityPacket>(dungeonId, gravity));
+    for (auto const& clientInfo : m_clientInfo.values())
+      clientInfo->outgoingPackets.append(make_shared<SetDungeonGravityPacket>(dungeonId, gravity));
   }
 }
 
@@ -2042,9 +2043,9 @@ void WorldServer::setLiquid(Vec2I const& pos, LiquidId liquid, float level, floa
       level = 0;
 
     if (auto netUpdate = tile->liquid.update(liquid, level, pressure)) {
-      for (auto const& pair : m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_tileArray->sectorFor(pos)))
-          pair.second->pendingLiquidUpdates.add(pos);
+      for (auto const& [_, clientInfo] : m_clientInfo) {
+        if (clientInfo->activeSectors.contains(m_tileArray->sectorFor(pos)))
+          clientInfo->pendingLiquidUpdates.add(pos);
       }
     }
   }
@@ -2168,14 +2169,14 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   }
   clientInfo->pendingTileUpdates.clear();
 
-  for (auto const& pair : clientInfo->pendingTileDamageUpdates) {
-    auto tile = m_tileArray->tile(pair.first);
-    if (pair.second == TileLayer::Foreground)
+  for (auto const& [position, layer] : clientInfo->pendingTileDamageUpdates) {
+    auto tile = m_tileArray->tile(position);
+    if (layer == TileLayer::Foreground)
       clientInfo->outgoingPackets.append(
-        makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Foreground, tile.foregroundDamage));
+        makePooled<TileDamageUpdatePacket>(position, TileLayer::Foreground, tile.foregroundDamage));
     else
       clientInfo->outgoingPackets.append(
-        makePooled<TileDamageUpdatePacket>(pair.first, TileLayer::Background, tile.backgroundDamage));
+        makePooled<TileDamageUpdatePacket>(position, TileLayer::Background, tile.backgroundDamage));
   }
   clientInfo->pendingTileDamageUpdates.clear();
 
@@ -2201,9 +2202,9 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   HashMap<ConnectionId, shared_ptr<EntityUpdateSetPacket>> updateSetPackets;
   if (sendRemoteUpdates || clientInfo->local)
     updateSetPackets.add(ServerConnectionId, makePooled<EntityUpdateSetPacket>(ServerConnectionId));
-  for (auto const& p : m_clientInfo) {
-    if (p.first != clientId && p.second->pendingForward)
-      updateSetPackets.add(p.first, makePooled<EntityUpdateSetPacket>(p.first));
+  for (auto const& [remoteClientId, remoteClientInfo] : m_clientInfo) {
+    if (remoteClientId != clientId && remoteClientInfo->pendingForward)
+      updateSetPackets.add(remoteClientId, makePooled<EntityUpdateSetPacket>(remoteClientId));
   }
 
   for (auto const& monitoredEntity : monitoredEntities) {
@@ -2213,28 +2214,28 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
       auto netRules = clientInfo->clientState.netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
-          auto pair = make_pair(entityId, *version);
+          auto cacheKey = make_pair(entityId, *version);
           auto& cache = m_netStateCache[netRules];
-          auto i = cache.find(pair);
+          auto i = cache.find(cacheKey);
           if (i == cache.end())
-            i = cache.insert(pair, monitoredEntity->writeNetState(*version, netRules)).first;
-          const auto& netState = i->second;
-          if (!netState.first.empty())
-            updateSetPacket->deltas[entityId] = netState.first;
-          *version = netState.second;
+            i = cache.insert(cacheKey, monitoredEntity->writeNetState(*version, netRules)).first;
+          auto const& [delta, nextVersion] = i->second;
+          if (!delta.empty())
+            updateSetPacket->deltas[entityId] = delta;
+          *version = nextVersion;
         }
       } else if (!monitoredEntity->masterOnly()) {
         // Client was unaware of this entity until now
-        auto firstUpdate = monitoredEntity->writeNetState(0, netRules);
-        clientInfo->clientSlavesNetVersion.add(entityId, firstUpdate.second);
+        auto [initialDelta, initialVersion] = monitoredEntity->writeNetState(0, netRules);
+        clientInfo->clientSlavesNetVersion.add(entityId, initialVersion);
         clientInfo->outgoingPackets.append(makePooled<EntityCreatePacket>(monitoredEntity->entityType(),
-                                                                          entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(firstUpdate.first), entityId));
+                                                                          entityFactory->netStoreEntity(monitoredEntity, netRules), std::move(initialDelta), entityId));
       }
     }
   }
 
-  for (auto& p : updateSetPackets)
-    clientInfo->outgoingPackets.append(std::move(p.second));
+  for (auto& updateSetPacket : updateSetPackets.values())
+    clientInfo->outgoingPackets.append(std::move(updateSetPacket));
 }
 
 void WorldServer::updateDamage(float dt) {
@@ -2252,9 +2253,9 @@ void WorldServer::updateDamage(float dt) {
       ->outgoingPackets.append(make_shared<DamageRequestPacket>(remoteDamageRequest));
 
   for (auto const& remoteDamageNotification : m_damageManager->pullRemoteDamageNotifications()) {
-    for (auto const& pair : m_clientInfo) {
-      if (pair.second->needsDamageNotification(remoteDamageNotification))
-        pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(remoteDamageNotification));
+    for (auto const& [_, clientInfo] : m_clientInfo) {
+      if (clientInfo->needsDamageNotification(remoteDamageNotification))
+        clientInfo->outgoingPackets.append(makePooled<DamageNotificationPacket>(remoteDamageNotification));
     }
   }
 }
@@ -2341,16 +2342,16 @@ void WorldServer::checkEntityBreaks(RectF const& rect) {
 }
 
 void WorldServer::queueTileUpdates(Vec2I const& pos) {
-  for (auto const& pair : m_clientInfo) {
-    if (pair.second->activeSectors.contains(m_tileArray->sectorFor(pos)))
-      pair.second->pendingTileUpdates.add(pos);
+  for (auto const& [_, clientInfo] : m_clientInfo) {
+    if (clientInfo->activeSectors.contains(m_tileArray->sectorFor(pos)))
+      clientInfo->pendingTileUpdates.add(pos);
   }
 }
 
 void WorldServer::queueTileDamageUpdates(Vec2I const& pos, TileLayer layer) {
-  for (auto const& pair : m_clientInfo) {
-    if (pair.second->activeSectors.contains(m_tileArray->sectorFor(pos)))
-      pair.second->pendingTileDamageUpdates.add({pos, layer});
+  for (auto const& [_, clientInfo] : m_clientInfo) {
+    if (clientInfo->activeSectors.contains(m_tileArray->sectorFor(pos)))
+      clientInfo->pendingTileDamageUpdates.add({pos, layer});
   }
 }
 
@@ -2392,8 +2393,7 @@ void WorldServer::removeEntity(EntityId entityId, bool andDie) {
   if (andDie)
     entity->destroy(nullptr);
 
-  for (auto const& pair : m_clientInfo) {
-    auto& clientInfo = pair.second;
+  for (auto const& [_, clientInfo] : m_clientInfo) {
     if (auto version = clientInfo->clientSlavesNetVersion.maybeTake(entity->entityId())) {
       auto netRules = clientInfo->clientState.netCompatibilityRules();
       ByteArray finalDelta = entity->writeNetState(*version, netRules).first;
@@ -2421,8 +2421,8 @@ void WorldServer::setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathab
     else
       m_dungeonProtection.m_dungeonIdBreathable.remove(dungeonId);
 
-    for (auto const& p : m_clientInfo)
-      p.second->outgoingPackets.append(make_shared<SetDungeonBreathablePacket>(dungeonId, breathable));
+    for (auto const& clientInfo : m_clientInfo.values())
+      clientInfo->outgoingPackets.append(make_shared<SetDungeonBreathablePacket>(dungeonId, breathable));
   }
 }
 
@@ -2543,12 +2543,12 @@ RpcPromise<Json> WorldServer::sendEntityMessage(Variant<EntityId, String> const&
     else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {
-    auto pair = RpcPromise<Json>::createPair();
+    auto [promise, response] = RpcPromise<Json>::createPair();
     auto clientInfo = m_clientInfo.get(connectionForEntity(entity->entityId()));
     Uuid uuid;
-    m_entityMessageResponses[uuid] = {clientInfo->clientId, pair.second};
+    m_entityMessageResponses[uuid] = {clientInfo->clientId, response};
     clientInfo->outgoingPackets.append(make_shared<EntityMessagePacket>(entity->entityId(), message, args, uuid));
-    return pair.first;
+    return promise;
   }
 }
 
@@ -2599,19 +2599,21 @@ void WorldServer::writeMetadata() {
     {"protectedDungeonIds", jsonFromSet(m_dungeonProtection.m_protectedDungeonIds)},
     {"worldProperties", m_worldProperties.properties()},
     {"spawningEnabled", m_spawner.active()},
-    {"dungeonIdGravity", m_dungeonProtection.m_dungeonIdGravity.pairs().transformed([](auto const& p) -> Json {
-       return JsonArray{p.first, p.second};
+    {"dungeonIdGravity", m_dungeonProtection.m_dungeonIdGravity.pairs().transformed([](auto const& dungeonGravity) -> Json {
+       auto const& [dungeonId, gravity] = dungeonGravity;
+       return JsonArray{dungeonId, gravity};
      })},
-    {"dungeonIdBreathable", m_dungeonProtection.m_dungeonIdBreathable.pairs().transformed([](auto const& p) -> Json {
-       return JsonArray{p.first, p.second};
+    {"dungeonIdBreathable", m_dungeonProtection.m_dungeonIdBreathable.pairs().transformed([](auto const& dungeonBreathable) -> Json {
+       auto const& [dungeonId, breathable] = dungeonBreathable;
+       return JsonArray{dungeonId, breathable};
      })}};
 
   m_worldStorage->setWorldMetadata(versioningDatabase->makeCurrentVersionedJson("WorldMetadata", metadata));
 }
 
 bool WorldServer::isVisibleToPlayer(RectF const& region) const {
-  for (auto const& p : m_clientInfo) {
-    for (auto const& playerRegion : p.second->monitoringRegions(m_entityMap)) {
+  for (auto const& clientInfo : m_clientInfo.values()) {
+    for (auto const& playerRegion : clientInfo->monitoringRegions(m_entityMap)) {
       if (m_geometry.rectIntersectsRect(RectF(playerRegion), region))
         return true;
     }

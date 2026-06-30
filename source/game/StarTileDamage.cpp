@@ -74,8 +74,8 @@ TileDamageParameters::TileDamageParameters(AssetsConstPtr assets, Json config, M
     config = assets->json(config.toString());
   }
 
-  for (auto const& pair : config.getObject("damageFactors"))
-    m_damages[TileDamageTypeNames.getLeft(pair.first)] = pair.second.toFloat();
+  for (auto const& [damageType, damageFactor] : config.getObject("damageFactors"))
+    m_damages[TileDamageTypeNames.getLeft(damageType)] = damageFactor.toFloat();
   m_damageRecoveryPerSecond = config.getFloat("damageRecovery");
 
   m_requiredHarvestLevel = config.getUInt("harvestLevel", 1);

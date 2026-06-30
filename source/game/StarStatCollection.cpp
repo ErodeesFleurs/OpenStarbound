@@ -6,14 +6,14 @@
 namespace Star {
 
 StatCollection::StatCollection(Json const& config) {
-  for (auto const& stat : config.getObject("stats", {}))
-    m_stats.addStat(stat.first, stat.second.getFloat("baseValue", 0.0));
+  for (auto const& [statName, statConfig] : config.getObject("stats", {}))
+    m_stats.addStat(statName, statConfig.getFloat("baseValue", 0.0));
 
-  for (auto const& resource : config.getObject("resources", {})) {
-    auto statOrValue = [&resource](String const& statName, String const& valueName, MVariant<String, float> def = {}) -> MVariant<String, float> {
-      if (auto maxStat = resource.second.optString(statName))
+  for (auto const& [resourceName, resourceConfig] : config.getObject("resources", {})) {
+    auto statOrValue = [&resourceConfig](String const& statName, String const& valueName, MVariant<String, float> def = {}) -> MVariant<String, float> {
+      if (auto maxStat = resourceConfig.optString(statName))
         return *maxStat;
-      else if (auto maxValue = resource.second.optFloat(valueName))
+      else if (auto maxValue = resourceConfig.optFloat(valueName))
         return *maxValue;
       else
         return def;
@@ -21,21 +21,21 @@ StatCollection::StatCollection(Json const& config) {
 
     MVariant<String, float> resourceMax = statOrValue("maxStat", "maxValue");
     MVariant<String, float> resourceDelta = statOrValue("deltaStat", "deltaValue");
-    m_stats.addResource(resource.first, resourceMax, resourceDelta);
+    m_stats.addResource(resourceName, resourceMax, resourceDelta);
 
-    if (auto initialValue = resource.second.optFloat("initialValue")) {
-      m_stats.setResourceValue(resource.first, *initialValue);
-      m_defaultResourceValues[resource.first] = makeLeft(*initialValue);
-    } else if (auto percentage = resource.second.optFloat("initialPercentage")) {
-      m_stats.setResourcePercentage(resource.first, *percentage);
-      m_defaultResourceValues[resource.first] = makeRight(*percentage);
+    if (auto initialValue = resourceConfig.optFloat("initialValue")) {
+      m_stats.setResourceValue(resourceName, *initialValue);
+      m_defaultResourceValues[resourceName] = makeLeft(*initialValue);
+    } else if (auto percentage = resourceConfig.optFloat("initialPercentage")) {
+      m_stats.setResourcePercentage(resourceName, *percentage);
+      m_defaultResourceValues[resourceName] = makeRight(*percentage);
     } else {
-      if (m_stats.resourceMax(resource.first)) {
-        m_stats.setResourcePercentage(resource.first, 1.0f);
-        m_defaultResourceValues[resource.first] = makeRight(1.0f);
+      if (m_stats.resourceMax(resourceName)) {
+        m_stats.setResourcePercentage(resourceName, 1.0f);
+        m_defaultResourceValues[resourceName] = makeRight(1.0f);
       } else {
-        m_stats.setResourceValue(resource.first, 0.0f);
-        m_defaultResourceValues[resource.first] = makeLeft(0.0f);
+        m_stats.setResourceValue(resourceName, 0.0f);
+        m_defaultResourceValues[resourceName] = makeLeft(0.0f);
       }
     }
   }
@@ -164,26 +164,26 @@ void StatCollection::tickSlave(float) {
 void StatCollection::netElementsNeedLoad(bool) {
   if (m_statModifiersNetState.pullUpdated()) {
     StatModifierGroupMap allModifiers;
-    for (auto const& p : m_statModifiersNetState)
-      allModifiers.add(p.first, p.second);
+    for (auto const& [statName, modifiers] : m_statModifiersNetState)
+      allModifiers.add(statName, modifiers);
     m_stats.setAllStatModifierGroups(std::move(allModifiers));
   }
 
-  for (auto const& pair : m_resourceValuesNetStates)
-    m_stats.setResourceValue(pair.first, pair.second.get());
+  for (auto const& [resourceName, resourceValue] : m_resourceValuesNetStates)
+    m_stats.setResourceValue(resourceName, resourceValue.get());
 
-  for (auto& pair : m_resourceLockedNetStates)
-    m_stats.setResourceLocked(pair.first, pair.second.get());
+  for (auto& [resourceName, resourceLocked] : m_resourceLockedNetStates)
+    m_stats.setResourceLocked(resourceName, resourceLocked.get());
 }
 
 void StatCollection::netElementsNeedStore() {
   m_statModifiersNetState.setContents(m_stats.allStatModifierGroups());
 
-  for (auto& pair : m_resourceValuesNetStates)
-    pair.second.set(m_stats.resourceValue(pair.first));
+  for (auto& [resourceName, resourceValue] : m_resourceValuesNetStates)
+    resourceValue.set(m_stats.resourceValue(resourceName));
 
-  for (auto& pair : m_resourceLockedNetStates)
-    pair.second.set(m_stats.resourceLocked(pair.first));
+  for (auto& [resourceName, resourceLocked] : m_resourceLockedNetStates)
+    resourceLocked.set(m_stats.resourceLocked(resourceName));
 }
 
 }

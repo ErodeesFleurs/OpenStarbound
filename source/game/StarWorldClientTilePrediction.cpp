@@ -117,14 +117,15 @@ bool StarWorldClientTilePrediction::readNetTile(Vec2I const& pos, NetTile const&
 void StarWorldClientTilePrediction::expirePredictedTiles() {
   float expireTime = min(float(m_worldClient.m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
-  eraseWhere(m_predictedTiles, [&](auto& pair) {
-    float expiry = static_cast<float>(now - pair.second.time) / expireTime;
-    auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
+  eraseWhere(m_predictedTiles, [&](auto& predictedTile) {
+    auto& [position, prediction] = predictedTile;
+    float expiry = static_cast<float>(now - prediction.time) / expireTime;
+    auto center = Vec2F(position) + Vec2F::filled(0.5f);
     auto size = Vec2F::filled(0.875f - expiry * 0.875f);
     auto poly = PolyF(RectF::withCenter(center, size));
     SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
     if (expiry >= 1.0f) {
-      m_worldClient.dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
+      m_worldClient.dirtyCollision(RectI::withSize(position, { 1, 1 }));
       return true;
     } else {
       return false;

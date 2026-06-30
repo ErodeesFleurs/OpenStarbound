@@ -65,8 +65,8 @@ UserGeneratedContentService::UGCState SteamUserGeneratedContentService::triggerC
   }
 
   bool allDownloaded = true;
-  for (auto const& p : m_currentDownloadState) {
-    if (!p.second)
+  for (auto downloaded : m_currentDownloadState.values()) {
+    if (!downloaded)
       allDownloaded = false;
   }
 

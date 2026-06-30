@@ -480,9 +480,9 @@ PolyF Projectile::statusEffectArea() const {
 
 List<PhysicsForceRegion> Projectile::forceRegions() const {
   List<PhysicsForceRegion> forces;
-  for (auto const& p : m_physicsForces) {
-    if (p.second.enabled.get()) {
-      PhysicsForceRegion forceRegion = p.second.forceRegion;
+  for (auto const& [_, forceRegionConfig] : m_physicsForces) {
+    if (forceRegionConfig.enabled.get()) {
+      PhysicsForceRegion forceRegion = forceRegionConfig.forceRegion;
       forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
       forces.append(std::move(forceRegion));
     }
@@ -969,27 +969,27 @@ void Projectile::setup() {
   m_animationCycle = m_parameters.getFloat("animationCycle", m_config->animationCycle);
   m_collision = false;
 
-  for (auto const& p : m_config->physicsForces.iterateObject()) {
-    auto& forceConfig = m_physicsForces[p.first];
+  for (auto const& [forceName, forceJson] : m_config->physicsForces.iterateObject()) {
+    auto& forceConfig = m_physicsForces[forceName];
 
-    forceConfig.forceRegion = jsonToPhysicsForceRegion(p.second);
-    forceConfig.enabled.set(p.second.getBool("enabled", true));
+    forceConfig.forceRegion = jsonToPhysicsForceRegion(forceJson);
+    forceConfig.enabled.set(forceJson.getBool("enabled", true));
   }
 
-  for (auto const& p : m_config->physicsCollisions.iterateObject()) {
-    auto& forceConfig = m_physicsCollisions[p.first];
+  for (auto const& [collisionName, collisionJson] : m_config->physicsCollisions.iterateObject()) {
+    auto& forceConfig = m_physicsCollisions[collisionName];
 
-    forceConfig.movingCollision = PhysicsMovingCollision::fromJson(p.second);
-    forceConfig.enabled.set(p.second.getBool("enabled", true));
+    forceConfig.movingCollision = PhysicsMovingCollision::fromJson(collisionJson);
+    forceConfig.enabled.set(collisionJson.getBool("enabled", true));
   }
 
   m_physicsForces.sortByKey();
-  for (auto& p : m_physicsForces)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [forceName, forceConfig] : m_physicsForces)
+    m_netGroup.addNetElement(&forceConfig.enabled);
 
   m_physicsCollisions.sortByKey();
-  for (auto& p : m_physicsCollisions)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [collisionName, collisionConfig] : m_physicsCollisions)
+    m_netGroup.addNetElement(&collisionConfig.enabled);
 
   m_netGroup.addNetElement(&m_collisionEvent);
   m_netGroup.addNetElement(m_movementController.get());

@@ -299,7 +299,10 @@ template <typename Fun,
           typename RetType = typename FunctionTraits<Fun>::Return>
 StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) {
   return StringMap<RetType>::from(map.pairs().transformed(
-    [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
+    [fun](pair<String, ArgType> entry) {
+      auto const& [key, value] = entry;
+      return make_pair(key, fun(value));
+    }));
 }
 
 StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase) {

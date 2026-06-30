@@ -26,10 +26,10 @@ void PacketStatCollector::mix(PacketType type, size_t size, bool addToTotal) {
 
 void PacketStatCollector::mix(HashMap<PacketType, size_t> const& sizes, bool addToTotal) {
   calculate();
-  for (auto const& p : sizes) {
+  for (auto const& [packetType, byteSize] : sizes) {
     if (addToTotal)
-      m_totalBytes += p.second;
-    m_unmixed[p.first] += p.second;
+      m_totalBytes += byteSize;
+    m_unmixed[packetType] += byteSize;
   }
 }
 
@@ -45,13 +45,13 @@ void PacketStatCollector::calculate() {
     m_lastMixTime = currentTime;
     m_stats.worstPacketSize = 0;
 
-    for (auto& pair : m_unmixed) {
-      if (pair.second > m_stats.worstPacketSize) {
-        m_stats.worstPacketType = pair.first;
-        m_stats.worstPacketSize = pair.second;
+    for (auto& [packetType, packetSize] : m_unmixed) {
+      if (packetSize > m_stats.worstPacketSize) {
+        m_stats.worstPacketType = packetType;
+        m_stats.worstPacketSize = packetSize;
       }
 
-      m_stats.packetBytesPerSecond[pair.first] = round(pair.second / elapsedTime);
+      m_stats.packetBytesPerSecond[packetType] = round(packetSize / elapsedTime);
     }
     m_stats.bytesPerSecond = round(float(m_totalBytes) / elapsedTime);
     m_totalBytes = 0;

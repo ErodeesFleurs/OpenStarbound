@@ -131,9 +131,9 @@ StringList ServerWeather::weatherList() const {
 
 void ServerWeather::setWeather(String const& weatherName, bool force) {
   size_t index = NPos;
-  for (auto const& weatherAndIndex : enumerateIterator(m_weatherPool.items())) {
-    if (weatherAndIndex.first.second == weatherName) {
-      index = weatherAndIndex.second;
+  for (auto const& [weatherEntry, weatherIndex] : enumerateIterator(m_weatherPool.items())) {
+    if (weatherEntry.second == weatherName) {
+      index = weatherIndex;
       break;
     }
   }

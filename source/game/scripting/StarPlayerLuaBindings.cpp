@@ -690,9 +690,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player& player) {
     });
 
   callbacks.registerCallback("confirm", [&player](Json dialogConfig) {
-      auto pair = RpcPromise<Json>::createPair();
-      player.queueConfirmation(dialogConfig, pair.second);
-      return pair.first;
+      auto [promise, keeper] = RpcPromise<Json>::createPair();
+      player.queueConfirmation(dialogConfig, keeper);
+      return promise;
     });
 
   callbacks.registerCallback("playCinematic", [&player](Json const& cinematic, Maybe<bool> unique) {
@@ -709,8 +709,9 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player& player) {
     });
 
   callbacks.registerCallback("orbitBookmarks", [&player]() -> List<pair<Vec3I, Json>> {
-      return player.universeMap()->orbitBookmarks().transformed([](pair<Vec3I, OrbitBookmark> const& p) -> pair<Vec3I, Json> {
-        return {p.first, p.second.toJson()};
+      return player.universeMap()->orbitBookmarks().transformed([](pair<Vec3I, OrbitBookmark> const& bookmarkEntry) -> pair<Vec3I, Json> {
+        auto const& [systemPosition, bookmark] = bookmarkEntry;
+        return {systemPosition, bookmark.toJson()};
       });
     });
 
@@ -753,13 +754,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player& player) {
   callbacks.registerCallback("mappedObjects", [&player](Json const& coords) -> Json {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       JsonObject json;
-      for (auto p : player.universeMap()->mappedObjects(coordinate)) {
+      for (auto const& [objectUuid, mappedObject] : player.universeMap()->mappedObjects(coordinate)) {
         JsonObject object = {
-          {"typeName", p.second.typeName},
-          {"orbit", jsonFromMaybe<CelestialOrbit>(p.second.orbit, [](CelestialOrbit const& o) { return o.toJson(); })},
-          {"parameters", p.second.parameters}
+          {"typeName", mappedObject.typeName},
+          {"orbit", jsonFromMaybe<CelestialOrbit>(mappedObject.orbit, [](CelestialOrbit const& o) { return o.toJson(); })},
+          {"parameters", mappedObject.parameters}
         };
-        json.set(p.first.hex(), object);
+        json.set(objectUuid.hex(), object);
       }
       return json;
     });

@@ -119,13 +119,13 @@ SpawnTypeDatabase::SpawnTypeDatabase(AssetsConstPtr assets) {
     try {
       auto spawnTypes = assets->json(file);
 
-      for (auto const& entry : spawnTypes.iterateArray()) {
-        auto spawnType = spawnTypeFromJson(entry);
+      for (auto const& spawnTypeConfig : spawnTypes.iterateArray()) {
+        auto spawnType = spawnTypeFromJson(spawnTypeConfig);
 
         if (m_spawnTypes.contains(spawnType.typeName))
           throw SpawnTypeDatabaseException::format("Duplicate spawnType named '{}' in config file '{}'", spawnType.typeName, file);
 
-        if (!entry.contains("seedMix"))
+        if (!spawnTypeConfig.contains("seedMix"))
           spawnType.seedMix = ++seedMix;
 
         m_spawnTypes[spawnType.typeName] = spawnType;

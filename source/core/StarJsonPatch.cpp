@@ -21,9 +21,9 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
 size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) {
   if (searchable.isType(Json::Type::Array)) {
     auto array = searchable.toArray();
-    for (auto const& entryAndIndex : enumerateIterator(array)) {
-      if (jsonPartialMatch(entryAndIndex.first, value))
-        return entryAndIndex.second + 1;
+    for (auto const& [entry, index] : enumerateIterator(array)) {
+      if (jsonPartialMatch(entry, value))
+        return index + 1;
     }
   } else {
     throw JsonPatchException(strf("Search operation failure, value at '{}' is not an array.", pointer.path()), false);

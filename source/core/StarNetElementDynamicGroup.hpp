@@ -138,9 +138,9 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   m_changeDataLastVersion = 0;
 
   addChangeData(ElementReset());
-  for (auto& pair : m_idMap) {
-    pair.second->initNetVersion(m_netVersion);
-    addChangeData(ElementAddition(pair.first, {}));// we will write the data stream once we know the rules for the one receiving
+  for (auto& [elementId, element] : m_idMap) {
+    element->initNetVersion(m_netVersion);
+    addChangeData(ElementAddition(elementId, {}));// we will write the data stream once we know the rules for the one receiving
   }
 }
 
@@ -148,22 +148,22 @@ template <typename Element>
 void NetElementDynamicGroup<Element>::enableNetInterpolation(float extrapolationHint) {
   m_interpolationEnabled = true;
   m_extrapolationHint = extrapolationHint;
-  for (auto& p : m_idMap)
-    p.second->enableNetInterpolation(extrapolationHint);
+  for (auto& [elementId, element] : m_idMap)
+    element->enableNetInterpolation(extrapolationHint);
 }
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::disableNetInterpolation() {
   m_interpolationEnabled = false;
   m_extrapolationHint = 0.0f;
-  for (auto& p : m_idMap)
-    p.second->disableNetInterpolation();
+  for (auto& [elementId, element] : m_idMap)
+    element->disableNetInterpolation();
 }
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::tickNetInterpolation(float dt) {
-  for (auto& p : m_idMap)
-    p.second->tickNetInterpolation(dt);
+  for (auto& [elementId, element] : m_idMap)
+    element->tickNetInterpolation(dt);
 }
 
 template <typename Element>
@@ -173,9 +173,9 @@ void NetElementDynamicGroup<Element>::netStore(DataStream& ds, NetCompatibilityR
   ds.writeVlqU(m_idMap.size());
 
   m_buffer.setStreamCompatibilityVersion(rules);
-  for (auto& pair : m_idMap) {
-    ds.writeVlqU(pair.first);
-    pair.second->netStore(m_buffer, rules);
+  for (auto& [elementId, element] : m_idMap) {
+    ds.writeVlqU(elementId);
+    element->netStore(m_buffer, rules);
     ds.write(m_buffer.data());
     m_buffer.clear();
   }
@@ -224,9 +224,9 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       }
     };
 
-    for (auto const& p : m_changeData) {
-      if (p.first >= fromVersion) {
-        if (ElementAddition const* elementAddition = p.second.template ptr<ElementAddition>()) {
+    for (auto const& [version, change] : m_changeData) {
+      if (version >= fromVersion) {
+        if (ElementAddition const* elementAddition = change.template ptr<ElementAddition>()) {
           ElementId id = elementAddition->first;
           if (shared_ptr<Element> const* element = m_idMap.ptr(id)) {
             willWrite();
@@ -238,16 +238,16 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
         } else {
           willWrite();
           ds.writeVlqU(1);
-          ds.write(p.second);
+          ds.write(change);
         }
       }
     }
 
     m_buffer.setStreamCompatibilityVersion(rules);
-    for (auto& p : m_idMap) {
-      if (p.second->writeNetDelta(m_buffer, fromVersion, rules)) {
+    for (auto& [elementId, element] : m_idMap) {
+      if (element->writeNetDelta(m_buffer, fromVersion, rules)) {
         willWrite();
-        ds.writeVlqU(p.first + 1);
+        ds.writeVlqU(elementId + 1);
         ds.writeBytes(m_buffer.data());
         m_buffer.clear();
       }
@@ -298,9 +298,9 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
     }
 
     if (m_interpolationEnabled) {
-      for (auto& p : m_idMap) {
-        if (!m_receivedDeltaIds.contains(p.first))
-          p.second->blankNetDelta(interpolationTime);
+      for (auto& [elementId, element] : m_idMap) {
+        if (!m_receivedDeltaIds.contains(elementId))
+          element->blankNetDelta(interpolationTime);
       }
 
       m_receivedDeltaIds.clear();
@@ -311,8 +311,8 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
 template <typename Element>
 void NetElementDynamicGroup<Element>::blankNetDelta(float interpolationTime) {
   if (m_interpolationEnabled) {
-    for (auto& p : m_idMap)
-      p.second->blankNetDelta(interpolationTime);
+    for (auto& [elementId, element] : m_idMap)
+      element->blankNetDelta(interpolationTime);
   }
 }
 

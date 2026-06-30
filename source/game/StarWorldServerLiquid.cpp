@@ -41,9 +41,9 @@ void WorldServerLiquid::setLiquid(Vec2I const& pos, LiquidId liquid, float level
       level = 0;
 
     if (auto netUpdate = tile->liquid.update(liquid, level, pressure)) {
-      for (auto const& pair : m_worldServer.m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
-          pair.second->pendingLiquidUpdates.add(pos);
+      for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo) {
+        if (clientInfo->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
+          clientInfo->pendingLiquidUpdates.add(pos);
       }
     }
   }
@@ -78,9 +78,9 @@ ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions
         maybeDrainTiles.append(tile);
       }
 
-      for (auto const& pair : m_worldServer.m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
-          pair.second->pendingLiquidUpdates.add(pos);
+      for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo) {
+        if (clientInfo->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
+          clientInfo->pendingLiquidUpdates.add(pos);
       }
       m_liquidEngine->visitLocation(pos);
     }

@@ -115,11 +115,11 @@ template <typename MapType1, typename MapType2>
 bool mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
   bool noCommonKeys = true;
   for (auto i = sourceMap.begin(); i != sourceMap.end(); ++i) {
-    auto res = targetMap.insert(*i);
-    if (!res.second) {
+    auto [targetIt, inserted] = targetMap.insert(*i);
+    if (!inserted) {
       noCommonKeys = false;
       if (overwrite)
-        res.first->second = i->second;
+        targetIt->second = i->second;
     }
   }
   return noCommonKeys;
@@ -133,9 +133,9 @@ bool mapsEqual(MapType1 const& m1, MapType2 const& m2) {
   if (m1.size() != m2.size())
     return false;
 
-  for (auto const& m1pair : m1) {
-    auto m2it = m2.find(m1pair.first);
-    if (m2it == m2.end() || !(m2it->second == m1pair.second))
+  for (auto const& [key, value] : m1) {
+    auto m2it = m2.find(key);
+    if (m2it == m2.end() || !(m2it->second == value))
       return false;
   }
 

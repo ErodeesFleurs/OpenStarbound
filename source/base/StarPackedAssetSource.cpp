@@ -51,12 +51,11 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
       return getOrderingValue(a) < getOrderingValue(b);
     });
 
-  for (auto const& assetPathAndIndex : enumerateIterator(assetPaths)) {
-    String const& assetPath = assetPathAndIndex.first;
+  for (auto const& [assetPath, assetIndex] : enumerateIterator(assetPaths)) {
     ByteArray contents = directorySource.read(assetPath);
 
     if (progressCallback)
-      progressCallback(assetPathAndIndex.second, assetPaths.size(), directorySource.toFilesystem(assetPath), assetPath);
+      progressCallback(assetIndex, assetPaths.size(), directorySource.toFilesystem(assetPath), assetPath);
     index.add(assetPath, {ds.pos(), contents.size()});
     ds.writeBytes(contents);
   }

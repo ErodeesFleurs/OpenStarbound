@@ -44,9 +44,9 @@ LuaCallbacks LuaBindings::makeInputCallbacks(Input& input) {
   callbacks.registerCallback("events", [&input]() -> Json {
     JsonArray result;
 
-    for (auto& pair : input.inputEventsThisFrame()) {
-      if (auto jEvent = Input::inputEventToJson(pair.first))
-        result.emplace_back(jEvent.set("processed", pair.second));
+    for (auto& [inputEvent, processed] : input.inputEventsThisFrame()) {
+      if (auto jEvent = Input::inputEventToJson(inputEvent))
+        result.emplace_back(jEvent.set("processed", processed));
     }
 
     return result;

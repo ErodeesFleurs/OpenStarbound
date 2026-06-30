@@ -25,25 +25,25 @@ PlayerStorage::PlayerStorage(String const& storageDir, ConfigurationPtr configur
 
   if (m_configuration->get("clearPlayerFiles").toBool()) {
     Logger::info("Clearing all player files");
-    for (auto file : File::dirList(m_storageDirectory)) {
-      if (!file.second)
-        File::remove(File::relativeTo(m_storageDirectory, file.first));
+    for (auto const& [fileName, isDirectory] : File::dirList(m_storageDirectory)) {
+      if (!isDirectory)
+        File::remove(File::relativeTo(m_storageDirectory, fileName));
     }
   } else {
-    for (auto file : File::dirList(m_storageDirectory)) {
-      if (file.second)
+    for (auto const& [fileName, isDirectory] : File::dirList(m_storageDirectory)) {
+      if (isDirectory)
         continue;
 
-      String filename = File::relativeTo(m_storageDirectory, file.first);
+      String filename = File::relativeTo(m_storageDirectory, fileName);
       if (filename.endsWith(".player")) {
         try {
           auto json = VersionedJson::readFile(filename);
           Uuid uuid(json.content.getString("uuid"));
-          if (m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0))) {
+          if (m_playerFileNames.insert(uuid, fileName.rsplit('.', 1).at(0))) {
             auto& playerCacheData = m_savedPlayersCache[uuid];
             playerCacheData = m_entityFactory->loadVersionedJson(json, EntityType::Player);
           } else {
-            Logger::warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
+            Logger::warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", fileName, m_playerFileNames.getRight(uuid), uuid.hex());
           }
         } catch (std::exception const& e) {
           Logger::error("Error loading player file, ignoring! {} : {}", filename, outputException(e, false));
@@ -56,16 +56,17 @@ PlayerStorage::PlayerStorage(String const& storageDir, ConfigurationPtr configur
     auto it = makeSMutableMapIterator(m_savedPlayersCache);
     while (it.hasNext()) {
       auto& entry = it.next();
-      if (entry.second.isNull()) {
+      auto const& [playerUuid, playerData] = entry;
+      if (playerData.isNull()) {
         it.remove();
       } else {
         try {
-          auto player = as<Player>(m_entityFactory->diskLoadEntity(EntityType::Player, entry.second));
-          if (player->uuid() != entry.first)
-            throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
+          auto player = as<Player>(m_entityFactory->diskLoadEntity(EntityType::Player, playerData));
+          if (player->uuid() != playerUuid)
+            throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", playerUuid.hex()));
         } catch (StarException const& e) {
-          auto& fileName = uuidFileName(entry.first);
-          String uuidHex = entry.first.hex();
+          auto& fileName = uuidFileName(playerUuid);
+          String uuidHex = playerUuid.hex();
           if (uuidHex == fileName)
             Logger::error("Failed to validate player with uuid {} : {}", uuidHex, outputException(e, true));
           else
@@ -116,15 +117,15 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
   RecursiveMutexLocker locker(m_mutex);
 
   size_t longest = std::numeric_limits<size_t>::max();
-  for (auto& cache : m_savedPlayersCache) {
-    if (except && *except == cache.first)
+  for (auto const& [playerUuid, playerData] : m_savedPlayersCache) {
+    if (except && *except == playerUuid)
       continue;
-    else if (auto playerName = cache.second.optQueryString("identity.name")) {
+    else if (auto playerName = playerData.optQueryString("identity.name")) {
       auto cleanName = Text::stripEscapeCodes(*playerName).toLower();
       auto len = cleanName.size();
       if (len < longest && cleanName.utf8().rfind(cleanMatch.utf8()) == 0) {
         longest = len;
-        uuid = cache.first;
+        uuid = playerUuid;
       }
     }
   }
@@ -138,13 +139,13 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
 
   RecursiveMutexLocker locker(m_mutex);
 
-  for (auto& cache : m_savedPlayersCache) {
-    if (except && *except == cache.first)
+  for (auto const& [playerUuid, playerData] : m_savedPlayersCache) {
+    if (except && *except == playerUuid)
       continue;
-    else if (auto playerName = cache.second.optQueryString("identity.name")) {
+    else if (auto playerName = playerData.optQueryString("identity.name")) {
       auto cleanName = Text::stripEscapeCodes(*playerName).toLower();
       if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != NPos) {
-        list.append(cache.first);
+        list.append(playerUuid);
       }
     }
   }
@@ -305,8 +306,8 @@ String const& PlayerStorage::uuidFileName(Uuid const& uuid) {
 
 void PlayerStorage::writeMetadata() {
   JsonArray order;
-  for (auto const& p : m_savedPlayersCache)
-    order.append(p.first.hex());
+  for (auto const& [uuid, _] : m_savedPlayersCache)
+    order.append(uuid.hex());
 
   m_metadata["order"] = std::move(order);
 

@@ -8,32 +8,32 @@
 namespace Star {
 
 PhysicsObject::PhysicsObject(ObjectConfigConstPtr config, Json const& parameters) : Object(std::move(config), parameters) {
-  for (auto const& p : configValue("physicsForces", JsonObject()).iterateObject()) {
-    auto& forceConfig = m_physicsForces[p.first];
+  for (auto const& [forceName, forceJson] : configValue("physicsForces", JsonObject()).iterateObject()) {
+    auto& forceConfig = m_physicsForces[forceName];
 
-    forceConfig.forceRegion = jsonToPhysicsForceRegion(p.second);
-    forceConfig.enabled.set(p.second.getBool("enabled", true));
+    forceConfig.forceRegion = jsonToPhysicsForceRegion(forceJson);
+    forceConfig.enabled.set(forceJson.getBool("enabled", true));
   }
 
-  for (auto const& p : configValue("physicsCollisions", JsonObject()).iterateObject()) {
-    auto& collisionConfig = m_physicsCollisions[p.first];
-    collisionConfig.movingCollision = PhysicsMovingCollision::fromJson(p.second);
+  for (auto const& [collisionName, collisionJson] : configValue("physicsCollisions", JsonObject()).iterateObject()) {
+    auto& collisionConfig = m_physicsCollisions[collisionName];
+    collisionConfig.movingCollision = PhysicsMovingCollision::fromJson(collisionJson);
     collisionConfig.xPosition.set(take(collisionConfig.movingCollision.position[0]));
     collisionConfig.yPosition.set(take(collisionConfig.movingCollision.position[1]));
-    collisionConfig.enabled.set(p.second.getBool("enabled", true));
+    collisionConfig.enabled.set(collisionJson.getBool("enabled", true));
   }
 
   m_physicsForces.sortByKey();
-  for (auto& p : m_physicsForces)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [forceName, forceConfig] : m_physicsForces)
+    m_netGroup.addNetElement(&forceConfig.enabled);
 
   m_physicsCollisions.sortByKey();
-  for (auto& p : m_physicsCollisions) {
-    m_netGroup.addNetElement(&p.second.xPosition);
-    m_netGroup.addNetElement(&p.second.yPosition);
-    p.second.xPosition.setInterpolator(lerp<float, float>);
-    p.second.yPosition.setInterpolator(lerp<float, float>);
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [collisionName, collisionConfig] : m_physicsCollisions) {
+    m_netGroup.addNetElement(&collisionConfig.xPosition);
+    m_netGroup.addNetElement(&collisionConfig.yPosition);
+    collisionConfig.xPosition.setInterpolator(lerp<float, float>);
+    collisionConfig.yPosition.setInterpolator(lerp<float, float>);
+    m_netGroup.addNetElement(&collisionConfig.enabled);
   }
 }
 
@@ -64,8 +64,8 @@ void PhysicsObject::init(World* world, EntityId entityId, EntityMode mode) {
   }
   Object::init(world, entityId, mode);
   m_metaBoundBox = Object::metaBoundBox();
-  for (auto const& p : m_physicsForces) {
-    PhysicsForceRegion forceRegion = p.second.forceRegion;
+  for (auto const& [_, forceRegionConfig] : m_physicsForces) {
+    PhysicsForceRegion forceRegion = forceRegionConfig.forceRegion;
     forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
     m_metaBoundBox.combine(forceRegion.call([](auto& fr) { return fr.boundBox(); }));
   }
@@ -88,9 +88,9 @@ RectF PhysicsObject::metaBoundBox() const {
 
 List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
   List<PhysicsForceRegion> forces;
-  for (auto const& p : m_physicsForces) {
-    if (p.second.enabled.get()) {
-      PhysicsForceRegion forceRegion = p.second.forceRegion;
+  for (auto const& [_, forceRegionConfig] : m_physicsForces) {
+    if (forceRegionConfig.enabled.get()) {
+      PhysicsForceRegion forceRegion = forceRegionConfig.forceRegion;
       forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
       forces.append(std::move(forceRegion));
     }

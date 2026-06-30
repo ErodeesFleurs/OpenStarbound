@@ -132,8 +132,8 @@ auto TtlCacheBase<LruCacheType>::keys() const -> List<Key> {
 template <typename LruCacheType>
 auto TtlCacheBase<LruCacheType>::values() const -> List<Value> {
   List<Value> values;
-  for (auto& p : m_cache.values())
-    values.append(std::move(p.second));
+  for (auto& [expirationTime, value] : m_cache.values())
+    values.append(std::move(value));
   return values;
 }
 

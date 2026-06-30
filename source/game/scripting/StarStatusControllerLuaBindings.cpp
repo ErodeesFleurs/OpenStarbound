@@ -234,22 +234,25 @@ void LuaBindings::StatusControllerCallbacks::clearEphemeralEffects(StatusControl
 
 LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::damageTakenSince(
     StatusController& statController, Maybe<uint64_t> timestep) {
-  auto pair = statController.damageTakenSince(timestep.value());
-  return luaTupleReturn(pair.first.transformed(mem_fn(&DamageNotification::toJson)), pair.second);
+  auto [damageNotifications, nextTimestep] = statController.damageTakenSince(timestep.value());
+  return luaTupleReturn(damageNotifications.transformed(mem_fn(&DamageNotification::toJson)), nextTimestep);
 }
 
 LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::inflictedHitsSince(
     StatusController& statController, Maybe<uint64_t> timestep) {
-  auto pair = statController.inflictedHitsSince(timestep.value());
+  auto [hitNotifications, nextTimestep] = statController.inflictedHitsSince(timestep.value());
   return luaTupleReturn(
-      pair.first.transformed([](auto const& p) { return p.second.toJson().set("targetEntityId", p.first); }),
-      pair.second);
+      hitNotifications.transformed([](auto const& hitNotification) {
+        auto const& [targetEntityId, hit] = hitNotification;
+        return hit.toJson().set("targetEntityId", targetEntityId);
+      }),
+      nextTimestep);
 }
 
 LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::inflictedDamageSince(
     StatusController& statController, Maybe<uint64_t> timestep) {
-  auto pair = statController.inflictedDamageSince(timestep.value());
-  return luaTupleReturn(pair.first.transformed(mem_fn(&DamageNotification::toJson)), pair.second);
+  auto [damageNotifications, nextTimestep] = statController.inflictedDamageSince(timestep.value());
+  return luaTupleReturn(damageNotifications.transformed(mem_fn(&DamageNotification::toJson)), nextTimestep);
 }
 
 List<JsonArray> LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffectSummary(

@@ -12,7 +12,10 @@ FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
 
 void FontTextureGroup::cleanup(int64_t timeout) {
   int64_t currentTime = Time::monotonicMilliseconds();
-  eraseWhere(m_glyphs, [&](auto const& p) { return currentTime - p.second.time > timeout; });
+  eraseWhere(m_glyphs, [&](auto const& glyphEntry) {
+      auto const& [glyphKey, glyphTexture] = glyphEntry;
+      return currentTime - glyphTexture.time > timeout;
+    });
 }
 
 void FontTextureGroup::switchFont(String const& font) {

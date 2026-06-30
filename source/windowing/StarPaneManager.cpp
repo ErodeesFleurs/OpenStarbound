@@ -22,7 +22,8 @@ PaneManager::PaneManager(GuiContext& context)
 }
 
 void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissCallback onDismiss) {
-  if (!m_displayedPanes[paneLayer].insertFront(pane, std::move(onDismiss)).second)
+  auto [paneIt, inserted] = m_displayedPanes[paneLayer].insertFront(pane, std::move(onDismiss));
+  if (!inserted)
     throw GuiException("Pane displayed twice in PaneManager::displayPane");
 
   if (!pane->hasDisplayed() && pane->anchor() == PaneAnchor::None)
@@ -32,8 +33,8 @@ void PaneManager::displayPane(PaneLayer paneLayer, PanePtr const& pane, DismissC
 }
 
 bool PaneManager::isDisplayed(PanePtr const& pane) const {
-  for (auto const& layerPair : m_displayedPanes) {
-    if (layerPair.second.contains(pane))
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    if (panes.contains(pane))
       return true;
   }
 
@@ -47,38 +48,38 @@ void PaneManager::dismissPane(PanePtr const& pane) {
 
 void PaneManager::dismissAllPanes(Set<PaneLayer> const& paneLayers) {
   for (auto const& paneLayer : paneLayers) {
-    for (auto const& panePair : copy(m_displayedPanes[paneLayer]))
-      dismiss(panePair.first);
+    for (auto const& pane : copy(m_displayedPanes[paneLayer]).keys())
+      dismiss(pane);
   }
 }
 
 void PaneManager::dismissAllPanes() {
-  for (auto layerPair : copy(m_displayedPanes)) {
-    for (auto const& panePair : layerPair.second)
-      dismiss(panePair.first);
+  for (auto const& panes : copy(m_displayedPanes).values()) {
+    for (auto const& pane : panes.keys())
+      dismiss(pane);
   }
 }
 
 PanePtr PaneManager::topPane(Set<PaneLayer> const& paneLayers) const {
-  for (auto const& layerPair : m_displayedPanes) {
-    if (paneLayers.contains(layerPair.first) && !layerPair.second.empty())
-      return layerPair.second.firstKey();
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    if (paneLayers.contains(paneLayer) && !panes.empty())
+      return panes.firstKey();
   }
   return {};
 }
 
 PanePtr PaneManager::topPane() const {
-  for (auto const& layerPair : m_displayedPanes) {
-    if (!layerPair.second.empty())
-      return layerPair.second.firstKey();
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    if (!panes.empty())
+      return panes.firstKey();
   }
   return {};
 }
 
 void PaneManager::bringToTop(PanePtr const& pane) {
-  for (auto& layerPair : m_displayedPanes) {
-    if (layerPair.second.contains(pane)) {
-      layerPair.second.toFront(pane);
+  for (auto& [paneLayer, panes] : m_displayedPanes) {
+    if (panes.contains(pane)) {
+      panes.toFront(pane);
       return;
     }
   }
@@ -105,13 +106,13 @@ void PaneManager::bringPaneAdjacent(PanePtr const& anchor, PanePtr const& adjace
 }
 
 PanePtr PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& position) const {
-  for (auto const& layerPair : m_displayedPanes) {
-    if (!paneLayers.contains(layerPair.first))
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    if (!paneLayers.contains(paneLayer))
       continue;
 
-    for (auto const& panePair : layerPair.second) {
-      if (panePair.first->inWindow(position) && panePair.first->active())
-        return panePair.first;
+    for (auto const& pane : panes.keys()) {
+      if (pane->inWindow(position) && pane->active())
+        return pane;
     }
   }
 
@@ -119,12 +120,12 @@ PanePtr PaneManager::getPaneAt(Set<PaneLayer> const& paneLayers, Vec2I const& po
 }
 
 PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
-  for (auto const& layerPair : m_displayedPanes) {
-    for (auto const& panePair : layerPair.second) {
-      if (panePair.first != m_activeTooltip
-        && panePair.first->inWindow(position)
-        && panePair.first->active())
-        return panePair.first;
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : panes.keys()) {
+      if (pane != m_activeTooltip
+        && pane->inWindow(position)
+        && pane->active())
+        return pane;
     }
   }
 
@@ -133,10 +134,10 @@ PanePtr PaneManager::getPaneAt(Vec2I const& position) const {
 
 List<PanePtr> PaneManager::getAllPanes() {
   List<PanePtr> list;
-  for (auto const& layerPair : m_displayedPanes) {
-    for (auto const& panePair : layerPair.second) {
-      if (panePair.first != m_activeTooltip && panePair.first->active())
-        list.append(panePair.first);
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : panes.keys()) {
+      if (pane != m_activeTooltip && pane->active())
+        list.append(pane);
     }
   }
   return list;
@@ -150,12 +151,13 @@ void PaneManager::dismissWhere(function<bool(PanePtr const&)> func) {
   if (!func)
     return;
 
-  for (auto& layerPair : m_displayedPanes) {
-    eraseWhere(layerPair.second, [&](auto& panePair) {
-      if (func(panePair.first)) {
-        panePair.first->dismissed();
-        if (panePair.second)
-          panePair.second(panePair.first);
+  for (auto& [paneLayer, displayedPanes] : m_displayedPanes) {
+    eraseWhere(displayedPanes, [&](auto& paneAndCallback) {
+      auto& [pane, onDismiss] = paneAndCallback;
+      if (func(pane)) {
+        pane->dismissed();
+        if (onDismiss)
+          onDismiss(pane);
         return true;
       }
       return false;
@@ -164,10 +166,10 @@ void PaneManager::dismissWhere(function<bool(PanePtr const&)> func) {
 }
 
 PanePtr PaneManager::keyboardCapturedPane() const {
-  for (auto const& layerPair : m_displayedPanes) {
-    for (auto const& panePair : layerPair.second) {
-      if (panePair.first->keyboardCapturer())
-        return panePair.first;
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : panes.keys()) {
+      if (pane->keyboardCapturer())
+        return pane;
     }
   }
 
@@ -175,9 +177,9 @@ PanePtr PaneManager::keyboardCapturedPane() const {
 }
 
 WidgetPtr PaneManager::keyboardCapturedWidget() const {
-  for (auto const& layerPair : m_displayedPanes) {
-    for (auto const& panePair : layerPair.second) {
-      if (auto capturer = panePair.first->keyboardCapturer())
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : panes.keys()) {
+      if (auto capturer = pane->keyboardCapturer())
         return capturer;
     }
   }
@@ -195,10 +197,10 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   if (event.is<MouseMoveEvent>()) {
     m_tooltipLastMousePos = *m_context.mousePosition(event);
 
-    for (auto const& layerPair : m_displayedPanes) {
-      for (auto const& panePair : layerPair.second) {
-        if (panePair.first->dragActive()) {
-          panePair.first->drag(*m_context.mousePosition(event));
+    for (auto const& [paneLayer, panes] : m_displayedPanes) {
+      for (auto const& pane : panes.keys()) {
+        if (pane->dragActive()) {
+          pane->drag(*m_context.mousePosition(event));
           return true;
         }
       }
@@ -216,10 +218,10 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   }
 
   if (event.is<MouseButtonUpEvent>()) {
-    for (auto const& layerPair : m_displayedPanes) {
-      for (auto const& panePair : layerPair.second) {
-        if (panePair.first->dragActive()) {
-          panePair.first->setDragActive(false, {});
+    for (auto const& [paneLayer, panes] : m_displayedPanes) {
+      for (auto const& pane : panes.keys()) {
+        if (pane->dragActive()) {
+          pane->setDragActive(false, {});
           return true;
         }
       }
@@ -244,17 +246,17 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
     return keyCapturePane->sendEvent(event);
 
   bool foundModal = false;
-  for (auto& layerPair : m_displayedPanes) {
-    for (auto const& panePair : copy(layerPair.second)) {
-      if (panePair.first->sendEvent(event)) {
+  for (auto& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : copy(panes).keys()) {
+      if (pane->sendEvent(event)) {
         if (event.is<MouseButtonDownEvent>())
-          layerPair.second.toFront(panePair.first);
+          panes.toFront(pane);
         return true;
       }
       // If any modal windows are shown, Only the first modal window should
       // have a chance to consume the input event and all other panes below it
       // including different layers should ignore it.
-      if (layerPair.first == PaneLayer::ModalWindow) {
+      if (paneLayer == PaneLayer::ModalWindow) {
         foundModal = true;
         break;
       }
@@ -273,15 +275,15 @@ void PaneManager::render() {
     m_backgroundWidget->render(RectI(Vec2I(), windowSize()));
   }
 
-  for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
-    for (auto const& panePair : reverseIterate(layerPair.second)) {
-      if (panePair.first->active()) {
+  for (auto const& [paneLayer, panes] : reverseIterate(m_displayedPanes)) {
+    for (auto const& [pane, onDismiss] : reverseIterate(panes)) {
+      if (pane->active()) {
         if (m_prevInterfaceScale != m_context.interfaceScale())
-          panePair.first->setPosition(
-              calculateNewInterfacePosition(panePair.first, static_cast<float>(m_context.interfaceScale()) / m_prevInterfaceScale));
+          pane->setPosition(
+              calculateNewInterfacePosition(pane, static_cast<float>(m_context.interfaceScale()) / m_prevInterfaceScale));
 
-        panePair.first->setDrawingOffset(calculatePaneOffset(panePair.first));
-        panePair.first->render(RectI(Vec2I(), windowSize()));
+        pane->setDrawingOffset(calculatePaneOffset(pane));
+        pane->render(RectI(Vec2I(), windowSize()));
       }
     }
   }
@@ -333,18 +335,18 @@ void PaneManager::update(float dt) {
     m_activeTooltip->setPosition(m_tooltipLastMousePos + (offsetAdjust + m_tooltipMouseOffset.piecewiseMultiply(offsetDirection)));
   }
 
-  for (auto const& layerPair : m_displayedPanes) {
-    for (auto const& panePair : copy(layerPair.second)) {
-      if (panePair.first->isDismissed())
-        dismiss(panePair.first);
+  for (auto const& [paneLayer, panes] : m_displayedPanes) {
+    for (auto const& pane : copy(panes).keys()) {
+      if (pane->isDismissed())
+        dismiss(pane);
     }
   }
 
-  for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
-    for (auto const& panePair : reverseIterate(layerPair.second)) {
-      panePair.first->tick(dt);
-      if (panePair.first->active())
-        panePair.first->update(dt);
+  for (auto const& [paneLayer, panes] : reverseIterate(m_displayedPanes)) {
+    for (auto const& [pane, onDismiss] : reverseIterate(panes)) {
+      pane->tick(dt);
+      if (pane->active())
+        pane->update(dt);
     }
   }
 }
@@ -424,8 +426,8 @@ Vec2I PaneManager::calculateNewInterfacePosition(PanePtr const& pane, float inte
 
 bool PaneManager::dismiss(PanePtr const& pane) {
   bool dismissed = false;
-  for (auto& layerPair : m_displayedPanes) {
-    if (auto panePair = layerPair.second.maybeTake(pane)) {
+  for (auto& [paneLayer, displayedPanes] : m_displayedPanes) {
+    if (auto panePair = displayedPanes.maybeTake(pane)) {
       dismissed = true;
       panePair->first->dismissed();
       if (panePair->second)

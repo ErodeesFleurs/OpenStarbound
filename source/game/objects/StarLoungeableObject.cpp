@@ -32,10 +32,10 @@ InteractAction LoungeableObject::interact(InteractRequest const& request) {
     float bestDistance = 0.0f;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
-    for (auto const& positionAndIndex : enumerateIterator(m_sitPositions)) {
-      float distance = vmag(positionAndIndex.first + interactOffset);
+    for (auto const& [sitPosition, sitPositionIndex] : enumerateIterator(m_sitPositions)) {
+      float distance = vmag(sitPosition + interactOffset);
       if (!index || distance < bestDistance) {
-        index = positionAndIndex.second;
+        index = sitPositionIndex;
         bestDistance = distance;
       }
     }

@@ -41,12 +41,12 @@ StringMap<QuestPtr> readQuests(AssetsConstPtr assets, Json const& json, ItemData
   };
 
   StringMap<QuestPtr> result;
-  for (auto const& questPair : json.iterateObject()) {
+  for (auto const& [questId, questStore] : json.iterateObject()) {
     // don't load the quest unless all quests in the arc exist
-    Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
+    Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questStore), "Quest");
     auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"), versioningDatabase);
     if (validateArc(questArc))
-      result[questPair.first] = make_shared<Quest>(assets, questPair.second, itemDatabase, objectDatabase, questTemplateDatabase, versioningDatabase);
+      result[questId] = make_shared<Quest>(assets, questStore, itemDatabase, objectDatabase, questTemplateDatabase, versioningDatabase);
   }
   return result;
 }
@@ -159,11 +159,10 @@ StringMap<QuestPtr> QuestManager::quests() const {
 
 StringMap<QuestPtr> QuestManager::serverQuests() const {
   StringMap<QuestPtr> filtered;
-  for (auto& pair : m_quests) {
-    QuestPtr q = pair.second;
-    if (!questValidOnServer(q))
+  for (auto const& [questId, quest] : m_quests) {
+    if (!questValidOnServer(quest))
       continue;
-    filtered.insert(pair.first, q);
+    filtered.insert(questId, quest);
   }
   return filtered;
 }
@@ -228,33 +227,33 @@ bool QuestManager::canTurnIn(String const& questId) const {
 }
 
 Maybe<QuestPtr> QuestManager::getFirstNewQuest() {
-  for (auto& q : m_quests) {
-    if (questValidOnServer(q.second) && q.second->state() == QuestState::Offer)
-      return q.second;
+  for (auto const& [questId, quest] : m_quests) {
+    if (questValidOnServer(quest) && quest->state() == QuestState::Offer)
+      return quest;
   }
   return {};
 }
 
 Maybe<QuestPtr> QuestManager::getFirstCompletableQuest() {
-  for (auto& q : m_quests) {
-    if (questValidOnServer(q.second) && q.second->state() == QuestState::Complete && q.second->showDialog())
-      return q.second;
+  for (auto const& [questId, quest] : m_quests) {
+    if (questValidOnServer(quest) && quest->state() == QuestState::Complete && quest->showDialog())
+      return quest;
   }
   return {};
 }
 
 Maybe<QuestPtr> QuestManager::getFirstFailableQuest() {
-  for (auto& q : m_quests) {
-    if (questValidOnServer(q.second) && q.second->state() == QuestState::Failed && q.second->showDialog())
-      return q.second;
+  for (auto const& [questId, quest] : m_quests) {
+    if (questValidOnServer(quest) && quest->state() == QuestState::Failed && quest->showDialog())
+      return quest;
   }
   return {};
 }
 
 Maybe<QuestPtr> QuestManager::getFirstMainQuest() {
-  for (auto& q : m_quests) {
-    if (questValidOnServer(q.second) && q.second->state() == QuestState::Active && q.second->mainQuest())
-      return q.second;
+  for (auto const& [questId, quest] : m_quests) {
+    if (questValidOnServer(quest) && quest->state() == QuestState::Active && quest->mainQuest())
+      return quest;
   }
   return {};
 }
@@ -363,9 +362,9 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
     return QuestIndicator{indicatorImage, indicatorPos};
   }
 
-  for (auto& pair : m_quests) {
-    if (pair.second->state() == QuestState::Active) {
-      if (auto indicatorImage = pair.second->customIndicator(entity)) {
+  for (auto const& [questId, quest] : m_quests) {
+    if (quest->state() == QuestState::Active) {
+      if (auto indicatorImage = quest->customIndicator(entity)) {
         if (questGiver)
           indicatorPos = questGiver->questIndicatorPosition();
         return QuestIndicator{*indicatorImage, indicatorPos};
@@ -423,13 +422,12 @@ void QuestManager::update(float dt) {
   }
 
   List<String> expiredQuests;
-  for (auto& entry : m_quests) {
-    auto quest = entry.second;
+  for (auto const& [questId, quest] : m_quests) {
     QuestState state = quest->state();
     bool finished = state == QuestState::Complete || state == QuestState::Failed;
     if (state == QuestState::New || (finished && quest->ephemeral() && !quest->showDialog())) {
       quest->uninit();
-      expiredQuests.append(entry.first);
+      expiredQuests.append(questId);
     }
   }
 

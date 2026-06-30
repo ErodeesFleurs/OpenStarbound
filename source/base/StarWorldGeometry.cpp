@@ -254,8 +254,8 @@ RectF WorldGeometry::rectOverlap(RectF const& rect1, RectF const& rect2) const {
 
 bool WorldGeometry::polyContains(PolyF const& poly, Vec2F const& pos) const {
   auto wpos = xwrap(pos);
-  for (auto const& p : splitPoly(poly)) {
-    if (p.contains(wpos))
+  for (auto const& splitPolygon : splitPoly(poly)) {
+    if (splitPolygon.contains(wpos))
       return true;
   }
   return false;
@@ -307,8 +307,8 @@ bool WorldGeometry::polyIntersectsPoly(PolyF const& polyA, PolyF const& polyB) c
 bool WorldGeometry::rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const {
   if (rect.contains(center))
     return true;
-  for (auto const& e : rect.edges()) {
-    if (lineIntersectsCircle(e, center, radius))
+  for (auto const& edge : rect.edges()) {
+    if (lineIntersectsCircle(edge, center, radius))
       return true;
   }
   return false;

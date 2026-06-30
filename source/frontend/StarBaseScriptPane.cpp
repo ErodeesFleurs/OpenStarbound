@@ -70,13 +70,13 @@ void BaseScriptPane::dismissed() {
 void BaseScriptPane::tick(float dt) {
   Pane::tick(dt);
 
-  for (auto p : m_canvasClickCallbacks) {
-    for (auto const& clickEvent : p.first->pullClickEvents())
-      m_script.invoke(p.second, jsonFromVec2I(clickEvent.position), static_cast<uint8_t>(clickEvent.button), clickEvent.buttonDown);
+  for (auto const& [canvas, callback] : m_canvasClickCallbacks) {
+    for (auto const& clickEvent : canvas->pullClickEvents())
+      m_script.invoke(callback, jsonFromVec2I(clickEvent.position), static_cast<uint8_t>(clickEvent.button), clickEvent.buttonDown);
   }
-  for (auto p : m_canvasKeyCallbacks) {
-    for (auto const& keyEvent : p.first->pullKeyEvents())
-      m_script.invoke(p.second, static_cast<int>(keyEvent.key), keyEvent.keyDown, KeyNames.getRight(keyEvent.key));
+  for (auto const& [canvas, callback] : m_canvasKeyCallbacks) {
+    for (auto const& keyEvent : canvas->pullKeyEvents())
+      m_script.invoke(callback, static_cast<int>(keyEvent.key), keyEvent.keyDown, KeyNames.getRight(keyEvent.key));
   }
 
   m_script.update(m_script.updateDt(dt));
@@ -154,10 +154,10 @@ GuiReaderPtr BaseScriptPane::reader() {
 void BaseScriptPane::construct(Json config) {
   m_reader->construct(config, this);
 
-  for (auto pair : m_config.getObject("canvasClickCallbacks", {}))
-    m_canvasClickCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
-  for (auto pair : m_config.getObject("canvasKeyCallbacks", {}))
-    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(pair.first), pair.second.toString());
+  for (auto const& [canvasName, callback] : m_config.getObject("canvasClickCallbacks", {}))
+    m_canvasClickCallbacks.set(findChild<CanvasWidget>(canvasName), callback.toString());
+  for (auto const& [canvasName, callback] : m_config.getObject("canvasKeyCallbacks", {}))
+    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(canvasName), callback.toString());
 
   m_script.setScripts(jsonToStringList(m_config.get("scripts", JsonArray())));
   m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));

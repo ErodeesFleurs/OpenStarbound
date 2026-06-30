@@ -103,11 +103,14 @@ void PlayerNarrativeQueue::queueRadioMessage(RadioMessage message) {
 }
 
 void PlayerNarrativeQueue::tickDelayedRadio(float dt) {
-  for (auto& pair : m_delayedRadioMessages) {
-    if (pair.first.tick(dt))
-      queueRadioMessage(pair.second);
+  for (auto& [timer, radioMessage] : m_delayedRadioMessages) {
+    if (timer.tick(dt))
+      queueRadioMessage(radioMessage);
   }
-  m_delayedRadioMessages.filter([](pair<GameTimer, RadioMessage>& pair) { return !pair.first.ready(); });
+  m_delayedRadioMessages.filter([](pair<GameTimer, RadioMessage>& delayedMessage) {
+      auto& [timer, radioMessage] = delayedMessage;
+      return !timer.ready();
+    });
 }
 
 Maybe<Json> PlayerNarrativeQueue::pullPendingCinematic() {

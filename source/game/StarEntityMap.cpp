@@ -126,8 +126,8 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
   // Even if there is no sort order, we still copy pointers to a temporary
   // list, so that it is safe to call addEntity from the callback.
   m_entrySortBuffer.clear();
-  for (auto const& entry : m_spatialMap.entries())
-    m_entrySortBuffer.append(&entry.second);
+  for (auto const& spatialEntry : m_spatialMap.entries())
+    m_entrySortBuffer.append(&spatialEntry.second);
 
   if (sortOrder) {
     m_entrySortBuffer.sort([&sortOrder](auto a, auto b) {
@@ -211,8 +211,8 @@ void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(Ent
   // from the callback.
   m_forAllBuffer.clear();
   m_forAllBuffer.reserve(m_spatialMap.size());
-  for (auto const& entry : m_spatialMap.entries())
-    m_forAllBuffer.append(&entry.second.value);
+  for (auto const& spatialEntry : m_spatialMap.entries())
+    m_forAllBuffer.append(&spatialEntry.second.value);
 
   if (sortOrder) {
     m_forAllBuffer.sort([&sortOrder](EntityPtr const* a, EntityPtr const* b) {

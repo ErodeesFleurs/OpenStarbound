@@ -204,11 +204,11 @@ OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
 void OpenGlRenderer::loadConfig(Json const& config) {
   m_frameBuffers.clear();
 
-  for (auto& pair : config.getObject("frameBuffers", {})) {
-    Json fbConfig = pair.second;
+  for (auto& [frameBufferName, frameBufferConfig] : config.getObject("frameBuffers", {})) {
+    Json fbConfig = frameBufferConfig;
     fbConfig = fbConfig.set("multisample", m_multiSampling);
-    Logger::info("Creating framebuffer {}", pair.first);
-    m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(fbConfig);
+    Logger::info("Creating framebuffer {}", frameBufferName);
+    m_frameBuffers[frameBufferName] = make_ref<GlFrameBuffer>(fbConfig);
 
   }
   setScreenSize(m_screenSize);
@@ -285,14 +285,14 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   m_currentEffect = &effect;
   setupGlUniforms(effect, m_screenSize);
 
-  for (auto const& p : effectConfig.getObject("effectParameters", {})) {
+  for (auto const& [parameterName, parameterConfig] : effectConfig.getObject("effectParameters", {})) {
     EffectParameter effectParameter;
 
-    effectParameter.parameterUniform = glGetUniformLocation(m_program, p.second.getString("uniform").utf8Ptr());
+    effectParameter.parameterUniform = glGetUniformLocation(m_program, parameterConfig.getString("uniform").utf8Ptr());
     if (effectParameter.parameterUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", p.first, name);
+      Logger::warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", parameterName, name);
     } else {
-      String type = p.second.getString("type");
+      String type = parameterConfig.getString("type");
       if (type == "bool") {
         effectParameter.parameterType = RenderEffectParameter::typeIndexOf<bool>();
       } else if (type == "int") {
@@ -309,8 +309,8 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
         throw RendererException::format("Unrecognized effect parameter type '{}'", type);
       }
 
-      if (p.second.getBool("scriptable",false)) {
-        if (Json def = p.second.get("default", {})) {
+      if (parameterConfig.getBool("scriptable",false)) {
+        if (Json def = parameterConfig.get("default", {})) {
           if (type == "bool") {
             effectParameter.parameterValue = static_cast<RenderEffectParameter>(def.toBool());
           } else if (type == "int") {
@@ -325,22 +325,22 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
             effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec4F(def));
           }
         }
-        effect.scriptables[p.first] = effectParameter;
+        effect.scriptables[parameterName] = effectParameter;
       } else {
-        effect.parameters[p.first] = effectParameter;
-        if (Json def = p.second.get("default", {})) {
+        effect.parameters[parameterName] = effectParameter;
+        if (Json def = parameterConfig.get("default", {})) {
           if (type == "bool") {
-            setEffectParameter(p.first, def.toBool());
+            setEffectParameter(parameterName, def.toBool());
           } else if (type == "int") {
-            setEffectParameter(p.first, static_cast<int>(def.toInt()));
+            setEffectParameter(parameterName, static_cast<int>(def.toInt()));
           } else if (type == "float") {
-            setEffectParameter(p.first, def.toFloat());
+            setEffectParameter(parameterName, def.toFloat());
           } else if (type == "vec2") {
-            setEffectParameter(p.first, jsonToVec2F(def));
+            setEffectParameter(parameterName, jsonToVec2F(def));
           } else if (type == "vec3") {
-            setEffectParameter(p.first, jsonToVec3F(def));
+            setEffectParameter(parameterName, jsonToVec3F(def));
           } else if (type == "vec4") {
-            setEffectParameter(p.first, jsonToVec4F(def));
+            setEffectParameter(parameterName, jsonToVec4F(def));
           }
         }
       }
@@ -352,24 +352,24 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   // maximum texture units are not checked.
   unsigned parameterTextureUnit = effect.includeVBTextures ? MultiTextureCount : 0;
 
-  for (auto const& p : effectConfig.getObject("effectTextures", {})) {
+  for (auto const& [textureName, textureConfig] : effectConfig.getObject("effectTextures", {})) {
     EffectTexture effectTexture;
-    effectTexture.textureUniform = glGetUniformLocation(m_program, p.second.getString("textureUniform").utf8Ptr());
+    effectTexture.textureUniform = glGetUniformLocation(m_program, textureConfig.getString("textureUniform").utf8Ptr());
     if (effectTexture.textureUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
+      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", textureName);
     } else {
         effectTexture.textureUnit = parameterTextureUnit++;
         glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
 
-        effectTexture.textureAddressing = TextureAddressingNames.getLeft(p.second.getString("textureAddressing", "clamp"));
-        effectTexture.textureFiltering = TextureFilteringNames.getLeft(p.second.getString("textureFiltering", "nearest"));
-        if (auto tsu = p.second.optString("textureSizeUniform")) {
+        effectTexture.textureAddressing = TextureAddressingNames.getLeft(textureConfig.getString("textureAddressing", "clamp"));
+        effectTexture.textureFiltering = TextureFilteringNames.getLeft(textureConfig.getString("textureFiltering", "nearest"));
+        if (auto tsu = textureConfig.optString("textureSizeUniform")) {
           effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
           if (effectTexture.textureSizeUniform == -1)
-            Logger::warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", p.first, *tsu);
+            Logger::warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", textureName, *tsu);
         }
 
-      effect.textures[p.first] = effectTexture;
+      effect.textures[textureName] = effectTexture;
     }
   }
 
@@ -1072,19 +1072,17 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
     glUniformMatrix3fv(m_vertexTransformUniform, 1, GL_TRUE, transformation.ptr());
 
     if (m_currentEffect->includeVBTextures) {
-      for (auto const& textureAndUnit : enumerateIterator(vb.textures)) {
-        auto const& texture = textureAndUnit.first;
-        auto unit = textureAndUnit.second;
+      for (auto const& [texture, unit] : enumerateIterator(vb.textures)) {
         glUniform2f(m_textureSizeUniforms[unit], texture.size[0], texture.size[1]);
         glActiveTexture(GL_TEXTURE0 + unit);
         glBindTexture(GL_TEXTURE_2D, texture.texture);
       }
     }
 
-    for (auto const& p : m_currentEffect->textures) {
-      if (p.second.textureValue) {
-        glActiveTexture(GL_TEXTURE0 + p.second.textureUnit);
-        glBindTexture(GL_TEXTURE_2D, p.second.textureValue->textureId);
+    for (auto const& texture : m_currentEffect->textures.values()) {
+      if (texture.textureValue) {
+        glActiveTexture(GL_TEXTURE0 + texture.textureUnit);
+        glBindTexture(GL_TEXTURE_2D, texture.textureValue->textureId);
       }
     }
 

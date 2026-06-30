@@ -70,8 +70,8 @@ std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
 }
 
 bool entityIdInSpace(EntityId entityId, ConnectionId connectionId) {
-  auto pair = connectionEntitySpace(connectionId);
-  return entityId >= pair.first && entityId <= pair.second;
+  auto [beginIdSpace, endIdSpace] = connectionEntitySpace(connectionId);
+  return entityId >= beginIdSpace && entityId <= endIdSpace;
 }
 
 ConnectionId connectionForEntity(EntityId entityId) {

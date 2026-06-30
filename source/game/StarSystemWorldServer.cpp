@@ -136,7 +136,10 @@ List<SystemClientShipPtr> SystemWorldServer::shipsAtLocation(SystemLocation cons
 List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
   // Find the warp actions for all ships located at objects
   List<Maybe<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> Maybe<WarpAction> {
-    return clientWarpAction(clientId).apply([](auto const& p) { return p.first; });
+    return clientWarpAction(clientId).apply([](auto const& warpActionAndDestination) {
+        auto const& [warpAction, destination] = warpActionAndDestination;
+        return warpAction;
+      });
   });
   // Return a list of the ones which lead to instance worlds
   return warpActions.filtered([](Maybe<WarpAction> const& action) {
@@ -164,13 +167,13 @@ void SystemWorldServer::removeObject(Uuid objectUuid) {
     return;
 
   // fly away any active ships that are located at the object
-  for (auto p : m_clientShips) {
-    auto ship = m_ships.get(p.second);
+  for (auto [clientId, shipUuid] : m_clientShips) {
+    auto ship = m_ships.get(shipUuid);
     auto location = ship->systemLocation();
     if (location == objectUuid || ship->destination() == objectUuid) {
       ship->setDestination(*systemLocationPosition(objectUuid));
       if (!ship->flying())
-        m_shipFlights.append(p.first);
+        m_shipFlights.append(clientId);
     }
   }
 
@@ -197,8 +200,8 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
     float radius = object->position().magnitude();
     if (radius > maxRange || radius < minRange)
       return false;
-    for (pair<float, float> p : orbitDistances) {
-      if (abs(radius - p.first) < p.second + systemConfig().clientObjectSpawnPadding)
+    for (auto [orbitDistance, orbitRadius] : orbitDistances) {
+      if (abs(radius - orbitDistance) < orbitRadius + systemConfig().clientObjectSpawnPadding)
         return false;
     }
   }
@@ -215,15 +218,15 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
 }
 
 void SystemWorldServer::update(float dt) {
-  for (auto const& p : m_ships)
-    p.second->serverUpdate(*this, dt);
+  for (auto const& [_, ship] : m_ships)
+    ship->serverUpdate(*this, dt);
 
-  for (auto const& p : m_objects) {
-    p.second->serverUpdate(*this, dt);
+  for (auto const& [objectUuid, object] : m_objects) {
+    object->serverUpdate(*this, dt);
 
     // don't destroy objects that still have players at them
-    if (p.second->shouldDestroy() && shipsAtLocation(p.first).empty())
-      removeObject(p.first);
+    if (object->shouldDestroy() && shipsAtLocation(objectUuid).empty())
+      removeObject(objectUuid);
   }
 
   spawnObjects();
@@ -232,17 +235,17 @@ void SystemWorldServer::update(float dt) {
 
   // remove objects and ships after queueing update packets to ensure they're not updated after being removed
   for (auto objectUuid : take(m_objectDestroyQueue)) {
-    for (auto& p : m_clientNetVersions) {
-      p.second.objects.remove(objectUuid);
-      m_outgoingPackets[p.first].append(make_shared<SystemObjectDestroyPacket>(objectUuid));
+    for (auto& [clientId, clientNetVersion] : m_clientNetVersions) {
+      clientNetVersion.objects.remove(objectUuid);
+      m_outgoingPackets[clientId].append(make_shared<SystemObjectDestroyPacket>(objectUuid));
     }
     m_objects.remove(objectUuid);
     m_triggerStorage = true;
   }
   for (auto shipUuid : take(m_shipDestroyQueue)) {
-    for (auto& p : m_clientNetVersions) {
-      p.second.ships.remove(shipUuid);
-      m_outgoingPackets[p.first].append(make_shared<SystemShipDestroyPacket>(shipUuid));
+    for (auto& [clientId, clientNetVersion] : m_clientNetVersions) {
+      clientNetVersion.ships.remove(shipUuid);
+      m_outgoingPackets[clientId].append(make_shared<SystemShipDestroyPacket>(shipUuid));
     }
     m_ships.remove(shipUuid);
     m_triggerStorage = true;

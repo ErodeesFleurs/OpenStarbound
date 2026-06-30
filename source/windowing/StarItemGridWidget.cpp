@@ -198,9 +198,7 @@ void ItemGridWidget::updateAllItemSlots() {
 void ItemGridWidget::updateItemState() {
   updateAllItemSlots();
   auto newState = slotItemNames();
-  for (auto const& itemNameAndIndex : enumerateIterator(newState)) {
-    auto const& itemName = itemNameAndIndex.first;
-    auto itemIndex = itemNameAndIndex.second;
+  for (auto const& [itemName, itemIndex] : enumerateIterator(newState)) {
     if (itemName.empty())
       m_changedSlots.remove(itemIndex);
     else if (itemName.compare(m_itemNames[itemIndex]) != 0)

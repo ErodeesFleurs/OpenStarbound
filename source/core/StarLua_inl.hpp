@@ -1215,8 +1215,8 @@ T LuaEngine::luaTo(LuaValue const& v) {
 template <typename Container>
 LuaTable LuaEngine::createTable(Container const& map) {
   auto table = createTable(0, map.size());
-  for (auto const& p : map)
-    table.set(p.first, p.second);
+  for (auto const& [key, value] : map)
+    table.set(key, value);
   return table;
 }
 
@@ -1327,9 +1327,9 @@ void LuaEngine::registerUserDataType() {
   LuaDetail::rawSetField(m_state, -2, "__gc");
 
   auto methods = LuaUserDataMethods<T>::make();
-  for (auto& p : methods.methods()) {
-    pushLuaValue(m_state, createWrappedFunction(p.second));
-    LuaDetail::rawSetField(m_state, -2, p.first.utf8Ptr());
+  for (auto& [methodName, method] : methods.methods()) {
+    pushLuaValue(m_state, createWrappedFunction(method));
+    LuaDetail::rawSetField(m_state, -2, methodName.utf8Ptr());
   }
 
   m_registeredUserDataTypes.add(typeid(T), luaL_ref(m_state, LUA_REGISTRYINDEX));

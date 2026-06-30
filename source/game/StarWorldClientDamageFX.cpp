@@ -33,8 +33,9 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
   };
 
   eraseWhere(m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
-      if (Time::monotonicTime() - entry.second.timestamp > m_damageNotificationBatchDuration) {
-        renderParticle(entry.second.position, entry.second.amount, entry.first.damageNumberParticleKind);
+      auto const& [damageNumberKey, damageNumber] = entry;
+      if (Time::monotonicTime() - damageNumber.timestamp > m_damageNotificationBatchDuration) {
+        renderParticle(damageNumber.position, damageNumber.amount, damageNumberKey.damageNumberParticleKind);
         return true;
       }
       return false;

@@ -118,8 +118,8 @@ String ItemDatabase::guiFilterString(ItemPtr const& item) {
 }
 
 bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies) {
-  for (auto const& p : recipe.currencyInputs) {
-    if (availableCurrencies.value(p.first, 0) < p.second)
+  for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+    if (availableCurrencies.value(currencyName, 0) < currencyCount)
       return false;
   }
 
@@ -323,12 +323,12 @@ uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uin
 uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
   uint64_t res = highest<uint64_t>();
 
-  for (auto const& p : recipe.currencyInputs) {
-    uint64_t available = availableCurrencies.value(p.first, 0);
+  for (auto const& [currencyName, currencyCount] : recipe.currencyInputs) {
+    uint64_t available = availableCurrencies.value(currencyName, 0);
     if (available == 0)
       return 0;
-    else if (p.second > 0)
-      res = min(available / p.second, res);
+    else if (currencyCount > 0)
+      res = min(available / currencyCount, res);
   }
 
   for (auto const& input : recipe.inputs) {
@@ -756,8 +756,8 @@ void ItemDatabase::addBlueprints() {
 void ItemDatabase::addCodexes() {
   auto codexConfig = m_assets->json("/codex.config");
 
-  for (auto const& codexPair : m_codexDatabase->codexes()) {
-    String codexItemName = strf("{}-codex", codexPair.second->id());
+  for (auto const& [_, codex] : m_codexDatabase->codexes()) {
+    String codexItemName = strf("{}-codex", codex->id());
     if (m_items.contains(codexItemName)) {
       Logger::warn("Couldn't create codex item {} because an item with that name is already defined", codexItemName);
       continue;
@@ -768,20 +768,20 @@ void ItemDatabase::addCodexes() {
 
       codexItemData.type = ItemType::Codex;
       codexItemData.name = codexItemName;
-      codexItemData.friendlyName = codexPair.second->title();
-      codexItemData.directory = codexPair.second->directory();
-      codexItemData.filename = codexPair.second->filename();
-      auto customConfig = jsonMerge(codexConfig.get("defaultItemConfig"), codexPair.second->itemConfig()).toObject();
+      codexItemData.friendlyName = codex->title();
+      codexItemData.directory = codex->directory();
+      codexItemData.filename = codex->filename();
+      auto customConfig = jsonMerge(codexConfig.get("defaultItemConfig"), codex->itemConfig()).toObject();
       customConfig["itemName"] = codexItemName;
-      customConfig["codexId"] = codexPair.second->id();
-      customConfig["shortdescription"] = codexPair.second->title();
-      customConfig["description"] = codexPair.second->description();
-      customConfig["codexIcon"] = codexPair.second->icon();
+      customConfig["codexId"] = codex->id();
+      customConfig["shortdescription"] = codex->title();
+      customConfig["description"] = codex->description();
+      customConfig["codexIcon"] = codex->icon();
       codexItemData.customConfig = customConfig;
 
       m_items[codexItemName] = codexItemData;
     } catch (std::exception const& e) {
-      Logger::error("Could not create item for codex {}: {}", codexPair.second->id(), outputException(e, false));
+      Logger::error("Could not create item for codex {}: {}", codex->id(), outputException(e, false));
     }
   }
 }

@@ -1038,10 +1038,10 @@ Json const* Json::ptr(String const& key) const {
 Json jsonMerge(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     JsonObject merged = base.toObject();
-    for (auto const& p : merger.iterateObject()) {
-      auto res = merged.insert(p);
+    for (auto const& [key, value] : merger.iterateObject()) {
+      auto res = merged.insert({key, value});
       if (!res.second)
-        res.first->second = jsonMerge(res.first->second, p.second);
+        res.first->second = jsonMerge(res.first->second, value);
     }
     return merged;
   }
@@ -1051,13 +1051,13 @@ Json jsonMerge(Json const& base, Json const& merger) {
 Json jsonMergeNulling(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     JsonObject merged = base.toObject();
-    for (auto const& p : merger.iterateObject()) {
-      if (p.second.isNull())
-        merged.erase(p.first);
+    for (auto const& [key, value] : merger.iterateObject()) {
+      if (value.isNull())
+        merged.erase(key);
       else {
-        auto res = merged.insert(p);
+        auto res = merged.insert({key, value});
         if (!res.second)
-          res.first->second = jsonMergeNulling(res.first->second, p.second);
+          res.first->second = jsonMergeNulling(res.first->second, value);
       }
     }
     return merged;
@@ -1070,8 +1070,8 @@ bool jsonPartialMatch(Json const& base, Json const& compare) {
     return true;
   } else {
     if (base.type() == Json::Type::Object && compare.type() == Json::Type::Object) {
-      for (auto const& c : compare.iterateObject()) {
-        if (!base.contains(c.first) || !jsonPartialMatch(base.get(c.first), c.second))
+      for (auto const& [key, value] : compare.iterateObject()) {
+        if (!base.contains(key) || !jsonPartialMatch(base.get(key), value))
           return false;
       }
       return true;

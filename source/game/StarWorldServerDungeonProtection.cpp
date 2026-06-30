@@ -30,8 +30,8 @@ void WorldServerDungeonProtection::setTileProtection(DungeonId dungeonId, bool i
   }
 
   if (updated) {
-    for (auto const& pair : m_worldServer.m_clientInfo)
-      pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
+    for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo)
+      clientInfo->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
 
     Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
   }
@@ -47,8 +47,8 @@ size_t WorldServerDungeonProtection::setTileProtection(List<DungeonId> const& du
   if (updates.empty())
     return 0;
 
-  for (auto const& pair : m_worldServer.m_clientInfo)
-    pair.second->outgoingPackets.appendAll(updates);
+  for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo)
+    clientInfo->outgoingPackets.appendAll(updates);
 
   auto newDungeonIds = m_protectedDungeonIds.values();
   sort(newDungeonIds);
@@ -84,8 +84,8 @@ void WorldServerDungeonProtection::setDungeonGravity(DungeonId dungeonId, Maybe<
     else
       m_dungeonIdGravity.remove(dungeonId);
 
-    for (auto const& p : m_worldServer.m_clientInfo)
-      p.second->outgoingPackets.append(make_shared<SetDungeonGravityPacket>(dungeonId, gravity));
+    for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo)
+      clientInfo->outgoingPackets.append(make_shared<SetDungeonGravityPacket>(dungeonId, gravity));
   }
 }
 
@@ -97,8 +97,8 @@ void WorldServerDungeonProtection::setDungeonBreathable(DungeonId dungeonId, May
     else
       m_dungeonIdBreathable.remove(dungeonId);
 
-    for (auto const& p : m_worldServer.m_clientInfo)
-      p.second->outgoingPackets.append(make_shared<SetDungeonBreathablePacket>(dungeonId, breathable));
+    for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo)
+      clientInfo->outgoingPackets.append(make_shared<SetDungeonBreathablePacket>(dungeonId, breathable));
   }
 }
 

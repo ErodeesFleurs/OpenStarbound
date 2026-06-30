@@ -243,8 +243,8 @@ void GraphicsMenu::syncGui() {
 }
 
 void GraphicsMenu::apply() {
-  for (auto p : m_localChanges) {
-    m_configuration->set(p.first, p.second);
+  for (auto const& [settingName, settingValue] : m_localChanges) {
+    m_configuration->set(settingName, settingValue);
   }
 }
 

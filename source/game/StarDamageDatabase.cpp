@@ -8,13 +8,13 @@ namespace Star {
 DamageDatabase::DamageDatabase(AssetsConstPtr assets) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "DamageDatabase", "assets");
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
-  for (auto p : elementalConfig.iterateObject()) {
+  for (auto const& [elementalTypeName, elementalTypeConfig] : elementalConfig.iterateObject()) {
     ElementalType type;
-    type.resistanceStat = p.second.getString("resistanceStat");
-    for (auto particle : p.second.getObject("damageNumberParticles")) {
-      type.damageNumberParticles.set(HitTypeNames.getLeft(particle.first), particle.second.toString());
+    type.resistanceStat = elementalTypeConfig.getString("resistanceStat");
+    for (auto const& [hitTypeName, particleName] : elementalTypeConfig.getObject("damageNumberParticles")) {
+      type.damageNumberParticles.set(HitTypeNames.getLeft(hitTypeName), particleName.toString());
     }
-    m_elementalTypes.set(p.first, std::move(type));
+    m_elementalTypes.set(elementalTypeName, std::move(type));
   }
 
   auto& files = assets->scanExtension("damage");
@@ -27,15 +27,15 @@ DamageDatabase::DamageDatabase(AssetsConstPtr assets) {
 
     DamageKind kind;
     kind.name = name;
-    for (auto effect : config.getObject("effects", JsonObject())) {
-      TargetMaterial material = effect.first;
+    for (auto const& [materialName, materialEffects] : config.getObject("effects", JsonObject())) {
+      TargetMaterial material = materialName;
       kind.effects.set(material, {});
-      for (auto const& hit : effect.second.iterateObject()) {
+      for (auto const& [hitTypeName, hitEffectConfig] : materialEffects.iterateObject()) {
         DamageEffect dmgEffect = DamageEffect {
-          hit.second.get("sounds", JsonArray()),
-          hit.second.get("particles", JsonArray())
+          hitEffectConfig.get("sounds", JsonArray()),
+          hitEffectConfig.get("particles", JsonArray())
         };
-        kind.effects[material].set(HitTypeNames.getLeft(hit.first), dmgEffect);
+        kind.effects[material].set(HitTypeNames.getLeft(hitTypeName), dmgEffect);
       }
     }
     kind.elementalType = config.getString("elementalType", "default");

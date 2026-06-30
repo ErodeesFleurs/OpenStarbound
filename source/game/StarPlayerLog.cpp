@@ -13,14 +13,14 @@ PlayerLog::PlayerLog(Json const& json) {
   m_radioMessages = jsonToStringSet(json.get("radioMessages"));
   m_cinematics = jsonToStringSet(json.get("cinematics"));
 
-  for (auto pair : json.get("collections").iterateObject())
-    m_collections[pair.first] = jsonToStringSet(pair.second);
+  for (auto const& [collectionName, collectionEntries] : json.get("collections").iterateObject())
+    m_collections[collectionName] = jsonToStringSet(collectionEntries);
 }
 
 Json PlayerLog::toJson() const {
   auto collections = JsonObject();
-  for (auto pair : m_collections)
-    collections[pair.first] = jsonFromStringSet(pair.second);
+  for (auto const& [collectionName, collectionEntries] : m_collections)
+    collections[collectionName] = jsonFromStringSet(collectionEntries);
 
   return JsonObject{{"deathCount", m_deathCount},
       {"playTime", m_playTime},

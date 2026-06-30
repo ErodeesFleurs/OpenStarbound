@@ -1161,9 +1161,9 @@ void DungeonGeneratorWriter::flushLiquid() {
       // region, taking them from the unpressurized set.
       while (!openSet.empty()) {
         auto oldOpenSet = take(openSet);
-        for (auto const& p : oldOpenSet) {
+        for (auto const& openPosition : oldOpenSet) {
           for (auto dir : {Vec2I(1, 0), Vec2I(-1, 0), Vec2I(0, 1), Vec2I(0, -1)}) {
-            Vec2I pos = p + dir;
+            Vec2I pos = openPosition + dir;
             if (unpressurized.remove(pos)) {
               contiguousRegion.add(pos);
               openSet.append(pos);
@@ -1176,10 +1176,10 @@ void DungeonGeneratorWriter::flushLiquid() {
       // the open set, then we have taken a contiguous region out of the
       // unpressurized set.  Pressurize it based on the highest point.
       int highestPoint = lowest<int>();
-      for (auto const& p : contiguousRegion)
-        highestPoint = max(highestPoint, p[1]);
-      for (auto const& p : contiguousRegion)
-        m_pendingLiquids[p].pressure = 1.0f + highestPoint - p[1];
+      for (auto const& position : contiguousRegion)
+        highestPoint = max(highestPoint, position[1]);
+      for (auto const& position : contiguousRegion)
+        m_pendingLiquids[position].pressure = 1.0f + highestPoint - position[1];
     }
   }
 
@@ -1243,11 +1243,11 @@ void DungeonGeneratorWriter::flush() {
     m_facade->placeObject(displace(pos), object.objectName, object.direction, object.parameters);
   }
 
-  for (auto const& entry : m_vehicles) {
+  for (auto const& [position, vehicle] : m_vehicles) {
     String vehicleName;
     Json parameters;
-    tie(vehicleName, parameters) = entry.second;
-    m_facade->placeVehicle(displaceF(entry.first), vehicleName, parameters);
+    tie(vehicleName, parameters) = vehicle;
+    m_facade->placeVehicle(displaceF(position), vehicleName, parameters);
   }
 
   sortedPositions = List<Vec2I>::from(m_biomeTrees);

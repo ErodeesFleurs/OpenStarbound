@@ -69,14 +69,14 @@ void NetElementSignal<Signal>::enableNetInterpolation(float) {
 template <typename Signal>
 void NetElementSignal<Signal>::disableNetInterpolation() {
   m_netInterpolationEnabled = false;
-  for (auto& p : take(m_pendingSignals))
-    send(std::move(p.second));
+  for (auto& [timeToSend, signal] : take(m_pendingSignals))
+    send(std::move(signal));
 }
 
 template <typename Signal>
 void NetElementSignal<Signal>::tickNetInterpolation(float dt) {
-  for (auto& p : m_pendingSignals)
-    p.first -= dt;
+  for (auto& [timeToSend, signal] : m_pendingSignals)
+    timeToSend -= dt;
 
   while (!m_pendingSignals.empty() && m_pendingSignals.first().first <= 0.0f)
     send(m_pendingSignals.takeFirst().second);
@@ -112,8 +112,8 @@ void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationT
     ds.read(s);
     if (m_netInterpolationEnabled && interpolationTime > 0.0f) {
       if (!m_pendingSignals.empty() && m_pendingSignals.last().first > interpolationTime) {
-        for (auto& p : take(m_pendingSignals))
-          send(std::move(p.second));
+        for (auto& [timeToSend, signal] : take(m_pendingSignals))
+          send(std::move(signal));
       }
       m_pendingSignals.append({interpolationTime, std::move(s)});
     } else {

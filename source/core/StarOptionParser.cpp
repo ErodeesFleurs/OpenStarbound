@@ -71,11 +71,11 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
     }
   }
 
-  for (auto const& pair : m_options) {
-    if (pair.second.is<Parameter>()) {
-      auto const& na = pair.second.get<Parameter>();
-      if (na.requirementMode == Required && !result.parameters.contains(pair.first))
-        errors.append(strf("Missing required flag with argument '-{}'", pair.first));
+  for (auto const& [flag, option] : m_options) {
+    if (option.is<Parameter>()) {
+      auto const& na = option.get<Parameter>();
+      if (na.requirementMode == Required && !result.parameters.contains(flag))
+        errors.append(strf("Missing required flag with argument '-{}'", flag));
     }
   }
 
@@ -109,11 +109,11 @@ void OptionParser::printHelp(std::ostream& os) const {
 
   String cmdLineText;
 
-  for (auto const& p : m_options) {
-    if (p.second.is<Switch>()) {
-      cmdLineText += strf(" [-{}]", p.first);
+  for (auto const& [flag, option] : m_options) {
+    if (option.is<Switch>()) {
+      cmdLineText += strf(" [-{}]", flag);
     } else {
-      auto const& parameter = p.second.get<Parameter>();
+      auto const& parameter = option.get<Parameter>();
       if (parameter.requirementMode == Optional)
         cmdLineText += strf(" [-{} <{}>]", parameter.flag, parameter.argument);
       else if (parameter.requirementMode == Required)
@@ -137,14 +137,14 @@ void OptionParser::printHelp(std::ostream& os) const {
   else
     format(os, "Command Line Usage: {}{}\n", m_commandName, cmdLineText);
 
-  for (auto const& p : m_options) {
-    if (p.second.is<Switch>()) {
-      auto const& sw = p.second.get<Switch>();
+  for (auto const& [flag, option] : m_options) {
+    if (option.is<Switch>()) {
+      auto const& sw = option.get<Switch>();
       if (!sw.description.empty())
         format(os, "  -{}\t- {}\n", sw.flag, sw.description);
     }
-    if (p.second.is<Parameter>()) {
-      auto const& parameter = p.second.get<Parameter>();
+    if (option.is<Parameter>()) {
+      auto const& parameter = option.get<Parameter>();
       if (!parameter.description.empty())
         format(os, "  -{} <{}>\t- {}\n", parameter.flag, parameter.argument, parameter.description);
     }

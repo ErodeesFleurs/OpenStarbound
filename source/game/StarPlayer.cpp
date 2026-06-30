@@ -106,10 +106,10 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_armor = make_shared<ArmorWearer>(m_itemDatabase);
   m_companions = make_shared<PlayerCompanions>(m_config->companionsConfig);
 
-  for (auto& p : m_config->genericScriptContexts) {
+  for (auto const& [contextName, script] : m_config->genericScriptContexts) {
     auto scriptComponent = make_shared<GenericScriptComponent>();
-    scriptComponent->setScript(p.second);
-    m_genericScriptContexts.set(p.first, scriptComponent);
+    scriptComponent->setScript(script);
+    m_genericScriptContexts.set(contextName, scriptComponent);
   }
 
   // all of these are defaults and won't include the correct humanoid config for the species
@@ -301,12 +301,12 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_aiState = AiState(diskStore.get("aiState", JsonObject{}));
 
-  for (auto& script : m_genericScriptContexts)
-    script.second->setScriptStorage({});
+  for (auto const& scriptContext : m_genericScriptContexts.values())
+    scriptContext->setScriptStorage({});
 
-  for (auto const& p : diskStore.get("genericScriptStorage", JsonObject{}).iterateObject()) {
-    if (auto script = m_genericScriptContexts.maybe(p.first).value({})) {
-      script->setScriptStorage(p.second.toObject());
+  for (auto const& [contextName, contextStorage] : diskStore.get("genericScriptStorage", JsonObject{}).iterateObject()) {
+    if (auto script = m_genericScriptContexts.maybe(contextName).value({})) {
+      script->setScriptStorage(contextStorage.toObject());
     }
   }
 
@@ -378,15 +378,15 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects());
 
-    for (auto& p : m_genericScriptContexts) {
-      p.second->addActorMovementCallbacks(m_movementController.get());
-      p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(*this));
-      p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
-      p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(*m_songbook));
-      p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
+    for (auto const& scriptContext : m_genericScriptContexts.values()) {
+      scriptContext->addActorMovementCallbacks(m_movementController.get());
+      scriptContext->addCallbacks("player", LuaBindings::makePlayerCallbacks(*this));
+      scriptContext->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
+      scriptContext->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(*m_songbook));
+      scriptContext->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
       if (m_client)
-        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));
-      p.second->init(*world);
+        scriptContext->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));
+      scriptContext->init(*world);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
@@ -420,17 +420,17 @@ void Player::uninit() {
     m_companions->uninit();
     m_deployment->uninit();
 
-    for (auto& p : m_genericScriptContexts) {
-      p.second->uninit();
-      p.second->removeCallbacks("animator");
-      p.second->removeCallbacks("entity");
-      p.second->removeCallbacks("player");
-      p.second->removeCallbacks("mcontroller");
-      p.second->removeCallbacks("status");
-      p.second->removeCallbacks("songbook");
-      p.second->removeCallbacks("world");
+    for (auto const& scriptContext : m_genericScriptContexts.values()) {
+      scriptContext->uninit();
+      scriptContext->removeCallbacks("animator");
+      scriptContext->removeCallbacks("entity");
+      scriptContext->removeCallbacks("player");
+      scriptContext->removeCallbacks("mcontroller");
+      scriptContext->removeCallbacks("status");
+      scriptContext->removeCallbacks("songbook");
+      scriptContext->removeCallbacks("world");
       if (m_client)
-        p.second->removeCallbacks("celestial");
+        scriptContext->removeCallbacks("celestial");
     }
   }
   if (world()->isClient()) {
@@ -455,9 +455,9 @@ List<Drawable> Player::drawables() const {
       Vec2F scale = Vec2F::filled(1.f);
       auto extractScale = [&](List<Directives> const& list) {
         for (auto& directives : list) {
-          auto result = Humanoid::extractScaleFromDirectives(directives);
-          scale = scale.piecewiseMultiply(result.first);
-          humanoidDirectives.append(result.second);
+          auto [directiveScale, remainingDirectives] = Humanoid::extractScaleFromDirectives(directives);
+          scale = scale.piecewiseMultiply(directiveScale);
+          humanoidDirectives.append(remainingDirectives);
         }
       };
       extractScale(m_techController->parentDirectives().list());
@@ -842,10 +842,10 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       result = m_techController->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_questManager->receiveMessage(message, localMessage, args);
-    for (auto& p : m_genericScriptContexts) {
+    for (auto const& scriptContext : m_genericScriptContexts.values()) {
       if (result)
         break;
-      result = p.second->handleMessage(message, localMessage, args);
+      result = scriptContext->handleMessage(message, localMessage, args);
     }
     return result;
   }
@@ -930,8 +930,8 @@ void Player::update(float dt, uint64_t) {
 
       m_techController->tickMaster(dt);
 
-      for (auto& p : m_genericScriptContexts)
-        p.second->update(p.second->updateDt(dt));
+      for (auto const& scriptContext : m_genericScriptContexts.values())
+        scriptContext->update(scriptContext->updateDt(dt));
 
       if (edgeTriggeredUse) {
         auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor());
@@ -1106,8 +1106,8 @@ void Player::update(float dt, uint64_t) {
   }
 
   if (isMaster()) {
-    for (auto& p : m_genericScriptContexts)
-      p.second->invoke("postUpdate");
+    for (auto const& scriptContext : m_genericScriptContexts.values())
+      scriptContext->invoke("postUpdate");
   }
 
   m_pendingMoves.clear();
@@ -1168,10 +1168,10 @@ void Player::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_statusController->pullNewAudios());
   renderCallback->addAudios(m_appearance.humanoidDynamicTarget().pullNewAudios());
 
-  for (auto const& p : take(m_callbackSounds)) {
-    auto audio = make_shared<AudioInstance>(*m_assets->audio(get<0>(p)));
-    audio->setVolume(get<1>(p));
-    audio->setPitchMultiplier(get<2>(p));
+  for (auto const& [sound, volume, pitchMultiplier] : take(m_callbackSounds)) {
+    auto audio = make_shared<AudioInstance>(*m_assets->audio(sound));
+    audio->setVolume(volume);
+    audio->setPitchMultiplier(pitchMultiplier);
     audio->setPosition(position());
     renderCallback->addAudio(std::move(audio));
   }
@@ -1246,8 +1246,8 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
     for (auto const& b : item->learnBlueprintsOnPickup())
       addBlueprint(b);
 
-    for (auto const& pair : item->collectablesOnPickup())
-      addCollectable(pair.first, pair.second);
+    for (auto const& [collectionName, collectable] : item->collectablesOnPickup())
+      addCollectable(collectionName, collectable);
 
     for (auto m : item->instanceValue("radioMessagesOnPickup", JsonArray()).iterateArray()) {
       if (m.isType(Json::Type::Array)) {
@@ -2400,10 +2400,10 @@ ItemDatabaseConstPtr Player::itemDatabase() const {
 
 Json Player::diskStore() {
   JsonObject genericScriptStorage;
-  for (auto& p : m_genericScriptContexts) {
-    auto scriptStorage = p.second->getScriptStorage();
+  for (auto const& [contextName, scriptContext] : m_genericScriptContexts) {
+    auto scriptStorage = scriptContext->getScriptStorage();
     if (!scriptStorage.empty())
-      genericScriptStorage[p.first] = std::move(scriptStorage);
+      genericScriptStorage[contextName] = std::move(scriptStorage);
   }
 
   return JsonObject{

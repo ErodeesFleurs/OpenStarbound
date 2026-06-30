@@ -231,9 +231,9 @@ size_t ListWidget::selectedItem() const {
 }
 
 size_t ListWidget::itemPosition(WidgetPtr item) const {
-  for (auto const& memberAndIndex : enumerateIterator(m_members)) {
-    if (memberAndIndex.first == item)
-      return memberAndIndex.second;
+  for (auto const& [member, index] : enumerateIterator(m_members)) {
+    if (member == item)
+      return index;
   }
   return NPos;
 }

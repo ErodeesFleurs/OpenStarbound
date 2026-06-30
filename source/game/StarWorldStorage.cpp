@@ -15,14 +15,14 @@ namespace Star {
 
 WorldChunks WorldStorage::getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) {
   WorldChunks update;
-  for (auto const& p : oldChunks) {
-    if (!newChunks.contains(p.first))
-      update[p.first] = {};
+  for (auto const& [chunkKey, _] : oldChunks) {
+    if (!newChunks.contains(chunkKey))
+      update[chunkKey] = {};
   }
 
-  for (auto const& p : newChunks) {
-    if (oldChunks.value(p.first) != p.second)
-      update[p.first] = p.second;
+  for (auto const& [chunkKey, chunk] : newChunks) {
+    if (oldChunks.value(chunkKey) != chunk)
+      update[chunkKey] = chunk;
   }
   return update;
 }
@@ -31,11 +31,11 @@ void WorldStorage::applyWorldChunksUpdateToFile(String const& file, WorldChunks 
   BTreeDatabase db;
   openDatabase(db, File::open(file, IOMode::ReadWrite));
 
-  for (auto const& p : update) {
-    if (p.second)
-      (void)db.insert(p.first, *p.second);
+  for (auto const& [chunkKey, chunk] : update) {
+    if (chunk)
+      (void)db.insert(chunkKey, *chunk);
     else
-      (void)db.remove(p.first);
+      (void)db.remove(chunkKey);
   }
 }
 
@@ -81,9 +81,9 @@ WorldStorage::WorldStorage(AssetsConstPtr assets, MaterialDatabaseConstPtr mater
 
   openDatabase(m_db, File::ephemeralFile());
 
-  for (auto const& p : chunks) {
-    if (p.second)
-      (void)m_db.insert(p.first, *p.second);
+  for (auto const& [chunkKey, chunk] : chunks) {
+    if (chunk)
+      (void)m_db.insert(chunkKey, *chunk);
   }
 
   Vec2U worldSize = readWorldMetadata(*m_db.find(metadataKey())).worldSize;
@@ -179,8 +179,8 @@ void WorldStorage::queueSectorActivation(Sector sector) {
       return;
   }
 
-  auto p = m_generationQueue.insert(sector, m_generationQueueTimeToLive);
-  m_generationQueue.toFront(p.first);
+  auto [generationQueueIt, inserted] = m_generationQueue.insert(sector, m_generationQueueTimeToLive);
+  m_generationQueue.toFront(generationQueueIt);
 }
 
 void WorldStorage::triggerTerraformSector(Sector sector) {
@@ -251,7 +251,9 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
   try {
     if (sectorOrdering) {
       m_generationQueue.sort([&sectorOrdering](auto const& a, auto const& b) {
-          return sectorOrdering(a.first, b.first);
+          auto const& [leftSector, leftTimeToLive] = a;
+          auto const& [rightSector, rightTimeToLive] = b;
+          return sectorOrdering(leftSector, rightSector);
         });
     }
 
@@ -259,11 +261,11 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
       if (sectorGenerationLevelLimit && *sectorGenerationLevelLimit == 0)
         break;
 
-      auto p = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value(NPos));
-      if (p.first)
+      auto [generatedCompletely, generatedLevels] = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value(NPos));
+      if (generatedCompletely)
         m_generationQueue.removeFirst();
       if (sectorGenerationLevelLimit)
-        *sectorGenerationLevelLimit -= p.second;
+        *sectorGenerationLevelLimit -= generatedLevels;
     }
   } catch (std::exception const& e) {
     m_db.rollback();
@@ -275,24 +277,22 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
 void WorldStorage::tick(float dt, String const* worldId) {
   try {
     // Tick down generation queue entries, and erase any that are expired.
-    eraseWhere(m_generationQueue, [dt](auto& p) {
-        p.second -= dt;
-        return p.second <= 0.0f;
+    eraseWhere(m_generationQueue, [dt](auto& generationQueueEntry) {
+        auto& [sector, timeToLive] = generationQueueEntry;
+        timeToLive -= dt;
+        return timeToLive <= 0.0f;
       });
 
     // Tick down sector TTL values
-    for (auto& p : m_sectorMetadata)
-      p.second.timeToLive -= dt;
+    for (auto& [sector, metadata] : m_sectorMetadata)
+      metadata.timeToLive -= dt;
 
     // Loop over every loaded sector, figure out whether the sector needs to be
     // unloaded, kept alive by a keep-alive entity, or has any entities that need
     // to be stored because they moved into an entity-unloaded sector (zombies).
     auto entityFactory = m_entityFactory;
     unsigned unloaded = 0, skipped = 0;
-    for (auto const& p : m_sectorMetadata.pairs()) {
-      auto const& sector = p.first;
-      auto const& metadata = p.second;
-
+    for (auto const& [sector, metadata] : m_sectorMetadata.pairs()) {
       bool needsUnload = metadata.timeToLive <= 0.0f;
 
       // If it is not time to unload the sector, then we don't need to scan for
@@ -392,8 +392,8 @@ void WorldStorage::unloadAll(bool force) {
 
 void WorldStorage::sync() {
   try {
-    for (auto const& pair : m_sectorMetadata)
-      syncSector(pair.first);
+    for (auto const& [sector, _] : m_sectorMetadata)
+      syncSector(sector);
     m_db.commit();
   } catch (std::exception const& e) {
     m_db.rollback();
@@ -404,8 +404,8 @@ void WorldStorage::sync() {
 
 WorldChunks WorldStorage::readChunks() {
   try {
-    for (auto const& pair : m_sectorMetadata)
-      syncSector(pair.first);
+    for (auto const& [sector, _] : m_sectorMetadata)
+      syncSector(sector);
 
     WorldChunks chunks;
     m_db.forAll([&chunks](ByteArray k, ByteArray v) {
@@ -647,9 +647,9 @@ pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, Sec
 
     if (stepDownGeneration != SectorGenerationLevel::None) {
       for (auto adjacentSector : adjacentSectors(sector)) {
-        auto p = generateSectorToLevel(adjacentSector, stepDownGeneration, sectorGenerationLevelLimit - totalGeneratedLevels);
-        totalGeneratedLevels += p.second;
-        if (!p.first || totalGeneratedLevels >= sectorGenerationLevelLimit)
+        auto [generatedCompletely, generatedLevels] = generateSectorToLevel(adjacentSector, stepDownGeneration, sectorGenerationLevelLimit - totalGeneratedLevels);
+        totalGeneratedLevels += generatedLevels;
+        if (!generatedCompletely || totalGeneratedLevels >= sectorGenerationLevelLimit)
           return {false, totalGeneratedLevels};
       }
     }
@@ -872,8 +872,8 @@ void WorldStorage::updateSectorUniques(Sector const& sector, UniqueIndexStore co
     }
   }
 
-  for (auto const& p : sectorUniques)
-    setUniqueIndexEntry(p.first, p.second);
+  for (auto const& [uniqueId, uniqueSector] : sectorUniques)
+    setUniqueIndexEntry(uniqueId, uniqueSector);
 
   if (sectorUniques.empty())
     (void)m_db.remove(sectorUniqueKey(sector));
@@ -883,9 +883,9 @@ void WorldStorage::updateSectorUniques(Sector const& sector, UniqueIndexStore co
 
 void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques) {
   auto sectorUniqueStore = m_db.find(sectorUniqueKey(sector)).apply(readSectorUniqueStore).value();
-  for (auto const& p : sectorUniques) {
-    setUniqueIndexEntry(p.first, p.second);
-    sectorUniqueStore.add(p.first);
+  for (auto const& [uniqueId, uniqueSector] : sectorUniques) {
+    setUniqueIndexEntry(uniqueId, uniqueSector);
+    sectorUniqueStore.add(uniqueId);
   }
 
   if (sectorUniqueStore.empty())
@@ -902,13 +902,13 @@ auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> Maybe<SectorAn
 
 void WorldStorage::setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition) {
   UniqueIndexStore uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).apply(readUniqueIndexStore).value();
-  auto p = uniqueIndex.insert(uniqueId, sectorAndPosition);
-  if (!p.second) {
+  auto [uniqueIndexIt, inserted] = uniqueIndex.insert(uniqueId, sectorAndPosition);
+  if (!inserted) {
     // Don't need to update the index if the entry was already there and the
     // sector and position haven't changed
-    if (p.first->second == sectorAndPosition)
+    if (uniqueIndexIt->second == sectorAndPosition)
       return;
-    p.first->second = sectorAndPosition;
+    uniqueIndexIt->second = sectorAndPosition;
   }
   (void)m_db.insert(uniqueIndexKey(uniqueId), writeUniqueIndexStore(uniqueIndex));
 }

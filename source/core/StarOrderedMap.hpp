@@ -197,24 +197,24 @@ OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(ini
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keys() const -> List<key_type> {
   List<key_type> keys;
-  for (auto const& p : *this)
-    keys.append(p.first);
+  for (auto const& [key, value] : *this)
+    keys.append(key);
   return keys;
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::values() const -> List<mapped_type> {
   List<mapped_type> values;
-  for (auto const& p : *this)
-    values.append(p.second);
+  for (auto const& [key, value] : *this)
+    values.append(value);
   return values;
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::pairs() const -> List<pair<key_type, mapped_type>> {
   List<pair<key_type, mapped_type>> plist;
-  for (auto const& p : *this)
-    plist.append(p.second);
+  for (auto const& [key, value] : *this)
+    plist.append(value);
   return plist;
 }
 

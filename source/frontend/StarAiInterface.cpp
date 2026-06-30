@@ -127,10 +127,12 @@ void AiInterface::update(float dt) {
       if (m_chatterSound)
         m_chatterSound->stop();
     }
-    m_faceAnimation.second.update(dt * m_currentSpeech->speedModifier);
+    auto& [faceAnimationName, faceAnimation] = m_faceAnimation;
+    faceAnimation.update(dt * m_currentSpeech->speedModifier);
   } else {
     setFaceAnimation("idle");
-    m_faceAnimation.second.update(dt);
+    auto& [faceAnimationName, faceAnimation] = m_faceAnimation;
+    faceAnimation.update(dt);
     if (m_chatterSound)
       m_chatterSound->stop();
   }
@@ -151,7 +153,8 @@ void AiInterface::update(float dt) {
   }
 
   m_aiFaceCanvasWidget->clear();
-  m_aiFaceCanvasWidget->drawDrawable(m_faceAnimation.second.drawable(1.0f), Vec2F(0, 0));
+  auto const& [faceAnimationName, faceAnimation] = m_faceAnimation;
+  m_aiFaceCanvasWidget->drawDrawable(faceAnimation.drawable(1.0f), Vec2F(0, 0));
   m_aiFaceCanvasWidget->drawDrawable(m_staticAnimation.drawable(1.0f), Vec2F(0, 0));
   m_aiFaceCanvasWidget->drawDrawable(m_scanlineAnimation.drawable(1.0f), Vec2F(0, 0));
 }
@@ -381,7 +384,8 @@ void AiInterface::goBack() {
 }
 
 void AiInterface::setFaceAnimation(String const& name) {
-  if (m_faceAnimation.first != name)
+  auto const& [faceAnimationName, faceAnimation] = m_faceAnimation;
+  if (faceAnimationName != name)
     m_faceAnimation = {name, m_aiDatabase->animation(m_species, name)};
 }
 

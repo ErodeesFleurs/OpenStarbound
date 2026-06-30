@@ -187,8 +187,8 @@ void Star::PcP2PNetworkingService::update() {
   MutexLocker serviceLocker(m_mutex);
   
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  for (auto& p : m_pendingDiscordJoinRequests) {
-    if (auto res = p.second.result()) {
+  for (auto& [discordUserId, replyPromise] : m_pendingDiscordJoinRequests) {
+    if (auto res = replyPromise.result()) {
       auto reply = discord::ActivityJoinRequestReply::Ignore;
       switch (*res) {
         case P2PJoinRequestReply::Yes:
@@ -202,14 +202,15 @@ void Star::PcP2PNetworkingService::update() {
           break;
       }
 
-      m_state->discordCore->ActivityManager().SendRequestReply(p.first, reply, [](discord::Result res) {
+      m_state->discordCore->ActivityManager().SendRequestReply(discordUserId, reply, [](discord::Result res) {
           if (res != discord::Result::Ok)
             Logger::error("Could not send Discord activity join response (err {})", static_cast<int>(res));
         });
     }
   }
-  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([](pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>& p) {
-      return !p.second.finished();
+  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([](pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>& request) {
+      auto& [discordUserId, replyPromise] = request;
+      return !replyPromise.finished();
     });
 #endif
 }

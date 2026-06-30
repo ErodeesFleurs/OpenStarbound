@@ -57,14 +57,15 @@ void CodexInterface::showSelectedContents() {
   if (m_bookList->selectedItem() == NPos || m_bookList->selectedItem() >= m_codexList.size())
     return;
 
-  showContents(m_codexList[m_bookList->selectedItem()].first);
+  auto const& [codex, collected] = m_codexList[m_bookList->selectedItem()];
+  showContents(codex->id());
 }
 
 void CodexInterface::showContents(String const& codexId) {
   CodexConstPtr result;
-  for (auto entry : m_codexList)
-    if (entry.first->id() == codexId) {
-      result = entry.first;
+  for (auto const& [codex, collected] : m_codexList)
+    if (codex->id() == codexId) {
+      result = codex;
       break;
     }
   if (result)
@@ -141,16 +142,17 @@ void CodexInterface::setupPageText() {
 
 void CodexInterface::updateCodexList() {
   auto newCodexList = m_player->codexes()->codexes();
-  filter(newCodexList, [&](auto const& p) {
-      return p.first->species() == m_currentSpecies;
+  filter(newCodexList, [&](auto const& codexEntry) {
+      auto const& [codex, collected] = codexEntry;
+      return codex->species() == m_currentSpecies;
     });
   if (m_codexList != newCodexList) {
     m_bookList->removeAllChildren();
     m_codexList = newCodexList;
-    for (auto entry : m_codexList) {
+    for (auto const& [codex, collected] : m_codexList) {
       auto newEntry = m_bookList->addItem();
-      newEntry->fetchChild<LabelWidget>("bookName")->setText(entry.first->title());
-      newEntry->fetchChild<ImageWidget>("bookIcon")->setImage(entry.first->icon());
+      newEntry->fetchChild<LabelWidget>("bookName")->setText(codex->title());
+      newEntry->fetchChild<ImageWidget>("bookIcon")->setImage(codex->icon());
     }
   }
 }

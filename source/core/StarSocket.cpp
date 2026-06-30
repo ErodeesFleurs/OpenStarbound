@@ -10,16 +10,16 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
 
   // Prevent close from being called on any socket during this call.
   LinkedList<ReadLocker> readLockers;
-  for (auto const& p : query)
-    readLockers.emplaceAppend(p.first->m_mutex);
+  for (auto const& [socket, pollRequest] : query)
+    readLockers.emplaceAppend(socket->m_mutex);
 
   // If any sockets are already closed, then this is an "event" according to
   // this api but we cannot call poll on a closed socket, so just poll the rest
   // of the sockets with no wait.
   SocketPollResult result;
-  for (auto const& p : query) {
-    if (!p.first->isOpen()) {
-      result[p.first].exception = true;
+  for (auto const& [socket, pollRequest] : query) {
+    if (!socket->isOpen()) {
+      result[socket].exception = true;
       timeout = 0;
     }
   }
@@ -34,13 +34,13 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   FD_ZERO(&exceptfs);
 
   int ret;
-  for (auto const& p : query) {
-    if (p.first->isOpen()) {
-      if (p.second.readable)
-        FD_SET(p.first->m_impl->socketDesc, &readfs);
-      if (p.second.writable)
-        FD_SET(p.first->m_impl->socketDesc, &writefs);
-      FD_SET(p.first->m_impl->socketDesc, &exceptfs);
+  for (auto const& [socket, pollRequest] : query) {
+    if (socket->isOpen()) {
+      if (pollRequest.readable)
+        FD_SET(socket->m_impl->socketDesc, &readfs);
+      if (pollRequest.writable)
+        FD_SET(socket->m_impl->socketDesc, &writefs);
+      FD_SET(socket->m_impl->socketDesc, &exceptfs);
     }
   }
   timeval time;
@@ -54,28 +54,29 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   if (ret == 0)
     return {};
 
-  for (auto const& p : query) {
-    if (p.first->isOpen()) {
-      auto& r = result[p.first];
-      r.readable = FD_ISSET(p.first->m_impl->socketDesc, &readfs);
-      r.writable = FD_ISSET(p.first->m_impl->socketDesc, &writefs);
-      r.exception = FD_ISSET(p.first->m_impl->socketDesc, &exceptfs);
+  for (auto const& [socket, pollRequest] : query) {
+    if (socket->isOpen()) {
+      auto& r = result[socket];
+      r.readable = FD_ISSET(socket->m_impl->socketDesc, &readfs);
+      r.writable = FD_ISSET(socket->m_impl->socketDesc, &writefs);
+      r.exception = FD_ISSET(socket->m_impl->socketDesc, &exceptfs);
       if (r.exception)
-        p.first->doShutdown();
+        socket->doShutdown();
     }
   }
 
 #else
   auto pollfds = make_unique<pollfd[]>(query.size());
   int ret = 0;
-  for (auto p : enumerateIterator(query)) {
-    if (p.first.first->isOpen()) {
-      auto& pfd = pollfds[p.second];
-      pfd.fd = p.first.first->m_impl->socketDesc;
+  for (auto const& [pollEntry, pollIndex] : enumerateIterator(query)) {
+    auto const& [socket, pollRequest] = pollEntry;
+    if (socket->isOpen()) {
+      auto& pfd = pollfds[pollIndex];
+      pfd.fd = socket->m_impl->socketDesc;
       pfd.events = 0;
-      if (p.first.second.readable)
+      if (pollRequest.readable)
         pfd.events |= POLLIN;
-      if (p.first.second.writable)
+      if (pollRequest.writable)
         pfd.events |= POLLOUT;
     }
   }
@@ -87,16 +88,17 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   if (ret == 0)
     return {};
 
-  for (auto p : enumerateIterator(query)) {
-    if (p.first.first->isOpen()) {
-      auto& pfd = pollfds[p.second];
+  for (auto const& [pollEntry, pollIndex] : enumerateIterator(query)) {
+    auto const& [socket, pollRequest] = pollEntry;
+    if (socket->isOpen()) {
+      auto& pfd = pollfds[pollIndex];
       SocketPollResultEntry pr;
       pr.readable = pfd.revents & POLLIN;
       pr.writable = pfd.revents & POLLOUT;
       pr.exception = pfd.revents & POLLHUP || pfd.revents & POLLNVAL || pfd.revents & POLLERR;
       if (pfd.revents & POLLHUP)
-        p.first.first->doShutdown();
-      result.add(p.first.first, std::move(pr));
+        socket->doShutdown();
+      result.add(socket, std::move(pr));
     }
   }
 #endif

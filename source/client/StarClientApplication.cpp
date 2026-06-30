@@ -564,14 +564,14 @@ void ClientApplication::renderReload() {
       StringMap<String> shaders;
       auto config = assets->json(path);
       auto shaderConfig = config.getObject("effectShaders");
-      for (auto& entry : shaderConfig) {
-        if (entry.second.isType(Json::Type::String)) {
-          String shader = entry.second.toString();
+      for (auto& [shaderName, shaderConfig] : shaderConfig) {
+        if (shaderConfig.isType(Json::Type::String)) {
+          String shader = shaderConfig.toString();
           if (!shader.hasChar('\n')) {
             auto shaderBytes = assets->bytes(AssetPath::relativeTo(path, shader));
             shader = std::string(shaderBytes->ptr(), shaderBytes->size());
           }
-          shaders[entry.first] = shader;
+          shaders[shaderName] = shader;
         }
       }
 
@@ -593,10 +593,9 @@ void ClientApplication::renderReload() {
 
   m_postProcessGroups.clear();
   auto postProcessGroups = assets->json("/client.config:postProcessGroups").toObject();
-  for (auto& pair : postProcessGroups) {
-    auto name = pair.first;
+  for (auto& [name, postProcessGroup] : postProcessGroups) {
     auto groupConfig = groupsConfig.opt(name);
-    auto def = pair.second.getBool("enabledDefault", true);
+    auto def = postProcessGroup.getBool("enabledDefault", true);
     if (!groupConfig)
       config->setPath(strf("{}.{}", postProcessGroupsRoot, name), JsonObject());
     m_postProcessGroups.add(name, PostProcessGroup{groupConfig ? groupConfig.value().getBool("enabled", def) : def});

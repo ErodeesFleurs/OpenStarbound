@@ -48,8 +48,8 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg, AssetsConstPtr assets)
 
   bodyMaterialKind = cfg.get("bodyMaterialKind").toString();
 
-  for (auto& p : cfg.get("genericScriptContexts").optObject().value(JsonObject()))
-    genericScriptContexts[p.first] = p.second.toString();
+  for (auto& [contextName, contextPath] : cfg.get("genericScriptContexts").optObject().value(JsonObject()))
+    genericScriptContexts[contextName] = contextPath.toString();
 }
 
 PlayerFactory::PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)

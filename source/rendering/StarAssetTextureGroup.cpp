@@ -37,9 +37,10 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
     int64_t time = Time::monotonicMilliseconds();
 
     List<Texture const*> liveTextures;
-    filter(m_textureMap, [&](auto const& pair) {
-        if (time - pair.second.second < textureTimeout) {
-          liveTextures.append(pair.second.first.get());
+    filter(m_textureMap, [&](auto const& textureEntry) {
+        auto const& [texture, lastUsedTime] = textureEntry.second;
+        if (time - lastUsedTime < textureTimeout) {
+          liveTextures.append(texture.get());
           return true;
         }
         return false;
@@ -47,8 +48,8 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
 
     liveTextures.sort();
 
-    eraseWhere(m_textureDeduplicationMap, [&](auto const& p) {
-        return !liveTextures.containsSorted(p.second.get());
+    eraseWhere(m_textureDeduplicationMap, [&](auto const& textureEntry) {
+        return !liveTextures.containsSorted(textureEntry.second.get());
       });
   }
 }

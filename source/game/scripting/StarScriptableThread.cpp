@@ -34,12 +34,12 @@ ScriptableThread::ScriptableThread(Json parameters, LuaRootServices luaRootServi
       m_luaRoot->addCallbacks(
           "config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
       
-      for (auto const& p : m_parameters.get("scripts").iterateObject()) {
+      for (auto const& [scriptContextName, scriptConfig] : m_parameters.get("scripts").iterateObject()) {
         auto scriptComponent = make_shared<ScriptComponent>();
         scriptComponent->setLuaRoot(m_luaRoot);
-        scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
+        scriptComponent->setScripts(jsonToStringList(scriptConfig.toArray()));
 
-        m_scriptContexts.set(p.first, scriptComponent);
+        m_scriptContexts.set(scriptContextName, scriptComponent);
         scriptComponent->init();
       }
 }
@@ -102,14 +102,14 @@ void ScriptableThread::run() {
     Logger::error("ScriptableThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
   }
-  for (auto& p : m_scriptContexts)
-    p.second->uninit();
+  for (auto& scriptContext : m_scriptContexts.values())
+    scriptContext->uninit();
 }
 
 Maybe<Json> ScriptableThread::receiveMessage(String const& message, JsonArray const& args) {
   Maybe<Json> result;
-  for (auto& p : m_scriptContexts) {
-    result = p.second->handleMessage(message, true, args);
+  for (auto& scriptContext : m_scriptContexts.values()) {
+    result = scriptContext->handleMessage(message, true, args);
     if (result)
       break;
   }
@@ -120,8 +120,8 @@ void ScriptableThread::update() {
   float dt = m_timestep;
   
   if (dt > 0.0f && !m_pause) {
-    for (auto& p : m_scriptContexts) {
-      p.second->update(p.second->updateDt(dt));
+    for (auto& scriptContext : m_scriptContexts.values()) {
+      scriptContext->update(scriptContext->updateDt(dt));
     }
   }
   

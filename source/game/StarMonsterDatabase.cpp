@@ -249,8 +249,8 @@ MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompati
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {
   NetworkedAnimator animator(variant.animatorConfig, String(), m_assets, m_imageMetadataDatabase, m_particleDatabase);
-  for (auto const& pair : variant.animatorPartTags)
-    animator.setPartTag(pair.first, "partImage", pair.second);
+  for (auto const& [partName, partImage] : variant.animatorPartTags)
+    animator.setPartTag(partName, "partImage", partImage);
   animator.setZoom(variant.animatorZoom);
   auto colorSwap = variant.colorSwap.value(this->colorSwap(variant.parameters.getString("colors", "default"), variant.seed));
   if (!colorSwap.empty())
@@ -295,43 +295,43 @@ Json MonsterDatabase::mergePartParameters(Json const& partParameterDescription, 
   JsonObject mergedParameters;
 
   // First assign all the defaults.
-  for (auto const& pair : partParameterDescription.iterateObject())
-    mergedParameters[pair.first] = pair.second.get(1);
+  for (auto const& [parameterName, parameterDescription] : partParameterDescription.iterateObject())
+    mergedParameters[parameterName] = parameterDescription.get(1);
 
   // Then go through parameter list and merge based on the merge rules.
   for (auto const& applyParams : parameters) {
-    for (auto const& pair : applyParams.iterateObject()) {
-      String mergeMethod = partParameterDescription.get(pair.first).getString(0);
-      Json value = mergedParameters.get(pair.first);
+    for (auto const& [parameterName, parameterValue] : applyParams.iterateObject()) {
+      String mergeMethod = partParameterDescription.get(parameterName).getString(0);
+      Json value = mergedParameters.get(parameterName);
 
       if (mergeMethod.equalsIgnoreCase("add")) {
-        value = value.toDouble() + pair.second.toDouble();
+        value = value.toDouble() + parameterValue.toDouble();
       } else if (mergeMethod.equalsIgnoreCase("multiply")) {
-        value = value.toDouble() * pair.second.toDouble();
+        value = value.toDouble() * parameterValue.toDouble();
       } else if (mergeMethod.equalsIgnoreCase("merge")) {
         // "merge" means to either merge maps, or *append* lists together
-        if (!pair.second.isNull()) {
+        if (!parameterValue.isNull()) {
           if (value.isNull()) {
-            value = pair.second;
-          } else if (value.type() != pair.second.type()) {
-            value = pair.second;
+            value = parameterValue;
+          } else if (value.type() != parameterValue.type()) {
+            value = parameterValue;
           } else {
-            if (pair.second.type() == Json::Type::Array) {
+            if (parameterValue.type() == Json::Type::Array) {
               auto array = value.toArray();
-              array.appendAll(pair.second.toArray());
+              array.appendAll(parameterValue.toArray());
               value = std::move(array);
-            } else if (pair.second.type() == Json::Type::Object) {
+            } else if (parameterValue.type() == Json::Type::Object) {
               auto obj = value.toObject();
-              obj.merge(pair.second.toObject(), true);
+              obj.merge(parameterValue.toObject(), true);
               value = std::move(obj);
             }
           }
         }
-      } else if (mergeMethod.equalsIgnoreCase("override") && !pair.second.isNull()) {
-        value = pair.second;
+      } else if (mergeMethod.equalsIgnoreCase("override") && !parameterValue.isNull()) {
+        value = parameterValue;
       }
 
-      mergedParameters[pair.first] = value;
+      mergedParameters[parameterName] = value;
     }
   }
 
@@ -342,20 +342,20 @@ Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
   JsonObject mergedParameters;
 
   for (auto const& applyParams : parameters) {
-    for (auto const& pair : applyParams.iterateObject()) {
-      Json value = mergedParameters.value(pair.first);
+    for (auto const& [parameterName, parameterValue] : applyParams.iterateObject()) {
+      Json value = mergedParameters.value(parameterName);
 
       // Hard-coded merge for scripts and skills parameters, otherwise merge.
-      if (pair.first == "scripts" || pair.first == "skills" || pair.first == "specialSkills"
-          || pair.first == "baseSkills") {
+      if (parameterName == "scripts" || parameterName == "skills" || parameterName == "specialSkills"
+          || parameterName == "baseSkills") {
         auto array = value.optArray().value();
-        array.appendAll(pair.second.optArray().value());
+        array.appendAll(parameterValue.optArray().value());
         value = std::move(array);
       } else {
-        value = jsonMerge(value, pair.second);
+        value = jsonMerge(value, parameterValue);
       }
 
-      mergedParameters[pair.first] = value;
+      mergedParameters[parameterName] = value;
     }
   }
 
@@ -405,8 +405,8 @@ void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
 
   variant.colorSwap = variant.parameters.optObject("colorSwap").apply([](JsonObject const& json) -> ColorReplaceMap {
     ColorReplaceMap swaps;
-    for (auto pair : json) {
-      swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
+    for (auto const& [sourceColor, targetColor] : json) {
+      swaps.insert(Color::fromHex(sourceColor).toRgba(), Color::fromHex(targetColor.toString()).toRgba());
     }
     return swaps;
   });
@@ -441,8 +441,8 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   }
 
   for (auto const& partConfig : monsterParts) {
-    for (auto const& pair : partConfig.frames)
-      monsterVariant.animatorPartTags[pair.first] = AssetPath::relativeTo(partConfig.path, pair.second.toString());
+    for (auto const& [frameName, frame] : partConfig.frames)
+      monsterVariant.animatorPartTags[frameName] = AssetPath::relativeTo(partConfig.path, frame.toString());
   }
   JsonArray partParameterList;
   for (auto const& partConfig : monsterParts) {

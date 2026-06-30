@@ -148,14 +148,14 @@ void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool 
       }
     } else {
       bool first = true;
-      for (auto const& pair : val.iterateObject()) {
+      for (auto const& [key, value] : val.iterateObject()) {
         if (!first)
           stream.putComma();
         first = false;
-        auto ws = pair.first.wideString();
+        auto ws = key.wideString();
         stream.objectKey(ws.c_str(), ws.length());
         stream.putColon();
-        toJsonStream(pair.second, stream, sort);
+        toJsonStream(value, stream, sort);
       }
     }
     stream.endObject();

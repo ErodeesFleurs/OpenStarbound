@@ -285,8 +285,8 @@ String imageOperationToString(ImageOperation const& operation) {
     return strf("setcolor={}", Color::rgb(setColorOp->color).toHex());
   } else if (auto colorReplaceOp = operation.ptr<ColorReplaceImageOperation>()) {
     String str = "replace";
-    for (auto const& pair : colorReplaceOp->colorReplaceMap)
-      str += strf(";{}={}", Color::rgba(pair.first).toHex(), Color::rgba(pair.second).toHex());
+    for (auto const& [fromColor, toColor] : colorReplaceOp->colorReplaceMap)
+      str += strf(";{}={}", Color::rgba(fromColor).toHex(), Color::rgba(toColor).toHex());
     return str;
   } else if (auto alphaMaskOp = operation.ptr<AlphaMaskImageOperation>()) {
     if (alphaMaskOp->mode == AlphaMaskImageOperation::Additive)

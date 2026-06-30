@@ -118,39 +118,36 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 }
 
 Json SkyParameters::toJson() const {
+  auto layerToJson = [](pair<String, float> const& layer) -> Json {
+    auto const& [image, scale] = layer;
+    return JsonObject{{"image", image}, {"scale", scale}};
+  };
+
+  auto orbiterToJson = [&](pair<List<pair<String, float>>, Vec2F> const& orbiter) -> Json {
+    auto const& [layers, position] = orbiter;
+    return JsonObject{
+      {"layers", layers.transformed(layerToJson)},
+      {"pos", jsonFromVec2F(position)},
+    };
+  };
+
+  auto horizonImageToJson = [](pair<String, String> const& horizonImage) {
+    auto const& [left, right] = horizonImage;
+    return JsonObject{
+      {"left", left},
+      {"right", right},
+    };
+  };
+
   return JsonObject{
     {"seed", seed},
     {"dayLength", jsonFromMaybe<float>(dayLength)},
     {"planet",
-     jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet,
-                                                           [](pair<List<pair<String, float>>, Vec2F> p) -> Json {
-                                                             return JsonObject{
-                                                               {"layers",
-                                                                p.first.transformed([](pair<String, float> const& p) -> Json {
-                                                                  return JsonObject{{"image", p.first}, {"scale", p.second}};
-                                                                })},
-                                                               {"pos", jsonFromVec2F(p.second)},
-                                                             };
-                                                           })},
+     jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet, orbiterToJson)},
     {"satellites",
-     jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons,
-                                                          [](pair<List<pair<String, float>>, Vec2F> const& p) {
-                                                            return JsonObject{
-                                                              {"layers",
-                                                               p.first.transformed([](pair<String, float> const& p) -> Json {
-                                                                 return JsonObject{{"image", p.first}, {"scale", p.second}};
-                                                               })},
-                                                              {"pos", jsonFromVec2F(p.second)},
-                                                            };
-                                                          })},
+     jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons, orbiterToJson)},
     {"horizonImages",
-     jsonFromList<pair<String, String>>(horizonImages,
-                                        [](pair<String, String> p) {
-                                          return JsonObject{
-                                            {"left", p.first},
-                                            {"right", p.second},
-                                          };
-                                        })},
+     jsonFromList<pair<String, String>>(horizonImages, horizonImageToJson)},
     {"horizonClouds", horizonClouds},
     {"skyType", SkyTypeNames.getRight(skyType)},
     {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},

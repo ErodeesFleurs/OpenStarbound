@@ -1252,8 +1252,8 @@ private:
   bool setClipboardData(StringMap<ByteArray> data) {
     auto heldData = make_unique<StringMap<ByteArray>>(std::move(data));
     std::vector<const char*> types;
-    for (auto& entry : *heldData)
-      types.push_back(entry.first.utf8Ptr());
+    for (auto& [mimeType, bytes] : *heldData)
+      types.push_back(mimeType.utf8Ptr());
     auto request = [](void* userdata, const char* mime_type, size_t* size) -> const void* {
       if (auto entry = static_cast<StringMap<ByteArray>*>(userdata)->ptr(mime_type)) {
         *size = entry->size();

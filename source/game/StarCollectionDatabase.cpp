@@ -37,14 +37,14 @@ CollectionDatabase::CollectionDatabase(AssetsConstPtr assets, MonsterDatabaseCon
     collection.type = CollectionTypeNames.getLeft(config.getString("type", "generic"));
 
     m_collectables[collection.name] = {};
-    for (auto pair : config.get("collectables").iterateObject()) {
+    for (auto const& [collectableName, collectableConfig] : config.get("collectables").iterateObject()) {
       Collectable collectable;
       if (collection.type == CollectionType::Monster)
-        collectable = parseMonsterCollectable(pair.first, pair.second);
+        collectable = parseMonsterCollectable(collectableName, collectableConfig);
       else if (collection.type == CollectionType::Item)
-        collectable = parseItemCollectable(pair.first, pair.second);
+        collectable = parseItemCollectable(collectableName, collectableConfig);
       else
-        collectable = parseGenericCollectable(pair.first, pair.second);
+        collectable = parseGenericCollectable(collectableName, collectableConfig);
 
       m_collectables[collection.name][collectable.name] = collectable;
     }

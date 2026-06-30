@@ -82,12 +82,12 @@ CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsD
   // pools to make sure that each WeightedPool is predictably populated based
   // on key order.
 
-  for (auto const& systemPair : Map<String, Json>::from(config.getObject("systemTypes"))) {
+  for (auto const& [systemName, systemConfig] : Map<String, Json>::from(config.getObject("systemTypes"))) {
     SystemType systemType;
-    systemType.typeName = systemPair.first;
-    systemType.baseParameters = systemPair.second.get("baseParameters");
-    systemType.variationParameters = systemPair.second.getArray("variationParameters", JsonArray());
-    for (auto const& orbitRegion : systemPair.second.getArray("orbitRegions", JsonArray())) {
+    systemType.typeName = systemName;
+    systemType.baseParameters = systemConfig.get("baseParameters");
+    systemType.variationParameters = systemConfig.getArray("variationParameters", JsonArray());
+    for (auto const& orbitRegion : systemConfig.getArray("orbitRegions", JsonArray())) {
       String regionName = orbitRegion.getString("regionName");
       Vec2I orbitRange = jsonToVec2I(orbitRegion.get("orbitRange"));
       float bodyProbability = orbitRegion.getFloat("bodyProbability");
@@ -95,30 +95,30 @@ CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsD
       WeightedPool<String> regionSatelliteTypes = jsonToWeightedPool<String>(orbitRegion.get("satelliteTypes"));
       systemType.orbitRegions.append({regionName, orbitRange, bodyProbability, regionPlanetaryTypes, regionSatelliteTypes});
     }
-    m_generationInformation.systemTypes.add(systemPair.first, systemType);
+    m_generationInformation.systemTypes.add(systemName, systemType);
   }
 
   m_generationInformation.systemTypePerlin = PerlinD(config.getObject("systemTypePerlin"), staticRandomU64("SystemTypePerlin"));
   m_generationInformation.systemTypeBins = config.get("systemTypeBins");
 
-  for (auto const& planetaryPair : Map<String, Json>::from(config.getObject("planetaryTypes"))) {
+  for (auto const& [planetaryName, planetaryConfig] : Map<String, Json>::from(config.getObject("planetaryTypes"))) {
     PlanetaryType planetaryType;
-    planetaryType.typeName = planetaryPair.first;
-    planetaryType.satelliteProbability = planetaryPair.second.getFloat("satelliteProbability");
+    planetaryType.typeName = planetaryName;
+    planetaryType.satelliteProbability = planetaryConfig.getFloat("satelliteProbability");
     planetaryType.maxSatelliteCount =
-      planetaryPair.second.getUInt("maxSatelliteCount", m_baseInformation.satelliteOrbitalLevels);
-    planetaryType.baseParameters = planetaryPair.second.get("baseParameters");
-    planetaryType.variationParameters = planetaryPair.second.getArray("variationParameters", JsonArray());
-    planetaryType.orbitParameters = planetaryPair.second.getObject("orbitParameters", JsonObject());
+      planetaryConfig.getUInt("maxSatelliteCount", m_baseInformation.satelliteOrbitalLevels);
+    planetaryType.baseParameters = planetaryConfig.get("baseParameters");
+    planetaryType.variationParameters = planetaryConfig.getArray("variationParameters", JsonArray());
+    planetaryType.orbitParameters = planetaryConfig.getObject("orbitParameters", JsonObject());
     m_generationInformation.planetaryTypes[planetaryType.typeName] = planetaryType;
   }
 
-  for (auto const& satellitePair : Map<String, Json>::from(config.getObject("satelliteTypes"))) {
+  for (auto const& [satelliteName, satelliteConfig] : Map<String, Json>::from(config.getObject("satelliteTypes"))) {
     SatelliteType satelliteType;
-    satelliteType.typeName = satellitePair.first;
-    satelliteType.baseParameters = satellitePair.second.get("baseParameters");
-    satelliteType.variationParameters = satellitePair.second.getArray("variationParameters", JsonArray());
-    satelliteType.orbitParameters = satellitePair.second.getObject("orbitParameters", JsonObject());
+    satelliteType.typeName = satelliteName;
+    satelliteType.baseParameters = satelliteConfig.get("baseParameters");
+    satelliteType.variationParameters = satelliteConfig.getArray("variationParameters", JsonArray());
+    satelliteType.orbitParameters = satelliteConfig.getObject("orbitParameters", JsonObject());
     m_generationInformation.satelliteTypes[satelliteType.typeName] = satelliteType;
   }
 
@@ -315,11 +315,10 @@ List<CelestialCoordinate> CelestialMasterDatabase::scanSystems(RectI const& regi
       locker.lock();
     });
     locker.unlock();
-    for (auto const& pair : chunkData.systemParameters) {
-      Vec3I systemLocation = pair.first;
+    for (auto const& [systemLocation, systemParameters] : chunkData.systemParameters) {
       if (region.contains(systemLocation.vec2())) {
         if (includedTypes) {
-          String thisType = pair.second.getParameter("typeName", "").toString();
+          String thisType = systemParameters.getParameter("typeName", "").toString();
           if (!includedTypes->contains(thisType))
             continue;
         }
@@ -676,22 +675,22 @@ List<CelestialRequest> CelestialSlaveDatabase::pullRequests() {
 
   auto chunkIt = makeSMutableMapIterator(m_pendingChunkRequests);
   while (chunkIt.hasNext()) {
-    auto& pair = chunkIt.next();
-    if (!pair.second.running()) {
-      requests.append(makeLeft(pair.first));
-      pair.second.restart(m_requestTimeout);
-    } else if (pair.second.timeUp()) {
+    auto& [location, timer] = chunkIt.next();
+    if (!timer.running()) {
+      requests.append(makeLeft(location));
+      timer.restart(m_requestTimeout);
+    } else if (timer.timeUp()) {
       chunkIt.remove();
     }
   }
 
   auto systemIt = makeSMutableMapIterator(m_pendingSystemRequests);
   while (systemIt.hasNext()) {
-    auto& pair = systemIt.next();
-    if (!pair.second.running()) {
-      requests.append(makeRight(pair.first));
-      pair.second.restart(m_requestTimeout);
-    } else if (pair.second.timeUp()) {
+    auto& [location, timer] = systemIt.next();
+    if (!timer.running()) {
+      requests.append(makeRight(location));
+      timer.restart(m_requestTimeout);
+    } else if (timer.timeUp()) {
       systemIt.remove();
     }
   }
@@ -808,11 +807,10 @@ List<CelestialCoordinate> CelestialSlaveDatabase::scanSystems(RectI const& regio
   List<CelestialCoordinate> systems;
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
     if (auto chunkData = m_chunkCache.ptr(chunkLocation)) {
-      for (auto const& pair : chunkData->systemParameters) {
-        Vec3I systemLocation = pair.first;
+      for (auto const& [systemLocation, systemParameters] : chunkData->systemParameters) {
         if (region.contains(systemLocation.vec2())) {
           if (includedTypes) {
-            String thisType = pair.second.getParameter("typeName", "").toString();
+            String thisType = systemParameters.getParameter("typeName", "").toString();
             if (!includedTypes->contains(thisType))
               continue;
           }

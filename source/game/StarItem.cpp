@@ -65,8 +65,8 @@ Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDat
   for (auto b : jsonToStringList(instanceValue("learnBlueprintsOnPickup", JsonArray{})))
     m_learnBlueprintsOnPickup.append(ItemDescriptor(b));
 
-  for (auto pair : instanceValue("collectablesOnPickup", JsonObject{}).iterateObject())
-    m_collectablesOnPickup[pair.first] = pair.second.toString();
+  for (auto const& [collectionName, collectableName] : instanceValue("collectablesOnPickup", JsonObject{}).iterateObject())
+    m_collectablesOnPickup[collectionName] = collectableName.toString();
 }
 
 Item::~Item() = default;

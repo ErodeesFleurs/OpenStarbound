@@ -143,8 +143,8 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets(MainInterfaceConfigSe
   config->debugBackgroundPad = assets->json("/interface.config:debugBackgroundPad").toUInt();
 
   for (auto const& path : assets->scan(".macros")) {
-    for (auto const& pair : assets->json(path).iterateObject())
-      config->macroCommands.add(pair.first, jsonToStringList(pair.second));
+    for (auto const& [commandName, commandConfig] : assets->json(path).iterateObject())
+      config->macroCommands.add(commandName, jsonToStringList(commandConfig));
   }
 
   return config;

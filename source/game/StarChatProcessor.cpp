@@ -12,8 +12,8 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
 
   nick = makeNickUnique(nick);
 
-  for (auto& pair : m_clients) {
-    pair.second.pendingMessages.append({
+  for (auto& [connectedClientId, clientInfo] : m_clients) {
+    clientInfo.pendingMessages.append({
         {MessageContext::Broadcast},
         ServerConnectionId,
         ServerNick,
@@ -36,8 +36,8 @@ List<ChatReceivedMessage> ChatProcessor::disconnectClient(ConnectionId clientId)
 
   m_nicks.remove(clientInfo.nick);
 
-  for (auto& pair : m_clients) {
-    pair.second.pendingMessages.append({
+  for (auto& [connectedClientId, clientInfo] : m_clients) {
+    clientInfo.pendingMessages.append({
         {MessageContext::Broadcast},
         ServerConnectionId,
         ServerNick,
@@ -104,9 +104,9 @@ StringList ChatProcessor::clientChannels(ConnectionId clientId) const {
   RecursiveMutexLocker locker(m_mutex);
 
   StringList channels;
-  for (auto const& pair : m_channels) {
-    if (pair.second.contains(clientId))
-      channels.append(pair.first);
+  for (auto const& [channelName, clients] : m_channels) {
+    if (clients.contains(clientId))
+      channels.append(channelName);
   }
   return channels;
 }
@@ -115,9 +115,9 @@ StringList ChatProcessor::activeChannels() const {
   RecursiveMutexLocker locker(m_mutex);
 
   StringList channels;
-  for (auto const& pair : m_channels) {
-    if (!pair.second.empty())
-      channels.append(pair.first);
+  for (auto const& [channelName, clients] : m_channels) {
+    if (!clients.empty())
+      channels.append(channelName);
   }
   return channels;
 }
@@ -137,8 +137,8 @@ void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& tex
   if (handleCommand(message))
     return;
 
-  for (auto& pair : m_clients)
-    pair.second.pendingMessages.append(message);
+  for (auto& [connectedClientId, clientInfo] : m_clients)
+    clientInfo.pendingMessages.append(message);
 }
 
 void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mode mode, String const& channelName, String const& text, JsonObject data) {

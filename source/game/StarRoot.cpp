@@ -405,9 +405,9 @@ ConfigurationPtr Root::configuration() {
             throw ConfigurationException("User config version does not match default config version");
 
           auto config = jConfig.toObject();
-          for (auto& entry : *m_settings.defaultConfiguration.objectPtr()) {
-            if (!config.contains(entry.first))
-              config.insert(entry.first, entry.second);
+          for (auto const& [configKey, defaultValue] : *m_settings.defaultConfiguration.objectPtr()) {
+            if (!config.contains(configKey))
+              config.insert(configKey, defaultValue);
           }
 
           currentConfig = config;
@@ -664,8 +664,8 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     }
 
     Logger::info("Root: Scanning for asset sources in directory '{}'", directory);
-    for (auto& entry : File::dirList(directory, true).sorted())
-      processEntry(File::relativeTo(directory, entry.first), entry.second);
+    for (auto const& [assetName, isDirectory] : File::dirList(directory, true).sorted())
+      processEntry(File::relativeTo(directory, assetName), isDirectory);
   }
 
   // Take in any manual asset source paths

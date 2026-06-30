@@ -419,18 +419,18 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
   while (true) {
     bool yay = false;
     for (size_t i = 0; i != list->size(); ++i) {
-      auto& pair = list->at(i);
-      if (!isTileProtected(pair.first)) {
-        auto result = WorldImpl::validateTileModification(m_entityMap, pair.first, pair.second, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase);
+      auto& [position, modification] = list->at(i);
+      if (!isTileProtected(position)) {
+        auto result = WorldImpl::validateTileModification(m_entityMap, position, modification, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase);
 
         if (result.first) {
-          m_tilePrediction.informTilePrediction(pair.first, pair.second);
-          success.append(pair);
+          m_tilePrediction.informTilePrediction(position, modification);
+          success.append({position, modification});
           yay = true;
           continue;
         }
       }
-      failures.append(pair);
+      failures.append({position, modification});
     }
     if (yay) {
       list = &(temp = std::move(failures));
@@ -456,11 +456,11 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
     return modificationList;
 
   TileModificationList success, failures;
-  for (auto const& pair : modificationList) {
-    if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second, m_materialDatabase))
-      success.append(pair);
+  for (auto const& [position, modification] : modificationList) {
+    if (!isTileProtected(position) && WorldImpl::validateTileReplacement(modification, m_materialDatabase))
+      success.append({position, modification});
     else
-      failures.append(pair);
+      failures.append({position, modification});
   }
 
   m_outgoingPackets.append(make_shared<ReplaceTileListPacket>(std::move(success), tileDamage, applyDamage));
@@ -596,15 +596,15 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
 
     EntityDrawables ed;
-    for (auto& p : renderCallback.drawables) {
+    for (auto& [renderLayer, drawables] : renderCallback.drawables) {
       if (directives) {
         int directiveIndex = unsigned(entity->entityId()) % directives->size();
-        for (auto& d : p.second) {
+        for (auto& d : drawables) {
           if (d.isImage())
             d.imagePart().addDirectives(directives->at(directiveIndex), true, m_imageMetadataDatabase);
         }
       }
-      ed.layers[p.first] = std::move(p.second);
+      ed.layers[renderLayer] = std::move(drawables);
     }
 
     if (m_lighting.m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
@@ -676,15 +676,14 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
   });
 
-  for (auto& pair : m_tilePrediction.m_predictedTiles) {
-    Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
+  for (auto& [position, predictedTile] : m_tilePrediction.m_predictedTiles) {
+    Vec2I tileArrayPos = m_geometry.diff(position, renderData.tileMinPosition);
     int const tileWidth = static_cast<int>(renderData.tiles.size(0));
     int const tileHeight = static_cast<int>(renderData.tiles.size(1));
     if (tileArrayPos[0] >= 0 && tileArrayPos[0] < tileWidth && tileArrayPos[1] >= 0 && tileArrayPos[1] < tileHeight) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
-      PredictedTile& p = pair.second;
-      if (p.liquid) {
-        auto& liquid = *p.liquid;
+      if (predictedTile.liquid) {
+        auto& liquid = *predictedTile.liquid;
         if (liquid.liquid == renderTile.liquidId) {
           uint8_t added = floatToByte(liquid.level, true);
           renderTile.liquidLevel = (renderTile.liquidLevel > 255 - added) ? 255 : renderTile.liquidLevel + added;
@@ -694,7 +693,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         }
       }
 
-      pair.second.apply(renderTile);
+      predictedTile.apply(renderTile);
     }
   }
 
@@ -1104,11 +1103,11 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
     } else if (auto updateWorldProperties = as<UpdateWorldPropertiesPacket>(packet)) {
       // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
-      for (auto& pair : updateWorldProperties->updatedProperties) {
-        if (pair.second.isNull())
-          m_worldProperties.erase(pair.first);
+      for (auto& [propertyName, propertyValue] : updateWorldProperties->updatedProperties) {
+        if (propertyValue.isNull())
+          m_worldProperties.erase(propertyName);
         else
-          m_worldProperties[pair.first] = pair.second;
+          m_worldProperties[propertyName] = propertyValue;
       }
 
     } else if (auto updateTileProtection = as<UpdateTileProtectionPacket>(packet)) {
@@ -1639,12 +1638,12 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
     }
   }
 
-  auto pair = RpcPromise<InteractAction>::createPair();
+  auto [promise, keeper] = RpcPromise<InteractAction>::createPair();
   Uuid requestId;
-  m_entityInteractionResponses[requestId] = pair.second;
+  m_entityInteractionResponses[requestId] = keeper;
   m_outgoingPackets.append(make_shared<EntityInteractPacket>(request, requestId));
 
-  return pair.first;
+  return promise;
 }
 
 void WorldClient::initWorld(WorldStartPacket const& startPacket) {
@@ -2025,13 +2024,13 @@ RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
   if (auto entity = m_entityMap->uniqueEntity(uniqueId))
     return RpcPromise<Vec2F>::createFulfilled(entity->position());
 
-  auto pair = RpcPromise<Vec2F>::createPair();
+  auto [promise, keeper] = RpcPromise<Vec2F>::createPair();
   auto& rpcPromises = m_findUniqueEntityResponses[uniqueId];
   if (rpcPromises.empty())
     m_outgoingPackets.append(make_shared<FindUniqueEntityPacket>(uniqueId));
-  rpcPromises.append(pair.second);
+  rpcPromises.append(keeper);
 
-  return pair.first;
+  return promise;
 }
 
 RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
@@ -2054,11 +2053,11 @@ RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const&
     else
       return RpcPromise<Json>::createFailed("Message not handled by entity");
   } else {
-    auto pair = RpcPromise<Json>::createPair();
+    auto [promise, keeper] = RpcPromise<Json>::createPair();
     Uuid uuid;
-    m_entityMessageResponses[uuid] = pair.second;
+    m_entityMessageResponses[uuid] = keeper;
     m_outgoingPackets.append(make_shared<EntityMessagePacket>(entityId, message, args, uuid));
-    return pair.first;
+    return promise;
   }
 }
 

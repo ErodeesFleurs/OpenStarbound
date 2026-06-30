@@ -51,7 +51,8 @@ void EffectEmitter::tick(float dt, EntityMode mode, EffectSourceDatabaseConstPtr
     }
     for (auto& c : m_activeSources.get()) {
       if (!current.contains(c)) {
-        m_sources.append(effectSourceDatabase->effectSourceConfig(c.second)->instance(c.first));
+        auto const& [sourcePosition, sourceKind] = c;
+        m_sources.append(effectSourceDatabase->effectSourceConfig(sourceKind)->instance(sourcePosition));
       }
     }
   }
@@ -93,7 +94,8 @@ Json EffectEmitter::toJson() const {
   return JsonObject{{"activeSources",
       jsonFromSet<Set<pair<String, String>>>(m_activeSources.get(),
                          [](pair<String, String> const& entry) {
-                           return JsonObject{{"position", entry.first}, {"source", entry.second}};
+                           auto const& [sourcePosition, sourceKind] = entry;
+                           return JsonObject{{"position", sourcePosition}, {"source", sourceKind}};
                          })}};
 }
 

@@ -31,9 +31,9 @@ void LoungeableEntity::loungeAim(size_t, Vec2F const&) {}
 
 Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
   Set<EntityId> loungingInEntities;
-  for (auto const& p : entitiesLounging()) {
-    if (p.second == positionIndex)
-      loungingInEntities.add(p.first);
+  for (auto const& [entityId, loungePositionIndex] : entitiesLounging()) {
+    if (loungePositionIndex == positionIndex)
+      loungingInEntities.add(entityId);
   }
   return loungingInEntities;
 }

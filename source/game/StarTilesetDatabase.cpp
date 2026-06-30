@@ -296,9 +296,9 @@ namespace Tiled {
     m_tilesBack.resize(json.getInt("tilecount"));
     m_tilesFront.resize(json.getInt("tilecount"));
 
-    for (auto const& entry : tileProperties.iterateObject()) {
-      size_t index = lexicalCast<size_t>(entry.first);
-      Properties properties = Properties(entry.second).inherit(tilesetProperties);
+    for (auto const& [tileIndex, propertiesConfig] : tileProperties.iterateObject()) {
+      size_t index = lexicalCast<size_t>(tileIndex);
+      Properties properties = Properties(propertiesConfig).inherit(tilesetProperties);
 
       m_tilesBack[index] = make_shared<Tile>(properties, TileLayer::Background);
       m_tilesFront[index] = make_shared<Tile>(properties, TileLayer::Foreground);

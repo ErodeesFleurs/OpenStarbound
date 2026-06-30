@@ -57,17 +57,17 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   m_sourceEntityId = config.optInt("sourceEntityId");
 
-  for (auto image : config.optObject("images").value({})) {
-    auto widget = fetchChild<ImageWidget>(image.first);
-    if (image.second.isType(Json::Type::String))
-      widget->setImage(image.second.toString());
+  for (auto const& [widgetName, imageConfig] : config.optObject("images").value({})) {
+    auto widget = fetchChild<ImageWidget>(widgetName);
+    if (imageConfig.isType(Json::Type::String))
+      widget->setImage(imageConfig.toString());
     else
-      widget->setDrawables(image.second.toArray().transformed(construct<Drawable>()));
+      widget->setDrawables(imageConfig.toArray().transformed(construct<Drawable>()));
   }
 
-  for (auto label : config.optObject("labels").value({})) {
-    auto widget = fetchChild<LabelWidget>(label.first);
-    widget->setText(label.second.toString());
+  for (auto const& [widgetName, labelConfig] : config.optObject("labels").value({})) {
+    auto widget = fetchChild<LabelWidget>(widgetName);
+    widget->setText(labelConfig.toString());
   }
 
   show();

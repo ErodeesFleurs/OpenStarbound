@@ -71,8 +71,8 @@ bool LuaCallbacks::removeCallback(String name) {
 
 LuaCallbacks& LuaCallbacks::merge(LuaCallbacks const& callbacks) {
   try {
-    for (auto const& pair : callbacks.m_callbacks)
-      m_callbacks.add(pair.first, pair.second);
+    for (auto const& [callbackName, callback] : callbacks.m_callbacks)
+      m_callbacks.add(callbackName, callback);
   } catch (MapException const& e) {
     throw LuaException(strf("Failed to merge LuaCallbacks: {}", outputException(e, true)));
   }
@@ -110,8 +110,8 @@ void LuaContext::setCallbacks(String const& tableName, LuaCallbacks const& callb
     return;
 
   auto callbackTable = eng.createTable();
-  for (auto const& p : callbacks.callbacks())
-    callbackTable.set(p.first, eng.createWrappedFunction(p.second));
+  for (auto const& [callbackName, callback] : callbacks.callbacks())
+    callbackTable.set(callbackName, eng.createWrappedFunction(callback));
   LuaContext::set(tableName, callbackTable);
 }
 
@@ -425,8 +425,8 @@ bool LuaEngine::profilingEnabled() const {
 
 List<LuaProfileEntry> LuaEngine::getProfile() {
   List<LuaProfileEntry> profileEntries;
-  for (auto const& p : m_profileEntries) {
-    profileEntries.append(*p.second);
+  for (auto const& profileEntry : m_profileEntries.values()) {
+    profileEntries.append(*profileEntry);
   }
 
   return profileEntries;
@@ -1392,11 +1392,11 @@ LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& containe
         nils.rawSet(i + 1, 0);
     }
   } else {
-    for (auto const& pair : *container.objectPtr()) {
-      if (pair.second)
-        table.rawSet(pair.first, pair.second);
+    for (auto const& [key, value] : *container.objectPtr()) {
+      if (value)
+        table.rawSet(key, value);
       else
-        nils.rawSet(pair.first, 0);
+        nils.rawSet(key, 0);
     }
   }
 
@@ -1463,12 +1463,12 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
     && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && prev(intEntries.end())->first == intEntries.size()));
   if (interpretAsList) {
     JsonArray list;
-    for (auto& p : intEntries)
-      list.set(p.first - 1, std::move(p.second));
+    for (auto& [index, value] : intEntries)
+      list.set(index - 1, std::move(value));
     return Json(std::move(list));
   } else {
-    for (auto& p : intEntries)
-      stringEntries[toString(p.first)] = std::move(p.second);
+    for (auto& [index, value] : intEntries)
+      stringEntries[toString(index)] = std::move(value);
     return Json(std::move(stringEntries));
   }
 }

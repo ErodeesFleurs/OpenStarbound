@@ -12,11 +12,11 @@ PlayerCodexes::PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexD
     m_codexDatabase(requireServiceValueAs<StarException>(std::move(codexDatabase), "PlayerCodexes", "codex database")) {
   if (variant) {
     auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
-    for (auto pair : codexData) {
-      if (auto codex = m_codexDatabase->codex(pair.first)) {
-        m_codexes[pair.first] = CodexEntry{codex, pair.second};
+    for (auto const& [codexId, codexRead] : codexData) {
+      if (auto codex = m_codexDatabase->codex(codexId)) {
+        m_codexes[codexId] = CodexEntry{codex, codexRead};
       } else {
-        Logger::debug("Failed to load missing codex '{}'", pair.first);
+        Logger::debug("Failed to load missing codex '{}'", codexId);
       }
     }
   }
@@ -28,8 +28,8 @@ Json PlayerCodexes::toJson() const {
 
 List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
   List<CodexEntry> result;
-  for (auto pair : m_codexes)
-    result.append(pair.second);
+  for (auto const& [codexId, codexEntry] : m_codexes)
+    result.append(codexEntry);
   sort(result,
       [](CodexEntry const& left, CodexEntry const& right) -> bool {
         return make_tuple(left.second, left.first->title()) < make_tuple(right.second, right.first->title());
@@ -78,9 +78,9 @@ void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
 }
 
 CodexConstPtr PlayerCodexes::firstNewCodex() const {
-  for (auto pair : m_codexes) {
-    if (!pair.second.second)
-      return pair.second.first;
+  for (auto const& [codexId, codexEntry] : m_codexes) {
+    if (!codexEntry.second)
+      return codexEntry.first;
   }
   return {};
 }

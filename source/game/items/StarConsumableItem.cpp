@@ -67,8 +67,8 @@ bool ConsumableItem::canUse() const {
   if (!count() || m_consuming)
     return false;
 
-  for (auto pair : owner()->statusController()->activeUniqueStatusEffectSummary()) {
-    if (m_blockingEffects.contains(pair.first))
+  for (auto [effectName, duration] : owner()->statusController()->activeUniqueStatusEffectSummary()) {
+    if (m_blockingEffects.contains(effectName))
       return false;
   }
   return true;

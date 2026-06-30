@@ -119,8 +119,8 @@ void LuaBaseComponent::uninit() {
     contextShutdown();
     m_context.reset();
   }
-  for (auto p : m_threads) {
-    p.second->stop();
+  for ([[maybe_unused]] auto const& [threadName, thread] : m_threads) {
+    thread->stop();
   }
 
   m_error.reset();
@@ -145,8 +145,8 @@ Maybe<LuaContext>& LuaBaseComponent::context() {
 void LuaBaseComponent::contextSetup() {
   m_context->setPath("self", m_context->createTable());
 
-  for (auto const& p : m_callbacks)
-    m_context->setCallbacks(p.first, p.second);
+  for (auto const& [callbackName, callbacks] : m_callbacks)
+    m_context->setCallbacks(callbackName, callbacks);
 }
 
 void LuaBaseComponent::contextShutdown() {}
@@ -188,10 +188,10 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
       m_threads.remove(threadName);
   });
   callbacks.registerCallback("sendMessage", [this](String const& threadName, String const& message, LuaVariadic<Json> args) {
-    auto pair = RpcThreadPromise<Json>::createPair();
+    auto [promise, keeper] = RpcThreadPromise<Json>::createPair();
     RecursiveMutexLocker locker(m_threadLock);
-    m_threads.get(threadName)->passMessage({ message, args, pair.second });
-    return pair.first;
+    m_threads.get(threadName)->passMessage({ message, args, keeper });
+    return promise;
   });
   
   return callbacks;

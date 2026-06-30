@@ -86,11 +86,11 @@ void SystemWorldServerThread::update() {
   WriteLocker queueLocker(m_queueMutex);
   WriteLocker locker(m_mutex);
 
-  for (auto p : take(m_incomingPacketQueue))
-    m_systemWorld->handleIncomingPacket(p.first, p.second);
+  for (auto [clientId, packet] : take(m_incomingPacketQueue))
+    m_systemWorld->handleIncomingPacket(clientId, packet);
 
-  for (auto p : take(m_clientShipActions))
-    p.second(m_systemWorld->clientShip(p.first).get());
+  for (auto [clientId, action] : take(m_clientShipActions))
+    action(m_systemWorld->clientShip(clientId).get());
 
   if (!m_pause || *m_pause == false)
     m_systemWorld->update(SystemWorldTimestep * GlobalTimescale);
@@ -98,8 +98,8 @@ void SystemWorldServerThread::update() {
 
   // important to set destinations before getting locations
   // setting a destination nullifies the current location
-  for (auto p : take(m_clientShipDestinations))
-    m_systemWorld->setClientDestination(p.first, p.second);
+  for (auto [clientId, destination] : take(m_clientShipDestinations))
+    m_systemWorld->setClientDestination(clientId, destination);
 
   m_activeInstanceWorlds = m_systemWorld->activeInstanceWorlds();
 

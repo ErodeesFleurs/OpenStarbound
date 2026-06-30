@@ -76,9 +76,9 @@ MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstP
       material.itemDrop = matConfig.getString("itemDrop", "");
 
       JsonObject descriptions;
-      for (auto entry : matConfig.iterateObject())
-        if (entry.first.endsWith("Description"))
-          descriptions[entry.first] = entry.second;
+      for (auto const& [configKey, configValue] : matConfig.iterateObject())
+        if (configKey.endsWith("Description"))
+          descriptions[configKey] = configValue;
       descriptions["description"] = matConfig.getString("description", "");
       descriptions["shortdescription"] = matConfig.getString("shortdescription", "");
       material.descriptions = descriptions;
@@ -156,9 +156,9 @@ MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstP
       mod.itemDrop = modConfig.getString("itemDrop", "");
 
       JsonObject descriptions;
-      for (auto entry : modConfig.iterateObject())
-        if (entry.first.endsWith("Description"))
-          descriptions[entry.first] = entry.second;
+      for (auto const& [configKey, configValue] : modConfig.iterateObject())
+        if (configKey.endsWith("Description"))
+          descriptions[configKey] = configValue;
       descriptions["description"] = modConfig.getString("description", "");
       mod.descriptions = descriptions;
 

@@ -115,10 +115,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   Mat3F rotMatrix = Mat3F::rotation(sky.starRotation, viewCenter);
 
   JsonArray debrisFields = sky.settings.queryArray("spaceDebrisFields");
-  for (auto const& debrisFieldAndIndex : enumerateIterator(debrisFields)) {
-    Json const& debrisField = debrisFieldAndIndex.first;
-    size_t debrisFieldIndex = debrisFieldAndIndex.second;
-
+  for (auto const& [debrisField, debrisFieldIndex] : enumerateIterator(debrisFields)) {
     Vec2F spaceDebrisVelocityRange = jsonToVec2F(debrisField.query("velocityRange"));
     float debrisXVel = staticRandomFloatRange(spaceDebrisVelocityRange[0], spaceDebrisVelocityRange[1], sky.skyParameters.seed, debrisFieldIndex, "DebrisFieldXVel");
     float debrisYVel = staticRandomFloatRange(spaceDebrisVelocityRange[0], spaceDebrisVelocityRange[1], sky.skyParameters.seed, debrisFieldIndex, "DebrisFieldYVel");
@@ -490,9 +487,7 @@ void EnvironmentPainter::setupStars(SkyRenderData const& sky) {
 
   JsonArray debrisFields = sky.settings.queryArray("spaceDebrisFields");
   m_debrisGenerators.resize(debrisFields.size());
-  for (auto const& debrisFieldAndIndex : enumerateIterator(debrisFields)) {
-    Json const& debrisField = debrisFieldAndIndex.first;
-    size_t debrisFieldIndex = debrisFieldAndIndex.second;
+  for (auto const& [debrisField, debrisFieldIndex] : enumerateIterator(debrisFields)) {
     int debrisCellSize = debrisField.getInt("cellSize");
     Vec2I debrisCountRange = jsonToVec2I(debrisField.get("cellCountRange"));
     uint64_t debrisSeed = staticRandomU64(sky.skyParameters.seed, debrisFieldIndex, "DebrisFieldSeed");

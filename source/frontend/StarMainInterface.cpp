@@ -433,8 +433,8 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
 
   bool captured = false;
 
-  for (auto& pair : m_canvases)
-    captured |= pair.second->sendEvent(event);
+  for (auto& [_, canvas] : m_canvases)
+    captured |= canvas->sendEvent(event);
 
   return captured;
 }
@@ -881,13 +881,13 @@ void MainInterface::update(float dt) {
       m_containerInteractor->closeContainer();
   }
 
-  for (auto& pair : m_canvases) {
-    pair.second->setPosition(Vec2I());
-    if (pair.second->ignoreInterfaceScale())
-      pair.second->setSize(Vec2I(m_guiContext.windowSize()));
+  for (auto& [_, canvas] : m_canvases) {
+    canvas->setPosition(Vec2I());
+    if (canvas->ignoreInterfaceScale())
+      canvas->setSize(Vec2I(m_guiContext.windowSize()));
     else
-      pair.second->setSize(Vec2I(m_guiContext.windowInterfaceSize()));
-    pair.second->update(dt);
+      canvas->setSize(Vec2I(m_guiContext.windowInterfaceSize()));
+    canvas->update(dt);
   }
 }
 
@@ -914,8 +914,8 @@ void MainInterface::render() {
   renderDebug();
 
   RectI screenRect = RectI::withSize(Vec2I(), Vec2I(m_guiContext.windowSize()));
-  for (auto& pair : m_canvases)
-    pair.second->render(screenRect);
+  for (auto& [_, canvas] : m_canvases)
+    canvas->render(screenRect);
 
   renderWindows();
   renderCursor();
@@ -963,9 +963,9 @@ void MainInterface::queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinReques
 void MainInterface::queueItemPickupText(ItemPtr const& item) {
   auto descriptor = item->descriptor();
   if (m_itemDropMessages.contains(descriptor.singular())) {
-    auto countMessPair = m_itemDropMessages.get(descriptor.singular());
-    auto newCount = item->count() + countMessPair.first;
-    auto message = countMessPair.second;
+    auto [previousCount, previousMessage] = m_itemDropMessages.get(descriptor.singular());
+    auto newCount = item->count() + previousCount;
+    auto message = previousMessage;
     message->message = strf("{} - {}", item->friendlyName(), newCount);
     message->cooldown = m_config->messageTime;
     m_itemDropMessages[descriptor.singular()] = {newCount, message};
@@ -1476,9 +1476,9 @@ void MainInterface::renderDebug() {
     formatted.reserve(logMapValues.size());
 
     int counter = 0;
-    for (auto const& pair : logMapValues) {
+    for (auto const& [label, value] : logMapValues) {
       TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * counter++) };
-      String& text = formatted.emplace_back(strf("{}^lightgray;:^green,set; {}", pair.first, pair.second));
+      String& text = formatted.emplace_back(strf("{}^lightgray;:^green,set; {}", label, value));
       m_debugTextRect.combine(m_guiContext.determineTextSize(text, positioning).padded(m_config->debugBackgroundPad));
     }
 
@@ -1491,9 +1491,9 @@ void MainInterface::renderDebug() {
 
     m_debugTextRect = RectF::null();
 
-    for (auto const& textAndIndex : enumerateIterator(formatted)) {
-      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * textAndIndex.second) };
-      m_guiContext.renderText(textAndIndex.first, positioning);
+    for (auto const& [text, index] : enumerateIterator(formatted)) {
+      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * index) };
+      m_guiContext.renderText(text, positioning);
     }
   }
 

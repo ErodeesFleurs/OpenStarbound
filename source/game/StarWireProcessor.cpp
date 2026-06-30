@@ -26,16 +26,16 @@ void WireProcessor::process() {
   // thing again until the size stops changing.
   while (true) {
     size_t oldWorkingSize = m_workingWireEntities.size();
-    for (auto const& p : m_workingWireEntities.keys()) {
-      if (!m_workingWireEntities.get(p).networkLoaded)
-        loadNetwork(p);
+    for (auto const& entityId : m_workingWireEntities.keys()) {
+      if (!m_workingWireEntities.get(entityId).networkLoaded)
+        loadNetwork(entityId);
     }
     if (m_workingWireEntities.size() == oldWorkingSize)
       break;
   }
 
-  for (auto const& p : m_workingWireEntities)
-    p.second.wireEntity->evaluate(this);
+  for (auto const& [_, workingWireEntity] : m_workingWireEntities)
+    workingWireEntity.wireEntity->evaluate(this);
 
   m_workingWireEntities.clear();
 }

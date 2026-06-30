@@ -12,12 +12,12 @@ PlayerTech::PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase)
   : PlayerTech(requireServiceValueAs<PlayerTechException>(std::move(techDatabase), "PlayerTech", "tech database")) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
-  for (auto& p : json.getObject("equippedTechs")) {
-    String techName = p.second.toString();
+  for (auto const& [techTypeName, techConfig] : json.getObject("equippedTechs")) {
+    String techName = techConfig.toString();
     if (m_techDatabase->contains(techName))
-      m_equippedTechs.set(TechTypeNames.getLeft(p.first), techName);
+      m_equippedTechs.set(TechTypeNames.getLeft(techTypeName), techName);
     else
-      Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
+      Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, techTypeName);
   }
 }
 

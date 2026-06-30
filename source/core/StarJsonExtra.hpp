@@ -248,8 +248,8 @@ MapType jsonToMapKV(Json const& v, KeyConverter&& keyConvert, ValueConverter&& v
     throw JsonException("Json type is not an object in jsonToMap");
 
   MapType res;
-  for (auto const& pair : v.iterateObject())
-    res.add(keyConvert(pair.first), valueConvert(pair.second));
+  for (auto const& [key, value] : v.iterateObject())
+    res.add(keyConvert(key), valueConvert(value));
 
   return res;
 }
@@ -272,8 +272,8 @@ MapType jsonToMap(Json const& v) {
 template <typename MapType, typename KeyConverter, typename ValueConverter>
 Json jsonFromMapKV(MapType const& map, KeyConverter&& keyConvert, ValueConverter&& valueConvert) {
   JsonObject res;
-  for (auto pair : map)
-    res[keyConvert(pair.first)] = valueConvert(pair.second);
+  for (auto [key, value] : map)
+    res[keyConvert(key)] = valueConvert(value);
 
   return res;
 }
@@ -343,9 +343,9 @@ Json jsonFromWeightedPool(WeightedPool<T> const& pool) {
 template <typename T, typename Converter>
 Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter) {
   JsonArray res;
-  for (auto const& pair : pool.items()) {
+  for (auto const& [weight, item] : pool.items()) {
     res.append(JsonObject{
-        {"weight", pair.first}, {"item", converter(pair.second)},
+        {"weight", weight}, {"item", converter(item)},
     });
   }
   return res;

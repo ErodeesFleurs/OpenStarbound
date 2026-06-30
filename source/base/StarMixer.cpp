@@ -208,8 +208,8 @@ void Mixer::play(AudioInstancePtr sample) {
 void Mixer::stopAll(float rampTime) {
   MutexLocker locker(m_queueMutex);
   float vel = rateOfChangeFromRampTime(rampTime);
-  for (auto const& p : m_audios)
-    p.first->stop(vel);
+  for (auto const& [audio, _] : m_audios)
+    audio->stop(vel);
 }
 
 void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMixFunction) {
@@ -242,8 +242,8 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   float endVolume = approach(targetVolume, volume, volumeVelocity * time);
 
   Map<MixerGroup, float> groupEndVolumes;
-  for (auto p : groupVolumes)
-    groupEndVolumes[p.first] = approach(p.second.target, p.second.value, p.second.velocity * time);
+  for (auto const& [group, groupVolume] : groupVolumes)
+    groupEndVolumes[group] = approach(groupVolume.target, groupVolume.value, groupVolume.velocity * time);
 
   auto sampleStartTime = Time::millisecondsSinceEpoch();
   unsigned millisecondsInBuffer = (bufferSize * 1000) / (channels * sampleRate);
@@ -255,10 +255,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   {
     MutexLocker locker(m_queueMutex);
     // Mix all active sounds
-    for (auto& p : m_audios) {
-      auto& audioInstance = p.first;
-      auto& audioState = p.second;
-
+    for (auto& [audioInstance, audioState] : m_audios) {
       MutexLocker audioLocker(audioInstance->m_mutex);
 
       if (audioInstance->m_finished)
@@ -355,8 +352,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   {
     MutexLocker locker(m_effectsMutex);
     // Apply all active effects
-    for (auto const& pair : m_effects) {
-      auto const& effectInfo = pair.second;
+    for (auto const& [_, effectInfo] : m_effects) {
       if (effectInfo->finished)
         continue;
 
@@ -388,8 +384,8 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
 
     m_volume.value = endVolume;
 
-    for (auto p : groupEndVolumes)
-      m_groupVolumes[p.first].value = p.second;
+    for (auto const& [group, endVolume] : groupEndVolumes)
+      m_groupVolumes[group].value = endVolume;
   }
 }
 
@@ -465,16 +461,17 @@ void Mixer::setGroupVolume(MixerGroup group, float targetValue, float rampTime) 
 void Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFunction) {
   {
     MutexLocker locker(m_queueMutex);
-    eraseWhere(m_audios, [&](auto& p) {
-        if (p.first->m_finished)
+    eraseWhere(m_audios, [&](auto& audioEntry) {
+        auto& [audioInstance, audioState] = audioEntry;
+        if (audioInstance->m_finished)
           return true;
 
-        if (positionalAttenuationFunction && p.first->m_position) {
+        if (positionalAttenuationFunction && audioInstance->m_position) {
           for (unsigned c = 0; c < m_channels; ++c)
-            p.second.positionalChannelVolumes[c] = 1.0f - positionalAttenuationFunction(c, *p.first->m_position, p.first->m_rangeMultiplier);
+            audioState.positionalChannelVolumes[c] = 1.0f - positionalAttenuationFunction(c, *audioInstance->m_position, audioInstance->m_rangeMultiplier);
         } else {
           for (unsigned c = 0; c < m_channels; ++c)
-            p.second.positionalChannelVolumes[c] = 1.0f;
+            audioState.positionalChannelVolumes[c] = 1.0f;
         }
         return false;
       });
@@ -482,8 +479,9 @@ void Mixer::update(float, PositionalAttenuationFunction positionalAttenuationFun
 
   {
     MutexLocker locker(m_effectsMutex);
-    eraseWhere(m_effects, [](auto const& p) {
-        return p.second->finished;
+    eraseWhere(m_effects, [](auto const& effectEntry) {
+        auto const& [effectId, effectInfo] = effectEntry;
+        return effectInfo->finished;
       });
   }
 }

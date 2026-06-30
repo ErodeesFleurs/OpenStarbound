@@ -18,11 +18,11 @@ RadioMessageDatabase::RadioMessageDatabase(AssetsConstPtr assets) {
   for (auto& file : files) {
     try {
       Json messages = assets->json(file);
-      for (auto pair : messages.iterateObject()) {
-        if (m_radioMessages.contains(pair.first))
-          throw RadioMessageDatabaseException(strf("Duplicate radiomessage {} in file {}", pair.first, file));
+      for (auto const& [messageName, messageConfig] : messages.iterateObject()) {
+        if (m_radioMessages.contains(messageName))
+          throw RadioMessageDatabaseException(strf("Duplicate radiomessage {} in file {}", messageName, file));
 
-        m_radioMessages[pair.first] = createRadioMessage(pair.second, pair.first);
+        m_radioMessages[messageName] = createRadioMessage(messageConfig, messageName);
       }
     } catch (std::exception const& e) {
       throw RadioMessageDatabaseException(strf("Error loading radiomessages file {}", file), e);
@@ -64,10 +64,10 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe
     message.chatterSound = mergedConfig.getString("chatterSound");
 
     auto merger = config.eraseKey("speciesAiMessage").eraseKey("speciesMessage");
-    for (auto p : mergedConfig.getObject("speciesAiMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
-    for (auto p : mergedConfig.getObject("speciesMessage", JsonObject()))
-      message.speciesMessage.set(p.first, createRadioMessage(jsonMerge(merger, p.second), messageId));
+    for (auto const& [speciesName, speciesMessage] : mergedConfig.getObject("speciesAiMessage", JsonObject()))
+      message.speciesMessage.set(speciesName, createRadioMessage(jsonMerge(merger, speciesMessage), messageId));
+    for (auto const& [speciesName, speciesMessage] : mergedConfig.getObject("speciesMessage", JsonObject()))
+      message.speciesMessage.set(speciesName, createRadioMessage(jsonMerge(merger, speciesMessage), messageId));
 
     if (message.portraitFrames <= 0)
       throw RadioMessageDatabaseException(

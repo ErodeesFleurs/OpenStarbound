@@ -444,9 +444,9 @@ Json NpcDatabase::buildConfig(String const& typeName, Json const& overrides) con
 Json NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     auto map = base.toObject();
-    for (auto const& entry : merger.iterateObject()) {
-      if (!map.insert(entry.first, entry.second).second) {
-        map[entry.first] = mergeConfigValues(map[entry.first], entry.second);
+    for (auto const& [propertyName, propertyValue] : merger.iterateObject()) {
+      if (!map.insert(propertyName, propertyValue).second) {
+        map[propertyName] = mergeConfigValues(map[propertyName], propertyValue);
       }
     }
     return map;

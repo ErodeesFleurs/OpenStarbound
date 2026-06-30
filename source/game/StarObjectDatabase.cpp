@@ -86,21 +86,19 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
   // If we are given a direction affinity, try and find an orientation with a
   // matching affinity *first*
   if (directionAffinity) {
-    for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
-      auto const& orientation = orientationAndIndex.first;
+    for (auto const& [orientation, orientationIndex] : enumerateIterator(orientations)) {
       if (!orientation->directionAffinity || *directionAffinity != *orientation->directionAffinity)
         continue;
 
       if (orientation->placementValid(world, position) && orientation->anchorsValid(world, position))
-        return orientationAndIndex.second;
+        return orientationIndex;
     }
   }
 
   // Then, fallback and try and find any valid affinity
-  for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
-    auto const& orientation = orientationAndIndex.first;
+  for (auto const& [orientation, orientationIndex] : enumerateIterator(orientations)) {
     if (orientation->placementValid(world, position) && orientation->anchorsValid(world, position))
-      return orientationAndIndex.second;
+      return orientationIndex;
   }
 
   return NPos;
@@ -192,8 +190,8 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
     orientation->animationCycle = orientationSettings.getDouble("animationCycle", 1.0);
 
     if (orientationSettings.contains("spaces")) {
-      for (auto const& v : orientationSettings.getArray("spaces"))
-        orientation->spaces.append(jsonToVec2I(v));
+      for (auto const& spaceConfig : orientationSettings.getArray("spaces"))
+        orientation->spaces.append(jsonToVec2I(spaceConfig));
     } else {
       orientation->spaces = {{0, 0}};
     }
@@ -203,8 +201,8 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
       StringMap<String> imageKeys;
       imageKeys.set("color", orientationSettings.get("color", "default").toString().takeUtf8());
 
-      for (auto const& p : jsonMergeQueryDef("imageKeys", JsonObject(), baseConfig, orientation->config).iterateObject())
-        imageKeys.set(p.first, p.second.toString());
+      for (auto const& [imageKey, imageValue] : jsonMergeQueryDef("imageKeys", JsonObject(), baseConfig, orientation->config).iterateObject())
+        imageKeys.set(imageKey, imageValue.toString());
 
       for (auto const& layer : orientation->imageLayers) {
         if (layer.isImage())
@@ -260,11 +258,11 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
       }
     }
 
-    for (auto const& v : orientationSettings.getArray("bgAnchors", {}))
-      orientation->anchors.append({TileLayer::Background, jsonToVec2I(v), tilled, soil, anchorMaterial});
+    for (auto const& anchorConfig : orientationSettings.getArray("bgAnchors", {}))
+      orientation->anchors.append({TileLayer::Background, jsonToVec2I(anchorConfig), tilled, soil, anchorMaterial});
 
-    for (auto const& v : orientationSettings.getArray("fgAnchors", {}))
-      orientation->anchors.append({TileLayer::Foreground, jsonToVec2I(v), tilled, soil, anchorMaterial});
+    for (auto const& anchorConfig : orientationSettings.getArray("fgAnchors", {}))
+      orientation->anchors.append({TileLayer::Foreground, jsonToVec2I(anchorConfig), tilled, soil, anchorMaterial});
 
     orientation->anchorAny = orientationSettings.getBool("anchorAny", false);
 
@@ -550,8 +548,8 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
     if (config.contains("lightColor")) {
       objectConfig->lightColors["default"] = jsonToColor(config.get("lightColor"));
     } else if (config.contains("lightColors")) {
-      for (auto const& pair : config.get("lightColors").iterateObject())
-        objectConfig->lightColors[pair.first] = jsonToColor(pair.second);
+      for (auto const& [lightName, lightColor] : config.get("lightColors").iterateObject())
+        objectConfig->lightColors[lightName] = jsonToColor(lightColor);
     }
 
     if (auto lightType = config.optString("lightType"))
@@ -631,9 +629,9 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
       // matches our current direction, or if that fails just the first
       // orientation.
       List<Drawable> result;
-      for (auto const& orientationAndIndex : enumerateIterator(config->orientations)) {
-        if (orientationAndIndex.first->directionAffinity == direction)
-          orientationIndex = orientationAndIndex.second;
+      for (auto const& [orientation, index] : enumerateIterator(config->orientations)) {
+        if (orientation->directionAffinity == direction)
+          orientationIndex = index;
       }
       if (orientationIndex == NPos)
         orientationIndex = 0;
@@ -643,8 +641,8 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
     StringMap<String> imageKeys;
     imageKeys.set("color", orientation->config.get("color", "default").toString().takeUtf8());
-    for (auto const& p : jsonMergeQueryDef("imageKeys", JsonObject(), config->config, orientation->config, parameters).iterateObject())
-      imageKeys.set(p.first, p.second.toString());
+    for (auto const& [imageKey, imageValue] : jsonMergeQueryDef("imageKeys", JsonObject(), config->config, orientation->config, parameters).iterateObject())
+      imageKeys.set(imageKey, imageValue.toString());
 
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;

@@ -97,11 +97,11 @@ void UniverseSettings::loadFlagActions(AssetsConstPtr assets) {
   m_flagActions.clear();
 
   Json flagsConfig = assets->json("/universeflags.config");
-  for (auto flagPair : flagsConfig.iterateObject()) {
+  for (auto const& [flagName, flagConfig] : flagsConfig.iterateObject()) {
     List<UniverseFlagAction> actions;
-    for (auto actionConfig : flagPair.second.get("actions").iterateArray())
+    for (auto actionConfig : flagConfig.get("actions").iterateArray())
       actions.append(parseUniverseFlagAction(actionConfig));
-    m_flagActions[flagPair.first] = actions;
+    m_flagActions[flagName] = actions;
   }
 }
 

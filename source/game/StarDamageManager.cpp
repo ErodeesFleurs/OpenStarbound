@@ -86,12 +86,12 @@ void DamageManager::update(float dt) {
       else if (auto line = damageSource.damageArea.ptr<Line2F>())
         SpatialLogger::logLine("world", *line, Color::Orange.toRgba());
 
-      for (auto const& hitResultPair : queryHit(damageSource, causingEntity->entityId())) {
-        auto targetEntity = m_world.entity(hitResultPair.first);
+      for (auto const& [targetEntityId, hitResult] : queryHit(damageSource, causingEntity->entityId())) {
+        auto targetEntity = m_world.entity(targetEntityId);
         if (!isAuthoritative(causingEntity, targetEntity))
           continue;
 
-        auto& eventList = m_recentEntityDamages[hitResultPair.first];
+        auto& eventList = m_recentEntityDamages[targetEntityId];
         // Guard against rapidly repeating damages by either the causing
         // entity id, or optionally the repeat group if specified.
         bool allowDamage = true;
@@ -111,7 +111,7 @@ void DamageManager::update(float dt) {
           else
             eventList.append({causingEntity->entityId(), timeout});
 
-          auto damageRequest = DamageRequest(hitResultPair.second, damageSource.damageType, damageSource.damage,
+          auto damageRequest = DamageRequest(hitResult, damageSource.damageType, damageSource.damage,
               damageSource.knockbackMomentum(m_world.geometry(), targetEntity->position()),
               damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
           addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});

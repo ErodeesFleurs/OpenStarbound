@@ -143,9 +143,9 @@ pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
 }
 
 pair<UniquePtr<Root>, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
-  auto p = parseOrDie(cmdLineArguments);
-  auto root = make_unique<Root>(p.first);
-  return {std::move(root), p.second};
+  auto [settings, options] = parseOrDie(cmdLineArguments);
+  auto root = make_unique<Root>(settings);
+  return {std::move(root), options};
 }
 
 pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
@@ -154,9 +154,9 @@ pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc
 }
 
 pair<UniquePtr<Root>, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
-  auto p = commandParseOrDie(argc, argv);
-  auto root = make_unique<Root>(p.first);
-  return {std::move(root), p.second};
+  auto [settings, options] = commandParseOrDie(argc, argv);
+  auto root = make_unique<Root>(settings);
+  return {std::move(root), options};
 }
 
 Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const {

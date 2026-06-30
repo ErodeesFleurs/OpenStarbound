@@ -84,8 +84,8 @@ void LuaRoot::shutdown() {
         profile.set("self", entry.selfTime);
         profile.set("total", entry.totalTime);
         List<LuaProfileEntry> calls;
-        for (auto p : entry.calls)
-          calls.append(*p.second);
+        for (auto const& callEntry : entry.calls.values())
+          calls.append(*callEntry);
         profile.set("calls", calls.sorted([](auto const& a, auto const& b) { return a.totalTime > b.totalTime; }).transformed(jsonFromProfileEntry));
         return profile;
       };
@@ -131,8 +131,8 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
       Logger::error("Script '{}' does not exist", scriptPath);
   }
 
-  for (auto const& callbackPair : m_luaCallbacks)
-    newContext.setCallbacks(callbackPair.first, callbackPair.second);
+  for (auto const& [callbackName, callbacks] : m_luaCallbacks)
+    newContext.setCallbacks(callbackName, callbacks);
 
   return newContext;
 }
@@ -213,8 +213,8 @@ void LuaRoot::ScriptCache::loadContextScript(LuaContext& context, String const& 
 size_t LuaRoot::ScriptCache::memoryUsage() const {
   RecursiveMutexLocker locker(mutex);
   size_t total = 0;
-  for (auto const& p : scripts)
-    total += p.second.size();
+  for (auto const& [_, script] : scripts)
+    total += script.size();
   return total;
 }
 

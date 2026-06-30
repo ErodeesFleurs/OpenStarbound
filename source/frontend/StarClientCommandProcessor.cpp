@@ -563,15 +563,16 @@ String ClientCommandProcessor::render(String const& path) {
 
     StringMap<pair<RectU, ImageConstPtr>> frames;
     if (auto imageFrames = m_imageFrames(assetPath.basePath))
-      for (auto& pair : imageFrames->frames)
-        frames[pair.first] = make_pair(pair.second, ImageConstPtr());
+      for (auto const& [frameName, frameBox] : imageFrames->frames)
+        frames[frameName] = make_pair(frameBox, ImageConstPtr());
 
     if (frames.empty())
       return "^red;Failed to save image^reset;";
 
-    for (auto& entry : frames) {
-      framePath.subPath = entry.first;
-      entry.second.second = assets->image(framePath);
+    for (auto& [frameName, frame] : frames) {
+      auto& [frameBox, frameImage] = frame;
+      framePath.subPath = frameName;
+      frameImage = assets->image(framePath);
     }
 
     Vec2U frameSize = frames.begin()->second.first.size();
@@ -579,12 +580,12 @@ String ClientCommandProcessor::render(String const& path) {
     if (imageSize.min() == 0)
       return "^red;Resulting image is empty^reset;";
 
-    for (auto& frame : frames) {
-      RectU& box = frame.second.first;
-      box.setXMin((box.xMin() / frameSize[0]) * imageSize[0]);
-      box.setYMin(((sheet->height() - box.yMin() - box.height()) / frameSize[1]) * imageSize[1]);
-      box.setXMax(box.xMin() + imageSize[0]);
-      box.setYMax(box.yMin() + imageSize[1]);
+    for (auto& [frameName, frame] : frames) {
+      auto& [frameBox, frameImage] = frame;
+      frameBox.setXMin((frameBox.xMin() / frameSize[0]) * imageSize[0]);
+      frameBox.setYMin(((sheet->height() - frameBox.yMin() - frameBox.height()) / frameSize[1]) * imageSize[1]);
+      frameBox.setXMax(frameBox.xMin() + imageSize[0]);
+      frameBox.setYMax(frameBox.yMin() + imageSize[1]);
     }
 
     if (frameSize != imageSize) {
@@ -593,8 +594,10 @@ String ClientCommandProcessor::render(String const& path) {
       sheet->reset(sheetWidth, sheetHeight, PixelFormat::RGBA32);
     }
 
-    for (auto& entry : frames)
-      sheet->copyInto(entry.second.first.min(), *entry.second.second);
+    for (auto const& [frameName, frame] : frames) {
+      auto const& [frameBox, frameImage] = frame;
+      sheet->copyInto(frameBox.min(), *frameImage);
+    }
 
     image = std::move(sheet);
   } else {

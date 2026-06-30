@@ -78,7 +78,10 @@ pair<List<T>, uint64_t> ObserverStream<T>::query(uint64_t since) const {
   auto i = std::lower_bound(m_values.begin(),
       m_values.end(),
       since,
-      [](pair<uint64_t, T> const& p, uint64_t step) { return p.first < step; });
+      [](pair<uint64_t, T> const& entry, uint64_t step) {
+        auto const& [entryStep, value] = entry;
+        return entryStep < step;
+      });
   while (i != m_values.end()) {
     res.append(i->second);
     ++i;

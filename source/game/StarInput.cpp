@@ -279,9 +279,7 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig,
 
   auto userBindings = this->configuration->get(InputBindingConfigRoot);
 
-  for (auto& pair : config.getObject("binds", {})) {
-    String const& bindId = pair.first;
-    Json const& bindConfig = pair.second;
+  for (auto const& [bindId, bindConfig] : config.getObject("binds", {})) {
     if (!bindConfig.isType(Json::Type::Object))
       continue;
 
@@ -377,20 +375,22 @@ void Input::reset(bool clear) {
     m_controllerStates.clear();
     m_bindStates.clear();
   } else {
-    auto eraseCond = [](auto& p) {
-      if (p.second.held)
-        p.second.reset();
-      return !p.second.held;
+    auto eraseCond = [](auto& stateEntry) {
+      auto& [input, state] = stateEntry;
+      if (state.held)
+        state.reset();
+      return !state.held;
     };
 
     eraseWhere(m_keyStates, eraseCond);
     eraseWhere(m_mouseStates, eraseCond);
     eraseWhere(m_controllerStates, eraseCond);
-    eraseWhere(m_bindStates, [&](auto& p) {
-      if (p.second.held)
-        p.second.reset();
+    eraseWhere(m_bindStates, [&](auto& stateEntry) {
+      auto& [bindEntry, state] = stateEntry;
+      if (state.held)
+        state.reset();
       else {
-        for (auto& tag : p.first->tags) {
+        for (auto& tag : bindEntry->tags) {
           auto find = m_activeTags.find(tag);
           if (find != m_activeTags.end() && !--find->second)
             m_activeTags.erase(find);
@@ -498,9 +498,8 @@ void Input::rebuildMappings() {
   reset(true);
   m_bindMappings.clear();
 
-  for (auto& category : m_bindCategories) {
-    for (auto& pair : category.second.entries) {
-      auto& entry = pair.second;
+  for (auto& [categoryId, category] : m_bindCategories) {
+    for (auto& [bindId, entry] : category.entries) {
       for (auto& bind : entry.customBinds) {
         if (auto keyBind = bind.ptr<KeyBind>())
           m_bindMappings[keyBind->key].emplace_back(entry, *keyBind);
@@ -512,8 +511,8 @@ void Input::rebuildMappings() {
     }
   }
 
-  for (auto& pair : m_bindMappings) {
-    pair.second.sort([](BindRef const& a, BindRef const& b) { return a.priority > b.priority; });
+  for (auto& [input, bindings] : m_bindMappings) {
+    bindings.sort([](BindRef const& a, BindRef const& b) { return a.priority > b.priority; });
   }
 }
 
@@ -522,9 +521,7 @@ void Input::reload() {
   m_bindCategories.clear();
 
   for (auto& bindPath : m_assets->scanExtension("binds")) {
-    for (auto const& pair : m_assets->json(bindPath).iterateObject()) {
-      String const& categoryId = pair.first;
-      Json const& categoryConfig = pair.second;
+    for (auto const& [categoryId, categoryConfig] : m_assets->json(bindPath).iterateObject()) {
       if (!categoryConfig.isType(Json::Type::Object))
         continue;
 
@@ -535,8 +532,8 @@ void Input::reload() {
   }
 
   size_t count = 0;
-  for (auto& pair : m_bindCategories)
-    count += pair.second.entries.size();
+  for (auto const& [categoryId, category] : m_bindCategories)
+    count += category.entries.size();
 
   Logger::info("Binds: Loaded {} bind{}", count, count == 1 ? "" : "s");
 

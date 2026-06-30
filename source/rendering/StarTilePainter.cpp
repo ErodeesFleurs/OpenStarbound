@@ -94,8 +94,8 @@ void TilePainter::renderLiquid(WorldCamera const& camera) {
   transformation.translate(camera.tileMinScreen());
 
   for (auto const& chunk : m_pendingLiquidChunks) {
-    for (auto const& p : *chunk)
-      m_renderer->renderBuffer(p.second, transformation);
+    for (auto const& [_, buffer] : *chunk)
+      m_renderer->renderBuffer(buffer, transformation);
   }
 
   m_renderer->flush();
@@ -145,8 +145,8 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
   Map<QuadZLevel, List<RenderBufferPtr>> zOrderBuffers;
   for (auto const& chunk : m_pendingTerrainChunks) {
-    for (auto const& pair : chunk->value(terrainLayer))
-      zOrderBuffers[pair.first].append(pair.second);
+    for (auto const& [zLevel, buffer] : chunk->value(terrainLayer))
+      zOrderBuffers[zLevel].append(buffer);
   }
 
   Mat3F transformation = Mat3F::identity();
@@ -154,8 +154,8 @@ void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer te
   transformation.scale(TilePixels * camera.pixelRatio());
   transformation.translate(camera.tileMinScreen());
 
-  for (auto const& pair : zOrderBuffers) {
-    for (auto const& buffer : pair.second)
+  for (auto const& buffers : zOrderBuffers.values()) {
+    for (auto const& buffer : buffers)
       m_renderer->renderBuffer(buffer, transformation);
   }
 
@@ -179,11 +179,11 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
 
       auto chunk = make_shared<TerrainChunk>();
 
-      for (auto& layerPair : terrainPrimitives) {
-        for (auto& zLevelPair : layerPair.second) {
+      for (auto& [terrainLayer, zLevelPrimitives] : terrainPrimitives) {
+        for (auto& [zLevel, primitives] : zLevelPrimitives) {
           auto rb = m_renderer->createRenderBuffer();
-          rb->set(zLevelPair.second);
-          (*chunk)[layerPair.first][zLevelPair.first] = std::move(rb);
+          rb->set(primitives);
+          (*chunk)[terrainLayer][zLevel] = std::move(rb);
         }
       }
 
@@ -204,10 +204,10 @@ shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRend
 
       auto chunk = make_shared<LiquidChunk>();
 
-      for (auto& p : liquidPrimitives) {
+      for (auto& [liquidId, primitives] : liquidPrimitives) {
         auto rb = m_renderer->createRenderBuffer();
-        rb->set(p.second);
-        chunk->set(p.first, std::move(rb));
+        rb->set(primitives);
+        chunk->set(liquidId, std::move(rb));
       }
 
       return chunk;
@@ -280,13 +280,13 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     Directives const* directives = materialRenderProfile->colorDirectives.empty()
       ? nullptr
       : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
-    for (auto const& piecePair : pieces) {
-      TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, directives, false);
-      auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) [[unlikely]] variant = piecePair.first->variants.ptr(0);
+    for (auto const& [piece, offset] : pieces) {
+      TexturePtr texture = getPieceTexture(material, piece, materialHue, directives, false);
+      auto variant = piece->variants.ptr(materialColorVariant);
+      if (!variant) [[unlikely]] variant = piece->variants.ptr(0);
       if (!variant) continue;
       RectF textureCoords = variant->wrap(variance);
-      RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
+      RectF worldCoords = RectF::withSize(offset / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
           worldCoords  .min(),
           textureCoords.min(),
@@ -311,13 +311,13 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     Directives const* directives = modRenderProfile->colorDirectives.empty()
       ? nullptr
       : &modRenderProfile->colorDirectives.wrap(modColorVariant);
-    for (auto const& piecePair : pieces) {
-      auto texture = getPieceTexture(mod, piecePair.first, modHue, directives, true);
-      auto variant = piecePair.first->variants.ptr(modColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+    for (auto const& [piece, offset] : pieces) {
+      auto texture = getPieceTexture(mod, piece, modHue, directives, true);
+      auto variant = piece->variants.ptr(modColorVariant);
+      if (!variant) variant = piece->variants.ptr(0);
       if (!variant) continue;
       auto& textureCoords = variant->wrap(variance);
-      RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
+      RectF worldCoords = RectF::withSize(offset / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
           worldCoords.min(), textureCoords.min(),
           Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),

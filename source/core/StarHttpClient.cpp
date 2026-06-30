@@ -75,8 +75,8 @@ static HttpResponse performRequest(HttpRequest const& req) {
     response.statusCode = static_cast<int>(r.status_code);
     response.body = String(r.text);
 
-    for (auto const& pair : r.header) {
-      response.headers[String(pair.first)] = String(pair.second);
+    for (auto const& [headerName, headerValue] : r.header) {
+      response.headers[String(headerName)] = String(headerValue);
     }
 
   } catch (std::exception const& e) {
@@ -93,4 +93,3 @@ WorkerPoolPromise<HttpResponse> HttpClient::requestAsync(HttpRequest const& requ
 }
 
 }
-

@@ -108,8 +108,8 @@ template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 [[nodiscard]] List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::values() const {
   List<Value> values;
-  for (auto const& pair : m_entryMap)
-    values.append(pair.second.value);
+  for (auto const& [key, entry] : m_entryMap)
+    values.append(entry.value);
 
   return values;
 }
@@ -269,8 +269,8 @@ template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::setSectorSize(Scalar const& sectorSize) {
   m_sectorSize = sectorSize;
   m_sectorMap.clear();
-  for (auto const& pair : m_entryMap)
-    addSpatial(pair.first, pair.second);
+  for (auto const& [key, entry] : m_entryMap)
+    addSpatial(key, entry);
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>

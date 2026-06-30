@@ -148,37 +148,37 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
 
           bool dataTransmitted = false;
           size_t handledCount = 0;
-          for (auto& p : connections) {
-            if (p.second->workerIndex != i)
+          for (auto& [clientId, connection] : connections) {
+            if (connection->workerIndex != i)
               continue;
 
             handledCount++;
-            MutexLocker connectionLocker(p.second->mutex);
-            if (!p.second->packetSocket || !p.second->packetSocket->isOpen())
+            MutexLocker connectionLocker(connection->mutex);
+            if (!connection->packetSocket || !connection->packetSocket->isOpen())
               continue;
 
-            p.second->packetSocket->sendPackets(take(p.second->sendQueue));
-            dataTransmitted |= p.second->packetSocket->writeData();
+            connection->packetSocket->sendPackets(take(connection->sendQueue));
+            dataTransmitted |= connection->packetSocket->writeData();
 
-            dataTransmitted |= p.second->packetSocket->readData();
-            List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
+            dataTransmitted |= connection->packetSocket->readData();
+            List<PacketPtr> receivePackets = connection->packetSocket->receivePackets();
             if (!receivePackets.empty()) {
-              p.second->lastActivityTime = Time::monotonicMilliseconds();
+              connection->lastActivityTime = Time::monotonicMilliseconds();
               m_workerStats[i].packetsProcessed += receivePackets.size();
-              p.second->receiveQueue.appendAll(take(receivePackets));
+              connection->receiveQueue.appendAll(take(receivePackets));
             }
 
-            if (!p.second->receiveQueue.empty()) {
-              List<PacketPtr> toReceive = List<PacketPtr>::from(take(p.second->receiveQueue));
+            if (!connection->receiveQueue.empty()) {
+              List<PacketPtr> toReceive = List<PacketPtr>::from(take(connection->receiveQueue));
               connectionLocker.unlock();
 
               try {
-                m_packetReceiver(this, p.first, std::move(toReceive));
+                m_packetReceiver(this, clientId, std::move(toReceive));
               } catch (std::exception const& e) {
-                Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", p.first, outputException(e, true));
+                Logger::error("Exception caught handling incoming server packets, disconnecting client '{}' {}", clientId, outputException(e, true));
 
                 connectionLocker.lock();
-                p.second->packetSocket->close();
+                connection->packetSocket->close();
               }
             }
           }
@@ -190,9 +190,9 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
       } catch (std::exception const& e) {
         Logger::error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());
         connectionsLocker.lock();
-        for (auto& p : m_connections)
-          if (p.second->workerIndex == i)
-            p.second->packetSocket->close();
+        for (auto& [clientId, connection] : m_connections)
+          if (connection->workerIndex == i)
+            connection->packetSocket->close();
       }
     }));
   }

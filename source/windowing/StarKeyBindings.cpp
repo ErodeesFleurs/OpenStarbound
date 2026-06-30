@@ -121,9 +121,9 @@ KeyChord inputDescriptorFromJson(Json const& json) {
 
 Json inputDescriptorToJson(KeyChord const& chord) {
   JsonArray modNames;
-  for (auto const& p : KeyModNames) {
-    if ((chord.mods & p.first) != KeyMod::NoMod)
-      modNames.append(p.second);
+  for (auto const& [mod, modName] : KeyModNames) {
+    if ((chord.mods & mod) != KeyMod::NoMod)
+      modNames.append(modName);
   }
   return JsonObject{
     {"type", "key"},
@@ -134,9 +134,9 @@ Json inputDescriptorToJson(KeyChord const& chord) {
 
 String printInputDescriptor(KeyChord chord) {
   StringList modNames;
-  for (auto const& p : KeyModNames) {
-    if ((chord.mods & p.first) != KeyMod::NoMod)
-      modNames.append(p.second);
+  for (auto const& [mod, modName] : KeyModNames) {
+    if ((chord.mods & mod) != KeyMod::NoMod)
+      modNames.append(modName);
   }
 
   return String::joinWith(" + ", modNames.join(" + "), KeyNames.getRight(chord.key));
@@ -147,10 +147,10 @@ KeyBindings::KeyBindings() = default;
 KeyBindings::KeyBindings(Json const& json) {
   Map<Key, List<pair<KeyMod, InterfaceAction>>> actions;
   try {
-    for (auto const& kvpair : json.iterateObject()) {
-      InterfaceAction action = InterfaceActionNames.getLeft(kvpair.first);
+    for (auto const& [actionName, inputs] : json.iterateObject()) {
+      InterfaceAction action = InterfaceActionNames.getLeft(actionName);
 
-      for (auto const& input : kvpair.second.iterateArray()) {
+      for (auto const& input : inputs.iterateArray()) {
         try {
           auto chord = inputDescriptorFromJson(input);
           actions[chord.key].append({chord.mods, action});
@@ -181,13 +181,13 @@ Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
 Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
   size_t mostMatchedMods = 0;
   Set<InterfaceAction> matching;
-  for (auto const& pair : m_actions.value(chord.key)) {
+  for (auto const& [bindingMods, action] : m_actions.value(chord.key)) {
     // first make sure that all required mods for the binding are held
-    if ((pair.first & chord.mods) == pair.first) {
+    if ((bindingMods & chord.mods) == bindingMods) {
       // now count the number of mods in the binding
       size_t matchedMods = 0;
-      for (auto modPair : KeyChordMods) {
-        if ((modPair.second & pair.first) == modPair.second)
+      for (auto mod : KeyChordMods.values()) {
+        if ((mod & bindingMods) == mod)
           ++matchedMods;
       }
 
@@ -198,14 +198,17 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
 
       // only activate the binding(s) with the most mods
       if (matchedMods == mostMatchedMods)
-        matching.add(pair.second);
+        matching.add(action);
     }
   }
   return matching;
 }
 
 Set<InterfaceAction> KeyBindings::actionsForKey(Key key) const {
-  return Set<InterfaceAction>::from(m_actions.value(key).transformed([](auto p){ return p.second; }));
+  return Set<InterfaceAction>::from(m_actions.value(key).transformed([](auto const& actionEntry) {
+    auto const& [source, action] = actionEntry;
+    return action;
+  }));
 }
 
 }

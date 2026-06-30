@@ -184,9 +184,7 @@ bool ItemBag::consumeItems(size_t pos, uint64_t count) {
 bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   uint64_t countLeft = descriptor.count();
   List<std::pair<size_t, uint64_t>> consumeLocations;
-  for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
-    auto const& storedItem = storedItemAndIndex.first;
-    auto slot = storedItemAndIndex.second;
+  for (auto const& [storedItem, slot] : enumerateIterator(m_items)) {
     if (storedItem && storedItem->matches(descriptor, exactMatch)) {
       uint64_t count = storedItem->count();
       uint64_t take = std::min(count, countLeft);
@@ -336,9 +334,9 @@ void ItemBag::write(DataStream& ds) const {
   ds.writeVlqU(m_items.size());
 
   size_t setItemsSize = 0;
-  for (auto const& itemAndIndex : enumerateIterator(m_items)) {
-    if (itemAndIndex.first)
-      setItemsSize = itemAndIndex.second + 1;
+  for (auto const& [item, slot] : enumerateIterator(m_items)) {
+    if (item)
+      setItemsSize = slot + 1;
   }
 
   ds.writeVlqU(setItemsSize);
@@ -359,9 +357,7 @@ uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from
 
 size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
-  for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
-    auto const& storedItem = storedItemAndIndex.first;
-    auto slot = storedItemAndIndex.second;
+  for (auto const& [storedItem, slot] : enumerateIterator(m_items)) {
     if (!test(slot))
       continue;
     if (storedItem && stackTransfer(storedItem, item) != 0)
@@ -370,9 +366,9 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std
 
   if (!stacksOnly) {
     // Then, look for any empty slots.
-    for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
-      if (!storedItemAndIndex.first)
-        return storedItemAndIndex.second;
+    for (auto const& [storedItem, slot] : enumerateIterator(m_items)) {
+      if (!storedItem)
+        return slot;
     }
   }
 

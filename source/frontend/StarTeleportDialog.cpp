@@ -113,7 +113,8 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
         destList->setEnabled(destList->itemPosition(entry), false);
         entry->fetchChild<ButtonWidget>("editButton")->setEnabled(false);
       }
-      m_destinations.append({WarpToWorld(bookmark.target.first, bookmark.target.second), false});
+      auto const& [targetWorld, targetSpawn] = bookmark.target;
+      m_destinations.append({WarpToWorld(targetWorld, targetSpawn), false});
     }
   }
 
@@ -134,8 +135,7 @@ void TeleportDialog::teleport() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   if (destList->selectedItem() != NPos) {
     auto& destination = m_destinations[destList->selectedItem()];
-    auto warpAction = destination.first;
-    bool deploy = destination.second;
+    auto const& [warpAction, deploy] = destination;
 
     auto warp = [this, deploy](WarpAction const& action, String const& animation = "default") {
       if (deploy)
@@ -145,10 +145,11 @@ void TeleportDialog::teleport() {
     };
 
     m_client->worldClient()->sendEntityMessage(m_sourceEntityId, "onTeleport", {printWarpAction(warpAction)});
-    if (warpAction.is<WarpAlias>() && warpAction.get<WarpAlias>() == WarpAlias::OrbitedWorld) {
-      warp(take(destination).first, "beam");
+    [[maybe_unused]] auto [selectedWarpAction, selectedDeploy] = take(destination);
+    if (selectedWarpAction.is<WarpAlias>() && selectedWarpAction.get<WarpAlias>() == WarpAlias::OrbitedWorld) {
+      warp(selectedWarpAction, "beam");
     } else {
-      warp(take(destination).first);
+      warp(selectedWarpAction);
     }
     dismiss();
   }

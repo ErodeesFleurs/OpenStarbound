@@ -3,7 +3,10 @@
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
-  starAssert(!m_elements.any([element](auto p) { return p.first == element; }));
+  starAssert(!m_elements.any([element](auto netElement) {
+      auto [existingElement, propagateInterpolation] = netElement;
+      return existingElement == element;
+    }));
 
   element->initNetVersion(m_version);
   if (m_interpolationEnabled && propagateInterpolation)
@@ -24,46 +27,46 @@ void NetElementGroup::clearNetElements() {
 
 void NetElementGroup::initNetVersion(NetElementVersion const* version) {
   m_version = version;
-  for (auto& p : m_elements)
-    p.first->initNetVersion(m_version);
+  for (auto& [element, propagateInterpolation] : m_elements)
+    element->initNetVersion(m_version);
 }
 
 void NetElementGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
-  for (auto& p : m_elements)
-    if (p.first->checkWithRules(rules))
-      p.first->netStore(ds, rules);
+  for (auto& [element, propagateInterpolation] : m_elements)
+    if (element->checkWithRules(rules))
+      element->netStore(ds, rules);
 }
 
 void NetElementGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
-  for (auto& p : m_elements)
-    if (p.first->checkWithRules(rules))
-      p.first->netLoad(ds, rules);
+  for (auto& [element, propagateInterpolation] : m_elements)
+    if (element->checkWithRules(rules))
+      element->netLoad(ds, rules);
 }
 
 void NetElementGroup::enableNetInterpolation(float extrapolationHint) {
   m_interpolationEnabled = true;
   m_extrapolationHint = extrapolationHint;
-  for (auto& p : m_elements) {
-    if (p.second)
-      p.first->enableNetInterpolation(extrapolationHint);
+  for (auto& [element, propagateInterpolation] : m_elements) {
+    if (propagateInterpolation)
+      element->enableNetInterpolation(extrapolationHint);
   }
 }
 
 void NetElementGroup::disableNetInterpolation() {
   m_interpolationEnabled = false;
   m_extrapolationHint = 0;
-  for (auto& p : m_elements) {
-    if (p.second)
-      p.first->disableNetInterpolation();
+  for (auto& [element, propagateInterpolation] : m_elements) {
+    if (propagateInterpolation)
+      element->disableNetInterpolation();
   }
 }
 
 void NetElementGroup::tickNetInterpolation(float dt) {
   if (m_interpolationEnabled) {
-    for (auto& p : m_elements)
-      p.first->tickNetInterpolation(dt);
+    for (auto& [element, propagateInterpolation] : m_elements)
+      element->tickNetInterpolation(dt);
   }
 }
 
@@ -146,8 +149,8 @@ void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetC
 
 void NetElementGroup::blankNetDelta(float interpolationTime) {
   if (m_interpolationEnabled) {
-    for (auto& p : m_elements)
-      p.first->blankNetDelta(interpolationTime);
+    for (auto& [element, propagateInterpolation] : m_elements)
+      element->blankNetDelta(interpolationTime);
   }
 }
 

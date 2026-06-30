@@ -21,17 +21,17 @@ TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr i
   assets->queueJsons(treasureChests);
 
   for (auto& file : treasurePools) {
-    for (auto const& pair : assets->json(file).iterateObject()) {
-      if (m_treasurePools.contains(pair.first))
-        throw TreasureException(strf("Duplicate TreasurePool config '{}' from file '{}'", pair.first, file));
+    for (auto const& [poolName, poolConfig] : assets->json(file).iterateObject()) {
+      if (m_treasurePools.contains(poolName))
+        throw TreasureException(strf("Duplicate TreasurePool config '{}' from file '{}'", poolName, file));
 
-      auto& treasurePool = m_treasurePools[pair.first];
-      for (auto const& entry : pair.second.iterateArray()) {
-        if (entry.size() != 2)
+      auto& treasurePool = m_treasurePools[poolName];
+      for (auto const& poolEntry : poolConfig.iterateArray()) {
+        if (poolEntry.size() != 2)
           throw TreasureException("Wrong size for TreasurePool entry, list must be 2");
 
-        float startLevel = entry.getFloat(0);
-        auto config = entry.get(1);
+        float startLevel = poolEntry.getFloat(0);
+        auto config = poolEntry.get(1);
 
         ItemPool itemPool;
 
@@ -59,8 +59,8 @@ TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr i
         if (poolRounds.canConvert(Json::Type::Float)) {
           itemPool.poolRounds = WeightedPool<int>(List<std::pair<double, int>>{{1.0, poolRounds.toFloat()}});
         } else {
-          for (auto const& poolRoundPair : poolRounds.iterateArray())
-            itemPool.poolRounds.add(poolRoundPair.getDouble(0), poolRoundPair.getInt(1));
+          for (auto const& poolRound : poolRounds.iterateArray())
+            itemPool.poolRounds.add(poolRound.getDouble(0), poolRound.getInt(1));
         }
 
         itemPool.levelVariance = jsonToVec2F(config.get("levelVariance", JsonArray{0, 0}));
@@ -72,20 +72,20 @@ TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr i
   }
 
   for (auto& file : treasureChests) {
-    for (auto const& pair : assets->json(file).iterateObject()) {
-      if (m_treasureChestSets.contains(pair.first))
-        throw TreasureException(strf("Duplicate TreasureChestSet config '{}' from file '{}'", pair.first, file));
+    for (auto const& [chestSetName, chestSetConfig] : assets->json(file).iterateObject()) {
+      if (m_treasureChestSets.contains(chestSetName))
+        throw TreasureException(strf("Duplicate TreasureChestSet config '{}' from file '{}'", chestSetName, file));
 
-      auto& treasureChestSet = m_treasureChestSets[pair.first];
-      for (auto const& entry : pair.second.iterateArray()) {
+      auto& treasureChestSet = m_treasureChestSets[chestSetName];
+      for (auto const& chestConfig : chestSetConfig.iterateArray()) {
         TreasureChest treasureChest;
 
-        treasureChest.containers = jsonToStringList(entry.get("containers"));
-        treasureChest.treasurePool = entry.getString("treasurePool");
-        treasureChest.minimumLevel = entry.getFloat("minimumLevel", 0);
+        treasureChest.containers = jsonToStringList(chestConfig.get("containers"));
+        treasureChest.treasurePool = chestConfig.getString("treasurePool");
+        treasureChest.minimumLevel = chestConfig.getFloat("minimumLevel", 0);
 
         if (!m_treasurePools.contains(treasureChest.treasurePool))
-          throw TreasureException(strf("No such TreasurePool '{}' for TreasureChestSet named '{}' in file '{}'", treasureChest.treasurePool, pair.first, file));
+          throw TreasureException(strf("No such TreasurePool '{}' for TreasureChestSet named '{}' in file '{}'", treasureChest.treasurePool, chestSetName, file));
 
         treasureChestSet.append(treasureChest);
       }

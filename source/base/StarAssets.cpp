@@ -115,8 +115,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
   m_luaEngine = luaEngine;
   auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks && callbacks) {
     auto table = luaEngine->createTable();
-    for (auto const& p : callbacks.callbacks())
-      table.set(p.first, luaEngine->createWrappedFunction(p.second));
+    for (auto const& [callbackName, callback] : callbacks.callbacks())
+      table.set(callbackName, luaEngine->createWrappedFunction(callback));
     luaEngine->setGlobal(name, table);
   };
 
@@ -276,12 +276,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
             for (auto& path : patchPair.getArray("paths")) {
               if (auto p = m_files.ptr(path.toString())) {
                 p->patchSources.reserve(p->patchSources.size() + patches.size());
-                for (auto const& patchAndIndex : enumerateIterator(patches)) {
-                  auto& patch = patchAndIndex.first;
+                for (auto const& [patch, patchListIndex] : enumerateIterator(patches)) {
                   if (patch.isType(Json::Type::String))
                     p->patchSources.append({patch.toString(), source});
                   else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, patchAndIndex.second), source});
+                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, patchListIndex), source});
                 }
               }
             }
@@ -353,8 +352,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
     runLoadScripts("onLoad", sourcePath, source);
   }
 
-  for (auto& pair : sources)
-    runLoadScripts("postLoad", pair.first, pair.second);
+  for (auto const& [sourcePath, source] : sources)
+    runLoadScripts("postLoad", sourcePath, source);
 
   Sha256Hasher digest;
 
@@ -374,8 +373,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
     if (digestFile) {
       digest.push(assetPath);
       digest.push(DataStreamBuffer::serialize(descriptor.source->open(descriptor.sourceName)->size()));
-      for (auto const& pair : descriptor.patchSources)
-        digest.push(DataStreamBuffer::serialize(pair.second->open(AssetPath::removeSubPath(pair.first))->size()));
+      for (auto const& [patchSourceName, patchSource] : descriptor.patchSources)
+        digest.push(DataStreamBuffer::serialize(patchSource->open(AssetPath::removeSubPath(patchSourceName))->size()));
     }
   }
 
@@ -466,8 +465,7 @@ StringList Assets::scan(String const& suffix) const {
     return m_files.keys();
   } else {
     StringList result;
-    for (auto const& fileEntry : m_files) {
-      String const& file = fileEntry.first;
+    for (auto const& [file, descriptor] : m_files) {
       if (file.endsWith(suffix, String::CaseInsensitive))
         result.append(file);
     }
@@ -485,8 +483,7 @@ StringList Assets::scan(String const& prefix, String const& suffix) const {
         result.append(file);
     }
   } else {
-    for (auto const& fileEntry : m_files) {
-      String const& file = fileEntry.first;
+    for (auto const& [file, descriptor] : m_files) {
       if (file.beginsWith(prefix, String::CaseInsensitive) && file.endsWith(suffix, String::CaseInsensitive))
         result.append(file);
     }
@@ -632,9 +629,9 @@ void Assets::clearCache() {
   // Clear all assets that are not queued or broken.
   auto it = makeSMutableMapIterator(m_assetsCache);
   while (it.hasNext()) {
-    auto const& pair = it.next();
+    auto const& [assetId, asset] = it.next();
     // Don't clean up queued, persistent, or broken assets.
-    if (pair.second && !pair.second->shouldPersist() && !m_queue.contains(pair.first))
+    if (asset && !asset->shouldPersist() && !m_queue.contains(assetId))
       it.remove();
   }
 }
@@ -646,14 +643,14 @@ void Assets::cleanup() {
 
   auto it = makeSMutableMapIterator(m_assetsCache);
   while (it.hasNext()) {
-    auto pair = it.next();
+    auto [assetId, asset] = it.next();
     // Don't clean up broken assets or queued assets.
-    if (pair.second && !m_queue.contains(pair.first)) {
-      double liveTime = time - pair.second->time;
+    if (asset && !m_queue.contains(assetId)) {
+      double liveTime = time - asset->time;
       if (liveTime > m_settings.assetTimeToLive) {
         // If the asset should persist, just refresh the access time.
-        if (pair.second->shouldPersist())
-          pair.second->time = time;
+        if (asset->shouldPersist())
+          asset->time = time;
         else
           it.remove();
       }
@@ -695,9 +692,8 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
   framesSpecification.framesFile = std::move(path);
 
   if (frameConfig.contains("frameList")) {
-    for (auto const& pair : frameConfig.get("frameList").iterateObject()) {
-      String frameName = pair.first;
-      RectU rect = RectU(jsonToRectI(pair.second));
+    for (auto const& [frameName, frameRect] : frameConfig.get("frameList").iterateObject()) {
+      RectU rect = RectU(jsonToRectI(frameRect));
       if (rect.isEmpty())
         throw AssetException(
             strf("Empty rect in frame specification in image {} frame {}", framesSpecification.framesFile, frameName));
@@ -718,25 +714,22 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
 
     if (grid.contains("names")) {
       auto nameList = grid.get("names").toArray();
-      for (auto const& rowAndY : enumerateIterator(nameList)) {
-        size_t y = rowAndY.second;
+      for (auto const& [row, y] : enumerateIterator(nameList)) {
         if (y >= dimensions[1])
           throw AssetException(strf("Image {} row {} is out of bounds for y-dimension {}",
               framesSpecification.framesFile,
               y + 1,
               dimensions[1]));
-        if (rowAndY.first.isNull())
+        if (row.isNull())
           continue;
-        auto rowList = rowAndY.first.toArray();
-        for (auto const& frameAndX : enumerateIterator(rowList)) {
-          size_t x = frameAndX.second;
+        auto rowList = row.toArray();
+        for (auto const& [frame, x] : enumerateIterator(rowList)) {
           if (x >= dimensions[0])
             throw AssetException(strf("Image {} column {} is out of bounds for x-dimension {}",
                 framesSpecification.framesFile,
                 x + 1,
                 dimensions[0]));
 
-          auto frame = frameAndX.first;
           if (frame.isNull())
             continue;
           auto frameName = frame.toString();
@@ -756,9 +749,8 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
 
   if (auto aliasesConfig = frameConfig.opt("aliases")) {
     auto aliases = aliasesConfig->objectPtr();
-    for (auto const& pair : *aliases) {
-      String const& key = pair.first;
-      String value = pair.second.toString();
+    for (auto const& [key, alias] : *aliases) {
+      String value = alias.toString();
 
       // Resolve aliases to aliases by checking to see if the alias value in
       // the alias map itself.  Don't do this more than aliases.size() times to
@@ -864,11 +856,11 @@ void Assets::workerMain() {
     QueuePriority queuePriority = QueuePriority::None;
 
     // Find the highest priority queue entry
-    for (auto const& pair : m_queue) {
-      if (pair.second == QueuePriority::Load || pair.second == QueuePriority::PostProcess) {
-        assetId = pair.first;
-        queuePriority = pair.second;
-        if (pair.second == QueuePriority::Load)
+    for (auto const& [queuedAssetId, queuedPriority] : m_queue) {
+      if (queuedPriority == QueuePriority::Load || queuedPriority == QueuePriority::PostProcess) {
+        assetId = queuedAssetId;
+        queuePriority = queuedPriority;
+        if (queuedPriority == QueuePriority::Load)
           break;
       }
     }
@@ -1004,9 +996,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   LuaEngine* luaEngine = as<LuaEngine>(m_luaEngine.get());
   LuaValue result = luaEngine->createUserData(*image);
   luaLocker.unlock();
-  for (auto const& pair : patches) {
-    auto& patchPath = pair.first;
-    auto& patchSource = pair.second;
+  for (auto const& [patchPath, patchSource] : patches) {
     auto patchStream = patchSource->read(patchPath);
     if (patchPath.endsWith(".lua")) {
       std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchPath);
@@ -1078,10 +1068,9 @@ Json Assets::readJson(String const& path) const {
 
 Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> const& patches) const {
   Json result = input;
-  for (auto const& pair : patches) {
-    auto patchAssetPath = AssetPath::split(pair.first);
+  for (auto const& [patchPath, patchSource] : patches) {
+    auto patchAssetPath = AssetPath::split(patchPath);
     auto& patchBasePath = patchAssetPath.basePath;
-    auto& patchSource = pair.second;
     auto patchStream = patchSource->read(patchBasePath);
     if (patchBasePath.endsWith(".lua")) {
       std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
@@ -1103,11 +1092,11 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
         if (patchJson.isType(Json::Type::Array)) {
           auto patchData = patchJson.toArray();
           try {
-            result = checkPatchArray(pair.first, patchSource, result, patchData, {});
+            result = checkPatchArray(patchPath, patchSource, result, patchData, {});
           } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", patchPath, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           }
         } else if (patchJson.isType(Json::Type::Object)) {
           result = jsonMergeNulling(result, patchJson.toObject());

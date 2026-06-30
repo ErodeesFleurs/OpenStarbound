@@ -218,10 +218,11 @@ void TeamClient::handleRpcResponses() {
   List<RpcResponseHandler> stillPendingResponses;
   while (!m_pendingResponses.empty()) {
     auto handler = m_pendingResponses.takeLast();
-    if (handler.first.finished()) {
-      if (auto const& res = handler.first.result()) {
-        if (handler.second)
-          handler.second(*res);
+    auto& [responsePromise, responseFunction] = handler;
+    if (responsePromise.finished()) {
+      if (auto const& res = responsePromise.result()) {
+        if (responseFunction)
+          responseFunction(*res);
       }
     } else {
       stillPendingResponses.append(std::move(handler));

@@ -66,10 +66,10 @@ void SystemWorldClient::update(float dt) {
       m_universeMap->addMappedCoordinate(orbit->target.planet());
   }
 
-  for (auto const& p : m_clientShips)
-    p.second->clientUpdate(dt);
-  for (auto const& p : m_objects)
-    p.second->clientUpdate(dt);
+  for (auto const& [_, clientShip] : m_clientShips)
+    clientShip->clientUpdate(dt);
+  for (auto const& [_, object] : m_objects)
+    object->clientUpdate(dt);
 
   if (currentSystem().isNull()) {
     m_objects.clear();
@@ -111,15 +111,15 @@ Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Mayb
 bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
   if (auto updatePacket = as<SystemWorldUpdatePacket>(packet)) {
     auto location = m_ship->systemLocation();
-    for (auto const& p : updatePacket->shipUpdates) {
-      if (m_ship && p.first == m_ship->uuid())
-        m_ship->readNetState(p.second, SystemWorldTimestep);
+    for (auto const& [shipUuid, shipUpdate] : updatePacket->shipUpdates) {
+      if (m_ship && shipUuid == m_ship->uuid())
+        m_ship->readNetState(shipUpdate, SystemWorldTimestep);
       else
-        m_clientShips[p.first]->readNetState(p.second, SystemWorldTimestep);
+        m_clientShips[shipUuid]->readNetState(shipUpdate, SystemWorldTimestep);
     }
-    for (auto const& p : updatePacket->objectUpdates) {
-      auto object = getObject(p.first);
-      object->readNetState(p.second, SystemWorldTimestep);
+    for (auto const& [objectUuid, objectUpdate] : updatePacket->objectUpdates) {
+      auto object = getObject(objectUuid);
+      object->readNetState(objectUpdate, SystemWorldTimestep);
     }
 
   } else if (auto createPacket = as<SystemObjectCreatePacket>(packet)) {
@@ -149,7 +149,8 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
       auto ship = netLoadShip(netStore);
       m_clientShips.set(ship->uuid(), ship);
     }
-    m_ship = make_shared<SystemClientShip>(*this, startPacket->clientShip.first, startPacket->clientShip.second);
+    auto const& [clientShipUuid, clientSkyParameters] = startPacket->clientShip;
+    m_ship = make_shared<SystemClientShip>(*this, clientShipUuid, clientSkyParameters);
 
     m_universeMap->addMappedCoordinate(CelestialCoordinate(m_location));
     m_universeMap->filterMappedObjects(CelestialCoordinate(m_location), m_objects.keys());

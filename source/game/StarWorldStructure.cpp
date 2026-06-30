@@ -193,7 +193,10 @@ WorldStructure::WorldStructure(Json const& store) {
   m_foregroundBlocks = store.getArray("foregroundBlocks").transformed(blockFromJson);
   m_objects = store.getArray("objects").transformed(objectFromJson);
   m_flaggedBlocks = transform<StringMap<List<Vec2I>>>(store.getObject("flaggedBlocks"),
-      [](pair<String, Json> const& p) { return make_pair(p.first, p.second.toArray().transformed(jsonToVec2I)); });
+      [](pair<String, Json> const& flaggedBlockEntry) {
+        auto const& [flagName, positionsJson] = flaggedBlockEntry;
+        return make_pair(flagName, positionsJson.toArray().transformed(jsonToVec2I));
+      });
 }
 
 Json WorldStructure::configValue(String const& name) const {
@@ -257,8 +260,8 @@ void WorldStructure::translate(Vec2I const& distance) {
   for (auto& object : m_objects)
     object.position += distance;
 
-  for (auto& flagPair : m_flaggedBlocks) {
-    for (auto& pos : flagPair.second)
+  for (auto& flagPositions : m_flaggedBlocks.values()) {
+    for (auto& pos : flagPositions)
       pos += distance;
   }
 }
@@ -300,8 +303,9 @@ Json WorldStructure::store() const {
       {"objects", m_objects.transformed(objectToJson)},
       {"flaggedBlocks",
           transform<JsonObject>(m_flaggedBlocks,
-              [](pair<String, List<Vec2I>> const& p) {
-                return pair<String, Json>(p.first, p.second.transformed(jsonFromVec2I));
+              [](pair<String, List<Vec2I>> const& flaggedBlockEntry) {
+                auto const& [flagName, positions] = flaggedBlockEntry;
+                return pair<String, Json>(flagName, positions.transformed(jsonFromVec2I));
               })}};
 }
 

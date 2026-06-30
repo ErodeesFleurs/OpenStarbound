@@ -147,16 +147,16 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
   }
 
   auto tooltipFields = item->instanceValue("tooltipFields", JsonObject());
-  for (auto const& pair : tooltipFields.iterateObject()) {
-    if (pair.first.equalsIgnoreCase("subtitle"))
-      subTitle = pair.second.toString();
-    if (pair.first.endsWith("Label"))
-      container->setLabel(pair.first, pair.second.type() == Json::Type::String ? pair.second.toString() : toString(pair.second));
-    if (pair.first.endsWith("Image") && container->containsChild(pair.first)) {
-      if (pair.second.isType(Json::Type::String))
-        container->fetchChild<ImageWidget>(pair.first)->setImage(pair.second.toString());
+  for (auto const& [fieldName, fieldValue] : tooltipFields.iterateObject()) {
+    if (fieldName.equalsIgnoreCase("subtitle"))
+      subTitle = fieldValue.toString();
+    if (fieldName.endsWith("Label"))
+      container->setLabel(fieldName, fieldValue.type() == Json::Type::String ? fieldValue.toString() : toString(fieldValue));
+    if (fieldName.endsWith("Image") && container->containsChild(fieldName)) {
+      if (fieldValue.isType(Json::Type::String))
+        container->fetchChild<ImageWidget>(fieldName)->setImage(fieldValue.toString());
       else
-        container->fetchChild<ImageWidget>(pair.first)->setDrawables(pair.second.toArray().transformed(construct<Drawable>()));
+        container->fetchChild<ImageWidget>(fieldName)->setDrawables(fieldValue.toArray().transformed(construct<Drawable>()));
     }
   }
 

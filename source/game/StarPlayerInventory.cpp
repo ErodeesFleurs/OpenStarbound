@@ -57,8 +57,8 @@ PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr ite
   }
 
   auto currenciesConfig = m_assets->json("/currencies.config");
-  for (auto p : currenciesConfig.iterateObject())
-    m_currencies[p.first] = 0;
+  for (auto const& [currencyName, currencyConfig] : currenciesConfig.iterateObject())
+    m_currencies[currencyName] = 0;
 
   size_t customBarGroups = config.getUInt("customBarGroups");
   size_t customBarIndexes = config.getUInt("customBarIndexes");
@@ -238,18 +238,18 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
   if (!items || items->empty())
     return {};
 
-  for (auto const& pair : m_bags) {
-    if (!itemAllowedInBag(items, pair.first))
+  for (auto const& [bagType, bag] : m_bags) {
+    if (!itemAllowedInBag(items, bagType))
       continue;
 
-    items = pair.second->stackItems(items);
+    items = bag->stackItems(items);
     if (!items)
       break;
 
-    for (size_t i = 0; i < pair.second->size(); ++i) {
-      if (!pair.second->at(i)) {
-        pair.second->setItem(i, take(items));
-        autoAddToCustomBar(BagSlot(pair.first, i));
+    for (size_t i = 0; i < bag->size(); ++i) {
+      if (!bag->at(i)) {
+        bag->setItem(i, take(items));
+        autoAddToCustomBar(BagSlot(bagType, i));
         break;
       }
     }
@@ -278,9 +278,9 @@ uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
     ++canFit;
 
   // Then add into bags
-  for (auto const& pair : m_bags) {
-    if (itemAllowedInBag(items, pair.first))
-      canFit += pair.second->itemsCanFit(items);
+  for (auto const& [bagType, bag] : m_bags) {
+    if (itemAllowedInBag(items, bagType))
+      canFit += bag->itemsCanFit(items);
   }
 
   return min(canFit, items->count());
@@ -301,11 +301,11 @@ uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, bool 
 
   countItem(m_swapSlot);
   countItem(m_trashSlot);
-  for (auto const& p : m_equipment)
-    countItem(p.second);
+  for (auto const& [_, item] : m_equipment)
+    countItem(item);
 
-  for (auto const& pair : m_bags)
-    count += pair.second->available(one, exactMatch);
+  for (auto const& [_, bag] : m_bags)
+    count += bag->available(one, exactMatch);
 
   return count;
 }
@@ -317,13 +317,13 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   auto one = descriptor.singular();
 
   Map<String, uint64_t> consumeFromItemBags;
-  for (auto const& pair : m_bags)
-    consumeFromItemBags[pair.first] = pair.second->available(one);
+  for (auto const& [bagType, bag] : m_bags)
+    consumeFromItemBags[bagType] = bag->available(one);
 
   uint64_t consumeFromEquipment = 0;
-  for (auto const& p : m_equipment) {
-    if (p.second)
-      consumeFromEquipment += p.second->matches(one, exactMatch) ? p.second->count() : 0;
+  for (auto const& [_, item] : m_equipment) {
+    if (item)
+      consumeFromEquipment += item->matches(one, exactMatch) ? item->count() : 0;
   }
 
   uint64_t consumeFromSwap = 0;
@@ -335,18 +335,18 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     consumeFromTrash += m_trashSlot->matches(one, exactMatch) ? m_trashSlot->count() : 0;
 
   auto totalAvailable = consumeFromEquipment + consumeFromSwap + consumeFromTrash;
-  for (auto const& pair : consumeFromItemBags)
-    totalAvailable += pair.second;
+  for (auto const& [_, available] : consumeFromItemBags)
+    totalAvailable += available;
 
   if (totalAvailable < descriptor.count())
     return false;
 
   uint64_t leftoverCount = descriptor.count();
   uint64_t quantity;
-  for (auto const& pair : m_bags) {
-    quantity = min(leftoverCount, consumeFromItemBags[pair.first]);
+  for (auto const& [bagType, bag] : m_bags) {
+    quantity = min(leftoverCount, consumeFromItemBags[bagType]);
     if (quantity > 0) {
-      [[maybe_unused]] auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
+      [[maybe_unused]] auto res = bag->consumeItems(one.multiply(quantity), exactMatch);
       starAssert(res);
       leftoverCount -= quantity;
     }
@@ -355,10 +355,10 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   quantity = min(leftoverCount, consumeFromEquipment);
   if (quantity > 0) {
     [[maybe_unused]] auto leftoverQuantity = quantity;
-    for (auto const& p : m_equipment) {
-      if (p.second && p.second->matches(one, exactMatch)) {
-        auto toConsume = min(p.second->count(), quantity);
-        [[maybe_unused]] auto res = p.second->consume(toConsume);
+    for (auto const& [_, item] : m_equipment) {
+      if (item && item->matches(one, exactMatch)) {
+        auto toConsume = min(item->count(), quantity);
+        [[maybe_unused]] auto res = item->consume(toConsume);
         starAssert(res);
 
         leftoverQuantity -= toConsume;
@@ -801,9 +801,8 @@ void PlayerInventory::load(Json const& store) {
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
   auto itemBags = store.get("itemBags").toObject();
   m_inventoryLoadOverflow.clear();
-  for (auto const& p : itemBags) {
-    auto& bagType = p.first;
-    auto newBag = ItemBag::loadStore(p.second, m_itemDatabase);
+  for (auto const& [bagType, bagStore] : itemBags) {
+    auto newBag = ItemBag::loadStore(bagStore, m_itemDatabase);
     if (m_bags.contains(bagType)) {
       auto& bag = m_bags.at(bagType);
       m_inventoryLoadOverflow.appendAll(newBag.resize(bag->size()));
@@ -896,11 +895,11 @@ void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr&)
       function(slot, item);
   };
 
-  for (auto& p : m_equipment)
-    checkedFunction(p.first, p.second);
-  for (auto const& p : m_bags) {
-    for (size_t i = 0; i < p.second->size(); ++i)
-      checkedFunction(BagSlot(p.first, i), p.second->at(i));
+  for (auto& [slot, item] : m_equipment)
+    checkedFunction(slot, item);
+  for (auto const& [bagType, bag] : m_bags) {
+    for (size_t i = 0; i < bag->size(); ++i)
+      checkedFunction(BagSlot(bagType, i), bag->at(i));
   }
   checkedFunction(SwapSlot(), m_swapSlot);
   checkedFunction(TrashSlot(), m_trashSlot);
@@ -929,12 +928,12 @@ Map<String, uint64_t> PlayerInventory::itemSummary() const {
 }
 
 void PlayerInventory::cleanup() {
-  for (auto const& pair : m_bags)
-    pair.second->cleanup();
+  for (auto const& [_, bag] : m_bags)
+    bag->cleanup();
 
-  for (auto& p : m_equipment)
-    if (p.second && p.second->empty())
-      p.second = ItemPtr();
+  for (auto& [_, item] : m_equipment)
+    if (item && item->empty())
+      item = ItemPtr();
 
   if (m_swapSlot && m_swapSlot->empty())
     m_swapSlot = ItemPtr();

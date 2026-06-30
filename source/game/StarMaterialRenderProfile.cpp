@@ -91,10 +91,10 @@ MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr i
 
   profile.representativePiece = spec.getString("representativePiece");
 
-  for (auto const& pair : spec.get("rules").iterateObject()) {
+  for (auto const& [ruleName, ruleConfig] : spec.get("rules").iterateObject()) {
     auto rule = make_shared<MaterialRule>();
-    rule->join = MaterialJoinTypeNames.getLeft(pair.second.getString("join", "all"));
-    for (auto const& ruleEntry : pair.second.getArray("entries", {})) {
+    rule->join = MaterialJoinTypeNames.getLeft(ruleConfig.getString("join", "all"));
+    for (auto const& ruleEntry : ruleConfig.getArray("entries", {})) {
       bool inverse = ruleEntry.getBool("inverse", false);
       String type = ruleEntry.getString("type");
       if (type.equalsIgnoreCase("Connects")) {
@@ -109,20 +109,20 @@ MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr i
         rule->entries.append({MaterialRule::RulePropertyEquals{ruleEntry.getString("propertyName"), ruleEntry.get("propertyValue")}, inverse});
       }
     }
-    profile.rules[pair.first] = std::move(rule);
+    profile.rules[ruleName] = std::move(rule);
   }
 
-  for (auto const& pair : spec.get("pieces").iterateObject()) {
+  for (auto const& [pieceName, pieceConfig] : spec.get("pieces").iterateObject()) {
     auto renderPiece = make_shared<MaterialRenderPiece>();
     renderPiece->pieceId = profile.pieces.size();
 
-    renderPiece->texture = AssetPath::relativeTo(relativePath, pair.second.getString("texture", spec.getString("texture")));
-    unsigned variants = pair.second.getUInt("variants", spec.getUInt("variants", 1));
+    renderPiece->texture = AssetPath::relativeTo(relativePath, pieceConfig.getString("texture", spec.getString("texture")));
+    unsigned variants = pieceConfig.getUInt("variants", spec.getUInt("variants", 1));
 
-    Vec2F textureSize = jsonToVec2F(pair.second.get("textureSize"));
-    Vec2F texturePosition = jsonToVec2F(pair.second.get("texturePosition"));
-    Vec2F variantStride = jsonToVec2F(pair.second.get("variantStride", JsonArray{0, 0}));
-    Vec2F colorStride = jsonToVec2F(pair.second.get("colorStride", JsonArray{0, 0}));
+    Vec2F textureSize = jsonToVec2F(pieceConfig.get("textureSize"));
+    Vec2F texturePosition = jsonToVec2F(pieceConfig.get("texturePosition"));
+    Vec2F variantStride = jsonToVec2F(pieceConfig.get("variantStride", JsonArray{0, 0}));
+    Vec2F colorStride = jsonToVec2F(pieceConfig.get("colorStride", JsonArray{0, 0}));
 
     // Need to flip texture coordinates because material rendering configs
     // assume top down image coordinates
@@ -139,11 +139,11 @@ MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr i
       }
     }
 
-    profile.pieces[pair.first] = std::move(renderPiece);
+    profile.pieces[pieceName] = std::move(renderPiece);
   }
 
-  for (auto const& pair : spec.get("matches").iterateArray())
-    profile.matches[pair.getString(0)] = parseMaterialRenderMatchList(pair.get(1), profile.rules, profile.pieces, profile.matches);
+  for (auto const& matchEntry : spec.get("matches").iterateArray())
+    profile.matches[matchEntry.getString(0)] = parseMaterialRenderMatchList(matchEntry.get(1), profile.rules, profile.pieces, profile.matches);
 
   profile.mainMatchList = profile.matches.get("main");
 

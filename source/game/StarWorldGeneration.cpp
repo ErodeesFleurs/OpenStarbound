@@ -386,20 +386,20 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
       auto& bush = placement.item.get<BushVariant>();
       placePlant(m_plantDatabase->createPlant(bush, seed), placement.position);
     } else if (placement.item.is<TreePair>()) {
-      auto& treePair = placement.item.get<TreePair>();
+      auto const& [primaryTree, alternateTree] = placement.item.get<TreePair>();
       TreeVariant treeVariant;
       if (seed % 2 == 0)
-        treeVariant = treePair.first;
+        treeVariant = primaryTree;
       else
-        treeVariant = treePair.second;
+        treeVariant = alternateTree;
 
       placePlant(m_plantDatabase->createPlant(treeVariant, seed), placement.position);
     } else if (placement.item.is<ObjectPool>()) {
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
-      auto objectPair = objectPool.select(seed);
+      auto const& [objectName, objectParameters] = objectPool.select(seed);
       if (auto object = m_objectDatabase->createForPlacement(
-              m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
+              m_worldServer, objectName, placement.position, direction, objectParameters))
         m_worldServer.addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
@@ -724,14 +724,14 @@ bool WorldGenerator::entityPersistent(WorldStorage&, EntityPtr const& entity) co
 }
 
 RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
-  auto promise = RpcPromise<Vec2I>::createPair();
+  auto [promise, keeper] = RpcPromise<Vec2I>::createPair();
   m_queuedPlacements.append(QueuedPlacement {
     std::move(distributions),
     id,
-    promise.second,
+    keeper,
     false,
   });
-  return promise.first;
+  return promise;
 }
 
 void WorldGenerator::replaceBiomeBlocks(ServerTile& tile) {
@@ -848,20 +848,18 @@ void WorldGenerator::generateMicroDungeons(WorldStorage& worldStorage, ServerTil
       for (auto const& placement : m_worldServer.worldTemplate()->validBiomeItems(x, y, potential))
         placementQueue.append({placement, {}});
 
-      for (auto& p : m_queuedPlacements) {
+      for (auto& queuedPlacement : m_queuedPlacements) {
         WorldTemplate::PotentialBiomeItems queuedItems;
-        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Surface);
-        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Underground);
+        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, queuedPlacement.distributions, BiomePlacementArea::Surface);
+        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, queuedPlacement.distributions, BiomePlacementArea::Underground);
         for (auto placement : m_worldServer.worldTemplate()->validBiomeItems(x, y, queuedItems))
-          placementQueue.append({std::move(placement), &p});
+          placementQueue.append({std::move(placement), &queuedPlacement});
       }
     }
   }
 
   sort(placementQueue);
-  for (auto const& p : placementQueue) {
-    auto& placement = p.first;
-    auto queued = p.second;
+  for (auto const& [placement, queued] : placementQueue) {
     if (queued && queued->fulfilled)
       continue;
 
@@ -885,10 +883,10 @@ void WorldGenerator::generateMicroDungeons(WorldStorage& worldStorage, ServerTil
       }
     }
   }
-  
-  m_queuedPlacements = m_queuedPlacements.filtered([&](QueuedPlacement& p) {
-      return !p.fulfilled;
-    });
+
+  m_queuedPlacements = m_queuedPlacements.filtered([&](QueuedPlacement& queuedPlacement) {
+    return !queuedPlacement.fulfilled;
+  });
 }
 
 void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
@@ -1079,20 +1077,20 @@ void WorldGenerator::prepareSector(WorldStorage& worldStorage, ServerTileSectorA
       auto& bush = placement.item.get<BushVariant>();
       placePlant(worldStorage, m_plantDatabase->createPlant(bush, seed), placement.position);
     } else if (placement.item.is<TreePair>()) {
-      auto& treePair = placement.item.get<TreePair>();
+      auto const& [primaryTree, alternateTree] = placement.item.get<TreePair>();
       TreeVariant treeVariant;
       if (seed % 2 == 0)
-        treeVariant = treePair.first;
+        treeVariant = primaryTree;
       else
-        treeVariant = treePair.second;
+        treeVariant = alternateTree;
 
       placePlant(worldStorage, m_plantDatabase->createPlant(treeVariant, seed), placement.position);
     } else if (placement.item.is<ObjectPool>()) {
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
-      auto objectPair = objectPool.select(seed);
+      auto const& [objectName, objectParameters] = objectPool.select(seed);
       if (auto object = m_objectDatabase->createForPlacement(
-              m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
+              m_worldServer, objectName, placement.position, direction, objectParameters))
         m_worldServer.addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
@@ -1387,19 +1385,19 @@ void WorldGenerator::reapplyBiome(WorldStorage& worldStorage, ServerTileSectorAr
         auto& bush = biomeItemPlacement.item.get<BushVariant>();
         simplePlacePlant(m_plantDatabase->createPlant(bush, seed), position);
       } else if (biomeItemPlacement.item.is<TreePair>()) {
-        auto& treePair = biomeItemPlacement.item.get<TreePair>();
+        auto const& [primaryTree, alternateTree] = biomeItemPlacement.item.get<TreePair>();
         TreeVariant treeVariant;
         if (seed % 2 == 0)
-          treeVariant = treePair.first;
+          treeVariant = primaryTree;
         else
-          treeVariant = treePair.second;
+          treeVariant = alternateTree;
 
         simplePlacePlant(m_plantDatabase->createPlant(treeVariant, seed), position);
       } else if (biomeItemPlacement.item.is<ObjectPool>()) {
         auto& objectPool = biomeItemPlacement.item.get<ObjectPool>();
         auto direction = seed % 2 ? Direction::Left : Direction::Right;
-        auto objectPair = objectPool.select(seed);
-        if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectPair.first, position, direction, objectPair.second)) {
+        auto const& [objectName, objectParameters] = objectPool.select(seed);
+        if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectName, position, direction, objectParameters)) {
           if (object->biomePlaced())
             m_worldServer.addEntity(object);
         }

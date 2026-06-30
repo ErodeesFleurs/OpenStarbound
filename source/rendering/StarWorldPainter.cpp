@@ -21,8 +21,8 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration
   m_camera.setPixelRatio(m_configuration->get("zoomLevel").toFloat());
 
   m_highlightConfig = m_assets->json("/highlights.config");
-  for (auto p : m_highlightConfig.get("highlightDirectives").iterateObject())
-    m_highlightDirectives.set(EntityHighlightEffectTypeNames.getLeft(p.first), {p.second.getString("underlay", ""), p.second.getString("overlay", "")});
+  for (auto [effectTypeName, directives] : m_highlightConfig.get("highlightDirectives").iterateObject())
+    m_highlightDirectives.set(EntityHighlightEffectTypeNames.getLeft(effectTypeName), {directives.getString("underlay", ""), directives.getString("overlay", "")});
 
   m_entityBarOffset = jsonToVec2F(m_assets->json("/rendering.config:entityBarOffset"));
   m_entityBarSpacing = jsonToVec2F(m_assets->json("/rendering.config:entityBarSpacing"));
@@ -112,8 +112,8 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   Map<EntityRenderLayer, List<pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
   for (auto& ed : renderData.entityDrawables) {
-    for (auto& p : ed.layers)
-      entityDrawables[p.first].append({ed.highlightEffect, std::move(p.second)});
+    for (auto& [layer, drawables] : ed.layers)
+      entityDrawables[layer].append({ed.highlightEffect, std::move(drawables)});
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
@@ -123,8 +123,8 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
         break;
       if (until && entityDrawableIterator->first >= *until)
         break;
-      for (auto& edl : entityDrawableIterator->second)
-        drawEntityLayer(std::move(edl.second), edl.first);
+      for (auto& [highlightEffect, drawables] : entityDrawableIterator->second)
+        drawEntityLayer(std::move(drawables), highlightEffect);
       ++entityDrawableIterator;
     }
 

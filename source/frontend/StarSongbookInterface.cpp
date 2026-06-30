@@ -78,22 +78,22 @@ void SongbookInterface::refresh(bool reloadFiles) {
     auto songList = fetchChild<ListWidget>("songs.list");
     songList->clear();
     if (search.empty()) {
-      for (auto const& fileAndIndex : enumerateIterator(m_files)) {
+      for (auto const& [file, index] : enumerateIterator(m_files)) {
         auto widget = songList->addItem();
-        widget->setData(fileAndIndex.second);
+        widget->setData(index);
         auto songName = widget->fetchChild<LabelWidget>("songName");
-        String const& song = fileAndIndex.first;
+        String const& song = file;
         songName->setText(song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4)));
         widget->show();
       }
     } else {
-      for (auto const& fileAndIndex : enumerateIterator(m_files)) {
-        StringView song = fileAndIndex.first;
+      for (auto const& [file, index] : enumerateIterator(m_files)) {
+        StringView song = file;
         song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
         auto find = song.find(search, 0, String::CaseInsensitive);
         if (find != NPos) {
           auto widget = songList->addItem();
-          widget->setData(fileAndIndex.second);
+          widget->setData(index);
           String text = "";
           size_t last = 0;
           do {

@@ -45,43 +45,43 @@ Vehicle::Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabas
   if (auto animationScript = configValue("animationScript").optString())
     m_scriptedAnimator.setScript(*animationScript);
 
-  for (auto const& pair : configValue("loungePositions", JsonObject()).iterateObject()) {
-    auto& loungePosition = m_loungePositions[pair.first];
-    loungePosition.part = pair.second.getString("part");
-    loungePosition.partAnchor = pair.second.getString("partAnchor");
-    loungePosition.exitBottomOffset = pair.second.opt("exitBottomOffset").apply(jsonToVec2F);
-    loungePosition.armorCosmeticOverrides = pair.second.getObject("armorCosmeticOverrides", JsonObject());
-    loungePosition.cursorOverride = pair.second.optString("cursorOverride");
-    loungePosition.cameraFocus = pair.second.getBool("cameraFocus", false);
-    loungePosition.enabled.set(pair.second.getBool("enabled", true));
-    if (auto orientation = pair.second.optString("orientation"))
+  for (auto const& [loungePositionName, loungePositionConfig] : configValue("loungePositions", JsonObject()).iterateObject()) {
+    auto& loungePosition = m_loungePositions[loungePositionName];
+    loungePosition.part = loungePositionConfig.getString("part");
+    loungePosition.partAnchor = loungePositionConfig.getString("partAnchor");
+    loungePosition.exitBottomOffset = loungePositionConfig.opt("exitBottomOffset").apply(jsonToVec2F);
+    loungePosition.armorCosmeticOverrides = loungePositionConfig.getObject("armorCosmeticOverrides", JsonObject());
+    loungePosition.cursorOverride = loungePositionConfig.optString("cursorOverride");
+    loungePosition.cameraFocus = loungePositionConfig.getBool("cameraFocus", false);
+    loungePosition.enabled.set(loungePositionConfig.getBool("enabled", true));
+    if (auto orientation = loungePositionConfig.optString("orientation"))
       loungePosition.orientation.set(LoungeOrientationNames.getLeft(*orientation));
-    loungePosition.emote.set(pair.second.optString("emote"));
-    loungePosition.dance.set(pair.second.optString("dance"));
-    loungePosition.directives.set(pair.second.optString("directives"));
-    loungePosition.statusEffects.set(pair.second.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect));
-    loungePosition.suppressTools = pair.second.optBool("suppressTools");
+    loungePosition.emote.set(loungePositionConfig.optString("emote"));
+    loungePosition.dance.set(loungePositionConfig.optString("dance"));
+    loungePosition.directives.set(loungePositionConfig.optString("directives"));
+    loungePosition.statusEffects.set(loungePositionConfig.getArray("statusEffects", {}).transformed(jsonToPersistentStatusEffect));
+    loungePosition.suppressTools = loungePositionConfig.optBool("suppressTools");
   }
 
-  for (auto const& pair : configValue("physicsCollisions", JsonObject()).iterateObject()) {
-    auto& collisionConfig = m_movingCollisions[pair.first];
-    collisionConfig.movingCollision = PhysicsMovingCollision::fromJson(pair.second);
-    collisionConfig.attachToPart = pair.second.optString("attachToPart");
-    collisionConfig.enabled.set(pair.second.getBool("enabled", true));
+  for (auto const& [collisionName, collisionJson] : configValue("physicsCollisions", JsonObject()).iterateObject()) {
+    auto& collisionConfig = m_movingCollisions[collisionName];
+    collisionConfig.movingCollision = PhysicsMovingCollision::fromJson(collisionJson);
+    collisionConfig.attachToPart = collisionJson.optString("attachToPart");
+    collisionConfig.enabled.set(collisionJson.getBool("enabled", true));
   }
 
-  for (auto const& pair : configValue("physicsForces", JsonObject()).iterateObject()) {
-    auto& forceRegionConfig = m_forceRegions[pair.first];
-    forceRegionConfig.forceRegion = jsonToPhysicsForceRegion(pair.second);
-    forceRegionConfig.attachToPart = pair.second.optString("attachToPart");
-    forceRegionConfig.enabled.set(pair.second.getBool("enabled", true));
+  for (auto const& [forceName, forceJson] : configValue("physicsForces", JsonObject()).iterateObject()) {
+    auto& forceRegionConfig = m_forceRegions[forceName];
+    forceRegionConfig.forceRegion = jsonToPhysicsForceRegion(forceJson);
+    forceRegionConfig.attachToPart = forceJson.optString("attachToPart");
+    forceRegionConfig.enabled.set(forceJson.getBool("enabled", true));
   }
 
-  for (auto const& pair : configValue("damageSources", JsonObject()).iterateObject()) {
-    auto& damageSourceConfig = m_damageSources[pair.first];
-    damageSourceConfig.damageSource = DamageSource(pair.second);
-    damageSourceConfig.attachToPart = pair.second.optString("attachToPart");
-    damageSourceConfig.enabled.set(pair.second.getBool("enabled", true));
+  for (auto const& [damageSourceName, damageSourceJson] : configValue("damageSources", JsonObject()).iterateObject()) {
+    auto& damageSourceConfig = m_damageSources[damageSourceName];
+    damageSourceConfig.damageSource = DamageSource(damageSourceJson);
+    damageSourceConfig.attachToPart = damageSourceJson.optString("attachToPart");
+    damageSourceConfig.enabled.set(damageSourceJson.getBool("enabled", true));
   }
 
   auto animationConfig = assets->fetchJson(configValue("animation"), m_path);
@@ -90,11 +90,11 @@ Vehicle::Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabas
 
   m_networkedAnimator = NetworkedAnimator(animationConfig, m_path, assets, m_imageMetadataDatabase, m_particleDatabase);
 
-  for (auto const& p : configValue("animationGlobalTags", JsonObject()).iterateObject())
-    m_networkedAnimator.setGlobalTag(p.first, p.second.toString());
-  for (auto const& partPair : configValue("animationPartTags", JsonObject()).iterateObject()) {
-    for (auto const& tagPair : partPair.second.iterateObject())
-      m_networkedAnimator.setPartTag(partPair.first, tagPair.first, tagPair.second.toString());
+  for (auto const& [tagName, tagValue] : configValue("animationGlobalTags", JsonObject()).iterateObject())
+    m_networkedAnimator.setGlobalTag(tagName, tagValue.toString());
+  for (auto const& [partName, partTags] : configValue("animationPartTags", JsonObject()).iterateObject()) {
+    for (auto const& [tagName, tagValue] : partTags.iterateObject())
+      m_networkedAnimator.setPartTag(partName, tagName, tagValue.toString());
   }
 
   auto movementParameters = MovementParameters(configValue("movementSettings"));
@@ -108,26 +108,26 @@ Vehicle::Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabas
   m_netGroup.addNetElement(&m_damageTeam);
 
   m_loungePositions.sortByKey();
-  for (auto& p : m_loungePositions) {
-    m_netGroup.addNetElement(&p.second.enabled);
-    m_netGroup.addNetElement(&p.second.orientation);
-    m_netGroup.addNetElement(&p.second.emote);
-    m_netGroup.addNetElement(&p.second.dance);
-    m_netGroup.addNetElement(&p.second.directives);
-    m_netGroup.addNetElement(&p.second.statusEffects);
+  for (auto& [loungePositionId, loungePosition] : m_loungePositions) {
+    m_netGroup.addNetElement(&loungePosition.enabled);
+    m_netGroup.addNetElement(&loungePosition.orientation);
+    m_netGroup.addNetElement(&loungePosition.emote);
+    m_netGroup.addNetElement(&loungePosition.dance);
+    m_netGroup.addNetElement(&loungePosition.directives);
+    m_netGroup.addNetElement(&loungePosition.statusEffects);
   }
 
   m_movingCollisions.sortByKey();
-  for (auto& p : m_movingCollisions)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [collisionName, collision] : m_movingCollisions)
+    m_netGroup.addNetElement(&collision.enabled);
 
   m_forceRegions.sortByKey();
-  for (auto& p : m_forceRegions)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [forceRegionName, forceRegion] : m_forceRegions)
+    m_netGroup.addNetElement(&forceRegion.enabled);
 
   m_damageSources.sortByKey();
-  for (auto& p : m_damageSources)
-    m_netGroup.addNetElement(&p.second.enabled);
+  for (auto& [damageSourceName, damageSource] : m_damageSources)
+    m_netGroup.addNetElement(&damageSource.enabled);
 
   // don't interpolate scripted animation parameters
   m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
@@ -283,14 +283,15 @@ void Vehicle::update(float dt, uint64_t) {
     m_movementController.tickMaster(dt);
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
 
-    eraseWhere(m_aliveMasterConnections, [](auto& p) {
-      return p.second.tick(GlobalTimestep);
+    eraseWhere(m_aliveMasterConnections, [](auto& connectionTimer) {
+      auto& [connectionId, timer] = connectionTimer;
+      return timer.tick(GlobalTimestep);
     });
 
-    for (auto& loungePositionPair : m_loungePositions) {
-      for (auto& p : loungePositionPair.second.masterControlState) {
-        p.second.masterHeld = false;
-        filter(p.second.slavesHeld, [this](ConnectionId id) {
+    for (auto& [loungePositionId, loungePosition] : m_loungePositions) {
+      for (auto& [control, controlState] : loungePosition.masterControlState) {
+        controlState.masterHeld = false;
+        filter(controlState.slavesHeld, [this](ConnectionId id) {
           return m_aliveMasterConnections.contains(id);
         });
       }
@@ -302,33 +303,33 @@ void Vehicle::update(float dt, uint64_t) {
 
     bool heartbeat = m_slaveHeartbeatTimer.wrapTick();
 
-    for (auto& p : m_loungePositions) {
+    for (auto& [loungePositionId, loungePosition] : m_loungePositions) {
       if (heartbeat) {
         JsonArray allControlsHeld;
-        for (LoungeControl control : p.second.slaveNewControls) {
+        for (LoungeControl control : loungePosition.slaveNewControls) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
           allControlsHeld.append(LoungeControlNames.getRight(control));
         }
-        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(p.first), std::move(allControlsHeld)});
+        world()->sendEntityMessage(entityId(), "control_all", {*m_loungePositions.indexOf(loungePositionId), std::move(allControlsHeld)});
       } else {
-        for (auto control : p.second.slaveNewControls.difference(p.second.slaveOldControls)) {
+        for (auto control : loungePosition.slaveNewControls.difference(loungePosition.slaveOldControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
+          world()->sendEntityMessage(entityId(), "control_on", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
         }
-        for (auto control : p.second.slaveOldControls.difference(p.second.slaveNewControls)) {
+        for (auto control : loungePosition.slaveOldControls.difference(loungePosition.slaveNewControls)) {
           if (control > LoungeControl::Special3 && !m_receiveExtraControls)
             continue;
-          world()->sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(p.first), LoungeControlNames.getRight(control)});
+          world()->sendEntityMessage(entityId(), "control_off", {*m_loungePositions.indexOf(loungePositionId), LoungeControlNames.getRight(control)});
         }
       }
 
-      if (p.second.slaveOldAimPosition != p.second.slaveNewAimPosition)
-        world()->sendEntityMessage(entityId(), "aim", {*m_loungePositions.indexOf(p.first), p.second.slaveNewAimPosition[0], p.second.slaveNewAimPosition[1]});
+      if (loungePosition.slaveOldAimPosition != loungePosition.slaveNewAimPosition)
+        world()->sendEntityMessage(entityId(), "aim", {*m_loungePositions.indexOf(loungePositionId), loungePosition.slaveNewAimPosition[0], loungePosition.slaveNewAimPosition[1]});
 
-      p.second.slaveOldControls = take(p.second.slaveNewControls);
-      p.second.slaveOldAimPosition = p.second.slaveNewAimPosition;
+      loungePosition.slaveOldControls = take(loungePosition.slaveNewControls);
+      loungePosition.slaveOldAimPosition = loungePosition.slaveNewAimPosition;
     }
   }
 
@@ -394,11 +395,11 @@ Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& mes
     Set<LoungeControl> allControlsHeld;
     for (auto const& s : args.at(1).iterateArray())
       allControlsHeld.add(LoungeControlNames.getLeft(s.toString()));
-    for (auto& p : loungePosition.masterControlState) {
-      if (allControlsHeld.contains(p.first))
-        p.second.slavesHeld.add(connectionId);
+    for (auto& [control, controlState] : loungePosition.masterControlState) {
+      if (allControlsHeld.contains(control))
+        controlState.slavesHeld.add(connectionId);
       else
-        p.second.slavesHeld.remove(connectionId);
+        controlState.slavesHeld.remove(connectionId);
     }
     return Json();
   } else if (message.equalsIgnoreCase("aim")) {
@@ -428,15 +429,15 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
 
   Maybe<size_t> index;
   float bestDistance = 0.0f;
-  for (auto const& loungeAndIndex : enumerateIterator(m_loungePositions)) {
-    auto const& lounge = loungeAndIndex.first.second;
+  for (auto const& [loungeEntry, loungeIndex] : enumerateIterator(m_loungePositions)) {
+    auto const& lounge = loungeEntry.second;
     if (!lounge.enabled.get())
       continue;
 
     Vec2F loungePosition = *m_networkedAnimator.partPoint(lounge.part, lounge.partAnchor) + position();
     float distance = vmagSquared(loungePosition - request.interactPosition);
     if (!index || distance < bestDistance) {
-      index = loungeAndIndex.second;
+      index = loungeIndex;
       bestDistance = distance;
     }
   }
@@ -499,13 +500,13 @@ void Vehicle::loungeAim(size_t index, Vec2F const& aimPosition) {
 
 List<PhysicsForceRegion> Vehicle::forceRegions() const {
   List<PhysicsForceRegion> forces;
-  for (auto const& p : m_forceRegions) {
-    if (p.second.enabled.get()) {
-      PhysicsForceRegion forceRegion = p.second.forceRegion;
+  for (auto const& [_, forceRegionConfig] : m_forceRegions) {
+    if (forceRegionConfig.enabled.get()) {
+      PhysicsForceRegion forceRegion = forceRegionConfig.forceRegion;
 
       Vec2F translatePos = position();
-      if (p.second.attachToPart) {
-        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.get());
+      if (forceRegionConfig.attachToPart) {
+        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(forceRegionConfig.attachToPart.get());
         Vec2F localTranslation = partTransformation.transformVec2(Vec2F());
         translatePos += localTranslation;
       }
@@ -519,12 +520,12 @@ List<PhysicsForceRegion> Vehicle::forceRegions() const {
 
 List<DamageSource> Vehicle::damageSources() const {
   List<DamageSource> sources;
-  for (auto const& p : m_damageSources) {
-    if (p.second.enabled.get()) {
-      DamageSource damageSource = p.second.damageSource;
+  for (auto const& [_, damageSourceConfig] : m_damageSources) {
+    if (damageSourceConfig.enabled.get()) {
+      DamageSource damageSource = damageSourceConfig.damageSource;
 
-      if (p.second.attachToPart) {
-        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(p.second.attachToPart.get());
+      if (damageSourceConfig.attachToPart) {
+        Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(damageSourceConfig.attachToPart.get());
         damageSource.damageArea.call([partTransformation](auto& da) { da.transform(partTransformation); });
       }
 

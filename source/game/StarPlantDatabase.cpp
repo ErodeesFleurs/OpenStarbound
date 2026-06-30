@@ -139,9 +139,9 @@ PlantDatabase::PlantDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPt
 
 StringList PlantDatabase::treeStemNames(bool ceiling) const {
   StringList names;
-  for (auto const& pair : m_treeStemConfigs) {
-    if (pair.second.settings.getBool("ceiling", false) == ceiling)
-      names.append(pair.first);
+  for (auto const& [stemName, stemConfig] : m_treeStemConfigs) {
+    if (stemConfig.settings.getBool("ceiling", false) == ceiling)
+      names.append(stemName);
   }
   return names;
 }
@@ -196,9 +196,9 @@ TreeVariant PlantDatabase::buildTreeVariant(
   treeVariant.foliageDropConfig = foliageConfig.settings.get("dropConfig", JsonObject());
 
   JsonObject descriptions;
-  for (auto const& entry : stemConfig.settings.iterateObject()) {
-    if (entry.first.endsWith("Description"))
-      descriptions[entry.first] = entry.second;
+  for (auto const& [propertyName, propertyValue] : stemConfig.settings.iterateObject()) {
+    if (propertyName.endsWith("Description"))
+      descriptions[propertyName] = propertyValue;
   }
   descriptions["description"] = stemConfig.settings.getString("description", stemName + " with " + foliageName);
   treeVariant.descriptions = descriptions;
@@ -231,9 +231,9 @@ TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHu
   treeVariant.foliageDropConfig = JsonObject();
 
   JsonObject descriptions;
-  for (auto const& entry : stemConfig.settings.iterateObject()) {
-    if (entry.first.endsWith("Description"))
-      descriptions[entry.first] = entry.second;
+  for (auto const& [propertyName, propertyValue] : stemConfig.settings.iterateObject()) {
+    if (propertyName.endsWith("Description"))
+      descriptions[propertyName] = propertyValue;
   }
   descriptions["description"] = stemConfig.settings.getString("description", stemName);
   treeVariant.descriptions = descriptions;
@@ -249,9 +249,9 @@ TreeVariant PlantDatabase::buildTreeVariant(String const& stemName, float stemHu
 
 StringList PlantDatabase::grassNames(bool ceiling) const {
   StringList names;
-  for (auto const& pair : m_grassConfigs) {
-    if (pair.second.settings.getBool("ceiling", false) == ceiling)
-      names.append(pair.first);
+  for (auto const& [grassName, grassConfig] : m_grassConfigs) {
+    if (grassConfig.settings.getBool("ceiling", false) == ceiling)
+      names.append(grassName);
   }
   return names;
 }
@@ -270,9 +270,9 @@ GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift
   grassVariant.ceiling = config.settings.getBool("ceiling", false);
 
   JsonObject descriptions;
-  for (auto const& entry : config.settings.iterateObject()) {
-    if (entry.first.endsWith("Description"))
-      descriptions[entry.first] = entry.second;
+  for (auto const& [propertyName, propertyValue] : config.settings.iterateObject()) {
+    if (propertyName.endsWith("Description"))
+      descriptions[propertyName] = propertyValue;
   }
   descriptions["description"] = config.settings.getString("description", name);
   grassVariant.descriptions = descriptions;
@@ -287,9 +287,9 @@ GrassVariant PlantDatabase::buildGrassVariant(String const& name, float hueShift
 
 StringList PlantDatabase::bushNames(bool ceiling) const {
   StringList names;
-  for (auto const& pair : m_bushConfigs) {
-    if (pair.second.settings.getBool("ceiling") == ceiling)
-      names.append(pair.first);
+  for (auto const& [bushName, bushConfig] : m_bushConfigs) {
+    if (bushConfig.settings.getBool("ceiling") == ceiling)
+      names.append(bushName);
   }
   return names;
 }
@@ -322,9 +322,9 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   bushVariant.ceiling = config.settings.getBool("ceiling", false);
 
   JsonObject descriptions;
-  for (auto const& entry : config.settings.iterateObject()) {
-    if (entry.first.endsWith("Description"))
-      descriptions[entry.first] = entry.second;
+  for (auto const& [propertyName, propertyValue] : config.settings.iterateObject()) {
+    if (propertyName.endsWith("Description"))
+      descriptions[propertyName] = propertyValue;
   }
   descriptions["description"] = config.settings.getString("description", bushName + " with " + modName);
   bushVariant.descriptions = descriptions;

@@ -7,8 +7,8 @@ namespace Star {
 
 bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   // Check whether colonyTags is a supermultiset of colonyTagCriteria
-  for (pair<String, unsigned> const& entry : colonyTagCriteria.pairs()) {
-    if (colonyTags.value(entry.first, 0) < entry.second)
+  for (auto const& [tagName, requiredCount] : colonyTagCriteria.pairs()) {
+    if (colonyTags.value(tagName, 0) < requiredCount)
       return false;
   }
   return true;
@@ -68,8 +68,8 @@ TenantPtr TenantDatabase::readTenant(String const& path) const {
     float priority = config.getFloat("priority");
 
     StringMap<unsigned> colonyTagCriteria;
-    for (pair<String, Json> const& entry : config.getObject("colonyTagCriteria").pairs()) {
-      colonyTagCriteria[entry.first] = entry.second.toUInt();
+    for (auto const& [tagName, tagConfig] : config.getObject("colonyTagCriteria").pairs()) {
+      colonyTagCriteria[tagName] = tagConfig.toUInt();
     }
 
     List<TenantSpawnable> tenants = config.getArray("tenants").transformed([](Json const& json) -> TenantSpawnable {

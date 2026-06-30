@@ -129,8 +129,8 @@ void NetElementMapWrapper<BaseMap>::initNetVersion(NetElementVersion const* vers
     applyChange(std::move(change.second));
 
   addChangeData(ClearChange());
-  for (auto const& p : *this)
-    addChangeData(SetChange{p.first, p.second});
+  for (auto const& [key, value] : *this)
+    addChangeData(SetChange{key, value});
 }
 
 template <typename BaseMap>
@@ -147,8 +147,8 @@ void NetElementMapWrapper<BaseMap>::disableNetInterpolation() {
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::tickNetInterpolation(float dt) {
-  for (auto& p : m_pendingChangeData)
-    p.first -= dt;
+  for (auto& [timeToApply, change] : m_pendingChangeData)
+    timeToApply -= dt;
 
   while (!m_pendingChangeData.empty() && m_pendingChangeData.first().first <= 0.0f)
     applyChange(m_pendingChangeData.takeFirst().second);
@@ -158,11 +158,11 @@ template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   ds.writeVlqU(BaseMap::size() + m_pendingChangeData.size());
-  for (auto const& pair : *this)
-    writeChange(ds, SetChange{pair.first, pair.second});
+  for (auto const& [key, value] : *this)
+    writeChange(ds, SetChange{key, value});
 
-  for (auto const& p : m_pendingChangeData)
-    writeChange(ds, p.second);
+  for (auto const& [timeToApply, change] : m_pendingChangeData)
+    writeChange(ds, change);
 }
 
 template <typename BaseMap>
@@ -191,8 +191,8 @@ bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, Ne
   if (fromVersion < m_changeDataLastVersion)
     return true;
 
-  for (auto const& p : m_changeData)
-    if (p.first >= fromVersion)
+  for (auto const& [version, change] : m_changeData)
+    if (version >= fromVersion)
       return true;
 
   return false;
@@ -209,11 +209,11 @@ bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromV
     netStore(ds, rules);
 
   } else {
-    for (auto const& p : m_changeData) {
-      if (p.first >= fromVersion) {
+    for (auto const& [version, change] : m_changeData) {
+      if (version >= fromVersion) {
         deltaWritten = true;
         ds.writeVlqU(2);
-        writeChange(ds, p.second);
+        writeChange(ds, change);
       }
     }
   }
@@ -372,17 +372,17 @@ BaseMap const& NetElementMapWrapper<BaseMap>::baseMap() const {
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::reset(BaseMap values) {
-  for (auto const& p : *this) {
-    if (!values.contains(p.first)) {
-      addChangeData(RemoveChange{p.first});
+  for (auto const& [key, value] : *this) {
+    if (!values.contains(key)) {
+      addChangeData(RemoveChange{key});
       m_updated = true;
     }
   }
 
-  for (auto const& p : values) {
-    auto v = ptr(p.first);
-    if (!v || !(*v == p.second)) {
-      addChangeData(SetChange{p.first, p.second});
+  for (auto const& [key, value] : values) {
+    auto v = ptr(key);
+    if (!v || !(*v == value)) {
+      addChangeData(SetChange{key, value});
       m_updated = true;
     }
   }

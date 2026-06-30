@@ -123,9 +123,9 @@ void StarWorldClientLighting::lightingCalc() {
     }
   }
 
-  for (auto const& lightPair : particleLights) {
-    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second);
+  for (auto const& [lightPosition, lightSource] : particleLights) {
+    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPosition);
+    m_lightingCalculator.addSpreadLight(position, lightSource);
   }
 
   m_lightingCalculator.calculate(m_pendingLightMap);

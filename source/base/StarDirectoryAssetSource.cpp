@@ -82,9 +82,9 @@ void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& out
 
   // path must be passed in including the trailing '/'
   String fsDirectory = toFilesystem(assetDirectory);
-  for (auto entry : File::dirList(fsDirectory)) {
-    String assetPath = assetDirectory + entry.first;
-    if (entry.second) {
+  for (auto const& [entryName, isDirectory] : File::dirList(fsDirectory)) {
+    String assetPath = assetDirectory + entryName;
+    if (isDirectory) {
       scanAll(assetPath + "/", output);
     } else {
       if (!shouldIgnore(assetPath))

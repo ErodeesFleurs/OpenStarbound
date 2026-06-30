@@ -89,8 +89,8 @@ void WorldServerSpawnFinder::setPlayerStart(Vec2F const& startPosition, bool res
   m_playerStart = startPosition;
   m_respawnInWorld = respawnInWorld;
   m_adjustPlayerStart = false;
-  for (auto const& pair : m_worldServer.m_clientInfo)
-    pair.second->outgoingPackets.append(make_shared<SetPlayerStartPacket>(m_playerStart, m_respawnInWorld));
+  for (auto const& [_, clientInfo] : m_worldServer.m_clientInfo)
+    clientInfo->outgoingPackets.append(make_shared<SetPlayerStartPacket>(m_playerStart, m_respawnInWorld));
 }
 
 Vec2F WorldServerSpawnFinder::playerStart() const {

@@ -114,8 +114,8 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
   };
 
   if (config.isType(Json::Type::Object)) {
-    for (auto const& kvpair : config.iterateObject())
-      addWidget(kvpair.second.set("name", kvpair.first));
+    for (auto const& [name, memberConfig] : config.iterateObject())
+      addWidget(memberConfig.set("name", name));
   } else if (config.isType(Json::Type::Array)) {
     for (auto const& elem : config.iterateArray())
       addWidget(elem);

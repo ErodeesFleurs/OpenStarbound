@@ -599,10 +599,10 @@ bool Sky::controlledMovement(JsonArray const& path, Json const& origin, float ti
   float stepTime = 0;
   Vec2F stepOffset;
   float stepRotation;
-  for (auto const& entry : path) {
-    stepOffset = jsonToVec2F(entry.get("offset"));
-    stepRotation = entry.getFloat("rotation") * Constants::deg2rad;
-    stepTime += entry.getFloat("time");
+  for (auto const& pathEntry : path) {
+    stepOffset = jsonToVec2F(pathEntry.get("offset"));
+    stepRotation = pathEntry.getFloat("rotation") * Constants::deg2rad;
+    stepTime += pathEntry.getFloat("time");
 
     if (timeOffset <= stepTime) {
       float percentage = (timeOffset - previousTime) / (stepTime - previousTime);

@@ -293,8 +293,8 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   } else {
     List<Vec2I> toDamage;
 
-    for (auto pair : toSwap)
-      toDamage.append(pair.first);
+    for (auto [position, material] : toSwap)
+      toDamage.append(position);
     
     world()->damageTiles(toDamage, layer, owner()->position(), damage, owner()->entityId());
   }

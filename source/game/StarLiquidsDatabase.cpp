@@ -49,9 +49,9 @@ LiquidsDatabase::LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr
       entry->config = liquidConfig;
 
       JsonObject descriptions;
-      for (auto pair : liquidConfig.iterateObject())
-        if (pair.first.endsWith("Description"))
-          descriptions[pair.first] = pair.second;
+      for (auto const& [configKey, configValue] : liquidConfig.iterateObject())
+        if (configKey.endsWith("Description"))
+          descriptions[configKey] = configValue;
       descriptions["description"] = liquidConfig.getString("description", "");
       entry->descriptions = descriptions;
 

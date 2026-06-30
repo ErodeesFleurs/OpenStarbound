@@ -46,8 +46,8 @@ Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
   setTeam(EntityDamageTeam(m_monsterVariant.damageTeamType, m_monsterVariant.damageTeam));
 
   m_networkedAnimator = NetworkedAnimator(m_monsterVariant.animatorConfig, String(), assets, m_imageMetadataDatabase, m_particleDatabase);
-  for (auto const& pair : m_monsterVariant.animatorPartTags)
-    m_networkedAnimator.setPartTag(pair.first, "partImage", pair.second);
+  for (auto const& [partName, partTag] : m_monsterVariant.animatorPartTags)
+    m_networkedAnimator.setPartTag(partName, "partImage", partTag);
   m_networkedAnimator.setZoom(m_monsterVariant.animatorZoom);
   auto colorSwap = m_monsterVariant.colorSwap.value(m_monsterDatabase->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
   if (!colorSwap.empty())
@@ -294,12 +294,12 @@ List<DamageSource> Monster::damageSources() const {
   }
 
   auto animationDamageParts = m_monsterVariant.animationDamageParts;
-  for (auto pair : m_monsterVariant.animationDamageParts) {
-    if (!m_animationDamageParts.get().contains(pair.first))
+  for (auto const& [partName, partConfig] : m_monsterVariant.animationDamageParts) {
+    if (!m_animationDamageParts.get().contains(partName))
       continue;
 
-    String anchorPart = pair.second.getString("anchorPart");
-    DamageSource ds = DamageSource(pair.second.get("damageSource"));
+    String anchorPart = partConfig.getString("anchorPart");
+    DamageSource ds = DamageSource(partConfig.get("damageSource"));
     ds.damage *= levelPowerMultiplier * m_statusController->stat("powerMultiplier");
     ds.damageArea.call([this, &anchorPart](auto& poly) {
       poly.transform(m_networkedAnimator.partTransformation(anchorPart));
@@ -316,11 +316,11 @@ List<DamageSource> Monster::damageSources() const {
 
     List<DamageSource> partSources;
     if (auto line = ds.damageArea.maybe<Line2F>()) {
-      if (pair.second.getBool("checkLineCollision", false)) {
+      if (partConfig.getBool("checkLineCollision", false)) {
         Line2F worldLine = line.value().translated(position());
         float length = worldLine.length();
 
-        auto bounces = pair.second.getInt("bounces", 0);
+        auto bounces = partConfig.getInt("bounces", 0);
         while (auto collision = world()->lineTileCollisionPoint(worldLine.min(), worldLine.max())) {
           worldLine = Line2F(worldLine.min(), collision.value().first);
           ds.damageArea = worldLine.translated(-position());
@@ -373,8 +373,8 @@ void Monster::knockout() {
     m_networkedAnimator.setEffectEnabled(knockoutEffect, true);
 
   auto knockoutAnimationStates = m_monsterVariant.parameters.getObject("knockoutAnimationStates", JsonObject());
-  for (auto pair : knockoutAnimationStates)
-    m_networkedAnimator.setState(pair.first, pair.second.toString());
+  for (auto const& [stateName, state] : knockoutAnimationStates)
+    m_networkedAnimator.setState(stateName, state.toString());
 }
 
 bool Monster::shouldDestroy() const {

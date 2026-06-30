@@ -130,29 +130,29 @@ FunctionDatabase::FunctionDatabase(AssetsConstPtr assets) {
   assets->queueJsons(configFunctions);
 
   for (auto& file : functions) {
-    for (auto const& functionPair : assets->json(file).iterateObject()) {
-      if (m_functions.contains(functionPair.first))
-        throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions[functionPair.first] = make_shared<StoredFunction>(parametricFunctionFromConfig(functionPair.second));
+    for (auto const& [functionName, functionConfig] : assets->json(file).iterateObject()) {
+      if (m_functions.contains(functionName))
+        throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionName, file));
+      m_functions[functionName] = make_shared<StoredFunction>(parametricFunctionFromConfig(functionConfig));
     }
   }
 
   for (auto& file : sndFunctions) {
-    for (auto const& functionPair : assets->json(file).iterateObject()) {
-      if (m_functions2.contains(functionPair.first))
+    for (auto const& [functionName, functionConfig] : assets->json(file).iterateObject()) {
+      if (m_functions2.contains(functionName))
         throw StarException(
-            strf("Named 2-ary Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions2[functionPair.first] = make_shared<StoredFunction2>(multiTable2DFromConfig(functionPair.second));
+            strf("Named 2-ary Function '{}' defined twice, second time from {}", functionName, file));
+      m_functions2[functionName] = make_shared<StoredFunction2>(multiTable2DFromConfig(functionConfig));
     }
   }
 
   for (auto& file : configFunctions) {
-    for (auto const& tablePair : assets->json(file).iterateObject()) {
-      if (m_configFunctions.contains(tablePair.first))
+    for (auto const& [tableName, tableConfig] : assets->json(file).iterateObject()) {
+      if (m_configFunctions.contains(tableName))
         throw StarException(
-            strf("Named config function '{}' defined twice, second time from {}", tablePair.first, file));
-      m_configFunctions[tablePair.first] =
-          make_shared<StoredConfigFunction>(parametricTableFromConfig(tablePair.second));
+            strf("Named config function '{}' defined twice, second time from {}", tableName, file));
+      m_configFunctions[tableName] =
+          make_shared<StoredConfigFunction>(parametricTableFromConfig(tableConfig));
     }
   }
 }
@@ -257,13 +257,12 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
 
     auto grid = descriptor.getArray(2);
 
-    for (auto rowAndY : enumerateIterator(grid)) {
-      size_t y = rowAndY.second;
-      auto row = rowAndY.first.toArray();
+    for (auto&& [rowJson, y] : enumerateIterator(grid)) {
+      auto row = rowJson.toArray();
       if (y == 0) {
-        for (auto headerAndX : enumerateIterator(row)) {
-          if (headerAndX.second > 0)
-            xaxis.append(headerAndX.first.toFloat());
+        for (auto&& [header, x] : enumerateIterator(row)) {
+          if (x > 0)
+            xaxis.append(header.toFloat());
         }
         points.resize({row.size() - 1, grid.size() - 1});
       } else {
@@ -271,8 +270,8 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
         auto cells = row[1].toArray();
         if (cells.size() != xaxis.size())
           throw StarException("Number of sample points doesn't match axis size.");
-        for (auto cellAndX : enumerateIterator(cells))
-          points.set({cellAndX.second, y - 1}, cellAndX.first.toFloat());
+        for (auto&& [cell, x] : enumerateIterator(cells))
+          points.set({x, y - 1}, cell.toFloat());
       }
     }
 
