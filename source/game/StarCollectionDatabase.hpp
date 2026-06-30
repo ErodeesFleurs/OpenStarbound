@@ -25,7 +25,7 @@ enum class CollectionType : uint16_t {
 extern EnumMap<CollectionType> const CollectionTypeNames;
 
 struct Collectable {
-  Collectable();
+  Collectable() = default;
   Collectable(String const& name, int order, String const& title, String const& description, String const& icon);
 
   String name;
@@ -36,7 +36,7 @@ struct Collectable {
 };
 
 struct Collection {
-  Collection();
+  Collection() = default;
   Collection(String const& name, CollectionType type, String const& icon);
 
   String name;

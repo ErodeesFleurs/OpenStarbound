@@ -60,7 +60,7 @@ public:
   // portion from port portion.
   [[nodiscard]] static Either<String, HostAddressWithPort> lookupWithPort(String const& address);
 
-  HostAddressWithPort();
+  HostAddressWithPort() = default;
   HostAddressWithPort(HostAddress const& address, uint16_t port);
   HostAddressWithPort(NetworkMode mode, uint8_t* address, uint16_t port);
   // Throws if address or port is not valid

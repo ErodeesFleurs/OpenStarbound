@@ -35,7 +35,7 @@ enum class InteractActionType {
 extern EnumMap<InteractActionType> const InteractActionTypeNames;
 
 struct InteractAction {
-  InteractAction();
+  InteractAction() = default;
   InteractAction(InteractActionType type, EntityId entityId, Json data);
   InteractAction(String const& typeName, EntityId entityId, Json data);
 

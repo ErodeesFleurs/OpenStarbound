@@ -83,7 +83,7 @@ public:
 private:
   // If a delta is written from further back than this many steps, the delta
   // will fall back to a full serialization of the entire state.
-  static int64_t const MaxChangeDataVersions = 100;
+  static constexpr int64_t MaxChangeDataVersions = 100;
 
   struct SetChange {
     key_type key;

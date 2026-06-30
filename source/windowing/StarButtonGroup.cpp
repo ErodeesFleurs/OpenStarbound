@@ -3,8 +3,6 @@
 
 namespace Star {
 
-ButtonGroup::ButtonGroup() = default;
-
 void ButtonGroup::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }

@@ -118,7 +118,7 @@ private:
   };
 
   struct MaterialInfo {
-    MaterialInfo();
+    MaterialInfo() = default;
 
     String name;
     MaterialId id = NullMaterialId;
@@ -133,13 +133,13 @@ private:
     StringList miningSounds;
     String footstepSound;
     ModId tillableMod = NoModId;
-    CollisionKind collisionKind;
-    bool foregroundOnly;
-    bool supportsMods;
-    bool soil;
+    CollisionKind collisionKind = CollisionKind::None;
+    bool foregroundOnly = false;
+    bool supportsMods = false;
+    bool soil = false;
     bool falling{};
     bool cascading{};
-    bool blocksLiquidFlow;
+    bool blocksLiquidFlow = false;
 
     shared_ptr<MaterialRenderProfile const> materialRenderProfile;
 
@@ -147,7 +147,7 @@ private:
   };
 
   struct ModInfo {
-    ModInfo();
+    ModInfo() = default;
 
     String name;
     ModId id = NoModId;

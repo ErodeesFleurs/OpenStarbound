@@ -7,8 +7,6 @@
 
 namespace Star {
 
-SkyParameters::SkyParameters() = default;
-
 SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase)
     : SkyParameters() {
   if (!coordinate || coordinate.isSystem())

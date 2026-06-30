@@ -24,7 +24,7 @@ using LiquidException = TypedException<StarException, LiquidExceptionTag>;
 using LiquidInteractionResult = Either<MaterialId, LiquidId>;
 
 struct LiquidSettings {
-  LiquidSettings();
+  LiquidSettings() = default;
 
   String name;
   LiquidId id = EmptyLiquidId;
@@ -32,7 +32,7 @@ struct LiquidSettings {
   Json config;
   Json descriptions;
 
-  unsigned tickDelta;
+  unsigned tickDelta = 0;
   Vec4B liquidColor;
   Vec3F radiantLightLevel;
   ItemDescriptor itemDrop;

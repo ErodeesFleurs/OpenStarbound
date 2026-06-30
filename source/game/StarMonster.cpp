@@ -1,4 +1,7 @@
 #include "StarMonster.hpp"
+
+#include <utility>
+
 #include "StarAlgorithm.hpp"
 #include "StarBehaviorLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -841,7 +844,7 @@ Vec2F Monster::mouthPosition(bool) const {
 }
 
 List<ChatAction> Monster::pullPendingChatActions() {
-  return std::move(m_pendingChatActions);
+  return std::exchange(m_pendingChatActions, {});
 }
 
 List<PhysicsForceRegion> Monster::forceRegions() const {

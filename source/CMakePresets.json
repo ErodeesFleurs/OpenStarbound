@@ -115,6 +115,15 @@
       }
     },
     {
+      "inherits": "linux-debug-gcc",
+      "name": "linux-strict-gcc",
+      "displayName": "Linux GCC x64 Debug + strict warnings",
+      "binaryDir": "${sourceParentDir}/build/linux-strict-gcc",
+      "cacheVariables": {
+        "STAR_ENABLE_STRICT_WARNINGS": true
+      }
+    },
+    {
       "inherits": "linux-release-gcc",
       "name": "linux-optimized-gcc",
       "displayName": "Linux GCC x64 Release",
@@ -162,6 +171,15 @@
       "binaryDir": "${sourceParentDir}/build/linux-tidy-clang",
       "cacheVariables": {
         "STAR_ENABLE_CLANG_TIDY": true
+      }
+    },
+    {
+      "inherits": "linux-debug-clang",
+      "name": "linux-strict-clang",
+      "displayName": "Linux Clang x64 Debug + strict warnings",
+      "binaryDir": "${sourceParentDir}/build/linux-strict-clang",
+      "cacheVariables": {
+        "STAR_ENABLE_STRICT_WARNINGS": true
       }
     },
     {
@@ -337,6 +355,14 @@
       "configurePreset": "linux-debug-clang"
     },
     {
+      "name": "linux-tidy-clang",
+      "configurePreset": "linux-tidy-clang"
+    },
+    {
+      "name": "linux-strict-clang",
+      "configurePreset": "linux-strict-clang"
+    },
+    {
       "name": "linux-optimized-clang",
       "configurePreset": "linux-optimized-clang"
     },
@@ -375,6 +401,10 @@
     {
       "name": "linux-debug-gcc",
       "configurePreset": "linux-debug-gcc"
+    },
+    {
+      "name": "linux-strict-gcc",
+      "configurePreset": "linux-strict-gcc"
     },
     {
       "name": "linux-optimized-gcc",
@@ -432,8 +462,23 @@
     },
     {
       "inherits": "base",
+      "name": "linux-tidy-clang",
+      "configurePreset": "linux-tidy-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-strict-clang",
+      "configurePreset": "linux-strict-clang"
+    },
+    {
+      "inherits": "base",
       "name": "linux-debug-gcc",
       "configurePreset": "linux-debug-gcc"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-strict-gcc",
+      "configurePreset": "linux-strict-gcc"
     },
     {
       "inherits": "base",

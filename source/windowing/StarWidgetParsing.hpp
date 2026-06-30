@@ -13,7 +13,7 @@ struct WidgetParserExceptionTag { static constexpr char const* typeName = "Widge
 using WidgetParserException = TypedException<StarException, WidgetParserExceptionTag>;
 
 struct WidgetConstructResult {
-  WidgetConstructResult();
+  WidgetConstructResult() = default;
   WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel);
 
   WidgetPtr obj;

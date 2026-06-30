@@ -2,8 +2,6 @@
 
 namespace Star {
 
-SwingableItem::SwingableItem() = default;
-
 SwingableItem::SwingableItem(Json const& params) : FireableItem(params) {
   setParams(params);
 }

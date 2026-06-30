@@ -296,7 +296,7 @@ Maybe<String> PlayerAppearance::inspectionLogName() const {
   auto identifier = m_player.uniqueId();
   if (String* str = identifier.ptr()) {
     auto hash = XXH3_128bits(str->utf8Ptr(), str->utf8Size());
-    return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
+    return String("Player #") + hexEncode(reinterpret_cast<char const*>(&hash), sizeof(hash));
   }
   return identifier;
 }

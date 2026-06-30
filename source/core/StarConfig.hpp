@@ -16,20 +16,13 @@ using std::shared_ptr;
 using std::weak_ptr;
 using std::make_shared;
 using std::make_unique;
-using std::static_pointer_cast;
-using std::dynamic_pointer_cast;
-using std::const_pointer_cast;
-using std::enable_shared_from_this;
 
 using std::pair;
-using std::make_pair;
 
 using std::tuple;
-using std::make_tuple;
 using std::tuple_element;
 using std::get;
 using std::tie;
-using std::ignore;
 
 using std::initializer_list;
 
@@ -43,12 +36,9 @@ using std::ref;
 using std::cref;
 
 using std::prev;
-// using std::next;
 
 using std::atomic;
 using std::atomic_flag;
-using std::atomic_load;
-using std::atomic_store;
 
 template <typename T>
 using SharedPtr = std::shared_ptr<T>;

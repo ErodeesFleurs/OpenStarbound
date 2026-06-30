@@ -30,15 +30,15 @@ DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
 DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
 
 struct MovingCollisionId {
-  MovingCollisionId();
+  MovingCollisionId() = default;
   MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex);
 
-  bool operator==(MovingCollisionId const& rhs);
+  bool operator==(MovingCollisionId const& rhs) const;
 
   // Returns true if the MovingCollisionId is not empty, i.e. default
   // constructed
   bool valid() const;
-  operator bool() const;
+  explicit operator bool() const;
 
   EntityId physicsEntityId = NullEntityId;
   size_t collisionIndex = 0;

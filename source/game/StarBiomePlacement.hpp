@@ -49,7 +49,7 @@ public:
 
   static Maybe<BiomeItem> createItem(PlantDatabaseConstPtr plantDatabase, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
-  BiomeItemDistribution();
+  BiomeItemDistribution() = default;
   BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 

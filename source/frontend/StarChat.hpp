@@ -33,12 +33,12 @@ public:
   void startChat();
   void startCommand();
   bool hasFocus() const override;
-  virtual bool sendEvent(InputEvent const& event) override;
+  bool sendEvent(InputEvent const& event) override;
   void stopChat();
-  virtual void renderImpl() override;
-  virtual void hide() override;
+  void renderImpl() override;
+  void hide() override;
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
   void addLine(String const& text, bool showPane = true);
   void addMessages(List<ChatReceivedMessage> const& messages, bool showPane = true);

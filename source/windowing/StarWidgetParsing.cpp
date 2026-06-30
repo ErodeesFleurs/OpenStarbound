@@ -26,8 +26,6 @@
 
 namespace Star {
 
-WidgetConstructResult::WidgetConstructResult() = default;
-
 WidgetConstructResult::WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel)
   : obj(obj), name(name), zlevel(zlevel) {}
 

@@ -110,7 +110,7 @@ public:
   // Clears buffer, moves position to 0.
   bool empty() const;
 
-  operator bool() const;
+  explicit operator bool() const;
 
   // Reset buffer with new contents, moves position to 0.
   void reset(char const* externalData, size_t len);

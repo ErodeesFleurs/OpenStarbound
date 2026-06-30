@@ -100,7 +100,7 @@ using KeyBindingsPtr = SharedPtr<KeyBindings>;
 
 class KeyBindings {
 public:
-  KeyBindings();
+  KeyBindings() = default;
   explicit KeyBindings(Json const& json);
 
   Set<InterfaceAction> actions(Key key) const;

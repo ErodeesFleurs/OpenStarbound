@@ -11,7 +11,7 @@ struct MultiArrayInterpolator2 {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static constexpr size_t Rank = MultiArray::Rank;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -70,7 +70,7 @@ struct MultiArrayInterpolator4 {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static constexpr size_t Rank = MultiArray::Rank;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -144,7 +144,7 @@ struct MultiArrayPiecewiseInterpolator {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static constexpr size_t Rank = MultiArray::Rank;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -217,7 +217,7 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 2;
+  static constexpr size_t Rank = 2;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -259,7 +259,7 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 2;
+  static constexpr size_t Rank = 2;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -329,7 +329,7 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 3;
+  static constexpr size_t Rank = 3;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;
@@ -390,7 +390,7 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 3;
+  static constexpr size_t Rank = 3;
 
   using IndexList = Array<size_t, Rank>;
   using SizeList = Array<size_t, Rank>;

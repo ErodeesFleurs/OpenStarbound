@@ -8,8 +8,6 @@
 
 namespace Star {
 
-AmbientTrackGroup::AmbientTrackGroup() = default;
-
 AmbientTrackGroup::AmbientTrackGroup(StringList tracks) : tracks(std::move(tracks)) {}
 
 AmbientTrackGroup::AmbientTrackGroup(Json const& config, String const& directory) {
@@ -20,8 +18,6 @@ AmbientTrackGroup::AmbientTrackGroup(Json const& config, String const& directory
 Json AmbientTrackGroup::toJson() const {
   return JsonObject{{"tracks", jsonFromStringList(tracks)}};
 }
-
-AmbientNoisesDescription::AmbientNoisesDescription() = default;
 
 AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops)
   : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {}

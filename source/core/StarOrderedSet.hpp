@@ -28,7 +28,7 @@ public:
   template <typename Collection>
   static OrderedSetWrapper from(Collection const& c);
 
-  OrderedSetWrapper();
+  OrderedSetWrapper() = default;
   OrderedSetWrapper(OrderedSetWrapper const& set);
 
   template <typename InputIterator>
@@ -90,7 +90,7 @@ public:
 
   void sort();
 
-  size_t empty() const;
+  bool empty() const;
   size_t size() const;
 
   const_iterator begin() const;
@@ -126,9 +126,6 @@ template <typename Collection>
 auto OrderedSetWrapper<Map, Value, Allocator, Args...>::from(Collection const& c) -> OrderedSetWrapper {
   return OrderedSetWrapper(c.begin(), c.end());
 }
-
-template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper() = default;
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(OrderedSetWrapper const& set) {
@@ -341,7 +338,7 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::sort() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-size_t OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const {
+bool OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const {
   return m_map.empty();
 }
 

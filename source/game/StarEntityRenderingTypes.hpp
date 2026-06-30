@@ -39,7 +39,7 @@ EntityRenderLayer const RenderLayerOverlay = 22 << RenderLayerLowerBits;
 EntityRenderLayer parseRenderLayer(String renderLayer);
 
 struct PreviewTile {
-  PreviewTile();
+  PreviewTile() = default;
   PreviewTile(Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId);
   PreviewTile(Vec2I const& position, bool foreground, Vec3B const& light, bool updateLight);
   PreviewTile(Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId, Vec3B const& light, bool updateLight, MaterialColorVariant colorVariant);
@@ -58,7 +58,7 @@ struct PreviewTile {
 };
 
 struct OverheadBar {
-  OverheadBar();
+  OverheadBar() = default;
   OverheadBar(Json const& json);
   OverheadBar(Maybe<String> icon, float percentage, Color color, bool detailOnly);
 

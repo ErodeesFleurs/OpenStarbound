@@ -6,8 +6,6 @@
 
 namespace Star {
 
-LiquidSettings::LiquidSettings() = default;
-
 LiquidsDatabase::LiquidsDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase) {
   assets = requireServiceValueAs<LiquidException>(std::move(assets), "LiquidsDatabase", "assets");
   materialDatabase = requireDependencyValueAs<LiquidException>(std::move(materialDatabase), "LiquidsDatabase", "material database");

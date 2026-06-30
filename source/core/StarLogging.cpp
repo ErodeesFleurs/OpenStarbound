@@ -9,10 +9,6 @@ EnumMap<LogLevel> const LogLevelNames{
   {LogLevel::Error, "Error"}
 };
 
-LogSink::LogSink() = default;
-
-LogSink::~LogSink() = default;
-
 void LogSink::setLevel(LogLevel level) {
   m_level = level;
   Logger::refreshLoggable();

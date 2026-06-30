@@ -18,7 +18,7 @@ class NetElementDynamicGroup : public NetElement {
 public:
   using ElementPtr = shared_ptr<Element>;
   using ElementId = uint32_t;
-  static ElementId const NullElementId = 0;
+  static constexpr ElementId NullElementId = 0;
 
   NetElementDynamicGroup() = default;
 
@@ -57,7 +57,7 @@ public:
 private:
   // If a delta is written from further back than this many versions, the delta
   // will fall back to a full serialization of the entire state.
-  static int64_t const MaxChangeDataVersions = 100;
+  static constexpr int64_t MaxChangeDataVersions = 100;
 
   using ElementRemovalType = ElementId;
   using ElementAdditionType = pair<ElementId, ByteArray>;

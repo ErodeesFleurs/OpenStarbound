@@ -8,8 +8,6 @@
 
 namespace Star {
 
-Animation::Animation() = default;
-
 Animation::Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
   : m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Animation", "image metadata database")) {
   m_directory = directory;

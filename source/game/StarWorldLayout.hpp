@@ -26,18 +26,18 @@ using TerrainSelectorIndex = uint32_t;
 TerrainSelectorIndex const NullTerrainSelectorIndex = 0;
 
 struct WorldRegionLiquids {
-  LiquidId caveLiquid;
-  float caveLiquidSeedDensity;
+  LiquidId caveLiquid = EmptyLiquidId;
+  float caveLiquidSeedDensity = 0.0f;
 
-  LiquidId oceanLiquid;
-  int oceanLiquidLevel;
+  LiquidId oceanLiquid = EmptyLiquidId;
+  int oceanLiquidLevel = 0;
 
-  bool encloseLiquids;
-  bool fillMicrodungeons;
+  bool encloseLiquids = false;
+  bool fillMicrodungeons = false;
 };
 
 struct WorldRegion {
-  WorldRegion();
+  WorldRegion() = default;
   explicit WorldRegion(Json const& store);
 
   Json toJson() const;
@@ -61,7 +61,7 @@ public:
   struct BlockNoise {
     static BlockNoise build(Json const& config, uint64_t seed);
 
-    BlockNoise();
+    BlockNoise() = default;
     explicit BlockNoise(Json const& store);
 
     Json toJson() const;
@@ -87,7 +87,7 @@ public:
   static WorldLayout buildAsteroidsLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
   static WorldLayout buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
 
-  WorldLayout();
+  WorldLayout() = default;
   WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase);
 
   Json toJson() const;
@@ -117,7 +117,7 @@ public:
 
 private:
   struct WorldLayer {
-    WorldLayer();
+    WorldLayer() = default;
 
     int yStart = 0;
     Deque<int> boundaries;
@@ -125,8 +125,8 @@ private:
   };
 
   struct RegionParams {
-    int baseHeight;
-    float threatLevel;
+    int baseHeight = 0;
+    float threatLevel = 0.0f;
     Maybe<String> biomeName;
     Maybe<String> terrainSelector;
     Maybe<String> fgCaveSelector;

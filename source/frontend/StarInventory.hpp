@@ -54,7 +54,7 @@ public:
   void clearChangedSlots();
 
 protected:
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
   void selectTab(String const& selected);
 

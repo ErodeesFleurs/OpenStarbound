@@ -145,8 +145,6 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDa
   return {};
 }
 
-BiomeItemDistribution::BiomeItemDistribution() = default;
-
 BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift) {
   plantDatabase = requireServiceValueAs<BiomeException>(std::move(plantDatabase), "BiomeItemDistribution", "plant database");
 

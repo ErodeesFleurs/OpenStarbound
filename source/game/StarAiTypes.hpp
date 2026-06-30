@@ -17,7 +17,7 @@ struct AiSpeech {
 };
 
 struct AiState {
-  AiState();
+  AiState() = default;
   AiState(Json const& v);
 
   Json toJson() const;

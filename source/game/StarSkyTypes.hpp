@@ -35,7 +35,7 @@ enum class WarpPhase : int8_t {
 extern EnumMap<WarpPhase> const WarpPhaseNames;
 
 struct SkyColoring {
-  SkyColoring();
+  SkyColoring() = default;
   explicit SkyColoring(Json const& variant);
 
   Json toJson() const;
@@ -59,7 +59,7 @@ DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring);
 enum class SkyOrbiterType { Sun, Moon, HorizonCloud, SpaceDebris };
 
 struct SkyOrbiter {
-  SkyOrbiter();
+  SkyOrbiter() = default;
   SkyOrbiter(SkyOrbiterType type, float scale, float angle, String const& image, Vec2F position);
 
   SkyOrbiterType type = SkyOrbiterType::Sun;
@@ -70,7 +70,7 @@ struct SkyOrbiter {
 };
 
 struct SkyWorldHorizon {
-  SkyWorldHorizon();
+  SkyWorldHorizon() = default;
   SkyWorldHorizon(Vec2F center, float scale, float rotation);
 
   bool empty() const;

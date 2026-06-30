@@ -11,9 +11,9 @@ class CurrencyItem : public Item {
 public:
   CurrencyItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory);
 
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual String pickupSound() const override;
+  String pickupSound() const override;
 
   String currencyType();
 

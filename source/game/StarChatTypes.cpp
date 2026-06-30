@@ -9,8 +9,6 @@ EnumMap<ChatSendMode> const ChatSendModeNames{
     {ChatSendMode::Party, "Party"}
   };
 
-MessageContext::MessageContext() = default;
-
 MessageContext::MessageContext(Mode mode) : mode(mode) {}
 
 MessageContext::MessageContext(Mode mode, String const& channelName) : mode(mode), channelName(channelName) {}
@@ -38,8 +36,6 @@ DataStream& operator<<(DataStream& ds, MessageContext const& messageContext) {
 
   return ds;
 }
-
-ChatReceivedMessage::ChatReceivedMessage() = default;
 
 ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text)
   : context(context), fromConnection(fromConnection), fromNick(fromNick), text(text) {}

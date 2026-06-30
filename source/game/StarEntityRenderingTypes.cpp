@@ -44,8 +44,6 @@ EntityRenderLayer parseRenderLayer(String renderLayer) {
   return RenderLayerMap.get(renderLayer) + offset;
 }
 
-PreviewTile::PreviewTile() = default;
-
 PreviewTile::PreviewTile(
     Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId)
   : position(position),
@@ -82,8 +80,6 @@ PreviewTile::PreviewTile(Vec2I const& position, LiquidId liqId)
   : position(position),
     foreground(true),
     liqId(liqId) {}
-
-OverheadBar::OverheadBar() = default;
 
 OverheadBar::OverheadBar(Json const& json) {
   entityPosition = json.opt("position").apply(jsonToVec2F).value();

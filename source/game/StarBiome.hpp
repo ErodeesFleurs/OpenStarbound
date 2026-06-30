@@ -15,7 +15,7 @@ using BiomePtr = SharedPtr<Biome>;
 using BiomeConstPtr = SharedPtr<Biome const>;
 
 struct BiomePlaceables {
-  BiomePlaceables();
+  BiomePlaceables() = default;
   explicit BiomePlaceables(Json const& json);
 
   Json toJson() const;
@@ -33,7 +33,7 @@ struct BiomePlaceables {
 };
 
 struct Biome {
-  Biome();
+  Biome() = default;
   explicit Biome(Json const& store);
 
   Json toJson() const;

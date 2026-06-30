@@ -263,8 +263,14 @@ ZipTupleIterator<HeadIteratorT, TailIteratorT> makeZipTupleIterator(HeadIterator
 }
 
 template <typename Container, typename... Rest>
+struct zipIteratorReturn;
+
+template <typename... Containers>
+using zipIteratorReturn_t = typename zipIteratorReturn<Containers...>::type;
+
+template <typename Container, typename... Rest>
 struct zipIteratorReturn {
-  using type = ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type>;
+  using type = ZipTupleIterator<zipIteratorReturn_t<Container>, zipIteratorReturn_t<Rest...>>;
 };
 
 template <typename Container>
@@ -273,12 +279,12 @@ struct zipIteratorReturn<Container> {
 };
 
 template <typename Container>
-typename zipIteratorReturn<Container>::type zipIterator(Container& container) {
+zipIteratorReturn_t<Container> zipIterator(Container& container) {
   return makeZipWrapperIterator(container.begin(), container.end());
 }
 
 template <typename Container, typename... Rest>
-typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& container, Rest&... rest) {
+zipIteratorReturn_t<Container, Rest...> zipIterator(Container& container, Rest&... rest) {
   return makeZipTupleIterator(makeZipWrapperIterator(container.begin(), container.end()), zipIterator(rest...));
 }
 
@@ -289,13 +295,11 @@ typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& cont
 namespace RangeHelper {
 
   template <typename Diff>
-  std::enable_if_t<std::is_unsigned<Diff>::value, bool> checkIfDiffLessThanZero(Diff) {
-    return false;
-  }
-
-  template <typename Diff>
-  std::enable_if_t<!std::is_unsigned<Diff>::value, bool> checkIfDiffLessThanZero(Diff diff) {
-    return diff < 0;
+  bool checkIfDiffLessThanZero(Diff diff) {
+    if constexpr (std::is_unsigned_v<Diff>)
+      return false;
+    else
+      return diff < 0;
   }
 }
 

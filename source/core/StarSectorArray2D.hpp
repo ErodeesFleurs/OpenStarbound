@@ -38,7 +38,7 @@ public:
 
   using DynamicArray = MultiArray<Element, 2>;
 
-  SectorArray2D();
+  SectorArray2D() = default;
   SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh);
 
   void init(size_t numSectorsWide, size_t numSectorsHigh);
@@ -140,9 +140,6 @@ ElementT& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_
   starAssert(x < SectorSize && y < SectorSize);
   return elements[x * SectorSize + y];
 }
-
-template <typename ElementT, size_t SectorSize>
-SectorArray2D<ElementT, SectorSize>::SectorArray2D() = default;
 
 template <typename ElementT, size_t SectorSize>
 SectorArray2D<ElementT, SectorSize>::SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh) {

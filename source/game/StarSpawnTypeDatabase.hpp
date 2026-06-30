@@ -70,7 +70,7 @@ struct SpawnType {
 SpawnType spawnTypeFromJson(Json const& config);
 
 struct SpawnProfile {
-  SpawnProfile();
+  SpawnProfile() = default;
   SpawnProfile(Json const& config);
   SpawnProfile(StringSet spawnTypes, Json monsterParameters);
 

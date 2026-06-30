@@ -18,10 +18,10 @@ public:
   BeamItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config);
   virtual ~BeamItem() = default;
 
-  virtual void init(ToolUserEntity& owner, ToolHand hand) override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void init(ToolUserEntity& owner, ToolHand hand) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<Drawable> nonRotatedDrawables() const override;
+  List<Drawable> nonRotatedDrawables() const override;
 
   virtual float getAngle(float angle);
   virtual List<Drawable> drawables() const;

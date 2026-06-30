@@ -1,4 +1,7 @@
 #include "StarWorldClient.hpp"
+
+#include <utility>
+
 #include "StarAggressiveEntity.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarBiome.hpp"
@@ -1170,7 +1173,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 }
 
 List<PacketPtr> WorldClient::getOutgoingPackets() {
-  return std::move(m_outgoingPackets);
+  return std::exchange(m_outgoingPackets, {});
 }
 
 void WorldClient::update(float dt) {
@@ -1182,7 +1185,7 @@ void WorldClient::update(float dt) {
   // Secret broadcasts are transmitted through DamageNotifications for vanilla server compatibility.
   // Because DamageNotification packets are spoofable, we have to sign the data so other clients can validate that it is legitimate.
   auto& publicKey = Curve25519::publicKey();
-  String publicKeyString((const char*)publicKey.data(), publicKey.size());
+  String publicKeyString(reinterpret_cast<char const*>(publicKey.data()), publicKey.size());
   m_mainPlayer->setSecretProperty(SECRET_BROADCAST_PUBLIC_KEY, publicKeyString);
   // Temporary: Backwards compatibility with StarExtensions
   m_mainPlayer->effectsAnimator()->setGlobalTag("\0SE_VOICE_SIGNING_KEY"s, publicKeyString);

@@ -5,8 +5,6 @@
 
 namespace Star {
 
-WeatherType::WeatherType() = default;
-
 WeatherType::WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path) {
   if (config.isType(Json::Type::String)) {
     assets = requireDependencyValueAs<StarException>(std::move(assets), "WeatherType", "assets service to load config path");

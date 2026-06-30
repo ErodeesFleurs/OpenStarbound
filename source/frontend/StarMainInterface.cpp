@@ -66,8 +66,6 @@
 
 namespace Star {
 
-GuiMessage::GuiMessage() = default;
-
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 

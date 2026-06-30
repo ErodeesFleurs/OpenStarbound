@@ -63,8 +63,8 @@ public:
 
   bool shouldDestroy() const override;
 
-  virtual void render(RenderCallback* renderCallback) override;
-  virtual void renderLightSources(RenderCallback* renderCallback) override;
+  void render(RenderCallback* renderCallback) override;
+  void renderLightSources(RenderCallback* renderCallback) override;
   // The item that this drop contains
   ItemPtr item() const;
 

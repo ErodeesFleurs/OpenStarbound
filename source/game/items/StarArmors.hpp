@@ -35,18 +35,18 @@ public:
   ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ArmorItem() = default;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
+  List<PersistentStatusEffect> statusEffects() const override;
   bool statusEffectsInCosmeticSlot() const;
   List<PersistentStatusEffect> cosmeticStatusEffects() const;
 
-  virtual StringSet effectSources() const override;
+  StringSet effectSources() const override;
 
-  virtual List<Drawable> drawables() const override;
+  List<Drawable> drawables() const override;
 
-  virtual float getAngle(float aimAngle) override;
+  float getAngle(float aimAngle) override;
 
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  virtual void fireTriggered() override;
+  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  void fireTriggered() override;
 
   virtual ArmorType armorType() const = 0;
 
@@ -90,14 +90,14 @@ public:
   HeadArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~HeadArmor() = default;
 
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual ArmorType armorType() const override;
+  ArmorType armorType() const override;
 
   String const& frameset(Gender gender) const;
   Directives const& maskDirectives() const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -110,9 +110,9 @@ public:
   ChestArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ChestArmor() = default;
 
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual ArmorType armorType() const override;
+  ArmorType armorType() const override;
 
   // Will have :run, :normal, :duck, and :portrait
   String const& bodyFrameset(Gender gender) const;
@@ -122,7 +122,7 @@ public:
   // Same as FSleeve
   String const& backSleeveFrameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleBodyImage;
@@ -139,14 +139,14 @@ public:
   LegsArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~LegsArmor() = default;
 
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual ArmorType armorType() const override;
+  ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;
@@ -158,14 +158,14 @@ public:
   BackArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~BackArmor() = default;
 
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual ArmorType armorType() const override;
+  ArmorType armorType() const override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   String const& frameset(Gender gender) const;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
 
 private:
   String m_maleImage;

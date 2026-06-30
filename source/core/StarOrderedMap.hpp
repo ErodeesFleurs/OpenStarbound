@@ -31,7 +31,7 @@ public:
   template <typename Collection>
   static OrderedMapWrapper from(Collection const& c);
 
-  OrderedMapWrapper();
+  OrderedMapWrapper() = default;
 
   OrderedMapWrapper(OrderedMapWrapper const& map);
 
@@ -169,9 +169,6 @@ template <typename Collection>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::from(Collection const& c) -> OrderedMapWrapper {
   return OrderedMapWrapper(c.begin(), c.end());
 }
-
-template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper() = default;
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(OrderedMapWrapper const& map) {

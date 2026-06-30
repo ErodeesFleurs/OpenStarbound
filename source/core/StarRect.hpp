@@ -13,9 +13,6 @@ public:
   using Line = Star::Line<T, N>;
   using LineIntersectResult = typename Line::IntersectResult;
 
-  template <size_t P, typename T2 = void>
-  using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
-
   struct IntersectResult {
     // Whether or not the two objects intersect
     bool intersects;
@@ -190,58 +187,80 @@ public:
   // 2D Only
 
   // Slightly different to make ctor work
-  template <size_t P = N, class = Enable2D<P>>
+  template <size_t P = N>
+    requires (P == 2 && N == P)
   constexpr Box(T minx, T miny, T maxx, T maxy);
 
   template <size_t P = N>
-  constexpr Enable2D<P, T> xMin() const;
+    requires (P == 2 && N == P)
+  constexpr T xMin() const;
   template <size_t P = N>
-  constexpr Enable2D<P, T> xMax() const;
+    requires (P == 2 && N == P)
+  constexpr T xMax() const;
   template <size_t P = N>
-  constexpr Enable2D<P, T> yMin() const;
+    requires (P == 2 && N == P)
+  constexpr T yMin() const;
   template <size_t P = N>
-  constexpr Enable2D<P, T> yMax() const;
+    requires (P == 2 && N == P)
+  constexpr T yMax() const;
 
   template <size_t P = N>
-  constexpr Enable2D<P> setXMin(T xMin);
+    requires (P == 2 && N == P)
+  constexpr void setXMin(T xMin);
   template <size_t P = N>
-  constexpr Enable2D<P> setXMax(T xMax);
+    requires (P == 2 && N == P)
+  constexpr void setXMax(T xMax);
   template <size_t P = N>
-  constexpr Enable2D<P> setYMin(T yMin);
+    requires (P == 2 && N == P)
+  constexpr void setYMin(T yMin);
   template <size_t P = N>
-  constexpr Enable2D<P> setYMax(T yMax);
+    requires (P == 2 && N == P)
+  constexpr void setYMax(T yMax);
 
   template <size_t P = N>
-  constexpr Enable2D<P, T> width() const;
+    requires (P == 2 && N == P)
+  constexpr T width() const;
   template <size_t P = N>
-  constexpr Enable2D<P, T> height() const;
+    requires (P == 2 && N == P)
+  constexpr T height() const;
 
   template <size_t P = N>
-  constexpr Enable2D<P, void> translate(T x, T y);
+    requires (P == 2 && N == P)
+  constexpr void translate(T x, T y);
   template <size_t P = N>
-  constexpr Enable2D<P, void> translateToInclude(T x, T y, T xPadding = 0, T yPadding = 0);
+    requires (P == 2 && N == P)
+  constexpr void translateToInclude(T x, T y, T xPadding = 0, T yPadding = 0);
   template <size_t P = N>
-  constexpr Enable2D<P, void> scale(T x, T y);
+    requires (P == 2 && N == P)
+  constexpr void scale(T x, T y);
   template <size_t P = N>
-  constexpr Enable2D<P, void> expand(T x, T y);
+    requires (P == 2 && N == P)
+  constexpr void expand(T x, T y);
   template <size_t P = N>
-  constexpr Enable2D<P, void> flipHorizontal();
+    requires (P == 2 && N == P)
+  constexpr void flipHorizontal();
   template <size_t P = N>
-  constexpr Enable2D<P, void> flipVertical();
+    requires (P == 2 && N == P)
+  constexpr void flipVertical();
 
   template <size_t P = N>
-  constexpr Enable2D<P, Array<Line, 4>> edges() const;
+    requires (P == 2 && N == P)
+  constexpr Array<Line, 4> edges() const;
   template <size_t P = N>
-  Enable2D<P, bool> intersects(Line const& l) const;
+    requires (P == 2 && N == P)
+  bool intersects(Line const& l) const;
   template <size_t P = N>
-  Enable2D<P, bool> intersectsCircle(Coord const& position, T radius) const;
+    requires (P == 2 && N == P)
+  bool intersectsCircle(Coord const& position, T radius) const;
   template <size_t P = N>
-  Enable2D<P, LineIntersectResult> edgeIntersection(Line const& l) const;
+    requires (P == 2 && N == P)
+  LineIntersectResult edgeIntersection(Line const& l) const;
 
   // Returns a list of areas that are in this rect but not in the given rect.
   // Extra Credit: Implement this method for arbitrary dimensions.
   template <size_t P = N>
-  Enable2D<P, List<Box>> subtract(Box const& rect) const;
+    requires (P == 2 && N == P)
+  List<Box> subtract(Box const& rect) const;
 
 protected:
   template <typename... TN>
@@ -822,109 +841,127 @@ std::ostream& operator<<(std::ostream& os, Box<T, N> const& box) {
 }
 
 template <typename T, size_t N>
-template <size_t P, class>
+template <size_t P>
+  requires (P == 2 && N == P)
 constexpr Box<T, N>::Box(T minx, T miny, T maxx, T maxy)
   : Box(Coord(minx, miny), Coord(maxx, maxy)) {}
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::xMin() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::xMin() const -> T {
   return min()[0];
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::xMax() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::xMax() const -> T {
   return max()[0];
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::yMin() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::yMin() const -> T {
   return min()[1];
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::yMax() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::yMax() const -> T {
   return max()[1];
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::setXMin(T xMin) -> Enable2D<P> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::setXMin(T xMin) {
   m_min[0] = xMin;
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::setXMax(T xMax) -> Enable2D<P> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::setXMax(T xMax) {
   m_max[0] = xMax;
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::setYMin(T yMin) -> Enable2D<P> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::setYMin(T yMin) {
   m_min[1] = yMin;
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::setYMax(T yMax) -> Enable2D<P> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::setYMax(T yMax) {
   m_max[1] = yMax;
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::width() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::width() const -> T {
   return size(0);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::height() const -> Enable2D<P, T> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::height() const -> T {
   return size(1);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::translate(T x, T y) -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::translate(T x, T y) {
   translate(Coord(x, y));
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::translateToInclude(T x, T y, T xPadding, T yPadding) -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::translateToInclude(T x, T y, T xPadding, T yPadding) {
   translateToInclude(Coord(x, y), Coord(xPadding, yPadding));
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::scale(T x, T y) -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::scale(T x, T y) {
   scale(Coord(x, y));
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::expand(T x, T y) -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::expand(T x, T y) {
   expand(Coord(x, y));
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::flipHorizontal() -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::flipHorizontal() {
   flip(0);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::flipVertical() -> Enable2D<P, void> {
+  requires (P == 2 && N == P)
+constexpr void Box<T, N>::flipVertical() {
   flip(1);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-constexpr auto Box<T, N>::edges() const -> Enable2D<P, Array<Line, 4>> {
+  requires (P == 2 && N == P)
+constexpr auto Box<T, N>::edges() const -> Array<Line, 4> {
   Array<Line, 4> res;
   res[0] = {min(), {min()[0], max()[1]}};
   res[1] = {min(), {max()[0], min()[1]}};
@@ -935,7 +972,8 @@ constexpr auto Box<T, N>::edges() const -> Enable2D<P, Array<Line, 4>> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Box<T, N>::intersects(Line const& l) const -> Enable2D<P, bool> {
+  requires (P == 2 && N == P)
+auto Box<T, N>::intersects(Line const& l) const -> bool {
   if (contains(l.min()) || contains(l.max()))
     return true;
 
@@ -948,7 +986,8 @@ auto Box<T, N>::intersects(Line const& l) const -> Enable2D<P, bool> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> Enable2D<P, bool> {
+  requires (P == 2 && N == P)
+auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> bool {
   if (contains(position))
     return true;
   for (auto const& e : edges()) {
@@ -965,7 +1004,8 @@ auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> Enabl
 #endif
 template <typename T, size_t N>
 template <size_t P>
-auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineIntersectResult> {
+  requires (P == 2 && N == P)
+auto Box<T, N>::edgeIntersection(Line const& l) const -> LineIntersectResult {
   Array<LineIntersectResult, 4> candidates;
   size_t numCandidates = 0;
 
@@ -1038,7 +1078,8 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
 
 template <typename T, size_t N>
 template <size_t P>
-auto Box<T, N>::subtract(Box const& rect) const -> Enable2D<P, List<Box>> {
+  requires (P == 2 && N == P)
+auto Box<T, N>::subtract(Box const& rect) const -> List<Box> {
   List<Box> regions;
 
   auto overlap = Box::overlap(rect);

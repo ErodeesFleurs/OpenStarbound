@@ -28,7 +28,7 @@ template <typename Left, typename Right>
 class Either {
 public:
   // Constructs Either that contains a default constructed Left value
-  Either();
+  Either() = default;
 
   Either(EitherLeftValue<Left> left);
   Either(EitherRightValue<Right> right);
@@ -98,9 +98,6 @@ template <typename Value>
 EitherRightValue<Value> makeRight(Value value) {
   return {std::move(value)};
 }
-
-template <typename Left, typename Right>
-Either<Left, Right>::Either() = default;
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherLeftValue<Left> left)

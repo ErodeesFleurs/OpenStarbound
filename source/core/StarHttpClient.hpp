@@ -25,8 +25,8 @@ struct HttpResponse {
 
 class HttpClient {
 public:
-  HttpClient();
-  ~HttpClient();
+  HttpClient() = default;
+  ~HttpClient() = default;
 
   static WorkerPoolPromise<HttpResponse> requestAsync(HttpRequest const& request);
 
@@ -41,4 +41,3 @@ private:
 };
 
 }
-

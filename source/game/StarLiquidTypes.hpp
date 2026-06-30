@@ -8,7 +8,7 @@ using LiquidId = uint8_t;
 LiquidId const EmptyLiquidId = 0;
 
 struct LiquidLevel {
-  LiquidLevel();
+  LiquidLevel() = default;
   LiquidLevel(LiquidId liquid, float level);
 
   LiquidLevel take(float amount);
@@ -30,7 +30,7 @@ struct LiquidStore : LiquidLevel {
   // Returns a LiquidStore source liquid block
   static LiquidStore endless(LiquidId liquid, float pressure);
 
-  LiquidStore();
+  LiquidStore() = default;
   LiquidStore(LiquidId liquid, float level, float pressure, bool source);
 
   LiquidNetUpdate netUpdate() const;
@@ -42,8 +42,6 @@ struct LiquidStore : LiquidLevel {
   float pressure{};
   bool source{};
 };
-
-inline LiquidLevel::LiquidLevel() = default;
 
 inline LiquidLevel::LiquidLevel(LiquidId liquid, float level)
   : liquid(liquid), level(level) {}

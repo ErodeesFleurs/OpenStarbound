@@ -23,8 +23,6 @@ EnumMap<WarpPhase> const WarpPhaseNames{
     {WarpPhase::Maintain, "maintain"},
     {WarpPhase::SpeedingUp, "speedingup"}};
 
-SkyColoring::SkyColoring() = default;
-
 SkyColoring::SkyColoring(Json const& variant) {
   auto getColorPair = [](Json const& colorPair) {
     return pair<Color, Color>{jsonToColor(colorPair.get(0)), jsonToColor(colorPair.get(1))};
@@ -88,12 +86,8 @@ DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring) {
   return ds;
 }
 
-SkyOrbiter::SkyOrbiter() = default;
-
 SkyOrbiter::SkyOrbiter(SkyOrbiterType type, float scale, float angle, String const& image, Vec2F position)
   : type(type), scale(scale), angle(angle), image(image), position(position) {}
-
-SkyWorldHorizon::SkyWorldHorizon() = default;
 
 SkyWorldHorizon::SkyWorldHorizon(Vec2F center, float scale, float rotation)
   : center(center), scale(scale), rotation(rotation) {}

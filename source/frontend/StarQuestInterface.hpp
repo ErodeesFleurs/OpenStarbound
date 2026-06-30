@@ -35,9 +35,9 @@ public:
   QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services);
   virtual ~QuestLogInterface() = default;
 
-  virtual void displayed() override;
-  virtual void tick(float dt) override;
-  virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
+  void displayed() override;
+  void tick(float dt) override;
+  PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   void fetchData();
 
@@ -74,7 +74,7 @@ protected:
   virtual void close();
   virtual void decline();
   virtual void accept();
-  virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
+  PanePtr createTooltip(Vec2I const& screenPosition) override;
 
   QuestPtr m_quest;
   PlayerPtr m_player;

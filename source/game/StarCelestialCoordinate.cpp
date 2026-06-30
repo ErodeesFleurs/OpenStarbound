@@ -7,8 +7,6 @@
 
 namespace Star {
 
-CelestialCoordinate::CelestialCoordinate() = default;
-
 CelestialCoordinate::CelestialCoordinate(Vec3I location, int planetaryOrbitNumber, int satelliteOrbitNumber)
   : m_location(std::move(location)),
     m_planetaryOrbitNumber(planetaryOrbitNumber),

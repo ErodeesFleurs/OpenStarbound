@@ -45,8 +45,6 @@ bool tileDamageIsPenetrating(TileDamageType damageType) {
   return damageType == TileDamageType::Explosive;
 }
 
-TileDamage::TileDamage() = default;
-
 TileDamage::TileDamage(TileDamageType type, float amount, unsigned harvestLevel)
   : type(type), amount(amount), harvestLevel(harvestLevel) {}
 
@@ -164,8 +162,6 @@ DataStream& operator<<(DataStream& ds, TileDamageParameters const& tileDamage) {
   ds.write(tileDamage.m_totalHealth);
   return ds;
 }
-
-TileDamageStatus::TileDamageStatus() = default;
 
 void TileDamageStatus::reset() {
   m_damagePercentage = 0.0f;

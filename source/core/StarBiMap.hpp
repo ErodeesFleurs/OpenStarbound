@@ -39,7 +39,7 @@ public:
   template <typename Collection>
   static BiMap from(Collection const& c);
 
-  BiMap();
+  BiMap() = default;
   BiMap(BiMap const& map);
 
   template <typename InputIterator>
@@ -157,9 +157,6 @@ template <typename Collection>
 BiMap<LeftT, RightT, LeftMapT, RightMapT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::from(Collection const& c) {
   return BiMap(c.begin(), c.end());
 }
-
-template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap() = default;
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap(BiMap const& map)

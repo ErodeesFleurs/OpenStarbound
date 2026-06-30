@@ -183,7 +183,7 @@ public:
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const override;
+  Maybe<HitType> queryHit(DamageSource const& source) const override;
   Maybe<PolyF> hitPoly() const override;
 
   List<DamageNotification> applyDamage(DamageRequest const& damage) override;

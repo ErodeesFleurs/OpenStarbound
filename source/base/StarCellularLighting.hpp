@@ -18,7 +18,7 @@ using LightmapException = TypedException<StarException, LightmapExceptionTag>;
 
 class Lightmap {
 public:
-  Lightmap();
+  Lightmap() = default;
   Lightmap(unsigned width, unsigned height);
   Lightmap(Lightmap const& lightMap);
   Lightmap(Lightmap&& lightMap) noexcept;

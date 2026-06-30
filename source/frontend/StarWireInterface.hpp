@@ -25,11 +25,11 @@ public:
   WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services);
   virtual ~WirePane() = default;
 
-  virtual void update(float dt) override;
-  virtual bool sendEvent(InputEvent const& event) override;
+  void update(float dt) override;
+  bool sendEvent(InputEvent const& event) override;
 
-  virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
-  virtual bool connecting() override;
+  SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) override;
+  bool connecting() override;
 
   virtual void reset();
 

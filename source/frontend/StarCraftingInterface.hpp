@@ -59,7 +59,7 @@ private:
 
   List<ItemRecipe> determineRecipes();
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
   void updateCraftButtons();
   void updateAvailableRecipes();
   bool consumeIngredients(ItemRecipe& recipe, int count);

@@ -23,7 +23,7 @@ class TextPainter;
 using TextPainterPtr = SharedPtr<TextPainter>;
 
 struct TextPositioning {
-  TextPositioning();
+  TextPositioning() = default;
 
   TextPositioning(Vec2F pos,
                   HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor,

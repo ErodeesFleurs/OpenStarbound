@@ -3,8 +3,6 @@
 
 namespace Star {
 
-PlayerLog::PlayerLog() = default;
-
 PlayerLog::PlayerLog(Json const& json) {
   m_deathCount = json.getInt("deathCount");
   m_playTime = json.getDouble("playTime");

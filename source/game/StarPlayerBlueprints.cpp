@@ -3,8 +3,6 @@
 
 namespace Star {
 
-PlayerBlueprints::PlayerBlueprints() = default;
-
 PlayerBlueprints::PlayerBlueprints(Json const& variant) {
   m_knownBlueprints =
       transform<HashSet<ItemDescriptor>>(variant.get("knownBlueprints").toArray(), construct<ItemDescriptor>());

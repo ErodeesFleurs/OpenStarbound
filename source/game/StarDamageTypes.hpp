@@ -38,7 +38,7 @@ extern EnumMap<TeamType> const TeamTypeNames;
 using TeamNumber = uint16_t;
 
 struct EntityDamageTeam {
-  EntityDamageTeam();
+  EntityDamageTeam() = default;
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
   explicit EntityDamageTeam(Json const& json);
 

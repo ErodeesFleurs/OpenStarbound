@@ -16,11 +16,11 @@ namespace Dungeon {
   public:
     ImagePartReader(AssetsConstPtr assets, ImageTilesetConstPtr tileset) : m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "ImagePartReader", "assets")), m_tileset(requireServiceValueAs<DungeonException>(std::move(tileset), "ImagePartReader", "image tileset")) {}
 
-    virtual void readAsset(String const& asset) override;
-    virtual Vec2U size() const override;
+    void readAsset(String const& asset) override;
+    Vec2U size() const override;
 
-    virtual void forEachTile(TileCallback const& callback) const override;
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
+    void forEachTile(TileCallback const& callback) const override;
+    void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
   private:
     AssetsConstPtr m_assets;

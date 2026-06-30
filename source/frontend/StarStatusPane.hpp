@@ -26,11 +26,11 @@ class StatusPane : public Pane {
 public:
   StatusPane(UniverseClientPtr client, StatusPaneServices services);
 
-  virtual PanePtr createTooltip(Vec2I const& screenPosition) override;
+  PanePtr createTooltip(Vec2I const& screenPosition) override;
 
 protected:
-  virtual void renderImpl() override;
-  virtual void update(float dt) override;
+  void renderImpl() override;
+  void update(float dt) override;
 
 private:
   struct StatusEffectIndicator {

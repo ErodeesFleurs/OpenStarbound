@@ -22,8 +22,6 @@ EnumMap<Plant::RotationType> const Plant::RotationTypeNames{
   {Plant::RotationType::RotateCrownLeaves, "rotateCrownLeaves"},
 };
 
-Plant::PlantPiece::PlantPiece() = default;
-
 Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, TreeVariant const& config, uint64_t seed)
   : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_broken = false;

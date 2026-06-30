@@ -12,14 +12,14 @@ class BlueprintItem;
 class BlueprintItem : public Item, public SwingableItem {
 public:
   BlueprintItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
-  virtual ItemPtr clone() const override;
+  ItemPtr clone() const override;
 
-  virtual List<Drawable> drawables() const override;
+  List<Drawable> drawables() const override;
 
-  virtual void fireTriggered() override;
+  void fireTriggered() override;
 
-  virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables() const override;
+  List<Drawable> iconDrawables() const override;
+  List<Drawable> dropDrawables() const override;
 
 private:
   ItemDescriptor m_recipe;

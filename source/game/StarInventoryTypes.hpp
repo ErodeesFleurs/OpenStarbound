@@ -63,8 +63,8 @@ using SelectedActionBarLocation = MVariant<CustomBarIndex, EssentialItem>;
 SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
 
-static uint8_t const EquipmentSize = 8;
-static uint8_t const EssentialItemCount = 4;
+static constexpr uint8_t EquipmentSize = 8;
+static constexpr uint8_t EssentialItemCount = 4;
 
 }
 

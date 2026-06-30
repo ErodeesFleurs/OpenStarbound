@@ -72,7 +72,8 @@ public:
 };
 
 template <typename EnumType>
-struct hash<EnumType, std::enable_if_t<std::is_enum<EnumType>::value>> {
+  requires std::is_enum_v<EnumType>
+struct hash<EnumType> {
 private:
   using UnderlyingType = std::underlying_type_t<EnumType>;
 

@@ -75,7 +75,7 @@ const char* ServerQueryThread::serverPlugins() {
 }
 
 bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, size_t length) {
-  uint8_t* buf = (uint8_t*)data;
+  auto const* buf = reinterpret_cast<uint8_t const*>(data);
   if (length < 5 || buf[0] != 0xff || buf[1] != 0xff || buf[2] != 0xff || buf[3] != 0xff) {
     // short packet or missing header
     return false;
@@ -87,7 +87,7 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       // We use -6 and not -5 as the string should be NULL terminated
       // but instead of the std::string constructor stopping at the NULL
       // it includes it :(
-      std::string str((const char*)(buf + 5), length - 6);
+      std::string str(reinterpret_cast<char const*>(buf + 5), length - 6);
       if (str.compare(A2S_INFO_REQUEST_STRING) != 0) {
         // Invalid request
         return false;
@@ -261,7 +261,7 @@ bool ServerQueryThread::challengeRequest(HostAddressWithPort const& address, cha
     return false;
   }
 
-  uint8_t const* buf = (uint8_t const*)data;
+  auto const* buf = reinterpret_cast<uint8_t const*>(data);
   if ((buf[5] == 0xff) && (buf[6] == 0xff) && (buf[7] == 0xff) && (buf[8] == 0xff)) {
     sendChallenge(address);
     return true;

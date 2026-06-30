@@ -284,7 +284,7 @@ void NetElementIntegral<T>::readData(DataStream& ds, T& v) const {
   if (sizeof(T) == 1) {
     ds.read(v);
   } else {
-    if (std::is_unsigned<T>::value)
+    if constexpr (std::is_unsigned_v<T>)
       v = ds.readVlqU();
     else
       v = ds.readVlqI();
@@ -296,7 +296,7 @@ void NetElementIntegral<T>::writeData(DataStream& ds, T const& v) const {
   if (sizeof(T) == 1) {
     ds.write(v);
   } else {
-    if (std::is_unsigned<T>::value)
+    if constexpr (std::is_unsigned_v<T>)
       ds.writeVlqU(v);
     else
       ds.writeVlqI(v);

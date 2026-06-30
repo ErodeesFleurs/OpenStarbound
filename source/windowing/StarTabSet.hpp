@@ -27,7 +27,7 @@ class TabSetWidget : public Widget {
 public:
   TabSetWidget(GuiContext& context, TabSetConfig const& tabSetconfig);
 
-  virtual void setSize(Vec2I const& size) override;
+  void setSize(Vec2I const& size) override;
 
   void addTab(String const& widgetName, WidgetPtr widget, String const& title);
 

@@ -24,8 +24,8 @@ using LogSinkPtr = SharedPtr<LogSink>;
 // A sink for Logger messages.
 class LogSink {
 public:
-  LogSink();
-  virtual ~LogSink();
+  LogSink() = default;
+  virtual ~LogSink() = default;
 
   virtual void log(char const* msg, LogLevel level) = 0;
 
@@ -114,9 +114,9 @@ private:
 class SpatialLogger {
 public:
   // Maximum count of objects stored per space
-  static size_t const MaximumLines = 200000;
-  static size_t const MaximumPoints = 200000;
-  static size_t const MaximumText = 10000;
+  static constexpr size_t MaximumLines = 200000;
+  static constexpr size_t MaximumPoints = 200000;
+  static constexpr size_t MaximumText = 10000;
 
   struct Line {
     Vec2F begin;

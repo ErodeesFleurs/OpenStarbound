@@ -86,7 +86,7 @@ struct NpcVariant {
   EntitySplashConfig splashConfig;
 };
 
-class NpcDatabase : public enable_shared_from_this<NpcDatabase> {
+class NpcDatabase : public std::enable_shared_from_this<NpcDatabase> {
 public:
   NpcDatabase(AssetsConstPtr assets,
               ItemDatabaseConstPtr itemDatabase,

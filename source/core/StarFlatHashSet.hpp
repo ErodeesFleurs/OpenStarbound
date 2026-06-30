@@ -110,7 +110,7 @@ public:
   const_iterator cbegin() const;
   const_iterator cend() const;
 
-  size_t empty() const;
+  bool empty() const;
   size_t size() const;
   void clear();
 
@@ -354,7 +354,7 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::cend() const -> const_iterator {
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashSet<Key, Hash, Equals, Allocator>::empty() const {
+bool FlatHashSet<Key, Hash, Equals, Allocator>::empty() const {
   return m_table.empty();
 }
 
@@ -437,7 +437,7 @@ size_t FlatHashSet<Key, Hash, Equals, Allocator>::erase(key_type const& key) {
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 bool FlatHashSet<Key, Hash, Equals, Allocator>::contains(key_type const& key) const {
-  return m_table.find(key) != m_table.end();
+  return m_table.contains(key);
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>

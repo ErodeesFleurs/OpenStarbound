@@ -11,13 +11,13 @@ using ItemPtr = SharedPtr<Item>;
 class ItemSlotWidget;
 using ItemSlotWidgetPtr = SharedPtr<ItemSlotWidget>;
 
-static float const ItemIndicateNewTime = 1.5f;
+static constexpr float ItemIndicateNewTime = 1.5f;
 
 class ItemSlotWidget : public Widget {
 public:
   ItemSlotWidget(GuiContext& context, ItemPtr const& item, String const& backingImage);
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
   bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
   void setRightClickCallback(WidgetCallbackFunc callback);
@@ -40,7 +40,7 @@ public:
   void setHighlightEnabled(bool highlight);
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
 private:
   ItemPtr m_item;

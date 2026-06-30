@@ -120,8 +120,8 @@ public:
   void setScriptStorage(JsonObject storage);
 
 protected:
-  virtual void contextSetup() override;
-  virtual void contextShutdown() override;
+  void contextSetup() override;
+  void contextShutdown() override;
 
 private:
   JsonObject m_storage;
@@ -183,7 +183,7 @@ public:
   Maybe<Json> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 protected:
-  virtual void contextShutdown() override;
+  void contextShutdown() override;
 
 private:
   struct MessageHandler {

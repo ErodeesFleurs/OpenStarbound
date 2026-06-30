@@ -11,7 +11,7 @@ using PlayerBlueprintsPtr = SharedPtr<PlayerBlueprints>;
 
 class PlayerBlueprints {
 public:
-  PlayerBlueprints();
+  PlayerBlueprints() = default;
   PlayerBlueprints(Json const& json);
 
   Json toJson() const;

@@ -38,7 +38,7 @@ struct Particle {
   };
   static EnumMap<Layer> const LayerNames;
 
-  Particle();
+  Particle() = default;
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
   explicit Particle(Json const& config, String const& assetsPath = "/", AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});

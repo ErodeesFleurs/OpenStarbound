@@ -25,7 +25,7 @@ struct MessageContext {
     World
   };
 
-  MessageContext();
+  MessageContext() = default;
   MessageContext(Mode mode);
   MessageContext(Mode mode, String const& channelName);
 
@@ -41,7 +41,7 @@ DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
 DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
 
 struct ChatReceivedMessage {
-  ChatReceivedMessage();
+  ChatReceivedMessage() = default;
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text);
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait);
   ChatReceivedMessage(Json const& json);

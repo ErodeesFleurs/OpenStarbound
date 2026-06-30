@@ -151,10 +151,10 @@ public:
 
   List<Drawable> drawables() const override;
 
-  virtual void setEnd(EndType type) override;
-  virtual List<PreviewTile> previewTiles(bool shifting) const override;
-  virtual List<Drawable> nonRotatedDrawables() const override;
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  void setEnd(EndType type) override;
+  List<PreviewTile> previewTiles(bool shifting) const override;
+  List<Drawable> nonRotatedDrawables() const override;
+  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
 
   float getAngle(float angle) override;
 

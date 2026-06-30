@@ -13,7 +13,7 @@ class MultiTable {
 public:
   using Element = ElementT;
   using Position = PositionT;
-  static size_t const Rank = RankN;
+  static constexpr size_t Rank = RankN;
 
   using MultiArray = Star::MultiArray<ElementT, RankN>;
 

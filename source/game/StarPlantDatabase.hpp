@@ -19,7 +19,7 @@ using PlantDatabaseException = TypedException<StarException, PlantDatabaseExcept
 
 // Configuration for a specific tree variant
 struct TreeVariant {
-  TreeVariant();
+  TreeVariant() = default;
   TreeVariant(Json const& json);
 
   Json toJson() const;
@@ -48,7 +48,7 @@ struct TreeVariant {
 
 // Configuration for a specific grass variant
 struct GrassVariant {
-  GrassVariant();
+  GrassVariant() = default;
   GrassVariant(Json const& json);
 
   Json toJson() const;
@@ -74,7 +74,7 @@ struct BushVariant {
     StringList mods;
   };
 
-  BushVariant();
+  BushVariant() = default;
   BushVariant(Json const& json);
 
   Json toJson() const;

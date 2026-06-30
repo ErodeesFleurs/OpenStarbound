@@ -20,7 +20,7 @@ public:
   using Storage = List<ElementT>;
 
   using Element = ElementT;
-  static size_t const Rank = RankN;
+  static constexpr size_t Rank = RankN;
 
   using IndexArray = Array<size_t, Rank>;
   using SizeArray = Array<size_t, Rank>;
@@ -333,7 +333,7 @@ template <typename Element, size_t Rank>
 Element MultiArray<Element, Rank>::get(IndexArray const& index, Element def) {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
-      return std::move(def);
+      return def;
   }
 
   return m_data[storageIndex(index)];

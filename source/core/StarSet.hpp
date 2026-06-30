@@ -186,7 +186,7 @@ template <typename BaseSet>
   auto i = Base::begin();
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return v;
 }
 
 template <typename BaseSet>
@@ -220,7 +220,7 @@ template <typename BaseSet>
   auto i = prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return v;
 }
 
 template <typename BaseSet>

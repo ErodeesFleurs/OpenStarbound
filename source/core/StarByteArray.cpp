@@ -20,8 +20,6 @@ ByteArray ByteArray::withReserve(size_t capacity) {
   return bytes;
 }
 
-ByteArray::ByteArray() = default;
-
 ByteArray::ByteArray(size_t dataSize, char c)
   : ByteArray() {
   fill(dataSize, c);

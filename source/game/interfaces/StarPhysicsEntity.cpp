@@ -41,12 +41,10 @@ DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
   return ds;
 }
 
-MovingCollisionId::MovingCollisionId() = default;
-
 MovingCollisionId::MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex)
   : physicsEntityId(physicsEntityId), collisionIndex(collisionIndex) {}
 
-bool MovingCollisionId::operator==(MovingCollisionId const& rhs) {
+bool MovingCollisionId::operator==(MovingCollisionId const& rhs) const {
   return tie(physicsEntityId, collisionIndex) == tie(rhs.physicsEntityId, rhs.collisionIndex);
 }
 

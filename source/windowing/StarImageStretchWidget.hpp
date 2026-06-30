@@ -15,7 +15,7 @@ public:
   virtual ~ImageStretchWidget() = default;
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
 private:
   ImageStretchSet m_imageStretchSet;

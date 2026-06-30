@@ -125,17 +125,17 @@ inline Vec2F centerOfTile(Vec2T const& tile) {
 
 using DungeonId = uint16_t;
 
-static const DungeonId NoDungeonId = 65535;
-static const DungeonId SpawnDungeonId = 65534;
-static const DungeonId BiomeMicroDungeonId = 65533;
+static constexpr DungeonId NoDungeonId = 65535;
+static constexpr DungeonId SpawnDungeonId = 65534;
+static constexpr DungeonId BiomeMicroDungeonId = 65533;
 // meta dungeon signalling player built structures
-static const DungeonId ConstructionDungeonId = 65532;
+static constexpr DungeonId ConstructionDungeonId = 65532;
 // indicates a block that has been destroyed
-static const DungeonId DestroyedBlockDungeonId = 65531;
+static constexpr DungeonId DestroyedBlockDungeonId = 65531;
 
 // dungeonId for zero-g areas with and without tile protection
-static const DungeonId ZeroGDungeonId = 65525;
-static const DungeonId ProtectedZeroGDungeonId = 65524;
+static constexpr DungeonId ZeroGDungeonId = 65525;
+static constexpr DungeonId ProtectedZeroGDungeonId = 65524;
 
 // The first dungeon id that is reserved for special hard-coded dungeon values.
 DungeonId const FirstMetaDungeonId = 65520;

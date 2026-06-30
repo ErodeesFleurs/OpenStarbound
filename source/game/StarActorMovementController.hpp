@@ -16,7 +16,7 @@ class PathController;
 using PathControllerPtr = SharedPtr<PathController>;
 
 struct ActorJumpProfile {
-  ActorJumpProfile();
+  ActorJumpProfile() = default;
   ActorJumpProfile(Json const& config);
 
   Json toJson() const;

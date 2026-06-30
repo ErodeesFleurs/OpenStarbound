@@ -109,10 +109,6 @@ bool TreasureDatabase::isTreasureChestSet(String const& treasurePool) const {
   return m_treasureChestSets.contains(treasurePool);
 }
 
-TreasureDatabase::ItemPool::ItemPool() = default;
-
-TreasureDatabase::TreasureChest::TreasureChest() = default;
-
 List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level) const {
   return createTreasure(treasurePool, level, Random::randu64());
 }

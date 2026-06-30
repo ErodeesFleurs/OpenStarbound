@@ -10,7 +10,7 @@ using PlayerLogPtr = SharedPtr<PlayerLog>;
 
 class PlayerLog {
 public:
-  PlayerLog();
+  PlayerLog() = default;
   PlayerLog(Json const& json);
 
   Json toJson() const;

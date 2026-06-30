@@ -11,11 +11,7 @@ EnumMap<CollectionType> const CollectionTypeNames {
   {CollectionType::Monster, "monster"}
 };
 
-Collection::Collection() = default;
-
 Collection::Collection(String const& name, CollectionType type, String const& title) : name(name), title(title), type(type) {}
-
-Collectable::Collectable() = default;
 
 Collectable::Collectable(String const& name, int order, String const& title, String const& description, String const& icon)
   : name(name), order(order), title(title), description(description), icon(icon) {};

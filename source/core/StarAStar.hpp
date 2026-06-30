@@ -13,7 +13,7 @@ namespace Star {
 namespace AStar {
 
   struct Score {
-    Score();
+    Score() = default;
 
     double gScore = highest<double>();
     double hScore = 0.0;
@@ -99,8 +99,6 @@ namespace AStar {
     bool m_finished;
     Maybe<Path<Edge>> m_result;
   };
-
-  inline Score::Score() = default;
 
   template <class Edge, class Node>
   Search<Edge, Node>::Search(HeuristicFunction heuristicCost,

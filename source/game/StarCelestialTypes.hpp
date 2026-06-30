@@ -36,7 +36,7 @@ DataStream& operator>>(DataStream& ds, CelestialSystemObjects& systemObjects);
 DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects);
 
 struct CelestialChunk {
-  CelestialChunk();
+  CelestialChunk() = default;
   CelestialChunk(Json const& store);
 
   Json toJson() const;

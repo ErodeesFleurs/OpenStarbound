@@ -220,9 +220,11 @@ elseif(STAR_SYSTEM_FAMILY_WINDOWS)
 
 endif()
 
-target_compile_features(star_core PUBLIC cxx_std_20)
-target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES})
+target_include_directories(star_core PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripting)
 target_link_libraries(star_core PUBLIC star_extern star_build_definitions)
+target_link_libraries(star_core PRIVATE star_project_warnings)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_core PUBLIC StarPch.hpp)

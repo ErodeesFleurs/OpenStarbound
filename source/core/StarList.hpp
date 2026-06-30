@@ -25,7 +25,7 @@ public:
   using reference = typename Base::reference;
   using const_reference = typename Base::const_reference;
 
-  ListMixin();
+  ListMixin() = default;
   ListMixin(Base const& list);
   ListMixin(Base&& list) noexcept(noexcept(Base(std::declval<Base&&>())));
   ListMixin(value_type const* p, size_t count);
@@ -401,9 +401,6 @@ template <typename Container>
 typename ListEnumerateTypes<Container>::Result enumerate(Container&& container);
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin() = default;
-
-template <typename BaseList>
 ListMixin<BaseList>::ListMixin(Base const& list)
   : Base(list) {}
 
@@ -440,7 +437,7 @@ template <typename BaseList>
 template <typename Container>
 void ListMixin<BaseList>::appendAll(Container&& list) {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
       Base::push_back(std::move(e));
     else
       Base::push_back(e);
@@ -779,7 +776,7 @@ template <typename BaseList>
 template <typename Container>
 void FrontModifyingListMixin<BaseList>::prependAll(Container&& list) {
   for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
       Base::push_front(std::move(*i));
     else
       Base::push_front(*i);
@@ -1041,7 +1038,7 @@ template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::appendAll(Container&& list) {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
       Base::push_back(std::move(e));
     else
       Base::push_back(e);
@@ -1052,7 +1049,7 @@ template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::prependAll(Container&& list) {
   for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if constexpr (std::is_rvalue_reference_v<Container&&>)
       Base::push_front(std::move(*i));
     else
       Base::push_front(*i);

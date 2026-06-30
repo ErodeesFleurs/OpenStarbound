@@ -11,7 +11,7 @@ constexpr VersionNumber LegacyVersion = 0;
 
 class NetCompatibilityRules {
 public:
-  NetCompatibilityRules();
+  NetCompatibilityRules() = default;
   NetCompatibilityRules(uint64_t) = delete;
   NetCompatibilityRules(VersionNumber version);
 
@@ -29,8 +29,6 @@ private:
   VersionNumber m_version = OpenProtocolVersion;
   bool m_isAdmin = false;
 };
-
-inline NetCompatibilityRules::NetCompatibilityRules() = default;
 
 inline NetCompatibilityRules::NetCompatibilityRules(VersionNumber v) : m_version(v) {}
 

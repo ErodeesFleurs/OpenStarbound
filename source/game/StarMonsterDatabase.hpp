@@ -104,7 +104,7 @@ struct MonsterVariant {
   Maybe<ColorReplaceMap> colorSwap;
 };
 
-class MonsterDatabase : public enable_shared_from_this<MonsterDatabase> {
+class MonsterDatabase : public std::enable_shared_from_this<MonsterDatabase> {
 public:
   MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices);
 

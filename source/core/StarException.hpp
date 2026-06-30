@@ -43,7 +43,7 @@ public:
   explicit StarException(std::exception const& cause) noexcept;
   StarException(std::string message, std::exception const& cause) noexcept;
 
-  virtual char const* what() const noexcept override;
+  char const* what() const noexcept override;
 
   // If the given exception is really StarException, then this will call
   // StarException::printException, otherwise just prints std::exception::what.

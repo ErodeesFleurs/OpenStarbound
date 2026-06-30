@@ -43,7 +43,7 @@ public:
     bool residual;
   };
 
-  WorldStructure();
+  WorldStructure() = default;
   WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath);
   WorldStructure(Json const& store);
 

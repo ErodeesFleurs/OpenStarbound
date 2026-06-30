@@ -7,6 +7,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarImageStretchWidget.hpp"
 #include "StarCanvasWidget.hpp"
+#include "StarWorldClient.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
@@ -28,7 +29,7 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices servic
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "Chat", "assets")) {
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
-  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)m_client->worldClient().get()));
+  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(static_cast<World&>(*m_client->worldClient())));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
   

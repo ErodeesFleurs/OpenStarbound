@@ -39,7 +39,7 @@ inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over
 
 class CollisionSet {
 public:
-  CollisionSet();
+  CollisionSet() = default;
   CollisionSet(initializer_list<CollisionKind> kinds);
 
   void insert(CollisionKind kind);
@@ -78,8 +78,6 @@ struct CollisionBlock {
   PolyF poly;
   RectF polyBounds;
 };
-
-inline CollisionSet::CollisionSet() = default;
 
 inline CollisionSet::CollisionSet(initializer_list<CollisionKind> kinds)
   : CollisionSet() {

@@ -50,7 +50,7 @@ public:
 
 private:
   struct PlantDropPiece {
-    PlantDropPiece();
+    PlantDropPiece() = default;
     AssetPath image;
     Vec2F offset;
     int segmentIdx = 0;

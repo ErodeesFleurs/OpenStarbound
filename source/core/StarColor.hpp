@@ -70,7 +70,7 @@ public:
   static Vec4B hueShiftVec4B(Vec4B color, float hue);
   static Vec4B hexToVec4B(StringView s);
   // Black
-  Color();
+  Color() = default;
 
   explicit Color(StringView name);
 

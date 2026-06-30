@@ -29,7 +29,7 @@ public:
   Vec2U baseSize() const;
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
 private:
   void readDefaults();
@@ -53,7 +53,7 @@ public:
 
   int trackSize() const;
   float sizeRatio() const;
-  virtual Vec2I size() const override;
+  Vec2I size() const override;
   float scrollRatio() const;
   Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
 
@@ -100,8 +100,8 @@ public:
 
   void setUpdatesChildren(bool slop);
 
-  virtual bool sendEvent(InputEvent const& event) override;
-  virtual void update(float dt) override;
+  bool sendEvent(InputEvent const& event) override;
+  void update(float dt) override;
 
 protected:
   void drawChildren() override;

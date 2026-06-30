@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <thread>
 
@@ -97,21 +98,57 @@ struct ThreadImpl {
 
 // ---- ThreadFunctionImpl ----
 
-struct ThreadFunctionImpl : ThreadImpl {
+struct ThreadFunctionImpl {
   ThreadFunctionImpl(std::function<void()> function, String name)
-      : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
-
-  std::function<void()> wrapFunction(std::function<void()> function) {
-    return [function = std::move(function), this]() {
-      try {
-        function();
-      } catch (...) {
-        exception = std::current_exception();
-      }
-    };
+      : name(std::move(name)), result(done.get_future()) {
+    start(std::move(function));
   }
 
-  std::exception_ptr exception;
+  bool start(std::function<void()> function) {
+    MutexLocker mutexLocker(mutex);
+    if (!joined)
+      return false;
+
+    stopped = false;
+    joined = false;
+    try {
+      thread = std::thread(runThread, this, std::move(function));
+      setThreadName(thread, name);
+    } catch (std::system_error const& e) {
+      stopped = true;
+      joined = true;
+      throw StarException(strf("Failed to create thread, error {}", e.what()));
+    }
+    return true;
+  }
+
+  bool join() {
+    MutexLocker mutexLocker(mutex);
+    if (joined)
+      return false;
+    if (thread.joinable())
+      thread.join();
+    joined = true;
+    return true;
+  }
+
+  static void runThread(ThreadFunctionImpl* ptr, std::function<void()> function) {
+    try {
+      function();
+      ptr->done.set_value();
+    } catch (...) {
+      ptr->done.set_exception(std::current_exception());
+    }
+    ptr->stopped = true;
+  }
+
+  String name;
+  std::thread thread;
+  std::atomic<bool> stopped = true;
+  bool joined = true;
+  Mutex mutex;
+  std::promise<void> done;
+  std::future<void> result;
 };
 
 // ---- MutexImpl ----
@@ -214,21 +251,26 @@ ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
 ThreadFunction<void>::ThreadFunction(function<void()> function, String const& name) {
   m_impl = make_unique<ThreadFunctionImpl>(std::move(function), name);
-  m_impl->start();
 }
 
 ThreadFunction<void>::~ThreadFunction() {
   finishNoThrow();
 }
 
-ThreadFunction<void>& ThreadFunction<void>::operator=(ThreadFunction&&) = default;
+ThreadFunction<void>& ThreadFunction<void>::operator=(ThreadFunction&& rhs) {
+  if (this != &rhs) {
+    finishNoThrow();
+    m_impl = std::move(rhs.m_impl);
+  }
+  return *this;
+}
 
 void ThreadFunction<void>::finish() {
   if (m_impl) {
     m_impl->join();
 
-    if (m_impl->exception)
-      std::rethrow_exception(take(m_impl->exception));
+    if (m_impl->result.valid())
+      m_impl->result.get();
   }
 }
 

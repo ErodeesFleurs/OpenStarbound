@@ -11,7 +11,7 @@ public:
   using ItemsType = pair<double, Item>;
   using ItemsList = List<ItemsType>;
 
-  WeightedPool();
+  WeightedPool() = default;
 
   template <typename Container>
   explicit WeightedPool(Container container);
@@ -51,9 +51,6 @@ private:
   ItemsList m_items;
   double m_totalWeight = 0.0;
 };
-
-template <typename Item>
-WeightedPool<Item>::WeightedPool() = default;
 
 template <typename Item>
 template <typename Container>

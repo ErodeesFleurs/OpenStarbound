@@ -20,7 +20,7 @@ public:
   using Value = ValueT;
 
   struct Entry {
-    Entry();
+    Entry() = default;
 
     SmallList<Rect, 2> rects;
     Value value{};
@@ -92,9 +92,6 @@ private:
   EntryMap m_entryMap;
   SectorMap m_sectorMap;
 };
-
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Entry::Entry() = default;
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SpatialHash2D(Scalar const& sectorSize)

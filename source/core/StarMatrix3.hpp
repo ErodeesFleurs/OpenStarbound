@@ -13,9 +13,7 @@ public:
 
   // Only enable pointer access if we know that our internal rows are not
   // padded
-  template <typename RT = void>
-  using EnableIfContiguousStorage =
-      std::enable_if_t<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>;
+  static constexpr bool ContiguousStorage = sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3);
 
   static constexpr Matrix3 identity();
 
@@ -43,8 +41,10 @@ public:
   constexpr Vec3 const& operator[](size_t const i) const;
 
   // Gives pointer to row major storage
-  constexpr EnableIfContiguousStorage<T*> ptr();
-  constexpr EnableIfContiguousStorage<T const*> ptr() const;
+  constexpr T* ptr()
+    requires ContiguousStorage;
+  constexpr T const* ptr() const
+    requires ContiguousStorage;
 
   // Copy to an existing array
   constexpr void copy(T* loc) const;
@@ -185,12 +185,16 @@ constexpr auto Matrix3<T>::operator[](const size_t i) const -> Vec3 const & {
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::ptr() -> EnableIfContiguousStorage<T*> {
+constexpr T* Matrix3<T>::ptr()
+  requires Matrix3<T>::ContiguousStorage
+{
   return m_rows[0].ptr();
 }
 
 template <typename T>
-constexpr auto Matrix3<T>::ptr() const -> EnableIfContiguousStorage<T const*> {
+constexpr T const* Matrix3<T>::ptr() const
+  requires Matrix3<T>::ContiguousStorage
+{
   return m_rows[0].ptr();
 }
 

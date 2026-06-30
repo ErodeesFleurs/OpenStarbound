@@ -27,23 +27,23 @@ public:
   void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
   bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
-  virtual unsigned framesSkipped() const override;
+  unsigned framesSkipped() const override;
 
 protected:
-  virtual void startup(StringList const& cmdLineArgs) override;
-  virtual void shutdown() override;
+  void startup(StringList const& cmdLineArgs) override;
+  void shutdown() override;
 
-  virtual void applicationInit(ApplicationControllerPtr appController) override;
-  virtual void renderInit(RendererPtr renderer) override;
+  void applicationInit(ApplicationControllerPtr appController) override;
+  void renderInit(RendererPtr renderer) override;
 
-  virtual void windowChanged(WindowMode windowMode, Vec2U screenSize) override;
+  void windowChanged(WindowMode windowMode, Vec2U screenSize) override;
 
-  virtual void processInput(InputEvent const& event) override;
+  void processInput(InputEvent const& event) override;
 
-  virtual void update() override;
-  virtual void render() override;
+  void update() override;
+  void render() override;
 
-  virtual void getAudioData(int16_t* stream, size_t len) override;
+  void getAudioData(int16_t* stream, size_t len) override;
 
 private:
   enum class MainAppState {

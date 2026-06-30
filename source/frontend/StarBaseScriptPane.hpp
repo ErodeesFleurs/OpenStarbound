@@ -34,7 +34,7 @@ class BaseScriptPane : public Pane {
 public:
   BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services);
 
-  virtual void show() override;
+  void show() override;
   void displayed() override;
   void dismissed() override;
 
@@ -52,7 +52,7 @@ public:
   Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
 
 protected:
-  virtual GuiReaderPtr reader() override;
+  GuiReaderPtr reader() override;
   void construct(Json config);
 
   Json m_config;

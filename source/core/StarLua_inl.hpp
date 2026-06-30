@@ -422,42 +422,42 @@ namespace LuaDetail {
   struct FromFunctionReturn<LuaTupleReturn<ArgFirst, ArgRest...>> {
     static LuaTupleReturn<ArgFirst, ArgRest...> convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
       if (auto l = ret.ptr<LuaValue>()) {
-        return doConvertSingle(engine, *l, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+        return doConvertSingle(engine, *l, std::make_index_sequence<sizeof...(ArgRest)>{});
       } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        return doConvertMulti(engine, *vec, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+        return doConvertMulti(engine, *vec, std::make_index_sequence<sizeof...(ArgRest)>{});
       } else {
-        return doConvertNone(engine, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+        return doConvertNone(engine, std::make_index_sequence<sizeof...(ArgRest)>{});
       }
     }
 
     template <size_t... Indexes>
     static LuaTupleReturn<ArgFirst, ArgRest...> doConvertSingle(
-        LuaEngine& engine, LuaValue const& single, IndexSequence<Indexes...> const&) {
+        LuaEngine& engine, LuaValue const& single, std::index_sequence<Indexes...>) {
       return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(single), engine.luaTo<ArgRest>(LuaNil)...);
     }
 
     template <size_t... Indexes>
     static LuaTupleReturn<ArgFirst, ArgRest...> doConvertMulti(
-        LuaEngine& engine, LuaVariadic<LuaValue> const& multi, IndexSequence<Indexes...> const&) {
+        LuaEngine& engine, LuaVariadic<LuaValue> const& multi, std::index_sequence<Indexes...>) {
       return LuaTupleReturn<ArgFirst, ArgRest...>(
           engine.luaTo<ArgFirst>(multi.at(0)), engine.luaTo<ArgRest>(multi.get(Indexes + 1))...);
     }
 
     template <size_t... Indexes>
-    static LuaTupleReturn<ArgFirst, ArgRest...> doConvertNone(LuaEngine& engine, IndexSequence<Indexes...> const&) {
+    static LuaTupleReturn<ArgFirst, ArgRest...> doConvertNone(LuaEngine& engine, std::index_sequence<Indexes...>) {
       return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(LuaNil), engine.luaTo<ArgRest>(LuaNil)...);
     }
   };
 
   template <typename... Args, size_t... Indexes>
   LuaVariadic<LuaValue> toVariadicReturn(
-      LuaEngine& engine, LuaTupleReturn<Args...> const& vals, IndexSequence<Indexes...> const&) {
+      LuaEngine& engine, LuaTupleReturn<Args...> const& vals, std::index_sequence<Indexes...>) {
     return LuaVariadic<LuaValue>{engine.luaFrom(get<Indexes>(vals))...};
   }
 
   template <typename... Args>
   LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaTupleReturn<Args...> const& vals) {
-    return toVariadicReturn(engine, vals, typename GenIndexSequence<0, sizeof...(Args)>::type());
+    return toVariadicReturn(engine, vals, std::make_index_sequence<sizeof...(Args)>{});
   }
 
   template <typename T>
@@ -500,7 +500,7 @@ namespace LuaDetail {
   template <typename Return, typename... Args>
   struct FunctionWrapper {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         return toWrappedReturn(engine, (Return const&)func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
       };
@@ -508,14 +508,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename... Args>
   struct FunctionWrapper<void, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         func(ArgGet<Args>::get(engine, argc, argv, Indexes)...);
         return LuaFunctionReturn();
@@ -524,14 +524,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename Return, typename... Args>
   struct FunctionWrapper<Return, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         return toWrappedReturn(engine, (Return const&)func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...));
       };
@@ -539,14 +539,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename... Args>
   struct FunctionWrapper<void, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...);
         return LuaFunctionReturn();
@@ -555,7 +555,7 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
@@ -578,7 +578,7 @@ namespace LuaDetail {
   template <typename Return, typename T, typename... Args>
   struct MethodWrapper {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) mutable {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
@@ -589,14 +589,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function&& func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename T, typename... Args>
   struct MethodWrapper<void, T, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
@@ -607,14 +607,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename Return, typename T, typename... Args>
   struct MethodWrapper<Return, T, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
@@ -626,14 +626,14 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
   template <typename T, typename... Args>
   struct MethodWrapper<void, T, LuaEngine, Args...> {
     template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
+    static LuaWrappedFunction wrapIndexes(Function func, std::index_sequence<Indexes...>) {
       return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
         if (argc == 0)
           throw LuaException("No object argument passed to wrapped method");
@@ -644,7 +644,7 @@ namespace LuaDetail {
 
     template <typename Function>
     static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+      return wrapIndexes(std::forward<Function>(func), std::make_index_sequence<sizeof...(Args)>{});
     }
   };
 
@@ -790,7 +790,7 @@ namespace LuaDetail {
 template <typename Container>
 LuaVariadic<typename std::decay_t<Container>::value_type> luaUnpack(Container&& c) {
   LuaVariadic<typename std::decay_t<Container>::value_type> ret;
-  if (std::is_rvalue_reference<Container&&>::value) {
+  if constexpr (std::is_rvalue_reference_v<Container&&>) {
     for (auto& e : c)
       ret.append(std::move(e));
   } else {

@@ -104,10 +104,10 @@ target_sources(star_frontend PRIVATE
     StarWireInterface.cpp
   )
 
-target_compile_features(star_frontend PUBLIC cxx_std_20)
 target_include_directories(star_frontend PUBLIC
-    ${STAR_FRONTEND_INCLUDES})
+    ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(star_frontend PUBLIC star_windowing star_rendering star_application star_game star_build_definitions)
+target_link_libraries(star_frontend PRIVATE star_project_warnings)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_frontend REUSE_FROM star_core)

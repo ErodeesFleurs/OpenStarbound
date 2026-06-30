@@ -1462,7 +1462,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
 List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   auto& fashion = *m_fashion;
-  ((Humanoid*)this)->refreshWearables(fashion);// bleh
+  const_cast<Humanoid*>(this)->refreshWearables(fashion);// bleh
   List<Drawable> drawables;
 
   if (m_useAnimation) {

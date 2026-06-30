@@ -12,8 +12,6 @@
 
 namespace Star {
 
-PlantDrop::PlantDropPiece::PlantDropPiece() = default;
-
 PlantDrop::PlantDrop(AssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
     bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random)
   : m_movementController(MovementParameters(), requireServiceValueAs<StarException>(assets, "PlantDrop", "assets")),

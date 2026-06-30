@@ -18,11 +18,11 @@ public:
       String const& disabledImage = "");
   virtual ~ButtonWidget();
 
-  virtual bool sendEvent(InputEvent const& event) override;
-  virtual void mouseOver() override;
-  virtual void mouseOut() override;
-  virtual void mouseReturnStillDown() override;
-  virtual void hide() override;
+  bool sendEvent(InputEvent const& event) override;
+  void mouseOver() override;
+  void mouseOut() override;
+  void mouseReturnStillDown() override;
+  void hide() override;
 
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
@@ -79,7 +79,7 @@ public:
   void setFontColorDisabled(Color color);
   void setFontColorChecked(Color color);
 
-  virtual WidgetPtr getChildAt(Vec2I const& pos) override;
+  WidgetPtr getChildAt(Vec2I const& pos) override;
 
   void disable();
   void enable();
@@ -88,8 +88,8 @@ public:
   void setInvisible(bool invisible);
 
 protected:
-  virtual RectI getScissorRect() const override;
-  virtual void renderImpl() override;
+  RectI getScissorRect() const override;
+  void renderImpl() override;
 
   void drawButtonPart(String const& image, Vec2F const& position);
   void updateSize();

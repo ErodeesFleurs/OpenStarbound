@@ -39,7 +39,7 @@ public:
   static Polygon clip(Polygon inputPoly, Polygon convexClipPoly);
 
   // Creates a null polygon
-  Polygon();
+  Polygon() = default;
   Polygon(Polygon const& rhs);
   Polygon(Polygon&& rhs);
 
@@ -219,9 +219,6 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
 
   return Polygon(std::move(outputVertexes));
 }
-
-template <typename DataType>
-Polygon<DataType>::Polygon() = default;
 
 template <typename DataType>
 Polygon<DataType>::Polygon(Polygon const& rhs)

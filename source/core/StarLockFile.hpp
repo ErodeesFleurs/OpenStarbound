@@ -30,7 +30,7 @@ public:
   bool isLocked() const;
 
 private:
-  static int64_t const MaximumSleepMillis = 25;
+  static constexpr int64_t MaximumSleepMillis = 25;
 
   String m_filename;
   shared_ptr<void> m_handle;

@@ -13,7 +13,7 @@ public:
   using SharedPtr = shared_ptr<T>;
   using WeakPtr = weak_ptr<T>;
 
-  AtomicSharedPtr();
+  AtomicSharedPtr() = default;
   AtomicSharedPtr(AtomicSharedPtr const& p);
   AtomicSharedPtr(AtomicSharedPtr&& p);
   AtomicSharedPtr(SharedPtr p);
@@ -36,9 +36,6 @@ private:
   SharedPtr m_ptr;
   mutable SpinLock m_lock;
 };
-
-template <typename T>
-AtomicSharedPtr<T>::AtomicSharedPtr() = default;
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr const& p)

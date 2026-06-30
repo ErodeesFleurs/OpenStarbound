@@ -12,7 +12,7 @@ class BindingsMenu : public BaseScriptPane {
 public:
   BindingsMenu(Json const& config, BaseScriptPaneServices services, Input& input);
 
-  virtual void show() override;
+  void show() override;
   void displayed() override;
   void dismissed() override;
 

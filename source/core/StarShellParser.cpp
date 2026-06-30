@@ -2,8 +2,6 @@
 
 namespace Star {
 
-ShellParser::ShellParser() = default;
-
 auto ShellParser::tokenize(String const& command) -> List<Token> {
   List<Token> res;
 

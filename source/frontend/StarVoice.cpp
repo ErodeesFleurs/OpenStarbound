@@ -315,7 +315,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
   size_t sampleCount = len / 2;
 
   if (active) {
-    float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
+    float decibels = getAudioLoudness(reinterpret_cast<int16_t*>(stream), sampleCount);
 
     if (m_inputMode == VoiceInputMode::VoiceActivity) {
       if (decibels > m_threshold)
@@ -324,7 +324,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
     }
   }
 
-  m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputAmplitude);
+  m_clientSpeaker->decibelLevel = getAudioLoudness(reinterpret_cast<int16_t*>(stream), sampleCount, m_inputAmplitude);
 
   if (!m_loopback) {
     if (active && !m_clientSpeaker->playing)
@@ -336,7 +336,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
   MutexLocker captureLock(m_captureMutex);
   if (active) {
     m_capturedChunksFrames += sampleCount / m_deviceChannels;
-    auto data = (opus_int16*)malloc(len);
+    auto data = static_cast<opus_int16*>(malloc(len));
     memcpy(data, stream, len);
     m_capturedChunks.emplace(data, sampleCount); // takes ownership
     m_threadCond.signal();
@@ -422,7 +422,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
     for (size_t i = 0; i != sharedBuffer.size(); ++i)
       finalBuffer[i] = static_cast<int16_t>(clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX));
 
-    SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(int16_t), 1.0f);
+    SDL_MixAudio(reinterpret_cast<Uint8*>(buffer), reinterpret_cast<Uint8*>(finalBuffer.data()), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(int16_t), 1.0f);
     memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(int32_t));
   }
 }
@@ -521,7 +521,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
       reader >> opusLength;
       if (reader.pos() + opusLength > reader.size())
         throw VoiceException("Opus packet length goes past end of buffer"s, false);
-      auto opusData = (unsigned char*)reader.ptr() + reader.pos();
+      auto opusData = reinterpret_cast<unsigned char const*>(reader.ptr()) + reader.pos();
       reader.seek(opusLength, IOSeek::Relative);
 
       int channels = opus_packet_get_nb_channels(opusData);
@@ -704,7 +704,7 @@ void Voice::thread() {
             samples[i] *= m_inputAmplitude;
         }
 
-        if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, (unsigned char*)encoded.ptr(), encoded.size())) {
+        if (int encodedSize = opus_encode(m_encoder.get(), samples.data(), VOICE_FRAME_SIZE, reinterpret_cast<unsigned char*>(encoded.ptr()), encoded.size())) {
           if (encodedSize == 1)
             continue;
 

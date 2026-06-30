@@ -29,8 +29,8 @@ public:
   // extend RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1
   // around the viewing area, then border chunks can continuously change hash,
   // and will be recomputed too often.
-  static unsigned const RenderChunkSize = 16;
-  static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
+  static constexpr unsigned RenderChunkSize = 16;
+  static constexpr unsigned BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
   TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
 

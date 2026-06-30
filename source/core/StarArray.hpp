@@ -15,7 +15,7 @@ public:
   using Base = std::array<ElementT, SizeN>;
 
   using Element = ElementT;
-  static size_t const ArraySize = SizeN;
+  static constexpr size_t ArraySize = SizeN;
 
   using iterator = Element*;
   using const_iterator = Element const*;

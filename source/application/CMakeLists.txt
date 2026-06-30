@@ -45,11 +45,11 @@ if(STAR_ENABLE_DISCORD_INTEGRATION)
     )
 endif()
 
-target_compile_features(star_application PUBLIC cxx_std_20)
 target_include_directories(star_application PUBLIC
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES})
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/platform)
 target_link_libraries(star_application PUBLIC star_core star_build_definitions)
+target_link_libraries(star_application PRIVATE star_project_warnings)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_application REUSE_FROM star_core)

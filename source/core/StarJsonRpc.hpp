@@ -21,7 +21,7 @@ using JsonRpcHandlers = StringMap<JsonRpcRemoteFunction>;
 // Simple interface to just the method invocation part of JsonRpc.
 class JsonRpcInterface {
 public:
-  virtual ~JsonRpcInterface();
+  virtual ~JsonRpcInterface() = default;
   virtual RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) = 0;
 };
 
@@ -30,7 +30,7 @@ public:
 // messages to be sent and received.
 class JsonRpc : public JsonRpcInterface {
 public:
-  JsonRpc();
+  JsonRpc() = default;
 
   void registerHandler(String const& handler, JsonRpcRemoteFunction func);
   void registerHandlers(JsonRpcHandlers const& handlers);

@@ -27,7 +27,7 @@ class TeamInvite : public Pane {
 public:
   TeamInvite(TeamBar& owner);
 
-  virtual void show() override;
+  void show() override;
 
 private:
   TeamBar& m_owner;
@@ -56,7 +56,7 @@ public:
 
   void open(Uuid memberUuid, Vec2I position);
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
 private:
   void updateWidgets();
@@ -87,7 +87,7 @@ public:
   void acceptInvitation(Uuid const& inviterUuid);
 
 protected:
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
 private:
   void updatePlayerResources();

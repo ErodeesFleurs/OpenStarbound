@@ -114,10 +114,12 @@ public:
 
   // All enum types are automatically serializable
 
-  template <typename EnumType, typename = std::enable_if_t<std::is_enum<EnumType>::value>>
+  template <typename EnumType>
+    requires std::is_enum_v<EnumType>
   DataStream& operator<<(EnumType const& e);
 
-  template <typename EnumType, typename = std::enable_if_t<std::is_enum<EnumType>::value>>
+  template <typename EnumType>
+    requires std::is_enum_v<EnumType>
   DataStream& operator>>(EnumType& e);
 
   // Convenience method to avoid temporary.
@@ -219,13 +221,15 @@ private:
   unsigned m_streamCompatibilityVersion;
 };
 
-template <typename EnumType, typename>
+template <typename EnumType>
+  requires std::is_enum_v<EnumType>
 DataStream& DataStream::operator<<(EnumType const& e) {
   *this << static_cast<std::underlying_type_t<EnumType>>(e);
   return *this;
 }
 
-template <typename EnumType, typename>
+template <typename EnumType>
+  requires std::is_enum_v<EnumType>
 DataStream& DataStream::operator>>(EnumType& e) {
   std::underlying_type_t<EnumType> i;
   *this >> i;

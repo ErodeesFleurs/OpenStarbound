@@ -20,7 +20,7 @@ using ShellParsingException = TypedException<StarException, ShellParsingExceptio
 
 class ShellParser {
 public:
-  ShellParser();
+  ShellParser() = default;
   using Char = String::Char;
 
   enum class TokenType {

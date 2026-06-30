@@ -13,7 +13,7 @@ class RefPtr {
 public:
   using element_type = T;
 
-  RefPtr();
+  RefPtr() = default;
   explicit RefPtr(T* p, bool addRef = true);
 
   RefPtr(RefPtr const& r);
@@ -102,15 +102,12 @@ public:
   friend void refPtrDecRef(RefCounter* p);
 
 protected:
-  RefCounter();
+  RefCounter() = default;
   virtual ~RefCounter() = default;
 
 private:
   size_t m_refCounter = 0;
 };
-
-template <typename T>
-RefPtr<T>::RefPtr() = default;
 
 template <typename T>
 RefPtr<T>::RefPtr(T* p, bool addRef)
@@ -292,7 +289,5 @@ inline void refPtrDecRef(RefCounter* p) {
   if (--p->m_refCounter == 0)
     delete p;
 }
-
-inline RefCounter::RefCounter() = default;
 
 }

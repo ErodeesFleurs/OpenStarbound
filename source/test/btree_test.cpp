@@ -419,7 +419,7 @@ struct SimpleBTreeBase {
 
       Key mid = index.split(right, (index.pointerCount() + 1) / 2);
 
-      return make_pair(mid, right);
+      return std::make_pair(mid, right);
     }
   }
 

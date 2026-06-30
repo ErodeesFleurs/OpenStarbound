@@ -4,8 +4,6 @@
 
 namespace Star {
 
-RenderCallback::~RenderCallback() = default;
-
 void RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {
   for (auto& drawable : drawables) {
     drawable.translate(translate);

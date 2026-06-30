@@ -31,8 +31,8 @@ public:
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
-  virtual List<Drawable> dropDrawables() const override;
+  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  List<Drawable> dropDrawables() const override;
   List<Drawable> nonRotatedDrawables() const override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;

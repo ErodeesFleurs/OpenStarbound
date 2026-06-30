@@ -11,6 +11,13 @@
 
 using namespace Star;
 
+static_assert(Variant<int, double, char>::typeIndexOf<int>() == 0);
+static_assert(Variant<int, double, char>::typeIndexOf<double>() == 1);
+static_assert(Variant<int, double, char>::typeIndexOf<char>() == 2);
+static_assert(MVariant<int, double, char>::typeIndexOf<int>() == 1);
+static_assert(MVariant<int, double, char>::typeIndexOf<double>() == 2);
+static_assert(MVariant<int, double, char>::typeIndexOf<char>() == 3);
+
 TEST(VariantTest, All) {
   struct VariantTester {
     shared_ptr<int> intptr;

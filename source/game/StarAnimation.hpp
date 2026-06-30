@@ -12,7 +12,7 @@ using AnimationPtr = SharedPtr<Animation>;
 
 class Animation {
 public:
-  Animation();
+  Animation() = default;
   // config can be either a path to a config or a literal config.
   Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 

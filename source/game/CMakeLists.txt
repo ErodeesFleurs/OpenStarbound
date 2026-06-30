@@ -527,11 +527,16 @@ target_sources(star_game PRIVATE
     terrain/StarWormCave.cpp
   )
 
-target_compile_features(star_game PUBLIC cxx_std_20)
 target_include_directories(star_game PUBLIC
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES})
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
+    ${CMAKE_CURRENT_SOURCE_DIR}/items
+    ${CMAKE_CURRENT_SOURCE_DIR}/objects
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripting
+    ${CMAKE_CURRENT_SOURCE_DIR}/terrain
+    ${PROJECT_SOURCE_DIR}/platform)
 target_link_libraries(star_game PUBLIC star_base star_build_definitions)
+target_link_libraries(star_game PRIVATE star_project_warnings)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_game REUSE_FROM star_core)

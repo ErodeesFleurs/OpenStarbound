@@ -76,7 +76,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     return make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
     auto image = assetData->get<ImagePtr>().get();
-    return make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
+    return make_shared<AssetReader>(reinterpret_cast<char*>(image->data()), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
 
@@ -112,7 +112,7 @@ ByteArray MemoryAssetSource::read(String const& path) {
     return *bytes;
   else {
     Image const* image = assetData->get<ImagePtr>().get();
-    return ByteArray((char const*)image->data(), image->width() * image->height() * image->bytesPerPixel());
+    return ByteArray(reinterpret_cast<char const*>(image->data()), image->width() * image->height() * image->bytesPerPixel());
   }
 }
 

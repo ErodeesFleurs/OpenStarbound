@@ -888,7 +888,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(*m_mainInterface, *m_universeClient));
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_universeClient, m_universeClient->biomeDatabase()));
     m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(*m_universeClient->teamClient()));
-    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)m_universeClient->worldClient().get()));
+    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(static_cast<World&>(*m_universeClient->worldClient())));
 
     LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
       auto& paneManager = mainInterface->paneManager();

@@ -91,7 +91,7 @@ public:
 
 private:
   // special values for pending iterator reads:
-  static U32Type const pending_read = 0xffffffffu;
+  static constexpr U32Type pending_read = 0xffffffffu;
 
   static void invalid_sequence() {
     throwInvalidUtf8Sequence();

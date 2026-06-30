@@ -45,43 +45,43 @@ public:
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
 
-  virtual EntityType entityType() const override;
-  virtual ClientEntityMode clientEntityMode() const override;
+  EntityType entityType() const override;
+  ClientEntityMode clientEntityMode() const override;
 
-  virtual void init(World* world, EntityId entityId, EntityMode mode) override;
-  virtual void uninit() override;
+  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void uninit() override;
 
-  virtual Vec2F position() const override;
-  virtual RectF metaBoundBox() const override;
+  Vec2F position() const override;
+  RectF metaBoundBox() const override;
 
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  virtual String name() const override;
-  virtual String description() const override;
+  String name() const override;
+  String description() const override;
 
-  virtual bool inspectable() const override;
-  virtual Maybe<String> inspectionLogName() const override;
-  virtual Maybe<String> inspectionDescription(String const& species) const override;
+  bool inspectable() const override;
+  Maybe<String> inspectionLogName() const override;
+  Maybe<String> inspectionDescription(String const& species) const override;
 
-  virtual List<LightSource> lightSources() const override;
+  List<LightSource> lightSources() const override;
 
-  virtual bool shouldDestroy() const override;
-  virtual void destroy(RenderCallback* renderCallback) override;
+  bool shouldDestroy() const override;
+  void destroy(RenderCallback* renderCallback) override;
 
-  virtual void update(float dt, uint64_t currentStep) override;
+  void update(float dt, uint64_t currentStep) override;
 
-  virtual void render(RenderCallback* renderCallback) override;
+  void render(RenderCallback* renderCallback) override;
 
-  virtual void renderLightSources(RenderCallback* renderCallback) override;
+  void renderLightSources(RenderCallback* renderCallback) override;
 
-  virtual bool checkBroken() override;
+  bool checkBroken() override;
 
-  virtual Vec2I tilePosition() const override;
+  Vec2I tilePosition() const override;
 
-  virtual List<Vec2I> spaces() const override;
-  virtual List<MaterialSpace> materialSpaces() const override;
-  virtual List<Vec2I> roots() const override;
+  List<Vec2I> spaces() const override;
+  List<MaterialSpace> materialSpaces() const override;
+  List<Vec2I> roots() const override;
 
   Direction direction() const;
   void setDirection(Direction direction);
@@ -100,50 +100,50 @@ public:
 
   virtual ObjectOrientationPtr currentOrientation() const;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
-  virtual PolyF statusEffectArea() const override;
+  List<PersistentStatusEffect> statusEffects() const override;
+  PolyF statusEffectArea() const override;
 
-  virtual List<DamageSource> damageSources() const override;
+  List<DamageSource> damageSources() const override;
 
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const override;
+  Maybe<HitType> queryHit(DamageSource const& source) const override;
   Maybe<PolyF> hitPoly() const override;
 
-  virtual List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
 
-  virtual bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  virtual bool canBeDamaged() const override;
+  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  bool canBeDamaged() const override;
 
   RectF interactiveBoundBox() const override;
 
   bool isInteractive() const override;
-  virtual InteractAction interact(InteractRequest const& request) override;
+  InteractAction interact(InteractRequest const& request) override;
   List<Vec2I> interactiveSpaces() const override;
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
 
-  virtual Vec2F mouthPosition() const override;
-  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  virtual List<ChatAction> pullPendingChatActions() override;
+  Vec2F mouthPosition() const override;
+  Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  List<ChatAction> pullPendingChatActions() override;
 
   void breakObject(bool smash = true);
 
-  virtual size_t nodeCount(WireDirection direction) const override;
-  virtual Vec2I nodePosition(WireNode wireNode) const override;
-  virtual List<WireConnection> connectionsForNode(WireNode wireNode) const override;
-  virtual bool nodeState(WireNode wireNode) const override;
+  size_t nodeCount(WireDirection direction) const override;
+  Vec2I nodePosition(WireNode wireNode) const override;
+  List<WireConnection> connectionsForNode(WireNode wireNode) const override;
+  bool nodeState(WireNode wireNode) const override;
 
-  virtual String nodeIcon(WireNode wireNode) const override;
-  virtual Color nodeColor(WireNode wireNode) const override;
+  String nodeIcon(WireNode wireNode) const override;
+  Color nodeColor(WireNode wireNode) const override;
 
-  virtual void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
-  virtual void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
+  void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
+  void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
 
-  virtual void evaluate(WireCoordinator* coordinator) override;
+  void evaluate(WireCoordinator* coordinator) override;
 
-  virtual List<QuestArcDescriptor> offeredQuests() const override;
-  virtual StringSet turnInQuests() const override;
-  virtual Vec2F questIndicatorPosition() const override;
+  List<QuestArcDescriptor> offeredQuests() const override;
+  StringSet turnInQuests() const override;
+  Vec2F questIndicatorPosition() const override;
 
   Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 

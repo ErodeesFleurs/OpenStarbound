@@ -2,8 +2,6 @@
 
 namespace Star {
 
-Lightmap::Lightmap() = default;
-
 Lightmap::Lightmap(unsigned width, unsigned height) : m_width(width), m_height(height) {
   m_data = std::make_unique<float[]>(len());
 }
@@ -35,7 +33,7 @@ Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
 
 Lightmap::operator ImageView() {
   ImageView view;
-  view.data = (uint8_t*)m_data.get();
+  view.data = reinterpret_cast<uint8_t*>(m_data.get());
   view.size = size();
   view.format = PixelFormat::RGB_F;
   return view;

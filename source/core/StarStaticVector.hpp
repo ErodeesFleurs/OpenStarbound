@@ -31,7 +31,7 @@ public:
 
   static constexpr size_t MaximumSize = MaxSize;
 
-  StaticVector();
+  StaticVector() = default;
   StaticVector(StaticVector const& other);
   StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   template <typename OtherElement, size_t OtherMaxSize>
@@ -99,9 +99,6 @@ private:
   size_t m_size = 0;
   alignas(Element) unsigned char m_elements[(MaxSize != 0 ? MaxSize : 1) * sizeof(Element)];
 };
-
-template <typename Element, size_t MaxSize>
-StaticVector<Element, MaxSize>::StaticVector() = default;
 
 template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::~StaticVector() {

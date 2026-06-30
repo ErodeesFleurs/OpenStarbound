@@ -14,6 +14,7 @@ target_link_libraries(mod_uploader PRIVATE
   star_extern
   star_core
   star_base
+  star_project_warnings
   star_build_definitions
   star_external_libraries
   SteamApi::SteamApi

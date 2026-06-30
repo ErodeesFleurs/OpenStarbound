@@ -12,7 +12,7 @@
 namespace Star {
 
 struct WorldTile {
-  WorldTile();
+  WorldTile() = default;
 
   // Copy constructor and operator= do not preserve collision cache.
   WorldTile(WorldTile const& worldTile);
@@ -63,7 +63,7 @@ void swap(WorldTile& a, WorldTile& b) noexcept;
 struct ServerTile : public WorldTile {
   static VersionNumber const CurrentSerializationVersion;
 
-  ServerTile();
+  ServerTile() = default;
 
   ServerTile(ServerTile const& serverTile);
   ServerTile& operator=(ServerTile const& serverTile);
@@ -95,7 +95,7 @@ using ServerTileSectorArray = TileSectorArray<ServerTile, WorldSectorSize>;
 using ServerTileSectorArrayPtr = shared_ptr<ServerTileSectorArray>;
 
 struct ClientTile : public WorldTile {
-  ClientTile();
+  ClientTile() = default;
 
   ClientTile(ClientTile const& clientTile);
   ClientTile& operator=(ClientTile other) noexcept;
@@ -115,7 +115,7 @@ using ClientTileSectorArrayPtr = shared_ptr<ClientTileSectorArray>;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
-  NetTile();
+  NetTile() = default;
 
   MaterialId background = NullMaterialId;
   MaterialHue backgroundHueShift{};
@@ -152,7 +152,7 @@ struct PredictedTile {
   Maybe<LiquidLevel> liquid;
   Maybe<CollisionKind> collision;
 
-  operator bool() const;
+  explicit operator bool() const;
   template <typename Tile>
   void apply(Tile& tile) {
     if (foreground) tile.foreground = *foreground;
@@ -202,8 +202,6 @@ DataStream& operator>>(DataStream& ds, RenderTile& tile);
 DataStream& operator<<(DataStream& ds, RenderTile const& tile);
 
 using RenderTileArray = MultiArray<RenderTile, 2>;
-
-inline WorldTile::WorldTile() = default;
 
 inline WorldTile::WorldTile(WorldTile const& worldTile)
   : foreground(worldTile.foreground),
@@ -271,8 +269,6 @@ inline tuple<MaterialId, ModId> WorldTile::materialAndMod(TileLayer layer) const
     return std::tuple<MaterialId, ModId>{background, backgroundMod};
 }
 
-inline ClientTile::ClientTile() = default;
-
 inline ClientTile::ClientTile(ClientTile const& clientTile)
   : WorldTile(clientTile),
     backgroundLightTransparent(clientTile.backgroundLightTransparent),
@@ -285,18 +281,16 @@ inline ClientTile& ClientTile::operator=(ClientTile other) noexcept {
   return *this;
 }
 
-inline NetTile::NetTile() = default;
-
 template <typename Hasher>
 inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   // Do the fast path hash if the last (terrain relevant) field is at byte 20, because that means
   // there are no padding bytes between any field and we can simply pass the
   // entire tile as one block of memory.
-  static size_t const TerrainEndOffset = offsetof(RenderTile, liquidId);
-  static size_t const TotalTerrainSize =
+  static constexpr size_t TerrainEndOffset = offsetof(RenderTile, liquidId);
+  static constexpr size_t TotalTerrainSize =
     sizeof(MaterialId) * 2 + sizeof(ModId) * 2 + sizeof(MaterialHue) * 4 + sizeof(MaterialColorVariant) * 2 * sizeof(TileDamageType) * 2 + 2;
 
-  static bool const FastHash = !DebugEnabled && TerrainEndOffset == TotalTerrainSize;
+  static constexpr bool FastHash = !DebugEnabled && TerrainEndOffset == TotalTerrainSize;
 
   if (FastHash) {
     hasher.push(reinterpret_cast<char const*>(this), TerrainEndOffset);

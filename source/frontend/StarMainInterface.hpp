@@ -98,7 +98,7 @@ class MainInterface;
 using MainInterfacePtr = SharedPtr<MainInterface>;
 
 struct GuiMessage {
-  GuiMessage();
+  GuiMessage() = default;
   GuiMessage(String const& message, float cooldown, float spring = 0);
 
   String message;

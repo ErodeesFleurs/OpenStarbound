@@ -8,6 +8,7 @@ target_include_directories(json_tool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE
 target_link_libraries(json_tool PRIVATE
   star_extern
   star_core
+  star_project_warnings
   star_build_definitions
   star_external_libraries
   Qt5::Core

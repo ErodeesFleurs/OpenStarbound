@@ -1,4 +1,7 @@
 #include "StarObject.hpp"
+
+#include <utility>
+
 #include "StarAssets.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarDamageManager.hpp"
@@ -1265,7 +1268,7 @@ Vec2F Object::mouthPosition(bool) const {
 }
 
 List<ChatAction> Object::pullPendingChatActions() {
-  return std::move(m_pendingChatActions);
+  return std::exchange(m_pendingChatActions, {});
 }
 
 void Object::addChatMessage(String const& message, Json const& config, String const& portrait) {

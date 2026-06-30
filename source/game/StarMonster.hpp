@@ -133,9 +133,9 @@ public:
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;
 
-  virtual Vec2F mouthPosition() const override;
-  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  virtual List<ChatAction> pullPendingChatActions() override;
+  Vec2F mouthPosition() const override;
+  Vec2F mouthPosition(bool ignoreAdjustments) const override;
+  List<ChatAction> pullPendingChatActions() override;
 
   List<PhysicsForceRegion> forceRegions() const override;
 

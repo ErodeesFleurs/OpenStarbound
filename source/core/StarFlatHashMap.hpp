@@ -115,15 +115,17 @@ public:
   const_iterator cbegin() const;
   const_iterator cend() const;
 
-  size_t empty() const;
+  bool empty() const;
   size_t size() const;
   void clear();
 
   pair<iterator, bool> insert(value_type const& value);
-  template <typename T, typename = std::enable_if_t<std::is_constructible<TableValue, T&&>::value>>
+  template <typename T>
+    requires std::is_constructible_v<TableValue, T&&>
   pair<iterator, bool> insert(T&& value);
   iterator insert(const_iterator hint, value_type const& value);
-  template <typename T, typename = std::enable_if_t<std::is_constructible<TableValue, T&&>::value>>
+  template <typename T>
+    requires std::is_constructible_v<TableValue, T&&>
   iterator insert(const_iterator hint, T&& value);
   template <typename InputIt>
   void insert(InputIt first, InputIt last);
@@ -368,7 +370,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::cend() const -> const_it
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
+bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
   return m_table.empty();
 }
 
@@ -389,9 +391,10 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(value_type const&
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-template <typename T, typename>
+template <typename T>
+  requires std::is_constructible_v<typename FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::TableValue, T&&>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(T&& value) -> pair<iterator, bool> {
-  auto res = m_table.insert(TableValue(std::forward<T&&>(value)));
+  auto res = m_table.insert(TableValue(std::forward<T>(value)));
   return {iterator{res.first}, res.second};
 }
 
@@ -401,9 +404,10 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(const_iterator hi
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-template <typename T, typename>
+template <typename T>
+  requires std::is_constructible_v<typename FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::TableValue, T&&>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(const_iterator, T&& value) -> iterator {
-  return insert(std::forward<T&&>(value)).first;
+  return insert(std::forward<T>(value)).first;
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
@@ -485,7 +489,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type&& ke
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::contains(key_type const& key) const {
-  return m_table.find(key) != m_table.end();
+  return m_table.contains(key);
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>

@@ -22,8 +22,6 @@ EnumMap<Particle::DestructionAction> const Particle::DestructionActionNames{{Par
 EnumMap<Particle::Layer> const Particle::LayerNames{
     {Particle::Layer::Back, "back"}, {Particle::Layer::Middle, "middle"}, {Particle::Layer::Front, "front"}};
 
-Particle::Particle() = default;
-
 Particle::Particle(Json const& config, String const& path, AssetsConstPtr assetsPtr, ImageMetadataDatabaseConstPtr imageMetadataDatabasePtr) {
   type = TypeNames.getLeft(config.getString("type", "variance"));
   if (type == Type::Variance) {

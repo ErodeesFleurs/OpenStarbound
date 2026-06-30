@@ -40,11 +40,11 @@ public:
   virtual Vec2F firePosition() const;
   virtual Vec2F handPosition() const;
 
-  virtual void init(ToolUserEntity& owner, ToolHand hand) override;
-  virtual void uninit() override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void init(ToolUserEntity& owner, ToolHand hand) override;
+  void uninit() override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
+  List<PersistentStatusEffect> statusEffects() const override;
 
   virtual bool validAimPos(Vec2F const& aimPos);
 

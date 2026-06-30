@@ -9,8 +9,6 @@ namespace Tiled {
 
   EnumMap<TileLayer> const LayerNames{{TileLayer::Foreground, "front"}, {TileLayer::Background, "back"}};
 
-  Properties::Properties() = default;
-
   Properties::Properties(Json const& json) : m_properties(json) {}
 
   Json Properties::toJson() const {

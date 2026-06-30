@@ -6,7 +6,7 @@
 namespace Star {
 
 struct SayChatAction {
-  SayChatAction();
+  SayChatAction() = default;
   SayChatAction(EntityId entity, String const& text, Vec2F const& position);
   SayChatAction(EntityId entity, String const& text, Vec2F const& position, Json const& config);
 
@@ -19,7 +19,7 @@ struct SayChatAction {
 };
 
 struct PortraitChatAction {
-  PortraitChatAction();
+  PortraitChatAction() = default;
   PortraitChatAction(EntityId entity, String const& portrait, String const& text, Vec2F const& position);
   PortraitChatAction(EntityId entity, String const& portrait, String const& text, Vec2F const& position, Json const& config);
 

@@ -6,8 +6,6 @@ add_executable(starbound WIN32
 if(STAR_SYSTEM_WINDOWS)
   target_sources(starbound PRIVATE starbound.rc)
 endif()
-target_compile_features(starbound PRIVATE cxx_std_20)
-
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(starbound REUSE_FROM star_core)
 endif()
@@ -31,6 +29,7 @@ target_link_libraries(starbound PRIVATE
   star_rendering
   star_windowing
   star_frontend
+  star_project_warnings
   star_build_definitions
   star_external_libraries
   star_external_gui_libraries)

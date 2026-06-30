@@ -12,7 +12,7 @@ public:
   explicit FuelWidget(GuiContext& context);
   virtual ~FuelWidget() = default;
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
   void setCurrentFuelLevel(float amount);
   void setMaxFuelLevel(float amount);
@@ -22,7 +22,7 @@ public:
   void ping();
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
   float m_fuelLevel = 0.0f;
   float m_maxLevel = 0.0f;

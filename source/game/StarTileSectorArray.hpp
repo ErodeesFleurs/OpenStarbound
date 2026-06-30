@@ -19,14 +19,14 @@ template <typename TileT, unsigned SectorSizeT>
 class TileSectorArray {
 public:
   using Tile = TileT;
-  static unsigned const SectorSize = SectorSizeT;
+  static constexpr unsigned SectorSize = SectorSizeT;
 
   using SectorArray = SectorArray2D<Tile, SectorSize>;
   using Sector = typename SectorArray::Sector;
   using Array = typename SectorArray::Array;
   using ArrayPtr = typename SectorArray::ArrayPtr;
 
-  TileSectorArray();
+  TileSectorArray() = default;
   TileSectorArray(Vec2U const& size, Tile defaultTile = Tile());
 
   void init(Vec2U const& size, Tile defaultTile = Tile());
@@ -145,9 +145,6 @@ private:
 
 template <typename Tile, unsigned SectorSize>
 unsigned const TileSectorArray<Tile, SectorSize>::SectorSize;
-
-template <typename Tile, unsigned SectorSize>
-TileSectorArray<Tile, SectorSize>::TileSectorArray() = default;
 
 template <typename Tile, unsigned SectorSize>
 TileSectorArray<Tile, SectorSize>::TileSectorArray(Vec2U const& size, Tile defaultTile) {

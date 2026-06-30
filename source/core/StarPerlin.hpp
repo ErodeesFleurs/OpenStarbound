@@ -24,7 +24,7 @@ template <typename Float>
 class Perlin {
 public:
   // Default constructed perlin noise is uninitialized and cannot be queried.
-  Perlin();
+  Perlin() = default;
 
   Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
   Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
@@ -128,9 +128,6 @@ template <typename Float>
 Float Perlin<Float>::at3(Float* q, Float rx, Float ry, Float rz) {
   return rx * q[0] + ry * q[1] + rz * q[2];
 }
-
-template <typename Float>
-Perlin<Float>::Perlin() = default;
 
 template <typename Float>
 Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {

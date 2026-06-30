@@ -4,10 +4,6 @@
 
 namespace Star {
 
-JsonRpcInterface::~JsonRpcInterface() = default;
-
-JsonRpc::JsonRpc() = default;
-
 void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
   if (m_handlers.contains(handler))
     throw JsonRpcException(strf("Handler by that name already exists '{}'", handler));

@@ -65,6 +65,8 @@ if(STAR_USE_RPMALLOC)
   )
 endif()
 
-target_include_directories(star_extern PUBLIC ${STAR_EXTERN_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/lua)
+target_include_directories(star_extern PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/lua)
 target_link_libraries(star_extern PUBLIC star_build_definitions)
 set_target_properties(star_extern PROPERTIES UNITY_BUILD OFF)

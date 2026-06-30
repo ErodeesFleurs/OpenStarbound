@@ -132,13 +132,13 @@ private:
 template <typename Return>
 class ThreadFunction {
 public:
-  ThreadFunction();
-  ThreadFunction(ThreadFunction&&);
+  ThreadFunction() = default;
+  ThreadFunction(ThreadFunction&&) = default;
   ThreadFunction(function<Return()> function, String const& name);
 
   ~ThreadFunction();
 
-  ThreadFunction& operator=(ThreadFunction&&);
+  ThreadFunction& operator=(ThreadFunction&&) = default;
 
   // Finishes the thread, moving and returning the final value of the function.
   // If the function threw an exception, finish() will rethrow that exception.
@@ -370,12 +370,6 @@ ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thre
 }
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction() = default;
-
-template <typename Return>
-ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
-
-template <typename Return>
 ThreadFunction<Return>::ThreadFunction(function<Return()> function, String const& name) {
   m_return = make_shared<Maybe<Return>>();
   m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() {
@@ -388,9 +382,6 @@ template <typename Return>
 ThreadFunction<Return>::~ThreadFunction() {
   m_function.finishNoThrow();
 }
-
-template <typename Return>
-ThreadFunction<Return>& ThreadFunction<Return>::operator=(ThreadFunction&&) = default;
 
 template <typename Return>
 Return ThreadFunction<Return>::finish() {

@@ -33,7 +33,7 @@ void ScriptPane::displayed() {
   auto world = m_client->worldClient();
   if (world && world->inWorld()) {
     m_script.setLuaRoot(world->luaRoot());
-    m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)world.get()));
+    m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(static_cast<World&>(*world)));
   }
   BaseScriptPane::displayed();
 }

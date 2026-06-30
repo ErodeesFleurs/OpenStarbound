@@ -12,7 +12,7 @@ class TextBoxWidget : public Widget {
 public:
   TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback);
 
-  virtual void update(float dt) override;
+  void update(float dt) override;
 
   String const& getText() const;
   bool setText(String const& text, bool callback = true, bool moveCursor = true);
@@ -52,17 +52,17 @@ public:
   void setTextAlign(HorizontalAnchor hAnchor);
   int getCursorDrawOffset() const;
 
-  virtual void mouseOver() override;
-  virtual void mouseOut() override;
-  virtual void mouseReturnStillDown() override;
+  void mouseOver() override;
+  void mouseOut() override;
+  void mouseReturnStillDown() override;
 
-  virtual void blur() override;
+  void blur() override;
 
-  virtual KeyboardCaptureMode keyboardCaptureMode() const override;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
+  KeyboardCaptureMode keyboardCaptureMode() const override;
+  Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
 private:
   bool innerSendEvent(InputEvent const& event);

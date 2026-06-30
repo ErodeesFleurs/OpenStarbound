@@ -1,6 +1,5 @@
 function(star_configure_utility_target target)
-  target_compile_features(${target} PRIVATE cxx_std_20)
-  target_link_libraries(${target} PRIVATE star_build_definitions)
+  target_link_libraries(${target} PRIVATE star_project_warnings star_build_definitions)
 endfunction()
 
 add_executable(asset_packer

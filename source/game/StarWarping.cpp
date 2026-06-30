@@ -12,8 +12,6 @@ EnumMap<WarpMode> WarpModeNames {
   {WarpMode::BeamOrDeploy, "BeamOrDeploy"}
 };
 
-InstanceWorldId::InstanceWorldId() = default;
-
 InstanceWorldId::InstanceWorldId(String instance, Maybe<Uuid> uuid, Maybe<float> level)
   : instance(std::move(instance)), uuid(std::move(uuid)), level(std::move(level)) {}
 
@@ -155,8 +153,6 @@ String printSpawnTarget(SpawnTarget spawnTarget) {
   else
     return "";
 }
-
-WarpToWorld::WarpToWorld() = default;
 
 WarpToWorld::WarpToWorld(WorldId world, SpawnTarget target) : world(std::move(world)), target(std::move(target)) {}
 

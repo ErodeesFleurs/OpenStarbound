@@ -14,7 +14,7 @@ using TrackerListenerPtr = SharedPtr<TrackerListener>;
 
 class Listener {
 public:
-  virtual ~Listener();
+  virtual ~Listener() = default;
   virtual void trigger() = 0;
 };
 
@@ -23,7 +23,7 @@ public:
   CallbackListener(function<void()> callback);
 
 protected:
-  virtual void trigger() override;
+  void trigger() override;
 
 private:
   function<void()> callback;
@@ -31,12 +31,12 @@ private:
 
 class TrackerListener : public Listener {
 public:
-  TrackerListener();
+  TrackerListener() = default;
 
   bool pullTriggered();
 
 protected:
-  virtual void trigger() override;
+  void trigger() override;
 
 private:
   atomic<bool> triggered = false;

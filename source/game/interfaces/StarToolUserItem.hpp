@@ -14,7 +14,7 @@ class ToolUserItem;
 // Tool.  Three words when one will do, rename.
 class ToolUserItem {
 public:
-  ToolUserItem();
+  ToolUserItem() = default;
   virtual ~ToolUserItem() = default;
 
   // Owner must be initialized when a ToolUserItem is initialized and

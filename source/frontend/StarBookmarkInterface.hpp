@@ -15,7 +15,7 @@ public:
 
   EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services);
 
-  virtual void show() override;
+  void show() override;
 
   void setBookmark(TeleportBookmark bookmark);
 

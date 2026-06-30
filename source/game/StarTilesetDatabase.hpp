@@ -26,7 +26,7 @@ namespace Tiled {
   // types, parsing them as Json for instance.
   class Properties {
   public:
-    Properties();
+    Properties() = default;
     Properties(Json const& json);
 
     Json toJson() const;

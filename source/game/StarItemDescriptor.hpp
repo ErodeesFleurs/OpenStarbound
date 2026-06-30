@@ -16,7 +16,7 @@ public:
   // Loads ItemDescriptor from store format.
   static ItemDescriptor loadStore(Json const& store, VersioningDatabaseConstPtr versioningDatabase);
 
-  ItemDescriptor();
+  ItemDescriptor() = default;
   ItemDescriptor(String name, uint64_t count, Json parameters = Json());
 
   // Populate from a configuration JsonArray containing up to 3 elements, the

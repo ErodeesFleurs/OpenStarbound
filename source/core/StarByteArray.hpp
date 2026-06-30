@@ -30,7 +30,7 @@ public:
   static ByteArray fromCStringWithNull(char const* str);
   static ByteArray withReserve(size_t capacity);
 
-  ByteArray();
+  ByteArray() = default;
   ByteArray(size_t dataSize, char c);
   ByteArray(char const* data, size_t dataSize);
   explicit ByteArray(std::span<char const> data) : ByteArray(data.data(), data.size()) {}

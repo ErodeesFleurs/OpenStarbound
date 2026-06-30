@@ -136,7 +136,7 @@ enum class PacketCompressionMode : uint8_t {
 };
 
 struct Packet {
-  virtual ~Packet();
+  virtual ~Packet() = default;
 
   virtual PacketType type() const = 0;
 
@@ -159,7 +159,7 @@ PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
-  static PacketType const Type = PacketT;
+  static constexpr PacketType Type = PacketT;
 
   PacketType type() const override { return Type; }
 };
@@ -179,7 +179,7 @@ struct AutoPacket : PacketBase<PT> {
 };
 
 struct ProtocolRequestPacket : AutoPacket<ProtocolRequestPacket, PacketType::ProtocolRequest> {
-  ProtocolRequestPacket();
+  ProtocolRequestPacket() = default;
   explicit ProtocolRequestPacket(VersionNumber requestProtocolVersion);
 
   VersionNumber requestProtocolVersion = 0;
@@ -200,7 +200,7 @@ struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
 };
 
 struct ServerDisconnectPacket : AutoPacket<ServerDisconnectPacket, PacketType::ServerDisconnect> {
-  ServerDisconnectPacket();
+  ServerDisconnectPacket() = default;
   explicit ServerDisconnectPacket(String reason);
 
   String reason;
@@ -211,7 +211,7 @@ struct ServerDisconnectPacket : AutoPacket<ServerDisconnectPacket, PacketType::S
 };
 
 struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
-  ConnectSuccessPacket();
+  ConnectSuccessPacket() = default;
   ConnectSuccessPacket(ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation);
 
   void read(DataStream& ds) override;
@@ -223,7 +223,7 @@ struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
 };
 
 struct ConnectFailurePacket : AutoPacket<ConnectFailurePacket, PacketType::ConnectFailure> {
-  ConnectFailurePacket();
+  ConnectFailurePacket() = default;
   explicit ConnectFailurePacket(String reason);
 
   String reason;
@@ -234,7 +234,7 @@ struct ConnectFailurePacket : AutoPacket<ConnectFailurePacket, PacketType::Conne
 };
 
 struct HandshakeChallengePacket : AutoPacket<HandshakeChallengePacket, PacketType::HandshakeChallenge> {
-  HandshakeChallengePacket();
+  HandshakeChallengePacket() = default;
   explicit HandshakeChallengePacket(ByteArray const& passwordSalt);
 
   ByteArray passwordSalt;
@@ -245,7 +245,7 @@ struct HandshakeChallengePacket : AutoPacket<HandshakeChallengePacket, PacketTyp
 };
 
 struct ChatReceivePacket : AutoPacket<ChatReceivePacket, PacketType::ChatReceive> {
-  ChatReceivePacket();
+  ChatReceivePacket() = default;
   explicit ChatReceivePacket(ChatReceivedMessage receivedMessage);
 
   void readJson(Json const& json) override;
@@ -259,7 +259,7 @@ struct ChatReceivePacket : AutoPacket<ChatReceivePacket, PacketType::ChatReceive
 };
 
 struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
-  UniverseTimeUpdatePacket();
+  UniverseTimeUpdatePacket() = default;
   explicit UniverseTimeUpdatePacket(double universeTime);
 
   void read(DataStream& ds) override;
@@ -270,7 +270,7 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
 };
 
 struct CelestialResponsePacket : AutoPacket<CelestialResponsePacket, PacketType::CelestialResponse> {
-  CelestialResponsePacket();
+  CelestialResponsePacket() = default;
   explicit CelestialResponsePacket(List<CelestialResponse> responses);
 
   List<CelestialResponse> responses;
@@ -281,7 +281,7 @@ struct CelestialResponsePacket : AutoPacket<CelestialResponsePacket, PacketType:
 };
 
 struct PlayerWarpResultPacket : AutoPacket<PlayerWarpResultPacket, PacketType::PlayerWarpResult> {
-  PlayerWarpResultPacket();
+  PlayerWarpResultPacket() = default;
   PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid);
 
   bool success = false;
@@ -294,7 +294,7 @@ struct PlayerWarpResultPacket : AutoPacket<PlayerWarpResultPacket, PacketType::P
 };
 
 struct PlanetTypeUpdatePacket : AutoPacket<PlanetTypeUpdatePacket, PacketType::PlanetTypeUpdate> {
-  PlanetTypeUpdatePacket();
+  PlanetTypeUpdatePacket() = default;
   explicit PlanetTypeUpdatePacket(CelestialCoordinate coordinate);
 
   CelestialCoordinate coordinate;
@@ -305,7 +305,7 @@ struct PlanetTypeUpdatePacket : AutoPacket<PlanetTypeUpdatePacket, PacketType::P
 };
 
 struct PausePacket : PacketBase<PacketType::Pause> {
-  PausePacket();
+  PausePacket() = default;
   explicit PausePacket(bool pause, float timescale = 1.0f);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -319,7 +319,7 @@ struct PausePacket : PacketBase<PacketType::Pause> {
 };
 
 struct ServerInfoPacket : AutoPacket<ServerInfoPacket, PacketType::ServerInfo> {
-  ServerInfoPacket();
+  ServerInfoPacket() = default;
   ServerInfoPacket(uint16_t players, uint16_t maxPlayers);
 
   void readJson(Json const& json) override;
@@ -334,7 +334,7 @@ struct ServerInfoPacket : AutoPacket<ServerInfoPacket, PacketType::ServerInfo> {
 };
 
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
-  ClientConnectPacket();
+  ClientConnectPacket() = default;
   ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid, String playerName,
       String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
       String account, Json info = {});
@@ -355,14 +355,14 @@ struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
 };
 
 struct ClientDisconnectRequestPacket : PacketBase<PacketType::ClientDisconnectRequest> {
-  ClientDisconnectRequestPacket();
+  ClientDisconnectRequestPacket() = default;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 };
 
 struct HandshakeResponsePacket : AutoPacket<HandshakeResponsePacket, PacketType::HandshakeResponse> {
-  HandshakeResponsePacket();
+  HandshakeResponsePacket() = default;
   explicit HandshakeResponsePacket(ByteArray const& passHash);
 
   ByteArray passHash;
@@ -373,7 +373,7 @@ struct HandshakeResponsePacket : AutoPacket<HandshakeResponsePacket, PacketType:
 };
 
 struct PlayerWarpPacket : AutoPacket<PlayerWarpPacket, PacketType::PlayerWarp> {
-  PlayerWarpPacket();
+  PlayerWarpPacket() = default;
   PlayerWarpPacket(WarpAction action, bool deploy);
 
   WarpAction action;
@@ -385,7 +385,7 @@ struct PlayerWarpPacket : AutoPacket<PlayerWarpPacket, PacketType::PlayerWarp> {
 };
 
 struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
-  FlyShipPacket();
+  FlyShipPacket() = default;
   FlyShipPacket(Vec3I system, SystemLocation location, Json settings = {});
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -397,7 +397,7 @@ struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
 };
 
 struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
-  ChatSendPacket();
+  ChatSendPacket() = default;
   ChatSendPacket(String text, ChatSendMode sendMode);
   ChatSendPacket(String text, ChatSendMode sendMode, JsonObject data);
 
@@ -410,7 +410,7 @@ struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
 };
 
 struct CelestialRequestPacket : AutoPacket<CelestialRequestPacket, PacketType::CelestialRequest> {
-  CelestialRequestPacket();
+  CelestialRequestPacket() = default;
   explicit CelestialRequestPacket(List<CelestialRequest> requests);
 
   List<CelestialRequest> requests;
@@ -421,7 +421,7 @@ struct CelestialRequestPacket : AutoPacket<CelestialRequestPacket, PacketType::C
 };
 
 struct ClientContextUpdatePacket : AutoPacket<ClientContextUpdatePacket, PacketType::ClientContextUpdate> {
-  ClientContextUpdatePacket();
+  ClientContextUpdatePacket() = default;
   explicit ClientContextUpdatePacket(ByteArray updateData);
 
   ByteArray updateData;
@@ -433,7 +433,7 @@ struct ClientContextUpdatePacket : AutoPacket<ClientContextUpdatePacket, PacketT
 
 // Sent when a client should initialize themselves on a new world
 struct WorldStartPacket : AutoPacket<WorldStartPacket, PacketType::WorldStart> {
-  WorldStartPacket();
+  WorldStartPacket() = default;
 
   Json templateData;
   ByteArray skyData;
@@ -460,7 +460,7 @@ struct WorldStartPacket : AutoPacket<WorldStartPacket, PacketType::WorldStart> {
 
 // Sent when a client is leaving a world
 struct WorldStopPacket : AutoPacket<WorldStopPacket, PacketType::WorldStop> {
-  WorldStopPacket();
+  WorldStopPacket() = default;
   explicit WorldStopPacket(String const& reason);
 
   String reason;
@@ -472,7 +472,7 @@ struct WorldStopPacket : AutoPacket<WorldStopPacket, PacketType::WorldStop> {
 
 // Sent when the region data for the client's current world changes
 struct WorldLayoutUpdatePacket : AutoPacket<WorldLayoutUpdatePacket, PacketType::WorldLayoutUpdate> {
-  WorldLayoutUpdatePacket();
+  WorldLayoutUpdatePacket() = default;
   explicit WorldLayoutUpdatePacket(Json const& layoutData);
 
   Json layoutData;
@@ -484,7 +484,7 @@ struct WorldLayoutUpdatePacket : AutoPacket<WorldLayoutUpdatePacket, PacketType:
 
 // Sent when the environment status effect list for the client's current world changes
 struct WorldParametersUpdatePacket : AutoPacket<WorldParametersUpdatePacket, PacketType::WorldParametersUpdate> {
-  WorldParametersUpdatePacket();
+  WorldParametersUpdatePacket() = default;
   explicit WorldParametersUpdatePacket(ByteArray const& parametersData);
 
   ByteArray parametersData;
@@ -495,7 +495,7 @@ struct WorldParametersUpdatePacket : AutoPacket<WorldParametersUpdatePacket, Pac
 };
 
 struct CentralStructureUpdatePacket : AutoPacket<CentralStructureUpdatePacket, PacketType::CentralStructureUpdate> {
-  CentralStructureUpdatePacket();
+  CentralStructureUpdatePacket() = default;
   explicit CentralStructureUpdatePacket(Json structureData);
 
   Json structureData;
@@ -508,7 +508,7 @@ struct CentralStructureUpdatePacket : AutoPacket<CentralStructureUpdatePacket, P
 struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
   using TileArray = MultiArray<NetTile, 2>;
 
-  TileArrayUpdatePacket();
+  TileArrayUpdatePacket() = default;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -527,7 +527,7 @@ struct TileUpdatePacket : PacketBase<PacketType::TileUpdate> {
 };
 
 struct TileLiquidUpdatePacket : PacketBase<PacketType::TileLiquidUpdate> {
-  TileLiquidUpdatePacket();
+  TileLiquidUpdatePacket() = default;
   TileLiquidUpdatePacket(Vec2I const& position, LiquidNetUpdate liquidUpdate);
 
   void read(DataStream& ds) override;
@@ -538,7 +538,7 @@ struct TileLiquidUpdatePacket : PacketBase<PacketType::TileLiquidUpdate> {
 };
 
 struct TileDamageUpdatePacket : AutoPacket<TileDamageUpdatePacket, PacketType::TileDamageUpdate> {
-  TileDamageUpdatePacket();
+  TileDamageUpdatePacket() = default;
   TileDamageUpdatePacket(Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage);
 
   Vec2I position;
@@ -551,7 +551,7 @@ struct TileDamageUpdatePacket : AutoPacket<TileDamageUpdatePacket, PacketType::T
 };
 
 struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFailure> {
-  TileModificationFailurePacket();
+  TileModificationFailurePacket() = default;
   explicit TileModificationFailurePacket(TileModificationList modifications);
 
   void read(DataStream& ds) override;
@@ -561,7 +561,7 @@ struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFa
 };
 
 struct GiveItemPacket : AutoPacket<GiveItemPacket, PacketType::GiveItem> {
-  GiveItemPacket();
+  GiveItemPacket() = default;
   explicit GiveItemPacket(ItemDescriptor const& item);
 
   void readJson(Json const& json) override;
@@ -575,7 +575,7 @@ struct GiveItemPacket : AutoPacket<GiveItemPacket, PacketType::GiveItem> {
 };
 
 struct EnvironmentUpdatePacket : AutoPacket<EnvironmentUpdatePacket, PacketType::EnvironmentUpdate> {
-  EnvironmentUpdatePacket();
+  EnvironmentUpdatePacket() = default;
   EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta);
 
   ByteArray skyDelta;
@@ -587,7 +587,7 @@ struct EnvironmentUpdatePacket : AutoPacket<EnvironmentUpdatePacket, PacketType:
 };
 
 struct UpdateTileProtectionPacket : AutoPacket<UpdateTileProtectionPacket, PacketType::UpdateTileProtection> {
-  UpdateTileProtectionPacket();
+  UpdateTileProtectionPacket() = default;
   UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected);
 
   void readJson(Json const& json) override;
@@ -602,7 +602,7 @@ struct UpdateTileProtectionPacket : AutoPacket<UpdateTileProtectionPacket, Packe
 };
 
 struct SetDungeonGravityPacket : AutoPacket<SetDungeonGravityPacket, PacketType::SetDungeonGravity> {
-  SetDungeonGravityPacket();
+  SetDungeonGravityPacket() = default;
   SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity);
 
   void readJson(Json const& json) override;
@@ -617,7 +617,7 @@ struct SetDungeonGravityPacket : AutoPacket<SetDungeonGravityPacket, PacketType:
 };
 
 struct SetDungeonBreathablePacket : AutoPacket<SetDungeonBreathablePacket, PacketType::SetDungeonBreathable> {
-  SetDungeonBreathablePacket();
+  SetDungeonBreathablePacket() = default;
   SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable);
 
   void readJson(Json const& json) override;
@@ -632,7 +632,7 @@ struct SetDungeonBreathablePacket : AutoPacket<SetDungeonBreathablePacket, Packe
 };
 
 struct SetPlayerStartPacket : AutoPacket<SetPlayerStartPacket, PacketType::SetPlayerStart> {
-  SetPlayerStartPacket();
+  SetPlayerStartPacket() = default;
   SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld);
 
   void readJson(Json const& json) override;
@@ -647,7 +647,7 @@ struct SetPlayerStartPacket : AutoPacket<SetPlayerStartPacket, PacketType::SetPl
 };
 
 struct FindUniqueEntityResponsePacket : AutoPacket<FindUniqueEntityResponsePacket, PacketType::FindUniqueEntityResponse> {
-  FindUniqueEntityResponsePacket();
+  FindUniqueEntityResponsePacket() = default;
   FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition);
 
   String uniqueEntityId;
@@ -659,7 +659,7 @@ struct FindUniqueEntityResponsePacket : AutoPacket<FindUniqueEntityResponsePacke
 };
 
 struct PongPacket : PacketBase<PacketType::Pong> {
-  PongPacket();
+  PongPacket() = default;
   explicit PongPacket(int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -669,7 +669,7 @@ struct PongPacket : PacketBase<PacketType::Pong> {
 };
 
 struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
-  ModifyTileListPacket();
+  ModifyTileListPacket() = default;
   ModifyTileListPacket(TileModificationList modifications, bool allowEntityOverlap);
 
   void read(DataStream& ds) override;
@@ -680,7 +680,7 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
 };
 
 struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
-  ReplaceTileListPacket();
+  ReplaceTileListPacket() = default;
   ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage);
 
   void read(DataStream& ds) override;
@@ -692,7 +692,7 @@ struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
-  DamageTileGroupPacket();
+  DamageTileGroupPacket() = default;
   DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, Maybe<EntityId> sourceEntity);
 
   void read(DataStream& ds) override;
@@ -706,7 +706,7 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
 };
 
 struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
-  CollectLiquidPacket();
+  CollectLiquidPacket() = default;
   CollectLiquidPacket(List<Vec2I> tilePositions, LiquidId liquidId);
 
   void read(DataStream& ds) override;
@@ -717,7 +717,7 @@ struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
 };
 
 struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
-  RequestDropPacket();
+  RequestDropPacket() = default;
   explicit RequestDropPacket(EntityId dropEntityId);
 
   void read(DataStream& ds) override;
@@ -727,7 +727,7 @@ struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
 };
 
 struct SpawnEntityPacket : AutoPacket<SpawnEntityPacket, PacketType::SpawnEntity> {
-  SpawnEntityPacket();
+  SpawnEntityPacket() = default;
   SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState);
 
   EntityType entityType;
@@ -740,7 +740,7 @@ struct SpawnEntityPacket : AutoPacket<SpawnEntityPacket, PacketType::SpawnEntity
 };
 
 struct ConnectWirePacket : AutoPacket<ConnectWirePacket, PacketType::ConnectWire> {
-  ConnectWirePacket();
+  ConnectWirePacket() = default;
   ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection);
 
   WireConnection outputConnection;
@@ -752,7 +752,7 @@ struct ConnectWirePacket : AutoPacket<ConnectWirePacket, PacketType::ConnectWire
 };
 
 struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
-  DisconnectAllWiresPacket();
+  DisconnectAllWiresPacket() = default;
   DisconnectAllWiresPacket(Vec2I entityPosition, WireNode wireNode);
 
   void read(DataStream& ds) override;
@@ -763,7 +763,7 @@ struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
 };
 
 struct WorldClientStateUpdatePacket : AutoPacket<WorldClientStateUpdatePacket, PacketType::WorldClientStateUpdate> {
-  WorldClientStateUpdatePacket();
+  WorldClientStateUpdatePacket() = default;
   explicit WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta);
 
   ByteArray worldClientStateDelta;
@@ -774,7 +774,7 @@ struct WorldClientStateUpdatePacket : AutoPacket<WorldClientStateUpdatePacket, P
 };
 
 struct FindUniqueEntityPacket : AutoPacket<FindUniqueEntityPacket, PacketType::FindUniqueEntity> {
-  FindUniqueEntityPacket();
+  FindUniqueEntityPacket() = default;
   explicit FindUniqueEntityPacket(String uniqueEntityId);
 
   String uniqueEntityId;
@@ -785,14 +785,14 @@ struct FindUniqueEntityPacket : AutoPacket<FindUniqueEntityPacket, PacketType::F
 };
 
 struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledge> {
-  WorldStartAcknowledgePacket();
+  WorldStartAcknowledgePacket() = default;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 };
 
 struct PingPacket : PacketBase<PacketType::Ping> {
-  PingPacket();
+  PingPacket() = default;
   explicit PingPacket(int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -802,7 +802,7 @@ struct PingPacket : PacketBase<PacketType::Ping> {
 };
 
 struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
-  EntityCreatePacket();
+  EntityCreatePacket() = default;
   EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId);
 
   void read(DataStream& ds) override;
@@ -828,7 +828,7 @@ struct EntityUpdateSetPacket : PacketBase<PacketType::EntityUpdateSet> {
 };
 
 struct EntityDestroyPacket : PacketBase<PacketType::EntityDestroy> {
-  EntityDestroyPacket();
+  EntityDestroyPacket() = default;
   EntityDestroyPacket(EntityId entityId, ByteArray finalNetState, bool death);
 
   void read(DataStream& ds) override;
@@ -842,7 +842,7 @@ struct EntityDestroyPacket : PacketBase<PacketType::EntityDestroy> {
 };
 
 struct EntityInteractPacket : AutoPacket<EntityInteractPacket, PacketType::EntityInteract> {
-  EntityInteractPacket();
+  EntityInteractPacket() = default;
   EntityInteractPacket(InteractRequest interactRequest, Uuid requestId);
 
   InteractRequest interactRequest;
@@ -854,7 +854,7 @@ struct EntityInteractPacket : AutoPacket<EntityInteractPacket, PacketType::Entit
 };
 
 struct EntityInteractResultPacket : AutoPacket<EntityInteractResultPacket, PacketType::EntityInteractResult> {
-  EntityInteractResultPacket();
+  EntityInteractResultPacket() = default;
   EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId);
 
   InteractAction action;
@@ -867,7 +867,7 @@ struct EntityInteractResultPacket : AutoPacket<EntityInteractResultPacket, Packe
 };
 
 struct HitRequestPacket : AutoPacket<HitRequestPacket, PacketType::HitRequest> {
-  HitRequestPacket();
+  HitRequestPacket() = default;
   explicit HitRequestPacket(RemoteHitRequest remoteHitRequest);
 
   RemoteHitRequest remoteHitRequest;
@@ -878,7 +878,7 @@ struct HitRequestPacket : AutoPacket<HitRequestPacket, PacketType::HitRequest> {
 };
 
 struct DamageRequestPacket : AutoPacket<DamageRequestPacket, PacketType::DamageRequest> {
-  DamageRequestPacket();
+  DamageRequestPacket() = default;
   explicit DamageRequestPacket(RemoteDamageRequest remoteDamageRequest);
 
   RemoteDamageRequest remoteDamageRequest;
@@ -889,7 +889,7 @@ struct DamageRequestPacket : AutoPacket<DamageRequestPacket, PacketType::DamageR
 };
 
 struct DamageNotificationPacket : AutoPacket<DamageNotificationPacket, PacketType::DamageNotification> {
-  DamageNotificationPacket();
+  DamageNotificationPacket() = default;
   explicit DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification);
 
   RemoteDamageNotification remoteDamageNotification;
@@ -900,7 +900,7 @@ struct DamageNotificationPacket : AutoPacket<DamageNotificationPacket, PacketTyp
 };
 
 struct EntityMessagePacket : AutoPacket<EntityMessagePacket, PacketType::EntityMessage> {
-  EntityMessagePacket();
+  EntityMessagePacket() = default;
   EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
 
   void readJson(Json const& json) override;
@@ -919,7 +919,7 @@ struct EntityMessagePacket : AutoPacket<EntityMessagePacket, PacketType::EntityM
 };
 
 struct EntityMessageResponsePacket : AutoPacket<EntityMessageResponsePacket, PacketType::EntityMessageResponse> {
-  EntityMessageResponsePacket();
+  EntityMessageResponsePacket() = default;
   EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid);
 
   Either<String, Json> response;
@@ -931,7 +931,7 @@ struct EntityMessageResponsePacket : AutoPacket<EntityMessageResponsePacket, Pac
 };
 
 struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldProperties> {
-  UpdateWorldPropertiesPacket();
+  UpdateWorldPropertiesPacket() = default;
   explicit UpdateWorldPropertiesPacket(JsonObject const& updatedProperties);
 
   void read(DataStream& ds) override;
@@ -944,7 +944,7 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
 };
 
 struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
-  StepUpdatePacket();
+  StepUpdatePacket() = default;
   explicit StepUpdatePacket(double remoteTime);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
@@ -954,7 +954,7 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
 };
 
 struct SystemWorldStartPacket : AutoPacket<SystemWorldStartPacket, PacketType::SystemWorldStart> {
-  SystemWorldStartPacket();
+  SystemWorldStartPacket() = default;
   SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip);
 
   Vec3I location;
@@ -969,7 +969,7 @@ struct SystemWorldStartPacket : AutoPacket<SystemWorldStartPacket, PacketType::S
 };
 
 struct SystemWorldUpdatePacket : AutoPacket<SystemWorldUpdatePacket, PacketType::SystemWorldUpdate> {
-  SystemWorldUpdatePacket();
+  SystemWorldUpdatePacket() = default;
   SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates);
 
   HashMap<Uuid, ByteArray> objectUpdates;
@@ -981,7 +981,7 @@ struct SystemWorldUpdatePacket : AutoPacket<SystemWorldUpdatePacket, PacketType:
 };
 
 struct SystemObjectCreatePacket : AutoPacket<SystemObjectCreatePacket, PacketType::SystemObjectCreate> {
-  SystemObjectCreatePacket();
+  SystemObjectCreatePacket() = default;
   explicit SystemObjectCreatePacket(ByteArray objectStore);
 
   ByteArray objectStore;
@@ -992,7 +992,7 @@ struct SystemObjectCreatePacket : AutoPacket<SystemObjectCreatePacket, PacketTyp
 };
 
 struct SystemObjectDestroyPacket : AutoPacket<SystemObjectDestroyPacket, PacketType::SystemObjectDestroy> {
-  SystemObjectDestroyPacket();
+  SystemObjectDestroyPacket() = default;
   explicit SystemObjectDestroyPacket(Uuid objectUuid);
 
   Uuid objectUuid;
@@ -1003,7 +1003,7 @@ struct SystemObjectDestroyPacket : AutoPacket<SystemObjectDestroyPacket, PacketT
 };
 
 struct SystemShipCreatePacket : AutoPacket<SystemShipCreatePacket, PacketType::SystemShipCreate> {
-  SystemShipCreatePacket();
+  SystemShipCreatePacket() = default;
   explicit SystemShipCreatePacket(ByteArray shipStore);
 
   ByteArray shipStore;
@@ -1014,7 +1014,7 @@ struct SystemShipCreatePacket : AutoPacket<SystemShipCreatePacket, PacketType::S
 };
 
 struct SystemShipDestroyPacket : AutoPacket<SystemShipDestroyPacket, PacketType::SystemShipDestroy> {
-  SystemShipDestroyPacket();
+  SystemShipDestroyPacket() = default;
   explicit SystemShipDestroyPacket(Uuid shipUuid);
 
   Uuid shipUuid;
@@ -1025,7 +1025,7 @@ struct SystemShipDestroyPacket : AutoPacket<SystemShipDestroyPacket, PacketType:
 };
 
 struct SystemObjectSpawnPacket : AutoPacket<SystemObjectSpawnPacket, PacketType::SystemObjectSpawn> {
-  SystemObjectSpawnPacket();
+  SystemObjectSpawnPacket() = default;
   SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters);
 
   String typeName;
@@ -1040,7 +1040,7 @@ struct SystemObjectSpawnPacket : AutoPacket<SystemObjectSpawnPacket, PacketType:
 };
 
 struct UpdateWorldTemplatePacket : AutoPacket<UpdateWorldTemplatePacket, PacketType::UpdateWorldTemplate> {
-  UpdateWorldTemplatePacket();
+  UpdateWorldTemplatePacket() = default;
   explicit UpdateWorldTemplatePacket(Json templateData);
 
   Json templateData;

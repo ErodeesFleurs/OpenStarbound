@@ -129,7 +129,36 @@ TEST(ZipWith, All) {
 TEST(TupleFunctions, All) {
   std::vector<int> a;
   std::vector<int> b = {1, 2, 3, 4, 5, 6, 7, 8};
-  tupleCallFunction(make_tuple(1, 2, 3, 4, 5, 6, 7, 8), [&a](int i) { a.push_back(i); });
+  tupleCallFunction(std::make_tuple(1, 2, 3, 4, 5, 6, 7, 8), [&a](int i) { a.push_back(i); });
 
   EXPECT_EQ(a, b);
+}
+
+namespace {
+
+int functionTraitsFree(double) noexcept;
+
+struct FunctionTraitsCallable {
+  long lvalue(float) &;
+  long constLvalue(float) const& noexcept;
+  long rvalue(float) &&;
+  long constRvalue(float) const&& noexcept;
+};
+
+static_assert(FunctionTraits<decltype(&functionTraitsFree)>::Arity == 1);
+static_assert(std::is_same_v<FunctionTraits<decltype(&functionTraitsFree)>::Return, int>);
+static_assert(std::is_same_v<FunctionTraits<decltype(&functionTraitsFree)>::Arg<0>::type, double>);
+
+static_assert(std::is_same_v<FunctionTraits<decltype(&FunctionTraitsCallable::lvalue)>::OwnerType, FunctionTraitsCallable&>);
+static_assert(std::is_same_v<FunctionTraits<decltype(&FunctionTraitsCallable::constLvalue)>::OwnerType, FunctionTraitsCallable const&>);
+static_assert(std::is_same_v<FunctionTraits<decltype(&FunctionTraitsCallable::rvalue)>::OwnerType, FunctionTraitsCallable&&>);
+static_assert(std::is_same_v<FunctionTraits<decltype(&FunctionTraitsCallable::constRvalue)>::OwnerType, FunctionTraitsCallable const&&>);
+
+auto functionTraitsMutableLambda = [count = 0](short) mutable -> long {
+  return ++count;
+};
+
+static_assert(std::is_same_v<FunctionTraits<decltype(functionTraitsMutableLambda)>::Return, long>);
+static_assert(std::is_same_v<FunctionTraits<decltype(functionTraitsMutableLambda)>::Arg<0>::type, short>);
+
 }

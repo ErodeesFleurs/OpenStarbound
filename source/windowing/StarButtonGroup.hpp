@@ -17,9 +17,9 @@ class ButtonGroup {
 public:
   friend class ButtonWidget;
 
-  static int const NoButton = -1;
+  static constexpr int NoButton = -1;
 
-  ButtonGroup();
+  ButtonGroup() = default;
 
   // Callback is called when any child buttons checked state is changed, and
   // its parameter is the button being checked.

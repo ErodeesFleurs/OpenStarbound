@@ -289,7 +289,7 @@ typename Container::value_type product(Container const& cont) {
 template <typename OutContainer, typename InContainer, typename Function>
 void transformInto(OutContainer& outContainer, InContainer&& inContainer, Function&& function) {
   for (auto&& elem : inContainer) {
-    if (std::is_rvalue_reference<InContainer&&>::value)
+    if constexpr (std::is_rvalue_reference_v<InContainer&&>)
       outContainer.insert(outContainer.end(), function(std::move(elem)));
     else
       outContainer.insert(outContainer.end(), function(elem));
@@ -528,42 +528,51 @@ Service requireNonEmptyServiceValue(Service service, char const* context, char c
 
 // Generates compile time sequences of indexes from MinIndex to MaxIndex
 
-template <size_t...>
-struct IndexSequence {};
+template <size_t Min, typename Sequence>
+struct OffsetIndexSequence;
 
-template <size_t Min, size_t N, size_t... S>
-struct GenIndexSequence : GenIndexSequence<Min, N - 1, N - 1, S...> {};
-
-template <size_t Min, size_t... S>
-struct GenIndexSequence<Min, Min, S...> {
-  using type = IndexSequence<S...>;
+template <size_t Min, size_t... Indexes>
+struct OffsetIndexSequence<Min, std::index_sequence<Indexes...>> {
+  using type = std::index_sequence<(Min + Indexes)...>;
 };
+
+template <size_t Min, typename Sequence>
+using OffsetIndexSequenceT = typename OffsetIndexSequence<Min, Sequence>::type;
+
+template <size_t Min, size_t N>
+struct MakeOffsetIndexSequence {
+  static_assert(Min <= N);
+  using type = OffsetIndexSequenceT<Min, std::make_index_sequence<N - Min>>;
+};
+
+template <size_t Min, size_t N>
+using MakeOffsetIndexSequenceT = typename MakeOffsetIndexSequence<Min, N>::type;
 
 // Apply a tuple as individual arguments to a function
 
 template <typename Function, typename Tuple, size_t... Indexes>
-decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
+decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, std::index_sequence<Indexes...>) {
   return function(get<Indexes>(std::forward<Tuple>(args))...);
 }
 
 template <typename Function, typename Tuple>
 decltype(auto) tupleUnpackFunction(Function&& function, Tuple&& args) {
   return tupleUnpackFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<std::decay_t<Tuple>>::value>::type());
+      std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
 }
 
 // Apply a function to every element of a tuple.  This will NOT happen in a
 // predictable order!
 
 template <typename Function, typename Tuple, size_t... Indexes>
-decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
-  return make_tuple(function(get<Indexes>(std::forward<Tuple>(args)))...);
+decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, std::index_sequence<Indexes...>) {
+  return std::make_tuple(function(get<Indexes>(std::forward<Tuple>(args)))...);
 }
 
 template <typename Function, typename Tuple>
 decltype(auto) tupleApplyFunction(Function&& function, Tuple&& args) {
   return tupleApplyFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<std::decay_t<Tuple>>::value>::type());
+      std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
 }
 
 // Use this version if you do not care about the return value of the function
@@ -583,18 +592,18 @@ void tupleCallFunction(Tuple&& t, Function&& f) {
 // Get a subset of a tuple
 
 template <typename Tuple, size_t... Indexes>
-decltype(auto) subTupleIndexes(Tuple&& t, IndexSequence<Indexes...> const&) {
-  return make_tuple(get<Indexes>(std::forward<Tuple>(t))...);
+decltype(auto) subTupleIndexes(Tuple&& t, std::index_sequence<Indexes...>) {
+  return std::make_tuple(get<Indexes>(std::forward<Tuple>(t))...);
 }
 
 template <size_t Min, size_t Size, typename Tuple>
 decltype(auto) subTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), GenIndexSequence<Min, Size>::type());
+  return subTupleIndexes(std::forward<Tuple>(t), MakeOffsetIndexSequenceT<Min, Size>{});
 }
 
 template <size_t Trim, typename Tuple>
 decltype(auto) trimTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<std::decay_t<Tuple>>::value>::type());
+  return subTupleIndexes(std::forward<Tuple>(t), MakeOffsetIndexSequenceT<Trim, std::tuple_size_v<std::decay_t<Tuple>>>{});
 }
 
 // Unpack a parameter expansion into a container
@@ -649,12 +658,18 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.
-    using type = typename tuple_element<i, ArgTuple>::type;
+    using type = std::tuple_element_t<i, ArgTuple>;
   };
 };
 
+template <typename ReturnType, typename... ArgsTypes>
+struct FunctionTraits<ReturnType(ArgsTypes...) noexcept> : public FunctionTraits<ReturnType(ArgsTypes...)> {};
+
 template <typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (*)(Args...)> : public FunctionTraits<ReturnType(Args...)> {};
+
+template <typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (*)(Args...) noexcept> : public FunctionTraits<ReturnType(Args...)> {};
 
 template <typename FunctionType>
 struct FunctionTraits<std::function<FunctionType>> : public FunctionTraits<FunctionType> {};
@@ -665,9 +680,47 @@ struct FunctionTraits<ReturnType (ClassType::*)(Args...)> : public FunctionTrait
 };
 
 template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...)> {};
+
+template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...) const> : public FunctionTraits<ReturnType(Args...)> {
   using OwnerType = const ClassType&;
 };
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) const noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...) const> {};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) &> : public FunctionTraits<ReturnType(Args...)> {
+  using OwnerType = ClassType&;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) & noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...) &> {};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) const&> : public FunctionTraits<ReturnType(Args...)> {
+  using OwnerType = const ClassType&;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) const& noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...) const&> {};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) &&> : public FunctionTraits<ReturnType(Args...)> {
+  using OwnerType = ClassType&&;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) && noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...) &&> {};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) const&&> : public FunctionTraits<ReturnType(Args...)> {
+  using OwnerType = const ClassType&&;
+};
+
+template <typename ClassType, typename ReturnType, typename... Args>
+struct FunctionTraits<ReturnType (ClassType::*)(Args...) const&& noexcept> : public FunctionTraits<ReturnType (ClassType::*)(Args...) const&&> {};
 
 template <typename T>
 struct FunctionTraits<T&> : public FunctionTraits<T> {};

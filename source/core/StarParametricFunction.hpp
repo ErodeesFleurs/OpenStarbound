@@ -14,7 +14,7 @@ public:
   using Index = IndexType;
   using Value = ValueType;
 
-  ParametricTable();
+  ParametricTable() = default;
 
   template <typename OtherIndexType, typename OtherValueType>
   explicit ParametricTable(ParametricTable<OtherIndexType, OtherValueType> const& parametricFunction);
@@ -99,9 +99,6 @@ private:
   InterpolationMode m_interpolationMode;
   BoundMode m_boundMode;
 };
-
-template <typename IndexType, typename ValueType>
-ParametricTable<IndexType, ValueType>::ParametricTable() = default;
 
 template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>

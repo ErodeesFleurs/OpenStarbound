@@ -39,7 +39,7 @@ extern EnumMap<TileDamageType> const TileDamageTypeNames;
 bool tileDamageIsPenetrating(TileDamageType damageType);
 
 struct TileDamage {
-  TileDamage();
+  TileDamage() = default;
   TileDamage(TileDamageType type, float amount, unsigned harvestLevel = 1);
 
   TileDamageType type{};
@@ -82,7 +82,7 @@ private:
 
 class TileDamageStatus {
 public:
-  TileDamageStatus();
+  TileDamageStatus() = default;
 
   float damagePercentage() const;
   float damageEffectPercentage() const;

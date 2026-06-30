@@ -20,7 +20,7 @@ public:
   static FontPtr loadFont(String const& fileName, unsigned pixelSize = 12);
   static FontPtr loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize = 12);
 
-  Font();
+  Font() = default;
   ~Font();
 
   Font(Font const&) = delete;

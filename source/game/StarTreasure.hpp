@@ -60,7 +60,7 @@ private:
   using TreasureEntry = MVariant<String, ItemDescriptor>;
 
   struct ItemPool {
-    ItemPool();
+    ItemPool() = default;
 
     // If non-empty, the treasure set is pre-filled with this before selecting
     // from the pool.
@@ -86,7 +86,7 @@ private:
   using TreasurePool = ParametricTable<float, ItemPool>;
 
   struct TreasureChest {
-    TreasureChest();
+    TreasureChest() = default;
 
     StringList containers;
     String treasurePool;

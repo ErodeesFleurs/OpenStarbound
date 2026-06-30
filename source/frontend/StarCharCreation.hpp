@@ -41,10 +41,10 @@ public:
   void randomize();
   void randomizeName();
 
-  virtual void tick(float dt) override;
-  virtual bool sendEvent(InputEvent const& event) override;
+  void tick(float dt) override;
+  bool sendEvent(InputEvent const& event) override;
 
-  virtual PanePtr createTooltip(Vec2I const&) override;
+  PanePtr createTooltip(Vec2I const&) override;
 
 private:
   void nameBoxCallback(Widget* object);

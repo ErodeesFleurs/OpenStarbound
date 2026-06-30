@@ -20,53 +20,25 @@ VariantTypeIndex const InvalidVariantType = 255;
 
 namespace detail {
   template <typename T, typename... Args>
-  struct HasType;
-
-  template <typename T>
-  struct HasType<T> : std::false_type {};
-
-  template <typename T, typename Head, typename... Args>
-  struct HasType<T, Head, Args...> {
-    static constexpr bool value = std::is_same<T, Head>::value || HasType<T, Args...>::value;
-  };
+  inline constexpr bool HasType_v = (std::is_same_v<T, Args> || ...);
 
   template <typename... Args>
-  struct IsNothrowMoveConstructible;
-
-  template <>
-  struct IsNothrowMoveConstructible<> : std::true_type {};
-
-  template <typename Head, typename... Args>
-  struct IsNothrowMoveConstructible<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_constructible<Head>::value && IsNothrowMoveConstructible<Args...>::value;
-  };
+  inline constexpr bool IsNothrowMoveConstructible_v = (std::is_nothrow_move_constructible_v<Args> && ...);
 
   template <typename... Args>
-  struct IsNothrowMoveAssignable;
-
-  template <>
-  struct IsNothrowMoveAssignable<> : std::true_type {};
-
-  template <typename Head, typename... Args>
-  struct IsNothrowMoveAssignable<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_assignable<Head>::value && IsNothrowMoveAssignable<Args...>::value;
-  };
+  inline constexpr bool IsNothrowMoveAssignable_v = (std::is_nothrow_move_assignable_v<Args> && ...);
 
   template <size_t First, size_t... Rest>
-  struct StaticMax {
-    static constexpr size_t tail = StaticMax<Rest...>::value;
-    static constexpr size_t value = First > tail ? First : tail;
-  };
-
-  template <size_t Value>
-  struct StaticMax<Value> {
-    static constexpr size_t value = Value;
-  };
+  inline constexpr size_t StaticMax = [] {
+    size_t result = First;
+    ((result = result > Rest ? result : Rest), ...);
+    return result;
+  }();
 
   template <typename... Types>
   struct VariantStorage {
-    static constexpr size_t size = StaticMax<sizeof(Types)...>::value;
-    static constexpr size_t alignment = StaticMax<alignof(Types)...>::value;
+    static constexpr size_t size = StaticMax<sizeof(Types)...>;
+    static constexpr size_t alignment = StaticMax<alignof(Types)...>;
   };
 }
 
@@ -76,72 +48,78 @@ template <typename FirstType, typename... RestTypes>
 class Variant {
 public:
   template <typename T>
-  using ValidateType = std::enable_if_t<detail::HasType<T, FirstType, RestTypes...>::value, void>;
-
-  template <typename T, typename = ValidateType<T>>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   static constexpr VariantTypeIndex typeIndexOf();
 
   // If the first type has a default constructor, constructs an Variant which
   // contains a default constructed value of that type.
   Variant();
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   Variant(T const& x);
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   Variant(T&& x);
 
-  template <typename T, typename = ValidateType<T>, typename... Args,
-    std::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0
-  >
+  template <typename T, typename... Args>
+    requires detail::HasType_v<T, FirstType, RestTypes...> && std::is_constructible_v<T, Args...>
   Variant(std::in_place_type_t<T>, Args&&... args) {
     std::construct_at(reinterpret_cast<T*>(m_buffer), std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
-  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
-    std::enable_if_t<std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int> = 0
-  >
+  template <typename T, typename U, typename... Args>
+    requires detail::HasType_v<T, FirstType, RestTypes...> && std::is_constructible_v<T, std::initializer_list<U>&, Args...>
   Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
     std::construct_at(reinterpret_cast<T*>(m_buffer), il, std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
   Variant(Variant const& x);
-  Variant(Variant&& x) noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value);
+  Variant(Variant&& x) noexcept(detail::IsNothrowMoveConstructible_v<FirstType, RestTypes...>);
 
   ~Variant();
 
   // Implementations of operator= may invalidate the Variant if the copy or
   // move constructor of the assigned value throws.
   Variant& operator=(Variant const& x);
-  Variant& operator=(Variant&& x) noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value);
-  template <typename T, typename = ValidateType<T>>
+  Variant& operator=(Variant&& x) noexcept(detail::IsNothrowMoveAssignable_v<FirstType, RestTypes...>);
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   Variant& operator=(T const& x);
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   Variant& operator=(T&& x);
 
   // Returns true if this Variant contains the given type.
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   bool is() const;
 
   // get throws BadVariantCast on bad casts
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   T const& get() const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   T& get();
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   Maybe<T> maybe() const;
 
   // ptr() does not throw if this Variant does not hold the given type, instead
   // simply returns nullptr.
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   T const* ptr() const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   T* ptr();
 
   // Calls the given function with the type currently being held, and returns
@@ -177,11 +155,14 @@ public:
   // Requires that every type included in this Variant has operator<
   bool operator<(Variant const& x) const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   bool operator==(T const& x) const;
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   bool operator!=(T const& x) const;
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, FirstType, RestTypes...>
   bool operator<(T const& x) const;
 
 private:
@@ -190,17 +171,17 @@ private:
 
   template <typename MatchType, VariantTypeIndex Index>
   struct LookupTypeIndex<MatchType, Index> {
-    static VariantTypeIndex const value = InvalidVariantType;
+    static constexpr VariantTypeIndex value = InvalidVariantType;
   };
 
   template <typename MatchType, VariantTypeIndex Index, typename Head, typename... Rest>
   struct LookupTypeIndex<MatchType, Index, Head, Rest...> {
-    static VariantTypeIndex const value = std::is_same<MatchType, Head>::value ? Index : LookupTypeIndex<MatchType, Index + 1, Rest...>::value;
+    static constexpr VariantTypeIndex value = std::is_same_v<MatchType, Head> ? Index : LookupTypeIndex<MatchType, Index + 1, Rest...>::value;
   };
 
   template <typename MatchType>
   struct TypeIndex {
-    static VariantTypeIndex const value = LookupTypeIndex<MatchType, 0, FirstType, RestTypes...>::value;
+    static constexpr VariantTypeIndex value = LookupTypeIndex<MatchType, 0, FirstType, RestTypes...>::value;
   };
 
   void destruct();
@@ -234,45 +215,45 @@ template <typename... Types>
 class MVariant {
 public:
   template <typename T>
-  using ValidateType = std::enable_if_t<detail::HasType<T, Types...>::value, void>;
-
-  template <typename T, typename = ValidateType<T>>
+    requires detail::HasType_v<T, Types...>
   static constexpr VariantTypeIndex typeIndexOf();
 
-  MVariant();
+  MVariant() = default;
   MVariant(MVariant const& x);
   MVariant(MVariant&& x);
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   MVariant(T const& x);
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   MVariant(T&& x);
 
-  template <typename T, typename = ValidateType<T>, typename... Args,
-    std::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0
-  >
+  template <typename T, typename... Args>
+    requires detail::HasType_v<T, Types...> && std::is_constructible_v<T, Args...>
   MVariant(std::in_place_type_t<T>, Args&&... args)
     : m_variant(std::in_place_type<T>, std::forward<Args>(args)...) {}
 
-  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
-    std::enable_if_t<std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int> = 0
-  >
+  template <typename T, typename U, typename... Args>
+    requires detail::HasType_v<T, Types...> && std::is_constructible_v<T, std::initializer_list<U>&, Args...>
   MVariant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args)
       : m_variant(std::in_place_type<T>, il, std::forward<Args>(args)...) {}
 
   MVariant(Variant<Types...> const& x);
   MVariant(Variant<Types...>&& x);
 
-  ~MVariant();
+  ~MVariant() = default;
 
   // MVariant::operator= will never invalidate the MVariant, instead it will
   // just become empty.
   MVariant& operator=(MVariant const& x);
   MVariant& operator=(MVariant&& x);
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   MVariant& operator=(T const& x);
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   MVariant& operator=(T&& x);
 
   MVariant& operator=(Variant<Types...> const& x);
@@ -285,38 +266,48 @@ public:
   // Requires that every type included in this MVariant has operator<
   bool operator<(MVariant const& x) const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   bool operator==(T const& x) const;
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   bool operator!=(T const& x) const;
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   bool operator<(T const& x) const;
 
   // get throws BadVariantCast on bad casts
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   T const& get() const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   T& get();
 
   // maybe() and ptr() do not throw if this MVariant does not hold the given
   // type, instead simply returns Nothing / nullptr.
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   Maybe<T> maybe() const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   T const* ptr() const;
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   T* ptr();
 
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   bool is() const;
 
   // Takes the given value out and leaves this empty
-  template <typename T, typename = ValidateType<T>>
+  template <typename T>
+    requires detail::HasType_v<T, Types...>
   T take();
 
   // Returns a Variant of all the allowed types if non-empty, throws
@@ -386,7 +377,8 @@ private:
 };
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 constexpr VariantTypeIndex Variant<FirstType, RestTypes...>::typeIndexOf() {
   return TypeIndex<T>::value;
 }
@@ -396,13 +388,15 @@ Variant<FirstType, RestTypes...>::Variant()
   : Variant(FirstType()) {}
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 Variant<FirstType, RestTypes...>::Variant(T const& x) {
   assign(x);
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 Variant<FirstType, RestTypes...>::Variant(T&& x) {
   assign(std::forward<T>(x));
 }
@@ -416,7 +410,7 @@ Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
 
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>::Variant(Variant&& x)
-  noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value) {
+  noexcept(detail::IsNothrowMoveConstructible_v<FirstType, RestTypes...>) {
   x.call([&](auto& t) {
       assign(std::move(t));
     });
@@ -441,7 +435,7 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
 
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Variant&& x)
-  noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value) {
+  noexcept(detail::IsNothrowMoveAssignable_v<FirstType, RestTypes...>) {
   if (&x == this)
     return *this;
 
@@ -453,21 +447,24 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T const& x) {
   assign(x);
   return *this;
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T&& x) {
   assign(std::forward<T>(x));
   return *this;
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 T const& Variant<FirstType, RestTypes...>::get() const {
   if (!is<T>())
     throw BadVariantCast();
@@ -475,7 +472,8 @@ T const& Variant<FirstType, RestTypes...>::get() const {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 T& Variant<FirstType, RestTypes...>::get() {
   if (!is<T>())
     throw BadVariantCast();
@@ -483,7 +481,8 @@ T& Variant<FirstType, RestTypes...>::get() {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
   if (!is<T>())
     return {};
@@ -491,7 +490,8 @@ Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 T const* Variant<FirstType, RestTypes...>::ptr() const {
   if (!is<T>())
     return nullptr;
@@ -499,7 +499,8 @@ T const* Variant<FirstType, RestTypes...>::ptr() const {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 T* Variant<FirstType, RestTypes...>::ptr() {
   if (!is<T>())
     return nullptr;
@@ -507,7 +508,8 @@ T* Variant<FirstType, RestTypes...>::ptr() {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 bool Variant<FirstType, RestTypes...>::is() const {
   return m_typeIndex == TypeIndex<T>::value;
 }
@@ -577,7 +579,8 @@ bool Variant<FirstType, RestTypes...>::operator<(Variant const& x) const {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 bool Variant<FirstType, RestTypes...>::operator==(T const& x) const {
   if (auto p = ptr<T>())
     return *p == x;
@@ -585,13 +588,15 @@ bool Variant<FirstType, RestTypes...>::operator==(T const& x) const {
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 bool Variant<FirstType, RestTypes...>::operator!=(T const& x) const {
   return !operator==(x);
 }
 
 template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, FirstType, RestTypes...>
 bool Variant<FirstType, RestTypes...>::operator<(T const& x) const {
   if (auto p = ptr<T>())
     return *p == x;
@@ -681,13 +686,11 @@ void Variant<FirstType, RestTypes...>::doMakeType(VariantTypeIndex typeIndex) {
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 constexpr VariantTypeIndex MVariant<Types...>::typeIndexOf() {
   return Variant<MVariantEmpty, Types...>::template typeIndexOf<T>();
 }
-
-template <typename... Types>
-MVariant<Types...>::MVariant() = default;
 
 template <typename... Types>
 MVariant<Types...>::MVariant(MVariant const& x)
@@ -710,17 +713,16 @@ MVariant<Types...>::MVariant(Variant<Types...>&& x) {
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 MVariant<Types...>::MVariant(T const& x)
   : m_variant(x) {}
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 MVariant<Types...>::MVariant(T&& x)
   : m_variant(std::forward<T>(x)) {}
-
-template <typename... Types>
-MVariant<Types...>::~MVariant() = default;
 
 template <typename... Types>
 MVariant<Types...>& MVariant<Types...>::operator=(MVariant const& x) {
@@ -747,7 +749,8 @@ MVariant<Types...>& MVariant<Types...>::operator=(MVariant&& x) {
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 MVariant<Types...>& MVariant<Types...>::operator=(T const& x) {
   try {
     m_variant = x;
@@ -760,7 +763,8 @@ MVariant<Types...>& MVariant<Types...>::operator=(T const& x) {
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 MVariant<Types...>& MVariant<Types...>::operator=(T&& x) {
   try {
     m_variant = std::forward<T>(x);
@@ -804,61 +808,71 @@ bool MVariant<Types...>::operator<(MVariant const& x) const {
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 bool MVariant<Types...>::operator==(T const& x) const {
   return m_variant == x;
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 bool MVariant<Types...>::operator!=(T const& x) const {
   return m_variant != x;
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 bool MVariant<Types...>::operator<(T const& x) const {
   return m_variant < x;
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 T const& MVariant<Types...>::get() const {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 T& MVariant<Types...>::get() {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 Maybe<T> MVariant<Types...>::maybe() const {
   return m_variant.template maybe<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 T const* MVariant<Types...>::ptr() const {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 T* MVariant<Types...>::ptr() {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 bool MVariant<Types...>::is() const {
   return m_variant.template is<T>();
 }
 
 template <typename... Types>
-template <typename T, typename>
+template <typename T>
+  requires detail::HasType_v<T, Types...>
 T MVariant<Types...>::take() {
   T t = std::move(m_variant.template get<T>());
   m_variant = MVariantEmpty();

@@ -65,7 +65,7 @@ private:
     TextureFiltering textureFiltering;
   };
 
-  struct GlTextureGroup : enable_shared_from_this<GlTextureGroup>, public TextureGroup {
+  struct GlTextureGroup : std::enable_shared_from_this<GlTextureGroup>, public TextureGroup {
     GlTextureGroup(unsigned atlasNumCells);
     ~GlTextureGroup();
 

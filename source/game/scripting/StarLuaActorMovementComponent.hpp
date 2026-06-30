@@ -12,7 +12,7 @@ namespace Star {
 template <typename Base>
 class LuaActorMovementComponent : public Base {
 public:
-  LuaActorMovementComponent();
+  LuaActorMovementComponent() = default;
 
   void addActorMovementCallbacks(ActorMovementController* actorMovementController);
   void removeActorMovementCallbacks();
@@ -33,7 +33,7 @@ private:
   void performControls();
   void clearControls();
 
-  ActorMovementController* m_movementController;
+  ActorMovementController* m_movementController = nullptr;
   bool m_autoClearControls = true;
 
   float m_controlRotation = 0.0f;
@@ -51,7 +51,7 @@ private:
   bool m_controlHoldJump = false;
   Maybe<Vec2F> m_controlFly;
 
-  bool m_resetPathMove;
+  bool m_resetPathMove = false;
   struct ControlPathMove {
     Vec2F position;
     bool run;
@@ -63,9 +63,6 @@ private:
   Maybe<ControlPathMove> m_controlPathMove;
   Maybe<PathMoveResult> m_pathMoveResult;
 };
-
-template <typename Base>
-LuaActorMovementComponent<Base>::LuaActorMovementComponent() = default;
 
 template <typename Base>
 void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* actorMovementController) {

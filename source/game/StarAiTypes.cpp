@@ -3,8 +3,6 @@
 
 namespace Star {
 
-AiState::AiState() = default;
-
 AiState::AiState(Json const& v) {
   availableMissions.addAll(jsonToStringList(v.get("availableMissions", JsonArray())));
   completedMissions.addAll(jsonToStringList(v.get("completedMissions", JsonArray())));

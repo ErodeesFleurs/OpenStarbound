@@ -4,8 +4,6 @@
 
 namespace Star {
 
-GameTimer::GameTimer() = default;
-
 GameTimer::GameTimer(float time) : time(time) {
   reset();
 }
@@ -56,8 +54,6 @@ DataStream& operator<<(DataStream& ds, GameTimer const& gt) {
   ds << gt.timer;
   return ds;
 }
-
-SlidingWindow::SlidingWindow() = default;
 
 SlidingWindow::SlidingWindow(float windowSize, size_t resolution, float initialValue)
   : windowSize(windowSize), resolution(resolution) {
@@ -114,8 +110,6 @@ float SlidingWindow::max() {
 float SlidingWindow::average() {
   return currentAverage;
 }
-
-EpochTimer::EpochTimer() = default;
 
 EpochTimer::EpochTimer(Json json) {
   m_lastSeenEpochTime = json.get("lastEpochTime").optDouble();

@@ -27,8 +27,6 @@ EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
     {TeamType::Indiscriminate, "indiscriminate"},
     {TeamType::Assistant, "assistant"}};
 
-EntityDamageTeam::EntityDamageTeam() = default;
-
 EntityDamageTeam::EntityDamageTeam(TeamType type, TeamNumber team) : type(type), team(team) {}
 
 EntityDamageTeam::EntityDamageTeam(Json const& json) {

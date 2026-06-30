@@ -16,7 +16,7 @@ public:
 
   Either<size_t, String> currentPage() const;
 
-  virtual void addChild(String const& name, WidgetPtr member) override;
+  void addChild(String const& name, WidgetPtr member) override;
 
 private:
   WidgetPtr m_shownPage;

@@ -1,4 +1,7 @@
 #include "StarWorldServer.hpp"
+
+#include <utility>
+
 #include "StarBiome.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarContainerEntity.hpp"
@@ -683,7 +686,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
 
 List<PacketPtr> WorldServer::getOutgoingPackets(ConnectionId clientId) {
   auto const& clientInfo = m_clientInfo.get(clientId);
-  return std::move(clientInfo->outgoingPackets);
+  return std::exchange(clientInfo->outgoingPackets, {});
 }
 
 bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {

@@ -93,7 +93,7 @@ DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
 DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
 
 struct DamageNotification {
-  DamageNotification();
+  DamageNotification() = default;
   DamageNotification(Json const& v);
   DamageNotification(EntityId sourceEntityId,
       EntityId targetEntityId,

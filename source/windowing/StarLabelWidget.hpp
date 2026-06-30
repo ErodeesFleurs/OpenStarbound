@@ -33,8 +33,8 @@ public:
   RectI relativeBoundRect() const override;
 
 protected:
-  virtual RectI getScissorRect() const override;
-  virtual void renderImpl() override;
+  RectI getScissorRect() const override;
+  void renderImpl() override;
 
 private:
   void updateTextRegion();

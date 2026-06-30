@@ -11,10 +11,6 @@ WorkerPool& HttpClient::workerPool() {
   return pool;
 }
 
-HttpClient::HttpClient() = default;
-
-HttpClient::~HttpClient() = default;
-
 static HttpResponse performRequest(HttpRequest const& req) {
   HttpResponse response;
 

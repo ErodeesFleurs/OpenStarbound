@@ -76,7 +76,7 @@ private:
         std::conditional_t<BlockSize <= std::numeric_limits<uint32_t>::max(), uint32_t,
           std::conditional_t<BlockSize <= std::numeric_limits<uint64_t>::max(), uint64_t, uintmax_t>>>>;
 
-  static ChunkIndex const NullChunkIndex = std::numeric_limits<ChunkIndex>::max();
+  static constexpr ChunkIndex NullChunkIndex = std::numeric_limits<ChunkIndex>::max();
 
   struct Unallocated {
     ChunkIndex prev;

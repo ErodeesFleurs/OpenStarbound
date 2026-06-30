@@ -3,10 +3,9 @@
 #include "StarException.hpp"
 #include "StarHash.hpp"
 
-#include <memory>
-#include <new>
 #include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace Star {
 
@@ -23,7 +22,7 @@ public:
   using RefType = T&;
   using RefConstType = T const&;
 
-  Maybe();
+  Maybe() = default;
 
   Maybe(T const& t);
   Maybe(T&& t);
@@ -103,11 +102,7 @@ public:
   auto sequence(Function function) const -> decltype(function(std::declval<T>()));
 
 private:
-  union {
-    T m_data;
-  };
-
-  bool m_initialized = false;
+  std::optional<T> m_data;
 };
 
 template <typename T>
@@ -120,59 +115,34 @@ struct hash<Maybe<T>> {
 };
 
 template <typename T>
-Maybe<T>::Maybe() {}
-
-template <typename T>
 Maybe<T>::Maybe(T const& t)
-    : Maybe() {
-  std::construct_at(&m_data, t);
-  m_initialized = true;
-}
+    : m_data(t) {}
 
 template <typename T>
 Maybe<T>::Maybe(T&& t)
-    : Maybe() {
-  std::construct_at(&m_data, std::forward<T>(t));
-  m_initialized = true;
-}
+    : m_data(std::move(t)) {}
 
 template <typename T>
 Maybe<T>::Maybe(std::nullopt_t)
-    : Maybe() {}
+    : m_data(std::nullopt) {}
 
 template <typename T>
 Maybe<T>::Maybe(Maybe const& rhs)
-    : Maybe() {
-  if (rhs.m_initialized) {
-    std::construct_at(&m_data, rhs.get());
-    m_initialized = true;
-  }
-}
+    : m_data(rhs.m_data) {}
 
 template <typename T>
 Maybe<T>::Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>)
-    : Maybe() {
-  if (rhs.m_initialized) {
-    std::construct_at(&m_data, std::move(*rhs.ptr()));
-    m_initialized = true;
-    rhs.reset();
-  }
+    : m_data(std::move(rhs.m_data)) {
+  rhs.reset();
 }
 
 template <typename T>
 template <typename T2>
 Maybe<T>::Maybe(Maybe<T2> const& rhs)
-    : Maybe() {
-  if (rhs) {
-    std::construct_at(&m_data, *rhs);
-    m_initialized = true;
-  }
-}
+    : m_data(rhs ? std::optional<T>(*rhs) : std::nullopt) {}
 
 template <typename T>
-Maybe<T>::~Maybe() {
-  reset();
-}
+Maybe<T>::~Maybe() = default;
 
 template <typename T>
 Maybe<T>& Maybe<T>::operator=(Maybe const& rhs) {
@@ -233,36 +203,32 @@ Maybe<T> Maybe<T>::fromOptional(std::optional<T>&& t) {
 
 template <typename T>
 bool Maybe<T>::isValid() const {
-  return m_initialized;
+  return m_data.has_value();
 }
 
 template <typename T>
 bool Maybe<T>::isNothing() const {
-  return !m_initialized;
+  return !m_data.has_value();
 }
 
 template <typename T>
 Maybe<T>::operator bool() const {
-  return m_initialized;
+  return m_data.has_value();
 }
 
 template <typename T>
 auto Maybe<T>::ptr() const -> PointerConstType {
-  if (m_initialized)
-    return std::launder(&m_data);
-  return nullptr;
+  return m_data ? &*m_data : nullptr;
 }
 
 template <typename T>
 auto Maybe<T>::ptr() -> PointerType {
-  if (m_initialized)
-    return std::launder(&m_data);
-  return nullptr;
+  return m_data ? &*m_data : nullptr;
 }
 
 template <typename T>
 auto Maybe<T>::operator->() const -> PointerConstType {
-  if (!m_initialized)
+  if (!m_data)
     throw InvalidMaybeAccessException();
 
   return ptr();
@@ -270,7 +236,7 @@ auto Maybe<T>::operator->() const -> PointerConstType {
 
 template <typename T>
 auto Maybe<T>::operator->() -> PointerType {
-  if (!m_initialized)
+  if (!m_data)
     throw InvalidMaybeAccessException();
 
   return ptr();
@@ -288,9 +254,9 @@ auto Maybe<T>::operator*() -> RefType {
 
 template <typename T>
 bool Maybe<T>::operator==(Maybe const& rhs) const {
-  if (!m_initialized && !rhs.m_initialized)
+  if (!m_data && !rhs.m_data)
     return true;
-  if (m_initialized && rhs.m_initialized)
+  if (m_data && rhs.m_data)
     return get() == rhs.get();
   return false;
 }
@@ -302,54 +268,52 @@ bool Maybe<T>::operator!=(Maybe const& rhs) const {
 
 template <typename T>
 bool Maybe<T>::operator<(Maybe const& rhs) const {
-  if (m_initialized && rhs.m_initialized)
+  if (m_data && rhs.m_data)
     return get() < rhs.get();
-  if (!m_initialized && rhs.m_initialized)
+  if (!m_data && rhs.m_data)
     return true;
   return false;
 }
 
 template <typename T>
 auto Maybe<T>::get() const -> RefConstType {
-  if (!m_initialized)
+  if (!m_data)
     throw InvalidMaybeAccessException();
 
-  return *ptr();
+  return *m_data;
 }
 
 template <typename T>
 auto Maybe<T>::get() -> RefType {
-  if (!m_initialized)
+  if (!m_data)
     throw InvalidMaybeAccessException();
 
-  return *ptr();
+  return *m_data;
 }
 
 template <typename T>
 [[nodiscard]] std::optional<T> Maybe<T>::optional() const& {
-  if (m_initialized)
-    return *ptr();
-  return std::nullopt;
+  return m_data;
 }
 
 template <typename T>
 [[nodiscard]] std::optional<T> Maybe<T>::optional() && {
-  if (m_initialized)
+  if (m_data)
     return take();
   return std::nullopt;
 }
 
 template <typename T>
 [[nodiscard]] T Maybe<T>::value(T def) const {
-  if (m_initialized)
-    return *ptr();
+  if (m_data)
+    return *m_data;
   else
     return def;
 }
 
 template <typename T>
 [[nodiscard]] Maybe<T> Maybe<T>::orMaybe(Maybe const& other) const {
-  if (m_initialized)
+  if (m_data)
     return *this;
   else
     return other;
@@ -357,10 +321,10 @@ template <typename T>
 
 template <typename T>
 [[nodiscard]] T Maybe<T>::take() {
-  if (!m_initialized)
+  if (!m_data)
     throw InvalidMaybeAccessException();
 
-  T val(std::move(*ptr()));
+  T val(std::move(*m_data));
 
   reset();
 
@@ -369,8 +333,8 @@ template <typename T>
 
 template <typename T>
 [[nodiscard]] bool Maybe<T>::put(T& t) {
-  if (m_initialized) {
-    t = std::move(*ptr());
+  if (m_data) {
+    t = std::move(*m_data);
 
     reset();
 
@@ -393,18 +357,12 @@ void Maybe<T>::set(T&& t) {
 template <typename T>
 template <typename... Args>
 void Maybe<T>::emplace(Args&&... t) {
-  reset();
-
-  std::construct_at(&m_data, std::forward<Args>(t)...);
-  m_initialized = true;
+  m_data.emplace(std::forward<Args>(t)...);
 }
 
 template <typename T>
 void Maybe<T>::reset() {
-  if (m_initialized) {
-    m_initialized = false;
-    std::destroy_at(&m_data);
-  }
+  m_data.reset();
 }
 
 template <typename T>

@@ -6,7 +6,7 @@
 namespace Star {
 
 struct GameTimer {
-  GameTimer();
+  GameTimer() = default;
   explicit GameTimer(float time);
 
   float time{};
@@ -26,18 +26,18 @@ DataStream& operator>>(DataStream& ds, GameTimer& gt);
 DataStream& operator<<(DataStream& ds, GameTimer const& gt);
 
 struct SlidingWindow {
-  SlidingWindow();
+  SlidingWindow() = default;
   SlidingWindow(float windowSize, size_t resolution, float initialValue);
 
   GameTimer sampleTimer;
   float windowSize = 1.0f;
   size_t resolution = 1;
 
-  float currentMin;
-  float currentMax;
-  float currentAverage;
+  float currentMin = 0.0f;
+  float currentMax = 0.0f;
+  float currentAverage = 0.0f;
 
-  size_t currentIndex;
+  size_t currentIndex = 0;
   std::vector<float> window;
 
   void reset(float initialValue);
@@ -53,7 +53,7 @@ struct SlidingWindow {
 // Keeps long term track of elapsed time based on epochTime.
 class EpochTimer {
 public:
-  EpochTimer();
+  EpochTimer() = default;
   explicit EpochTimer(Json json);
 
   Json toJson() const;

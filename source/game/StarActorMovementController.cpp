@@ -8,8 +8,6 @@
 
 namespace Star {
 
-ActorJumpProfile::ActorJumpProfile() = default;
-
 ActorJumpProfile::ActorJumpProfile(Json const& config) {
   jumpSpeed = config.optFloat("jumpSpeed");
   jumpControlForce = config.optFloat("jumpControlForce");

@@ -11,7 +11,7 @@ struct AmbientNoisesDescription;
 using AmbientNoisesDescriptionPtr = SharedPtr<AmbientNoisesDescription>;
 
 struct AmbientTrackGroup {
-  AmbientTrackGroup();
+  AmbientTrackGroup() = default;
   AmbientTrackGroup(StringList tracks);
   AmbientTrackGroup(Json const& config, String const& directory = "");
 
@@ -22,7 +22,7 @@ struct AmbientTrackGroup {
 
 // represents the ambient sounds data for a biome
 struct AmbientNoisesDescription {
-  AmbientNoisesDescription();
+  AmbientNoisesDescription() = default;
   AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops = -1);
   AmbientNoisesDescription(Json const& config, String const& directory = "");
 

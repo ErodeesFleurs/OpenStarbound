@@ -50,12 +50,12 @@ Type1 const* as(Type2 const* p) {
 
 template <typename Type1, typename Type2>
 shared_ptr<Type1> as(shared_ptr<Type2> const& p) {
-  return dynamic_pointer_cast<Type1>(p);
+  return std::dynamic_pointer_cast<Type1>(p);
 }
 
 template <typename Type1, typename Type2>
 shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
-  return dynamic_pointer_cast<Type1 const>(p);
+  return std::dynamic_pointer_cast<Type1 const>(p);
 }
 
 template <typename Type, typename Ptr>

@@ -40,7 +40,7 @@ public:
   };
 
   struct PlantPiece {
-    PlantPiece();
+    PlantPiece() = default;
     AssetPath imagePath;
     String image;
     Vec2U imageSize;
@@ -69,7 +69,7 @@ public:
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
-  virtual String description() const override;
+  String description() const override;
 
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;

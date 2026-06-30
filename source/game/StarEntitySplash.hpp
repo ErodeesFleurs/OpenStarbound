@@ -11,7 +11,7 @@ struct EntitySplashConfig;
 class EntitySplashHelper;
 
 struct EntitySplashConfig {
-  EntitySplashConfig();
+  EntitySplashConfig() = default;
   EntitySplashConfig(Json const& config, AssetsConstPtr assets);
   float splashSpeedMin = 0.0f;
   Vec2F splashBottomSensor;

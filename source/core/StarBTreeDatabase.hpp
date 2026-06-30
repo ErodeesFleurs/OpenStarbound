@@ -93,20 +93,20 @@ public:
 
 private:
   using BlockIndex = uint32_t;
-  static BlockIndex const InvalidBlockIndex = static_cast<BlockIndex>(-1);
-  static uint32_t const HeaderSize = 512;
+  static constexpr BlockIndex InvalidBlockIndex = static_cast<BlockIndex>(-1);
+  static constexpr uint32_t HeaderSize = 512;
 
   // 8 byte magic file identifier
   static char const* const VersionMagic;
-  static uint32_t const VersionMagicSize = 8;
+  static constexpr uint32_t VersionMagicSize = 8;
   // 2 byte leaf and index start markers.
   static char const* const FreeIndexMagic;
   static char const* const IndexMagic;
   static char const* const LeafMagic;
   // static uint32_t const BlockMagicSize = 2;
-  static size_t const BTreeRootSelectorBit = 32;
-  static size_t const BTreeRootInfoStart = 33;
-  static size_t const BTreeRootInfoSize = 17;
+  static constexpr size_t BTreeRootSelectorBit = 32;
+  static constexpr size_t BTreeRootInfoStart = 33;
+  static constexpr size_t BTreeRootInfoSize = 17;
 
   struct FreeIndexBlock {
     BlockIndex nextFreeBlock;

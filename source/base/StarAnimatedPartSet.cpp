@@ -5,8 +5,6 @@
 
 namespace Star {
 
-AnimatedPartSet::AnimatedPartSet() = default;
-
 AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   m_animatorVersion = animatorVersion;
   for (auto const& [stateTypeName, stateTypeConfig] : config.get("stateTypes", JsonObject()).iterateObject()) {

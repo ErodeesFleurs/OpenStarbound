@@ -11,7 +11,7 @@ class TileEntity;
 using TileEntityPtr = SharedPtr<TileEntity>;
 
 struct MaterialSpace {
-  MaterialSpace();
+  MaterialSpace() = default;
   MaterialSpace(Vec2I space, MaterialId material);
 
   bool operator==(MaterialSpace const& rhs) const;
@@ -30,7 +30,7 @@ public:
   TileEntity();
 
   // position() here is simply the tilePosition (but Vec2F)
-  virtual Vec2F position() const override;
+  Vec2F position() const override;
 
   // The base tile position of this object.
   virtual Vec2I tilePosition() const = 0;
@@ -61,16 +61,16 @@ public:
 
   // If the entity accepts interaction through right clicking, by default,
   // returns false.
-  virtual bool isInteractive() const override;
+  bool isInteractive() const override;
   // By default, does nothing.  Will be called only on the server.
-  virtual InteractAction interact(InteractRequest const& request) override;
+  InteractAction interact(InteractRequest const& request) override;
   // Specific subset spaces that are interactive, by default, just returns
   // spaces()
   virtual List<Vec2I> interactiveSpaces() const;
 
-  virtual List<QuestArcDescriptor> offeredQuests() const override;
-  virtual StringSet turnInQuests() const override;
-  virtual Vec2F questIndicatorPosition() const override;
+  List<QuestArcDescriptor> offeredQuests() const override;
+  StringSet turnInQuests() const override;
+  Vec2F questIndicatorPosition() const override;
 
 protected:
   // Checks whether any of a given spaces list (relative to current tile
@@ -83,8 +83,6 @@ protected:
 
   float spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const;
 };
-
-inline MaterialSpace::MaterialSpace() = default;
 
 inline MaterialSpace::MaterialSpace(Vec2I space, MaterialId material)
   : space(space), material(material) {}

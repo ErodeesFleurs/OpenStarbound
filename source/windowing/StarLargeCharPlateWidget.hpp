@@ -23,12 +23,12 @@ public:
   void enableDelete(WidgetCallbackFunc const& callback);
   void disableDelete();
 
-  virtual bool sendEvent(InputEvent const& event) override;
+  bool sendEvent(InputEvent const& event) override;
 
   void update(float dt) override;
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
 
 private:
   PlayerPtr m_player;

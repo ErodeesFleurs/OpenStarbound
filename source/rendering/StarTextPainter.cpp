@@ -5,8 +5,6 @@
 
 namespace Star {
 
-TextPositioning::TextPositioning() = default;
-
 TextPositioning::TextPositioning(Vec2F pos, HorizontalAnchor hAnchor, VerticalAnchor vAnchor,
                                  Maybe<unsigned> wrapWidth, Maybe<unsigned> charLimit)
     : pos(pos), hAnchor(hAnchor), vAnchor(vAnchor), wrapWidth(wrapWidth), charLimit(charLimit) {}
@@ -476,7 +474,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   Vec2F pos = position.pos + Vec2F(hOffset, vOffset);
   if (reallyRender) {
     bool hasShadow = m_renderSettings.shadow[3] > 0;
-    bool hasBackDirectives = m_renderSettings.backDirectives;
+    bool hasBackDirectives = !m_renderSettings.backDirectives.empty();
     if (hasShadow) {
       //Kae: unlike vanilla we draw only one shadow glyph instead of two, so i'm tweaking the alpha here
       Vec4B shadow = m_renderSettings.shadow;

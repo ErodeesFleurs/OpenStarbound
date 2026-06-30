@@ -26,7 +26,7 @@ using VisitableWorldParametersConstPtr = SharedPtr<VisitableWorldParameters cons
 // derived from the visitableworldparameters without reconstructing all sky
 // parameters, e.g. for terraforming
 struct SkyParameters {
-  SkyParameters();
+  SkyParameters() = default;
   SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
   explicit SkyParameters(Json const& config);

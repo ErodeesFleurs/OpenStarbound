@@ -134,8 +134,8 @@ public:
   // Line2
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, IntersectResult> intersection(
-      Line const& line2, bool infinite = false) const {
+    requires (P == 2 && N == P)
+  IntersectResult intersection(Line const& line2, bool infinite = false) const {
     Line l1 = *this;
     Line l2 = line2;
     // Warning to others, do not make the lines positive, because points of
@@ -206,20 +206,23 @@ public:
   }
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, bool> intersects(Line const& l2, bool infinite = false) const {
+    requires (P == 2 && N == P)
+  bool intersects(Line const& l2, bool infinite = false) const {
     return intersection(l2, infinite).intersects;
   }
 
   // Returns t value for closest point on the line.  t value is *not* clamped
   // from 0.0 to 1.0
   template <size_t P = N>
-  constexpr std::enable_if_t<P == 2 && N == P, T> lineProjection(VectorType const& l2) const {
+    requires (P == 2 && N == P)
+  constexpr T lineProjection(VectorType const& l2) const {
     VectorType d = diff();
     return ((l2[0] - min()[0]) * d[0] + (l2[1] - min()[1]) * d[1]) / d.magnitudeSquared();
   }
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, T> distanceTo(VectorType const& l, bool infinite = false) const {
+    requires (P == 2 && N == P)
+  T distanceTo(VectorType const& l, bool infinite = false) const {
     auto t = lineProjection(l);
     if (!infinite)
       t = clamp<T>(t, 0, 1);
@@ -227,32 +230,36 @@ public:
   }
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, void> rotate(
-      T angle, VectorType const& rotationCenter = VectorType()) {
+    requires (P == 2 && N == P)
+  void rotate(T angle, VectorType const& rotationCenter = VectorType()) {
     auto rotMatrix = Mat3F::rotation(angle, rotationCenter);
     min() = rotMatrix.transformVec2(min());
     max() = rotMatrix.transformVec2(max());
   }
 
   template <typename T2, size_t P = N>
-  constexpr std::enable_if_t<P == 2 && N == P, void> transform(Matrix3<T2> const& transform) {
+    requires (P == 2 && N == P)
+  constexpr void transform(Matrix3<T2> const& transform) {
     min() = transform.transformVec2(min());
     max() = transform.transformVec2(max());
   }
 
   template <typename T2, size_t P = N>
-  constexpr std::enable_if_t<P == 2 && N == P, Line> transformed(Matrix3<T2> const& transform) const {
+    requires (P == 2 && N == P)
+  constexpr Line transformed(Matrix3<T2> const& transform) const {
     return Line(transform.transformVec2(min()), transform.transformVec2(max()));
   }
 
   template <size_t P = N>
-  constexpr std::enable_if_t<P == 2 && N == P, void> flipHorizontal(T horizontalPos) {
+    requires (P == 2 && N == P)
+  constexpr void flipHorizontal(T horizontalPos) {
     m_min[0] = horizontalPos + (horizontalPos - m_min[0]);
     m_max[0] = horizontalPos + (horizontalPos - m_max[0]);
   }
 
   template <size_t P = N>
-  constexpr std::enable_if_t<P == 2 && N == P, void> flipVertical(T verticalPos) {
+    requires (P == 2 && N == P)
+  constexpr void flipVertical(T verticalPos) {
     m_min[1] = verticalPos + (verticalPos - m_min[1]);
     m_max[1] = verticalPos + (verticalPos - m_max[1]);
   }

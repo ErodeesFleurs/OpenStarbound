@@ -36,7 +36,7 @@ public:
     mutable Mutex mutex;
 
     bool empty() const;
-    Shared();
+    Shared() = default;
     Shared(List<Entry>&& givenEntries, String&& givenString);
   };
 
@@ -64,7 +64,7 @@ public:
   size_t hash() const;
   size_t size() const;
   bool empty() const;
-  operator bool() const;
+  explicit operator bool() const;
 
   Shared const& operator*() const;
   Shared const* operator->() const;
@@ -89,12 +89,12 @@ public:
 
 class DirectivesGroup {
 public:
-  DirectivesGroup();
+  DirectivesGroup() = default;
   DirectivesGroup(String const& directives);
   DirectivesGroup(String&& directives);
 
   bool empty() const;
-  operator bool() const;
+  explicit operator bool() const;
   bool compare(DirectivesGroup const& other) const;
   void append(Directives const& other);
   void clear();

@@ -7,8 +7,6 @@
 
 namespace Star {
 
-ParallaxLayer::ParallaxLayer() = default;
-
 ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   textures = jsonToStringList(store.get("textures"));
   directives = store.getString("directives");

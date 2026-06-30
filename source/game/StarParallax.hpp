@@ -14,7 +14,7 @@ using ParallaxPtr = SharedPtr<Parallax>;
 struct ParallaxLayer;
 
 struct ParallaxLayer {
-  ParallaxLayer();
+  ParallaxLayer() = default;
   ParallaxLayer(Json const& store);
 
   Json store() const;

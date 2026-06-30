@@ -19,7 +19,7 @@ public:
 
   using CaseSensitivity = String::CaseSensitivity;
 
-  StringView();
+  StringView() = default;
   StringView(StringView const& s);
   StringView(StringView&& s) noexcept;
   StringView(String const& s);

@@ -11,9 +11,9 @@ namespace Star {
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 struct FlatHashTable {
 private:
-  static size_t const EmptyHashValue = 0;
-  static size_t const EndHashValue = 1;
-  static size_t const FilledHashBit = static_cast<size_t>(1) << (sizeof(size_t) * 8 - 1);
+  static constexpr size_t EmptyHashValue = 0;
+  static constexpr size_t EndHashValue = 1;
+  static constexpr size_t FilledHashBit = static_cast<size_t>(1) << (sizeof(size_t) * 8 - 1);
 
   struct Bucket {
     Bucket();
@@ -79,7 +79,7 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
-  size_t empty() const;
+  bool empty() const;
   size_t size() const;
   void clear();
 
@@ -90,6 +90,7 @@ public:
 
   const_iterator find(Key const& key) const;
   iterator find(Key const& key);
+  bool contains(Key const& key) const;
 
   void reserve(size_t capacity);
   Allocator getAllocator() const;
@@ -322,7 +323,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::end() const -> 
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const {
+bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const {
   return m_filledCount == 0;
 }
 
@@ -448,6 +449,11 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::find(Key const&
       return end();
     }
   }
+}
+
+template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
+bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::contains(Key const& key) const {
+  return find(key) != end();
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>

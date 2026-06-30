@@ -114,7 +114,7 @@ public:
     bool activePartDirty;
   };
 
-  AnimatedPartSet();
+  AnimatedPartSet() = default;
   AnimatedPartSet(Json config, uint8_t animatiorVersion);
 
   // Returns the available state types.

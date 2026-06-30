@@ -2,6 +2,8 @@
 
 #include "gtest/gtest.h"
 
+#include <atomic>
+
 using namespace Star;
 
 TEST(Thread, InvokeErrors) {
@@ -31,6 +33,29 @@ TEST(Thread, InvokeReturn) {
 
   EXPECT_EQ(functionRet.finish(), String("TestValue"));
   EXPECT_THROW(functionRet.finish(), InvalidMaybeAccessException);
+}
+
+TEST(Thread, MoveAssignFinishesExistingFunction) {
+  std::atomic<bool> firstStarted = false;
+  std::atomic<bool> allowFirstFinish = false;
+  std::atomic<bool> firstFinished = false;
+
+  ThreadFunction<void> function = Thread::invoke("first", [&]() {
+    firstStarted = true;
+    while (!allowFirstFinish)
+      Thread::yield();
+    firstFinished = true;
+  });
+
+  while (!firstStarted)
+    Thread::yield();
+
+  auto replacement = Thread::invoke("second", []() {});
+  allowFirstFinish = true;
+  function = std::move(replacement);
+
+  EXPECT_TRUE(firstFinished);
+  EXPECT_NO_THROW(function.finish());
 }
 
 TEST(Thread, ReadersWriterMutex) {

@@ -61,23 +61,23 @@ public:
 
 class GenericInputFormat : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  FormattedJson toJson(String const& input) const override;
+  String fromJson(FormattedJson const& json) const override;
+  FormattedJson getDefault() const override;
 };
 
 class CommaSeparatedStrings : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  FormattedJson toJson(String const& input) const override;
+  String fromJson(FormattedJson const& json) const override;
+  FormattedJson getDefault() const override;
 };
 
 class StringInputFormat : public JsonInputFormat {
 public:
-  virtual FormattedJson toJson(String const& input) const override;
-  virtual String fromJson(FormattedJson const& json) const override;
-  virtual FormattedJson getDefault() const override;
+  FormattedJson toJson(String const& input) const override;
+  String fromJson(FormattedJson const& json) const override;
+  FormattedJson getDefault() const override;
 };
 
 class Output;
@@ -99,16 +99,16 @@ public:
 
 class OutputOnSeparateLines : public Output {
 public:
-  virtual void out(FormattedJson const& json) override;
-  virtual void flush() override;
+  void out(FormattedJson const& json) override;
+  void flush() override;
 };
 
 class ArrayOutput : public Output {
 public:
   ArrayOutput(bool unique) : m_unique(unique) {}
 
-  virtual void out(FormattedJson const& json) override;
-  virtual void flush() override;
+  void out(FormattedJson const& json) override;
+  void flush() override;
 
 private:
   bool m_unique;

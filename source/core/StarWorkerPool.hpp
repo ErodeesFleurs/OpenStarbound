@@ -35,7 +35,7 @@ private:
   friend WorkerPool;
 
   struct Impl {
-    Impl();
+    Impl() = default;
 
     Mutex mutex;
     ConditionVariable condition;

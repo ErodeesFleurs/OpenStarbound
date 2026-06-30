@@ -20,7 +20,7 @@ struct InstanceWorldId {
   Maybe<Uuid> uuid;
   Maybe<float> level;
 
-  InstanceWorldId();
+  InstanceWorldId() = default;
   InstanceWorldId(String instance, Maybe<Uuid> uuid = {}, Maybe<float> level = {});
 
   bool operator==(InstanceWorldId const& other) const;
@@ -59,7 +59,7 @@ SpawnTarget spawnTargetFromJson(Json v);
 String printSpawnTarget(SpawnTarget spawnTarget);
 
 struct WarpToWorld {
-  WarpToWorld();
+  WarpToWorld() = default;
   explicit WarpToWorld(WorldId world, SpawnTarget spawn = {});
   explicit WarpToWorld(Json v);
 

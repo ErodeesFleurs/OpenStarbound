@@ -239,8 +239,6 @@ DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest) {
   return ds;
 }
 
-DamageNotification::DamageNotification() = default;
-
 DamageNotification::DamageNotification(Json const& v) {
   sourceEntityId = v.getInt("sourceEntityId");
   targetEntityId = v.getInt("targetEntityId");

@@ -22,7 +22,7 @@ public:
   void setOverlay(String const& overlay);
 
 protected:
-  virtual void renderImpl() override;
+  void renderImpl() override;
   RectI shift(float begin, float end, RectI templ);
 
   float m_progressLevel = 0.0f;

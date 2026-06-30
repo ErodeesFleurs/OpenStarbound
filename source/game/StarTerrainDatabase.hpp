@@ -32,7 +32,7 @@ struct TerrainSelectorParameters {
 
 struct TerrainSelector {
   TerrainSelector(String type, Json config, TerrainSelectorParameters parameters);
-  virtual ~TerrainSelector();
+  virtual ~TerrainSelector() = default;
 
   // Returns a float signifying the "solid-ness" of a block, >= 0.0 should be
   // considered solid, < 0.0 should be considered open space.

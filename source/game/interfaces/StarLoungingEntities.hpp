@@ -38,7 +38,7 @@ struct LoungeAnchor : EntityAnchor {
 // may be called on both the master and slave.
 class LoungeableEntity : public AnchorableEntity {
 public:
-  virtual size_t anchorCount() const override = 0;
+  size_t anchorCount() const override = 0;
   EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const override;
   virtual LoungeAnchorConstPtr loungeAnchor(size_t anchorPositionIndex) const = 0;
 

@@ -1,4 +1,7 @@
 #include "StarPlayerInventory.hpp"
+
+#include <utility>
+
 #include "StarCurrency.hpp"
 #include "StarArmors.hpp"
 #include "StarLiquidItem.hpp"
@@ -791,7 +794,7 @@ Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
 }
 
 List<ItemPtr> PlayerInventory::pullOverflow() {
-  return std::move(m_inventoryLoadOverflow);
+  return std::exchange(m_inventoryLoadOverflow, {});
 }
 
 bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {

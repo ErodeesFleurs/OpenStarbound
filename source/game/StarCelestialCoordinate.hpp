@@ -23,7 +23,7 @@ using CelestialException = TypedException<StarException, CelestialExceptionTag>;
 class CelestialCoordinate {
 public:
   // Creates the null CelestialCoordinate
-  CelestialCoordinate();
+  CelestialCoordinate() = default;
   CelestialCoordinate(Vec3I location, int planetaryOrbitNumber = 0, int satelliteOrbitNumber = 0);
   explicit CelestialCoordinate(Json const& json);
 

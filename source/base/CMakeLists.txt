@@ -31,9 +31,11 @@ target_sources(star_base PRIVATE
     scripting/StarImageLuaBindings.cpp
   )
 
-target_compile_features(star_base PUBLIC cxx_std_20)
-target_include_directories(star_base PUBLIC ${STAR_BASE_INCLUDES})
+target_include_directories(star_base PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripting)
 target_link_libraries(star_base PUBLIC star_core star_build_definitions)
+target_link_libraries(star_base PRIVATE star_project_warnings)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_base REUSE_FROM star_core)

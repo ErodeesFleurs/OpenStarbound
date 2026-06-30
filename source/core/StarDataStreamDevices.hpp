@@ -125,7 +125,7 @@ private:
 
 class DataStreamExternalBuffer : public DataStream {
 public:
-  DataStreamExternalBuffer();
+  DataStreamExternalBuffer() = default;
   DataStreamExternalBuffer(ByteArray const& byteArray);
   DataStreamExternalBuffer(DataStreamBuffer const& buffer);
 

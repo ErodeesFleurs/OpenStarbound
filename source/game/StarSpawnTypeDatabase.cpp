@@ -74,8 +74,6 @@ SpawnType spawnTypeFromJson(Json const& config) {
   return spawnType;
 }
 
-SpawnProfile::SpawnProfile() = default;
-
 SpawnProfile::SpawnProfile(Json const& config) {
   spawnTypes = jsonToStringSet(config.get("spawnTypes", JsonArray()));
   monsterParameters = config.get("monsterParameters", {});

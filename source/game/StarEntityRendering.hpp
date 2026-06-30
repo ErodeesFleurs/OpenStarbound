@@ -14,7 +14,7 @@ namespace Star {
 // translated into world space.
 class RenderCallback {
 public:
-  virtual ~RenderCallback();
+  virtual ~RenderCallback() = default;
 
   virtual void addDrawable(Drawable drawable, EntityRenderLayer renderLayer) = 0;
   virtual void addLightSource(LightSource lightSource) = 0;

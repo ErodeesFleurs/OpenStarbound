@@ -1,4 +1,7 @@
 #include "StarNpc.hpp"
+
+#include <utility>
+
 #include "StarAlgorithm.hpp"
 #include "StarArmors.hpp"
 #include "StarBehaviorLuaBindings.hpp"
@@ -1027,7 +1030,7 @@ Vec2F Npc::mouthPosition(bool ignoreAdjustments) const {
 }
 
 List<ChatAction> Npc::pullPendingChatActions() {
-  return std::move(m_pendingChatActions);
+  return std::exchange(m_pendingChatActions, {});
 }
 
 void Npc::addChatMessage(String const& message, Json const& config, String const& portrait) {

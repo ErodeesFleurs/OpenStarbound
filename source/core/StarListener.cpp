@@ -2,8 +2,6 @@
 
 namespace Star {
 
-Listener::~Listener() = default;
-
 CallbackListener::CallbackListener(function<void()> callback)
   : callback(std::move(callback)) {}
 
@@ -11,8 +9,6 @@ void CallbackListener::trigger() {
   if (callback)
     callback();
 }
-
-TrackerListener::TrackerListener() = default;
 
 void ListenerGroup::addListener(ListenerWeakPtr listener) {
   MutexLocker locker(m_mutex);

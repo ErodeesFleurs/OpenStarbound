@@ -49,8 +49,6 @@ TerrainSelectorParameters TerrainSelectorParameters::withCommonality(float newCo
 TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParameters parameters)
   : type(std::move(type)), config(std::move(config)), parameters(std::move(parameters)) {}
 
-TerrainSelector::~TerrainSelector() = default;
-
 TerrainDatabase::TerrainDatabase(AssetsConstPtr assets) {
   assets = requireServiceValueAs<TerrainException>(std::move(assets), "TerrainDatabase", "assets");
 

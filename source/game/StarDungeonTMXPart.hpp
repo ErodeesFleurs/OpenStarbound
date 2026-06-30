@@ -203,12 +203,12 @@ namespace Dungeon {
   public:
     explicit TMXPartReader(AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase) : m_assets(requireServiceValueAs<DungeonException>(std::move(assets), "TMXPartReader", "assets")), m_tilesetDatabase(requireServiceValueAs<DungeonException>(std::move(tilesetDatabase), "TMXPartReader", "tileset database")) {}
 
-    virtual void readAsset(String const& asset) override;
+    void readAsset(String const& asset) override;
 
-    virtual Vec2U size() const override;
+    Vec2U size() const override;
 
-    virtual void forEachTile(TileCallback const& callback) const override;
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
+    void forEachTile(TileCallback const& callback) const override;
+    void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
   private:
     // Return true in the callback to exit early without processing later maps

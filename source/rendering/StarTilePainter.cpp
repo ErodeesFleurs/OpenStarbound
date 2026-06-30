@@ -125,7 +125,7 @@ TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData
   XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-    hasher.push((char const*)&renderTile, offsetof(RenderTile, liquidId));
+    hasher.push(reinterpret_cast<char const*>(&renderTile), offsetof(RenderTile, liquidId));
   });
 
   return hasher.digest();
@@ -136,7 +136,7 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-    hasher.push((char const*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
+    hasher.push(reinterpret_cast<char const*>(&renderTile.liquidId), sizeof(LiquidId) + sizeof(LiquidLevel));
   });
 
   return hasher.digest();

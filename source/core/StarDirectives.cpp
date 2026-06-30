@@ -44,8 +44,6 @@ bool Directives::Shared::empty() const {
   return entries.empty();
 }
 
-Directives::Shared::Shared() = default;
-
 Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   entries = std::move(givenEntries);
   string = std::move(givenString);
@@ -274,7 +272,6 @@ bool operator==(Directives const& directives, String const& string) {
   return directives.equals(string);
 }
 
-DirectivesGroup::DirectivesGroup() = default;
 DirectivesGroup::DirectivesGroup(String const& directives) {
   if (directives.empty())
     return;

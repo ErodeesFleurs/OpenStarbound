@@ -213,9 +213,9 @@ namespace Dungeon {
   public:
     WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
 
-    virtual bool requiresOpen() const override {
+    bool requiresOpen() const override {
       return true;
     }
 
@@ -226,9 +226,9 @@ namespace Dungeon {
   public:
     WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
 
-    virtual bool requiresSolid() const override {
+    bool requiresSolid() const override {
       return true;
     }
 
@@ -239,9 +239,9 @@ namespace Dungeon {
   public:
     WorldGenMustContainLiquidRule() = default;
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
     
-    virtual bool requiresLiquid() const override {
+    bool requiresLiquid() const override {
       return true;
     }
   };
@@ -250,14 +250,14 @@ namespace Dungeon {
   public:
     WorldGenMustNotContainLiquidRule() = default;
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
   };
 
   class AllowOverdrawingRule : public Rule {
   public:
     AllowOverdrawingRule() = default;
 
-    virtual bool overdrawable() const override {
+    bool overdrawable() const override {
       return true;
     }
   };
@@ -266,7 +266,7 @@ namespace Dungeon {
   public:
     IgnorePartMaximumRule() = default;
 
-    virtual bool ignorePartMaximum() const override {
+    bool ignorePartMaximum() const override {
       return true;
     }
   };
@@ -277,7 +277,7 @@ namespace Dungeon {
       m_maxCount = rule.toArray()[1].toArray()[0].toInt();
     }
 
-    virtual bool allowSpawnCount(int currentCount) const override {
+    bool allowSpawnCount(int currentCount) const override {
       return currentCount < m_maxCount;
     }
 
@@ -292,7 +292,7 @@ namespace Dungeon {
         m_partNames.add(entry.toString());
     }
 
-    virtual bool doesNotConnectToPart(String const& name) const override {
+    bool doesNotConnectToPart(String const& name) const override {
       return m_partNames.contains(name);
     }
 
@@ -307,7 +307,7 @@ namespace Dungeon {
         m_parts.add(part.toString());
     }
 
-    virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const override {
+    bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const override {
       for (auto part : m_parts) {
         if (placementCounter.contains(part) && (placementCounter.get(part) > 0))
           return false;
@@ -349,7 +349,7 @@ namespace Dungeon {
   public:
     RandomBrush(Json const& brush);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     List<BrushConstPtr> m_brushes;
@@ -360,14 +360,14 @@ namespace Dungeon {
   public:
     ClearBrush() = default;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
 
   class FrontBrush : public Brush {
   public:
     FrontBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_material;
@@ -381,7 +381,7 @@ namespace Dungeon {
   public:
     BackBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_material;
@@ -395,7 +395,7 @@ namespace Dungeon {
   public:
     ObjectBrush(String const& object, Star::Direction direction, Json const& parameters);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_object;
@@ -407,7 +407,7 @@ namespace Dungeon {
   public:
     VehicleBrush(String const& vehicle, Json const& parameters);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_vehicle;
@@ -418,21 +418,21 @@ namespace Dungeon {
   public:
     BiomeItemsBrush() = default;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
 
   class BiomeTreeBrush : public Brush {
   public:
     BiomeTreeBrush() = default;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
 
   class ItemBrush : public Brush {
   public:
     ItemBrush(ItemDescriptor const& item);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     ItemDescriptor m_item;
@@ -442,7 +442,7 @@ namespace Dungeon {
   public:
     NpcBrush(Json const& brush);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     Json m_npc;
@@ -452,7 +452,7 @@ namespace Dungeon {
   public:
     StagehandBrush(Json const& definition);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     Json m_definition;
@@ -462,7 +462,7 @@ namespace Dungeon {
   public:
     DungeonIdBrush(DungeonId dungeonId);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     DungeonId m_dungeonId;
@@ -472,7 +472,7 @@ namespace Dungeon {
   public:
     SurfaceBrush(Maybe<int> variant, Maybe<String> mod);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
@@ -483,7 +483,7 @@ namespace Dungeon {
   public:
     SurfaceBackgroundBrush(Maybe<int> variant, Maybe<String> mod);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
@@ -494,7 +494,7 @@ namespace Dungeon {
   public:
     LiquidBrush(String const& liquidName, float quantity, bool source);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_liquid;
@@ -506,7 +506,7 @@ namespace Dungeon {
   public:
     WireBrush(String wireGroup, bool partLocal) : m_wireGroup(wireGroup), m_partLocal(partLocal) {}
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     String m_wireGroup;
@@ -515,7 +515,7 @@ namespace Dungeon {
 
   class PlayerStartBrush : public Brush {
   public:
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
 
   // InvalidBrush reports an error when it is painted. This brush is used on
@@ -525,7 +525,7 @@ namespace Dungeon {
   public:
     InvalidBrush(Maybe<String> nameHint);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+    void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     Maybe<String> m_nameHint;

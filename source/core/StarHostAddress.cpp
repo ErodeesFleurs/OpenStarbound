@@ -222,8 +222,6 @@ Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String c
   return makeRight(HostAddressWithPort(std::move(hostAddress.right()), *portNum));
 }
 
-HostAddressWithPort::HostAddressWithPort() = default;
-
 HostAddressWithPort::HostAddressWithPort(HostAddress const& address, uint16_t port)
   : m_address(address), m_port(port) {}
 

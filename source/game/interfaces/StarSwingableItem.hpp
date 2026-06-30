@@ -8,7 +8,7 @@ class SwingableItem;
 
 class SwingableItem : public FireableItem {
 public:
-  SwingableItem();
+  SwingableItem() = default;
   SwingableItem(Json const& params);
   virtual ~SwingableItem() = default;
 

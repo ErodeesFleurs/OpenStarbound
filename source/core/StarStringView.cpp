@@ -15,7 +15,6 @@ String& String::operator+=(std::string_view s) {
   return *this;
 }
 
-StringView::StringView() = default;
 StringView::StringView(StringView const& s) : m_view(s.m_view) {}
 StringView::StringView(StringView&& s) noexcept : m_view(std::move(s.m_view)) {};
 StringView::StringView(String const& s) : m_view(s.utf8()) {};

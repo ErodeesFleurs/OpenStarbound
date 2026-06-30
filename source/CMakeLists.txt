@@ -57,6 +57,8 @@ if(STAR_ENABLE_CLANG_TIDY)
   set(CMAKE_CXX_CLANG_TIDY "${STAR_CLANG_TIDY_EXE}")
 endif()
 
+option(STAR_ENABLE_STRICT_WARNINGS "Enable stricter diagnostics for OpenStarbound project sources" OFF)
+
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
 # set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
@@ -185,6 +187,7 @@ message(STATUS "LTO / IPO: ${STAR_ENABLE_LTO}")
 message(STATUS "Frame pointers: ${STAR_ENABLE_FRAME_POINTERS}")
 message(STATUS "Unity build: ${STAR_ENABLE_UNITY_BUILD}")
 message(STATUS "clang-tidy: ${STAR_ENABLE_CLANG_TIDY}")
+message(STATUS "Strict warnings: ${STAR_ENABLE_STRICT_WARNINGS}")
 
 if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
   message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")
@@ -307,6 +310,8 @@ endif()
 add_library(star_build_options INTERFACE)
 target_compile_features(star_build_options INTERFACE cxx_std_20)
 
+add_library(star_project_warnings INTERFACE)
+
 function(star_clear_cmake_config_flags)
   foreach(config Debug RelWithAsserts RelWithDebInfo Release)
     string(TOUPPER "${config}" config_upper)
@@ -333,6 +338,9 @@ if(STAR_COMPILER_GNU)
   target_compile_definitions(star_build_definitions INTERFACE "$<$<CONFIG:Debug>:XXH_NO_INLINE_HINTS=1>")
   star_add_c_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
   star_add_cxx_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
+  if(STAR_ENABLE_STRICT_WARNINGS)
+    target_compile_options(star_project_warnings INTERFACE -Wpedantic -Werror)
+  endif()
   target_link_options(star_build_options INTERFACE -rdynamic -no-pie)
   star_clear_cmake_config_flags()
 
@@ -386,6 +394,9 @@ if(STAR_COMPILER_GNU)
 elseif(STAR_COMPILER_CLANG)
   star_add_c_compile_options(-Wall -Wextra -Wuninitialized -Wshadow -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
   star_add_cxx_compile_options(-Wall -Wextra -Wuninitialized -Wshadow -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  if(STAR_ENABLE_STRICT_WARNINGS)
+    target_compile_options(star_project_warnings INTERFACE -Wpedantic -Werror)
+  endif()
   star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_MACOS)
@@ -458,6 +469,9 @@ elseif(STAR_COMPILER_MSVC)
 
   star_add_c_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
   star_add_cxx_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  if(STAR_ENABLE_STRICT_WARNINGS)
+    target_compile_options(star_project_warnings INTERFACE /W4 /WX)
+  endif()
   star_clear_cmake_config_flags()
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
@@ -655,37 +669,19 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endforeach()
 
 # External code included with starbound source, which core depends on
-set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)
 
 # Core support code, not specific to starbound.
-set(STAR_CORE_INCLUDES
-    ${PROJECT_SOURCE_DIR}/core
-    ${PROJECT_SOURCE_DIR}/core/scripting
-)
 add_subdirectory(core)
 
 # Less general purpose code than core that is available to both the game and
 # application modules.
-set(STAR_BASE_INCLUDES
-    ${PROJECT_SOURCE_DIR}/base
-    ${PROJECT_SOURCE_DIR}/base/scripting
-)
 add_subdirectory(base)
 
 # Platform APIs that are implemented by the application module
-set(STAR_PLATFORM_INCLUDES ${PROJECT_SOURCE_DIR}/platform)
 add_subdirectory(platform)
 
 # Core game logic used by both server and client.
-set(STAR_GAME_INCLUDES
-    ${PROJECT_SOURCE_DIR}/game
-    ${PROJECT_SOURCE_DIR}/game/interfaces
-    ${PROJECT_SOURCE_DIR}/game/items
-    ${PROJECT_SOURCE_DIR}/game/objects
-    ${PROJECT_SOURCE_DIR}/game/scripting
-    ${PROJECT_SOURCE_DIR}/game/terrain
-  )
 add_subdirectory(game)
 
 # Googletest based tests
@@ -704,19 +700,15 @@ add_subdirectory(utility)
 if(STAR_BUILD_GUI)
   # Handles creating windows, keyboard / mouse / joystick input, and the 2d
   # rendering model.
-  set(STAR_APPLICATION_INCLUDES ${PROJECT_SOURCE_DIR}/application)
   add_subdirectory(application)
 
   # Rendering code not dependent on widget system
-  set(STAR_RENDERING_INCLUDES ${PROJECT_SOURCE_DIR}/rendering)
   add_subdirectory(rendering)
 
   # Panes and Widgets
-  set(STAR_WINDOWING_INCLUDES ${PROJECT_SOURCE_DIR}/windowing)
   add_subdirectory(windowing)
 
   # Client interface code
-  set(STAR_FRONTEND_INCLUDES ${PROJECT_SOURCE_DIR}/frontend)
   add_subdirectory(frontend)
 
   # Starbound game / client

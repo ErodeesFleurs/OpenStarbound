@@ -61,7 +61,7 @@ public:
   void setBackingImageAffinity(bool full, bool empty);
   void showDurability(bool show);
 
-  virtual RectI getScissorRect() const override;
+  RectI getScissorRect() const override;
 
 protected:
   void renderImpl() override;
