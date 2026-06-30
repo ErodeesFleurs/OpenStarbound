@@ -21,17 +21,17 @@ AudioInstance::AudioInstance(Audio const& audio)
   : m_audio(audio) {}
 
 [[nodiscard]] Maybe<Vec2F> AudioInstance::position() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_position;
 }
 
 void AudioInstance::setPosition(Maybe<Vec2F> position) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_position = position;
 }
 
 void AudioInstance::translate(Vec2F const& distance) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   if (m_position)
     *m_position += distance;
   else
@@ -39,18 +39,18 @@ void AudioInstance::translate(Vec2F const& distance) {
 }
 
 [[nodiscard]] float AudioInstance::rangeMultiplier() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_rangeMultiplier;
 }
 
 void AudioInstance::setRangeMultiplier(float rangeMultiplier) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_rangeMultiplier = rangeMultiplier;
 }
 
 void AudioInstance::setVolume(float targetValue, float rampTime) {
   assert(targetValue >= 0);
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
 
   if (m_stopping)
     return;
@@ -67,7 +67,7 @@ void AudioInstance::setVolume(float targetValue, float rampTime) {
 
 void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
   assert(targetValue >= 0);
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
 
   if (m_stopping)
     return;
@@ -83,12 +83,12 @@ void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
 }
 
 [[nodiscard]] int AudioInstance::loops() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_loops;
 }
 
 void AudioInstance::setLoops(int loops) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_loops = loops;
 }
 
@@ -105,28 +105,28 @@ void AudioInstance::seekTime(double time) {
 }
 
 [[nodiscard]] MixerGroup AudioInstance::mixerGroup() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_mixerGroup;
 }
 
 void AudioInstance::setMixerGroup(MixerGroup mixerGroup) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_mixerGroup = mixerGroup;
 }
 
 void AudioInstance::setClockStart(Maybe<int64_t> clockStartTime) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_clockStart = clockStartTime;
 }
 
 void AudioInstance::setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   m_clockStop = clockStopTime;
   m_clockStopFadeOut = fadeOutTime;
 }
 
 void AudioInstance::stop(float rampTime) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
 
   if (rampTime <= 0.0f) {
     m_volume.value = 0.0f;
@@ -256,7 +256,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
     MutexLocker locker(m_queueMutex);
     // Mix all active sounds
     for (auto& [audioInstance, audioState] : m_audios) {
-      MutexLocker audioLocker(audioInstance->m_mutex);
+      WriteLocker audioLocker(audioInstance->m_mutex);
 
       if (audioInstance->m_finished)
         continue;

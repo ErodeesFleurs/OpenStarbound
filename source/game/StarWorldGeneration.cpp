@@ -697,7 +697,6 @@ void WorldGenerator::sectorLoadLevelChanged(WorldStorage& worldStorage, Sector c
 }
 
 void WorldGenerator::terraformSector(WorldStorage& worldStorage, Sector const& sector) {
-  // Logger::info("terraforming sector {}...", sector);
   reapplyBiome(worldStorage, sector);
 }
 
@@ -1182,7 +1181,6 @@ void WorldGenerator::reapplyBiome(WorldStorage& worldStorage, ServerTileSectorAr
   auto tileArray = worldStorage.tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
-  // Logger::info("Reapplying biome in sector {}...", sectorTiles);
 
   auto entities = m_worldServer.entityQuery(RectF(sectorTiles.padded(1)));
   List<TileEntityPtr> biomeTileEntities;

@@ -70,7 +70,7 @@ public:
 private:
   friend class Mixer;
 
-  mutable Mutex m_mutex;
+  mutable ReadersWriterMutex m_mutex;
 
   Audio m_audio;
 

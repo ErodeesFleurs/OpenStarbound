@@ -61,7 +61,7 @@ namespace WorldImpl {
   // Split modification list into good and bad
   template <typename GetTileFunction>
   pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
-    [[nodiscard]] bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
+    bool allowEntityOverlap, GetTileFunction& getTile, MaterialDatabaseConstPtr const& materialDatabase, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
   [[nodiscard]] float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);

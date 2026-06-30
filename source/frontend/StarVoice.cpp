@@ -383,26 +383,6 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
           for (size_t i = 0; i != samples; ++i)
             sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
           //Blends the weaker channel into the stronger one,
-          /* unused, is a bit too strong on stereo music.
-          float maxLevel = max(levels[0], levels[1]);
-          float leftToRight = maxLevel != 0.0f ? 1.0f - (levels[0] / maxLevel) : 0.0f;
-          float rightToLeft = maxLevel != 0.0f ? 1.0f - (levels[1] / maxLevel) : 0.0f;
-
-          int16_t* speakerData = speakerBuffer.data();
-          int32_t* sharedData  = sharedBuffer.data();
-          for (size_t i = 0; i != frameCount; ++i) {
-            auto leftSample  = static_cast<float>(*speakerData++);
-            auto rightSample = static_cast<float>(*speakerData++);
-            
-            if (rightToLeft != 0.0f)
-              leftSample  = ( leftSample + rightSample * rightToLeft) / (1.0f + rightToLeft);
-            if (leftToRight != 0.0f)
-              rightSample = (rightSample +  leftSample * leftToRight) / (1.0f + leftToRight);
-
-            *sharedData++ += static_cast<int32_t>(leftSample)  * levels[0];
-            *sharedData++ += static_cast<int32_t>(rightSample) * levels[1];
-          }
-          //*/
         }
         ++it;
       }

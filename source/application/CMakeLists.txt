@@ -9,6 +9,7 @@ target_sources(star_application PRIVATE
     StarP2PNetworkingService_pc.hpp
     StarPlatformServices_pc.hpp
     StarRenderer_opengl.hpp
+    StarTextureAtlas.hpp
     StarMainApplication_sdl.cpp
     StarP2PNetworkingService_pc.cpp
     StarPlatformServices_pc.cpp

@@ -120,6 +120,7 @@ protected:
     : BaseName(type, std::move(message), cause) {}
 };
 
+
 struct OutOfRangeExceptionTag { static constexpr char const* typeName = "OutOfRangeException"; };
 using OutOfRangeException = TypedException<StarException, OutOfRangeExceptionTag>;
 

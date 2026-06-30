@@ -185,7 +185,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::const_iterator::operator
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::const_iterator::operator++(int) -> const_iterator {
-  [[nodiscard]] const_iterator copy(*this);
+  const_iterator copy(*this);
   ++*this;
   return copy;
 }
@@ -218,7 +218,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::iterator::operator++() -
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::iterator::operator++(int) -> iterator {
-  [[nodiscard]] iterator copy(*this);
+  iterator copy(*this);
   operator++();
   return copy;
 }

@@ -252,19 +252,7 @@ target_sources(star_game PRIVATE
     scripting/StarUniverseServerLuaBindings.hpp
     scripting/StarScriptableThread.hpp
 
-    terrain/StarCacheSelector.hpp
-    terrain/StarConstantSelector.hpp
-    terrain/StarDisplacementSelector.hpp
-    terrain/StarFlatSurfaceSelector.hpp
-    terrain/StarIslandSurfaceSelector.hpp
-    terrain/StarKarstCave.hpp
-    terrain/StarMaxSelector.hpp
-    terrain/StarMinMaxSelector.hpp
-    terrain/StarMixSelector.hpp
-    terrain/StarPerlinSelector.hpp
-    terrain/StarRidgeBlocksSelector.hpp
-    terrain/StarRotateSelector.hpp
-    terrain/StarWormCave.hpp
+    StarTerrainSelectors.hpp
     StarActorMovementController.cpp
     StarAiDatabase.cpp
     StarAiTypes.cpp

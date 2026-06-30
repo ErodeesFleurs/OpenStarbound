@@ -166,13 +166,13 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  [[nodiscard]] STAR_THREAD_ACQUIRE_CAPABILITY void lock();
+  STAR_THREAD_ACQUIRE_CAPABILITY void lock();
 
   // Attempt to acquire the mutex without blocking.
   STAR_THREAD_TRY_ACQUIRE_CAPABILITY(true)
   [[nodiscard]] bool tryLock();
 
-  [[nodiscard]] STAR_THREAD_RELEASE_CAPABILITY void unlock();
+  STAR_THREAD_RELEASE_CAPABILITY void unlock();
 
 private:
   friend struct ConditionVariableImpl;

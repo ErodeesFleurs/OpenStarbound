@@ -199,7 +199,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
 
   for (uint64_t i = 0; i < count; ++i) {
     ElementId id = ds.readVlqU();
-    [[nodiscard]] DataStreamBuffer storeBuffer(ds.read<ByteArray>());
+    DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
     ElementPtr element = m_elementFactory();
     element->netLoad(storeBuffer, rules);
@@ -287,7 +287,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
           auto& [elementId, elementData] = *addition;
           ElementPtr element = m_elementFactory();
-          [[nodiscard]] DataStreamBuffer storeBuffer(std::move(elementData));
+          DataStreamBuffer storeBuffer(std::move(elementData));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
           m_idMap.add(elementId, std::move(element));

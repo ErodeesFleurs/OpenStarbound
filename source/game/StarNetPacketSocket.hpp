@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarAtomicSharedPtr.hpp"
 #include "StarNetCompatibility.hpp"
 #include "StarNetPackets.hpp"
 #include "StarP2PNetworkingService.hpp"
@@ -127,7 +126,7 @@ private:
     Deque<PacketPtr> queue;
   };
 
-  AtomicSharedPtr<Pipe> m_incomingPipe;
+  std::atomic<shared_ptr<Pipe>> m_incomingPipe;
   weak_ptr<Pipe> m_outgoingPipe;
 };
 

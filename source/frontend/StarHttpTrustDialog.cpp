@@ -24,9 +24,6 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
 
   reader.registerCallback("yes", [this](Widget*) { reply(HttpTrustReply::Allow); });
   reader.registerCallback("no", [this](Widget*) { reply(HttpTrustReply::Deny); });
-  // reader.registerCallback("rememberCheckbox", [this](Widget*) {
-  //   // just to capture it
-  // });
 
   m_confirmed = false;
 
@@ -37,8 +34,6 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
   // Update message with domain
   const String message = strf("^green;{}^reset;", domain);
   fetchChild<LabelWidget>("domain")->setText(message);
-  // fetchChild<ButtonWidget>("yes")->setText("Allow");
-  // fetchChild<ButtonWidget>("no")->setText("Deny"); // I did it cuz of: if some smart guy will swap yes/no buttons texts in the config file
   fetchChild<ButtonWidget>("yes")->setText("✅");
   fetchChild<ButtonWidget>("no")->setText("❌"); // Emoji buttons dont need to be translated
 

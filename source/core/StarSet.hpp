@@ -283,7 +283,7 @@ Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::difference(Set co
 
 template <typename Value, typename Compare, typename Allocator>
 Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::combination(Set const& s) const {
-  [[nodiscard]] Set ret(*this);
+  Set ret(*this);
   ret.addAll(s);
   return ret;
 }
@@ -318,7 +318,7 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::difference(HashSetMixin const& s) c
 
 template <typename BaseMap>
 HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) const {
-  [[nodiscard]] HashSetMixin ret(*this);
+  HashSetMixin ret(*this);
   ret.addAll(s);
   return ret;
 }

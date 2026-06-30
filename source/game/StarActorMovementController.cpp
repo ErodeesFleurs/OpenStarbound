@@ -1310,7 +1310,6 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
       m_edgeIndex++;
       if (m_edgeIndex < m_path->size()) {
         if (!validateEdge(movementController, m_path->at(m_edgeIndex))) {
-          // Logger::info("Path invalidated on {} {} {}", ActionNames.getRight(nextEdge.action), nextEdge.source.position, nextEdge.target.position);
           reset();
           return {};
         }
@@ -1323,20 +1322,6 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
     auto movement = (curVelocity + sourceVelocity) / 2.0 * m_edgeTimer;
     movementController.setPosition(edge.source.position + movement);
 
-    // Shows path and current step
-    // for (size_t i = 0; i < m_path->size(); i++) {
-    //   auto debugEdge = m_path->get(i);
-    //   SpatialLogger::logPoint("world", debugEdge.source.position, Color::Blue.toRgba());
-    //   SpatialLogger::logPoint("world", debugEdge.target.position, Color::Blue.toRgba());
-    //   SpatialLogger::logLine("world", debugEdge.source.position, debugEdge.target.position, Color::Blue.toRgba());
-
-    //   if (i == m_edgeIndex) {
-    //     Vec2F velocity = debugEdge.source.velocity.orMaybe(debugEdge.target.velocity).value({ 0.0, 0.0 });
-    //     SpatialLogger::logPoint("world", debugEdge.source.position, Color::Yellow.toRgba());
-    //     SpatialLogger::logLine("world", debugEdge.source.position, debugEdge.target.position, Color::Yellow.toRgba());
-    //     SpatialLogger::logText("world", strf("{} {}", ActionNames.getRight(debugEdge.action), curVelocity), debugEdge.source.position, Color::Yellow.toRgba());
-    //   }
-    // }
 
     if (auto direction = directionOf(delta[0]))
       m_controlFace = direction;
@@ -1385,33 +1370,21 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
   poly.translate(edge.target.position);
   if (m_world.polyCollision(poly) || movingCollision(movementController, poly)) {
     auto bounds = RectI::integral(poly.boundBox());
-    // for (auto line : bounds.edges()) {
-    //   SpatialLogger::logLine("world", Line2F(line), Color::Magenta.toRgba());
-    // }
     if (m_world.rectTileCollision(bounds) && !m_world.rectTileCollision(bounds, solidCollision)) {
       if (!openDoors(poly.boundBox())) {
-        // SpatialLogger::logPoly("world", poly, Color::Yellow.toRgba());
         return false;
       }
     } else {
-      // SpatialLogger::logPoly("world", poly, Color::Red.toRgba());
       return false;
     }
   }
-  //SpatialLogger::logPoly("world", poly, Color::Blue.toRgba());
 
   auto inLiquid = [&](Vec2F const& position) -> bool {
     auto bounds = movementController.localBoundBox().translated(position);
     auto liquidLevel = m_world.liquidLevel(bounds);
     if (liquidLevel.level >= movementController.baseParameters().minimumLiquidPercentage.value(1.0)) {
-      // for (auto line : bounds.edges()) {
-      //   SpatialLogger::logLine("world", line, Color::Blue.toRgba());
-      // }
       return true;
     } else {
-      // for (auto line : bounds.edges()) {
-      //   SpatialLogger::logLine("world", line, Color::Red.toRgba());
-      // }
       return false;
     }
   };
@@ -1447,9 +1420,6 @@ bool PathController::onGround(ActorMovementController const& movementController,
     auto bounds = RectI::integral(movementController.localBoundBox().translated(position));
     Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
     Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
-    // for (auto line : RectF(Vec2F(min), Vec2F(max)).edges()) {
-    //   SpatialLogger::logLine("world", line, m_world.rectTileCollision(RectI(min, max), collisionSet) ? Color::Blue.toRgba() : Color::Red.toRgba());
-    // }
     return m_world.rectTileCollision(RectI(min, max), collisionSet);
 }
 

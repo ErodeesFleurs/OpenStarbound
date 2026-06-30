@@ -162,7 +162,7 @@ template <typename... Args>
 void Logger::logf(LogLevel level, char const* msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strf(msg, args...);
-    [[nodiscard]] MutexLocker locker(s_mutex);
+    MutexLocker locker(s_mutex);
     for (auto const& l : s_sinks) {
       if (l->level() <= level) {
         l->log(output.c_str(), level);

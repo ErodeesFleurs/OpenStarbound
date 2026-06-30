@@ -238,7 +238,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator:
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator++(int) -> const_iterator {
-  [[nodiscard]] const_iterator copy(*this);
+  const_iterator copy(*this);
   operator++();
   return copy;
 }
@@ -271,7 +271,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::opera
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator++(int) -> iterator {
-  [[nodiscard]] iterator copy(*this);
+  iterator copy(*this);
   operator++();
   return copy;
 }

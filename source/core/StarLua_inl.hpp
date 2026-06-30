@@ -408,7 +408,7 @@ namespace LuaDetail {
       if (auto l = ret.ptr<LuaValue>()) {
         return {engine.luaTo<T>(*l)};
       } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        [[nodiscard]] LuaVariadic<T> result(vec->size());
+        LuaVariadic<T> result(vec->size());
         for (size_t i = 0; i < vec->size(); ++i)
           result[i] = engine.luaTo<T>((*vec)[i]);
         return result;
@@ -462,7 +462,7 @@ namespace LuaDetail {
 
   template <typename T>
   LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaVariadic<T> const& vals) {
-    [[nodiscard]] LuaVariadic<LuaValue> ret(vals.size());
+    LuaVariadic<LuaValue> ret(vals.size());
     for (auto pair : zipIterator(vals, ret)) {
       auto [val, out] = pair;
       out = engine.luaFrom(val);
@@ -490,7 +490,7 @@ namespace LuaDetail {
       if (index >= argc)
         return {};
 
-      [[nodiscard]] LuaVariadic<T> subargs(argc - index);
+      LuaVariadic<T> subargs(argc - index);
       for (size_t i = index; i < argc; ++i)
         subargs[i - index] = engine.luaTo<T>(std::move(argv[i]));
       return subargs;
@@ -1261,7 +1261,7 @@ LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const
   } else if (returnValues == 1) {
     return popLuaValue(m_state);
   } else {
-    [[nodiscard]] LuaVariadic<LuaValue> ret(returnValues);
+    LuaVariadic<LuaValue> ret(returnValues);
     for (int i = returnValues - 1; i >= 0; --i)
       ret[i] = popLuaValue(m_state);
     return ret;
@@ -1295,7 +1295,7 @@ Maybe<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Arg
   } else if (returnValues == 1) {
     return LuaDetail::LuaFunctionReturn(popLuaValue(threadState));
   } else {
-    [[nodiscard]] LuaVariadic<LuaValue> ret(returnValues);
+    LuaVariadic<LuaValue> ret(returnValues);
     for (int i = returnValues - 1; i >= 0; --i)
       ret[i] = popLuaValue(threadState);
     return LuaDetail::LuaFunctionReturn(std::move(ret));

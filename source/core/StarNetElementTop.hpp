@@ -64,7 +64,7 @@ void NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpola
   if (data.empty()) {
     BaseNetElement::blankNetDelta(interpolationTime);
   } else {
-    [[nodiscard]] DataStreamBuffer ds(std::move(data));
+    DataStreamBuffer ds(std::move(data));
     ds.setStreamCompatibilityVersion(rules);
     if (ds.read<bool>())
       BaseNetElement::netLoad(ds, rules);

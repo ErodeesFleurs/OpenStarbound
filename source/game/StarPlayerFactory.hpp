@@ -6,14 +6,14 @@
 #include "StarItemDescriptor.hpp"
 #include "StarLuaRoot.hpp"
 
+#include "StarConfiguration.hpp"
+
 namespace Star {
 
 class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
-class Configuration;
-using ConfigurationPtr = SharedPtr<Configuration>;
 class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 class ItemDatabase;

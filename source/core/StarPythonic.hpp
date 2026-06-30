@@ -384,25 +384,25 @@ public:
   }
 
   RangeIterator operator++(int) {
-    [[nodiscard]] RangeIterator tmp(*this);
+    RangeIterator tmp(*this);
     ++(*this);
     return tmp;
   }
 
   RangeIterator operator--(int) {
-    [[nodiscard]] RangeIterator tmp(*this);
+    RangeIterator tmp(*this);
     --(*this);
     return tmp;
   }
 
   RangeIterator operator+(Diff steps) const {
-    [[nodiscard]] RangeIterator copy(*this);
+    RangeIterator copy(*this);
     copy += steps;
     return copy;
   }
 
   RangeIterator operator-(Diff steps) const {
-    [[nodiscard]] RangeIterator copy(*this);
+    RangeIterator copy(*this);
     copy -= steps;
     return copy;
   }
@@ -452,7 +452,7 @@ public:
 
   RangeIterator end() const {
     Diff steps = stepsBetween(m_start, m_end);
-    [[nodiscard]] RangeIterator res(m_start, m_end, m_diff);
+    RangeIterator res(m_start, m_end, m_diff);
     res += steps;
     return res;
   }

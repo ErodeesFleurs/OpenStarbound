@@ -15,7 +15,7 @@ public:
   PacketPool& operator=(PacketPool const&) = delete;
 
   [[nodiscard]] T* acquire() {
-    [[nodiscard]] SpinLocker locker(m_lock);
+    SpinLocker locker(m_lock);
     if (m_freeList) {
       auto* p = m_freeList;
       m_freeList = *reinterpret_cast<void**>(m_freeList);
@@ -28,14 +28,14 @@ public:
 
   void release(T* p) {
     p->~T();
-    [[nodiscard]] SpinLocker locker(m_lock);
+    SpinLocker locker(m_lock);
       *reinterpret_cast<void**>(p) = m_freeList;
     m_freeList = p;
     ++m_allocCount;
   }
 
   void reserve(size_t count) {
-    [[nodiscard]] SpinLocker locker(m_lock);
+    SpinLocker locker(m_lock);
     for (size_t i = 0; i < count; ++i) {
       auto* p = Star::malloc(sizeof(T));
     *reinterpret_cast<void**>(p) = m_freeList;

@@ -82,11 +82,11 @@ pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> LocalPacketSock
 }
 
 bool LocalPacketSocket::isOpen() const {
-  return m_incomingPipe && !m_outgoingPipe.expired();
+  return m_incomingPipe.load() != nullptr && !m_outgoingPipe.expired();
 }
 
 void LocalPacketSocket::close() {
-  m_incomingPipe.reset();
+  m_incomingPipe.store(nullptr);
 }
 
 void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
@@ -115,9 +115,10 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
 }
 
 List<PacketPtr> LocalPacketSocket::receivePackets() {
-  MutexLocker locker(m_incomingPipe->mutex);
+  auto incomingPipe = m_incomingPipe.load();
+  MutexLocker locker(incomingPipe->mutex);
   List<PacketPtr> packets;
-  packets.appendAll(take(m_incomingPipe->queue));
+  packets.appendAll(take(incomingPipe->queue));
   return packets;
 }
 

@@ -188,31 +188,31 @@ template <typename T, typename WriteFunction>
 
 template <typename T>
 void DataStreamBuffer::deserialize(T& t, ByteArray data) {
-  [[nodiscard]] DataStreamBuffer ds(std::move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.read(t);
 }
 
 template <typename T>
 void DataStreamBuffer::deserializeContainer(T& t, ByteArray data) {
-  [[nodiscard]] DataStreamBuffer ds(std::move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readContainer(t);
 }
 
 template <typename T, typename ReadFunction>
 void DataStreamBuffer::deserializeContainer(T& t, ByteArray data, ReadFunction readFunction) {
-  [[nodiscard]] DataStreamBuffer ds(std::move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readContainer(t, readFunction);
 }
 
 template <typename T>
 void DataStreamBuffer::deserializeMapContainer(T& t, ByteArray data) {
-  [[nodiscard]] DataStreamBuffer ds(std::move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readMapContainer(t);
 }
 
 template <typename T, typename ReadFunction>
 void DataStreamBuffer::deserializeMapContainer(T& t, ByteArray data, ReadFunction readFunction) {
-  [[nodiscard]] DataStreamBuffer ds(std::move(data));
+  DataStreamBuffer ds(std::move(data));
   ds.readMapContainer(t, readFunction);
 }
 

@@ -6,11 +6,10 @@
 #include "StarListener.hpp"
 #include "StarHash.hpp"
 #include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 
 namespace Star {
 
-class Configuration;
-using ConfigurationPtr = SharedPtr<Configuration>;
 
 class Input;
 using InputPtr = SharedPtr<Input>;

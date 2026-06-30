@@ -562,11 +562,6 @@ void Songbook::keepAlive(String const& instrument, Vec2F const& position) {
               }
             }
 
-            // std::cerr << ":" << note << ":" << (int)accidentalSpecified <<
-            // ":" <<
-            // (int)accidentalActive << ":" << accidentals << ":" << (note-base)
-            // << ":" << head <<
-            // "\n";
           }
           accidentals = 0;
           accidentalSpecified = false;

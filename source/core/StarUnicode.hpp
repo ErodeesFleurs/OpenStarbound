@@ -65,7 +65,7 @@ public:
   }
 
   U8ToU32Iterator operator++(int) {
-    [[nodiscard]] U8ToU32Iterator clone(*this);
+    U8ToU32Iterator clone(*this);
     increment();
     return clone;
   }
@@ -76,7 +76,7 @@ public:
   }
 
   U8ToU32Iterator operator--(int) {
-    [[nodiscard]] U8ToU32Iterator clone(*this);
+    U8ToU32Iterator clone(*this);
     decrement();
     return clone;
   }
@@ -143,7 +143,7 @@ private:
     // see how many extra byts we have:
     unsigned extra = utf8_trailing_byte_count(*m_position);
     // extract the extra bits, 6 from each extra byte:
-    [[nodiscard]] BaseIterator next(m_position);
+    BaseIterator next(m_position);
     for (unsigned c = 0; c < extra; ++c) {
       ++next;
       m_value <<= 6;

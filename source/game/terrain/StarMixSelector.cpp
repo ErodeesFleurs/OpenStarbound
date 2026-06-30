@@ -1,4 +1,4 @@
-#include "StarMixSelector.hpp"
+#include "StarTerrainSelectors.hpp"
 #include "StarInterpolation.hpp"
 
 namespace Star {

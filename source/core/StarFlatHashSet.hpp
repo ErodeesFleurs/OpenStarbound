@@ -170,7 +170,7 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator++() -> 
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator++(int) -> const_iterator {
-  [[nodiscard]] const_iterator copy(*this);
+  const_iterator copy(*this);
   operator++();
   return copy;
 }
@@ -203,7 +203,7 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::iterator::operator++() -> iterat
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 auto FlatHashSet<Key, Hash, Equals, Allocator>::iterator::operator++(int) -> iterator {
-  [[nodiscard]] iterator copy(*this);
+  iterator copy(*this);
   operator++();
   return copy;
 }

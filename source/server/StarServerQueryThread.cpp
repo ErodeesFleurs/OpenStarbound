@@ -57,7 +57,8 @@ uint8_t ServerQueryThread::serverPlayerCount() {
 }
 
 bool ServerQueryThread::serverPassworded() {
-  // TODO: implement
+  // Starbound uses per-account passwords during handshake rather than
+  // a global server password, so this Source query field is always false.
   return false;
 }
 
@@ -70,7 +71,8 @@ String ServerQueryThread::serverWorldNames() {
 }
 
 const char* ServerQueryThread::serverPlugins() {
-  // TODO: implement
+  // Source query protocol compatibility: Starbound does not use a plugin
+  // system analogous to Source engine games.
   return "none";
 }
 

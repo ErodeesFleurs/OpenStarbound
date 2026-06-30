@@ -21,6 +21,7 @@ target_sources(star_windowing PRIVATE
         StarPaneManager.hpp
         StarPortraitWidget.hpp
         StarProgressWidget.hpp
+        StarRegisteredPaneManager.hpp
         StarScrollArea.hpp
         StarSliderBar.hpp
         StarStackWidget.hpp

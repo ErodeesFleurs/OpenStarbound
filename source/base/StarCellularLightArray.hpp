@@ -311,7 +311,7 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 
     // Pick falloff here based on closest block obstacle value (probably not
     // best)
-    [[nodiscard]] Vec2I pos(light.position.floor());
+    Vec2I pos(light.position.floor());
     float oneBlockAtt;
     if (pos[0] >= 0 && pos[0] < static_cast<int>(m_width) && pos[1] >= 0 && pos[1] < static_cast<int>(m_height) && getObstacle(pos[0], pos[1]))
       oneBlockAtt = 1.0f / m_spreadMaxObstacle;

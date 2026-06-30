@@ -61,7 +61,13 @@ unsigned const RootMaintenanceSleep = 5000;
 unsigned const RootLoadThreads = 4;
 }// namespace
 
-Root::Root(Settings settings) : RootBase() {
+atomic<Root*> Root::s_activeRoot{nullptr};
+
+Root::Root(Settings settings) {
+  Root* oldRoot = nullptr;
+  if (!s_activeRoot.compare_exchange_strong(oldRoot, this))
+    throw RootException("Root has been constructed twice");
+
   m_settings = std::move(settings);
   if (m_settings.runtimeConfigFile)
     m_runtimeConfigFile = toStoragePath(*m_settings.runtimeConfigFile);
@@ -91,53 +97,39 @@ Root::Root(Settings settings) : RootBase() {
     while (!m_stopMaintenanceThread) {
       m_reloadListeners.clearExpiredListeners();
 
+      ObjectDatabasePtr objectDb;
+      ItemDatabasePtr itemDb;
+      MonsterDatabasePtr monsterDb;
+      AssetsPtr assets;
+      TenantDatabasePtr tenantDb;
+      ImageMetadataDatabasePtr imgMetaDb;
       {
-        MutexLocker objectDbLocker(m_objectDatabaseMutex);
-        if (ObjectDatabasePtr objectDb = m_objectDatabase) {
-          objectDbLocker.unlock();
-          objectDb->cleanup();
-        }
+        RecursiveMutexLocker loadLocker(m_loadMutex);
+        objectDb = m_objectDatabase;
+        itemDb = m_itemDatabase;
+        monsterDb = m_monsterDatabase;
+        assets = m_assets;
+        tenantDb = m_tenantDatabase;
+        imgMetaDb = m_imageMetadataDatabase;
       }
-      {
-        MutexLocker itemDbLocker(m_itemDatabaseMutex);
-        if (ItemDatabasePtr itemDb = m_itemDatabase) {
-          itemDbLocker.unlock();
-          itemDb->cleanup();
-        }
-      }
-      {
-        MutexLocker monsterDbLocker(m_monsterDatabaseMutex);
-        if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
-          monsterDbLocker.unlock();
-          monsterDb->cleanup();
-        }
-      }
-      {
-        MutexLocker assetsLocker(m_assetsMutex);
-        if (AssetsPtr assets = m_assets) {
-          assetsLocker.unlock();
-          assets->cleanup();
-        }
-      }
-      {
-        MutexLocker tenantDbLocker(m_tenantDatabaseMutex);
-        if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
-          tenantDbLocker.unlock();
-          tenantDb->cleanup();
-        }
-      }
-      {
-        MutexLocker imgMetaDbLocker(m_imageMetadataDatabaseMutex);
-        if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
-          imgMetaDbLocker.unlock();
-          imgMetaDb->cleanup();
-        }
-      }
+
+      if (objectDb)
+        objectDb->cleanup();
+      if (itemDb)
+        itemDb->cleanup();
+      if (monsterDb)
+        monsterDb->cleanup();
+      if (assets)
+        assets->cleanup();
+      if (tenantDb)
+        tenantDb->cleanup();
+      if (imgMetaDb)
+        imgMetaDb->cleanup();
 
       Random::addEntropy();
 
       {
-        MutexLocker configLocker(m_configurationMutex);
+        RecursiveMutexLocker loadLocker(m_loadMutex);
         writeConfig();
       }
 
@@ -161,88 +153,15 @@ Root::~Root() {
   m_reloadListeners.clearAllListeners();
 
   writeConfig();
+
+  s_activeRoot.store(nullptr);
 }
 
 void Root::reload() {
   Logger::info("Root: Reloading from disk");
 
   {
-    // We need to lock all the mutexes to reset everything to cause it to be
-    // reloaded, but whenever we lock individual members we should always do it
-    // in the same order (well, the same order*ing* not necessarily the same
-    // order) to avoid deadlocks.  This means that we need to enumerate the
-    // finicky, implicit dependency order that we have due to each member's
-    // constructor referencing root recursively.  We could avoid doing this
-    // explicitly with C++11's std::lock (if c++11 threading primitives were
-    // finally reliable on all targets), or some other equivalent deadlock
-    // avoidance algorithm.
-
-    // Entity factory depends on all the entity databases and the versioning
-    // database.
-    MutexLocker entityFactoryLock(m_entityFactoryMutex);
-
-    // Player factory depends on the species database and several other services below.
-    MutexLocker playerFactoryLock(m_playerFactoryMutex);
-
-    // Species database depends on the item database.
-    MutexLocker speciesDatabaseLock(m_speciesDatabaseMutex);
-
-    // Item database depends on object database and codex database
-    MutexLocker itemDatabaseLock(m_itemDatabaseMutex);
-
-    // These databases depend on various things below, but not the item database
-    MutexLocker objectDatabaseLock(m_objectDatabaseMutex);
-    MutexLocker npcDatabaseLock(m_npcDatabaseMutex);
-    MutexLocker stagehandDatabaseLock(m_stagehandDatabaseMutex);
-    MutexLocker vehicleDatabaseLock(m_vehicleDatabaseMutex);
-    MutexLocker monsterDatabaseLock(m_monsterDatabaseMutex);
-    MutexLocker plantDatabaseLock(m_plantDatabaseMutex);
-    MutexLocker projectileDatabaseLock(m_projectileDatabaseMutex);
-
-    // Biome database depends on liquids, materials, and stored function
-    // databases.
-    MutexLocker biomeDatabaseLock(m_biomeDatabaseMutex);
-
-    // Dungeon definitions database depends on the material and liquids database
-    MutexLocker dungeonDefinitionsLock(m_dungeonDefinitionsMutex);
-    MutexLocker tilesetDatabaseLock(m_tilesetDatabaseMutex);
-
-    MutexLocker statisticsDatabaseLock(m_statisticsDatabaseMutex);
-
-    // Liquids database depends on the materials database
-    MutexLocker liquidsDatabaseLock(m_liquidsDatabaseMutex);
-
-    // Material database depends on particle database
-    MutexLocker materialDatabaseLock(m_materialDatabaseMutex);
-
-    // Databases that depend on functions database.
-    MutexLocker damageDatabaseLock(m_damageDatabaseMutex);
-    MutexLocker effectSourceDatabaseLock(m_effectSourceDatabaseMutex);
-    MutexLocker statusEffectDatabaseLock(m_statusEffectDatabaseMutex);
-    MutexLocker treasureDatabaseLock(m_treasureDatabaseMutex);
-
-    // Databases that don't depend on anything other than assets
-    MutexLocker codexDatabaseLock(m_codexDatabaseMutex);
-    MutexLocker behaviorDatabaseMutex(m_behaviorDatabaseMutex);
-    MutexLocker techDatabaseLock(m_techDatabaseMutex);
-    MutexLocker aiDatabaseLock(m_aiDatabaseMutex);
-    MutexLocker questTemplateDatabaseLock(m_questTemplateDatabaseMutex);
-    MutexLocker emoteProcessorLock(m_emoteProcessorMutex);
-    MutexLocker terrainDatabaseLock(m_terrainDatabaseMutex);
-    MutexLocker particleDatabaseLock(m_particleDatabaseMutex);
-    MutexLocker versioningDatabaseLock(m_versioningDatabaseMutex);
-    MutexLocker functionDatabaseLock(m_functionDatabaseMutex);
-    MutexLocker imageMetadataDatabaseLock(m_imageMetadataDatabaseMutex);
-    MutexLocker tenantDatabaseLock(m_tenantDatabaseMutex);
-    MutexLocker nameGeneratorLock(m_nameGeneratorMutex);
-    MutexLocker danceDatabaseLock(m_danceDatabaseMutex);
-    MutexLocker spawnTypeDatabaseLock(m_spawnTypeDatabaseMutex);
-    MutexLocker radioMessageDatabaseLock(m_radioMessageDatabaseMutex);
-    MutexLocker collectionDatabaseLock(m_collectionDatabaseMutex);
-
-    // Configuration and Assets are at the very bottom of the hierarchy.
-    MutexLocker configurationLock(m_configurationMutex);
-    MutexLocker assetsLock(m_assetsMutex);
+    RecursiveMutexLocker locker(m_loadMutex);
 
     writeConfig();
 
@@ -356,7 +275,7 @@ void Root::fullyLoad() {
   Logger::info("Root: Loaded everything in {} seconds", Time::monotonicTime() - startSeconds);
 
   {
-    MutexLocker locker(m_assetsMutex);
+    RecursiveMutexLocker locker(m_loadMutex);
     if (m_assets)
       m_assets->clearCache();
   }
@@ -376,7 +295,7 @@ String Root::toStoragePath(String const& path) const {
 }
 
 AssetsConstPtr Root::assets() {
-  return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
+  return loadMemberFunction<Assets>(m_assets, m_loadMutex, "Assets", [this]() {
     StringList assetDirectories = m_settings.assetDirectories;
     assetDirectories.appendAll(m_modDirectories);
     StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
@@ -388,7 +307,7 @@ AssetsConstPtr Root::assets() {
 }
 
 ConfigurationPtr Root::configuration() {
-  return loadMemberFunction<Configuration>(m_configuration, m_configurationMutex, "Configuration", [this]() {
+  return loadMemberFunction<Configuration>(m_configuration, m_loadMutex, "Configuration", [this]() {
     Json currentConfig;
 
     if (m_runtimeConfigFile) {
@@ -426,43 +345,43 @@ ConfigurationPtr Root::configuration() {
 }
 
 ObjectDatabaseConstPtr Root::objectDatabase() {
-  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets(), materialDatabase(), imageMetadataDatabase(), particleDatabase(), [this]() {
+  return loadMember(m_objectDatabase, m_loadMutex, "ObjectDatabase", assets(), materialDatabase(), imageMetadataDatabase(), particleDatabase(), [this]() {
     return itemDatabase();
   }, luaRootServices());
 }
 
 PlantDatabaseConstPtr Root::plantDatabase() {
-  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", assets(), imageMetadataDatabase());
+  return loadMember(m_plantDatabase, m_loadMutex, "PlantDatabase", assets(), imageMetadataDatabase());
 }
 
 ProjectileDatabaseConstPtr Root::projectileDatabase() {
-  return loadMember(m_projectileDatabase, m_projectileDatabaseMutex, "ProjectileDatabase", assets());
+  return loadMember(m_projectileDatabase, m_loadMutex, "ProjectileDatabase", assets());
 }
 
 MonsterDatabaseConstPtr Root::monsterDatabase() {
-  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", assets(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
+  return loadMember(m_monsterDatabase, m_loadMutex, "MonsterDatabase", assets(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 NpcDatabaseConstPtr Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase(), danceDatabase(), emoteProcessor(), versioningDatabase(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
+  return loadMember(m_npcDatabase, m_loadMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase(), danceDatabase(), emoteProcessor(), versioningDatabase(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 StagehandDatabaseConstPtr Root::stagehandDatabase() {
-  return loadMember(m_stagehandDatabase, m_stagehandDatabaseMutex, "StagehandDatabase", assets());
+  return loadMember(m_stagehandDatabase, m_loadMutex, "StagehandDatabase", assets());
 }
 
 VehicleDatabaseConstPtr Root::vehicleDatabase() {
-  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", assets(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
+  return loadMember(m_vehicleDatabase, m_loadMutex, "VehicleDatabase", assets(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 PlayerFactoryConstPtr Root::playerFactory() {
-  return loadMemberFunction<PlayerFactory>(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", [this]() {
+  return loadMemberFunction<PlayerFactory>(m_playerFactory, m_loadMutex, "PlayerFactory", [this]() {
     return make_shared<PlayerFactory>(assets(), configuration(), materialDatabase(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase(), codexDatabase(), danceDatabase(), emoteProcessor(), radioMessageDatabase(), aiDatabase(), collectionDatabase(), speciesDatabase(), [this]() { return entityFactory(); }, liquidsDatabase(), techDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
   });
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
-  return loadMemberFunction<EntityFactory>(m_entityFactory, m_entityFactoryMutex, "EntityFactory", [this]() {
+  return loadMemberFunction<EntityFactory>(m_entityFactory, m_loadMutex, "EntityFactory", [this]() {
     return make_shared<EntityFactory>(assets(), playerFactory(), monsterDatabase(),
                                       objectDatabase(), projectileDatabase(), npcDatabase(), vehicleDatabase(),
                                       versioningDatabase(), itemDatabase(), imageMetadataDatabase());
@@ -470,119 +389,119 @@ EntityFactoryConstPtr Root::entityFactory() {
 }
 
 PatternedNameGeneratorConstPtr Root::nameGenerator() {
-  return loadMember(m_nameGenerator, m_nameGeneratorMutex, "NameGenerator", assets());
+  return loadMember(m_nameGenerator, m_loadMutex, "NameGenerator", assets());
 }
 
 ItemDatabaseConstPtr Root::itemDatabase() {
-  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets(), [this]() { return objectDatabase(); }, liquidsDatabase(), functionDatabase(), codexDatabase(), materialDatabase(), versioningDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
+  return loadMember(m_itemDatabase, m_loadMutex, "ItemDatabase", assets(), [this]() { return objectDatabase(); }, liquidsDatabase(), functionDatabase(), codexDatabase(), materialDatabase(), versioningDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 MaterialDatabaseConstPtr Root::materialDatabase() {
-  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", assets(), particleDatabase(), imageMetadataDatabase());
+  return loadMember(m_materialDatabase, m_loadMutex, "MaterialDatabase", assets(), particleDatabase(), imageMetadataDatabase());
 }
 
 TerrainDatabaseConstPtr Root::terrainDatabase() {
-  return loadMember(m_terrainDatabase, m_terrainDatabaseMutex, "TerrainDatabase", assets());
+  return loadMember(m_terrainDatabase, m_loadMutex, "TerrainDatabase", assets());
 }
 
 BiomeDatabaseConstPtr Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase(), imageMetadataDatabase(), plantDatabase());
+  return loadMember(m_biomeDatabase, m_loadMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase(), imageMetadataDatabase(), plantDatabase());
 }
 
 LiquidsDatabaseConstPtr Root::liquidsDatabase() {
-  return loadMember(m_liquidsDatabase, m_liquidsDatabaseMutex, "LiquidsDatabase", assets(), materialDatabase());
+  return loadMember(m_liquidsDatabase, m_loadMutex, "LiquidsDatabase", assets(), materialDatabase());
 }
 
 StatusEffectDatabaseConstPtr Root::statusEffectDatabase() {
-  return loadMember(m_statusEffectDatabase, m_statusEffectDatabaseMutex, "StatusEffectDatabase", assets());
+  return loadMember(m_statusEffectDatabase, m_loadMutex, "StatusEffectDatabase", assets());
 }
 
 DamageDatabaseConstPtr Root::damageDatabase() {
-  return loadMember(m_damageDatabase, m_damageDatabaseMutex, "DamageDatabase", assets());
+  return loadMember(m_damageDatabase, m_loadMutex, "DamageDatabase", assets());
 }
 
 ParticleDatabaseConstPtr Root::particleDatabase() {
-  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", assets(), imageMetadataDatabase());
+  return loadMember(m_particleDatabase, m_loadMutex, "ParticleDatabase", assets(), imageMetadataDatabase());
 }
 
 EffectSourceDatabaseConstPtr Root::effectSourceDatabase() {
-  return loadMember(m_effectSourceDatabase, m_effectSourceDatabaseMutex, "EffectSourceDatabase", assets());
+  return loadMember(m_effectSourceDatabase, m_loadMutex, "EffectSourceDatabase", assets());
 }
 
 FunctionDatabaseConstPtr Root::functionDatabase() {
-  return loadMember(m_functionDatabase, m_functionDatabaseMutex, "FunctionDatabase", assets());
+  return loadMember(m_functionDatabase, m_loadMutex, "FunctionDatabase", assets());
 }
 
 TreasureDatabaseConstPtr Root::treasureDatabase() {
-  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", assets(), itemDatabase(), objectDatabase());
+  return loadMember(m_treasureDatabase, m_loadMutex, "TreasureDatabase", assets(), itemDatabase(), objectDatabase());
 }
 
 DungeonDefinitionsConstPtr Root::dungeonDefinitions() {
-  return loadMember(m_dungeonDefinitions, m_dungeonDefinitionsMutex, "DungeonDefinitions", assets(), tilesetDatabase());
+  return loadMember(m_dungeonDefinitions, m_loadMutex, "DungeonDefinitions", assets(), tilesetDatabase());
 }
 
 TilesetDatabaseConstPtr Root::tilesetDatabase() {
-  return loadMember(m_tilesetDatabase, m_tilesetDatabaseMutex, "TilesetDatabase", assets());
+  return loadMember(m_tilesetDatabase, m_loadMutex, "TilesetDatabase", assets());
 }
 
 StatisticsDatabaseConstPtr Root::statisticsDatabase() {
-  return loadMember(m_statisticsDatabase, m_statisticsDatabaseMutex, "StatisticsDatabase", assets());
+  return loadMember(m_statisticsDatabase, m_loadMutex, "StatisticsDatabase", assets());
 }
 
 EmoteProcessorConstPtr Root::emoteProcessor() {
-  return loadMember(m_emoteProcessor, m_emoteProcessorMutex, "EmoteProcessor", assets());
+  return loadMember(m_emoteProcessor, m_loadMutex, "EmoteProcessor", assets());
 }
 
 SpeciesDatabaseConstPtr Root::speciesDatabase() {
-  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets(), nameGenerator(), luaRootServices());
+  return loadMember(m_speciesDatabase, m_loadMutex, "SpeciesDatabase", assets(), nameGenerator(), luaRootServices());
 }
 
 ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
-  return loadMember(m_imageMetadataDatabase, m_imageMetadataDatabaseMutex, "ImageMetadataDatabase", assets());
+  return loadMember(m_imageMetadataDatabase, m_loadMutex, "ImageMetadataDatabase", assets());
 }
 
 VersioningDatabaseConstPtr Root::versioningDatabase() {
-  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", assets(), liquidsDatabase(), biomeDatabase(), [this](String const& path) { return toStoragePath(path); }, luaRootServices());
+  return loadMember(m_versioningDatabase, m_loadMutex, "VersioningDatabase", assets(), liquidsDatabase(), biomeDatabase(), [this](String const& path) { return toStoragePath(path); }, luaRootServices());
 }
 
 QuestTemplateDatabaseConstPtr Root::questTemplateDatabase() {
-  return loadMember(m_questTemplateDatabase, m_questTemplateDatabaseMutex, "QuestTemplateDatabase", assets());
+  return loadMember(m_questTemplateDatabase, m_loadMutex, "QuestTemplateDatabase", assets());
 }
 
 AiDatabaseConstPtr Root::aiDatabase() {
-  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", assets(), imageMetadataDatabase());
+  return loadMember(m_aiDatabase, m_loadMutex, "AiDatabase", assets(), imageMetadataDatabase());
 }
 
 TechDatabaseConstPtr Root::techDatabase() {
-  return loadMember(m_techDatabase, m_techDatabaseMutex, "TechDatabase", assets());
+  return loadMember(m_techDatabase, m_loadMutex, "TechDatabase", assets());
 }
 
 CodexDatabaseConstPtr Root::codexDatabase() {
-  return loadMember(m_codexDatabase, m_codexDatabaseMutex, "CodexDatabase", assets());
+  return loadMember(m_codexDatabase, m_loadMutex, "CodexDatabase", assets());
 }
 
 BehaviorDatabaseConstPtr Root::behaviorDatabase() {
-  return loadMember(m_behaviorDatabase, m_behaviorDatabaseMutex, "BehaviorDatabase", assets());
+  return loadMember(m_behaviorDatabase, m_loadMutex, "BehaviorDatabase", assets());
 }
 
 TenantDatabaseConstPtr Root::tenantDatabase() {
-  return loadMember(m_tenantDatabase, m_tenantDatabaseMutex, "TenantDatabase", assets());
+  return loadMember(m_tenantDatabase, m_loadMutex, "TenantDatabase", assets());
 }
 
 DanceDatabaseConstPtr Root::danceDatabase() {
-  return loadMember(m_danceDatabase, m_danceDatabaseMutex, "DanceDatabase", assets());
+  return loadMember(m_danceDatabase, m_loadMutex, "DanceDatabase", assets());
 }
 
 SpawnTypeDatabaseConstPtr Root::spawnTypeDatabase() {
-  return loadMember(m_spawnTypeDatabase, m_spawnTypeDatabaseMutex, "SpawnTypeDatabase", assets());
+  return loadMember(m_spawnTypeDatabase, m_loadMutex, "SpawnTypeDatabase", assets());
 }
 
 RadioMessageDatabaseConstPtr Root::radioMessageDatabase() {
-  return loadMember(m_radioMessageDatabase, m_radioMessageDatabaseMutex, "RadioMessageDatabase", assets());
+  return loadMember(m_radioMessageDatabase, m_loadMutex, "RadioMessageDatabase", assets());
 }
 
 CollectionDatabaseConstPtr Root::collectionDatabase() {
-  return loadMember(m_collectionDatabase, m_collectionDatabaseMutex, "CollectionDatabase", assets(), monsterDatabase(), itemDatabase());
+  return loadMember(m_collectionDatabase, m_loadMutex, "CollectionDatabase", assets(), monsterDatabase(), itemDatabase());
 }
 
 Root::Settings& Root::settings() {
@@ -755,15 +674,15 @@ LuaRootServices Root::luaRootServices() {
 }
 
 template <typename T, typename... Params>
-shared_ptr<T> Root::loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
+shared_ptr<T> Root::loadMember(shared_ptr<T>& ptr, RecursiveMutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
     return make_shared<T>(std::forward<Params>(params)...);
   });
 }
 
 template <typename T>
-shared_ptr<T> Root::loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction) {
-  MutexLocker locker(mutex);
+shared_ptr<T> Root::loadMemberFunction(shared_ptr<T>& ptr, RecursiveMutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction) {
+  RecursiveMutexLocker locker(mutex);
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();
     ptr = loadFunction();

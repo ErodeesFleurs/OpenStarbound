@@ -7,6 +7,8 @@
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 
+#include "StarConfiguration.hpp"
+
 namespace Star {
 
 class Item;
@@ -25,8 +27,6 @@ using LegsArmorPtr = SharedPtr<LegsArmor>;
 class BackArmor;
 using BackArmorPtr = SharedPtr<BackArmor>;
 class Player;
-class Configuration;
-using ConfigurationPtr = SharedPtr<Configuration>;
 
 class PlayerInventory;
 using PlayerInventoryPtr = SharedPtr<PlayerInventory>;

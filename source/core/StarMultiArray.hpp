@@ -203,7 +203,7 @@ void MultiArray<Element, Rank>::resize(SizeArray const& shape) {
   if (equal)
     return;
 
-  [[nodiscard]] MultiArray newArray(shape);
+  MultiArray newArray(shape);
   newArray.copy(*this);
   std::swap(*this, newArray);
 }
@@ -222,7 +222,7 @@ void MultiArray<Element, Rank>::resize(SizeArray const& shape, Element const& c)
   if (equal)
     return;
 
-  [[nodiscard]] MultiArray newArray(shape, c);
+  MultiArray newArray(shape, c);
   newArray.copy(*this);
   *this = std::move(newArray);
 }

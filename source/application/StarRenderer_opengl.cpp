@@ -81,14 +81,6 @@ void main() {
 }
 )SHADER";
 
-/*
-static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GLsizei, const GLchar* message, const void* renderer) {
-  if (type == GL_DEBUG_TYPE_ERROR) {
-    Logger::error("GL ERROR: {}", message);
-    __debugbreak();
-  }
-}
-*/
 
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();

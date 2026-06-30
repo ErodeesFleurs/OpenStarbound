@@ -1,10 +1,11 @@
 #pragma once
 
 #include "StarConfiguration.hpp"
+#include "StarAssets.hpp"
 #include "StarJson.hpp"
 #include "StarListener.hpp"
 #include "StarLogging.hpp"
-#include "StarRootBase.hpp"
+#include <shared_mutex>
 
 namespace Star {
 
@@ -161,6 +162,9 @@ class CollectionDatabase;
 using CollectionDatabasePtr = SharedPtr<CollectionDatabase>;
 using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
 
+struct RootExceptionTag { static constexpr char const* typeName = "RootException"; };
+using RootException = TypedException<StarException, RootExceptionTag>;
+
 class Root;
 
 // Root object for starbound providing access to the unique
@@ -169,7 +173,7 @@ class Root;
 // should be completed before any code dependent on Root is started in any
 // thread, and all Root dependent code in any thread should be finished before
 // letting Root destruct.
-class Root final : public RootBase {
+class Root final {
 public:
   struct Settings {
     Assets::Settings assetsSettings;
@@ -246,8 +250,8 @@ public:
   // All of the Root member accessors are safe to call at any time after Root
   // initialization, if they are not loaded they will load before returning.
 
-  [[nodiscard]] AssetsConstPtr assets() override;
-  [[nodiscard]] ConfigurationPtr configuration() override;
+  [[nodiscard]] AssetsConstPtr assets();
+  [[nodiscard]] ConfigurationPtr configuration();
 
   [[nodiscard]] ObjectDatabaseConstPtr objectDatabase();
   [[nodiscard]] PlantDatabaseConstPtr plantDatabase();
@@ -297,16 +301,17 @@ public:
 private:
   [[nodiscard]] static StringList scanForAssetSources(StringList const& directories, StringList const& manual = {});
   template <typename T, typename... Params>
-  [[nodiscard]] static shared_ptr<T> loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params);
+  [[nodiscard]] static shared_ptr<T> loadMember(shared_ptr<T>& ptr, RecursiveMutex& mutex, char const* name, Params&&... params);
   template <typename T>
-  [[nodiscard]] static shared_ptr<T> loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction);
+  [[nodiscard]] static shared_ptr<T> loadMemberFunction(shared_ptr<T>& ptr, RecursiveMutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction);
 
-  // m_configurationMutex must be held when calling
+  // m_loadMutex must be held when calling
   void writeConfig();
 
   Settings m_settings;
 
   Mutex m_modsMutex;
+  RecursiveMutex m_loadMutex;
   StringList m_modDirectories;
 
   ListenerGroup m_reloadListeners;
@@ -320,124 +325,76 @@ private:
   bool m_stopMaintenanceThread;
 
   AssetsPtr m_assets;
-  Mutex m_assetsMutex;
 
   ConfigurationPtr m_configuration;
-  Mutex m_configurationMutex;
 
   ObjectDatabasePtr m_objectDatabase;
-  Mutex m_objectDatabaseMutex;
 
   PlantDatabasePtr m_plantDatabase;
-  Mutex m_plantDatabaseMutex;
 
   ProjectileDatabasePtr m_projectileDatabase;
-  Mutex m_projectileDatabaseMutex;
 
   MonsterDatabasePtr m_monsterDatabase;
-  Mutex m_monsterDatabaseMutex;
 
   NpcDatabasePtr m_npcDatabase;
-  Mutex m_npcDatabaseMutex;
 
   StagehandDatabasePtr m_stagehandDatabase;
-  Mutex m_stagehandDatabaseMutex;
 
   VehicleDatabasePtr m_vehicleDatabase;
-  Mutex m_vehicleDatabaseMutex;
 
   PlayerFactoryPtr m_playerFactory;
-  Mutex m_playerFactoryMutex;
 
   EntityFactoryPtr m_entityFactory;
-  Mutex m_entityFactoryMutex;
 
   PatternedNameGeneratorPtr m_nameGenerator;
-  Mutex m_nameGeneratorMutex;
 
   ItemDatabasePtr m_itemDatabase;
-  Mutex m_itemDatabaseMutex;
 
   MaterialDatabasePtr m_materialDatabase;
-  Mutex m_materialDatabaseMutex;
-
   TerrainDatabasePtr m_terrainDatabase;
-  Mutex m_terrainDatabaseMutex;
-
   BiomeDatabasePtr m_biomeDatabase;
-  Mutex m_biomeDatabaseMutex;
-
   LiquidsDatabasePtr m_liquidsDatabase;
-  Mutex m_liquidsDatabaseMutex;
-
   StatusEffectDatabasePtr m_statusEffectDatabase;
-  Mutex m_statusEffectDatabaseMutex;
-
   DamageDatabasePtr m_damageDatabase;
-  Mutex m_damageDatabaseMutex;
-
   ParticleDatabasePtr m_particleDatabase;
-  Mutex m_particleDatabaseMutex;
-
   EffectSourceDatabasePtr m_effectSourceDatabase;
-  Mutex m_effectSourceDatabaseMutex;
-
   FunctionDatabasePtr m_functionDatabase;
-  Mutex m_functionDatabaseMutex;
-
   TreasureDatabasePtr m_treasureDatabase;
-  Mutex m_treasureDatabaseMutex;
-
   DungeonDefinitionsPtr m_dungeonDefinitions;
-  Mutex m_dungeonDefinitionsMutex;
 
   TilesetDatabasePtr m_tilesetDatabase;
-  Mutex m_tilesetDatabaseMutex;
 
   StatisticsDatabasePtr m_statisticsDatabase;
-  Mutex m_statisticsDatabaseMutex;
 
   EmoteProcessorPtr m_emoteProcessor;
-  Mutex m_emoteProcessorMutex;
 
   SpeciesDatabasePtr m_speciesDatabase;
-  Mutex m_speciesDatabaseMutex;
 
   ImageMetadataDatabasePtr m_imageMetadataDatabase;
-  Mutex m_imageMetadataDatabaseMutex;
 
   VersioningDatabasePtr m_versioningDatabase;
-  Mutex m_versioningDatabaseMutex;
 
   QuestTemplateDatabasePtr m_questTemplateDatabase;
-  Mutex m_questTemplateDatabaseMutex;
 
   AiDatabasePtr m_aiDatabase;
-  Mutex m_aiDatabaseMutex;
 
   TechDatabasePtr m_techDatabase;
-  Mutex m_techDatabaseMutex;
 
   CodexDatabasePtr m_codexDatabase;
-  Mutex m_codexDatabaseMutex;
 
   BehaviorDatabasePtr m_behaviorDatabase;
-  Mutex m_behaviorDatabaseMutex;
 
   TenantDatabasePtr m_tenantDatabase;
-  Mutex m_tenantDatabaseMutex;
 
   DanceDatabasePtr m_danceDatabase;
-  Mutex m_danceDatabaseMutex;
 
   SpawnTypeDatabasePtr m_spawnTypeDatabase;
-  Mutex m_spawnTypeDatabaseMutex;
 
   RadioMessageDatabasePtr m_radioMessageDatabase;
-  Mutex m_radioMessageDatabaseMutex;
 
   CollectionDatabasePtr m_collectionDatabase;
-  Mutex m_collectionDatabaseMutex;
+
+  static atomic<Root*> s_activeRoot;
 };
 
 }// namespace Star

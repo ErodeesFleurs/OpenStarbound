@@ -473,7 +473,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
 template <typename ElementT, size_t SectorSize>
 WorkerPool& SectorArray2D<ElementT, SectorSize>::getWorkerPool() const {
-  [[nodiscard]] static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
+  static WorkerPool pool("SectorArray2DWorkerPool", std::thread::hardware_concurrency());
   return pool;
 }
 

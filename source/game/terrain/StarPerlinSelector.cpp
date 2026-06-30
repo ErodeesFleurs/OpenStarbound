@@ -1,4 +1,4 @@
-#include "StarPerlinSelector.hpp"
+#include "StarTerrainSelectors.hpp"
 #include "StarRandom.hpp"
 
 namespace Star {

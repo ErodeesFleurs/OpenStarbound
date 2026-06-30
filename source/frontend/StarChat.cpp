@@ -100,14 +100,11 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices servic
 
   show();
 
-  //if (!m_scripted) {
-    //updateBottomButton();
 
-    m_background = fetchChild<ImageStretchWidget>("background");
-    m_defaultHeight = m_background->size()[1];
-    m_expanded = false;
-    updateSize();
-  //}
+  m_background = fetchChild<ImageStretchWidget>("background");
+  m_defaultHeight = m_background->size()[1];
+  m_expanded = false;
+  updateSize();
 }
 
 void Chat::update(float dt) {

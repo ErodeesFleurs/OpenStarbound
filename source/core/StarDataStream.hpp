@@ -104,9 +104,9 @@ public:
   // fewer bytes.  size_t version can be used to portably write a size_t type,
   // and portably and efficiently handles the case of NPos.
 
-  [[nodiscard]] size_t writeVlqU(uint64_t i);
-  [[nodiscard]] size_t writeVlqI(int64_t i);
-  [[nodiscard]] size_t writeVlqS(size_t i);
+  size_t writeVlqU(uint64_t i);
+  size_t writeVlqI(int64_t i);
+  size_t writeVlqS(size_t i);
 
   [[nodiscard]] size_t readVlqU(uint64_t& i);
   [[nodiscard]] size_t readVlqI(int64_t& i);

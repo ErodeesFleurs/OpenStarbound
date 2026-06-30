@@ -8,13 +8,13 @@
 #include "StarRpcPromise.hpp"
 #include "StarStatusTypes.hpp"
 
+#include "StarConfiguration.hpp"
+
 namespace Star {
 
 class Player;
 class AiDatabase;
 using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
-class Configuration;
-using ConfigurationPtr = SharedPtr<Configuration>;
 class RadioMessageDatabase;
 using RadioMessageDatabaseConstPtr = SharedPtr<RadioMessageDatabase const>;
 class StatusController;

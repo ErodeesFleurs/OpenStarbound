@@ -23,83 +23,106 @@ public:
   using RefConstType = T const&;
 
   Maybe() = default;
+  Maybe(T const& t) : m_data(t) {}
+  Maybe(T&& t) : m_data(std::move(t)) {}
+  Maybe(std::nullopt_t) : m_data(std::nullopt) {}
 
-  Maybe(T const& t);
-  Maybe(T&& t);
-  Maybe(std::nullopt_t);
-
-  Maybe(Maybe const& rhs);
-  Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
+  Maybe(Maybe const&) = default;
+  Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>) : m_data(std::move(rhs.m_data)) {}
   template <typename T2>
-  Maybe(Maybe<T2> const& rhs);
+  Maybe(Maybe<T2> const& rhs) : m_data(rhs ? std::optional<T>(*rhs) : std::nullopt) {}
 
-  ~Maybe();
+  ~Maybe() = default;
 
-  Maybe& operator=(Maybe const& rhs);
-  Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
-  Maybe& operator=(std::nullopt_t);
+  Maybe& operator=(Maybe const&) = default;
+  Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>) {
+    if (this != &rhs) {
+      if (rhs)
+        emplace(rhs.take());
+      else
+        reset();
+    }
+    return *this;
+  }
+  Maybe& operator=(std::nullopt_t) {
+    m_data.reset();
+    return *this;
+  }
   template <typename T2>
-  Maybe& operator=(Maybe<T2> const& rhs);
+  Maybe& operator=(Maybe<T2> const& rhs) {
+    if (rhs)
+      m_data.emplace(*rhs);
+    else
+      m_data.reset();
+    return *this;
+  }
 
-  [[nodiscard]] static Maybe fromOptional(std::optional<T> const& t);
-  [[nodiscard]] static Maybe fromOptional(std::optional<T>&& t);
+  [[nodiscard]] static Maybe fromOptional(std::optional<T> const& t) { return t ? Maybe(*t) : Maybe(); }
+  [[nodiscard]] static Maybe fromOptional(std::optional<T>&& t) { return t ? Maybe(std::move(*t)) : Maybe(); }
 
-  [[nodiscard]] bool isValid() const;
-  [[nodiscard]] bool isNothing() const;
-  [[nodiscard]] explicit operator bool() const;
+  [[nodiscard]] bool isValid() const { return m_data.has_value(); }
+  [[nodiscard]] bool isNothing() const { return !m_data.has_value(); }
+  [[nodiscard]] explicit operator bool() const { return m_data.has_value(); }
 
-  [[nodiscard]] PointerConstType ptr() const;
-  [[nodiscard]] PointerType ptr();
+  [[nodiscard]] PointerConstType ptr() const { return m_data ? &*m_data : nullptr; }
+  [[nodiscard]] PointerType ptr() { return m_data ? &*m_data : nullptr; }
 
-  [[nodiscard]] PointerConstType operator->() const;
-  [[nodiscard]] PointerType operator->();
+  [[nodiscard]] PointerConstType operator->() const { return &m_data.value(); }
+  [[nodiscard]] PointerType operator->() { return &m_data.value(); }
 
-  [[nodiscard]] RefConstType operator*() const;
-  [[nodiscard]] RefType operator*();
+  [[nodiscard]] RefConstType operator*() const { return m_data.value(); }
+  [[nodiscard]] RefType operator*() { return m_data.value(); }
 
-  bool operator==(Maybe const& rhs) const;
-  bool operator!=(Maybe const& rhs) const;
-  [[nodiscard]] bool operator<(Maybe const& rhs) const;
+  bool operator==(Maybe const& rhs) const { return m_data == rhs.m_data; }
+  bool operator!=(Maybe const& rhs) const { return m_data != rhs.m_data; }
+  [[nodiscard]] bool operator<(Maybe const& rhs) const { return m_data < rhs.m_data; }
 
-  [[nodiscard]] RefConstType get() const;
-  [[nodiscard]] RefType get();
+  [[nodiscard]] RefConstType get() const { return m_data.value(); }
+  [[nodiscard]] RefType get() { return m_data.value(); }
 
-  [[nodiscard]] std::optional<T> optional() const&;
-  [[nodiscard]] std::optional<T> optional() &&;
+  [[nodiscard]] std::optional<T> optional() const& { return m_data; }
+  [[nodiscard]] std::optional<T> optional() && { auto tmp = std::move(m_data); m_data.reset(); return tmp; }
 
-  // Get either the contents of this Maybe or the given default.
-  [[nodiscard]] T value(T def = T()) const;
+  [[nodiscard]] T value(T def = T()) const { return m_data.value_or(std::move(def)); }
+  [[nodiscard]] Maybe orMaybe(Maybe const& other) const { return m_data ? *this : other; }
 
-  // Get either this value, or if this value is none the given value.
-  [[nodiscard]] Maybe orMaybe(Maybe const& other) const;
+  [[nodiscard]] T take() {
+    if (!m_data)
+      throw InvalidMaybeAccessException();
+    T val(std::move(*m_data));
+    m_data.reset();
+    return val;
+  }
 
-  // Takes the value out of this Maybe, leaving it Nothing.
-  [[nodiscard]] T take();
+  [[nodiscard]] bool put(T& t) {
+    if (m_data) {
+      t = std::move(*m_data);
+      m_data.reset();
+      return true;
+    }
+    return false;
+  }
 
-  // If this Maybe is set, assigns it to t and leaves this Maybe as Nothing.
-  [[nodiscard]] bool put(T& t);
-
-  void set(T const& t);
-  void set(T&& t);
-
+  void set(T const& t) { m_data.emplace(t); }
+  void set(T&& t) { m_data.emplace(std::move(t)); }
   template <typename... Args>
-  void emplace(Args&&... t);
+  void emplace(Args&&... t) { m_data.emplace(std::forward<Args>(t)...); }
+  void reset() { m_data.reset(); }
 
-  void reset();
-
-  // Apply a function to the contained value if it is not Nothing.
   template <typename Function>
-  void exec(Function&& function);
+  void exec(Function&& function) { if (m_data) function(*m_data); }
 
-  // Functor map operator.  If this maybe is not Nothing, then applies the
-  // given function to it and returns the result, otherwise returns Nothing (of
-  // the type the function would normally return).
   template <typename Function>
-  [[nodiscard]] auto apply(Function&& function) const -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>>;
+  [[nodiscard]] auto apply(Function&& function) const -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
+    if (m_data) return function(*m_data);
+    return {};
+  }
 
-  // Monadic bind operator.  Given function should return another Maybe.
   template <typename Function>
-  [[nodiscard]] auto sequence(Function function) const -> decltype(function(std::declval<T>()));
+  [[nodiscard]] auto sequence(Function function) const -> decltype(function(std::declval<T>())) {
+    if (m_data) return function(*m_data);
+    return {};
+  }
 
 private:
   std::optional<T> m_data;
@@ -114,280 +137,7 @@ struct hash<Maybe<T>> {
   hash<T> hasher;
 };
 
-template <typename T>
-Maybe<T>::Maybe(T const& t)
-    : m_data(t) {}
-
-template <typename T>
-Maybe<T>::Maybe(T&& t)
-    : m_data(std::move(t)) {}
-
-template <typename T>
-Maybe<T>::Maybe(std::nullopt_t)
-    : m_data(std::nullopt) {}
-
-template <typename T>
-Maybe<T>::Maybe(Maybe const& rhs)
-    : m_data(rhs.m_data) {}
-
-template <typename T>
-Maybe<T>::Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>)
-    : m_data(std::move(rhs.m_data)) {
-  rhs.reset();
-}
-
-template <typename T>
-template <typename T2>
-Maybe<T>::Maybe(Maybe<T2> const& rhs)
-    : m_data(rhs ? std::optional<T>(*rhs) : std::nullopt) {}
-
-template <typename T>
-Maybe<T>::~Maybe() = default;
-
-template <typename T>
-Maybe<T>& Maybe<T>::operator=(Maybe const& rhs) {
-  if (&rhs == this)
-    return *this;
-
-  if (rhs)
-    emplace(*rhs);
-  else
-    reset();
-
-  return *this;
-}
-
-template <typename T>
-template <typename T2>
-Maybe<T>& Maybe<T>::operator=(Maybe<T2> const& rhs) {
-  if (rhs)
-    emplace(*rhs);
-  else
-    reset();
-
-  return *this;
-}
-
-template <typename T>
-Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>) {
-  if (&rhs == this)
-    return *this;
-
-  if (rhs)
-    emplace(rhs.take());
-  else
-    reset();
-
-  return *this;
-}
-
-template <typename T>
-Maybe<T>& Maybe<T>::operator=(std::nullopt_t) {
-  reset();
-  return *this;
-}
-
-template <typename T>
-Maybe<T> Maybe<T>::fromOptional(std::optional<T> const& t) {
-  if (t)
-    return Maybe(*t);
-  return {};
-}
-
-template <typename T>
-Maybe<T> Maybe<T>::fromOptional(std::optional<T>&& t) {
-  if (t)
-    return Maybe(std::move(*t));
-  return {};
-}
-
-template <typename T>
-bool Maybe<T>::isValid() const {
-  return m_data.has_value();
-}
-
-template <typename T>
-bool Maybe<T>::isNothing() const {
-  return !m_data.has_value();
-}
-
-template <typename T>
-Maybe<T>::operator bool() const {
-  return m_data.has_value();
-}
-
-template <typename T>
-auto Maybe<T>::ptr() const -> PointerConstType {
-  return m_data ? &*m_data : nullptr;
-}
-
-template <typename T>
-auto Maybe<T>::ptr() -> PointerType {
-  return m_data ? &*m_data : nullptr;
-}
-
-template <typename T>
-auto Maybe<T>::operator->() const -> PointerConstType {
-  if (!m_data)
-    throw InvalidMaybeAccessException();
-
-  return ptr();
-}
-
-template <typename T>
-auto Maybe<T>::operator->() -> PointerType {
-  if (!m_data)
-    throw InvalidMaybeAccessException();
-
-  return ptr();
-}
-
-template <typename T>
-auto Maybe<T>::operator*() const -> RefConstType {
-  return get();
-}
-
-template <typename T>
-auto Maybe<T>::operator*() -> RefType {
-  return get();
-}
-
-template <typename T>
-bool Maybe<T>::operator==(Maybe const& rhs) const {
-  if (!m_data && !rhs.m_data)
-    return true;
-  if (m_data && rhs.m_data)
-    return get() == rhs.get();
-  return false;
-}
-
-template <typename T>
-bool Maybe<T>::operator!=(Maybe const& rhs) const {
-  return !operator==(rhs);
-}
-
-template <typename T>
-bool Maybe<T>::operator<(Maybe const& rhs) const {
-  if (m_data && rhs.m_data)
-    return get() < rhs.get();
-  if (!m_data && rhs.m_data)
-    return true;
-  return false;
-}
-
-template <typename T>
-auto Maybe<T>::get() const -> RefConstType {
-  if (!m_data)
-    throw InvalidMaybeAccessException();
-
-  return *m_data;
-}
-
-template <typename T>
-auto Maybe<T>::get() -> RefType {
-  if (!m_data)
-    throw InvalidMaybeAccessException();
-
-  return *m_data;
-}
-
-template <typename T>
-[[nodiscard]] std::optional<T> Maybe<T>::optional() const& {
-  return m_data;
-}
-
-template <typename T>
-[[nodiscard]] std::optional<T> Maybe<T>::optional() && {
-  if (m_data)
-    return take();
-  return std::nullopt;
-}
-
-template <typename T>
-[[nodiscard]] T Maybe<T>::value(T def) const {
-  if (m_data)
-    return *m_data;
-  else
-    return def;
-}
-
-template <typename T>
-[[nodiscard]] Maybe<T> Maybe<T>::orMaybe(Maybe const& other) const {
-  if (m_data)
-    return *this;
-  else
-    return other;
-}
-
-template <typename T>
-[[nodiscard]] T Maybe<T>::take() {
-  if (!m_data)
-    throw InvalidMaybeAccessException();
-
-  [[nodiscard]] T val(std::move(*m_data));
-
-  reset();
-
-  return val;
-}
-
-template <typename T>
-[[nodiscard]] bool Maybe<T>::put(T& t) {
-  if (m_data) {
-    t = std::move(*m_data);
-
-    reset();
-
-    return true;
-  } else {
-    return false;
-  }
-}
-
-template <typename T>
-void Maybe<T>::set(T const& t) {
-  emplace(t);
-}
-
-template <typename T>
-void Maybe<T>::set(T&& t) {
-  emplace(std::forward<T>(t));
-}
-
-template <typename T>
-template <typename... Args>
-void Maybe<T>::emplace(Args&&... t) {
-  m_data.emplace(std::forward<Args>(t)...);
-}
-
-template <typename T>
-void Maybe<T>::reset() {
-  m_data.reset();
-}
-
-template <typename T>
-template <typename Function>
-[[nodiscard]] auto Maybe<T>::apply(Function&& function) const
-  -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
-  if (!isValid())
-    return {};
-  return function(get());
-}
-
-template <typename T>
-template <typename Function>
-void Maybe<T>::exec(Function&& function) {
-  if (isValid())
-    function(get());
-}
-
-template <typename T>
-template <typename Function>
-[[nodiscard]] auto Maybe<T>::sequence(Function function) const -> decltype(function(std::declval<T>())) {
-  if (!isValid())
-    return {};
-  return function(get());
-}
+// --- out-of-line implementations (only non-trivial ones) ---
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, Maybe<T> const& v) {
@@ -405,7 +155,7 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
     return hasher(*m);
 }
 
-}// namespace Star
+} // namespace Star
 
 template <typename T>
 struct std::formatter<Star::Maybe<T>> : Star::OstreamFormatter {};

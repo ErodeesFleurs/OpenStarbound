@@ -7,10 +7,9 @@
 #include "StarWorldStorage.hpp"
 #include "StarStatistics.hpp"
 
+#include "StarConfiguration.hpp"
 namespace Star {
 
-class Configuration;
-using ConfigurationPtr = SharedPtr<Configuration>;
 class EntityFactory;
 using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
 

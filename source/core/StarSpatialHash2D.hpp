@@ -288,7 +288,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(
     auto sectorResult = getSectors(rect);
     for (IntT x = sectorResult.xMin(); x < sectorResult.xMax(); ++x) {
       for (IntT y = sectorResult.yMin(); y < sectorResult.yMax(); ++y) {
-        [[nodiscard]] Sector sector(x, y);
+        Sector sector(x, y);
         SectorEntrySet* p = m_sectorMap.ptr(sector);
         if (!p)
           p = &m_sectorMap.add(sector, SectorEntrySet());

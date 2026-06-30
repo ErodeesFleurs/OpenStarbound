@@ -796,7 +796,7 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
 
 template <typename Base>
 [[nodiscard]] bool BTreeMixin<Base>::modify(DataElement e, ModifyAction action) {
-  [[nodiscard]] ModifyInfo info(action, std::move(e));
+  ModifyInfo info(action, std::move(e));
 
   Leaf lowerLeaf;
   Index lowerIndex;

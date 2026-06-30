@@ -12,7 +12,6 @@ target_sources(star_base PRIVATE
     StarMemoryAssetSource.hpp
     StarMixer.hpp
     StarPackedAssetSource.hpp
-    StarRootBase.hpp
     StarVersionOptionParser.hpp
     StarWorldGeometry.hpp
     scripting/StarImageLuaBindings.hpp
@@ -25,7 +24,6 @@ target_sources(star_base PRIVATE
     StarMemoryAssetSource.cpp
     StarMixer.cpp
     StarPackedAssetSource.cpp
-    StarRootBase.cpp
     StarVersionOptionParser.cpp
     StarWorldGeometry.cpp
     scripting/StarImageLuaBindings.cpp

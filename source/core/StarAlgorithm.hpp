@@ -248,7 +248,7 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
   else
     sort(work, compare);
 
-  [[nodiscard]] Container result(containerSize);
+  Container result(containerSize);
   for (size_t i = 0; i < containerSize; ++i)
     swap(result[i], container[work[i].second]);
 

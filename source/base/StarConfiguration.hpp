@@ -30,8 +30,7 @@ public:
   void set(String const& key, Json const& value);
   void setPath(String const& path, Json const& value);
 
-private:
-  mutable Mutex m_mutex;
+  mutable ReadersWriterMutex m_mutex;
 
   Json m_defaultConfig;
   Json m_currentConfig;

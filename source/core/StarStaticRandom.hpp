@@ -18,7 +18,7 @@ void staticRandomHash32Iter(XXHash32& hash, T const& v, TL const&... rest) {
 
 template <typename T, typename... TL>
 uint32_t staticRandomHash32(T const& v, TL const&... rest) {
-  [[nodiscard]] XXHash32 hash(2938728349u);
+  XXHash32 hash(2938728349u);
   staticRandomHash32Iter(hash, v, rest...);
   return hash.digest();
 }
@@ -33,7 +33,7 @@ void staticRandomHash64Iter(XXHash64& hash, T const& v, TL const&... rest) {
 
 template <typename T, typename... TL>
 uint64_t staticRandomHash64(T const& v, TL const&... rest) {
-  [[nodiscard]] XXHash64 hash(1997293021376312589);
+  XXHash64 hash(1997293021376312589);
   staticRandomHash64Iter(hash, v, rest...);
   return hash.digest();
 }

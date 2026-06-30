@@ -195,7 +195,7 @@ auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) con
 
 template <typename Tile, unsigned SectorSize>
 RectI TileSectorArray<Tile, SectorSize>::sectorRegion(Sector const& sector) const {
-  [[nodiscard]] Vec2I sectorCorner(m_tileSectors.sectorCorner(sector));
+  Vec2I sectorCorner(m_tileSectors.sectorCorner(sector));
   return RectI::withSize(sectorCorner, {min<int>(SectorSize, m_worldSize[0] - sectorCorner[0]), min<int>(SectorSize, m_worldSize[1] - sectorCorner[1])});
 }
 
@@ -204,7 +204,7 @@ auto TileSectorArray<Tile, SectorSize>::adjacentSector(Sector const& sector, Vec
   // This works because the only smaller than SectorSize sectors are on the
   // world wrap point, and there is only one vertical line of them, but it's
   // very not-obvious that it works.
-  [[nodiscard]] Vec2I corner(m_tileSectors.sectorCorner(sector));
+  Vec2I corner(m_tileSectors.sectorCorner(sector));
   corner += sectorMovement * SectorSize;
   return sectorFor(corner);
 }

@@ -153,13 +153,13 @@ private:
 
 template <typename ResultType>
 [[nodiscard]] bool WorkerPoolPromise<ResultType>::done() const {
-  [[nodiscard]] MutexLocker locker(m_impl->mutex);
+  MutexLocker locker(m_impl->mutex);
   return m_impl->result || m_impl->exception;
 }
 
 template <typename ResultType>
 [[nodiscard]] bool WorkerPoolPromise<ResultType>::wait(unsigned millis) const {
-  [[nodiscard]] MutexLocker locker(m_impl->mutex);
+  MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->result && !m_impl->exception && millis != 0)
     m_impl->condition.wait(m_impl->mutex, millis);
@@ -180,7 +180,7 @@ template <typename ResultType>
 
 template <typename ResultType>
 [[nodiscard]] ResultType& WorkerPoolPromise<ResultType>::get() {
-  [[nodiscard]] MutexLocker locker(m_impl->mutex);
+  MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->result && !m_impl->exception)
     m_impl->condition.wait(m_impl->mutex);
@@ -210,11 +210,11 @@ template <typename ResultType>
   queueWork([workerPoolPromiseImpl, producer = std::move(producer)]() {
     try {
       auto result = producer();
-      [[nodiscard]] MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
+      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->result = std::move(result);
       workerPoolPromiseImpl->condition.broadcast();
     } catch (...) {
-      [[nodiscard]] MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
+      MutexLocker promiseLocker(workerPoolPromiseImpl->mutex);
       workerPoolPromiseImpl->exception = std::current_exception();
       workerPoolPromiseImpl->condition.broadcast();
     }

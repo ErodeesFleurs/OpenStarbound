@@ -1,6 +1,4 @@
 #include "StarConfiguration.hpp"
-#include "StarFile.hpp"
-#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -12,37 +10,37 @@ Configuration::Configuration(Json defaultConfiguration, Json currentConfiguratio
 }
 
 [[nodiscard]] Json Configuration::currentConfiguration() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_currentConfig;
 }
 
 [[nodiscard]] String Configuration::printConfiguration() const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_currentConfig.printJson(2, true);
 }
 
 [[nodiscard]] Json Configuration::get(String const& key, Json def) const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_currentConfig.get(key, def);
 }
 
 [[nodiscard]] Json Configuration::getPath(String const& path, Json def) const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_currentConfig.query(path, def);
 }
 
 [[nodiscard]] Json Configuration::getDefault(String const& key) const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_defaultConfig.get(key, {});
 }
 
 [[nodiscard]] Json Configuration::getDefaultPath(String const& path) const {
-  MutexLocker locker(m_mutex);
+  ReadLocker locker(m_mutex);
   return m_defaultConfig.query(path, {});
 }
 
 void Configuration::set(String const& key, Json const& value) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   if (key == "configurationVersion")
     throw ConfigurationException("cannot set configurationVersion");
 
@@ -53,7 +51,7 @@ void Configuration::set(String const& key, Json const& value) {
 }
 
 void Configuration::setPath(String const& path, Json const& value) {
-  MutexLocker locker(m_mutex);
+  WriteLocker locker(m_mutex);
   if (path.splitAny("[].").get(0) == "configurationVersion")
     throw ConfigurationException("cannot set configurationVersion");
 

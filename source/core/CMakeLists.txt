@@ -5,7 +5,6 @@ target_sources(star_core PRIVATE
     StarAlgorithm.hpp
     StarArray.hpp
     StarAssetPath.hpp
-    StarAtomicSharedPtr.hpp
     StarAudio.hpp
     StarIODeviceCallbacks.hpp
     StarBTree.hpp
@@ -29,6 +28,7 @@ target_sources(star_core PRIVATE
     StarEncode.hpp
     StarException.hpp
     StarFile.hpp
+    StarFlatHashTable.hpp
     StarFlatHashMap.hpp
     StarFlatHashSet.hpp
     StarFont.hpp
@@ -62,6 +62,7 @@ target_sources(star_core PRIVATE
     StarLruCache.hpp
     StarLua.hpp
     StarLuaConverters.hpp
+    StarLuaBindingHelpers.hpp
     StarMap.hpp
     StarMathCommon.hpp
     StarMatrix3.hpp
@@ -85,11 +86,13 @@ target_sources(star_core PRIVATE
     StarNetElementTop.hpp
     StarNetImpl.hpp
     StarObserverStream.hpp
+    StarObserverPtr.hpp
     StarOptionParser.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
     StarOutputProxy.hpp
     StarParametricFunction.hpp
+    StarPacketPool.hpp
     StarPch.hpp
     StarPeriodic.hpp
     StarPeriodicFunction.hpp
@@ -108,6 +111,7 @@ target_sources(star_core PRIVATE
     StarShellParser.hpp
     StarSignalHandler.hpp
     StarSocket.hpp
+    StarSmallVector.hpp
     StarSpatialHash2D.hpp
     StarSpline.hpp
     StarStaticRandom.hpp
@@ -124,8 +128,10 @@ target_sources(star_core PRIVATE
     StarUdp.hpp
     StarUnicode.hpp
     StarUuid.hpp
+    StarUtf8.hpp
     StarVector.hpp
     StarVersion.hpp
+    StarVariant.hpp
     StarVlqEncoding.hpp
     StarWeightedPool.hpp
     StarWorkerPool.hpp

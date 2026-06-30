@@ -678,8 +678,6 @@ add_subdirectory(core)
 # application modules.
 add_subdirectory(base)
 
-# Platform APIs that are implemented by the application module
-add_subdirectory(platform)
 
 # Core game logic used by both server and client.
 add_subdirectory(game)

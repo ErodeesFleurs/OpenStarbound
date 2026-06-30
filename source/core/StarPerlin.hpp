@@ -470,7 +470,7 @@ void Perlin<Float>::normalize3(Float v[3]) const {
 
 template <typename Float>
 void Perlin<Float>::init(uint64_t seed) {
-  [[nodiscard]] RandomSource randomSource(seed);
+  RandomSource randomSource(seed);
 
   p = make_unique<int[]>(PerlinSampleSize + PerlinSampleSize + 2);
   g3 = make_unique<Float[][3]>(PerlinSampleSize + PerlinSampleSize + 2);
