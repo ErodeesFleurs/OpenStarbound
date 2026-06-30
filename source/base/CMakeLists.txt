@@ -1,4 +1,4 @@
-SET (star_base_HEADERS
+set(star_base_HEADERS
     StarAnimatedPartSet.hpp
     StarAssets.hpp
     StarAssetSource.hpp
@@ -17,7 +17,7 @@ SET (star_base_HEADERS
     scripting/StarImageLuaBindings.hpp
   )
 
-SET (star_base_SOURCES
+set(star_base_SOURCES
     StarAnimatedPartSet.cpp
     StarAssets.cpp
     StarCellularLightArray.cpp
@@ -33,11 +33,11 @@ SET (star_base_SOURCES
     scripting/StarImageLuaBindings.cpp
   )
 
-ADD_LIBRARY (star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS})
-TARGET_COMPILE_FEATURES (star_base PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_base PUBLIC ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_base PUBLIC star_build_definitions)
+add_library(star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS})
+target_compile_features(star_base PUBLIC cxx_std_20)
+target_include_directories(star_base PUBLIC ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
+target_link_libraries(star_base PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_base REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(star_base REUSE_FROM star_core)
+endif()

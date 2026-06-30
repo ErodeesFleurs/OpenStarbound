@@ -1,4 +1,4 @@
-SET (star_rendering_HEADERS
+set(star_rendering_HEADERS
       StarAnchorTypes.hpp
       StarAssetTextureGroup.hpp
       StarDrawablePainter.hpp
@@ -9,7 +9,7 @@ SET (star_rendering_HEADERS
       StarWorldPainter.hpp
     )
 
-SET (star_rendering_SOURCES
+set(star_rendering_SOURCES
       StarAnchorTypes.cpp
       StarAssetTextureGroup.cpp
       StarDrawablePainter.cpp
@@ -20,9 +20,9 @@ SET (star_rendering_SOURCES
       StarWorldPainter.cpp
     )
 
-ADD_LIBRARY (star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
-TARGET_COMPILE_FEATURES (star_rendering PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_rendering PUBLIC
+add_library(star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
+target_compile_features(star_rendering PUBLIC cxx_std_20)
+target_include_directories(star_rendering PUBLIC
     ${STAR_RENDERING_INCLUDES}
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
@@ -30,8 +30,8 @@ TARGET_INCLUDE_DIRECTORIES (star_rendering PUBLIC
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_rendering PUBLIC star_build_definitions)
+target_link_libraries(star_rendering PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_rendering REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(star_rendering REUSE_FROM star_core)
+endif()

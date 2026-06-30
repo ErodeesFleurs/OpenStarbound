@@ -1,4 +1,4 @@
-SET (star_game_HEADERS
+set(star_game_HEADERS
     StarActorMovementController.hpp
     StarAiDatabase.hpp
     StarAiTypes.hpp
@@ -266,7 +266,7 @@ SET (star_game_HEADERS
     terrain/StarWormCave.hpp
   )
 
-SET (star_game_SOURCES
+set(star_game_SOURCES
     StarActorMovementController.cpp
     StarAiDatabase.cpp
     StarAiTypes.cpp
@@ -511,16 +511,16 @@ SET (star_game_SOURCES
     terrain/StarWormCave.cpp
   )
 
-ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
-TARGET_COMPILE_FEATURES (star_game PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_game PUBLIC
+add_library(star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+target_compile_features(star_game PUBLIC cxx_std_20)
+target_include_directories(star_game PUBLIC
     ${STAR_GAME_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_game PUBLIC star_build_definitions)
+target_link_libraries(star_game PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(star_game REUSE_FROM star_core)
+endif()

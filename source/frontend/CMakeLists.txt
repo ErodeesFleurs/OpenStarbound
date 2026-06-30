@@ -1,4 +1,4 @@
-SET (star_frontend_HEADERS
+set(star_frontend_HEADERS
     StarActionBar.hpp
     StarAiInterface.hpp
     StarBaseScriptPane.hpp
@@ -52,7 +52,7 @@ SET (star_frontend_HEADERS
     StarWireInterface.hpp
   )
 
-SET (star_frontend_SOURCES
+set(star_frontend_SOURCES
     StarActionBar.cpp
     StarAiInterface.cpp
     StarBaseScriptPane.cpp
@@ -106,9 +106,9 @@ SET (star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
-ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-TARGET_COMPILE_FEATURES (star_frontend PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_frontend PUBLIC
+add_library(star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
+target_compile_features(star_frontend PUBLIC cxx_std_20)
+target_include_directories(star_frontend PUBLIC
     ${STAR_FRONTEND_INCLUDES}
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
@@ -118,8 +118,8 @@ TARGET_INCLUDE_DIRECTORIES (star_frontend PUBLIC
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_build_definitions)
+target_link_libraries(star_frontend PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(star_frontend REUSE_FROM star_core)
+endif()

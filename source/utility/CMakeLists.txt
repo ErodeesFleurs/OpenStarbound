@@ -1,90 +1,90 @@
-FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
-  TARGET_COMPILE_FEATURES (${target} PRIVATE cxx_std_20)
-  TARGET_INCLUDE_DIRECTORIES (${target} PRIVATE
+function(STAR_CONFIGURE_UTILITY_TARGET target)
+  target_compile_features(${target} PRIVATE cxx_std_20)
+  target_include_directories(${target} PRIVATE
       ${STAR_GAME_INCLUDES}
       ${STAR_PLATFORM_INCLUDES}
       ${STAR_BASE_INCLUDES}
       ${STAR_CORE_INCLUDES}
       ${STAR_EXTERN_INCLUDES})
-  TARGET_LINK_LIBRARIES (${target} star_build_definitions)
-ENDFUNCTION ()
+  target_link_libraries(${target} PRIVATE star_build_definitions)
+endfunction()
 
-ADD_EXECUTABLE (asset_packer
+add_executable(asset_packer
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_packer.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (asset_packer)
-TARGET_LINK_LIBRARIES (asset_packer ${STAR_EXT_LIBS})
+target_link_libraries(asset_packer PRIVATE star_external_libraries)
 
-ADD_EXECUTABLE (asset_unpacker
+add_executable(asset_unpacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_unpacker.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (asset_unpacker)
-TARGET_LINK_LIBRARIES (asset_unpacker ${STAR_EXT_LIBS})
+target_link_libraries(asset_unpacker PRIVATE star_external_libraries)
 
-ADD_EXECUTABLE (btree_repacker
+add_executable(btree_repacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   btree_repacker.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (btree_repacker)
-TARGET_LINK_LIBRARIES (btree_repacker ${STAR_EXT_LIBS})
+target_link_libraries(btree_repacker PRIVATE star_external_libraries)
 
-ADD_EXECUTABLE (dump_versioned_json
+add_executable(dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (dump_versioned_json)
-TARGET_LINK_LIBRARIES (dump_versioned_json ${STAR_EXT_LIBS})
+target_link_libraries(dump_versioned_json PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (game_repl
+#add_executable(game_repl
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  game_repl.cpp)
-#TARGET_LINK_LIBRARIES (game_repl ${STAR_EXT_LIBS})
+#target_link_libraries(game_repl PRIVATE star_external_libraries)
 
-ADD_EXECUTABLE (make_versioned_json
+add_executable(make_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   make_versioned_json.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (make_versioned_json)
-TARGET_LINK_LIBRARIES (make_versioned_json ${STAR_EXT_LIBS})
+target_link_libraries(make_versioned_json PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (planet_mapgen
+#add_executable(planet_mapgen
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  planet_mapgen.cpp)
-#TARGET_LINK_LIBRARIES (planet_mapgen ${STAR_EXT_LIBS})
+#target_link_libraries(planet_mapgen PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (render_terrain_selector
+#add_executable(render_terrain_selector
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  render_terrain_selector.cpp)
-#TARGET_LINK_LIBRARIES (render_terrain_selector ${STAR_EXT_LIBS})
+#target_link_libraries(render_terrain_selector PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (update_tilesets
+#add_executable(update_tilesets
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  update_tilesets.cpp tileset_updater.cpp)
-#TARGET_LINK_LIBRARIES (update_tilesets ${STAR_EXT_LIBS})
+#target_link_libraries(update_tilesets PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (fix_embedded_tilesets
+#add_executable(fix_embedded_tilesets
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  fix_embedded_tilesets.cpp)
-#TARGET_LINK_LIBRARIES (fix_embedded_tilesets ${STAR_EXT_LIBS})
+#target_link_libraries(fix_embedded_tilesets PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (world_benchmark
+#add_executable(world_benchmark
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  world_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (world_benchmark ${STAR_EXT_LIBS})
+#target_link_libraries(world_benchmark PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (generation_benchmark
+#add_executable(generation_benchmark
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  generation_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (generation_benchmark ${STAR_EXT_LIBS})
+#target_link_libraries(generation_benchmark PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (dungeon_generation_benchmark
+#add_executable(dungeon_generation_benchmark
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  dungeon_generation_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (dungeon_generation_benchmark ${STAR_EXT_LIBS})
+#target_link_libraries(dungeon_generation_benchmark PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (map_grep
+#add_executable(map_grep
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  map_grep.cpp)
-#TARGET_LINK_LIBRARIES (map_grep ${STAR_EXT_LIBS})
+#target_link_libraries(map_grep PRIVATE star_external_libraries)
 
-#ADD_EXECUTABLE (word_count
+#add_executable(word_count
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  word_count.cpp)
-#TARGET_LINK_LIBRARIES (word_count ${STAR_EXT_LIBS})
+#target_link_libraries(word_count PRIVATE star_external_libraries)

@@ -1,4 +1,4 @@
-SET (star_windowing_HEADERS
+set(star_windowing_HEADERS
         StarButtonGroup.hpp
         StarButtonWidget.hpp
         StarCanvasWidget.hpp
@@ -31,7 +31,7 @@ SET (star_windowing_HEADERS
         StarWidgetParsing.hpp
     )
 
-SET (star_windowing_SOURCES
+set(star_windowing_SOURCES
         StarButtonGroup.cpp
         StarButtonWidget.cpp
         StarCanvasWidget.cpp
@@ -64,9 +64,9 @@ SET (star_windowing_SOURCES
         StarWidgetParsing.cpp
     )
 
-ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
-TARGET_COMPILE_FEATURES (star_windowing PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_windowing PUBLIC
+add_library(star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
+target_compile_features(star_windowing PUBLIC cxx_std_20)
+target_include_directories(star_windowing PUBLIC
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
     ${STAR_APPLICATION_INCLUDES}
@@ -75,4 +75,4 @@ TARGET_INCLUDE_DIRECTORIES (star_windowing PUBLIC
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_windowing PUBLIC star_build_definitions)
+target_link_libraries(star_windowing PUBLIC star_build_definitions)

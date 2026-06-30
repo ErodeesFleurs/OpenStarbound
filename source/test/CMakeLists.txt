@@ -1,4 +1,4 @@
-SET (star_core_tests_SOURCES
+set(star_core_tests_SOURCES
       gtest/gtest-all.cc
 
       core_tests_main.cpp
@@ -45,20 +45,20 @@ SET (star_core_tests_SOURCES
       variant_test.cpp
       vlq_test.cpp
     )
-ADD_EXECUTABLE (core_tests
+add_executable(core_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   ${star_core_tests_SOURCES})
-SET_TARGET_PROPERTIES (core_tests PROPERTIES UNITY_BUILD OFF)
-TARGET_COMPILE_FEATURES (core_tests PRIVATE cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (core_tests PRIVATE . ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
-TARGET_COMPILE_OPTIONS (core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
-TARGET_LINK_LIBRARIES (core_tests star_build_definitions ${STAR_EXT_LIBS})
-ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
-SET_TESTS_PROPERTIES(core_tests PROPERTIES
+set_target_properties(core_tests PROPERTIES UNITY_BUILD OFF)
+target_compile_features(core_tests PRIVATE cxx_std_20)
+target_include_directories(core_tests PRIVATE . ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
+target_compile_options(core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
+target_link_libraries(core_tests PRIVATE star_build_definitions star_external_libraries)
+add_test(NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
+set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets"
                      TIMEOUT 120)
 
-SET (star_game_tests_SOURCES
+set(star_game_tests_SOURCES
       gtest/gtest-all.cc
 
       game_tests_main.cpp
@@ -75,26 +75,26 @@ SET (star_game_tests_SOURCES
       world_geometry_test.cpp
       universe_connection_test.cpp
     )
-ADD_EXECUTABLE (game_tests
+add_executable(game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
-SET_TARGET_PROPERTIES (game_tests PROPERTIES UNITY_BUILD OFF)
-TARGET_COMPILE_FEATURES (game_tests PRIVATE cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (game_tests PRIVATE
+set_target_properties(game_tests PROPERTIES UNITY_BUILD OFF)
+target_compile_features(game_tests PRIVATE cxx_std_20)
+target_include_directories(game_tests PRIVATE
     .
     ${STAR_GAME_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_COMPILE_OPTIONS (game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
-TARGET_LINK_LIBRARIES (game_tests star_build_definitions ${STAR_EXT_LIBS})
+target_compile_options(game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
+target_link_libraries(game_tests PRIVATE star_build_definitions star_external_libraries)
 
-SET (STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
-IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
-  SET (STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
-  FILE (MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
-  FILE (WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
+set(STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
+if(EXISTS ${STAR_BASE_ASSET_PACKAGE})
+  set(STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
+  file(MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
+  file(WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
   "{
     \"assetDirectories\" : [
       \"${PROJECT_SOURCE_DIR}/../assets/\",
@@ -117,11 +117,11 @@ IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
     }
   }
   ")
-  ADD_TEST (NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
-  SET_TESTS_PROPERTIES(game_tests PROPERTIES
+  add_test(NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
+  set_tests_properties(game_tests PROPERTIES
                        LABELS "Assets"
                        TIMEOUT 300
                        RESOURCE_LOCK game_assets)
-ELSE ()
-  MESSAGE (STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
-ENDIF ()
+else()
+  message(STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
+endif()

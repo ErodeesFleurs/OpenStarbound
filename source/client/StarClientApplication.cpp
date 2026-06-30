@@ -35,9 +35,8 @@
 #include "imgui_freetype.h"
 
 #if defined STAR_SYSTEM_WINDOWS
-#include <cstdio>
-#include <shellapi.h>
 #include <windows.h>
+#include <shellapi.h>
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
 #endif // graphics driver is told by these exports to default to the dedicated GPU

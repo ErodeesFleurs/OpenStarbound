@@ -1,25 +1,25 @@
-SET (star_client_HEADERS
+set(star_client_HEADERS
       StarClientApplication.hpp
       StarRenderingLuaBindings.hpp
     )
 
-SET (star_client_SOURCES
+set(star_client_SOURCES
       StarClientApplication.cpp
       StarRenderingLuaBindings.cpp
     )
 
-IF (STAR_SYSTEM_WINDOWS)
-  SET (star_client_RESOURCES
+if(STAR_SYSTEM_WINDOWS)
+  set(star_client_RESOURCES
       starbound.rc
     )
-ENDIF ()
+endif()
 
-ADD_EXECUTABLE (starbound WIN32
+add_executable(starbound WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   $<TARGET_OBJECTS:star_application> $<TARGET_OBJECTS:star_rendering> $<TARGET_OBJECTS:star_windowing> $<TARGET_OBJECTS:star_frontend>
   ${star_client_HEADERS} ${star_client_SOURCES} ${star_client_RESOURCES})
-TARGET_COMPILE_FEATURES (starbound PRIVATE cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (starbound PRIVATE
+target_compile_features(starbound PRIVATE cxx_std_20)
+target_include_directories(starbound PRIVATE
     ${STAR_FRONTEND_INCLUDES}
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
@@ -30,18 +30,18 @@ TARGET_INCLUDE_DIRECTORIES (starbound PRIVATE
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
 
-IF (STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (starbound REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(starbound REUSE_FROM star_core)
+endif()
 
-IF(STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
-ELSEIF (UNIX)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
-ENDIF()
+if(STAR_SYSTEM_MACOS)
+  set_target_properties(starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+elseif(UNIX)
+  set_target_properties(starbound PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
+endif()
 
-IF (STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
-ENDIF()
+if(STAR_SYSTEM_MACOS)
+  set_target_properties(starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
+endif()
 
-TARGET_LINK_LIBRARIES (starbound star_build_definitions ${STAR_EXT_LIBS} ${STAR_EXT_GUI_LIBS})
+target_link_libraries(starbound PRIVATE star_build_definitions star_external_libraries star_external_gui_libraries)
