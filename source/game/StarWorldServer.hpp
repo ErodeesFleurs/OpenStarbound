@@ -18,20 +18,31 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(Sky);
-STAR_STRUCT(SkyParameters);
-STAR_CLASS(DamageManager);
-STAR_CLASS(WireProcessor);
-STAR_CLASS(EntityMap);
-STAR_CLASS(WorldStorage);
-STAR_CLASS(FallingBlocksAgent);
-STAR_CLASS(DungeonDefinition);
-STAR_CLASS(WorldServer);
-STAR_CLASS(TileEntity);
-STAR_CLASS(UniverseSettings);
-STAR_CLASS(UniverseServer);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class WorldTemplate;
+using WorldTemplatePtr = SharedPtr<WorldTemplate>;
+class Sky;
+using SkyPtr = SharedPtr<Sky>;
+struct SkyParameters;
+class DamageManager;
+using DamageManagerPtr = SharedPtr<DamageManager>;
+class WireProcessor;
+using WireProcessorPtr = SharedPtr<WireProcessor>;
+class EntityMap;
+using EntityMapPtr = SharedPtr<EntityMap>;
+class WorldStorage;
+using WorldStoragePtr = SharedPtr<WorldStorage>;
+class FallingBlocksAgent;
+using FallingBlocksAgentPtr = SharedPtr<FallingBlocksAgent>;
+class DungeonDefinition;
+class WorldServer;
+using WorldServerPtr = SharedPtr<WorldServer>;
+class TileEntity;
+using TileEntityPtr = SharedPtr<TileEntity>;
+class UniverseSettings;
+using UniverseSettingsPtr = SharedPtr<UniverseSettings>;
+class UniverseServer;
 
 struct WorldServerExceptionTag { static constexpr char const* typeName = "WorldServerException"; };
 using WorldServerException = TypedException<StarException, WorldServerExceptionTag>;

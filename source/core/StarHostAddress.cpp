@@ -130,7 +130,7 @@ void HostAddress::set(String const& address) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     // Request only usable addresses e.g. IPv6 only if IPv6 is available
-    hints.ai_flags = AI_ADDRCONFIG;
+    hints.ai_flags = AddrConfigFlag;
 
     if (::getaddrinfo(address.utf8Ptr(), nullptr, &hints, &result) != 0)
       throw NetworkException(strf("Failed to determine address for '{}' ({})", address, netErrorString()));

@@ -4,11 +4,14 @@
 #include "StarOutputProxy.hpp"
 
 #include <format>
+#include <source_location>
 #include <string>
 #include <string_view>
 #include <sstream>
 
 namespace Star {
+
+class String;
 
 template <typename... T>
 std::string strf(std::string_view fmt, T&&... args);
@@ -74,19 +77,30 @@ void printStack(char const* message);
 void fatalError(char const* message, bool showStackTrace);
 void fatalException(std::exception const& e, bool showStackTrace);
 
-#ifdef STAR_DEBUG
-#define debugPrintStack() \
-  { Star::printStack("Debug: file " STAR_STR(__FILE__) " line " STAR_STR(__LINE__)); }
+#ifndef NDEBUG
+inline void debugPrintStack(std::source_location location = std::source_location::current()) {
+  auto message = strf("Debug: file {} line {}", location.file_name(), location.line());
+  Star::printStack(message.c_str());
+}
+#else
+inline void debugPrintStack() {
+}
+#endif
+
+inline void assertionFailure(std::source_location location = std::source_location::current()) {
+  auto message = strf("assert failure in file {} line {}", location.file_name(), location.line());
+  Star::fatalError(message.c_str(), true);
+}
+
+#ifndef NDEBUG
 #define starAssert(COND)                                                                                \
   {                                                                                                     \
     if (COND)                                                                                           \
       ;                                                                                                 \
     else                                                                                                \
-      Star::fatalError("assert failure in file " STAR_STR(__FILE__) " line " STAR_STR(__LINE__), true); \
+      Star::assertionFailure(std::source_location::current());                                           \
   }
 #else
-#define debugPrintStack() \
-  {}
 #define starAssert(COND) \
   {}
 #endif
@@ -134,3 +148,5 @@ StarException StarException::format(std::string_view fmt, Args const&... args) {
 }
 
 }
+
+template <> struct std::formatter<Star::String> : Star::OstreamFormatter {};

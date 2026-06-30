@@ -6,12 +6,14 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialParameters);
-STAR_CLASS(CelestialDatabase);
+class CelestialParameters;
+class CelestialDatabase;
+using CelestialDatabasePtr = SharedPtr<CelestialDatabase>;
 
-STAR_STRUCT(SkyParameters);
+struct SkyParameters;
 
-STAR_STRUCT(VisitableWorldParameters);
+struct VisitableWorldParameters;
+using VisitableWorldParametersConstPtr = SharedPtr<VisitableWorldParameters const>;
 
 // This struct is a stripped down version of CelestialParameters that only
 // contains the required inforamtion to generate a sky.  It's constructable

@@ -214,7 +214,7 @@ message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
 # Set a cmake variable to true and define a corresponding C/C++ definition
 function(SET_FLAG flagValue)
   set(${flagValue} TRUE PARENT_SCOPE)
-  add_definitions(-D${flagValue})
+  set(STAR_COMPILE_DEFINITIONS ${STAR_COMPILE_DEFINITIONS} ${flagValue} PARENT_SCOPE)
 endfunction()
 
 if(STAR_LITTLE_ENDIAN)
@@ -258,47 +258,53 @@ elseif(STAR_COMPILER STREQUAL "msvc")
 endif()
 
 if(STAR_LUA_APICHECK)
-  add_definitions(-DLUA_USE_APICHECK)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_APICHECK)
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
   # LUA_USE_WINDOWS is automatically defined in luaconf if _WIN32 is defined
 elseif(STAR_SYSTEM_MACOS)
-  add_definitions(-DLUA_USE_MACOSX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_MACOSX)
 elseif(STAR_SYSTEM_LINUX)
-  add_definitions(-DLUA_USE_LINUX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_LINUX)
 elseif(STAR_SYSTEM_FAMILY_UNIX)
-  add_definitions(-DLUA_USE_POSIX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_POSIX)
 endif()
 
 if(STAR_ENABLE_STEAM_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_STEAM_INTEGRATION)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_STEAM_INTEGRATION)
 endif()
 
 if(STAR_ENABLE_DISCORD_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_DISCORD_INTEGRATION)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
 if(STAR_USE_JEMALLOC)
-  add_definitions(-DSTAR_USE_JEMALLOC)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_JEMALLOC)
 elseif(STAR_USE_MIMALLOC)
-  add_definitions(-DSTAR_USE_MIMALLOC)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_MIMALLOC)
 elseif(STAR_USE_RPMALLOC)
-  add_definitions(-DSTAR_USE_RPMALLOC -DENABLE_PRELOAD)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_RPMALLOC ENABLE_PRELOAD)
 endif()
 
 # Set C/C++ compiler flags based on build environment...
 
+set(STAR_C_COMPILE_OPTIONS)
+set(STAR_CXX_COMPILE_OPTIONS)
+
 if(STAR_COMPILER_GNU)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate -no-pie")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -no-pie")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -no-pie")
 
   if(STAR_SYSTEM_FAMILY_WINDOWS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthreads")
   else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
+    list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     if(STAR_USE_LLD)
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
@@ -335,8 +341,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
 
   if(STAR_SYSTEM_MACOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -344,8 +350,9 @@ elseif(STAR_COMPILER_CLANG)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
   else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
+    list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
     if(STAR_USE_LLD)
@@ -402,8 +409,8 @@ elseif(STAR_COMPILER_MSVC)
   # /wd4624  - Silence implicitly deleted destructor warnings that show up when
   #            using unions in interesting ways.
 
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
+  list(APPEND STAR_C_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
@@ -435,13 +442,14 @@ elseif(STAR_COMPILER_MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
   endif()
 
-  add_definitions(/DUNICODE)
-  add_definitions(/D_UNICODE)
-  add_definitions(/DNOMINMAX)
+  list(APPEND STAR_COMPILE_DEFINITIONS UNICODE _UNICODE NOMINMAX)
 
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pthread -D_REENTRANT")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -D_REENTRANT")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall)
+  list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
   set(CMAKE_C_FLAGS_DEBUG "-g")
   set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -533,7 +541,7 @@ if (NOT STAR_SYSTEM_HAIKU)
 	find_package(Opus CONFIG REQUIRED)
 	find_package(re2 CONFIG REQUIRED)
 endif()
-include_directories(SYSTEM
+list(APPEND STAR_SYSTEM_INCLUDE_DIRS
     ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
 )
@@ -577,7 +585,7 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
+  list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
       ${OPENGL_LIBRARY}
       $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
@@ -589,7 +597,7 @@ if(STAR_BUILD_GUI)
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-    include_directories(SYSTEM ${STEAM_API_INCLUDE_DIR})
+    list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${STEAM_API_INCLUDE_DIR})
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
   endif()
 
@@ -598,6 +606,23 @@ if(STAR_BUILD_GUI)
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
   endif()
 endif()
+
+add_library(star_system_includes INTERFACE)
+if(STAR_SYSTEM_INCLUDE_DIRS)
+  target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
+endif()
+
+add_library(star_build_options INTERFACE)
+if(STAR_C_COMPILE_OPTIONS)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${STAR_C_COMPILE_OPTIONS}>")
+endif()
+if(STAR_CXX_COMPILE_OPTIONS)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:${STAR_CXX_COMPILE_OPTIONS}>")
+endif()
+
+add_library(star_build_definitions INTERFACE)
+target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
+target_link_libraries(star_build_definitions INTERFACE star_system_includes star_build_options)
 
 # Set basic build flags, include all the relevant source directories, based on
 # build settings...

@@ -50,8 +50,6 @@ using JsonInputFormatPtr = SharedPtr<JsonInputFormat>;
 using JsonInputFormatConstPtr = SharedPtr<JsonInputFormat const>;
 using JsonInputFormatWeakPtr = WeakPtr<JsonInputFormat>;
 using JsonInputFormatConstWeakPtr = WeakPtr<JsonInputFormat const>;
-using JsonInputFormatUPtr = UniquePtr<JsonInputFormat>;
-using JsonInputFormatConstUPtr = UniquePtr<JsonInputFormat const>;
 
 class JsonInputFormat {
 public:
@@ -87,8 +85,6 @@ using OutputPtr = SharedPtr<Output>;
 using OutputConstPtr = SharedPtr<Output const>;
 using OutputWeakPtr = WeakPtr<Output>;
 using OutputConstWeakPtr = WeakPtr<Output const>;
-using OutputUPtr = UniquePtr<Output>;
-using OutputConstUPtr = UniquePtr<Output const>;
 
 class Output {
 public:

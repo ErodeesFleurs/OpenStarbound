@@ -34,9 +34,9 @@ void WorldStorage::applyWorldChunksUpdateToFile(String const& file, WorldChunks 
 
   for (auto const& p : update) {
     if (p.second)
-      db.insert(p.first, *p.second);
+      (void)db.insert(p.first, *p.second);
     else
-      db.remove(p.first);
+      (void)db.remove(p.first);
   }
 }
 
@@ -61,7 +61,7 @@ WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, Wo
 
   openDatabase(m_db, device);
 
-  m_db.insert(metadataKey(), writeWorldMetadata(WorldMetadataStore{worldSize, VersionedJson()}));
+  (void)m_db.insert(metadataKey(), writeWorldMetadata(WorldMetadataStore{worldSize, VersionedJson()}));
   m_db.commit();
 }
 
@@ -84,7 +84,7 @@ WorldStorage::WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr co
 
   for (auto const& p : chunks) {
     if (p.second)
-      m_db.insert(p.first, *p.second);
+      (void)m_db.insert(p.first, *p.second);
   }
 
   Vec2U worldSize = readWorldMetadata(*m_db.find(metadataKey())).worldSize;
@@ -104,7 +104,7 @@ VersionedJson WorldStorage::worldMetadata() {
 }
 
 void WorldStorage::setWorldMetadata(VersionedJson const& metadata) {
-  m_db.insert(metadataKey(), writeWorldMetadata({Vec2U(m_tileArray->size()), metadata}));
+  (void)m_db.insert(metadataKey(), writeWorldMetadata({Vec2U(m_tileArray->size()), metadata}));
 }
 
 ServerTileSectorArrayPtr const& WorldStorage::tileArray() const {
@@ -345,7 +345,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
               storedUniques.add(*uniqueId, {sector, entity->position()});
             sectorStore.append(entityFactory->storeVersionedEntity(entity));
           }
-          m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
+          (void)m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
           mergeSectorUniques(sector, storedUniques);
         }
       }
@@ -596,7 +596,7 @@ void WorldStorage::openDatabase(BTreeDatabase& db, IODevicePtr device) {
   db.setIODevice(std::move(device));
   db.setBlockSize(2048);
   db.setAutoCommit(false);
-  db.open();
+  (void)db.open();
 
   if (db.contentIdentifier() != "World4" || db.keySize() != 5)
     throw WorldStorageException::format("World database format is too old or unrecognized!");
@@ -788,7 +788,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
           storedUniques.add(*uniqueId, {sector, position});
         sectorStore.append(entityFactory->storeVersionedEntity(entity));
       }
-      m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
+      (void)m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
       if (metadata.loadLevel < SectorLoadLevel::Entities)
         mergeSectorUniques(sector, storedUniques);
       else
@@ -806,8 +806,8 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
       TileSectorStore sectorStore;
       sectorStore.tiles = m_tileArray->unloadSector(sector);
       sectorStore.generationLevel = metadata.generationLevel;
-      m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
-      m_sectorMetadata.remove(sector);
+      (void)m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
+      (void)m_sectorMetadata.remove(sector);
       m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::None);
       return true;
     }
@@ -841,7 +841,7 @@ void WorldStorage::syncSector(Sector const& sector) {
         sectorStore.append(entityFactory->storeVersionedEntity(entity));
       }
     }
-    m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
+    (void)m_db.insert(entitySectorKey(sector), writeEntitySector(sectorStore));
     updateSectorUniques(sector, storedUniques);
   }
 
@@ -849,7 +849,7 @@ void WorldStorage::syncSector(Sector const& sector) {
     TileSectorStore sectorStore;
     sectorStore.tiles = m_tileArray->copySector(sector);
     sectorStore.generationLevel = metadata.generationLevel;
-    m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
+    (void)m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
   }
 }
 
@@ -873,9 +873,9 @@ void WorldStorage::updateSectorUniques(Sector const& sector, UniqueIndexStore co
     setUniqueIndexEntry(p.first, p.second);
 
   if (sectorUniques.empty())
-    m_db.remove(sectorUniqueKey(sector));
+    (void)m_db.remove(sectorUniqueKey(sector));
   else
-    m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(HashSet<String>::from(sectorUniques.keys())));
+    (void)m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(HashSet<String>::from(sectorUniques.keys())));
 }
 
 void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques) {
@@ -886,9 +886,9 @@ void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore con
   }
 
   if (sectorUniqueStore.empty())
-    m_db.remove(sectorUniqueKey(sector));
+    (void)m_db.remove(sectorUniqueKey(sector));
   else
-    m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(sectorUniqueStore));
+    (void)m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(sectorUniqueStore));
 }
 
 auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> Maybe<SectorAndPosition> {
@@ -907,7 +907,7 @@ void WorldStorage::setUniqueIndexEntry(String const& uniqueId, SectorAndPosition
       return;
     p.first->second = sectorAndPosition;
   }
-  m_db.insert(uniqueIndexKey(uniqueId), writeUniqueIndexStore(uniqueIndex));
+  (void)m_db.insert(uniqueIndexKey(uniqueId), writeUniqueIndexStore(uniqueIndex));
 }
 
 void WorldStorage::removeUniqueIndexEntry(String const& uniqueId, Sector const& sector) {
@@ -916,9 +916,9 @@ void WorldStorage::removeUniqueIndexEntry(String const& uniqueId, Sector const& 
       if (sectorAndPosition->first == sector) {
         uniqueIndex->remove(uniqueId);
         if (uniqueIndex->empty())
-          m_db.remove(uniqueIndexKey(uniqueId));
+          (void)m_db.remove(uniqueIndexKey(uniqueId));
         else
-          m_db.insert(uniqueIndexKey(uniqueId), writeUniqueIndexStore(*uniqueIndex));
+          (void)m_db.insert(uniqueIndexKey(uniqueId), writeUniqueIndexStore(*uniqueIndex));
       }
     }
   }

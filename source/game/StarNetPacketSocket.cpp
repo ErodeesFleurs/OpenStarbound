@@ -70,13 +70,13 @@ NetCompatibilityRules PacketSocket::netRules() const { return m_netRules; }
 void CompressedPacketSocket::setCompressionStreamEnabled(bool enabled) { m_useCompressionStream = enabled; }
 bool CompressedPacketSocket::compressionStreamEnabled() const { return m_useCompressionStream; }
 
-pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair() {
+pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> LocalPacketSocket::openPair() {
   auto lhsIncomingPipe = make_shared<Pipe>();
   auto rhsIncomingPipe = make_shared<Pipe>();
 
   return {
-    LocalPacketSocketUPtr(new LocalPacketSocket(lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe))),
-    LocalPacketSocketUPtr(new LocalPacketSocket(rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe)))
+    UniquePtr<LocalPacketSocket>(new LocalPacketSocket(lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe))),
+    UniquePtr<LocalPacketSocket>(new LocalPacketSocket(rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe)))
   };
 }
 
@@ -95,18 +95,17 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
   if (auto outgoingPipe = m_outgoingPipe.lock()) {
     MutexLocker locker(outgoingPipe->mutex);
 
-#ifdef STAR_DEBUG
-    // Test serialization if STAR_DEBUG is enabled
-    DataStreamBuffer buffer;
-    for (auto inPacket : take(packets)) {
-      buffer.clear();
-      inPacket->write(buffer);
-      auto outPacket = createPacket(inPacket->type());
-      buffer.seek(0);
-      outPacket->read(buffer);
-      packets.append(outPacket);
+    if constexpr (DebugEnabled) {
+      DataStreamBuffer buffer;
+      for (auto inPacket : take(packets)) {
+        buffer.clear();
+        inPacket->write(buffer);
+        auto outPacket = createPacket(inPacket->type());
+        buffer.seek(0);
+        outPacket->read(buffer);
+        packets.append(outPacket);
+      }
     }
-#endif
 
     outgoingPipe->queue.appendAll(std::move(packets));
   }
@@ -134,10 +133,10 @@ bool LocalPacketSocket::readData() {
 LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe)
   : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
-TcpPacketSocketUPtr TcpPacketSocket::open(TcpSocketPtr socket) {
+UniquePtr<TcpPacketSocket> TcpPacketSocket::open(TcpSocketPtr socket) {
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
-  return TcpPacketSocketUPtr(new TcpPacketSocket(std::move(socket)));
+  return UniquePtr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
 }
 
 bool TcpPacketSocket::isOpen() const {
@@ -348,8 +347,8 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
 
 TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
 
-P2PPacketSocketUPtr P2PPacketSocket::open(P2PSocketUPtr socket) {
-  return P2PPacketSocketUPtr(new P2PPacketSocket(std::move(socket)));
+UniquePtr<P2PPacketSocket> P2PPacketSocket::open(UniquePtr<P2PSocket> socket) {
+  return UniquePtr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
 }
 
 bool P2PPacketSocket::isOpen() const {

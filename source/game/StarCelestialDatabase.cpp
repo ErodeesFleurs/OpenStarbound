@@ -135,13 +135,13 @@ CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
   if (databaseFile) {
     m_database.setContentIdentifier("Celestial2");
     m_database.setIODevice(File::open(*databaseFile, IOMode::ReadWrite));
-    m_database.open();
+    (void)m_database.open();
     if (m_database.contentIdentifier() != "Celestial2") {
       Logger::error("CelestialMasterDatabase database content identifier is not 'Celestial2', moving out of the way and recreating");
       m_database.close();
       File::rename(*databaseFile, strf("{}.{}.fail", *databaseFile, Time::millisecondsSinceEpoch()));
       m_database.setIODevice(File::open(*databaseFile, IOMode::ReadWrite));
-      m_database.open();
+      (void)m_database.open();
     }
     m_database.setAutoCommit(false);
   }
@@ -365,9 +365,9 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
     DataStreamBuffer ds;
     ds.write(versionedChunk);
     VersionedJson::writeSubVersioning(ds, versionedChunk);
-    m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+    (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
 
-    m_chunkCache.remove(chunkIndex);
+    (void)m_chunkCache.remove(chunkIndex);
   } else {
     updated = false;
   }
@@ -397,7 +397,7 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
             DataStreamBuffer ds;
             ds.write(versionedChunk);
             VersionedJson::writeSubVersioning(ds, versionedChunk);
-            m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+            (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
           }
           return CelestialChunk(versionedChunk.content);
         }
@@ -414,7 +414,7 @@ CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex,
         DataStreamBuffer ds;
         ds.write(versionedChunk);
         VersionedJson::writeSubVersioning(ds, versionedChunk);
-        m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+        (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
       }
 
       return newChunk;
@@ -842,7 +842,7 @@ bool CelestialSlaveDatabase::scanRegionFullyLoaded(RectI const& region) {
 void CelestialSlaveDatabase::invalidateCacheFor(CelestialCoordinate const& coordinate) {
   RecursiveMutexLocker locker(m_mutex);
 
-  m_chunkCache.remove(chunkIndexFor(coordinate));
+  (void)m_chunkCache.remove(chunkIndexFor(coordinate));
 }
 
 }

@@ -3,9 +3,9 @@
 #include "StarException.hpp"
 #include "StarString.hpp"
 
-//#define STAR_MUTEX_LOG
-
 namespace Star {
+
+inline constexpr bool LogRecursiveMutex = false;
 
 struct ThreadImpl;
 struct ThreadFunctionImpl;
@@ -199,9 +199,7 @@ public:
 
   RecursiveMutex& operator=(RecursiveMutex&&);
 
-  #ifdef STAR_MUTEX_LOG
   void setLogged(bool logged);
-  #endif
 
   void lock();
 
@@ -212,9 +210,7 @@ public:
 
 private:
   UniquePtr<RecursiveMutexImpl> m_impl;
-  #ifdef STAR_MUTEX_LOG
   bool m_log = false;
-  #endif
 };
 
 // RAII for mutexes.  Locking and unlocking are always safe, MLocker will never

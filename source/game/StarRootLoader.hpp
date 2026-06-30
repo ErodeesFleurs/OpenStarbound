@@ -54,10 +54,10 @@ public:
   RootLoader(Defaults defaults);
 
   pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
-  pair<RootUPtr, Options> initOrDie(StringList const& cmdLineArguments) const;
+  pair<UniquePtr<Root>, Options> initOrDie(StringList const& cmdLineArguments) const;
 
   pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
-  pair<RootUPtr, Options> commandInitOrDie(int argc, char** argv);
+  pair<UniquePtr<Root>, Options> commandInitOrDie(int argc, char** argv);
 
 private:
   Root::Settings rootSettingsForOptions(Options const& options) const;

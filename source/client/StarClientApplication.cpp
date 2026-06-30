@@ -35,6 +35,8 @@
 #include "imgui_freetype.h"
 
 #if defined STAR_SYSTEM_WINDOWS
+#include <cstdio>
+#include <shellapi.h>
 #include <windows.h>
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
@@ -748,7 +750,7 @@ void ClientApplication::changeState(MainAppState newState) {
     }
 
     if (m_state == MainAppState::MultiPlayer) {
-      PacketSocketUPtr packetSocket;
+      UniquePtr<PacketSocket> packetSocket;
 
       auto multiPlayerConnection = m_pendingMultiPlayerConnection.take();
 
@@ -1420,4 +1422,25 @@ void ClientApplication::updateCamera(float dt) {
 
 }
 
-STAR_MAIN_APPLICATION(Star::ClientApplication);
+#if defined STAR_SYSTEM_WINDOWS
+int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+  int nArgs;
+  LPWSTR* argsList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+  Star::StringList args;
+  for (int i = 0; i < nArgs; ++i)
+    args.append(Star::String(argsList[i]));
+
+  if (IsDebuggerPresent() && AllocConsole()) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+
+  unsigned long exceptionStackSize = 131072;
+  SetThreadStackGuarantee(&exceptionStackSize);
+  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), args);
+}
+#else
+int main(int argc, char** argv) {
+  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
+}
+#endif

@@ -13,9 +13,12 @@ namespace Star {
 struct WorldStorageExceptionTag { static constexpr char const* typeName = "WorldStorageException"; };
 using WorldStorageException = TypedException<StarException, WorldStorageExceptionTag>;
 
-STAR_CLASS(EntityMap);
-STAR_STRUCT(WorldGeneratorFacade);
-STAR_CLASS(WorldStorage);
+class EntityMap;
+using EntityMapPtr = SharedPtr<EntityMap>;
+struct WorldGeneratorFacade;
+using WorldGeneratorFacadePtr = SharedPtr<WorldGeneratorFacade>;
+class WorldStorage;
+using WorldStoragePtr = SharedPtr<WorldStorage>;
 
 using WorldChunks = HashMap<ByteArray, Maybe<ByteArray>>;
 

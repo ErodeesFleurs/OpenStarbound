@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
 
     rootLoader.setSummary("Calculate a (very approximate) word count of user-facing text in assets");
 
-    RootUPtr root;
+    UniquePtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

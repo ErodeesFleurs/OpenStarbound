@@ -129,7 +129,7 @@ OutputProxy outputStack(StackCapture stack) {
       symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
       symbol->MaxNameLen = MAX_SYM_NAME;
 
-      format(os, "[{:0{}}] {}", i, static_cast<int>(log10(stack.second)) + 1, static_cast<void*>(stack.first[i]));
+      format(os, "[{:0{}}] {}", i, static_cast<int>(log10(stack.second)) + 1, reinterpret_cast<void*>(stack.first[i]));
       IMAGEHLP_LINE64 line{};
       DWORD displacement = 0;
       line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);

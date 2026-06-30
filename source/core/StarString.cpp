@@ -1131,7 +1131,3 @@ size_t hash<StringList>::operator()(StringList const& sl) const {
 }
 
 }
-
-std::format_context::iterator std::formatter<Star::String>::format(Star::String const& s, format_context& ctx) const {
-  return formatter<std::string>::format(s.utf8(), ctx);
-};

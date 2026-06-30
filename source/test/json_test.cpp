@@ -101,7 +101,7 @@ TEST(JsonTest, JsonParsingEdge) {
 
   auto isValidJson = [](String const& json) -> bool {
     try {
-      Json::parseJson(json);
+      (void)Json::parseJson(json);
       return true;
     } catch (JsonParsingException const&) {
       return false;

@@ -7,11 +7,14 @@
 
 namespace Star {
 
-STAR_CLASS(Audio);
-STAR_CLASS(AudioInstance);
-STAR_CLASS(World);
-STAR_CLASS(Songbook);
-STAR_CLASS(RenderCallback);
+class Audio;
+using AudioConstPtr = SharedPtr<Audio const>;
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class World;
+class Songbook;
+using SongbookPtr = SharedPtr<Songbook>;
+class RenderCallback;
 
 class Songbook : public NetElementSyncGroup {
 public:

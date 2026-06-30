@@ -38,7 +38,7 @@ namespace {
   void putAll(BTreeDatabase& db, const List<uint32_t>& keys) {
     for (uint32_t k : keys) {
       ByteArray val = genBlock(k);
-      db.insert(toByteArray(k), val);
+      (void)db.insert(toByteArray(k), val);
 
       int i = Random::randi32();
       if (i % 23 == 0)
@@ -98,7 +98,7 @@ namespace {
     db.setIndexCacheSize(0);
     db.setBlockSize(blockSize);
     db.setIODevice(tmpFile);
-    db.open();
+    EXPECT_TRUE(db.open());
 
     // record writes/reads repeated writeRepeat times randomly each cycle
     Random::shuffle(keys);
@@ -145,7 +145,7 @@ namespace {
     // Set the wrong value, should be set to correct value in open()
     db.setBlockSize(blockSize + 512);
 
-    db.open();
+    EXPECT_FALSE(db.open());
 
     // Checking values...
 
@@ -182,7 +182,7 @@ TEST(BTreeDatabaseTest, Threading) {
   db.setAutoCommit(false);
   db.setBlockSize(256);
   db.setIODevice(tmpFile);
-  db.open();
+  EXPECT_TRUE(db.open());
 
   List<uint32_t> writeKeySet;
   List<uint32_t> deleteKeySet;
@@ -201,7 +201,7 @@ TEST(BTreeDatabaseTest, Threading) {
           try {
             for (uint32_t k : writeKeySet) {
               ByteArray val = genBlock(k);
-              db.insert(toByteArray(k), val);
+              (void)db.insert(toByteArray(k), val);
               if (Random::randi32() % 23 == 0)
                 db.commit();
             }
@@ -215,7 +215,7 @@ TEST(BTreeDatabaseTest, Threading) {
         [&db, &deleteKeySet]() {
           try {
             for (uint32_t k : deleteKeySet) {
-              db.remove(toByteArray(k));
+              (void)db.remove(toByteArray(k));
               if (Random::randi32() % 23 == 0)
                 db.commit();
             }
@@ -230,7 +230,7 @@ TEST(BTreeDatabaseTest, Threading) {
 
     db.close(false);
     tmpFile->open(IOMode::Read);
-    db.open();
+    EXPECT_FALSE(db.open());
 
     EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
 

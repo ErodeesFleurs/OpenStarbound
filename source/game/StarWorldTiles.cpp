@@ -59,9 +59,11 @@ VersionNumber const ServerTile::CurrentSerializationVersion = 418;
 
 ServerTile::ServerTile() : objectCollision(CollisionKind::None) {}
 
-ServerTile::ServerTile(ServerTile const& serverTile) : WorldTile() {
-  *this = serverTile;
-}
+ServerTile::ServerTile(ServerTile const& serverTile)
+  : WorldTile(serverTile),
+    liquid(serverTile.liquid),
+    rootSource(serverTile.rootSource),
+    objectCollision(serverTile.objectCollision) {}
 
 bool ServerTile::isColliding(CollisionSet const& collisionSet) const {
   return Star::isColliding(getCollision(), collisionSet);

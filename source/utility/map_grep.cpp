@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("MaterialId|ObjectName|Property=Value", OptionParser::Required);
     rootLoader.addArgument("JsonMapFile", OptionParser::Multiple);
 
-    RootUPtr root;
+    UniquePtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

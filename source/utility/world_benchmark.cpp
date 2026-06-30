@@ -18,7 +18,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("fidelity", "server fidelity", OptionParser::Optional, "fidelity to run the server with, default high");
     rootLoader.addSwitch("profiling", "whether to use lua profiling, prints the profile with info logging");
     rootLoader.addSwitch("unsafe", "enables unsafe lua libraries");
-    RootUPtr root;
+    UniquePtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

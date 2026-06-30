@@ -1,8 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-  )
-
 SET (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
@@ -232,6 +227,7 @@ CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 TARGET_COMPILE_FEATURES (star_core PUBLIC cxx_std_20)
 TARGET_INCLUDE_DIRECTORIES (star_core PUBLIC ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
+TARGET_LINK_LIBRARIES (star_core PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)

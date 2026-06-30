@@ -27,14 +27,14 @@ String DynamicLib::libraryExtension() {
   return ".dll";
 }
 
-DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
+UniquePtr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = LoadLibraryW(stringToUtf16(libraryName).get());
   if (handle == nullptr)
     return {};
   return make_unique<PrivateDynLib>(handle);
 }
 
-DynamicLibUPtr DynamicLib::currentExecutable() {
+UniquePtr<DynamicLib> DynamicLib::currentExecutable() {
   void* handle = GetModuleHandle(0);
   starAssert(handle);
   return make_unique<PrivateDynLib>(handle);

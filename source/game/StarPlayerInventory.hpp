@@ -7,16 +7,25 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
-STAR_CLASS(Player);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
+using ItemBagConstPtr = SharedPtr<ItemBag const>;
+class ArmorItem;
+using ArmorItemPtr = SharedPtr<ArmorItem>;
+class HeadArmor;
+using HeadArmorPtr = SharedPtr<HeadArmor>;
+class ChestArmor;
+using ChestArmorPtr = SharedPtr<ChestArmor>;
+class LegsArmor;
+using LegsArmorPtr = SharedPtr<LegsArmor>;
+class BackArmor;
+using BackArmorPtr = SharedPtr<BackArmor>;
+class Player;
 
-STAR_CLASS(PlayerInventory);
+class PlayerInventory;
+using PlayerInventoryPtr = SharedPtr<PlayerInventory>;
 
 struct InventoryExceptionTag { static constexpr char const* typeName = "InventoryException"; };
 using InventoryException = TypedException<StarException, InventoryExceptionTag>;

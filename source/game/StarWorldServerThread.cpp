@@ -274,7 +274,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
           clientId, outputException(e, true));
       RecursiveMutexLocker queueLocker(m_queueMutex);
       m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
-      unerroredClientIds.remove(clientId);
+      (void)unerroredClientIds.remove(clientId);
     }
   }
 

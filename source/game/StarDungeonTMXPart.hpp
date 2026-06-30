@@ -8,11 +8,16 @@
 namespace Star {
 
 namespace Dungeon {
-  STAR_CLASS(TMXTilesets);
-  STAR_CLASS(TMXTileLayer);
-  STAR_CLASS(TMXObject);
-  STAR_CLASS(TMXObjectGroup);
-  STAR_CLASS(TMXMap);
+  class TMXTilesets;
+  using TMXTilesetsPtr = SharedPtr<TMXTilesets>;
+  class TMXTileLayer;
+  using TMXTileLayerPtr = SharedPtr<TMXTileLayer>;
+  class TMXObject;
+  using TMXObjectPtr = SharedPtr<TMXObject>;
+  class TMXObjectGroup;
+  using TMXObjectGroupPtr = SharedPtr<TMXObjectGroup>;
+  class TMXMap;
+  using TMXMapConstPtr = SharedPtr<TMXMap const>;
 
   class TMXTilesets {
   public:

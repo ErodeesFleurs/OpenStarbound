@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     //open the old db
     BTreeDatabase db;
     db.setIODevice(File::open(bTreePath, IOMode::Read));
-    db.open();
+    (void)db.open();
 
     //make a new db
     BTreeDatabase newDb;
@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     newDb.setAutoCommit(false);
 
     newDb.setIODevice(File::open(outputFilename, IOMode::ReadWrite | IOMode::Truncate));
-    newDb.open();
+    (void)newDb.open();
     coutf("Repacking {}...\n", bTreePath);
     //copy the data over
     unsigned count = 0, overwritten = 0;

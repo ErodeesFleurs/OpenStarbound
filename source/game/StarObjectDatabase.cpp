@@ -337,7 +337,7 @@ ObjectDatabase::ObjectDatabase() : m_rebuilder(make_shared<Rebuilder>("object"))
 void ObjectDatabase::cleanup() {
   MutexLocker locker(m_cacheMutex);
   m_configCache.cleanup([](String const&, ObjectConfigPtr const& config) {
-      return !config.unique();
+      return config.use_count() != 1;
     });
 }
 

@@ -1,11 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
-
 SET (star_server_HEADERS
     StarServerQueryThread.hpp
     StarServerRconClient.hpp
@@ -46,4 +38,4 @@ ELSEIF (UNIX)
   SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
-TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS})
+TARGET_LINK_LIBRARIES (starbound_server star_build_definitions ${STAR_EXT_LIBS})

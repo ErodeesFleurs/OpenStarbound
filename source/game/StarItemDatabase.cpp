@@ -146,7 +146,7 @@ void ItemDatabase::cleanup() {
   {
     MutexLocker locker(m_cacheMutex);
     m_itemCache.cleanup([](ItemCacheEntry const&, ItemPtr const& item) {
-      return !item.unique();
+      return item.use_count() != 1;
     });
   }
 }

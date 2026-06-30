@@ -22,10 +22,6 @@ constexpr size_t MaxThreadNameLen = MAXCOMLEN;
 constexpr size_t MaxThreadNameLen = 16;
 #endif
 
-#ifndef STAR_SYSTEM_MACOS
-#define STAR_RECURSIVE_MUTEX_TIMED
-#endif
-
 namespace Star {
 
 struct ThreadImpl {
@@ -215,7 +211,7 @@ struct RecursiveMutexImpl {
   }
 
   void lock() {
-#ifdef STAR_RECURSIVE_MUTEX_TIMED
+#ifndef STAR_SYSTEM_MACOS
     timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += 15;
