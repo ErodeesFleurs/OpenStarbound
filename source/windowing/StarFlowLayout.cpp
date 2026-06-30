@@ -10,7 +10,7 @@ void FlowLayout::update(float dt) {
   int consumedWidth = 0;
   int rowHeight = 0;
   Vec2I currentOffset = {0, size()[1]};
-  for (auto child : m_members) {
+  for (auto const& child : m_members) {
     if (m_wrap && consumedWidth + child->size()[0] > size()[0] && consumedWidth != 0) { // wrapping
       currentOffset[0] = 0;
       consumedWidth = 0;

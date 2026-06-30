@@ -44,10 +44,10 @@ public:
 
 private:
   struct CustomBarEntry {
-    ItemSlotWidgetPtr left;
-    ItemSlotWidgetPtr right;
-    ImageWidgetPtr leftOverlay;
-    ImageWidgetPtr rightOverlay;
+    WidgetRef<ItemSlotWidget> left;
+    WidgetRef<ItemSlotWidget> right;
+    WidgetRef<ImageWidget> leftOverlay;
+    WidgetRef<ImageWidget> rightOverlay;
   };
 
   struct CustomBarHover {
@@ -72,10 +72,10 @@ private:
   StringList m_switchSounds;
 
   List<CustomBarEntry> m_customBarWidgets;
-  ImageWidgetPtr m_customSelectedWidget;
+  WidgetRef<ImageWidget> m_customSelectedWidget;
 
-  List<ItemSlotWidgetPtr> m_essentialBarWidgets;
-  ImageWidgetPtr m_essentialSelectedWidget;
+  List<WidgetRef<ItemSlotWidget>> m_essentialBarWidgets;
+  WidgetRef<ImageWidget> m_essentialSelectedWidget;
 
   SelectedActionBarLocation m_emptyHandsPreviousActionBarLocation;
   Maybe<CustomBarHover> m_customBarHover;

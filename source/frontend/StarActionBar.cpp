@@ -98,7 +98,7 @@ ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, Ac
 
 PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
   ItemPtr item;
-  auto tryItemWidget = [&](ItemSlotWidgetPtr const& isw) {
+  auto tryItemWidget = [&](auto const& isw) {
     if (isw->screenBoundRect().contains(screenPosition))
       item = isw->item();
   };

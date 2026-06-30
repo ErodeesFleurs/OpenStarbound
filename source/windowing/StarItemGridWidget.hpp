@@ -21,8 +21,8 @@ public:
   [[nodiscard]] ItemPtr itemAt(size_t index) const;
   [[nodiscard]] ItemPtr selectedItem() const;
 
-  [[nodiscard]] ItemSlotWidgetPtr itemWidgetAt(Vec2I const& position) const;
-  [[nodiscard]] ItemSlotWidgetPtr itemWidgetAt(size_t index) const;
+  [[nodiscard]] WidgetRef<ItemSlotWidget> itemWidgetAt(Vec2I const& position) const;
+  [[nodiscard]] WidgetRef<ItemSlotWidget> itemWidgetAt(size_t index) const;
 
   // Returns the dimensions of the item grid
   [[nodiscard]] Vec2I dimensions() const;
@@ -72,7 +72,7 @@ private:
   [[nodiscard]] Vec2I locOfItemSlot(unsigned slot) const;
 
   ItemBagConstPtr m_bag;
-  List<ItemSlotWidgetPtr> m_slots;
+  List<WidgetRef<ItemSlotWidget>> m_slots;
   unsigned m_bagOffset;
   Vec2I m_dimensions;
   Vec2I m_rowSpacing;

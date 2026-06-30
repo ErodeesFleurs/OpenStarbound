@@ -111,10 +111,10 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     }
   }
 
-  m_guiList = fetchChild<ListWidget>("scrollArea.itemList");
-  m_textBox = fetchChild<TextBoxWidget>("tbSpinCount");
+  m_guiList = fetchChild<ListWidget>("scrollArea.itemList").get();
+  m_textBox = fetchChild<TextBoxWidget>("tbSpinCount").get();
 
-  m_filterHaveMaterials = fetchChild<ButtonWidget>("btnFilterHaveMaterials");
+  m_filterHaveMaterials = fetchChild<ButtonWidget>("btnFilterHaveMaterials").get();
   if (m_filterHaveMaterials)
     m_filterHaveMaterials->setChecked(m_configuration->getPath("crafting.filterHaveMaterials").toBool());
 
@@ -187,12 +187,11 @@ PanePtr CraftingPane::createTooltip(Vec2I const& screenPosition) {
   for (size_t i = 0; i < m_guiList->numChildren(); ++i) {
     auto entry = m_guiList->itemAt(i);
     if (entry->getChildAt(screenPosition)) {
-      auto& recipe = m_recipesWidgetMap.getLeft(entry);
-      return setupTooltip(recipe);
+      return setupTooltip(m_recipes[i]);
     }
   }
 
-  if (WidgetPtr child = getChildAt(screenPosition)) {
+  if (auto child = getChildAt(screenPosition)) {
     if (child->name() == "btnUpgrade") {
       if (m_upgradeRecipe)
         return setupTooltip(*m_upgradeRecipe);
@@ -268,7 +267,7 @@ void CraftingPane::update(float dt) {
       description->removeAllChildren();
 
       auto item = m_itemDatabase->itemShared(recipe.output);
-      ItemTooltipBuilder::buildItemDescription(description, item, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
+      ItemTooltipBuilder::buildItemDescription(description.get(), item, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     }
   }
 
@@ -358,34 +357,27 @@ void CraftingPane::updateAvailableRecipes() {
 
   size_t currentOffset = 0;
 
+  size_t selectedIdx = m_guiList->selectedItem();
   ItemRecipe selectedRecipe;
-  if (m_guiList->selectedWidget())
-    selectedRecipe = m_recipesWidgetMap.getLeft(m_guiList->selectedWidget());
+  if (selectedIdx != NPos)
+    selectedRecipe = m_recipes[selectedIdx];
 
   HashMap<ItemDescriptor, uint64_t> normalizedBag = m_player->inventory()->availableItems();
 
   m_guiList->clear();
 
   for (auto const& recipe : m_recipes) {
-    auto widget = m_recipesWidgetMap.valueRight(recipe);
-    if (widget) {
-      m_guiList->addItem(widget);
-    } else {
-      widget = m_guiList->addItem();
-      m_recipesWidgetMap.add(recipe, widget);
-    }
-
+    auto widget = m_guiList->addItem();
     setupWidget(widget, recipe, normalizedBag);
 
-    if (selectedRecipe == recipe) {
+    if (selectedRecipe == recipe)
       m_guiList->setSelected(currentOffset);
-    }
 
     currentOffset++;
   }
 }
 
-void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag) {
+void CraftingPane::setupWidget(WidgetRef<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag) {
   auto single = recipe.output.singular();
   ItemPtr item = m_itemCache[single];
   if (!item) {
@@ -754,10 +746,9 @@ int CraftingPane::maxCraft() {
 }
 
 ItemRecipe CraftingPane::recipeFromSelectedWidget() const {
-  auto pane = m_guiList->selectedWidget();
-  if (pane && m_recipesWidgetMap.hasRightValue(pane)) {
-    return m_recipesWidgetMap.getLeft(pane);
-  }
+  auto idx = m_guiList->selectedItem();
+  if (idx != NPos)
+    return m_recipes[idx];
   return ItemRecipe();
 }
 

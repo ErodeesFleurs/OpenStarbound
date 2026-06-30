@@ -172,16 +172,16 @@ void ButtonWidget::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
 
-ButtonGroupPtr ButtonWidget::buttonGroup() const {
+ButtonGroup* ButtonWidget::buttonGroup() const {
   return m_buttonGroup;
 }
 
-void ButtonWidget::setButtonGroup(ButtonGroupPtr newGroup, int id) {
+void ButtonWidget::setButtonGroup(ButtonGroup* newGroup, int id) {
   if (m_buttonGroup != newGroup) {
     if (m_buttonGroup)
       m_buttonGroup->removeButton(this);
 
-    m_buttonGroup = std::move(newGroup);
+    m_buttonGroup = newGroup;
 
     if (m_buttonGroup) {
       setCheckable(true);
@@ -339,8 +339,8 @@ void ButtonWidget::setFontColorChecked(Color color) {
 }
 
 // Although ButtonWidget wraps other widgets from time to time.  These should never be "accessible"
-WidgetPtr ButtonWidget::getChildAt(Vec2I const&) {
-  return {};
+WidgetRef<Widget> ButtonWidget::getChildAt(Vec2I const&) {
+  return nullptr;
 }
 
 void ButtonWidget::disable() {

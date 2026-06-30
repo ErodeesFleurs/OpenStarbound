@@ -296,7 +296,7 @@ private:
   ItemSlotWidgetPtr m_cursorItem;
   Maybe<String> m_cursorTooltip;
 
-  LabelWidgetPtr m_planetText;
+  WidgetRef<LabelWidget> m_planetText;
   GameTimer m_planetNameTimer;
 
   GameTimer m_debugSpatialClearTimer;

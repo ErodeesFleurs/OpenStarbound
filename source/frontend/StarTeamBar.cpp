@@ -47,10 +47,10 @@ TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Service
 
   reader.construct(m_assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
 
-  m_healthBar = fetchChild<ProgressWidget>("healthBar");
-  m_energyBar = fetchChild<ProgressWidget>("energyBar");
-  m_foodBar = fetchChild<ProgressWidget>("foodBar");
-  m_nameLabel = fetchChild<LabelWidget>("name");
+  m_healthBar = fetchChild<ProgressWidget>("healthBar").get();
+  m_energyBar = fetchChild<ProgressWidget>("energyBar").get();
+  m_foodBar = fetchChild<ProgressWidget>("foodBar").get();
+  m_nameLabel = fetchChild<LabelWidget>("name").get();
 
   m_energyBarColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
   m_energyBarRegenMixColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
@@ -162,22 +162,23 @@ void TeamBar::buildTeamBar() {
     }
 
     String cellName = toString(controlIndex);
-    WidgetPtr cell = list->fetchChild(cellName);
-
+    auto cell = list->fetchChild(cellName);
+    
     if (!cell) {
       GuiReader reader(m_guiContext);
-      cell = make_shared<Widget>(m_guiContext);
-      cell->disableScissoring();
-      cell->markAsContainer();
+      auto newCell = make_unique<Widget>(m_guiContext);
+      newCell->disableScissoring();
+      newCell->markAsContainer();
 
       reader.registerCallback("showMemberMenu", [this](Widget* widget) {
           auto position = widget->screenPosition() + jsonToVec2I(m_assets->json("/interface/windowconfig/teambar.config:memberMenuOffset"));
           showMemberMenu(Uuid(widget->parent()->data().toString()), position);
         });
 
-      reader.construct(m_assets->json("/interface/windowconfig/teambar.config:entry"), cell.get());
+      reader.construct(m_assets->json("/interface/windowconfig/teambar.config:entry"), newCell.get());
 
-      list->addChild(cellName, cell);
+      cell = WidgetRef<Widget>(*newCell);
+      list->addChild(cellName, std::move(newCell));
     }
 
     offset[1] -= memberSize;
@@ -233,7 +234,7 @@ void TeamBar::buildTeamBar() {
 
   while (true) {
     String cellName = toString(controlIndex);
-    WidgetPtr cell = list->fetchChild(cellName);
+    auto cell = list->fetchChild(cellName);
     if (!cell)
       break;
     cell->hide();

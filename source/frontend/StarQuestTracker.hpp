@@ -36,16 +36,16 @@ public:
 private:
   void setExpanded(bool expanded);
 
-  ImageWidgetPtr m_frame;
-  ImageStretchWidgetPtr m_expandedFrame;
+  WidgetRef<ImageWidget> m_frame;
+  WidgetRef<ImageStretchWidget> m_expandedFrame;
 
-  LabelWidgetPtr m_questObjectiveList;
+  WidgetRef<LabelWidget> m_questObjectiveList;
 
-  ImageWidgetPtr m_compassFrame;
-  ImageWidgetPtr m_compass;
+  WidgetRef<ImageWidget> m_compassFrame;
+  WidgetRef<ImageWidget> m_compass;
 
-  ImageWidgetPtr m_progressFrame;
-  ProgressWidgetPtr m_progress;
+  WidgetRef<ImageWidget> m_progressFrame;
+  WidgetRef<ProgressWidget> m_progress;
 
   int m_expandedFrameMinHeight;
   int m_expandedFramePadding;

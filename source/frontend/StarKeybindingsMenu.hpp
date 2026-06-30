@@ -44,9 +44,9 @@ private:
 
   Map<Widget*, InterfaceAction> m_childToAction;
   TabSetWidgetPtr m_tabSet;
-  ListWidgetPtr m_playerList;
-  ListWidgetPtr m_toolBarList;
-  ListWidgetPtr m_gameList;
+  WidgetRef<ListWidget> m_playerList;
+  WidgetRef<ListWidget> m_toolBarList;
+  WidgetRef<ListWidget> m_gameList;
 
   Json m_origConfiguration;
 

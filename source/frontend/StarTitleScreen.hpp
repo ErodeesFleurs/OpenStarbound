@@ -138,7 +138,7 @@ private:
   void switchState(TitleState titleState);
   void back();
 
-  void populateServerList(ListWidgetPtr list);
+  void populateServerList(WidgetRef<ListWidget> list);
 
   [[nodiscard]] float interfaceScale() const;
   [[nodiscard]] unsigned windowHeight() const;
@@ -179,7 +179,7 @@ private:
   PanePtr m_backgroundMenu;
 
   struct RightAnchoredButton {
-    ButtonWidgetPtr button;
+    ButtonWidget* button;
     Vec2I offset;
   };
   List<RightAnchoredButton> m_rightAnchoredButtons;

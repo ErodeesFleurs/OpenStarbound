@@ -73,10 +73,10 @@ private:
   AssetsConstPtr m_assets;
   bool m_scripted;
 
-  TextBoxWidgetPtr m_textBox;
-  LabelWidgetPtr m_say;
-  ButtonWidgetPtr m_bottomButton;
-  ButtonWidgetPtr m_upButton;
+  WidgetRef<TextBoxWidget> m_textBox;
+  WidgetRef<LabelWidget> m_say;
+  WidgetRef<ButtonWidget> m_bottomButton;
+  WidgetRef<ButtonWidget> m_upButton;
   Deque<String> m_chatHistory;
   unsigned m_chatPrevIndex;
   int64_t m_timeChatLastActive;
@@ -87,10 +87,10 @@ private:
   int m_historyOffset;
   String m_chatFormatString;
 
-  CanvasWidgetPtr m_chatLog;
+  WidgetRef<CanvasWidget> m_chatLog;
   Vec2I m_chatLogPadding;
 
-  ImageStretchWidgetPtr m_background;
+  WidgetRef<ImageStretchWidget> m_background;
   int m_defaultHeight;
   int m_bodyHeight;
   int m_expandedBodyHeight;

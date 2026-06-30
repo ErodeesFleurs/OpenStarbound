@@ -26,8 +26,8 @@
 
 namespace Star {
 
-WidgetConstructResult::WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel)
-  : obj(obj), name(name), zlevel(zlevel) {}
+WidgetConstructResult::WidgetConstructResult(UniquePtr<Widget> obj, String const& name, float zlevel)
+  : obj(std::move(obj)), name(name), zlevel(zlevel) {}
 
 WidgetParser::WidgetParser(GuiContext& context) : m_context(context) {
   // only the non-interactive ones by default
@@ -68,16 +68,16 @@ void WidgetParser::constructImpl(Json const& config, Widget* widget) {
         return a.zlevel < b.zlevel;
       });
 
-  for (auto const& res : widgets) {
-    widget->addChild(res.name, res.obj);
-    if (res.obj->hasFocus()) {
-      if (m_pane)
-        m_pane->setFocus(res.obj.get());
-    }
+  for (auto& res : widgets) {
+    bool hadFocus = res.obj->hasFocus();
+    Widget* rawPtr = res.obj.get();
+    widget->addChild(res.name, std::move(res.obj));
+    if (hadFocus && m_pane && rawPtr)
+      m_pane->setFocus(*rawPtr);
   }
 }
 
-WidgetPtr WidgetParser::makeSingle(String const& name, Json const& config) {
+UniquePtr<Widget> WidgetParser::makeSingle(String const& name, Json const& config) {
   if (!m_constructors.contains(config.getString("type"))) {
     throw WidgetParserException(strf("Unknown type in gui json. {}", config.getString("type")));
   }
@@ -85,7 +85,7 @@ WidgetPtr WidgetParser::makeSingle(String const& name, Json const& config) {
   auto constructResult = m_constructors.get(config.getString("type"))(name, config);
   if (constructResult.obj)
     constructResult.obj->setContext(m_context);
-  return constructResult.obj;
+  return std::move(constructResult.obj);
 }
 
 List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
@@ -106,7 +106,7 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
           m_constructors.get(memberConfig.getString("type"))(memberConfig.getString("name"), memberConfig);
       if (constructResult.obj) {
         constructResult.obj->setContext(m_context);
-        widgets.append(constructResult);
+        widgets.append(std::move(constructResult));
       }
     }
   };
@@ -155,9 +155,9 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
     throw WidgetParserException::format("Failed to find callback named: {}", callback);
   WidgetCallbackFunc callbackFunc = m_callbacks.get(callback);
 
-  auto button = make_shared<ButtonWidget>(guiContext(), callbackFunc, baseImage, hoverImage, pressedImage, disabledImage);
+  auto button = make_unique<ButtonWidget>(guiContext(), callbackFunc, baseImage, hoverImage, pressedImage, disabledImage);
   button->setCheckedImages(baseImageChecked, hoverImageChecked, pressedImageChecked, disabledImageChecked);
-  common(button, config);
+  common(*button, config);
 
   button->setInvisible(invisible);
 
@@ -206,12 +206,12 @@ WidgetConstructResult WidgetParser::buttonHandler(String const& name, Json const
   if (config.contains("disabled"))
     button->setEnabled(!config.getBool("disabled"));
 
-  return WidgetConstructResult(button, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(button), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::imageHandler(String const& name, Json const& config) {
-  auto image = make_shared<ImageWidget>(guiContext());
-  common(image, config);
+  auto image = make_unique<ImageWidget>(guiContext());
+  common(*image, config);
 
   if (config.contains("file"))
     image->setImage(config.getString("file"));
@@ -242,22 +242,22 @@ WidgetConstructResult WidgetParser::imageHandler(String const& name, Json const&
   if (config.contains("minSize"))
     image->setMinSize(jsonToVec2I(config.get("minSize")));
 
-  return WidgetConstructResult(image, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(image), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::imageStretchHandler(String const& name, Json const& config) {
   ImageStretchSet stretchSet = parseImageStretchSet(config.get("stretchSet"));
   GuiDirection direction = GuiDirectionNames.getLeft(config.getString("direction", "horizontal"));
 
-  auto imageStretch = make_shared<ImageStretchWidget>(guiContext(), stretchSet, direction);
-  common(imageStretch, config);
+  auto imageStretch = make_unique<ImageStretchWidget>(guiContext(), stretchSet, direction);
+  common(*imageStretch, config);
 
-  return WidgetConstructResult(imageStretch, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(imageStretch), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json const& config) {
-  auto container = make_shared<Widget>(guiContext());
-  common(container, config);
+  auto container = make_unique<Widget>(guiContext());
+  common(*container, config);
 
   String callback = config.getString("callback", name);
 
@@ -282,24 +282,24 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
 
   float upOffset = config.getFloat("upOffset", static_cast<float>(imageSize[0]) + padding);
 
-  auto down = make_shared<ButtonWidget>(
+  auto down = make_unique<ButtonWidget>(
       guiContext(), callbackDown, config.getString("leftBase", leftBase), config.getString("leftHover", leftHover));
-  auto up = make_shared<ButtonWidget>(
+  auto up = make_unique<ButtonWidget>(
       guiContext(), callbackUp, config.getString("rightBase", rightBase), config.getString("rightHover", rightHover));
   up->setPosition(up->position() + Vec2I(upOffset, 0));
 
-  container->addChild("down", down);
-  container->addChild("up", up);
+  container->addChild("down", std::move(down));
+  container->addChild("up", std::move(up));
   container->disableScissoring();
   container->markAsContainer();
   container->determineSizeFromChildren();
 
-  return WidgetConstructResult(container, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(container), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json const& config) {
-  auto buttonGroup = make_shared<ButtonGroupWidget>(guiContext());
-  common(buttonGroup, config);
+  auto buttonGroup = make_unique<ButtonGroupWidget>(guiContext());
+  common(*buttonGroup, config);
   buttonGroup->markAsContainer();
   buttonGroup->disableScissoring();
 
@@ -332,8 +332,8 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
       auto overlayImage = btnConfig.getString("image", "");
       auto id = btnConfig.getInt("id", ButtonGroup::NoButton);
 
-      auto button = make_shared<ButtonWidget>(guiContext());
-      button->setButtonGroup(buttonGroup, id);
+      auto button = make_unique<ButtonWidget>(guiContext());
+      button->setButtonGroup(buttonGroup.get(), id);
 
       button->setImages(btnConfig.getString("baseImage", baseImage),
           btnConfig.getString("hoverImage", hoverImage),
@@ -369,9 +369,9 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
       if (btnConfig.contains("pressedOffset"))
         button->setPressedOffset(jsonToVec2I(btnConfig.get("pressedOffset")));
 
-      common(button, btnConfig);
+      common(*button, btnConfig);
 
-      buttonGroup->addChild(toString(button->buttonGroupId()), button);
+      buttonGroup->addChild(toString(button->buttonGroupId()), std::move(button));
     } catch (MapException const& e) {
       throw WidgetParserException(
           strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
@@ -381,11 +381,11 @@ WidgetConstructResult WidgetParser::radioGroupHandler(String const& name, Json c
   // Set callback after all other buttons are loaded, to avoid callbacks being
   // called during reading.
   buttonGroup->setCallback(m_callbacks.get(callback));
-  return WidgetConstructResult(buttonGroup, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(buttonGroup), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::portraitHandler(String const& name, Json const& config) {
-  auto portrait = make_shared<PortraitWidget>(guiContext());
+  auto portrait = make_unique<PortraitWidget>(guiContext());
 
   if (config.contains("portraitMode"))
     portrait->setMode(PortraitModeNames.getLeft(config.getString("portraitMode")));
@@ -394,9 +394,9 @@ WidgetConstructResult WidgetParser::portraitHandler(String const& name, Json con
 
   portrait->setScale(config.getFloat("scale", 1));
 
-  common(portrait, config);
+  common(*portrait, config);
 
-  return WidgetConstructResult(portrait, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(portrait), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json const& config) {
@@ -409,7 +409,7 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
 
   String initialText = config.getString("value", "");
   String hintText = config.getString("hint", "");
-  auto textbox = make_shared<TextBoxWidget>(guiContext(), initialText, hintText, callbackFunc);
+  auto textbox = make_unique<TextBoxWidget>(guiContext(), initialText, hintText, callbackFunc);
 
   if (config.contains("blur"))
     textbox->setOnBlurCallback(m_callbacks.get(config.getString("blur")));
@@ -450,9 +450,9 @@ WidgetConstructResult WidgetParser::textboxHandler(String const& name, Json cons
   if (config.contains("hidden"))
     textbox->setHidden(config.getBool("hidden"));
 
-  common(textbox, config);
+  common(*textbox, config);
 
-  return WidgetConstructResult(textbox, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(textbox), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::labelHandler(String const& name, Json const& config) {
@@ -464,8 +464,8 @@ WidgetConstructResult WidgetParser::labelHandler(String const& name, Json const&
   HorizontalAnchor hAnchor = HorizontalAnchorNames.getLeft(config.getString("hAnchor", "left"));
   VerticalAnchor vAnchor = VerticalAnchorNames.getLeft(config.getString("vAnchor", "bottom"));
 
-  auto label = make_shared<LabelWidget>(guiContext(), text, color, hAnchor, vAnchor);
-  common(label, config);
+  auto label = make_unique<LabelWidget>(guiContext(), text, color, hAnchor, vAnchor);
+  common(*label, config);
   if (config.contains("fontSize"))
     label->setFontSize(config.getInt("fontSize"));
   if (config.contains("wrapWidth"))
@@ -479,7 +479,7 @@ WidgetConstructResult WidgetParser::labelHandler(String const& name, Json const&
   if (config.contains("font"))
     label->setFont(config.getString("font"));
 
-  return WidgetConstructResult(label, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(label), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json const& config) {
@@ -492,7 +492,7 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   String middleClickCallback = callback.equals("null") ? callback : callback + ".middle";
   middleClickCallback = config.getString("middleClickCallback", middleClickCallback);
 
-  auto itemSlot = make_shared<ItemSlotWidget>(guiContext(), ItemPtr(), backingImage);
+  auto itemSlot = make_unique<ItemSlotWidget>(guiContext(), ItemPtr(), backingImage);
 
   if (auto leftClickCallback = m_callbacks.ptr(callback))
     itemSlot->setCallback(*leftClickCallback);
@@ -512,9 +512,9 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   itemSlot->showCount(config.getBool("showCount", true));
   itemSlot->showRarity(config.getBool("showRarity", true));
 
-  common(itemSlot, config);
+  common(*itemSlot, config);
 
-  return WidgetConstructResult(itemSlot, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(itemSlot), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json const& config) {
@@ -544,7 +544,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   unsigned slotOffset = config.getInt("slotOffset", 0);
   String backingImage = config.getString("backingImage", "");
 
-  auto itemGrid = make_shared<ItemGridWidget>(guiContext(), ItemBagConstPtr(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
+  auto itemGrid = make_unique<ItemGridWidget>(guiContext(), ItemBagConstPtr(), dimensions, rowSpacing, columnSpacing, backingImage, slotOffset);
 
   itemGrid->setBackingImageAffinity(
     config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
@@ -563,9 +563,9 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   if (auto middleCallback = m_callbacks.ptr(middleClickCallback))
     itemGrid->setMiddleClickCallback(*middleCallback);
 
-  common(itemGrid, config);
+  common(*itemGrid, config);
 
-  return WidgetConstructResult(itemGrid, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(itemGrid), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& config) {
@@ -577,8 +577,8 @@ WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& 
         strf("Malformed gui json, missing a required value in the map. {}", outputException(e, false)));
   }
 
-  auto list = make_shared<ListWidget>(guiContext(), schema);
-  common(list, config);
+  auto list = make_unique<ListWidget>(guiContext(), schema);
+  common(*list, config);
 
   if (auto callback = m_callbacks.value(config.getString("callback", name)))
     list->setCallback(callback);
@@ -586,14 +586,14 @@ WidgetConstructResult WidgetParser::listHandler(String const& name, Json const& 
   list->setFillDown(config.getBool("fillDown", false));
   list->setColumns(config.getUInt("columns", 1));
 
-  return WidgetConstructResult(list, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(list), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::sliderHandler(String const& name, Json const& config) {
   try {
     auto grid = config.getString("gridImage");
-    auto slider = make_shared<SliderBarWidget>(guiContext(), grid, config.getBool("showSpinner", true));
-    common(slider, config);
+    auto slider = make_unique<SliderBarWidget>(guiContext(), grid, config.getBool("showSpinner", true));
+    common(*slider, config);
 
     if (auto callback = m_callbacks.value(config.getString("callback", name)))
       slider->setCallback(callback);
@@ -614,7 +614,7 @@ WidgetConstructResult WidgetParser::sliderHandler(String const& name, Json const
     if (config.contains("disabled"))
       slider->setEnabled(!config.getBool("disabled"));
 
-    return WidgetConstructResult(slider, name, config.getFloat("zlevel", 0));
+    return WidgetConstructResult(std::move(slider), name, config.getFloat("zlevel", 0));
   } catch (MapException const& e) {
     throw WidgetParserException::format(
         "Malformed gui json, missing a required value in the map. {}", outputException(e, false));
@@ -627,10 +627,10 @@ WidgetConstructResult WidgetParser::largeCharPlateHandler(String const& name, Js
   if (!m_callbacks.contains(callback))
     throw WidgetParserException::format("Failed to find callback named: '{}'", name);
 
-  auto charPlate = make_shared<LargeCharPlateWidget>(guiContext(), m_callbacks.get(callback));
-  common(charPlate, config);
+  auto charPlate = make_unique<LargeCharPlateWidget>(guiContext(), m_callbacks.get(callback));
+  common(*charPlate, config);
 
-  return WidgetConstructResult(charPlate, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(charPlate), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const& config) {
@@ -652,35 +652,35 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
   tabSetConfig.tabButtonTextOffset = config.opt("tabButtonTextOffset").apply(jsonToVec2I).value();
   tabSetConfig.tabButtonSpacing = config.opt("tabButtonSpacing").apply(jsonToVec2I).value();
 
-  auto tabSet = make_shared<TabSetWidget>(guiContext(), tabSetConfig);
-  common(tabSet, config);
+  auto tabSet = make_unique<TabSetWidget>(guiContext(), tabSetConfig);
+  common(*tabSet, config);
 
   try {
     for (auto entry : config.get("tabs").iterateArray()) {
-      auto widget = make_shared<Widget>(guiContext());
+      auto widget = make_unique<Widget>(guiContext());
       constructImpl(entry.get("children"), widget.get());
       widget->determineSizeFromChildren();
-      tabSet->addTab(entry.getString("tabName"), widget, entry.getString("tabTitle"));
+      tabSet->addTab(entry.getString("tabName"), std::move(widget), entry.getString("tabTitle"));
     }
   } catch (JsonException const& e) {
     throw WidgetParserException(strf("Malformed gui json. {}", outputException(e, false)));
   }
 
-  return WidgetConstructResult(tabSet, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(tabSet), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::widgetHandler(String const& name, Json const& config) {
-  auto widget = make_shared<Widget>(guiContext());
-  common(widget, config);
+  auto widget = make_unique<Widget>(guiContext());
+  common(*widget, config);
 
-  return WidgetConstructResult(widget, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(widget), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::containerHandler(String const& name, Json const& config) {
-  auto widget = widgetHandler(name, config);
-  widget.obj->disableScissoring();
-  widget.obj->markAsContainer();
-  return widget;
+  auto result = widgetHandler(name, config);
+  result.obj->disableScissoring();
+  result.obj->markAsContainer();
+  return result;
 }
 
 WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const& config) {
@@ -690,47 +690,47 @@ WidgetConstructResult WidgetParser::layoutHandler(String const& name, Json const
   } catch (JsonException const&) {
     throw WidgetParserException("Failed to find layout type.  Options are: \"basic\", \"flow\", \"vertical\".");
   }
-  WidgetPtr widget;
+  UniquePtr<Widget> widget;
   if (type == "flow") {
-    widget = make_shared<FlowLayout>(guiContext());
-    auto flow = convert<FlowLayout>(widget);
+    widget = make_unique<FlowLayout>(guiContext());
+    auto flow = convert<FlowLayout>(widget.get());
     try {
       flow->setSpacing(jsonToVec2I(config.get("spacing")));
     } catch (JsonException const& e) {
       throw WidgetParserException(strf("Parameter \"spacing\" in FlowLayout specification is invalid: {}.", outputException(e, false)));
     }
   } else if (type == "vertical") {
-    widget = make_shared<VerticalLayout>(guiContext());
-    auto vert = convert<VerticalLayout>(widget);
+    widget = make_unique<VerticalLayout>(guiContext());
+    auto vert = convert<VerticalLayout>(widget.get());
     vert->setHorizontalAnchor(HorizontalAnchorNames.getLeft(config.getString("hAnchor", "left")));
     vert->setVerticalAnchor(VerticalAnchorNames.getLeft(config.getString("vAnchor", "top")));
     vert->setVerticalSpacing(config.getInt("spacing", 0));
     vert->setFillDown(config.getBool("fillDown", false));
   } else if (type == "basic") {
-    widget = make_shared<Layout>(guiContext());
+    widget = make_unique<Layout>(guiContext());
   } else {
     throw WidgetParserException(strf("Invalid layout type \"{}\".  Options are \"basic\", \"flow\", \"vertical\".", type));
   }
-  common(widget, config);
+  common(*widget, config);
   widget->update(0);
 
-  return WidgetConstructResult(widget, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(widget), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::canvasHandler(String const& name, Json const& config) {
-  auto canvas = make_shared<CanvasWidget>(guiContext());
+  auto canvas = make_unique<CanvasWidget>(guiContext());
   canvas->setCaptureKeyboardEvents(config.getBool("captureKeyboardEvents", false));
   canvas->setCaptureMouseEvents(config.getBool("captureMouseEvents", false));
-  common(canvas, config);
+  common(*canvas, config);
 
-  return WidgetConstructResult(canvas, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(canvas), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::fuelGaugeHandler(String const& name, Json const& config) {
-  auto fuelGauge = make_shared<FuelWidget>(guiContext());
-  common(fuelGauge, config);
+  auto fuelGauge = make_unique<FuelWidget>(guiContext());
+  common(*fuelGauge, config);
 
-  return WidgetConstructResult(fuelGauge, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(fuelGauge), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::progressHandler(String const& name, Json const& config) {
@@ -742,9 +742,9 @@ WidgetConstructResult WidgetParser::progressHandler(String const& name, Json con
   progressSet = parseImageStretchSet(config.get("progressSet"));
   GuiDirection direction = GuiDirectionNames.getLeft(config.getString("direction", "horizontal"));
 
-  auto progress = make_shared<ProgressWidget>(guiContext(), background, overlay, progressSet, direction);
+  auto progress = make_unique<ProgressWidget>(guiContext(), background, overlay, progressSet, direction);
 
-  common(progress, config);
+  common(*progress, config);
 
   if (config.contains("barColor"))
     progress->setColor(jsonToColor(config.get("barColor")));
@@ -755,29 +755,29 @@ WidgetConstructResult WidgetParser::progressHandler(String const& name, Json con
   if (config.contains("initial"))
     progress->setCurrentProgressLevel(config.getFloat("initial"));
 
-  return WidgetConstructResult(progress, name, config.getFloat("zlevel", 0));
+  return WidgetConstructResult(std::move(progress), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::stackHandler(String const& name, Json const& config) {
-  auto stack = make_shared<StackWidget>(guiContext());
+  auto stack = make_unique<StackWidget>(guiContext());
 
   if (config.contains("stack")) {
     auto stackList = config.getArray("stack");
     for (auto widgetCfg : stackList) {
-      auto widget = make_shared<Widget>(guiContext());
+      auto widget = make_unique<Widget>(guiContext());
       constructImpl(widgetCfg, widget.get());
       widget->determineSizeFromChildren();
-      stack->addChild(toString(stack->numChildren()), widget);
+      stack->addChild(toString(stack->numChildren()), std::move(widget));
     }
   }
 
   stack->determineSizeFromChildren();
-  common(stack, config);
-  return WidgetConstructResult(stack, name, config.getFloat("zlevel", 0));
+  common(*stack, config);
+  return WidgetConstructResult(std::move(stack), name, config.getFloat("zlevel", 0));
 }
 
 WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json const& config) {
-  auto scrollArea = make_shared<ScrollArea>(guiContext());
+  auto scrollArea = make_unique<ScrollArea>(guiContext());
 
   if (config.contains("buttons"))
     scrollArea->setButtonImages(config.get("buttons"));
@@ -794,35 +794,35 @@ WidgetConstructResult WidgetParser::scrollAreaHandler(String const& name, Json c
 
   scrollArea->setUpdatesChildren(config.getBool("updatesChildren", false));
 
-  common(scrollArea, config, false);
-  return WidgetConstructResult(scrollArea, name, config.getFloat("zlevel", 0));
+  common(*scrollArea, config, false);
+  return WidgetConstructResult(std::move(scrollArea), name, config.getFloat("zlevel", 0));
 }
 
-void WidgetParser::common(WidgetPtr widget, Json const& config, bool getChildren) {
+void WidgetParser::common(Widget& widget, Json const& config, bool getChildren) {
   if (config.contains("rect")) {
     auto rect = jsonToRectI(config.get("rect"));
-    widget->setPosition(rect.min());
-    widget->setSize(rect.size());
+    widget.setPosition(rect.min());
+    widget.setSize(rect.size());
   } else {
     if (config.contains("size")) {
-      widget->setSize(jsonToVec2I(config.get("size")));
+      widget.setSize(jsonToVec2I(config.get("size")));
     }
     if (config.contains("position")) {
-      widget->setPosition(jsonToVec2I(config.get("position")));
+      widget.setPosition(jsonToVec2I(config.get("position")));
     }
   }
   if (config.contains("visible"))
-    widget->setVisibility(config.getBool("visible"));
+    widget.setVisibility(config.getBool("visible"));
   if (config.getBool("focus", false))
-    widget->focus();
+    widget.focus();
   if (config.contains("data"))
-    widget->setData(config.get("data"));
+    widget.setData(config.get("data"));
   if (!config.getBool("scissoring", true))
-    widget->disableScissoring();
-  widget->setMouseTransparent(config.getBool("mouseTransparent", false));
+    widget.disableScissoring();
+  widget.setMouseTransparent(config.getBool("mouseTransparent", false));
 
   if (getChildren && config.contains("children"))
-    constructImpl(config.get("children"), widget.get());
+    constructImpl(config.get("children"), &widget);
 }
 
 ImageStretchSet WidgetParser::parseImageStretchSet(Json const& config) {

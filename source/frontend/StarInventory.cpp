@@ -202,10 +202,10 @@ InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerI
 
   for (auto name : bagOrder) {
     auto itemTab = itemBagConfig.get(name);
-    m_itemGrids[name] = fetchChild<ItemGridWidget>(itemTab.getString("itemGrid"));
+    m_itemGrids[name] = fetchChild<ItemGridWidget>(itemTab.getString("itemGrid")).get();
     m_itemGrids[name]->setItemBag(m_player->inventory()->bagContents(name));
     m_itemGrids[name]->hide();
-    m_newItemMarkers[name] = fetchChild<Widget>(itemTab.getString("newItemMarker"));
+    m_newItemMarkers[name] = fetchChild<Widget>(itemTab.getString("newItemMarker")).get();
     m_tabButtonData[name] = itemTab.getString("tabButtonData");
   }
   selectTab(bagOrder[0]);

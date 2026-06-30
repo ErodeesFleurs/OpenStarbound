@@ -64,7 +64,7 @@ private:
   void swapSlot();
 
   void buildItemList();
-  void setupWidget(WidgetPtr const& widget, Json const& itemConfig);
+  void setupWidget(WidgetRef<Widget> const& widget, Json const& itemConfig);
   void updateSelection();
   [[nodiscard]] int itemPrice();
   void updateBuyTotal();
@@ -97,15 +97,15 @@ private:
   float m_sellFactor;
   int m_sellTotal;
 
-  TabSetWidgetPtr m_tabSet;
-  ListWidgetPtr m_itemGuiList;
-  TextBoxWidgetPtr m_countTextBox;
-  LabelWidgetPtr m_buyTotalLabel;
-  ButtonWidgetPtr m_buyButton;
-  LabelWidgetPtr m_sellTotalLabel;
-  ButtonWidgetPtr m_sellButton;
+  TabSetWidget* m_tabSet;
+  ListWidget* m_itemGuiList;
+  TextBoxWidget* m_countTextBox;
+  LabelWidget* m_buyTotalLabel;
+  ButtonWidget* m_buyButton;
+  LabelWidget* m_sellTotalLabel;
+  ButtonWidget* m_sellButton;
 
-  ItemGridWidgetPtr m_itemGrid;
+  ItemGridWidget* m_itemGrid;
   ItemBagPtr m_itemBag;
 
   int m_buyCount;

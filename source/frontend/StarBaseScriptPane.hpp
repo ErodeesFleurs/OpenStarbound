@@ -65,8 +65,8 @@ protected:
 
   GuiReaderPtr m_reader;
 
-  Map<CanvasWidgetPtr, String> m_canvasClickCallbacks;
-  Map<CanvasWidgetPtr, String> m_canvasKeyCallbacks;
+  Map<CanvasWidget*, String> m_canvasClickCallbacks;
+  Map<CanvasWidget*, String> m_canvasKeyCallbacks;
 
   bool m_interactive;
 

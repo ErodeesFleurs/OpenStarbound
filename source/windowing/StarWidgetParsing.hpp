@@ -14,9 +14,9 @@ using WidgetParserException = TypedException<StarException, WidgetParserExceptio
 
 struct WidgetConstructResult {
   WidgetConstructResult() = default;
-  WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel);
+  WidgetConstructResult(UniquePtr<Widget> obj, String const& name, float zlevel);
 
-  WidgetPtr obj;
+  UniquePtr<Widget> obj;
   String name;
   float zlevel = 0.0f;
 };
@@ -30,7 +30,7 @@ public:
 
   virtual void construct(Json const& config, Widget* widget);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
-  [[nodiscard]] WidgetPtr makeSingle(String const& name, Json const& config);
+  [[nodiscard]] UniquePtr<Widget> makeSingle(String const& name, Json const& config);
 
 protected:
   void constructImpl(Json const& config, Widget* widget);
@@ -65,7 +65,7 @@ protected:
   [[nodiscard]] WidgetConstructResult layoutHandler(String const& name, Json const& config);
 
   // Utilities
-  void common(WidgetPtr widget, Json const& config, bool getChildren = true);
+  void common(Widget& widget, Json const& config, bool getChildren = true);
   [[nodiscard]] ImageStretchSet parseImageStretchSet(Json const& config);
   [[nodiscard]] GuiContext& guiContext() const;
 

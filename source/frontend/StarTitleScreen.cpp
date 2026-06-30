@@ -266,16 +266,17 @@ void TitleScreen::initMainMenu() {
     WidgetCallbackFunc callback = buttonCallbacks.get(key);
     bool rightAnchored = buttonConfig.getBool("rightAnchored", false);
 
-    auto button = make_shared<ButtonWidget>(m_guiContext, callback, image, imageHover, "", "");
+    auto button = make_unique<ButtonWidget>(m_guiContext, callback, image, imageHover, "", "");
     button->setPosition(offset);
+    auto* buttonRaw = button.get();
 
     if (rightAnchored)
-      m_rightAnchoredButtons.append(RightAnchoredButton{button, offset});
+      m_rightAnchoredButtons.append(RightAnchoredButton{buttonRaw, offset});
 
     if (key == "back")
-      backMenu->addChild(key, button);
+      backMenu->addChild(key, std::move(button));
     else
-      m_mainMenu->addChild(key, button);
+      m_mainMenu->addChild(key, std::move(button));
   }
 
   m_mainMenu->setAnchor(PaneAnchor::BottomLeft);
@@ -288,7 +289,7 @@ void TitleScreen::initMainMenu() {
   m_backgroundMenu = make_shared<Pane>(m_guiContext);
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
-  m_backgroundMenu->addChild("canvas", make_shared<CanvasWidget>(m_guiContext));
+  m_backgroundMenu->addChild("canvas", make_unique<CanvasWidget>(m_guiContext));
   m_backgroundMenu->show();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
@@ -358,7 +359,7 @@ void TitleScreen::initCharCreationMenu() {
   m_paneManager.registerPane("charCreationMenu", PaneLayer::Hud, charCreationMenu);
 }
 
-void TitleScreen::populateServerList(ListWidgetPtr list) {
+void TitleScreen::populateServerList(WidgetRef<ListWidget> list) {
   if (!m_serverList.isNull()) {
     list->clear();
     for (auto const& server : m_serverList.iterateArray()) {

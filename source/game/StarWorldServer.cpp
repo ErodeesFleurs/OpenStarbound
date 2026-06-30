@@ -1932,95 +1932,95 @@ WorldTemplatePtr WorldServer::worldTemplate() const {
   return m_worldTemplate;
 }
 
-AssetsConstPtr WorldServer::assets() const {
+AssetsConstPtr const& WorldServer::assets() const {
   return m_assets;
 }
 
-MaterialDatabaseConstPtr WorldServer::materialDatabase() const {
+MaterialDatabaseConstPtr const& WorldServer::materialDatabase() const {
   return m_materialDatabase;
 }
 
-ItemDatabaseConstPtr WorldServer::itemDatabase() const {
+ItemDatabaseConstPtr const& WorldServer::itemDatabase() const {
   return m_itemDatabase;
 }
 
-ObjectDatabaseConstPtr WorldServer::objectDatabase() const {
+ObjectDatabaseConstPtr const& WorldServer::objectDatabase() const {
   return m_objectDatabase;
 }
 
-PlantDatabaseConstPtr WorldServer::plantDatabase() const {
+PlantDatabaseConstPtr const& WorldServer::plantDatabase() const {
   return m_plantDatabase;
 }
 
-TreasureDatabaseConstPtr WorldServer::treasureDatabase() const {
+TreasureDatabaseConstPtr const& WorldServer::treasureDatabase() const {
   return m_treasureDatabase;
 }
 
-ImageMetadataDatabaseConstPtr WorldServer::imageMetadataDatabase() const {
+ImageMetadataDatabaseConstPtr const& WorldServer::imageMetadataDatabase() const {
   return m_imageMetadataDatabase;
 }
 
-FunctionDatabaseConstPtr WorldServer::functionDatabase() const {
+FunctionDatabaseConstPtr const& WorldServer::functionDatabase() const {
   return m_functionDatabase;
 }
 
-NpcDatabaseConstPtr WorldServer::npcDatabase() const {
+NpcDatabaseConstPtr const& WorldServer::npcDatabase() const {
   return m_npcDatabase;
 }
 
-MonsterDatabaseConstPtr WorldServer::monsterDatabase() const {
+MonsterDatabaseConstPtr const& WorldServer::monsterDatabase() const {
   return m_monsterDatabase;
 }
 
-ProjectileDatabaseConstPtr WorldServer::projectileDatabase() const {
+ProjectileDatabaseConstPtr const& WorldServer::projectileDatabase() const {
   return m_projectileDatabase;
 }
 
-SpawnTypeDatabaseConstPtr WorldServer::spawnTypeDatabase() const {
+SpawnTypeDatabaseConstPtr const& WorldServer::spawnTypeDatabase() const {
   return m_spawnTypeDatabase;
 }
 
-StagehandDatabaseConstPtr WorldServer::stagehandDatabase() const {
+StagehandDatabaseConstPtr const& WorldServer::stagehandDatabase() const {
   return m_stagehandDatabase;
 }
 
-VehicleDatabaseConstPtr WorldServer::vehicleDatabase() const {
+VehicleDatabaseConstPtr const& WorldServer::vehicleDatabase() const {
   return m_vehicleDatabase;
 }
 
-TerrainDatabaseConstPtr WorldServer::terrainDatabase() const {
+TerrainDatabaseConstPtr const& WorldServer::terrainDatabase() const {
   return m_terrainDatabase;
 }
 
-BiomeDatabaseConstPtr WorldServer::biomeDatabase() const {
+BiomeDatabaseConstPtr const& WorldServer::biomeDatabase() const {
   return m_biomeDatabase;
 }
 
-DungeonDefinitionsConstPtr WorldServer::dungeonDefinitions() const {
+DungeonDefinitionsConstPtr const& WorldServer::dungeonDefinitions() const {
   return m_dungeonDefinitions;
 }
 
-BehaviorDatabaseConstPtr WorldServer::behaviorDatabase() const {
+BehaviorDatabaseConstPtr const& WorldServer::behaviorDatabase() const {
   return m_behaviorDatabase;
 }
 
-LiquidsDatabaseConstPtr WorldServer::liquidsDatabase() const {
+LiquidsDatabaseConstPtr const& WorldServer::liquidsDatabase() const {
   return m_liquidsDatabase;
 }
 
-EffectSourceDatabaseConstPtr WorldServer::effectSourceDatabase() const {
+EffectSourceDatabaseConstPtr const& WorldServer::effectSourceDatabase() const {
   return m_effectSourceDatabase;
 }
 
-ParticleDatabaseConstPtr WorldServer::particleDatabase() const {
+ParticleDatabaseConstPtr const& WorldServer::particleDatabase() const {
   return m_particleDatabase;
 }
 
-TechDatabaseConstPtr WorldServer::techDatabase() const {
+TechDatabaseConstPtr const& WorldServer::techDatabase() const {
   return m_techDatabase;
 }
 
-StatusEffectDatabaseConstPtr WorldServer::statusEffectDatabase() const {
+StatusEffectDatabaseConstPtr const& WorldServer::statusEffectDatabase() const {
   return m_statusEffectDatabase;
 }
 

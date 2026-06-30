@@ -27,10 +27,10 @@ public:
   // Callback is called when the checked / pressed state is changed.
   void setCallback(WidgetCallbackFunc callback);
 
-  [[nodiscard]] ButtonGroupPtr buttonGroup() const;
+  [[nodiscard]] ButtonGroup* buttonGroup() const;
   // Sets the button group for this widget, and adds it to the button group if
   // it is not already added.  Additionally, sets the button as checkable.
-  void setButtonGroup(ButtonGroupPtr buttonGroup, int id = ButtonGroup::NoButton);
+  void setButtonGroup(ButtonGroup* buttonGroup, int id = ButtonGroup::NoButton);
   // If a button group is set, returns this button's id in the button group.
   [[nodiscard]] int buttonGroupId();
 
@@ -79,7 +79,7 @@ public:
   void setFontColorDisabled(Color color);
   void setFontColorChecked(Color color);
 
-  [[nodiscard]] WidgetPtr getChildAt(Vec2I const& pos) override;
+  [[nodiscard]] WidgetRef<Widget> getChildAt(Vec2I const& pos) override;
 
   void disable();
   void enable();
@@ -95,7 +95,7 @@ protected:
   void updateSize();
 
   WidgetCallbackFunc m_callback;
-  ButtonGroupPtr m_buttonGroup;
+  ButtonGroup* m_buttonGroup = nullptr;
 
   bool m_hovered = false;
   bool m_pressed = false;

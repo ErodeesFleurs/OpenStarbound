@@ -20,24 +20,22 @@ public:
 
   [[nodiscard]] bool sendEvent(InputEvent const& event) override;
   void setSchema(Json const& schema);
-  [[nodiscard]] WidgetPtr constructWidget();
-  [[nodiscard]] WidgetPtr addItem();
-  [[nodiscard]] WidgetPtr addItem(size_t at);
-  [[nodiscard]] WidgetPtr addItem(WidgetPtr existingItem);
+  [[nodiscard]] UniquePtr<Widget> constructWidget();
+  [[nodiscard]] WidgetRef<Widget> addItem();
+  [[nodiscard]] WidgetRef<Widget> addItem(size_t at);
   void removeItem(size_t at);
-  void removeItem(WidgetPtr item);
+  void removeItem(Widget& item);
   void clear();
   [[nodiscard]] size_t selectedItem() const;
-  [[nodiscard]] size_t itemPosition(WidgetPtr item) const;
-  [[nodiscard]] WidgetPtr itemAt(size_t n) const;
-  [[nodiscard]] WidgetPtr selectedWidget() const;
-  [[nodiscard]] List<WidgetPtr> const& list() const;
+  [[nodiscard]] size_t itemPosition(Widget& item) const;
+  [[nodiscard]] WidgetRef<Widget> itemAt(size_t n) const;
+  [[nodiscard]] WidgetRef<Widget> selectedWidget() const;
   [[nodiscard]] size_t listSize() const;
   void setEnabled(size_t pos, bool enabled);
   void setHovered(size_t pos, bool hovered);
   void setSelected(size_t pos);
   void clearSelected();
-  void setSelectedWidget(WidgetPtr selected);
+  void setSelectedWidget(WidgetRef<Widget> selected);
 
   void registerMemberCallback(String const& name, WidgetCallbackFunc const& callback);
 

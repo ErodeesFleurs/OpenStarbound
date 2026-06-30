@@ -119,7 +119,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr
 
   callbacks.registerCallback("bindCanvas", [&parentWidget](String const& widgetName) -> Maybe<CanvasWidgetPtr> {
       if (auto canvas = parentWidget.fetchChild<CanvasWidget>(widgetName))
-        return canvas;
+        return CanvasWidgetPtr(canvas.get(), [](CanvasWidget*) {});
       return {};
     });
 
@@ -201,7 +201,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr
       if (auto widget = parentWidget.fetchChild<Widget>(widgetName)) {
         String name = newChildName.value(toString(Random::randu64()));
         if (auto newChild = reader->makeSingle(name, newChildConfig))
-          widget->addChild(name, newChild);
+          widget->addChild(name, std::move(newChild));
       }
     });
 
@@ -458,10 +458,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr
     });
 
   callbacks.registerCallback("addFlowImage", [&parentWidget](String const& widgetName, String const& childName, String const& image) {
-      if (auto flow = parentWidget.fetchChild<FlowLayout>(widgetName)) {
-        WidgetPtr newChild = make_shared<ImageWidget>(parentWidget.context(), image);
-        flow->addChild(childName, newChild);
-      }
+      if (auto flow = parentWidget.fetchChild<FlowLayout>(widgetName))
+        flow->addChild(childName, make_unique<ImageWidget>(parentWidget.context(), image));
     });
 
   callbacks.registerCallback("setImageStretchSet", [&parentWidget](String const& widgetName, Json const& imageSet) {

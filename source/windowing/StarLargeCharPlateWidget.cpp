@@ -27,11 +27,12 @@ LargeCharPlateWidget::LargeCharPlateWidget(GuiContext& context, WidgetCallbackFu
   String switchText = m_config.getString("switchText");
   String createText = m_config.getString("createText");
 
-  m_portrait = make_shared<PortraitWidget>(guiContext);
+  auto portrait = make_unique<PortraitWidget>(guiContext);
+  m_portrait = WidgetRef<PortraitWidget>(*portrait);
   m_portrait->setScale(m_portraitScale);
   m_portrait->setPosition(m_portraitOffset);
   m_portrait->setRenderHumanoid(true);
-  addChild("portrait", m_portrait);
+  addChild("portrait", std::move(portrait));
 
   String modeLabelText = m_config.getString("modeText");
   m_regularTextColor = Color::rgb(jsonToVec3B(m_config.get("textColor")));
@@ -42,15 +43,17 @@ LargeCharPlateWidget::LargeCharPlateWidget(GuiContext& context, WidgetCallbackFu
 
   auto modeNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeNameHAnchor", "mid"));
   auto modeNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeNameVAnchor", "bottom"));
-  m_modeName = make_shared<LabelWidget>(guiContext, modeLabelText, Color::White, modeNameHAnchor);
-  addChild("modeName", m_modeName);
+  auto modeName = make_unique<LabelWidget>(guiContext, modeLabelText, Color::White, modeNameHAnchor);
+  m_modeName = WidgetRef<LabelWidget>(*modeName);
+  addChild("modeName", std::move(modeName));
   m_modeName->setPosition(m_modeNameOffset);
   m_modeName->setAnchor(modeNameHAnchor, modeNameVAnchor);
 
   auto modeHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeHAnchor", "left"));
   auto modeVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeVAnchor", "bottom"));
-  m_mode = make_shared<LabelWidget>(guiContext);
-  addChild("mode", m_mode);
+  auto mode = make_unique<LabelWidget>(guiContext);
+  m_mode = WidgetRef<LabelWidget>(*mode);
+  addChild("mode", std::move(mode));
   m_mode->setPosition(m_modeOffset);
   m_mode->setAnchor(modeHAnchor, modeVAnchor);
 
@@ -60,11 +63,12 @@ LargeCharPlateWidget::LargeCharPlateWidget(GuiContext& context, WidgetCallbackFu
 
   auto playerNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("playerNameHAnchor", "mid"));
   auto playerNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("playerNameVAnchor", "bottom"));
-  m_playerName = make_shared<LabelWidget>(guiContext);
+  auto playerName = make_unique<LabelWidget>(guiContext);
+  m_playerName = WidgetRef<LabelWidget>(*playerName);
   m_playerName->setColor(m_createCharTextColor);
   m_playerName->setPosition(m_playerNameOffset);
   m_playerName->setAnchor(playerNameHAnchor, playerNameVAnchor);
-  addChild("player", m_playerName);
+  addChild("player", std::move(playerName));
 }
 
 void LargeCharPlateWidget::renderImpl() {
@@ -135,15 +139,16 @@ void LargeCharPlateWidget::enableDelete(WidgetCallbackFunc const& callback) {
   auto disabledImage = trashButton.getString("disabledImage");
   auto offset = jsonToVec2I(trashButton.get("offset"));
 
-  m_delete = make_shared<ButtonWidget>(context(), callback, baseImage, hoverImage, pressedImage, disabledImage);
-  addChild("trashButton", m_delete);
+  auto deleteBtn = make_unique<ButtonWidget>(context(), callback, baseImage, hoverImage, pressedImage, disabledImage);
+  m_delete = WidgetRef<ButtonWidget>(*deleteBtn);
+  addChild("trashButton", std::move(deleteBtn));
   m_delete->setPosition(offset);
   m_deleteOffset = offset;
 }
 
 void LargeCharPlateWidget::disableDelete() {
   if (m_delete) {
-    removeChild(m_delete.get());
+    removeChild(*m_delete);
   }
 
   m_delete = {};

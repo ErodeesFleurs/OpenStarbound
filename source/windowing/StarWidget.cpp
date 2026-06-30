@@ -43,7 +43,7 @@ void Widget::render(RectI const& region) {
 void Widget::renderImpl() {}
 
 void Widget::drawChildren() {
-  for (auto child : m_members)
+  for (auto& child : m_members)
     child->render(m_drawingArea);
 }
 
@@ -129,17 +129,17 @@ void Widget::markAsContainer() {
   m_container = true;
 }
 
-WidgetPtr Widget::keyboardCapturer() const {
+Widget* Widget::keyboardCapturer() const {
   if (active()) {
     for (auto const& member : m_members) {
       auto mode = member->keyboardCaptureMode();
       if (mode != KeyboardCaptureMode::None)
-        return member;
+        return member.get();
       else if (auto capturer = member->keyboardCapturer())
         return capturer;
     }
   }
-  return {};
+  return nullptr;
 }
 
 KeyboardCaptureMode Widget::keyboardCaptureMode() const {
@@ -177,7 +177,7 @@ bool Widget::inMember(Vec2I const& position) const {
     return false;
 
   if (m_container) {
-    for (auto child : m_members)
+    for (auto& child : m_members)
       if (child->inMember(position))
         return true;
   } else {
@@ -191,7 +191,7 @@ bool Widget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  for (auto child : reverseIterate(m_members)) {
+  for (auto& child : reverseIterate(m_members)) {
     if (child->sendEvent(event))
       return true;
   }
@@ -259,7 +259,7 @@ bool Widget::hasFocus() const {
 void Widget::focus() {
   m_focus = true;
   if (auto w = window())
-    w->setFocus(this);
+    w->setFocus(*this);
 }
 
 void Widget::blur() {
@@ -292,68 +292,83 @@ Pane const* Widget::window() const {
   return nullptr;
 }
 
-void Widget::addChild(String const& name, WidgetPtr member) {
+void Widget::addChild(String const& name, UniquePtr<Widget> member) {
   member->setName(name);
   member->setContext(*m_context);
-  m_members.push_back(member);
-  m_memberHash[member->name()] = member;
-  member->setParent(this);
+  size_t index = m_members.size();
+  m_members.push_back(std::move(member));
+  m_memberHash[name] = index;
+  m_members[index]->setParent(this);
 }
 
-void Widget::addChildAt(String const& name, WidgetPtr member, size_t at) {
+void Widget::addChildAt(String const& name, UniquePtr<Widget> member, size_t at) {
   if (at > m_members.size())
     throw GuiException("Attempted to insert item after the end of the list.");
 
-  m_members.insert(m_members.begin() + at, member);
-  m_memberHash[name] = member;
-  member->setName(name);
-  member->setContext(*m_context);
-  member->setParent(this);
+  m_members.insert(m_members.begin() + at, std::move(member));
+  m_members[at]->setName(name);
+  m_members[at]->setContext(*m_context);
+  m_members[at]->setParent(this);
+  // Rebuild hash from the insertion point
+  for (size_t i = at; i < m_members.size(); ++i)
+    m_memberHash[m_members[i]->name()] = i;
 }
 
-bool Widget::removeChild(Widget* member) {
-  m_memberHash.erase(member->name());
-  for (auto child = m_members.begin(); child != m_members.end(); ++child) {
-    if (child->get() == member) {
-      (*child)->setParent(nullptr);
-      m_members.erase(child);
+bool Widget::removeChild(Widget& member) {
+  for (size_t i = 0; i < m_members.size(); ++i) {
+    if (m_members[i].get() == &member) {
+      m_memberHash.erase(member.name());
+      m_members[i]->setParent(nullptr);
+      m_members.erase(m_members.begin() + i);
       return true;
-    } else {
-      if ((*child)->removeChild(member))
-        return true;
     }
+    if (m_members[i]->removeChild(member))
+      return true;
   }
-
   return false;
 }
 
 bool Widget::removeChild(String const& name) {
-  m_memberHash.erase(name);
-  for (auto child = m_members.begin(); child != m_members.end(); ++child) {
-    auto ptr = *child;
-    if (ptr->name() == name) {
-      m_members.erase(child);
-      ptr->setParent(nullptr);
-      return true;
-    }
+  if (name.contains(".")) {
+    StringList nameList = name.split(".", 1);
+    auto it = m_memberHash.find(nameList[0]);
+    if (it != m_memberHash.end())
+      return m_members[it->second]->removeChild(nameList[1]);
+    return false;
   }
 
-  return false;
+  auto it = m_memberHash.find(name);
+  if (it == m_memberHash.end())
+    return false;
+
+  size_t index = it->second;
+  m_memberHash.erase(it);
+  m_members[index]->setParent(nullptr);
+  m_members.erase(m_members.begin() + index);
+
+  // Update hash entries for shifted indices
+  for (size_t i = index; i < m_members.size(); ++i)
+    m_memberHash[m_members[i]->name()] = i;
+
+  return true;
 }
 
 bool Widget::removeChildAt(size_t at) {
   if (at >= m_members.size())
     return false;
 
-  m_memberHash.erase(m_members.at(at)->name());
-
-  m_members.at(at)->setParent(nullptr);
+  m_memberHash.erase(m_members[at]->name());
+  m_members[at]->setParent(nullptr);
   m_members.erase(m_members.begin() + at);
+
+  for (size_t i = at; i < m_members.size(); ++i)
+    m_memberHash[m_members[i]->name()] = i;
+
   return true;
 }
 
 void Widget::removeAllChildren() {
-  for (auto child : m_members)
+  for (auto& child : m_members)
     child->setParent(nullptr);
 
   m_members.clear();
@@ -361,64 +376,51 @@ void Widget::removeAllChildren() {
 }
 
 bool Widget::containsChild(String const& name) {
-  if (fetchChild(name))
-    return true;
-  return false;
+  return fetchChild(name).operator bool();
 }
 
-WidgetPtr Widget::fetchChild(String const& name) {
-  WidgetPtr res;
+WidgetRef<Widget> Widget::fetchChild(String const& name) {
   if (name.contains(".")) {
     StringList nameList = name.split(".", 1);
-    if (auto child = m_memberHash.value(nameList[0], {}))
-      return child->fetchChild(nameList[1]);
+    auto it = m_memberHash.find(nameList[0]);
+    if (it != m_memberHash.end())
+      return m_members[it->second]->fetchChild(nameList[1]);
   } else {
-    if (auto child = m_memberHash.value(name, {}))
-      return child;
+    auto it = m_memberHash.find(name);
+    if (it != m_memberHash.end())
+      return WidgetRef<Widget>(*m_members[it->second]);
   }
-  return {};
+  return nullptr;
 }
 
-WidgetPtr Widget::findChild(String const& name) {
+WidgetRef<Widget> Widget::findChild(String const& name) {
   if (auto found = fetchChild(name))
     return found;
   for (auto const& child : m_members) {
     if (auto found = child->findChild(name))
       return found;
   }
-  return {};
+  return nullptr;
 }
 
-WidgetPtr Widget::childPtr(Widget const* child) const {
-  for (auto const& member : m_members) {
-    if (member.get() == child)
-      return member;
-    if (auto c = member->childPtr(child))
-      return c;
-  }
-  return {};
-}
-
-WidgetPtr Widget::getChildAt(Vec2I const& pos) {
-  for (auto child : reverseIterate(m_members)) {
+WidgetRef<Widget> Widget::getChildAt(Vec2I const& pos) {
+  for (auto& child : reverseIterate(m_members)) {
     if (child->inMember(pos)) {
       auto res = child->getChildAt(pos);
-      if (res) {
+      if (res)
         return res;
-      }
-      return child;
+      return WidgetRef<Widget>(*child);
     }
   }
-
-  return {};
+  return nullptr;
 }
 
 size_t Widget::numChildren() const {
   return m_members.size();
 }
 
-WidgetPtr Widget::getChildNum(size_t num) const {
-  return m_members.at(num);
+WidgetRef<Widget> Widget::getChildNum(size_t num) const {
+  return WidgetRef<Widget>(*m_members.at(num));
 }
 
 String const& Widget::name() const {
@@ -440,7 +442,7 @@ String Widget::fullName() const {
 String Widget::toStringImpl(int indentLevel) const {
   auto leader = String(" ") * indentLevel;
   String childrenString;
-  for (auto child : m_members) {
+  for (auto& child : m_members) {
     childrenString.append(child->toStringImpl(indentLevel + 4));
   }
   String output = strf(R"OUTPUT({}{} : {

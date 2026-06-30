@@ -184,7 +184,7 @@ PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
   return {};
 }
 
-WidgetPtr QuestLogInterface::getSelected() {
+WidgetRef<Widget> QuestLogInterface::getSelected() {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   if (auto selected = mainQuestList->selectedWidget())
     return selected;
@@ -193,19 +193,19 @@ WidgetPtr QuestLogInterface::getSelected() {
   if (auto selected = sideQuestList->selectedWidget())
     return selected;
 
-  return {};
+  return nullptr;
 }
 
-void QuestLogInterface::setSelected(WidgetPtr selected) {
+void QuestLogInterface::setSelected(WidgetRef<Widget> selected) {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
-  auto mainQuestListPos = mainQuestList->itemPosition(selected);
+  auto mainQuestListPos = mainQuestList->itemPosition(*selected);
   if (mainQuestListPos != NPos) {
     mainQuestList->setSelected(mainQuestListPos);
     return;
   }
 
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
-  auto sideQuestListPos = sideQuestList->itemPosition(selected);
+  auto sideQuestListPos = sideQuestList->itemPosition(*selected);
   if (sideQuestListPos != NPos) {
     sideQuestList->setSelected(sideQuestListPos);
     return;
@@ -256,7 +256,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   sideQuestList->clear();
   sideQuestHeader->hide();
   for (auto const& quest : quests) {
-    WidgetPtr entry;
+    auto entry = WidgetRef<Widget>();
     if (quest->mainQuest()) {
       entry = mainQuestList->addItem();
       mainQuestHeader->show();

@@ -67,7 +67,7 @@ private:
   WidgetCallbackFunc m_middleClickCallback;
   float m_progress = 1.0f;
 
-  ProgressWidgetPtr m_durabilityBar;
+  WidgetRef<ProgressWidget> m_durabilityBar;
 
   Animation m_newItemIndicator;
 

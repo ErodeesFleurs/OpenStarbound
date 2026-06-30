@@ -91,24 +91,28 @@ ScrollBar::ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallback
   : Widget(context), m_direction(direction) {
   auto& guiContext = this->context();
 
-  m_forward = make_shared<ButtonWidget>(guiContext);
-  m_forward->setCallback(forwardFunc);
-  m_forward->setSustainCallbackOnDownHold(true);
-  m_forward->setPressedOffset({0, 0});
+  auto forward = make_unique<ButtonWidget>(guiContext);
+  forward->setCallback(forwardFunc);
+  forward->setSustainCallbackOnDownHold(true);
+  forward->setPressedOffset({0, 0});
 
-  m_backward = make_shared<ButtonWidget>(guiContext);
-  m_backward->setCallback(backwardFunc);
-  m_backward->setSustainCallbackOnDownHold(true);
-  m_backward->setPressedOffset({0, 0});
+  auto backward = make_unique<ButtonWidget>(guiContext);
+  backward->setCallback(backwardFunc);
+  backward->setSustainCallbackOnDownHold(true);
+  backward->setPressedOffset({0, 0});
 
-  m_thumb = make_shared<ScrollThumb>(guiContext, m_direction);
+  auto thumb = make_unique<ScrollThumb>(guiContext, m_direction);
+
+  m_forward = WidgetRef<ButtonWidget>(*forward);
+  m_backward = WidgetRef<ButtonWidget>(*backward);
+  m_thumb = WidgetRef<ScrollThumb>(*thumb);
 
   auto const& assets = guiContext.assets();
   setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
 
-  addChild("thumb", m_thumb);
-  addChild("forward", m_forward);
-  addChild("backward", m_backward);
+  addChild("thumb", std::move(thumb));
+  addChild("forward", std::move(forward));
+  addChild("backward", std::move(backward));
 }
 
 void ScrollBar::setButtonImages(Json const& images) {
@@ -181,15 +185,15 @@ float ScrollBar::scrollRatio() const {
   return 0;
 }
 
-ButtonWidgetPtr ScrollBar::forwardButton() const {
+WidgetRef<ButtonWidget> ScrollBar::forwardButton() const {
   return m_forward;
 }
 
-ButtonWidgetPtr ScrollBar::backwardButton() const {
+WidgetRef<ButtonWidget> ScrollBar::backwardButton() const {
   return m_backward;
 }
 
-ScrollThumbPtr ScrollBar::thumb() const {
+WidgetRef<ScrollThumb> ScrollBar::thumb() const {
   return m_thumb;
 }
 
@@ -223,7 +227,7 @@ void ScrollBar::drawChildren() {
       m_thumb->setSize(Vec2I(innerSize, m_thumb->baseSize()[1]));
     }
 
-    for (auto child : m_members) {
+    for (auto const& child : m_members) {
       child->render(m_drawingArea);
     }
   }
@@ -255,11 +259,13 @@ ScrollArea::ScrollArea(GuiContext& context) : Widget(context) {
   WidgetCallbackFunc hAdvance = [this](Widget*) { scrollAreaBy({advanceFactorHelper(), 0}); };
   WidgetCallbackFunc hRetreat = [this](Widget*) { scrollAreaBy({-advanceFactorHelper(), 0}); };
 
-  m_vBar = make_shared<ScrollBar>(guiContext, GuiDirection::Vertical, vAdvance, vRetreat);
-  m_hBar = make_shared<ScrollBar>(guiContext, GuiDirection::Horizontal, hAdvance, hRetreat);
+  auto vBar = make_unique<ScrollBar>(guiContext, GuiDirection::Vertical, vAdvance, vRetreat);
+  m_vBar = WidgetRef<ScrollBar>(*vBar);
+  addChild("vScrollBar", std::move(vBar));
 
-  addChild("vScrollBar", m_vBar);
-  addChild("hScrollBar", m_hBar);
+  auto hBar = make_unique<ScrollBar>(guiContext, GuiDirection::Horizontal, hAdvance, hRetreat);
+  m_hBar = WidgetRef<ScrollBar>(*hBar);
+  addChild("hScrollBar", std::move(hBar));
 }
 
 void ScrollArea::setButtonImages(Json const& images) {
@@ -274,8 +280,8 @@ void ScrollArea::setThumbImages(Json const& images) {
 
 RectI ScrollArea::contentBoundRect() const {
   RectI res = RectI::null();
-  for (auto child : m_members) {
-    if (child == m_vBar || child == m_hBar) // scroll bars don't count
+  for (auto const& child : m_members) {
+    if (child.get() == m_vBar.get() || child.get() == m_hBar.get()) // scroll bars don't count
       continue;
     if (!child->active()) // neither do hidden members
       continue;
@@ -420,8 +426,8 @@ void ScrollArea::drawChildren() {
   if (contentSize[1] < areaSize[1])
     offset[1] = offset[1] - (areaSize[1] - contentSize[1]);
 
-  for (auto child : m_members) {
-    if (child == m_vBar || child == m_hBar)
+  for (auto const& child : m_members) {
+    if (child.get() == m_vBar.get() || child.get() == m_hBar.get())
       continue;
     child->setDrawingOffset(-offset);
     child->render(innerDrawingArea);

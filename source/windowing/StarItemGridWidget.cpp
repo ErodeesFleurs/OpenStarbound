@@ -47,14 +47,14 @@ ItemPtr ItemGridWidget::selectedItem() const {
   return itemAt(selectedIndex());
 }
 
-ItemSlotWidgetPtr ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
+WidgetRef<ItemSlotWidget> ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
   if (pos != NPos)
     return m_slots[pos];
   return {};
 }
 
-ItemSlotWidgetPtr ItemGridWidget::itemWidgetAt(size_t index) const {
+WidgetRef<ItemSlotWidget> ItemGridWidget::itemWidgetAt(size_t index) const {
   if (index < m_slots.size())
     return m_slots[index];
   return {};
@@ -155,13 +155,14 @@ void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {
   removeAllChildren();
   m_slots.clear();
   for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
-    auto itemSlot = make_shared<ItemSlotWidget>(context(), m_bag->at(i), m_backingImage);
-    addChild(toString(i), itemSlot);
-    m_slots.append(itemSlot);
-    itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
-    itemSlot->setProgress(m_progress);
-    itemSlot->setPosition(locOfItemSlot(i));
-    itemSlot->showDurability(m_showDurability);
+    auto itemSlot = make_unique<ItemSlotWidget>(context(), m_bag->at(i), m_backingImage);
+    auto ref = WidgetRef<ItemSlotWidget>(*itemSlot);
+    addChild(toString(i), std::move(itemSlot));
+    m_slots.append(ref);
+    ref->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
+    ref->setProgress(m_progress);
+    ref->setPosition(locOfItemSlot(i));
+    ref->showDurability(m_showDurability);
   }
 
   m_itemNames = slotItemNames();

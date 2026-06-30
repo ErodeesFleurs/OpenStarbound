@@ -110,7 +110,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
       auto entry = destList->addItem();
       setupBookmarkEntry(entry, bookmark);
       if (bookmark == m_currentLocation) {
-        destList->setEnabled(destList->itemPosition(entry), false);
+        destList->setEnabled(destList->itemPosition(*entry), false);
         entry->fetchChild<ButtonWidget>("editButton")->setEnabled(false);
       }
       auto const& [targetWorld, targetSpawn] = bookmark.target;

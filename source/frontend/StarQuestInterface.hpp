@@ -44,8 +44,8 @@ public:
   void pollDialog(PaneManager& paneManager);
 
 private:
-  [[nodiscard]] WidgetPtr getSelected();
-  void setSelected(WidgetPtr selected);
+  [[nodiscard]] WidgetRef<Widget> getSelected();
+  void setSelected(WidgetRef<Widget> selected);
   void toggleTracking();
   void abandon();
   void showQuests(List<QuestPtr> quests);

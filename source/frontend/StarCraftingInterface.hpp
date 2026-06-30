@@ -69,9 +69,8 @@ private:
   void countChanged();
   void countTextChanged();
   [[nodiscard]] int maxCraft();
-  void setupList(WidgetPtr widget, ItemRecipe const& recipe);
   [[nodiscard]] ItemRecipe recipeFromSelectedWidget() const;
-  void setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
+  void setupWidget(WidgetRef<Widget> const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
 
   [[nodiscard]] PanePtr setupTooltip(ItemRecipe const& recipe);
 
@@ -91,11 +90,10 @@ private:
   AudioInstancePtr m_craftingSound;
   int m_count;
   List<ItemRecipe> m_recipes;
-  BiHashMap<ItemRecipe, WidgetPtr> m_recipesWidgetMap; // maps ItemRecipe to guiList WidgetPtrs
 
-  ListWidgetPtr m_guiList;
-  TextBoxWidgetPtr m_textBox;
-  ButtonWidgetPtr m_filterHaveMaterials;
+  ListWidget* m_guiList;
+  TextBoxWidget* m_textBox;
+  ButtonWidget* m_filterHaveMaterials;
   size_t m_displayedRecipe;
 
   StringSet m_filter;

@@ -6,16 +6,19 @@
 namespace Star {
 
 SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner)
-  : Widget(context),
-    m_grid(make_shared<ImageWidget>(context, grid)) {
+  : Widget(context) {
 
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();
   auto const& imgMetadata = guiContext.imageMetadata();
 
-  m_jog = make_shared<ButtonWidget>(guiContext);
-  m_jog->setImages(assets->json("/interface.config:slider.jog").toString());
-  m_jog->setPressedOffset({0, 0});
+  auto gridWidget = make_unique<ImageWidget>(context, grid);
+  m_grid = WidgetRef<ImageWidget>(*gridWidget);
+
+  auto jog = make_unique<ButtonWidget>(guiContext);
+  jog->setImages(assets->json("/interface.config:slider.jog").toString());
+  jog->setPressedOffset({0, 0});
+  m_jog = WidgetRef<ButtonWidget>(*jog);
 
   if (showSpinner) {
     GuiReader guiReader(guiContext);
@@ -59,8 +62,8 @@ SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool s
     m_rightButton = fetchChild<ButtonWidget>("spinner.up");
   }
 
-  addChild("grid", m_grid);
-  addChild("jog", m_jog);
+  addChild("grid", std::move(gridWidget));
+  addChild("jog", std::move(jog));
 
   markAsContainer();
   disableScissoring();

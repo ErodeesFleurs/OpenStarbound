@@ -43,7 +43,6 @@ private:
   bool m_hovered = false;
   bool m_pressed = false;
 };
-using ScrollThumbPtr = shared_ptr<ScrollThumb>;
 
 class ScrollBar : public Widget {
 public:
@@ -57,9 +56,9 @@ public:
   [[nodiscard]] float scrollRatio() const;
   [[nodiscard]] Vec2I offsetFromThumbPosition(Vec2I const& thumbPosition) const;
 
-  [[nodiscard]] ButtonWidgetPtr forwardButton() const;
-  [[nodiscard]] ButtonWidgetPtr backwardButton() const;
-  [[nodiscard]] ScrollThumbPtr thumb() const;
+  [[nodiscard]] WidgetRef<ButtonWidget> forwardButton() const;
+  [[nodiscard]] WidgetRef<ButtonWidget> backwardButton() const;
+  [[nodiscard]] WidgetRef<ScrollThumb> thumb() const;
 
 protected:
   void drawChildren() override;
@@ -67,13 +66,12 @@ protected:
 private:
   GuiDirection m_direction;
 
-  ButtonWidgetPtr m_forward; // up or right, makes the offset higher
-  ButtonWidgetPtr m_backward; // down or left, makes the offset lower
-  ScrollThumbPtr m_thumb;
+  WidgetRef<ButtonWidget> m_forward;
+  WidgetRef<ButtonWidget> m_backward;
+  WidgetRef<ScrollThumb> m_thumb;
 
   ImageStretchSet m_track;
 };
-using ScrollBarPtr = shared_ptr<ScrollBar>;
 
 class ScrollArea : public Widget {
 public:
@@ -120,9 +118,8 @@ private:
   GuiDirection m_dragDirection;
   Vec2I m_dragOffset;
 
-  ScrollBarPtr m_vBar;
-  ScrollBarPtr m_hBar;
-  ImageWidgetPtr m_cornerBlock;
+  WidgetRef<ScrollBar> m_vBar;
+  WidgetRef<ScrollBar> m_hBar;
 
   bool m_horizontalScroll = false;
   bool m_verticalScroll = true;

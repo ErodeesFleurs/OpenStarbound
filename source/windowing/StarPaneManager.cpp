@@ -176,7 +176,7 @@ PanePtr PaneManager::keyboardCapturedPane() const {
   return {};
 }
 
-WidgetPtr PaneManager::keyboardCapturedWidget() const {
+Widget* PaneManager::keyboardCapturedWidget() const {
   for (auto const& [paneLayer, panes] : m_displayedPanes) {
     for (auto const& pane : panes.keys()) {
       if (auto capturer = pane->keyboardCapturer())
@@ -184,7 +184,7 @@ WidgetPtr PaneManager::keyboardCapturedWidget() const {
     }
   }
 
-  return {};
+  return nullptr;
 }
 
 bool PaneManager::keyboardCapturedForTextInput() const {

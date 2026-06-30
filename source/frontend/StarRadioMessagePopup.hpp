@@ -46,8 +46,8 @@ private:
   PopupStage m_popupStage;
   GameTimer m_stageTimer;
 
-  LabelWidgetPtr m_messageLabel;
-  ImageWidgetPtr m_portraitImage;
+  WidgetRef<LabelWidget> m_messageLabel;
+  WidgetRef<ImageWidget> m_portraitImage;
 
   RadioMessage m_message;
 

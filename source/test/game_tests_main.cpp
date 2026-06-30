@@ -36,12 +36,14 @@ class TestEnvironment : public testing::Environment {
 public:
   unique_ptr<Root> root;
   Root::Settings settings;
+  shared_ptr<LogSink> errorSink;
 
   TestEnvironment(Root::Settings settings)
     : settings(std::move(settings)) {}
 
   virtual void SetUp() {
-    Logger::addSink(make_shared<ErrorLogSink>());
+    errorSink = make_shared<ErrorLogSink>();
+    Logger::addSink(errorSink);
     root = make_unique<Root>(settings);
     g_testRoot = root.get();
     root->configuration()->set("clearUniverseFiles", true);
@@ -49,8 +51,10 @@ public:
   }
 
   virtual void TearDown() {
+    Logger::removeSink(errorSink);
     g_testRoot = nullptr;
     root.reset();
+    errorSink.reset();
   }
 };
 

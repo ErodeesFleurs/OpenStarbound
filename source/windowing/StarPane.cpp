@@ -46,10 +46,10 @@ void Pane::displayed() {
 void Pane::dismissed() {
   if (m_clickDown)
     m_clickDown->mouseOut();
-  m_clickDown.reset();
+  m_clickDown = nullptr;
   if (m_mouseOver)
     m_mouseOver->mouseOut();
-  m_mouseOver.reset();
+  m_mouseOver = nullptr;
   hide();
   m_dismissed = true;
 }
@@ -75,65 +75,64 @@ bool Pane::sendEvent(InputEvent const& event) {
       if (m_mouseOver) {
         if (!m_mouseOver->inMember(mousePos) || !m_mouseOver->active()) {
           m_mouseOver->mouseOut();
-          m_mouseOver.reset();
+          m_mouseOver = nullptr;
         }
       }
 
       if (event.is<MouseButtonUpEvent>())
-        m_clickDown.reset();
+        m_clickDown = nullptr;
 
-      WidgetPtr newClickDown;
-      WidgetPtr newMouseOver;
-      WidgetPtr newFocusWidget;
+      Widget* newClickDown = nullptr;
+      Widget* newMouseOver = nullptr;
+      Widget* newFocusWidget = nullptr;
 
-      List<WidgetPtr> validWidgets;
+      List<WidgetRef<Widget>> validWidgets;
       // gather valid widgets into our own list because any of them could mutate
       // m_members while processing the event and fuck everything up
       for (auto const& widget : reverseIterate(m_members)) {
         if (widget->inMember(mousePos) && widget->active() && widget->interactive())
-          validWidgets.append(widget);
+          validWidgets.append(WidgetRef<Widget>(*widget));
       }
 
       // Then, go through widgets in highest to lowest z-order and handle mouse
       // over, focus, and capture events.
       for (auto const& widget : validWidgets) {
-        WidgetPtr topWidget = widget;
-        WidgetPtr child = getChildAt(mousePos);
-        if (child->active() && child->interactive()) {
+        auto child = getChildAt(mousePos);
+        if (child && child->active() && child->interactive()) {
           if (event.is<MouseButtonDownEvent>()
               && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left
                       || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
             if (!newClickDown)
-              newClickDown = child;
+              newClickDown = child.get();
 
             if (!newFocusWidget)
-              newFocusWidget = child;
+              newFocusWidget = child.get();
           }
 
           if (!newMouseOver)
-            newMouseOver = child;
+            newMouseOver = child.get();
         }
       }
 
-      if (m_clickDown != newClickDown)
-        m_clickDown = newClickDown;
+      if (m_clickDown.get() != newClickDown)
+        m_clickDown = newClickDown ? WidgetRef<Widget>(*newClickDown) : WidgetRef<Widget>();
 
-      if (m_mouseOver != newMouseOver) {
+      if (m_mouseOver.get() != newMouseOver) {
         if (m_mouseOver)
           m_mouseOver->mouseOut();
-        m_mouseOver = newMouseOver;
+        m_mouseOver = newMouseOver ? WidgetRef<Widget>(*newMouseOver) : WidgetRef<Widget>();
         if (m_mouseOver) {
-          if (m_clickDown == m_mouseOver)
+          if (m_clickDown.get() == m_mouseOver.get())
             m_mouseOver->mouseReturnStillDown();
           else
             m_mouseOver->mouseOver();
         }
       }
 
-      if (newFocusWidget && m_focusWidget != newFocusWidget) {
-        if (auto focusWidget = m_focusWidget)
-          focusWidget->blur();
-        m_focusWidget = newFocusWidget;
+      if (newFocusWidget && m_focusWidget.get() != newFocusWidget) {
+        if (m_focusWidget)
+          m_focusWidget->blur();
+        m_focusWidget = WidgetRef<Widget>(*newFocusWidget);
         m_focusWidget->focus();
       }
 
@@ -163,24 +162,22 @@ bool Pane::sendEvent(InputEvent const& event) {
   return false;
 }
 
-void Pane::setFocus(Widget const* focus) {
-  if (m_focusWidget.get() == focus)
+void Pane::setFocus(Widget& focus) {
+  if (m_focusWidget.get() == &focus)
     return;
   if (m_focusWidget)
     m_focusWidget->blur();
-  if (auto c = childPtr(focus))
-    m_focusWidget = std::move(c);
-  else
-    throw GuiException("Cannot set focus on a widget which is not a child of this pane");
+  m_focusWidget = WidgetRef<Widget>(focus);
+  m_focusWidget->focus();
 }
 
 void Pane::removeFocus(Widget const* focus) {
   if (m_focusWidget.get() == focus)
-    m_focusWidget.reset();
+    m_focusWidget = nullptr;
 }
 
 void Pane::removeFocus() {
-  m_focusWidget.reset();
+  m_focusWidget = nullptr;
 }
 
 Pane const* Pane::window() const {
@@ -195,8 +192,8 @@ void Pane::update(float dt) {
   if (m_visible) {
     for (auto const& widget : m_members) {
       widget->update(dt);
-      if ((m_focusWidget == widget) != widget->hasFocus()) {
-        m_focusWidget.reset();
+      if (m_focusWidget.get() != widget.get() || !widget->hasFocus()) {
+        m_focusWidget = nullptr;
         widget->blur();
       }
     }
@@ -397,9 +394,11 @@ LuaCallbacks Pane::makePaneCallbacks() {
 
   callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> Maybe<LuaCallbacks> {
       String name = newWidgetName.value(toString(Random::randu64()));
-      if (auto newWidget = reader()->makeSingle(name, newWidgetConfig)) {
-        this->addChild(name, newWidget);
-        return LuaBindings::makeWidgetCallbacks(*newWidget, reader());
+      auto newWidget = reader()->makeSingle(name, newWidgetConfig);
+      if (newWidget) {
+        auto* rawPtr = newWidget.get();
+        this->addChild(name, std::move(newWidget));
+        return LuaBindings::makeWidgetCallbacks(*rawPtr, reader());
       } else {
         return {};
       }

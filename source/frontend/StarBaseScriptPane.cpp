@@ -155,9 +155,9 @@ void BaseScriptPane::construct(Json config) {
   m_reader->construct(config, this);
 
   for (auto const& [canvasName, callback] : m_config.getObject("canvasClickCallbacks", {}))
-    m_canvasClickCallbacks.set(findChild<CanvasWidget>(canvasName), callback.toString());
+    m_canvasClickCallbacks.set(findChild<CanvasWidget>(canvasName).get(), callback.toString());
   for (auto const& [canvasName, callback] : m_config.getObject("canvasKeyCallbacks", {}))
-    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(canvasName), callback.toString());
+    m_canvasKeyCallbacks.set(findChild<CanvasWidget>(canvasName).get(), callback.toString());
 
   m_script.setScripts(jsonToStringList(m_config.get("scripts", JsonArray())));
   m_script.setUpdateDelta(m_config.getUInt("scriptDelta", 1));

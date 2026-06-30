@@ -58,7 +58,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
     if (!tooltipKind.endsWith(".tooltip"))
       tooltipKind = "/interface/tooltips/" + tooltipKind + ".tooltip";
 
-    buildItemDescriptionInner(tooltip, item, tooltipKind, title, subTitle, viewer, services);
+    buildItemDescriptionInner(tooltip.get(), item, tooltipKind, title, subTitle, viewer, services);
 
     auto titleIcon = make_shared<ItemSlotWidget>(services.guiContext, item, "/interface/inventory/portrait.png");
     titleIcon->setBackingImageAffinity(true, true);
@@ -69,7 +69,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
   }
 }
 
-void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPtr const& item, Services services) {
+void ItemTooltipBuilder::buildItemDescription(Widget* container, ItemPtr const& item, Services services) {
   String tooltipKind = item->tooltipKind();
 
   if (tooltipKind.empty())
@@ -83,14 +83,14 @@ void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPt
 }
 
 void ItemTooltipBuilder::buildItemDescriptionInner(
-    WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer, Services services) {
+    Widget* container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer, Services services) {
   GuiReader reader(services.guiContext);
   auto assets = tooltipAssets(services);
   title = item->friendlyName();
   subTitle = categoryDisplayName(item->category(), services);
   String description = item->description();
 
-  reader.construct(assets->json(tooltipKind), container.get());
+  reader.construct(assets->json(tooltipKind), container);
 
   if (container->containsChild("icon"))
     container->fetchChild<ItemSlotWidget>("icon")->setItem(item);
@@ -206,7 +206,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 }
 
 void ItemTooltipBuilder::describePersistentEffect(
-    ListWidgetPtr const& container, PersistentStatusEffect const& effect, Services services) {
+    WidgetRef<ListWidget> container, PersistentStatusEffect const& effect, Services services) {
   if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>()) {
     auto statusEffectDatabase = tooltipStatusEffectDatabase(services);
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);

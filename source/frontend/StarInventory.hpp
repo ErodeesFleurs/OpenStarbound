@@ -74,12 +74,12 @@ private:
   InventorySlot m_containerSource;
 
   GameTimer m_trashBurn;
-  ItemSlotWidgetPtr m_trashSlot;
+  WidgetRef<ItemSlotWidget> m_trashSlot;
 
-  Map<String, ItemGridWidgetPtr> m_itemGrids;
+  Map<String, ItemGridWidget*> m_itemGrids;
   Map<String, String> m_tabButtonData;
 
-  Map<String, WidgetPtr> m_newItemMarkers;
+  Map<String, Widget*> m_newItemMarkers;
   String m_selectedTab;
 
   StringList m_pickUpSounds;
@@ -88,7 +88,7 @@ private:
   StringList m_someDownSounds;
   Maybe<ItemDescriptor> m_currentSwapSlotItem;
 
-  List<ImageWidgetPtr> m_disabledTechOverlays;
+  List<WidgetRef<ImageWidget>> m_disabledTechOverlays;
 };
 
 }

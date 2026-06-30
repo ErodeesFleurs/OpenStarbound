@@ -32,15 +32,15 @@ private:
   StringList m_assetsSources;
   AssetsConstPtr m_assets;
 
-  ListWidgetPtr m_modList;
-  LabelWidgetPtr m_modName;
-  LabelWidgetPtr m_modAuthor;
-  LabelWidgetPtr m_modVersion;
-  LabelWidgetPtr m_modPath;
-  LabelWidgetPtr m_modDescription;
+  WidgetRef<ListWidget> m_modList;
+  WidgetRef<LabelWidget> m_modName;
+  WidgetRef<LabelWidget> m_modAuthor;
+  WidgetRef<LabelWidget> m_modVersion;
+  WidgetRef<LabelWidget> m_modPath;
+  WidgetRef<LabelWidget> m_modDescription;
 
-  ButtonWidgetPtr m_linkButton;
-  ButtonWidgetPtr m_copyLinkButton;
+  WidgetRef<ButtonWidget> m_linkButton;
+  WidgetRef<ButtonWidget> m_copyLinkButton;
 };
 
 }

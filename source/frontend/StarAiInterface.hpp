@@ -112,35 +112,35 @@ private:
 
   AudioInstancePtr m_chatterSound;
 
-  StackWidgetPtr m_mainStack;
-  StackWidgetPtr m_missionStack;
-  StackWidgetPtr m_crewStack;
+  WidgetRef<StackWidget> m_mainStack;
+  WidgetRef<StackWidget> m_missionStack;
+  WidgetRef<StackWidget> m_crewStack;
 
-  ButtonWidgetPtr m_showMissionsButton;
-  ButtonWidgetPtr m_showCrewButton;
-  ButtonWidgetPtr m_backButton;
+  WidgetRef<ButtonWidget> m_showMissionsButton;
+  WidgetRef<ButtonWidget> m_showCrewButton;
+  WidgetRef<ButtonWidget> m_backButton;
 
   int m_breadcrumbLeftPadding;
   int m_breadcrumbRightPadding;
-  ImageStretchWidgetPtr m_homeBreadcrumbBackground;
-  ImageStretchWidgetPtr m_pageBreadcrumbBackground;
-  ImageStretchWidgetPtr m_itemBreadcrumbBackground;
-  LabelWidgetPtr m_homeBreadcrumbWidget;
-  LabelWidgetPtr m_pageBreadcrumbWidget;
-  LabelWidgetPtr m_itemBreadcrumbWidget;
+  WidgetRef<ImageStretchWidget> m_homeBreadcrumbBackground;
+  WidgetRef<ImageStretchWidget> m_pageBreadcrumbBackground;
+  WidgetRef<ImageStretchWidget> m_itemBreadcrumbBackground;
+  WidgetRef<LabelWidget> m_homeBreadcrumbWidget;
+  WidgetRef<LabelWidget> m_pageBreadcrumbWidget;
+  WidgetRef<LabelWidget> m_itemBreadcrumbWidget;
 
-  LabelWidgetPtr m_currentTextWidget;
+  WidgetRef<LabelWidget> m_currentTextWidget;
 
-  CanvasWidgetPtr m_aiFaceCanvasWidget;
+  WidgetRef<CanvasWidget> m_aiFaceCanvasWidget;
   LabelWidgetPtr m_shipStatusTextWidget;
 
-  ListWidgetPtr m_missionListWidget;
-  LabelWidgetPtr m_missionNameLabel;
-  ImageWidgetPtr m_missionIcon;
+  WidgetRef<ListWidget> m_missionListWidget;
+  WidgetRef<LabelWidget> m_missionNameLabel;
+  WidgetRef<ImageWidget> m_missionIcon;
 
-  ListWidgetPtr m_crewListWidget;
-  LabelWidgetPtr m_recruitNameLabel;
-  ImageWidgetPtr m_recruitIcon;
+  WidgetRef<ListWidget> m_crewListWidget;
+  WidgetRef<LabelWidget> m_recruitNameLabel;
+  WidgetRef<ImageWidget> m_recruitIcon;
 
   String m_species;
 
@@ -161,8 +161,8 @@ private:
   float m_textLength = 0.0f;
   float m_textMaxLength = 0.0f;
 
-  ButtonWidgetPtr m_startMissionButton;
-  ButtonWidgetPtr m_dismissRecruitButton;
+  WidgetRef<ButtonWidget> m_startMissionButton;
+  WidgetRef<ButtonWidget> m_dismissRecruitButton;
 };
 
 }

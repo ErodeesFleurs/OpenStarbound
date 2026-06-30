@@ -16,10 +16,10 @@ public:
 
   [[nodiscard]] Either<size_t, String> currentPage() const;
 
-  void addChild(String const& name, WidgetPtr member) override;
+  void addChild(String const& name, UniquePtr<Widget> member) override;
 
 private:
-  WidgetPtr m_shownPage;
+  WidgetRef<Widget> m_shownPage;
   Either<size_t, String> m_page;
 };
 

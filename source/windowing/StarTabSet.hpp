@@ -29,7 +29,7 @@ public:
 
   void setSize(Vec2I const& size) override;
 
-  void addTab(String const& widgetName, WidgetPtr widget, String const& title);
+  void addTab(String const& widgetName, UniquePtr<Widget> widget, String const& title);
 
   [[nodiscard]] size_t tabCount() const;
   void tabSelect(size_t page);
@@ -40,8 +40,8 @@ public:
 
 private:
   TabSetConfig m_tabSetConfig;
-  FlowLayoutPtr m_tabBar;
-  StackWidgetPtr m_stack;
+  WidgetRef<FlowLayout> m_tabBar;
+  WidgetRef<StackWidget> m_stack;
   WidgetCallbackFunc m_callback;
   Maybe<size_t> m_lastSelected;
 };

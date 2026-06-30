@@ -31,5 +31,5 @@ private:
   bool m_isNew = false;
 };
 
-void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark);
+void setupBookmarkEntry(WidgetRef<Widget> const& entry, TeleportBookmark const& bookmark);
 }

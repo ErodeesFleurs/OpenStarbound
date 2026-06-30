@@ -51,7 +51,7 @@ public:
   // so add them in the correct order.
 
   [[nodiscard]] bool sendEvent(InputEvent const& event) override;
-  virtual void setFocus(Widget const* focus);
+  virtual void setFocus(Widget& focus);
   virtual void removeFocus(Widget const* focus);
   virtual void removeFocus();
 
@@ -115,9 +115,9 @@ protected:
   bool m_lockPosition = false;
   Vec2I m_centerOffset;
 
-  WidgetPtr m_mouseOver;
-  WidgetPtr m_clickDown;
-  WidgetPtr m_focusWidget;
+  WidgetRef<Widget> m_mouseOver;
+  WidgetRef<Widget> m_clickDown;
+  WidgetRef<Widget> m_focusWidget;
 
   WidgetPtr m_icon;
   String m_title;

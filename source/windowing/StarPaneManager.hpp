@@ -72,7 +72,7 @@ public:
 
   // Returns the pane/widget that has captured the keyboard, if any.
   [[nodiscard]] PanePtr keyboardCapturedPane() const;
-  [[nodiscard]] WidgetPtr keyboardCapturedWidget() const;
+  [[nodiscard]] Widget* keyboardCapturedWidget() const;
   // Returns true if the current widget that has captured the keyboard is
   // accepting text input.
   [[nodiscard]] bool keyboardCapturedForTextInput() const;

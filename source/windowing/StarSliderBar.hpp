@@ -32,10 +32,10 @@ private:
   void leftCallback();
   void rightCallback();
 
-  ButtonWidgetPtr m_leftButton;
-  ButtonWidgetPtr m_rightButton;
-  ImageWidgetPtr m_grid;
-  ButtonWidgetPtr m_jog;
+  WidgetRef<ButtonWidget> m_leftButton;
+  WidgetRef<ButtonWidget> m_rightButton;
+  WidgetRef<ImageWidget> m_grid;
+  WidgetRef<ButtonWidget> m_jog;
   int m_low = 0;
   int m_high = 1;
   int m_delta = 1;

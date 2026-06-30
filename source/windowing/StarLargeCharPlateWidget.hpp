@@ -34,7 +34,7 @@ private:
   PlayerPtr m_player;
   Json m_config;
 
-  PortraitWidgetPtr m_portrait;
+  WidgetRef<PortraitWidget> m_portrait;
   Vec2I m_portraitOffset;
   float m_portraitScale = 0.0f;
 
@@ -43,12 +43,11 @@ private:
   String m_noPlayerPlateHover;
   String m_playerPlate;
 
-  LabelWidgetPtr m_playerName;
-  LabelWidgetPtr m_playerPhrase;
-  LabelWidgetPtr m_modeName;
-  LabelWidgetPtr m_mode;
+  WidgetRef<LabelWidget> m_playerName;
+  WidgetRef<LabelWidget> m_modeName;
+  WidgetRef<LabelWidget> m_mode;
 
-  ButtonWidgetPtr m_delete;
+  WidgetRef<ButtonWidget> m_delete;
 
   Vec2I m_playerNameOffset;
   Vec2I m_playerPhraseOffset;

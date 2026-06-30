@@ -92,7 +92,7 @@ MerchantPane::MerchantPane(
   paneLayout = jsonMerge(paneLayout, m_settings.get("paneLayoutOverride", {}));
   reader.construct(paneLayout, this);
 
-  m_tabSet = findChild<TabSetWidget>("buySellTabs");
+  m_tabSet = findChild<TabSetWidget>("buySellTabs").get();
   m_tabSet->setCallback([this](Widget*) {
     auto bgResult = getBG();
     if (m_tabSet->selectedTab() == 0)
@@ -101,14 +101,14 @@ MerchantPane::MerchantPane(
       bgResult.body = m_settings.getString("sellBody");
     setBG(bgResult);
   });
-  m_itemGuiList = findChild<ListWidget>("itemList");
-  m_countTextBox = findChild<TextBoxWidget>("tbCount");
-  m_buyTotalLabel = findChild<LabelWidget>("lblBuyTotal");
-  m_buyButton = findChild<ButtonWidget>("btnBuy");
-  m_sellTotalLabel = findChild<LabelWidget>("lblSellTotal");
-  m_sellButton = findChild<ButtonWidget>("btnSell");
+  m_itemGuiList = findChild<ListWidget>("itemList").get();
+  m_countTextBox = findChild<TextBoxWidget>("tbCount").get();
+  m_buyTotalLabel = findChild<LabelWidget>("lblBuyTotal").get();
+  m_buyButton = findChild<ButtonWidget>("btnBuy").get();
+  m_sellTotalLabel = findChild<LabelWidget>("lblSellTotal").get();
+  m_sellButton = findChild<ButtonWidget>("btnSell").get();
 
-  m_itemGrid = findChild<ItemGridWidget>("itemGrid");
+  m_itemGrid = findChild<ItemGridWidget>("itemGrid").get();
   m_itemGrid->setItemBag(m_itemBag);
 
   buildItemList();
@@ -156,8 +156,8 @@ void MerchantPane::update(float dt) {
     dismiss();
 
   if (m_refreshTimer.wrapTick()) {
-    for (auto [itemConfig, itemWidget] : zipIterator(m_itemList, m_itemGuiList->list()))
-      setupWidget(itemWidget, itemConfig);
+    for (size_t i = 0; i < m_itemGuiList->numChildren(); ++i)
+      setupWidget(m_itemGuiList->itemAt(i), m_itemList[i]);
     updateBuyTotal();
   }
 
@@ -236,7 +236,7 @@ void MerchantPane::buildItemList() {
   }
 }
 
-void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) {
+void MerchantPane::setupWidget(WidgetRef<Widget> const& widget, Json const& itemConfig) {
   ItemPtr item = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
 
   String name = item->friendlyName();

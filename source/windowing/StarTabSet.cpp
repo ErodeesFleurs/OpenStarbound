@@ -11,12 +11,14 @@ namespace Star {
 TabSetWidget::TabSetWidget(GuiContext& context, TabSetConfig const& tabSetConfig) : Widget(context) {
   m_tabSetConfig = tabSetConfig;
 
-  m_tabBar = make_shared<FlowLayout>(context);
-  m_tabBar->setSpacing(m_tabSetConfig.tabButtonSpacing);
-  Widget::addChild("tabBar", m_tabBar);
+  auto tabBar = make_unique<FlowLayout>(context);
+  tabBar->setSpacing(m_tabSetConfig.tabButtonSpacing);
+  m_tabBar = WidgetRef<FlowLayout>(*tabBar);
+  Widget::addChild("tabBar", std::move(tabBar));
 
-  m_stack = make_shared<StackWidget>(context);
-  addChild("tabs", m_stack);
+  auto stack = make_unique<StackWidget>(context);
+  m_stack = WidgetRef<StackWidget>(*stack);
+  addChild("tabs", std::move(stack));
 
   markAsContainer();
 }
@@ -38,8 +40,8 @@ void TabSetWidget::setSize(Vec2I const& size) {
   m_stack->setSize({size.x(), size.y() - tabHeight});
 }
 
-void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String const& title) {
-  auto newButton = make_shared<ButtonWidget>(context());
+void TabSetWidget::addTab(String const& widgetName, UniquePtr<Widget> widget, String const& title) {
+  auto newButton = make_unique<ButtonWidget>(context());
   newButton->setImages(
       m_tabSetConfig.tabButtonBaseImage, m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);
   newButton->setCheckedImages(m_tabSetConfig.tabButtonBaseImageSelected,
@@ -53,8 +55,8 @@ void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String con
   size_t pageForButton = m_tabBar->numChildren();
   newButton->setCallback([this, pageForButton](Widget*) { tabSelect(pageForButton); });
 
-  m_tabBar->addChild(toString(pageForButton), newButton);
-  m_stack->addChild(widgetName, widget);
+  m_tabBar->addChild(toString(pageForButton), std::move(newButton));
+  m_stack->addChild(widgetName, std::move(widget));
 
   if (!m_lastSelected)
     tabSelect(0);

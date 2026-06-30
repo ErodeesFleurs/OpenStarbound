@@ -346,7 +346,7 @@ void CharCreationPane::nameBoxCallback(Widget* object) {
 
 PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
   // what's under my cursor
-  if (WidgetPtr child = getChildAt(screenPosition)) {
+  if (auto child = getChildAt(screenPosition)) {
     // is it a species button ?
     if (child->parent()->name() == "species") {
       // which species is it ?

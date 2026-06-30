@@ -66,20 +66,20 @@ private:
   void displayModBindings();
   void displayGraphics();
 
-  SliderBarWidgetPtr m_instrumentSlider;
-  SliderBarWidgetPtr m_sfxSlider;
-  SliderBarWidgetPtr m_musicSlider;
-  ButtonWidgetPtr m_tutorialMessagesButton;
+  WidgetRef<SliderBarWidget> m_instrumentSlider;
+  WidgetRef<SliderBarWidget> m_sfxSlider;
+  WidgetRef<SliderBarWidget> m_musicSlider;
+  WidgetRef<ButtonWidget> m_tutorialMessagesButton;
   ButtonWidgetPtr m_interactiveHighlightButton;
-  ButtonWidgetPtr m_clientIPJoinableButton;
-  ButtonWidgetPtr m_clientP2PJoinableButton;
-  ButtonWidgetPtr m_allowAssetsMismatchButton;
-  ButtonWidgetPtr m_headRotationButton;
+  WidgetRef<ButtonWidget> m_clientIPJoinableButton;
+  WidgetRef<ButtonWidget> m_clientP2PJoinableButton;
+  WidgetRef<ButtonWidget> m_allowAssetsMismatchButton;
+  WidgetRef<ButtonWidget> m_headRotationButton;
 
-  LabelWidgetPtr m_instrumentLabel;
-  LabelWidgetPtr m_sfxLabel;
-  LabelWidgetPtr m_musicLabel;
-  LabelWidgetPtr m_p2pJoinableLabel;
+  WidgetRef<LabelWidget> m_instrumentLabel;
+  WidgetRef<LabelWidget> m_sfxLabel;
+  WidgetRef<LabelWidget> m_musicLabel;
+  WidgetRef<LabelWidget> m_p2pJoinableLabel;
 
   //TODO: add instrument range (or just use one range for all 3, it's kinda silly.)
   Vec2I m_sfxRange;

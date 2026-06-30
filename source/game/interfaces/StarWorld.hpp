@@ -46,21 +46,21 @@ public:
   [[nodiscard]] virtual ConnectionId connection() const = 0;
   [[nodiscard]] virtual WorldGeometry geometry() const = 0;
   [[nodiscard]] virtual uint64_t currentStep() const = 0;
-  [[nodiscard]] virtual AssetsConstPtr assets() const = 0;
-  [[nodiscard]] virtual ItemDatabaseConstPtr itemDatabase() const = 0;
-  [[nodiscard]] virtual ObjectDatabaseConstPtr objectDatabase() const = 0;
-  [[nodiscard]] virtual MaterialDatabaseConstPtr materialDatabase() const = 0;
-  [[nodiscard]] virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
-  [[nodiscard]] virtual EffectSourceDatabaseConstPtr effectSourceDatabase() const = 0;
-  [[nodiscard]] virtual ParticleDatabaseConstPtr particleDatabase() const = 0;
-  [[nodiscard]] virtual ProjectileDatabaseConstPtr projectileDatabase() const = 0;
-  [[nodiscard]] virtual TechDatabaseConstPtr techDatabase() const = 0;
-  [[nodiscard]] virtual StatusEffectDatabaseConstPtr statusEffectDatabase() const = 0;
-  [[nodiscard]] virtual PlantDatabaseConstPtr plantDatabase() const = 0;
-  [[nodiscard]] virtual TreasureDatabaseConstPtr treasureDatabase() const = 0;
-  [[nodiscard]] virtual ImageMetadataDatabaseConstPtr imageMetadataDatabase() const = 0;
-  [[nodiscard]] virtual FunctionDatabaseConstPtr functionDatabase() const = 0;
-  [[nodiscard]] virtual BehaviorDatabaseConstPtr behaviorDatabase() const = 0;
+  [[nodiscard]] virtual AssetsConstPtr const& assets() const = 0;
+  [[nodiscard]] virtual ItemDatabaseConstPtr const& itemDatabase() const = 0;
+  [[nodiscard]] virtual ObjectDatabaseConstPtr const& objectDatabase() const = 0;
+  [[nodiscard]] virtual MaterialDatabaseConstPtr const& materialDatabase() const = 0;
+  [[nodiscard]] virtual LiquidsDatabaseConstPtr const& liquidsDatabase() const = 0;
+  [[nodiscard]] virtual EffectSourceDatabaseConstPtr const& effectSourceDatabase() const = 0;
+  [[nodiscard]] virtual ParticleDatabaseConstPtr const& particleDatabase() const = 0;
+  [[nodiscard]] virtual ProjectileDatabaseConstPtr const& projectileDatabase() const = 0;
+  [[nodiscard]] virtual TechDatabaseConstPtr const& techDatabase() const = 0;
+  [[nodiscard]] virtual StatusEffectDatabaseConstPtr const& statusEffectDatabase() const = 0;
+  [[nodiscard]] virtual PlantDatabaseConstPtr const& plantDatabase() const = 0;
+  [[nodiscard]] virtual TreasureDatabaseConstPtr const& treasureDatabase() const = 0;
+  [[nodiscard]] virtual ImageMetadataDatabaseConstPtr const& imageMetadataDatabase() const = 0;
+  [[nodiscard]] virtual FunctionDatabaseConstPtr const& functionDatabase() const = 0;
+  [[nodiscard]] virtual BehaviorDatabaseConstPtr const& behaviorDatabase() const = 0;
 
   // Environment
   [[nodiscard]] virtual float gravity(Vec2F const& pos) const = 0;

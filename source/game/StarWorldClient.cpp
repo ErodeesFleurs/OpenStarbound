@@ -1366,63 +1366,63 @@ uint64_t WorldClient::currentStep() const {
   return m_currentStep;
 }
 
-AssetsConstPtr WorldClient::assets() const {
+AssetsConstPtr const& WorldClient::assets() const {
   return m_assets;
 }
 
-ItemDatabaseConstPtr WorldClient::itemDatabase() const {
+ItemDatabaseConstPtr const& WorldClient::itemDatabase() const {
   return m_itemDatabase;
 }
 
-ObjectDatabaseConstPtr WorldClient::objectDatabase() const {
+ObjectDatabaseConstPtr const& WorldClient::objectDatabase() const {
   return m_objectDatabase;
 }
 
-MaterialDatabaseConstPtr WorldClient::materialDatabase() const {
+MaterialDatabaseConstPtr const& WorldClient::materialDatabase() const {
   return m_materialDatabase;
 }
 
-LiquidsDatabaseConstPtr WorldClient::liquidsDatabase() const {
+LiquidsDatabaseConstPtr const& WorldClient::liquidsDatabase() const {
   return m_liquidsDatabase;
 }
 
-ParticleDatabaseConstPtr WorldClient::particleDatabase() const {
+ParticleDatabaseConstPtr const& WorldClient::particleDatabase() const {
   return m_particleDatabase;
 }
 
-ProjectileDatabaseConstPtr WorldClient::projectileDatabase() const {
+ProjectileDatabaseConstPtr const& WorldClient::projectileDatabase() const {
   return m_projectileDatabase;
 }
 
-EffectSourceDatabaseConstPtr WorldClient::effectSourceDatabase() const {
+EffectSourceDatabaseConstPtr const& WorldClient::effectSourceDatabase() const {
   return m_effectSourceDatabase;
 }
 
-TechDatabaseConstPtr WorldClient::techDatabase() const {
+TechDatabaseConstPtr const& WorldClient::techDatabase() const {
   return m_techDatabase;
 }
 
-StatusEffectDatabaseConstPtr WorldClient::statusEffectDatabase() const {
+StatusEffectDatabaseConstPtr const& WorldClient::statusEffectDatabase() const {
   return m_statusEffectDatabase;
 }
 
-PlantDatabaseConstPtr WorldClient::plantDatabase() const {
+PlantDatabaseConstPtr const& WorldClient::plantDatabase() const {
   return m_plantDatabase;
 }
 
-TreasureDatabaseConstPtr WorldClient::treasureDatabase() const {
+TreasureDatabaseConstPtr const& WorldClient::treasureDatabase() const {
   return m_treasureDatabase;
 }
 
-ImageMetadataDatabaseConstPtr WorldClient::imageMetadataDatabase() const {
+ImageMetadataDatabaseConstPtr const& WorldClient::imageMetadataDatabase() const {
   return m_imageMetadataDatabase;
 }
 
-FunctionDatabaseConstPtr WorldClient::functionDatabase() const {
+FunctionDatabaseConstPtr const& WorldClient::functionDatabase() const {
   return m_functionDatabase;
 }
 
-BehaviorDatabaseConstPtr WorldClient::behaviorDatabase() const {
+BehaviorDatabaseConstPtr const& WorldClient::behaviorDatabase() const {
   return m_behaviorDatabase;
 }
 

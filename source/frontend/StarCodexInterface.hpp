@@ -49,19 +49,18 @@ private:
 
   StackWidgetPtr m_stack;
 
-  ListWidgetPtr m_bookList;
-
   CodexConstPtr m_currentCodex;
   size_t m_currentPage = 0;
 
-  ButtonGroupWidgetPtr m_speciesTabs;
-  LabelWidgetPtr m_selectLabel;
-  LabelWidgetPtr m_titleLabel;
-  LabelWidgetPtr m_pageContent;
-  LabelWidgetPtr m_pageLabelWidget;
-  LabelWidgetPtr m_pageNumberWidget;
-  ButtonWidgetPtr m_prevPageButton;
-  ButtonWidgetPtr m_nextPageButton;
+  WidgetRef<ButtonGroupWidget> m_speciesTabs;
+  WidgetRef<LabelWidget> m_selectLabel;
+  WidgetRef<LabelWidget> m_titleLabel;
+  WidgetRef<ListWidget> m_bookList;
+  WidgetRef<LabelWidget> m_pageContent;
+  WidgetRef<LabelWidget> m_pageLabelWidget;
+  WidgetRef<LabelWidget> m_pageNumberWidget;
+  WidgetRef<ButtonWidget> m_prevPageButton;
+  WidgetRef<ButtonWidget> m_nextPageButton;
   ButtonWidgetPtr m_backButton;
 
   String m_selectText;

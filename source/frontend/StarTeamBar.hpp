@@ -112,11 +112,11 @@ private:
   TeamInvitationPtr m_teamInvitation;
   TeamMemberMenuPtr m_teamMemberMenu;
 
-  ProgressWidgetPtr m_healthBar;
-  ProgressWidgetPtr m_energyBar;
-  ProgressWidgetPtr m_foodBar;
+  ProgressWidget* m_healthBar;
+  ProgressWidget* m_energyBar;
+  ProgressWidget* m_foodBar;
 
-  LabelWidgetPtr m_nameLabel;
+  LabelWidget* m_nameLabel;
 
   Color m_energyBarColor;
   Color m_energyBarRegenMixColor;

@@ -84,7 +84,7 @@ PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr ite
     addNetElement(&element);
   }
 
-  for (auto& bagNetState : m_bagsNetState.values()) {
+  for (auto& [_, bagNetState] : m_bagsNetState) {
     for (auto& itemNetState : bagNetState)
       addNetElement(&itemNetState);
   }

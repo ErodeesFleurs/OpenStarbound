@@ -103,7 +103,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
   , m_containerInteractor(make_shared<ContainerInteractor>())
 {
   GuiReader itemSlotReader(m_guiContext);
-  m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
+  m_cursorItem = as<ItemSlotWidget>(WidgetPtr(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot)));
 
   m_planetNameTimer = GameTimer(m_config->planetNameTime);
 
@@ -207,13 +207,14 @@ MainInterface::MainInterface(UniverseClientPtr client,
   m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, statusPane);
 
   auto planetName = make_shared<Pane>(m_guiContext);
-  m_planetText = make_shared<LabelWidget>(m_guiContext);
-  m_planetText->setTextStyle(m_config->planetNameTextStyle);
-  m_planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
+  auto planetText = make_unique<LabelWidget>(m_guiContext);
+  planetText->setTextStyle(m_config->planetNameTextStyle);
+  planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
+  m_planetText = WidgetRef<LabelWidget>(*planetText);
   planetName->disableScissoring();
   planetName->setPosition(m_config->planetNameOffset);
   planetName->setAnchor(PaneAnchor::Center);
-  planetName->addChild("planetText", m_planetText);
+  planetName->addChild("planetText", std::move(planetText));
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},

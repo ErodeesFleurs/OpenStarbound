@@ -33,7 +33,7 @@ bool ListWidget::sendEvent(InputEvent const& event) {
     return false;
 
   for (size_t i = m_members.size(); i != 0; --i) {
-    auto child = m_members[i - 1];
+    auto& child = m_members[i - 1];
     if (child->sendEvent(event)
         || (event.is<MouseButtonDownEvent>() && child->inMember(*context().mousePosition(event))
               && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left)) {
@@ -66,34 +66,29 @@ void ListWidget::setSchema(Json const& schema) {
   updateSizeAndPosition();
 }
 
-WidgetPtr ListWidget::addItem() {
+WidgetRef<Widget> ListWidget::addItem() {
   auto newItem = constructWidget();
-  addChild(toString(Random::randu64()), newItem);
+  WidgetRef<Widget> ref(*newItem);
+  addChild(toString(Random::randu64()), std::move(newItem));
   updateSizeAndPosition();
 
-  return newItem;
+  return ref;
 }
 
-WidgetPtr ListWidget::addItem(size_t at) {
+WidgetRef<Widget> ListWidget::addItem(size_t at) {
   auto newItem = constructWidget();
-  addChildAt(toString(Random::randu64()), newItem, at);
+  WidgetRef<Widget> ref(*newItem);
+  addChildAt(toString(Random::randu64()), std::move(newItem), at);
   updateSizeAndPosition();
 
   if (m_selectedItem != NPos && at <= m_selectedItem)
     setSelected(m_selectedItem + 1);
 
-  return newItem;
+  return ref;
 }
 
-WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
-  addChild(toString(Random::randu64()), existingItem);
-  updateSizeAndPosition();
-
-  return existingItem;
-}
-
-WidgetPtr ListWidget::constructWidget() {
-  WidgetPtr newItem = make_shared<Widget>(context());
+UniquePtr<Widget> ListWidget::constructWidget() {
+  auto newItem = make_unique<Widget>(context());
   if (!m_reader)
     m_reader = make_shared<GuiReader>(context());
   m_reader->construct(m_schema.get("listTemplate"), newItem.get());
@@ -128,13 +123,13 @@ void ListWidget::setEnabled(size_t pos, bool enabled) {
   if (pos != NPos && pos < listSize()) {
     if (enabled) {
       m_disabledItems.remove(pos);
-      if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background"))
+      if (auto bgWidget = itemAt(pos)->template fetchChild<ImageWidget>("background"))
         bgWidget->setImage(pos == m_selectedItem ? m_selectedBG : m_unselectedBG);
     } else {
       m_disabledItems.add(pos);
       if (m_selectedItem == pos)
         clearSelected();
-      if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background"))
+      if (auto bgWidget = itemAt(pos)->template fetchChild<ImageWidget>("background"))
         bgWidget->setImage(m_disabledBG);
     }
   }
@@ -145,7 +140,7 @@ void ListWidget::setHovered(size_t pos, bool hovered) {
     return;
 
   if (pos != m_selectedItem && pos < listSize() && !m_disabledItems.contains(pos)) {
-    if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background")) {
+    if (auto bgWidget = itemAt(pos)->template fetchChild<ImageWidget>("background")) {
       if (hovered)
         bgWidget->setImage(m_hoverBG);
       else
@@ -156,7 +151,7 @@ void ListWidget::setHovered(size_t pos, bool hovered) {
 
 void ListWidget::setSelected(size_t pos) {
   if ((m_selectedItem != NPos) && (m_selectedItem < listSize())) {
-    if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
+    if (auto bgWidget = selectedWidget()->template fetchChild<ImageWidget>("background"))
       bgWidget->setImage(m_unselectedBG);
   }
 
@@ -167,7 +162,7 @@ void ListWidget::setSelected(size_t pos) {
   }
 
   if (m_selectedItem != NPos) {
-    if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
+    if (auto bgWidget = selectedWidget()->template fetchChild<ImageWidget>("background"))
       bgWidget->setImage(m_selectedBG);
   }
 }
@@ -176,8 +171,8 @@ void ListWidget::clearSelected() {
   setSelected(NPos);
 }
 
-void ListWidget::setSelectedWidget(WidgetPtr selected) {
-  auto offset = itemPosition(selected);
+void ListWidget::setSelectedWidget(WidgetRef<Widget> selected) {
+  auto offset = itemPosition(*selected);
 
   if (offset == NPos) {
     throw GuiException("Attempted to select item not in list.");
@@ -210,7 +205,7 @@ void ListWidget::removeItem(size_t at) {
   updateSizeAndPosition();
 }
 
-void ListWidget::removeItem(WidgetPtr item) {
+void ListWidget::removeItem(Widget& item) {
   auto offset = itemPosition(item);
 
   if (offset == NPos) {
@@ -230,28 +225,22 @@ size_t ListWidget::selectedItem() const {
   return m_selectedItem;
 }
 
-size_t ListWidget::itemPosition(WidgetPtr item) const {
-  for (auto const& [member, index] : enumerateIterator(m_members)) {
-    if (member == item)
-      return index;
+size_t ListWidget::itemPosition(Widget& item) const {
+  for (size_t i = 0; i < m_members.size(); ++i) {
+    if (m_members[i].get() == &item)
+      return i;
   }
   return NPos;
 }
 
-WidgetPtr ListWidget::itemAt(size_t n) const {
-  if (n < m_members.size()) {
-    return m_members[n];
-  } else {
-    return {};
-  }
+WidgetRef<Widget> ListWidget::itemAt(size_t n) const {
+  if (n < m_members.size())
+    return WidgetRef<Widget>(*m_members[n]);
+  return nullptr;
 }
 
-WidgetPtr ListWidget::selectedWidget() const {
+WidgetRef<Widget> ListWidget::selectedWidget() const {
   return itemAt(m_selectedItem);
-}
-
-List<WidgetPtr> const& ListWidget::list() const {
-  return m_members;
 }
 
 size_t ListWidget::listSize() const {

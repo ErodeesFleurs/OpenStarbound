@@ -4,6 +4,7 @@
 #include "StarAlgorithm.hpp"
 #include "StarString.hpp"
 #include "StarStatusTypes.hpp"
+#include "StarWidget.hpp"
 
 namespace Star {
 
@@ -40,11 +41,11 @@ namespace ItemTooltipBuilder {
 
   [[nodiscard]] PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services);
 
-  void buildItemDescription(WidgetPtr const& container, ItemPtr const& item, Services services);
+  void buildItemDescription(Widget* container, ItemPtr const& item, Services services);
   void buildItemDescriptionInner(
-      WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer, Services services);
+      Widget* container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer, Services services);
 
-  void describePersistentEffect(ListWidgetPtr const& container, PersistentStatusEffect const& effect, Services services);
+  void describePersistentEffect(WidgetRef<ListWidget> container, PersistentStatusEffect const& effect, Services services);
 };
 
 }
