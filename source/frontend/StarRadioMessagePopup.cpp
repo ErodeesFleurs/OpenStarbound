@@ -1,8 +1,8 @@
 #include "StarRadioMessagePopup.hpp"
+#include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarJsonExtra.hpp"
@@ -13,9 +13,9 @@
 
 namespace Star {
 
-RadioMessagePopup::RadioMessagePopup() {
-  auto assets = Root::singleton().assets();
-  auto config = assets->json("/interface/radiomessage/radiomessage.config");
+RadioMessagePopup::RadioMessagePopup(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
+  auto config = m_assets->json("/interface/radiomessage/radiomessage.config");
 
   GuiReader reader;
   reader.construct(config.get("paneLayout"), this);
@@ -88,8 +88,7 @@ void RadioMessagePopup::setMessage(RadioMessage message) {
   if (!message.chatterSound.empty() && message.textSpeed > 0) {
     if (m_chatterSound)
       m_chatterSound->stop();
-    auto assets = Root::singleton().assets();
-    m_chatterSound = make_shared<AudioInstance>(*assets->audio(message.chatterSound));
+    m_chatterSound = make_shared<AudioInstance>(*m_assets->audio(message.chatterSound));
     m_chatterSound->setLoops(-1);
   }
 

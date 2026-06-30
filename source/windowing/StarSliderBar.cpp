@@ -1,5 +1,4 @@
 #include "StarSliderBar.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarImageMetadataDatabase.hpp"
@@ -16,8 +15,8 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
     m_jogDragActive(false),
     m_enabled(true) {
 
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto const& assets = GuiContext::singleton().assets();
+  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
 
   m_jog = make_shared<ButtonWidget>();
   m_jog->setImages(assets->json("/interface.config:slider.jog").toString());

@@ -1,7 +1,7 @@
 #include "StarQuestTracker.hpp"
+#include "StarAssets.hpp"
 #include "StarMathCommon.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -13,8 +13,8 @@
 
 namespace Star {
 
-QuestTrackerPane::QuestTrackerPane() {
-  auto assets = Root::singleton().assets();
+QuestTrackerPane::QuestTrackerPane(Services services) {
+  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
   auto config = assets->json("/interface/questtracker/questtracker.config");
 
   m_progressFrameImage = config.getString("progressFrameImage");

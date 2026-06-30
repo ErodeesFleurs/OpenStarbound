@@ -1,5 +1,4 @@
 #include "StarScrollArea.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -16,7 +15,7 @@ ScrollThumb::ScrollThumb(GuiDirection direction) {
   m_hovered = false;
   m_pressed = false;
   m_direction = direction;
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   setImages(assets->json("/interface.config:scrollArea.thumbs"));
 }
 
@@ -103,7 +102,7 @@ ScrollBar::ScrollBar(GuiDirection direction, WidgetCallbackFunc forwardFunc, Wid
 
   m_thumb = make_shared<ScrollThumb>(m_direction);
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
 
   addChild("thumb", m_thumb);
@@ -245,7 +244,7 @@ Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
 }
 
 ScrollArea::ScrollArea() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_buttonAdvance = assets->json("/interface.config:scrollArea.buttonAdvance").toInt();
   m_advanceLimiter = Time::monotonicMilliseconds();
 

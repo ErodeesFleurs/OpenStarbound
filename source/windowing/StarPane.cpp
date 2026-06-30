@@ -1,5 +1,4 @@
 #include "StarPane.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarWidgetLuaBindings.hpp"
@@ -32,7 +31,7 @@ Pane::Pane() {
   m_visible = false;
   m_hasDisplayed = false;
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_textStyle = assets->json("/interface.config:paneTextStyle");
   m_iconOffset = jsonToVec2I(assets->json("/interface.config:paneIconOffset"));
   m_titleOffset = jsonToVec2I(assets->json("/interface.config:paneTitleOffset"));
@@ -367,8 +366,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
 
   callbacks.registerCallback("playSound",
     [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-      auto assets = Root::singleton().assets();
-      auto config = Root::singleton().configuration();
+      auto const& assets = context()->assets();
       auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));

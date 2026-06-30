@@ -22,11 +22,22 @@
 
 namespace Star {
 
-TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, UniverseClientPtr client)
-  : m_playerStorage(playerStorage), m_skipMultiPlayerConnection(false), m_mixer(mixer) {
+TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
+    MixerPtr mixer,
+    UniverseClientPtr client,
+    TitleScreenServices services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
+    m_playerFactory(services.playerFactory ? std::move(services.playerFactory) : Root::singleton().playerFactory()),
+    m_speciesDatabase(services.speciesDatabase ? std::move(services.speciesDatabase) : Root::singleton().speciesDatabase()),
+    m_nameGenerator(services.nameGenerator ? std::move(services.nameGenerator) : Root::singleton().nameGenerator()),
+    m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()),
+    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()),
+    m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}),
+    m_playerStorage(playerStorage),
+    m_skipMultiPlayerConnection(false),
+    m_mixer(mixer) {
   m_titleState = TitleState::Quit;
-
-  auto assets = Root::singleton().assets();
 
   m_guiContext = GuiContext::singletonPtr();
 
@@ -41,7 +52,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
   SkyParameters skyParameters(randomWorld, m_celestialDatabase);
   m_skyBackdrop = make_shared<Sky>(skyParameters, true);
 
-  m_musicTrack = make_shared<AmbientNoisesDescription>(assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
+  m_musicTrack = make_shared<AmbientNoisesDescription>(m_assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
 
   initMainMenu();
   initCharSelectionMenu();
@@ -59,8 +70,6 @@ void TitleScreen::renderInit(RendererPtr renderer) {
 }
 
 void TitleScreen::render() {
-  auto assets = Root::singleton().assets();
-
   float pixelRatio = m_guiContext->interfaceScale();
   Vec2F screenSize = Vec2F(m_guiContext->windowSize());
   auto skyRenderData = m_skyBackdrop->renderData();
@@ -78,7 +87,7 @@ void TitleScreen::render() {
 
   m_renderer->flush();
 
-  auto skyBackdropDarken = jsonToColor(assets->json("/interface/windowconfig/title.config:skyBackdropDarken"));
+  auto skyBackdropDarken = jsonToColor(m_assets->json("/interface/windowconfig/title.config:skyBackdropDarken"));
   m_renderer->render(renderFlatRect(RectF(0, 0, windowWidth(), windowHeight()), skyBackdropDarken.toRgba(), 0.0f));
 
   m_renderer->flush();
@@ -229,8 +238,7 @@ void TitleScreen::initMainMenu() {
   m_mainMenu = make_shared<Pane>();
   auto backMenu = make_shared<Pane>();
 
-  auto assets = Root::singleton().assets();
-  auto config = assets->json("/interface/windowconfig/title.config");
+  auto config = m_assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
   buttonCallbacks["singleplayer"] = [=, this](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
@@ -292,7 +300,7 @@ void TitleScreen::initCharSelectionMenu() {
   reader.registerCallback("delete", [=](Widget*) { deleteDialog->dismiss(); });
   reader.registerCallback("cancel", [=](Widget*) { deleteDialog->dismiss(); });
 
-  reader.construct(Root::singleton().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
+  reader.construct(m_assets->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_playerStorage, [=, this]() {
       if (m_titleState == TitleState::SinglePlayerSelectCharacter)
@@ -317,7 +325,7 @@ void TitleScreen::initCharSelectionMenu() {
         deleteDialog->dismiss();
       });
       m_paneManager.displayRegisteredPane("deleteDialog");
-    });
+    }, CharSelectionServices{m_assets, m_configuration});
   charSelectionMenu->setAnchor(PaneAnchor::Center);
   charSelectionMenu->lockPosition();
 
@@ -335,7 +343,7 @@ void TitleScreen::initCharCreationMenu() {
       m_playerStorage->moveToFront(m_mainAppPlayer->uuid());
     }
     back();
-  });
+  }, CharCreationServices{m_assets, m_playerFactory, m_speciesDatabase, m_nameGenerator, m_itemDatabase});
   charCreationMenu->setAnchor(PaneAnchor::Center);
   charCreationMenu->lockPosition();
 
@@ -362,11 +370,9 @@ void TitleScreen::initMultiPlayerMenu() {
   GuiReader readerConnect;
   GuiReader readerServer;
 
-  m_serverList = Root::singleton().configuration()->get("serverList");
+  m_serverList = m_configuration->get("serverList");
   if (!m_serverList.isType(Json::Type::Array))
     m_serverList = JsonArray();
-
-  auto assets = Root::singleton().assets();
 
   readerServer.registerCallback("saveServer", [=, this](Widget*) {
     Json serverData = JsonObject{
@@ -385,10 +391,10 @@ void TitleScreen::initMultiPlayerMenu() {
     }
 
     populateServerList(serverList);
-    Root::singleton().configuration()->set("serverList", m_serverList);
+    m_configuration->set("serverList", m_serverList);
   });
 
-  readerServer.construct(assets->json("/interface/windowconfig/serverselect.config"), m_serverSelectPane.get());
+  readerServer.construct(m_assets->json("/interface/windowconfig/serverselect.config"), m_serverSelectPane.get());
 
 
 
@@ -399,7 +405,7 @@ void TitleScreen::initMultiPlayerMenu() {
       m_serverList = m_serverList.eraseIndex(pos);
     }
     populateServerList(serverList);
-    Root::singleton().configuration()->set("serverList", m_serverList);
+    m_configuration->set("serverList", m_serverList);
   });
 
   serverList->setCallback([=, this](Widget*) {
@@ -444,7 +450,7 @@ void TitleScreen::initMultiPlayerMenu() {
     });
 
 
-  readerConnect.construct(assets->json("/interface/windowconfig/multiplayer.config"), m_multiPlayerMenu.get());
+  readerConnect.construct(m_assets->json("/interface/windowconfig/multiplayer.config"), m_multiPlayerMenu.get());
 
   populateServerList(serverList);
 
@@ -455,7 +461,7 @@ void TitleScreen::initMultiPlayerMenu() {
 }
 
 void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
-  auto optionsMenu = make_shared<OptionsMenu>(&m_paneManager,client);
+  auto optionsMenu = make_shared<OptionsMenu>(&m_paneManager, client, OptionsMenuServices{m_assets, m_configuration});
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
@@ -465,7 +471,7 @@ void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = make_shared<ModsMenu>();
+  auto modsMenu = make_shared<ModsMenu>(m_assets);
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 
@@ -533,8 +539,6 @@ void TitleScreen::back() {
 }
 
 void TitleScreen::renderCursor() {
-  auto assets = Root::singleton().assets();
-
   Vec2I cursorPos = m_cursorScreenPos;
   Vec2I cursorSize = m_cursor.size();
   Vec2I cursorOffset = m_cursor.offset();

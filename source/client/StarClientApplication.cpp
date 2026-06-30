@@ -157,6 +157,54 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     }
   )JSON");
 
+function<void(ListenerWeakPtr)> rootReloadListenerRegistrar(Root* root) {
+  return [root](ListenerWeakPtr reloadListener) {
+    root->registerReloadListener(std::move(reloadListener));
+  };
+}
+
+MainInterfaceServices makeMainInterfaceServices(Root* root) {
+  MainInterfaceServices services;
+  auto assets = root->assets();
+  services.assets = assets;
+  services.configuration = root->configuration();
+  services.imageMetadata = root->imageMetadataDatabase();
+  services.functionDatabase = root->functionDatabase();
+  services.itemDatabase = root->itemDatabase();
+  services.objectDatabase = root->objectDatabase();
+  services.aiDatabase = root->aiDatabase();
+  services.techDatabase = root->techDatabase();
+  services.statusEffectDatabase = root->statusEffectDatabase();
+  services.imageFrames = [assets](String const& path) {
+    return assets->imageFrames(path);
+  };
+  services.registerReloadListener = rootReloadListenerRegistrar(root);
+  services.reloadRoot = [root]() {
+    root->reload();
+    root->fullyLoad();
+  };
+  services.reloadRootForCommand = [root]() {
+    root->reload();
+  };
+  services.hotReloadRoot = [root]() {
+    root->hotReload();
+  };
+  services.outputDirectory = root->toStoragePath("output");
+  return services;
+}
+
+TitleScreenServices makeTitleScreenServices(Root* root) {
+  TitleScreenServices services;
+  services.assets = root->assets();
+  services.configuration = root->configuration();
+  services.playerFactory = root->playerFactory();
+  services.speciesDatabase = root->speciesDatabase();
+  services.nameGenerator = root->nameGenerator();
+  services.itemDatabase = root->itemDatabase();
+  services.imageMetadata = root->imageMetadataDatabase();
+  return services;
+}
+
 void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
   m_root = rootLoader.initOrDie(cmdLineArgs).first;
@@ -232,15 +280,17 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   loadMods();
   
   AudioFormat audioFormat = appController->enableAudio();
-  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
+  auto root = m_root.get();
+  auto assets = root->assets();
+  auto registerReloadListener = rootReloadListenerRegistrar(root);
+
+  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels, MainMixer::Services{assets, configuration});
   m_mainMixer->setVolume(0.5);
   
-  m_worldPainter = make_shared<WorldPainter>();
-  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
+  m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener);
+  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root->imageMetadataDatabase(), root->itemDatabase(), registerReloadListener});
   m_input = make_shared<Input>();
   m_voice = make_shared<Voice>(appController);  
-
-  auto assets = m_root->assets();
 
   {
     auto& io = ImGui::GetIO();
@@ -280,8 +330,8 @@ void ClientApplication::renderInit(RendererPtr renderer) {
 
   m_guiContext->renderInit(renderer);
 
-  m_cinematicOverlay = make_shared<Cinematic>();
-  m_errorScreen = make_shared<ErrorScreen>();
+  m_cinematicOverlay = make_shared<Cinematic>(Cinematic::Services{m_root->assets()});
+  m_errorScreen = make_shared<ErrorScreen>(ErrorScreenServices{m_root->assets(), m_root->imageMetadataDatabase()});
 
   if (m_titleScreen)
     m_titleScreen->renderInit(renderer);
@@ -695,7 +745,10 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_mainMixer->setUniverseClient(m_universeClient);
-    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
+    m_titleScreen = make_shared<TitleScreen>(m_playerStorage,
+      m_mainMixer->mixer(),
+      m_universeClient,
+      makeTitleScreenServices(m_root.get()));
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
@@ -812,7 +865,8 @@ void ClientApplication::changeState(MainAppState newState) {
     m_titleScreen->stopMusic();
 
     m_universeClient->restartLua();
-    m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay, Root::singleton().assets());
+    auto services = makeMainInterfaceServices(m_root.get());
+    m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay, std::move(services));
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get()));
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));

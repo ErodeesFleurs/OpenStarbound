@@ -7,10 +7,15 @@
 
 namespace Star {
 
-AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {
+AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
+  : m_textureGroup(std::move(textureGroup)),
+    m_assets(assets ? std::move(assets) : Root::singleton().assets()) {
+  if (!registerReloadListener)
+    registerReloadListener = [](ListenerWeakPtr reloadListener) {
+      Root::singleton().registerReloadListener(std::move(reloadListener));
+    };
   m_reloadTracker = make_shared<TrackerListener>();
-  Root::singleton().registerReloadListener(m_reloadTracker);
+  registerReloadListener(m_reloadTracker);
 }
 
 TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
@@ -56,13 +61,11 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
     return p->first;
   }
 
-  auto assets = Root::singleton().assets();
-
   ImageConstPtr image;
   if (tryTexture)
-    image = assets->tryImage(imagePath);
+    image = m_assets->tryImage(imagePath);
   else
-    image = assets->image(imagePath);
+    image = m_assets->image(imagePath);
 
   if (!image) [[unlikely]]
     return {};

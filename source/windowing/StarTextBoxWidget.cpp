@@ -1,5 +1,4 @@
 #include "StarTextBoxWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 
@@ -7,7 +6,7 @@ namespace Star {
 
 TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback)
   : m_text(startingText), m_hint(hint), m_callback(callback) {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_textHidden = false;
   m_regex = ".*";
   m_repeatKeyThreshold = 0;

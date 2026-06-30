@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarAssets.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -13,7 +14,7 @@ using ListWidgetPtr = SharedPtr<ListWidget>;
 
 class ModsMenu : public Pane {
 public:
-  ModsMenu();
+  ModsMenu(AssetsConstPtr assets = {});
 
   void update(float dt) override;
 
@@ -24,6 +25,7 @@ private:
   void openWorkshop();
 
   StringList m_assetsSources;
+  AssetsConstPtr m_assets;
 
   ListWidgetPtr m_modList;
   LabelWidgetPtr m_modName;

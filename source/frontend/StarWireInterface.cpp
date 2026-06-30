@@ -11,20 +11,19 @@
 
 namespace Star {
 
-WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter) {
-  m_worldClient = worldClient;
-  m_player = player;
-  m_worldPainter = worldPainter;
-
+WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services)
+  : m_worldClient(std::move(worldClient)),
+    m_player(std::move(player)),
+    m_worldPainter(std::move(worldPainter)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
   m_connecting = false;
 
-  auto assets = Root::singleton().assets();
   GuiReader reader;
-  reader.construct(assets->json("/interface/wires/wires.config:gui"), this);
+  reader.construct(m_assets->json("/interface/wires/wires.config:gui"), this);
 
   m_nodeSize = Vec2F(1.8f, 1.8f);
 
-  JsonObject config = assets->json("/player.config:wireConfig").toObject();
+  JsonObject config = m_assets->json("/player.config:wireConfig").toObject();
   m_minBeamWidth = config.get("minWireWidth").toFloat();
   m_maxBeamWidth = config.get("maxWireWidth").toFloat();
   m_beamWidthDev = config.value("wireWidthDev", (m_maxBeamWidth - m_minBeamWidth) / 3).toFloat();

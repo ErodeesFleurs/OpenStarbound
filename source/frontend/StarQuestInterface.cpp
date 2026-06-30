@@ -11,7 +11,6 @@
 #include "StarLabelWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
@@ -21,14 +20,14 @@
 
 namespace Star {
 
-QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client) {
+QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services) {
   m_manager = manager;
   m_player = player;
   m_cinematic = cinematic;
   m_client = client;
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
 
-  auto assets = Root::singleton().assets();
-  auto config = assets->json("/interface/windowconfig/questlog.config");
+  auto config = m_assets->json("/interface/windowconfig/questlog.config");
 
   m_trackLabel = config.getString("trackLabel");
   m_untrackLabel = config.getString("untrackLabel");
@@ -78,15 +77,15 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player);
+    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets});
     (*failableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic);
+    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets});
     (*completableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player);
+    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets});
     paneManager->displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
@@ -181,7 +180,7 @@ PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
   return {};
 }
 
@@ -287,7 +286,8 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
   verticalLayout->update(0);
 }
 
-QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(quest), m_player(std::move(player)) {}
+QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
+  : Pane(), m_quest(quest), m_player(std::move(player)), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
   GuiReader reader;
@@ -347,24 +347,22 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
   return {};
 }
 
-NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player)
-  : QuestPane(quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
-  auto assets = Root::singleton().assets();
-
+NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
+  : QuestPane(quest, std::move(player), std::move(services)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
   bool shortDialog = objectivePortrait.size() == 0;
 
   String configFile;
   if (shortDialog)
-    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.newQuest").toString());
+    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(m_assets->json("/quests/quests.config:defaultGuiConfigs.newQuest").toString());
   else
-    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.newQuestPortrait").toString());
+    configFile = m_quest->getTemplate()->newQuestGuiConfig.value(m_assets->json("/quests/quests.config:defaultGuiConfigs.newQuestPortrait").toString());
 
-  Json config = assets->json(configFile);
+  Json config = m_assets->json(configFile);
 
   commonSetup(config, m_quest->text(), "QuestStarted");
 
@@ -420,11 +418,10 @@ void NewQuestInterface::dismissed() {
   }
 }
 
-QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic)
-  : QuestPane(quest, player) {
-  auto assets = Root::singleton().assets();
-  String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
-  Json config = assets->json(configFile);
+QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic, QuestInterfaceServices services)
+  : QuestPane(quest, player, std::move(services)) {
+  String configFile = m_quest->getTemplate()->questCompleteGuiConfig.value(m_assets->json("/quests/quests.config:defaultGuiConfigs.questComplete").toString());
+  Json config = m_assets->json(configFile);
 
   m_player = player;
   m_cinematic = cinematic;
@@ -437,19 +434,18 @@ QuestCompleteInterface::QuestCompleteInterface(QuestPtr const& quest, PlayerPtr 
 }
 
 void QuestCompleteInterface::close() {
-  auto assets = Root::singleton().assets();
   if (m_quest->completionCinema() && m_cinematic) {
     String cinema = m_quest->completionCinema()->replaceTags(
         StringMap<String>{{"species", m_player->species()}, {"gender", GenderNames.getRight(m_player->gender())}});
-    m_cinematic->load(assets->fetchJson(cinema));
+    m_cinematic->load(m_assets->fetchJson(cinema));
   }
   dismiss();
 }
 
-QuestFailedInterface::QuestFailedInterface(QuestPtr const& quest, PlayerPtr player) : QuestPane(quest, std::move(player)) {
-  auto assets = Root::singleton().assets();
-  String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
-  Json config = assets->json(configFile);
+QuestFailedInterface::QuestFailedInterface(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
+  : QuestPane(quest, std::move(player), std::move(services)) {
+  String configFile = m_quest->getTemplate()->questFailedGuiConfig.value(m_assets->json("/quests/quests.config:defaultGuiConfigs.questFailed").toString());
+  Json config = m_assets->json(configFile);
   commonSetup(config, m_quest->failureText(), "QuestFailed");
   disableScissoring();
 }

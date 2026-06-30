@@ -7,12 +7,18 @@
 
 namespace Star {
 
-WorldPainter::WorldPainter() {
-  m_assets = Root::singleton().assets();
+WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener)
+  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
+    m_configuration(configuration ? std::move(configuration) : Root::singleton().configuration()),
+    m_registerReloadListener(std::move(registerReloadListener)) {
+  if (!m_registerReloadListener)
+    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
+      Root::singleton().registerReloadListener(std::move(reloadListener));
+    };
 
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());
-  m_camera.setPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
+  m_camera.setPixelRatio(m_configuration->get("zoomLevel").toFloat());
 
   m_highlightConfig = m_assets->json("/highlights.config");
   for (auto p : m_highlightConfig.get("highlightDirectives").iterateObject())
@@ -27,14 +33,12 @@ WorldPainter::WorldPainter() {
 }
 
 void WorldPainter::renderInit(RendererPtr renderer) {
-  m_assets = Root::singleton().assets();
-
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
   m_tilePainter = make_shared<TilePainter>(m_renderer);
-  m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup));
-  m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);
+  m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener));
+  m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer, m_assets, m_registerReloadListener);
 }
 
 void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const& position) {
@@ -52,9 +56,7 @@ void WorldPainter::update(float dt) {
 
 void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
-  m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
-
-  m_assets = Root::singleton().assets();
+  m_camera.setTargetPixelRatio(m_configuration->get("zoomLevel").toFloat());
 
   m_tilePainter->setup(m_camera, renderData);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 #include "StarWarping.hpp"
 #include "StarPlayerUniverseMap.hpp"
@@ -17,11 +18,16 @@ using TeleportDialogPtr = SharedPtr<TeleportDialog>;
 
 class TeleportDialog : public Pane {
 public:
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
   TeleportDialog(UniverseClientPtr client,
       PaneManager* paneManager,
       Json config,
       EntityId sourceEntityId,
-      TeleportBookmark currentLocation);
+      TeleportBookmark currentLocation,
+      Services services = {});
 
   void tick(float dt) override;
 
@@ -33,6 +39,7 @@ private:
   EntityId m_sourceEntityId;
   UniverseClientPtr m_client;
   PaneManager* m_paneManager;
+  IAssetsConstPtr m_assets;
   List<pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;
 };

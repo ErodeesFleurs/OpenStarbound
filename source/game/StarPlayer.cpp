@@ -351,6 +351,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
+  m_tools->init(this);
   auto speciesDefinition = m_speciesDatabase->species(m_appearance.m_identity.species);
 
   if (mode == EntityMode::Master) {

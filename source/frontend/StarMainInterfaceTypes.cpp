@@ -34,11 +34,8 @@ EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::CharacterSwap, "CharacterSwap"}
 };
 
-MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto imageMetadata = root.imageMetadataDatabase();
-
+MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets(MainInterfaceConfigServices services) {
+  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
   auto config = make_shared<MainInterfaceConfig>();
 
   config->textStyle = assets->json("/interface.config:textStyle");
@@ -144,7 +141,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   config->debugBackgroundColor = jsonToColor(assets->json("/interface.config:debugBackgroundColor"));
   config->debugBackgroundPad = assets->json("/interface.config:debugBackgroundPad").toUInt();
 
-  for (auto const& path : assets->scanExtension("macros")) {
+  for (auto const& path : assets->scan(".macros")) {
     for (auto const& pair : assets->json(path).iterateObject())
       config->macroCommands.add(pair.first, jsonToStringList(pair.second));
   }

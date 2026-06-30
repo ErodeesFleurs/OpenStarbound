@@ -20,7 +20,7 @@ GuiContext& GuiContext::singleton() {
     return *s_singleton;
 }
 
-GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController) {
+GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services) {
   if (s_singleton)
     throw GuiContextException("Singleton GuiContext has been constructed twice");
 
@@ -28,6 +28,15 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController) {
 
   m_mixer = std::move(mixer);
   m_applicationController = std::move(appController);
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_configuration = services.configuration ? std::move(services.configuration) : Root::singleton().configuration();
+  m_imageMetadata = services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase();
+  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
+  m_registerReloadListener = std::move(services.registerReloadListener);
+  if (!m_registerReloadListener)
+    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
+      Root::singleton().registerReloadListener(std::move(reloadListener));
+    };
 
   m_interfaceScale = 1;
 
@@ -43,7 +52,7 @@ GuiContext::~GuiContext() {
 void GuiContext::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup();
-  m_textureCollection = make_shared<AssetTextureGroup>(textureGroup);
+  m_textureCollection = make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, m_textureCollection);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
 }
@@ -54,6 +63,22 @@ MixerPtr const& GuiContext::mixer() const {
 
 ApplicationControllerPtr const& GuiContext::applicationController() const {
   return m_applicationController;
+}
+
+AssetsConstPtr const& GuiContext::assets() const {
+  return m_assets;
+}
+
+IConfigurationPtr const& GuiContext::configuration() const {
+  return m_configuration;
+}
+
+ImageMetadataDatabaseConstPtr const& GuiContext::imageMetadata() const {
+  return m_imageMetadata;
+}
+
+ItemDatabaseConstPtr const& GuiContext::itemDatabase() const {
+  return m_itemDatabase;
 }
 
 RendererPtr const& GuiContext::renderer() const {
@@ -129,7 +154,7 @@ Set<InterfaceAction> GuiContext::actionsForKey(Key key) const {
 }
 
 void GuiContext::refreshKeybindings() {
-  m_keyBindings = KeyBindings(Root::singleton().configuration()->get("bindings"));
+  m_keyBindings = KeyBindings(m_configuration->get("bindings"));
 }
 
 void GuiContext::setInterfaceScissorRect(RectI const& scissor) {
@@ -316,9 +341,8 @@ bool GuiContext::trySetCursor(Drawable const& drawable, Vec2I const& offset, int
   if (!drawable.isImage())
     return false;
 
-  auto assets = Root::singleton().assets();
   auto& imagePath = drawable.imagePart().image;
-  return applicationController()->setCursorImage(AssetPath::join(imagePath), assets->image(imagePath), pixelRatio, offset);
+  return applicationController()->setCursorImage(AssetPath::join(imagePath), m_assets->image(imagePath), pixelRatio, offset);
 }
 
 RectF GuiContext::renderText(String const& s, TextPositioning const& position) {
@@ -437,9 +461,7 @@ void GuiContext::playAudio(AudioInstancePtr audioInstance) {
 }
 
 void GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
-  auto assets = Root::singleton().assets();
-  auto config = Root::singleton().configuration();
-  auto audioInstance = make_shared<AudioInstance>(*assets->audio(audioAsset));
+  auto audioInstance = make_shared<AudioInstance>(*m_assets->audio(audioAsset));
   audioInstance->setVolume(volume);
   audioInstance->setPitchMultiplier(pitch);
   audioInstance->setLoops(loops);
@@ -471,7 +493,7 @@ float GuiContext::getDisplayScale() const {
 }
 
 void GuiContext::cleanup() {
-  int64_t textureTimeout = Root::singleton().assets()->json("/rendering.config:textureTimeout").toInt();
+  int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
   if (m_textureCollection)
     m_textureCollection->cleanup(textureTimeout);
   if (m_textPainter)

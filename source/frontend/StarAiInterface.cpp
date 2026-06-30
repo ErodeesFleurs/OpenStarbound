@@ -34,16 +34,19 @@
 
 namespace Star {
 
-AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainInterfacePaneManager* paneManager) {
+AiInterface::AiInterface(UniverseClientPtr client,
+    CinematicPtr cinematic,
+    MainInterfacePaneManager* paneManager,
+    AiInterfaceServices services) {
   m_client = client;
   m_cinematic = cinematic;
   m_paneManager = paneManager;
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
 
   m_textLength = 0.0;
   m_textMaxLength = 0.0;
 
-  m_aiDatabase = Root::singleton().aiDatabase();
-  auto assets = Root::singleton().assets();
+  m_aiDatabase = services.aiDatabase ? std::move(services.aiDatabase) : Root::singleton().aiDatabase();
 
   GuiReader reader;
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
@@ -55,14 +58,14 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   reader.registerCallback("showCrew", [this](Widget*) { showCrew(); });
   reader.registerCallback("goBack", [this](Widget*) { goBack(); });
 
-  reader.construct(assets->json("/interface/ai/ai.config:guiConfig"), this);
+  reader.construct(m_assets->json("/interface/ai/ai.config:guiConfig"), this);
 
   m_mainStack = fetchChild<StackWidget>("mainStack");
   m_missionStack = findChild<StackWidget>("missionStack");
   m_crewStack = findChild<StackWidget>("crewStack");
 
-  m_breadcrumbLeftPadding = assets->json("/interface/ai/ai.config:breadcrumbLeftPadding").toInt();
-  m_breadcrumbRightPadding = assets->json("/interface/ai/ai.config:breadcrumbRightPadding").toInt();
+  m_breadcrumbLeftPadding = m_assets->json("/interface/ai/ai.config:breadcrumbLeftPadding").toInt();
+  m_breadcrumbRightPadding = m_assets->json("/interface/ai/ai.config:breadcrumbRightPadding").toInt();
   m_homeBreadcrumbBackground = fetchChild<ImageStretchWidget>("homeBreadcrumbBg");
   m_pageBreadcrumbBackground = fetchChild<ImageStretchWidget>("pageBreadcrumbBg");
   m_itemBreadcrumbBackground = fetchChild<ImageStretchWidget>("itemBreadcrumbBg");
@@ -91,11 +94,11 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   m_staticAnimation = m_aiDatabase->staticAnimation(m_species);
   m_scanlineAnimation = m_aiDatabase->scanlineAnimation();
 
-  m_missionBreadcrumbText = assets->json("/interface/ai/ai.config:missionBreadcrumbText").toString();
-  m_missionDeployText = assets->json("/interface/ai/ai.config:missionDeployText").toString();
-  m_crewBreadcrumbText = assets->json("/interface/ai/ai.config:crewBreadcrumbText").toString();
-  m_defaultRecruitName = assets->json("/interface/ai/ai.config:defaultRecruitName").toString();
-  m_defaultRecruitDescription = assets->json("/interface/ai/ai.config:defaultRecruitDescription").toString();
+  m_missionBreadcrumbText = m_assets->json("/interface/ai/ai.config:missionBreadcrumbText").toString();
+  m_missionDeployText = m_assets->json("/interface/ai/ai.config:missionDeployText").toString();
+  m_crewBreadcrumbText = m_assets->json("/interface/ai/ai.config:crewBreadcrumbText").toString();
+  m_defaultRecruitName = m_assets->json("/interface/ai/ai.config:defaultRecruitName").toString();
+  m_defaultRecruitDescription = m_assets->json("/interface/ai/ai.config:defaultRecruitDescription").toString();
 }
 
 void AiInterface::update(float dt) {
@@ -119,8 +122,7 @@ void AiInterface::update(float dt) {
     if (m_textLength < m_textMaxLength) {
       setFaceAnimation(m_currentSpeech->animation);
       if (!m_chatterSound || m_chatterSound->finished()) {
-        auto assets = Root::singleton().assets();
-        m_chatterSound = make_shared<AudioInstance>(*assets->audio(assets->json("/interface/ai/ai.config:chatterSound").toString()));
+        m_chatterSound = make_shared<AudioInstance>(*m_assets->audio(m_assets->json("/interface/ai/ai.config:chatterSound").toString()));
         m_chatterSound->setLoops(-1);
         GuiContext::singleton().playAudio(m_chatterSound);
       }

@@ -3,7 +3,6 @@
 #include "StarStackWidget.hpp"
 #include "StarFlowLayout.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarImageMetadataDatabase.hpp"
 
@@ -23,7 +22,7 @@ TabSetWidget::TabSetWidget(TabSetConfig const& tabSetConfig) {
 }
 
 void TabSetWidget::setSize(Vec2I const& size) {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
   auto tabHeight = max({imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImage).y(),

@@ -1,4 +1,6 @@
 #include "StarActionBar.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarGuiReader.hpp"
@@ -11,20 +13,18 @@
 #include "StarPaneManager.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarMerchantInterface.hpp"
 
 namespace Star {
 
-ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
-  m_paneManager = paneManager;
-  m_player = std::move(player);
-
-  auto assets = Root::singleton().assets();
-
-  m_config = assets->json("/interface/windowconfig/actionbar.config");
+ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services)
+  : m_paneManager(paneManager),
+    m_player(std::move(player)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
+  m_config = m_assets->json("/interface/windowconfig/actionbar.config");
 
   m_actionBarSelectOffset = jsonToVec2I(m_config.get("actionBarSelectOffset"));
   m_switchSounds = jsonToStringList(m_config.get("sounds").get("switch"));
@@ -42,19 +42,18 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
     reader.registerCallback(strf("essentialBar{}", i + 1), [this, i](Widget*) { essentialBarClick(i); });
 
-  reader.registerCallback("pickupToActionBar", [=](Widget* widget) {
+  reader.registerCallback("pickupToActionBar", [this](Widget* widget) {
       auto button = as<ButtonWidget>(widget);
-      Root::singleton().configuration()->setPath("inventory.pickupToActionBar", button->isChecked());
+      m_configuration->setPath("inventory.pickupToActionBar", button->isChecked());
     });
 
   reader.registerCallback("swapCustomBar", [this](Widget*) {
       swapCustomBar();
     });
 
-  auto configuration = Root::singleton().configuration();
-  bool bottomBar = configuration->getPath("inventory.bottomActionBar").optBool().value(false);
+  bool bottomBar = m_configuration->getPath("inventory.bottomActionBar").optBool().value(false);
   if (bottomBar)
-    m_config = jsonMerge(m_config, assets->json("/interface/windowconfig/actionbarbottom.config"));
+    m_config = jsonMerge(m_config, m_assets->json("/interface/windowconfig/actionbarbottom.config"));
 
   reader.construct(m_config.get("paneLayout"), this);
   if (bottomBar) {
@@ -112,7 +111,7 @@ PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
   if (!item)
     return {};
 
-  return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+  return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
 }
 
 bool ActionBar::sendEvent(InputEvent const& event) {
@@ -296,7 +295,7 @@ void ActionBar::update(float) {
     widgets.right->setHighlightEnabled(!widgets.right->item() && swapSlotItem);
   }
 
-  fetchChild<ButtonWidget>("pickupToActionBar")->setChecked(Root::singleton().configuration()->getPath("inventory.pickupToActionBar").toBool());
+  fetchChild<ButtonWidget>("pickupToActionBar")->setChecked(m_configuration->getPath("inventory.pickupToActionBar").toBool());
   fetchChild<ButtonWidget>("swapCustomBar")->setChecked(m_player->inventory()->customBarGroup() != 0);
 }
 

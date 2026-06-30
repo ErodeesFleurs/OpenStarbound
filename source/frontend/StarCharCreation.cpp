@@ -20,10 +20,14 @@
 
 namespace Star {
 
-CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc) {
-  auto& root = Root::singleton();
-
-  m_speciesList = jsonToStringList(root.assets()->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
+CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc,
+    CharCreationServices services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_playerFactory(services.playerFactory ? std::move(services.playerFactory) : Root::singleton().playerFactory()),
+    m_speciesDatabase(services.speciesDatabase ? std::move(services.speciesDatabase) : Root::singleton().speciesDatabase()),
+    m_nameGenerator(services.nameGenerator ? std::move(services.nameGenerator) : Root::singleton().nameGenerator()),
+    m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()) {
+  m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
   GuiReader guiReader;
   guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
@@ -143,7 +147,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
       changed();
     });
 
-  guiReader.construct(root.assets()->json("/interface/windowconfig/charcreation.config:paneLayout"), this);
+  guiReader.construct(m_assets->json("/interface/windowconfig/charcreation.config:paneLayout"), this);
 
   createPlayer();
 
@@ -156,7 +160,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
 }
 
 void CharCreationPane::createPlayer() {
-  m_previewPlayer = Root::singleton().playerFactory()->create();
+  m_previewPlayer = m_playerFactory->create();
   try {
     auto portrait = fetchChild<PortraitWidget>("charPreview");
     if (static_cast<bool>(portrait)) {
@@ -228,11 +232,11 @@ bool CharCreationPane::sendEvent(InputEvent const& event) {
 }
 
 void CharCreationPane::randomizeName() {
-  auto species = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
+  auto species = m_speciesDatabase->species(m_speciesList[m_speciesChoice]);
   auto tb = fetchChild<TextBoxWidget>("name");
   auto genderOption = species->options().genderOptions.wrap(m_genderChoice);
   int limiter = 100;
-  while (!tb->setText(Root::singleton().nameGenerator()->generateName(species->nameGen(genderOption.gender)))) {
+  while (!tb->setText(m_nameGenerator->generateName(species->nameGen(genderOption.gender)))) {
     if (limiter == 0)
       break;
     limiter--;
@@ -241,10 +245,8 @@ void CharCreationPane::randomizeName() {
 }
 
 void CharCreationPane::changed() {
-  auto& root = Root::singleton();
-
   auto textBox = fetchChild<TextBoxWidget>("name");
-  auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
+  auto speciesDefinition = m_speciesDatabase->species(m_speciesList[m_speciesChoice]);
   auto species = speciesDefinition->options();
   auto genderOptions = species.genderOptions.wrap(m_genderChoice);
   int genderIdx = pmod<int64_t>(m_genderChoice, static_cast<int64_t>(species.genderOptions.size()));
@@ -283,7 +285,7 @@ void CharCreationPane::changed() {
     if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", i)))
       button->setOverlayImage(species.genderOptions[i].image);
 
-  for (auto const& nameDefPair : root.speciesDatabase()->allSpecies()) {
+  for (auto const& nameDefPair : m_speciesDatabase->allSpecies()) {
     String name;
     SpeciesDefinitionPtr def;
     std::tie(name, def) = nameDefPair;
@@ -301,7 +303,7 @@ void CharCreationPane::changed() {
   else
     portrait->setMode(PortraitMode::FullNude);
 
-  auto results = root.speciesDatabase()->createHumanoid(
+  auto results = m_speciesDatabase->createHumanoid(
     textBox->getText(),
     species.species,
     m_genderChoice,
@@ -324,7 +326,7 @@ void CharCreationPane::changed() {
   m_previewPlayer->refreshHumanoidParameters();
   for (auto p : EquipmentSlotNames) {
     if (auto equipment = results.armor.maybe(p.second)) {
-      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), root.itemDatabase()->item(ItemDescriptor(equipment.value())));
+      m_previewPlayer->inventory()->setItem(InventorySlot(p.first), m_itemDatabase->item(ItemDescriptor(equipment.value())));
     } else {
       m_previewPlayer->inventory()->consumeSlot(InventorySlot(p.first));
     }
@@ -354,15 +356,14 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
         return {};
 
       String speciesName = m_speciesList[speciesIndex];
-      Star::SpeciesDefinitionPtr speciesDefinition = Root::singleton().speciesDatabase()->species(speciesName);
+      Star::SpeciesDefinitionPtr speciesDefinition = m_speciesDatabase->species(speciesName);
 
       // make a tooltip from the config file
       PanePtr tooltip = make_shared<Pane>();
       tooltip->removeAllChildren();
       GuiReader reader;
-      auto& root = Root::singleton();
       String tooltipKind = "/interface/tooltips/species.tooltip";
-      reader.construct(root.assets()->json(tooltipKind), tooltip.get());
+      reader.construct(m_assets->json(tooltipKind), tooltip.get());
 
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);

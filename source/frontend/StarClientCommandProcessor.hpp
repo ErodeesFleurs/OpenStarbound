@@ -1,6 +1,9 @@
 #pragma once
 
 #include "StarShellParser.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarIItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarUniverseClient.hpp"
@@ -10,10 +13,23 @@
 
 namespace Star {
 
+struct FramesSpecification;
+using FramesSpecificationConstPtr = SharedPtr<FramesSpecification const>;
+
+struct ClientCommandProcessorServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  ItemDatabaseConstPtr itemDatabase;
+  function<FramesSpecificationConstPtr(String const&)> imageFrames;
+  String outputDirectory;
+  function<void()> reloadRoot;
+  function<void()> hotReloadRoot;
+};
+
 class ClientCommandProcessor {
 public:
   ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands);
+      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services = {});
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
 
@@ -65,6 +81,13 @@ private:
   UniverseClientPtr m_universeClient;
   CinematicPtr m_cinematicOverlay;
   MainInterfacePaneManager* m_paneManager;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  ItemDatabaseConstPtr m_itemDatabase;
+  function<FramesSpecificationConstPtr(String const&)> m_imageFrames;
+  String m_outputDirectory;
+  function<void()> m_reloadRoot;
+  function<void()> m_hotReloadRoot;
   CaseInsensitiveStringMap<function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
   ShellParser m_parser;

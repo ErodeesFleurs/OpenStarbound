@@ -4,6 +4,10 @@
 #include "StarWorldClient.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarPane.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarObjectDatabase.hpp"
 
 namespace Star {
 
@@ -25,10 +29,21 @@ using AudioInstancePtr = SharedPtr<AudioInstance>;
 class CraftingPane;
 using CraftingPanePtr = SharedPtr<CraftingPane>;
 
+struct CraftingPaneServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  ItemDatabaseConstPtr itemDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+};
+
 class CraftingPane : public Pane {
 public:
   CraftingPane(
-      WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId = NullEntityId);
+      WorldClientPtr worldClient,
+      PlayerPtr player,
+      Json const& settings,
+      EntityId sourceEntityId = NullEntityId,
+      CraftingPaneServices services = {});
 
   void displayed() override;
   void dismissed() override;
@@ -62,6 +77,10 @@ private:
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
   PlayerBlueprintsPtr m_blueprints;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
 
   bool m_crafting;
   GameTimer m_craftTimer;

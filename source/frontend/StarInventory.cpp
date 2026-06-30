@@ -13,7 +13,6 @@
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerCompanions.hpp"
 #include "StarWorldClient.hpp"
-#include "StarAssets.hpp"
 #include "StarItem.hpp"
 #include "StarMainInterface.hpp"
 #include "StarMerchantInterface.hpp"
@@ -25,13 +24,15 @@
 
 namespace Star {
 
-InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
+InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services) {
   m_parent = parent;
   m_player = std::move(player);
   m_containerInteractor = std::move(containerInteractor);
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_techDatabase = services.techDatabase ? std::move(services.techDatabase) : Root::singleton().techDatabase();
 
   GuiReader invWindowReader;
-  auto config = Root::singleton().assets()->json("/interface/windowconfig/playerinventory.config");
+  m_config = m_assets->json("/interface/windowconfig/playerinventory.config");
 
   auto leftClickCallback = [this](String const& bagType, Widget* widget) {
     auto itemGrid = convert<ItemGridWidget>(widget);
@@ -125,7 +126,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     }
   };
 
-  Json itemBagConfig = config.get("bagConfig");
+  Json itemBagConfig = m_config.get("bagConfig");
   auto bagOrder = itemBagConfig.toObject().keys().sorted([&itemBagConfig](String const& a, String const& b) {
     return itemBagConfig.get(a).getInt("order", 0) < itemBagConfig.get(b).getInt("order", 0);
   });
@@ -178,10 +179,10 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   }
   registerSlotCallbacks("trash", TrashSlot());
 
-  invWindowReader.construct(config.get("paneLayout"), this);
+  invWindowReader.construct(m_config.get("paneLayout"), this);
 
   m_trashSlot = fetchChild<ItemSlotWidget>("trash");
-  m_trashBurn = GameTimer(config.get("trashBurnTimeout").toFloat());
+  m_trashBurn = GameTimer(m_config.get("trashBurnTimeout").toFloat());
 
   m_disabledTechOverlays.append(fetchChild<ImageWidget>("techHeadDisabled"));
   m_disabledTechOverlays.append(fetchChild<ImageWidget>("techBodyDisabled"));
@@ -212,9 +213,9 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
 
   auto portrait = make_shared<PortraitWidget>(m_player, PortraitMode::Bust);
   portrait->setIconMode();
-  setTitle(portrait, m_player->name(), config.getString("subtitle"));
+  setTitle(portrait, m_player->name(), m_config.getString("subtitle"));
 
-  if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = config.getBool("alwaysDisplayCosmetics", false))) {
+  if ((m_displayingCosmetics = m_alwaysDisplayCosmetics = m_config.getBool("alwaysDisplayCosmetics", false))) {
     for (auto const& p : EquipmentSlotNames) {
       if (p.first >= EquipmentSlot::Cosmetic1) {
         if (auto itemSlot = fetchChild<ItemSlotWidget>(p.second))
@@ -227,10 +228,10 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
 
   if (auto item = m_player->inventory()->swapSlotItem())
     m_currentSwapSlotItem = item->descriptor();
-  m_pickUpSounds = jsonToStringList(config.get("sounds").get("pickup"));
-  m_putDownSounds = jsonToStringList(config.get("sounds").get("putdown"));
-  m_someUpSounds = jsonToStringList(config.get("sounds").get("someup"));
-  m_someDownSounds = jsonToStringList(config.get("sounds").get("somedown"));
+  m_pickUpSounds = jsonToStringList(m_config.get("sounds").get("pickup"));
+  m_putDownSounds = jsonToStringList(m_config.get("sounds").get("putdown"));
+  m_someUpSounds = jsonToStringList(m_config.get("sounds").get("someup"));
+  m_someDownSounds = jsonToStringList(m_config.get("sounds").get("somedown"));
 }
 
 void InventoryPane::displayed() {
@@ -251,7 +252,7 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
         auto widgetData = itemSlot->data();
         if (widgetData && widgetData.type() == Json::Type::Object) {
           if (auto text = widgetData.optString("tooltipText"))
-            return SimpleTooltipBuilder::buildTooltip(*text);
+            return SimpleTooltipBuilder::buildTooltip(*text, SimpleTooltipServices{m_assets});
         }
       }
     }
@@ -259,15 +260,14 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
 
-  auto techDatabase = Root::singleton().techDatabase();
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
         if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
-          if (techDatabase->contains(*techModule))
-            return SimpleTooltipBuilder::buildTooltip(techDatabase->tech(*techModule).description);
+          if (m_techDatabase->contains(*techModule))
+            return SimpleTooltipBuilder::buildTooltip(m_techDatabase->tech(*techModule).description, SimpleTooltipServices{m_assets});
       }
     }
   }
@@ -382,12 +382,11 @@ void InventoryPane::update(float dt) {
     }
   }
 
-  auto techDatabase = Root::singleton().techDatabase();
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first)) {
-        if (techDatabase->contains(*techModule)) {
-          techIcon->setImage(techDatabase->tech(*techModule).icon);
+        if (m_techDatabase->contains(*techModule)) {
+          techIcon->setImage(m_techDatabase->tech(*techModule).icon);
           continue;
         }
       }
@@ -453,8 +452,6 @@ void InventoryPane::update(float dt) {
     fetchChild<LabelWidget>("lblEssence")->hide();
   }
 
-  auto config = Root::singleton().assets()->json("/interface/windowconfig/playerinventory.config");
-
   auto pets = m_player->companions()->getCompanions("pets");
   if (pets.size() > 0) {
     auto pet = pets.first();
@@ -466,7 +463,7 @@ void InventoryPane::update(float dt) {
     if (auto name = pet->name()) {
       nameLabel->setText(pet->name()->toUpper());
     } else {
-      nameLabel->setText(config.getString("defaultPetNameLabel"));
+      nameLabel->setText(m_config.getString("defaultPetNameLabel"));
     }
 
     auto attackLabel = fetchChild<LabelWidget>("companionAttackStat");
@@ -498,7 +495,7 @@ void InventoryPane::update(float dt) {
   } else {
     fetchChild<ImageWidget>("companionSlot")->setVisibility(false);
 
-    fetchChild<LabelWidget>("companionName")->setText(config.getString("defaultPetNameLabel"));
+    fetchChild<LabelWidget>("companionName")->setText(m_config.getString("defaultPetNameLabel"));
 
     fetchChild<LabelWidget>("companionAttackStat")->setText("");
     fetchChild<LabelWidget>("companionDefenseStat")->setText("");

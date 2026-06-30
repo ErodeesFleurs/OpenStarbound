@@ -9,7 +9,8 @@
 
 namespace Star {
 
-ConfirmationDialog::ConfirmationDialog() {}
+ConfirmationDialog::ConfirmationDialog(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
 
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise) {
   m_resultPromise = resultPromise;
@@ -19,11 +20,9 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, RpcPromis
 void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback) {
   Json config;
   if (dialogConfig.isType(Json::Type::String))
-    config = Root::singleton().assets()->json(dialogConfig.toString());
+    config = m_assets->json(dialogConfig.toString());
   else
     config = dialogConfig;
-
-  auto assets = Root::singleton().assets();
 
   removeAllChildren();
 
@@ -40,7 +39,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   String paneLayoutPath =
       config.optString("paneLayout").value("/interface/windowconfig/confirmation.config:paneLayout");
-  reader.construct(assets->json(paneLayoutPath), this);
+  reader.construct(m_assets->json(paneLayoutPath), this);
 
   ImageWidgetPtr titleIcon = {};
   if (config.contains("icon"))
@@ -70,7 +69,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   }
 
   show();
-  auto sound = Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/confirmation.config:onShowSound").toArray(), "").toString();
+  auto sound = Random::randValueFrom(m_assets->json("/interface/windowconfig/confirmation.config:onShowSound").toArray(), "").toString();
 
   if (!sound.empty())
     context()->playAudio(sound);

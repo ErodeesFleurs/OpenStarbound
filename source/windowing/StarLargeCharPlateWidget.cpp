@@ -1,5 +1,4 @@
 #include "StarLargeCharPlateWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
@@ -11,7 +10,7 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
 
   setSize(ButtonWidget::size());
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_config = assets->json("/interface.config:largeCharPlate");
   auto charPlateImage = m_config.getString("backingImage");
 
@@ -112,7 +111,7 @@ void LargeCharPlateWidget::setPlayer(PlayerPtr player) {
     m_playerName->setText(m_createCharText);
   }
 
-  auto modeTypeTextAndColor = Root::singleton().assets()->json("/interface.config:modeTypeTextAndColor").toArray();
+  auto modeTypeTextAndColor = context()->assets()->json("/interface.config:modeTypeTextAndColor").toArray();
   int modeType;
   if (m_player) {
     modeType = 1 + static_cast<int>(m_player->modeType());

@@ -1,5 +1,4 @@
 #include "StarLabelWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -13,7 +12,7 @@ LabelWidget::LabelWidget(String text,
   : m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
     m_wrapWidth(std::move(wrapWidth)) {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_style = assets->json("/interface.config:labelTextStyle");
   m_style.color = color.toRgba();
   if (lineSpacing)

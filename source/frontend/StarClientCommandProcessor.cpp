@@ -16,9 +16,32 @@
 namespace Star {
 
 ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands)
+  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
-  m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
+  m_paneManager(paneManager),
+  m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+  m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
+  m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()),
+  m_imageFrames(std::move(services.imageFrames)),
+  m_outputDirectory(std::move(services.outputDirectory)),
+  m_reloadRoot(std::move(services.reloadRoot)),
+  m_hotReloadRoot(std::move(services.hotReloadRoot)),
+  m_macroCommands(std::move(macroCommands)) {
+  if (!m_imageFrames)
+    m_imageFrames = [](String const& path) {
+      return Root::singleton().assets()->imageFrames(path);
+    };
+  if (m_outputDirectory.empty())
+    m_outputDirectory = Root::singleton().toStoragePath("output");
+  if (!m_reloadRoot)
+    m_reloadRoot = []() {
+      Root::singleton().reload();
+    };
+  if (!m_hotReloadRoot)
+    m_hotReloadRoot = []() {
+      Root::singleton().hotReload();
+    };
+
   m_builtinCommands = {
     {"reload", [this](String const&) { return reload(); }},
     {"hotReload", [this](String const&) { return hotReload(); }},
@@ -60,7 +83,7 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
 }
 
 bool ClientCommandProcessor::adminCommandAllowed() const {
-  return Root::singleton().configuration()->get("allowAdminCommandsFromAnyone").toBool() ||
+  return m_configuration->get("allowAdminCommandsFromAnyone").toBool() ||
     m_universeClient->mainPlayer()->isAdmin();
 }
 
@@ -129,12 +152,12 @@ bool ClientCommandProcessor::fixedCameraEnabled() const {
 }
 
 String ClientCommandProcessor::reload() {
-  Root::singleton().reload();
+  m_reloadRoot();
   return "Client Star::Root reloaded";
 }
 
 String ClientCommandProcessor::hotReload() {
-  Root::singleton().hotReload();
+  m_hotReloadRoot();
   return "Hot-reloaded assets";
 }
 
@@ -206,8 +229,8 @@ String ClientCommandProcessor::fixedCamera() {
 }
 
 String ClientCommandProcessor::monochromeLighting() {
-  bool monochrome = !Root::singleton().configuration()->get("monochromeLighting").toBool();
-  Root::singleton().configuration()->set("monochromeLighting", monochrome);
+  bool monochrome = !m_configuration->get("monochromeLighting").toBool();
+  m_configuration->set("monochromeLighting", monochrome);
   return strf("Monochrome lighting {}", monochrome ? "enabled" : "disabled");
 }
 
@@ -273,7 +296,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
+    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets});
   });
 }
 
@@ -283,7 +306,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
+    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets});
   });
 }
 
@@ -293,7 +316,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
+    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets});
   });
 }
 
@@ -319,7 +342,7 @@ String ClientCommandProcessor::cinema(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  m_cinematicOverlay->load(Root::singleton().assets()->json(arguments.at(0)));
+  m_cinematicOverlay->load(m_assets->json(arguments.at(0)));
   if (arguments.size() > 1)
     m_cinematicOverlay->setTime(lexicalCast<float>(arguments.at(1)));
   return strf("Started cinematic {} at {}", arguments.at(0), arguments.size() > 1 ? arguments.at(1) : "beginning");
@@ -368,7 +391,7 @@ String ClientCommandProcessor::giveEssentialItem(String const& argumentsString) 
     return "Not enough arguments to /giveessentialitem";
 
   try {
-    auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(arguments.at(0)));
+    auto item = m_itemDatabase->item(ItemDescriptor(arguments.at(0)));
     auto slot = EssentialItemNames.getLeft(arguments.at(1));
     m_universeClient->mainPlayer()->inventory()->setEssentialItem(slot, item);
     return strf("Put {} in player slot {}", item->name(), arguments.at(1));
@@ -536,14 +559,14 @@ String ClientCommandProcessor::render(String const& path) {
     if (!assetPath.basePath.beginsWith("/"))
       assetPath.basePath = "/assetmissing.png" + assetPath.basePath;
   }
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   ImageConstPtr image;
   if (outputSheet) {
     auto sheet = make_shared<Image>(assets->image(assetPath.basePath)->convert(PixelFormat::RGBA32));
     AssetPath framePath = assetPath;
 
     StringMap<pair<RectU, ImageConstPtr>> frames;
-    if (auto imageFrames = assets->imageFrames(assetPath.basePath))
+    if (auto imageFrames = m_imageFrames(assetPath.basePath))
       for (auto& pair : imageFrames->frames)
         frames[pair.first] = make_pair(pair.second, ImageConstPtr());
 
@@ -583,7 +606,7 @@ String ClientCommandProcessor::render(String const& path) {
   }
   if (image->size().min() == 0)
     return "^red;Resulting image is empty^reset;";
-  auto outputDirectory = Root::singleton().toStoragePath("output");
+  auto outputDirectory = m_outputDirectory;
   auto outputPath = File::relativeTo(outputDirectory, strf("{}.png", outputName));
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);

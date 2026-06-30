@@ -5,6 +5,7 @@
 #include "StarDrawable.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarInputEvent.hpp"
+#include "StarIAssets.hpp"
 #include "StarTextPainter.hpp"
 #include "StarMixer.hpp"
 
@@ -17,7 +18,11 @@ using PlayerPtr = SharedPtr<Player>;
 
 class Cinematic {
 public:
-  Cinematic();
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
+  Cinematic(Services services = {});
 
   void load(Json const& definition);
 
@@ -106,6 +111,7 @@ private:
   List<PanelPtr> m_panels;
   List<AudioCue> m_audioCues;
   std::vector<AudioInstancePtr> m_activeAudio;
+  IAssetsConstPtr m_assets;
 
   // these include the time for background fades so they may not reflect the completion timecode
   Clock m_timer;

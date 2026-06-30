@@ -12,16 +12,17 @@ namespace Star {
 CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     CreateCharCallback createCallback,
     SelectCharacterCallback selectCallback,
-    DeleteCharacterCallback deleteCallback)
+    DeleteCharacterCallback deleteCallback,
+    CharSelectionServices services)
   : m_playerStorage(playerStorage),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
     m_downScroll(0),
     m_search(""),
     m_filteredList({}),
     m_createCallback(createCallback),
     m_selectCallback(selectCallback),
     m_deleteCallback(deleteCallback) {
-  auto& root = Root::singleton();
-
   GuiReader guiReader;
 
   guiReader.registerCallback("playerUpButton", [=, this](Widget*) { shiftCharacters(-1); });
@@ -39,12 +40,11 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
   guiReader.registerCallback("clearSearch", [=, this](Widget*) {
     fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   });
-  guiReader.registerCallback("toggleDismissCheckbox", [=](Widget* widget) {
-    auto configuration = Root::singleton().configuration();
-    configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
+  guiReader.registerCallback("toggleDismissCheckbox", [=, this](Widget* widget) {
+    m_configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
   });
 
-  guiReader.construct(root.assets()->json("/interface/windowconfig/charselection.config"), this);
+  guiReader.construct(m_assets->json("/interface/windowconfig/charselection.config"), this);
 }
 
 bool CharSelectionPane::sendEvent(InputEvent const& event) {
@@ -81,7 +81,7 @@ void CharSelectionPane::selectCharacter(unsigned buttonIndex) {
     auto player = m_playerStorage->loadPlayer(playerUuid);
     if (player->isPermaDead() && !player->isAdmin()) {
       auto sound = Random::randValueFrom(
-                       Root::singleton().assets()->json("/interface.config:buttonClickFailSound").toArray(), "")
+                       m_assets->json("/interface.config:buttonClickFailSound").toArray(), "")
                        .toString();
       if (!sound.empty())
         context()->playAudio(sound);

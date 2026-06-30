@@ -22,23 +22,28 @@
 namespace Star {
 
 MerchantPane::MerchantPane(
-    WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {
+    WorldClientPtr worldClient,
+    PlayerPtr player,
+    Json const& settings,
+    EntityId sourceEntityId,
+    MerchantPaneServices services) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
   m_sourceEntityId = sourceEntityId;
 
-  auto assets = Root::singleton().assets();
   auto baseConfig = settings.get("config", "/interface/windowconfig/merchant.config");
-  m_settings = jsonMerge(assets->fetchJson(baseConfig), settings);
+  m_settings = jsonMerge(m_assets->fetchJson(baseConfig), settings);
 
-  m_refreshTimer = GameTimer(assets->json("/merchant.config:autoRefreshRate").toFloat());
+  m_refreshTimer = GameTimer(m_assets->json("/merchant.config:autoRefreshRate").toFloat());
 
-  m_buyFactor = m_settings.getFloat("buyFactor", assets->json("/merchant.config:defaultBuyFactor").toFloat());
-  m_sellFactor = m_settings.getFloat("sellFactor", assets->json("/merchant.config:defaultSellFactor").toFloat());
+  m_buyFactor = m_settings.getFloat("buyFactor", m_assets->json("/merchant.config:defaultBuyFactor").toFloat());
+  m_sellFactor = m_settings.getFloat("sellFactor", m_assets->json("/merchant.config:defaultSellFactor").toFloat());
 
   m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
 
-  m_maxBuyCount = m_settings.getUInt("maxSpinCount", assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
+  m_maxBuyCount = m_settings.getUInt("maxSpinCount", m_assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=, this](Widget*) {
@@ -130,13 +135,13 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
-        ItemPtr item = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
-        return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+        ItemPtr item = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
+        return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
       }
     }
   } else {
     if (auto item = m_itemGrid->itemAt(screenPosition))
-      return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+      return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
   }
   return {};
 }
@@ -196,9 +201,8 @@ void MerchantPane::buildItemList() {
   m_itemGuiList->clear();
   m_itemList = m_settings.getArray("items");
 
-  auto itemDatabase = Root::singleton().itemDatabase();
   filter(m_itemList, [&](Json const& itemConfig) {
-      if (!itemDatabase->hasItem(ItemDescriptor(itemConfig.get("item")).name()))
+      if (!m_itemDatabase->hasItem(ItemDescriptor(itemConfig.get("item")).name()))
         return false;
 
       if (auto prerequisite = itemConfig.optString("prerequisiteQuest")) {
@@ -233,9 +237,7 @@ void MerchantPane::buildItemList() {
 }
 
 void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  ItemPtr item = root.itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+  ItemPtr item = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
 
   String name = item->friendlyName();
   if (item->count() > 1)
@@ -268,7 +270,7 @@ void MerchantPane::updateSelection() {
 
     if (m_selectedIndex != NPos) {
       auto itemConfig = m_itemList.get(m_selectedIndex);
-      m_selectedItem = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
+      m_selectedItem = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
       findChild<ButtonWidget>("spinCount.up")->enable();
       findChild<ButtonWidget>("spinCount.down")->enable();
       m_countTextBox->setColor(Color::White);
@@ -322,7 +324,7 @@ void MerchantPane::buy() {
       m_worldClient->sendEntityMessage(m_sourceEntityId, "onBuy", {buySummary});
 
     auto& guiContext = GuiContext::singleton();
-    guiContext.playAudio(Root::singleton().assets()->json("/merchant.config:buySound").toString());
+    guiContext.playAudio(m_assets->json("/merchant.config:buySound").toString());
 
     buildItemList();
 
@@ -353,13 +355,12 @@ void MerchantPane::sell() {
     updateSellTotal();
 
     auto& guiContext = GuiContext::singleton();
-    guiContext.playAudio(Root::singleton().assets()->json("/merchant.config:sellSound").toString());
+    guiContext.playAudio(m_assets->json("/merchant.config:sellSound").toString());
   }
 }
 
 int MerchantPane::maxBuyCount() {
   if (auto selected = m_itemGuiList->selectedWidget()) {
-    auto assets = Root::singleton().assets();
     auto unitPrice = selected->data().toUInt();
     if (unitPrice == 0)
       return m_maxBuyCount;

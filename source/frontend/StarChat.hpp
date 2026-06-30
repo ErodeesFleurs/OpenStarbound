@@ -2,6 +2,7 @@
 
 #include "StarBaseScriptPane.hpp"
 #include "StarChatTypes.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -20,9 +21,13 @@ using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
 class Chat;
 using ChatPtr = SharedPtr<Chat>;
 
+struct ChatServices {
+  IAssetsConstPtr assets;
+};
+
 class Chat : public BaseScriptPane {
 public:
-  Chat(UniverseClientPtr client, Json const&);
+  Chat(UniverseClientPtr client, Json const&, ChatServices services = {});
 
   void startChat();
   void startCommand();
@@ -64,6 +69,7 @@ private:
   void updateBottomButton();
 
   UniverseClientPtr m_client;
+  IAssetsConstPtr m_assets;
   bool m_scripted;
 
   TextBoxWidgetPtr m_textBox;

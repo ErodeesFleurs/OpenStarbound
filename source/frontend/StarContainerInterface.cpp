@@ -22,10 +22,12 @@
 
 namespace Star {
 
-ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor) {
+ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services) {
   m_worldClient = worldClient;
   m_player = player;
   m_containerInteractor = std::move(containerInteractor);
+  m_itemDatabase = services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase();
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
 
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();
@@ -142,8 +144,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     fetchChild<ItemGridWidget>("outputItemGrid")->setItemBag(m_itemBag);
 
   if (container->iconItem()) {
-    auto itemDatabase = Root::singleton().itemDatabase();
-    auto iconItem = itemDatabase->itemShared(container->iconItem());
+    auto iconItem = m_itemDatabase->itemShared(container->iconItem());
     auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);
@@ -217,7 +218,7 @@ PanePtr ContainerPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player);
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets});
   return {};
 }
 

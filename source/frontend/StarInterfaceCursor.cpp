@@ -2,18 +2,17 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
-InterfaceCursor::InterfaceCursor() {
+InterfaceCursor::InterfaceCursor(InterfaceCursorServices services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()) {
   resetCursor();
 }
 
 void InterfaceCursor::resetCursor() {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  setCursor(assets->json("/interface.config:defaultCursor").toString());
+  setCursor(m_assets->json("/interface.config:defaultCursor").toString());
 }
 
 void InterfaceCursor::setCursor(String const& configFile) {
@@ -22,16 +21,12 @@ void InterfaceCursor::setCursor(String const& configFile) {
 
   m_configFile = configFile;
 
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto imageMetadata = root.imageMetadataDatabase();
-
-  auto config = assets->json(m_configFile);
+  auto config = m_assets->json(m_configFile);
 
   m_offset = jsonToVec2I(config.get("offset"));
   if (config.contains("image")) {
     m_drawable = config.getString("image");
-    m_size = Vec2I{imageMetadata->imageSize(config.getString("image"))};
+    m_size = Vec2I{m_imageMetadata->imageSize(config.getString("image"))};
   } else {
     m_drawable = Animation(config.get("animation"), "/interface");
     m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false).size());

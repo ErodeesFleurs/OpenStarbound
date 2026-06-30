@@ -6,6 +6,8 @@
 #include "StarPlayerTech.hpp"
 #include "StarGameTimers.hpp"
 #include "StarContainerInteractor.hpp"
+#include "StarIAssets.hpp"
+#include "StarTechDatabase.hpp"
 
 namespace Star {
 
@@ -23,9 +25,14 @@ using WidgetPtr = SharedPtr<Widget>;
 class InventoryPane;
 using InventoryPanePtr = SharedPtr<InventoryPane>;
 
+struct InventoryPaneServices {
+  IAssetsConstPtr assets;
+  TechDatabaseConstPtr techDatabase;
+};
+
 class InventoryPane : public Pane {
 public:
-  InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor);
+  InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services = {});
 
   void displayed() override;
   PanePtr createTooltip(Vec2I const& screenPosition) override;
@@ -48,6 +55,9 @@ private:
   MainInterface* m_parent;
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
+  IAssetsConstPtr m_assets;
+  TechDatabaseConstPtr m_techDatabase;
+  Json m_config;
 
   bool m_alwaysDisplayCosmetics;
   bool m_displayingCosmetics;

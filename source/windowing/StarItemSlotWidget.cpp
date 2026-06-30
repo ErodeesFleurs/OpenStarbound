@@ -1,5 +1,4 @@
 #include "StarItemSlotWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWidgetParsing.hpp"
 #include "StarImageMetadataDatabase.hpp"
@@ -55,7 +54,7 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   m_drawBackingImageWhenEmpty = true;
   m_progress = 1;
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   auto interfaceConfig = assets->json("/interface.config");
   m_countPosition = TextPositioning(jsonToVec2F(interfaceConfig.get("itemCountRightAnchor")), HorizontalAnchor::RightAnchor);
   m_countFontMode = FontMode::Normal;
@@ -74,7 +73,7 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
 
   Vec2I backingImageSize;
   if (m_backingImage.size()) {
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    auto const& imgMetadata = GuiContext::singleton().imageMetadata();
     backingImageSize = Vec2I(imgMetadata->imageSize(m_backingImage));
   }
   setSize(m_itemDraggableArea.max().piecewiseMax(backingImageSize));

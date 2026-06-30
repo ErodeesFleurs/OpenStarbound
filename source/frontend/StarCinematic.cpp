@@ -11,7 +11,8 @@ namespace Star {
 const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
-Cinematic::Cinematic() {
+Cinematic::Cinematic(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
   m_completable = false;
   m_suppressInput = false;
 }
@@ -235,7 +236,7 @@ void Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      AudioInstancePtr audioInstance = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
+      AudioInstancePtr audioInstance = make_shared<AudioInstance>(*m_assets->audio(m_audioCues[i].resource));
       audioInstance->setLoops(m_audioCues[i].loops);
       audioInstance->setMixerGroup(MixerGroup::Cinematic);
       mixer->play(audioInstance);

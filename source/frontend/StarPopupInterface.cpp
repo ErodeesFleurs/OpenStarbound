@@ -7,22 +7,21 @@
 
 namespace Star {
 
-PopupInterface::PopupInterface() {
-  auto assets = Root::singleton().assets();
-
+PopupInterface::PopupInterface(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
   GuiReader reader;
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("ok", [=, this](Widget*) { dismiss(); });
 
-  reader.construct(assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
 }
 
 void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound) {
   setTitleString(title, subtitle);
   fetchChild<LabelWidget>("message")->setText(message);
   show();
-  auto sound = onShowSound.value(Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
+  auto sound = onShowSound.value(Random::randValueFrom(m_assets->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
   if (!sound.empty())
     context()->playAudio(sound);
 }

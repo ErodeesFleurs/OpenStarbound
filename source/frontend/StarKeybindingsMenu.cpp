@@ -11,7 +11,10 @@
 
 namespace Star {
 
-KeybindingsMenu::KeybindingsMenu() : m_activeKeybinding(nullptr) {
+KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
+  : m_activeKeybinding(nullptr),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
   GuiReader reader;
   reader.registerCallback("cancel",
       [&](Widget*) {
@@ -25,11 +28,9 @@ KeybindingsMenu::KeybindingsMenu() : m_activeKeybinding(nullptr) {
       });
   reader.registerCallback("setDefault", [&](Widget*) { resetDefaults(); });
 
-  auto assets = Root::singleton().assets();
+  m_maxBindings = m_assets->json("/interface/windowconfig/keybindingsmenu.config:maxBindings").toUInt();
 
-  m_maxBindings = assets->json("/interface/windowconfig/keybindingsmenu.config:maxBindings").toUInt();
-
-  Json paneLayout = assets->json("/interface/windowconfig/keybindingsmenu.config:paneLayout");
+  Json paneLayout = m_assets->json("/interface/windowconfig/keybindingsmenu.config:paneLayout");
   reader.construct(paneLayout, this);
 
   buildListsFromConfig();
@@ -93,7 +94,7 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
 }
 
 void KeybindingsMenu::show() {
-  m_origConfiguration = Root::singleton().configuration()->get("bindings");
+  m_origConfiguration = m_configuration->get("bindings");
   Pane::show();
 }
 
@@ -116,8 +117,7 @@ void KeybindingsMenu::buildListsFromConfig() {
 
     list->registerMemberCallback("deleteBinding", [this](Widget*) { clearActive(); });
 
-    auto config = Root::singleton().configuration();
-    auto bindings = config->get("bindings");
+    auto bindings = m_configuration->get("bindings");
 
     for (auto const& keybind : keybinds.iterateArray()) {
       auto newListMember = list->addItem();
@@ -138,10 +138,9 @@ void KeybindingsMenu::buildListsFromConfig() {
     }
   };
 
-  auto assets = Root::singleton().assets();
-  doKeybindingsFor(m_playerList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.player"));
-  doKeybindingsFor(m_toolBarList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.toolbar"));
-  doKeybindingsFor(m_gameList, assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.game"));
+  doKeybindingsFor(m_playerList, m_assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.player"));
+  doKeybindingsFor(m_toolBarList, m_assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.toolbar"));
+  doKeybindingsFor(m_gameList, m_assets->json("/interface/windowconfig/keybindingsmenu.config:keyActions.game"));
 }
 
 bool KeybindingsMenu::activateBinding(Widget* widget) {
@@ -160,8 +159,7 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   auto out = inputDescriptorToJson(desc);
 
-  auto config = Root::singleton().configuration();
-  auto base = config->get("bindings");
+  auto base = m_configuration->get("bindings");
 
   auto action = m_childToAction.get(m_activeKeybinding);
   auto key = InterfaceActionNames.getRight(action);
@@ -178,7 +176,7 @@ void KeybindingsMenu::setKeybinding(KeyChord desc) {
 
   base = base.set(key, JsonArray::from(bindings));
 
-  config->set("bindings", base);
+  m_configuration->set("bindings", base);
 
   StringList buttonText;
 
@@ -201,14 +199,13 @@ void KeybindingsMenu::clearActive() {
   if (!m_activeKeybinding)
     return;
 
-  auto config = Root::singleton().configuration();
-  auto base = config->get("bindings").toObject();
+  auto base = m_configuration->get("bindings").toObject();
 
   auto action = m_childToAction.get(m_activeKeybinding);
   auto key = InterfaceActionNames.getRight(action);
 
   base[key] = JsonArray{};
-  config->set("bindings", base);
+  m_configuration->set("bindings", base);
 
   convert<ButtonWidget>(m_activeKeybinding)->setText("<Unbound>");
 
@@ -231,15 +228,14 @@ void KeybindingsMenu::apply() {
 }
 
 void KeybindingsMenu::revert() {
-  Root::singleton().configuration()->set("bindings", m_origConfiguration);
+  m_configuration->set("bindings", m_origConfiguration);
   apply();
 
   buildListsFromConfig();
 }
 
 void KeybindingsMenu::resetDefaults() {
-  auto config = Root::singleton().configuration();
-  config->set("bindings", config->getDefault("bindings"));
+  m_configuration->set("bindings", m_configuration->getDefault("bindings"));
   apply();
 
   buildListsFromConfig();

@@ -1,18 +1,19 @@
 #include "StarHttpTrustDialog.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
-#include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
 
 namespace Star {
 
-HttpTrustDialog::HttpTrustDialog() : m_confirmed(false) {}
+HttpTrustDialog::HttpTrustDialog(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()),
+    m_confirmed(false) {}
 
 void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {
-  const auto assets = Root::singleton().assets();
-
   removeAllChildren();
 
   GuiReader reader;
@@ -28,7 +29,7 @@ void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTru
 
   m_confirmed = false;
 
-  const Json config = assets->json("/interface/httpwarning/warning.config");
+  const Json config = m_assets->json("/interface/httpwarning/warning.config");
 
   reader.construct(config.get("paneLayout"), this);
 
@@ -51,11 +52,8 @@ void HttpTrustDialog::reply(const HttpTrustReply replyType) {
 
   // If allowing and remember is checked, add to trusted list
   if (replyType == HttpTrustReply::Allow && remember) {
-    auto& root = Root::singleton();
-    const auto config = root.configuration();
-
     JsonArray trustedSites;
-    if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
+    if (auto existing = m_configuration->getPath("safe.luaHttp.trustedSites").optArray())
       trustedSites = *existing;
 
     // Check if already exists
@@ -69,7 +67,7 @@ void HttpTrustDialog::reply(const HttpTrustReply replyType) {
 
     if (!exists) {
       trustedSites.append(m_domain);
-      config->setPath("safe.luaHttp.trustedSites", trustedSites);
+      m_configuration->setPath("safe.luaHttp.trustedSites", trustedSites);
     }
   }
 
@@ -85,8 +83,6 @@ void HttpTrustDialog::dismissed() {
 }
 
 }
-
-
 
 
 

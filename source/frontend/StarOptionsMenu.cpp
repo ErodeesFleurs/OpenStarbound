@@ -14,11 +14,12 @@
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
-  : m_sfxRange(0, 100), m_musicRange(0, 100), m_paneManager(manager) {
-  auto root = Root::singletonPtr();
-  auto assets = root->assets();
-
+OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services)
+  : m_sfxRange(0, 100),
+    m_musicRange(0, 100),
+    m_paneManager(manager),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
   GuiReader reader;
 
   reader.registerCallback("instrumentSlider", [=, this](Widget*) {
@@ -32,7 +33,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
     });
   reader.registerCallback("acceptButton", [=, this](Widget*) {
       for (auto k : ConfigKeys)
-        root->configuration()->set(k, m_localChanges.get(k));
+        m_configuration->set(k, m_localChanges.get(k));
 
       dismiss();
     });
@@ -70,7 +71,7 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
       displayGraphics();
     });
 
-  Json config = assets->json("/interface/optionsmenu/optionsmenu.config");
+  Json config = m_assets->json("/interface/optionsmenu/optionsmenu.config");
 
   reader.construct(config.get("paneLayout"), this);
 
@@ -88,14 +89,14 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   m_musicLabel = fetchChild<LabelWidget>("musicValueLabel");
   m_p2pJoinableLabel = fetchChild<LabelWidget>("clientP2PJoinableLabel");
 
-  m_instrumentSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
-  m_sfxSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
-  m_musicSlider->setRange(m_musicRange, assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
+  m_instrumentSlider->setRange(m_sfxRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
+  m_sfxSlider->setRange(m_sfxRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
+  m_musicSlider->setRange(m_musicRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
-  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
-  m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
-  m_keybindingsMenu = make_shared<KeybindingsMenu>();
-  m_graphicsMenu = make_shared<GraphicsMenu>(manager,client);
+  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(m_assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
+  m_modBindingsMenu = make_shared<BindingsMenu>(m_assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
+  m_keybindingsMenu = make_shared<KeybindingsMenu>(KeybindingsMenuServices{m_assets, m_configuration});
+  m_graphicsMenu = make_shared<GraphicsMenu>(manager, client, GraphicsMenuServices{m_assets, m_configuration});
 
   initConfig();
 }
@@ -125,56 +126,54 @@ StringList const OptionsMenu::ConfigKeys = {
 };
 
 void OptionsMenu::initConfig() {
-  auto configuration = Root::singleton().configuration();
-
   for (auto k : ConfigKeys) {
-    m_origConfig[k] = configuration->get(k);
-    m_localChanges[k] = configuration->get(k);
+    m_origConfig[k] = m_configuration->get(k);
+    m_localChanges[k] = m_configuration->get(k);
   }
 }
 
 void OptionsMenu::updateInstrumentVol() {
   m_localChanges.set("instrumentVol", m_instrumentSlider->val());
-  Root::singleton().configuration()->set("instrumentVol", m_instrumentSlider->val());
+  m_configuration->set("instrumentVol", m_instrumentSlider->val());
   m_instrumentLabel->setText(toString(m_instrumentSlider->val()));
 }
 
 void OptionsMenu::updateSFXVol() {
   m_localChanges.set("sfxVol", m_sfxSlider->val());
-  Root::singleton().configuration()->set("sfxVol", m_sfxSlider->val());
+  m_configuration->set("sfxVol", m_sfxSlider->val());
   m_sfxLabel->setText(toString(m_sfxSlider->val()));
 }
 
 void OptionsMenu::updateMusicVol() {
   m_localChanges.set("musicVol", {m_musicSlider->val()});
-  Root::singleton().configuration()->set("musicVol", m_musicSlider->val());
+  m_configuration->set("musicVol", m_musicSlider->val());
   m_musicLabel->setText(toString(m_musicSlider->val()));
 }
 
 
 void OptionsMenu::updateTutorialMessages() {
   m_localChanges.set("tutorialMessages", m_tutorialMessagesButton->isChecked());
-  Root::singleton().configuration()->set("tutorialMessages", m_tutorialMessagesButton->isChecked());
+  m_configuration->set("tutorialMessages", m_tutorialMessagesButton->isChecked());
 }
 
 void OptionsMenu::updateClientIPJoinable() {
   m_localChanges.set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
-  Root::singleton().configuration()->set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
+  m_configuration->set("clientIPJoinable", m_clientIPJoinableButton->isChecked());
 }
 
 void OptionsMenu::updateClientP2PJoinable() {
   m_localChanges.set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
-  Root::singleton().configuration()->set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
+  m_configuration->set("clientP2PJoinable", m_clientP2PJoinableButton->isChecked());
 }
 
 void OptionsMenu::updateAllowAssetsMismatch() {
   m_localChanges.set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
-  Root::singleton().configuration()->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
+  m_configuration->set("allowAssetsMismatch", m_allowAssetsMismatchButton->isChecked());
 }
 
 void OptionsMenu::updateHeadRotation() {
   m_localChanges.set("humanoidHeadRotation", m_headRotationButton->isChecked());
-  Root::singleton().configuration()->set("humanoidHeadRotation", m_headRotationButton->isChecked());
+  m_configuration->set("humanoidHeadRotation", m_headRotationButton->isChecked());
   Humanoid::globalHeadRotation() = m_headRotationButton->isChecked();
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 #include "StarConfiguration.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -24,9 +25,14 @@ using BindingsMenuPtr = SharedPtr<BindingsMenu>;
 class OptionsMenu;
 using OptionsMenuPtr = SharedPtr<OptionsMenu>;
 
+struct OptionsMenuServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+};
+
 class OptionsMenu : public Pane {
 public:
-  OptionsMenu(PaneManager* manager, UniverseClientPtr client);
+  OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services = {});
 
   virtual void show() override;
 
@@ -80,6 +86,8 @@ private:
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
   PaneManager* m_paneManager;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
 };
 
 }

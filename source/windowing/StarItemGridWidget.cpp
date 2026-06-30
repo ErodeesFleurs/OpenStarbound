@@ -1,5 +1,4 @@
 #include "StarItemGridWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 
@@ -20,7 +19,7 @@ ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec
 
   setItemBag(bag);
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_itemDraggableArea = jsonToRectI(assets->json("/interface.config:itemDraggableArea"));
   Vec2I calculatedSize = {
     m_dimensions[0] * m_rowSpacing[0] + m_dimensions[1] * m_columnSpacing[0],
@@ -279,7 +278,7 @@ void ItemGridWidget::showDurability(bool show) {
 }
 
 RectI ItemGridWidget::getScissorRect() const {
-  auto assets = Root::singleton().assets();
+  auto const& assets = context()->assets();
   auto durabilityOffset = jsonToVec2I(assets->json("/interface.config:itemIconDurabilityOffset"));
   auto itemCountRightAnchor = jsonToVec2I(assets->json("/interface.config:itemCountRightAnchor"));
 

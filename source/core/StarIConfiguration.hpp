@@ -11,6 +11,8 @@ public:
 
   virtual Json get(String const& key, Json def = {}) const = 0;
   virtual Json getPath(String const& path, Json def = {}) const = 0;
+  virtual Json getDefault(String const& key) const = 0;
+  virtual Json getDefaultPath(String const& path) const = 0;
 
   virtual void set(String const& key, Json const& value) = 0;
   virtual void setPath(String const& path, Json const& value) = 0;
@@ -22,4 +24,3 @@ using IConfigurationPtr = SharedPtr<IConfiguration>;
 using IConfigurationConstPtr = SharedPtr<IConfiguration const>;
 
 }
-

@@ -107,8 +107,12 @@ void ToolUser::init(ToolUserEntity* user) {
 
 void ToolUser::uninit() {
   m_user = nullptr;
-  uninitItem(m_primaryHandItem.get());
-  uninitItem(m_altHandItem.get());
+  if (m_primaryHandItemInitialized)
+    uninitItem(m_primaryHandItem.get());
+  if (m_altHandItemInitialized)
+    uninitItem(m_altHandItem.get());
+  m_primaryHandItemInitialized = false;
+  m_altHandItemInitialized = false;
 }
 
 List<LightSource> ToolUser::lightSources() const {
@@ -574,8 +578,12 @@ void ToolUser::setItems(ItemPtr newPrimaryHandItem, ItemPtr newAltHandItem) {
   if (newPrimaryHandItem == m_primaryHandItem.get() && newAltHandItem == m_altHandItem.get())
     return;
 
-  uninitItem(m_primaryHandItem.get());
-  uninitItem(m_altHandItem.get());
+  if (m_primaryHandItemInitialized)
+    uninitItem(m_primaryHandItem.get());
+  if (m_altHandItemInitialized)
+    uninitItem(m_altHandItem.get());
+  m_primaryHandItemInitialized = false;
+  m_altHandItemInitialized = false;
 
   // Cancel held fire if we switch primary / alt hand items, to prevent
   // accidentally triggering a switched item without a new edge trigger.
@@ -770,12 +778,16 @@ void ToolUser::NetItem::updateItemDescriptor() {
 }
 
 void ToolUser::initPrimaryHandItem() {
-  if (m_user && m_primaryHandItem.get()) {
+  if (m_primaryHandItemInitialized)
+    return;
+  if (m_user && m_user->inWorld() && m_primaryHandItem.get()) {
     if (auto toolUserItem = as<ToolUserItem>(m_primaryHandItem.get()))
       toolUserItem->init(m_user, ToolHand::Primary);
 
     if (auto fireable = as<FireableItem>(m_primaryHandItem.get()))
       fireable->triggerCooldown();
+
+    m_primaryHandItemInitialized = true;
   }
 }
 
@@ -783,12 +795,16 @@ void ToolUser::initAltHandItem() {
   if (m_altHandItem.get() == m_primaryHandItem.get())
     m_altHandItem.set({});
 
-  if (m_user && m_altHandItem.get()) {
+  if (m_altHandItemInitialized)
+    return;
+  if (m_user && m_user->inWorld() && m_altHandItem.get()) {
     if (auto toolUserItem = as<ToolUserItem>(m_altHandItem.get()))
       toolUserItem->init(m_user, ToolHand::Alt);
 
     if (auto fireable = as<FireableItem>(m_altHandItem.get()))
       fireable->triggerCooldown();
+
+    m_altHandItemInitialized = true;
   }
 }
 
@@ -798,11 +814,15 @@ void ToolUser::uninitItem(ItemPtr const& item) {
 }
 
 void ToolUser::netElementsNeedLoad(bool) {
-  if (m_primaryHandItem.pullNewItem())
+  if (m_primaryHandItem.pullNewItem()) {
+    m_primaryHandItemInitialized = false;
     initPrimaryHandItem();
+  }
 
-  if (m_altHandItem.pullNewItem())
+  if (m_altHandItem.pullNewItem()) {
+    m_altHandItemInitialized = false;
     initAltHandItem();
+  }
 
   if (auto fireableItem = as<FireableItem>(m_primaryHandItem.get())) {
     auto fireTime = m_primaryFireTimerNetState.get();

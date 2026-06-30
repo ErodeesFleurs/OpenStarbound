@@ -16,9 +16,14 @@ class GuiContext;
 class ErrorScreen;
 using ErrorScreenPtr = SharedPtr<ErrorScreen>;
 
+struct ErrorScreenServices {
+  IAssetsConstPtr assets;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+};
+
 class ErrorScreen {
 public:
-  ErrorScreen();
+  ErrorScreen(ErrorScreenServices services = {});
 
   // Resets accepted
   void setMessage(String const& message);
@@ -40,6 +45,8 @@ private:
   GuiContext* m_guiContext;
   PaneManagerPtr m_paneManager;
   PanePtr m_errorPane;
+  IAssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
 
   bool m_accepted;
   Vec2I m_cursorScreenPos;

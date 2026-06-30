@@ -64,13 +64,16 @@ public:
 
   // Write state data that changes over time, and is used to keep slaves in
   // sync.  Can return empty and this is the default.  May be called
-  // uninitalized.  Should return the delta to be written to the slave, along
+  // uninitialized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
   virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
-  // enabled.
+  // enabled.  New slave entities receive their first net state before init()
+  // so init() can consume initial state such as position or orientation.
+  // readNetState() implementations and NetElement load callbacks must not
+  // require world(), entityId(), or entityMode().
   virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
 
   virtual void enableInterpolation(float extrapolationHint);

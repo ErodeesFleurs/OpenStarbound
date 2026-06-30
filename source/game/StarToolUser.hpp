@@ -144,6 +144,8 @@ private:
   NetElementFloat m_altTimeFiringNetState;
   NetElementBool m_primaryItemActiveNetState;
   NetElementBool m_altItemActiveNetState;
+  bool m_primaryHandItemInitialized = false;
+  bool m_altHandItemInitialized = false;
 
   List<Drawable> m_cachedObjectPreview;
   Vec2I m_cachedObjectPreviewPosition;

@@ -4,6 +4,8 @@
 #include "StarLuaComponents.hpp"
 #include "StarContainerInteractor.hpp"
 #include "StarGuiReader.hpp"
+#include "StarIAssets.hpp"
+#include "StarIItemDatabase.hpp"
 
 namespace Star {
 
@@ -17,9 +19,14 @@ using ItemBagPtr = SharedPtr<ItemBag>;
 class ContainerPane;
 using ContainerPanePtr = SharedPtr<ContainerPane>;
 
+struct ContainerPaneServices {
+  IItemDatabaseConstPtr itemDatabase;
+  IAssetsConstPtr assets;
+};
+
 class ContainerPane : public Pane {
 public:
-  ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor);
+  ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services = {});
 
   void displayed() override;
   void dismissed() override;
@@ -48,6 +55,8 @@ private:
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
+  IItemDatabaseConstPtr m_itemDatabase;
+  IAssetsConstPtr m_assets;
   ItemBagPtr m_itemBag;
 
   ExpectingSwap m_expectingSwap;

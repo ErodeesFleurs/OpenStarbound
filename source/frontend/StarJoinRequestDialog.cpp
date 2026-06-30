@@ -1,19 +1,18 @@
 #include "StarJoinRequestDialog.hpp"
+#include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarRandom.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-JoinRequestDialog::JoinRequestDialog() : m_confirmed(false) {}
+JoinRequestDialog::JoinRequestDialog(Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()), m_confirmed(false) {}
 
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {
-  auto assets = Root::singleton().assets();
-
   removeAllChildren();
 
   GuiReader reader;
@@ -26,7 +25,7 @@ void JoinRequestDialog::displayRequest(String const& userName, function<void(P2P
 
   m_confirmed = false;
 
-  Json config = assets->json("/interface/windowconfig/joinrequest.config");
+  Json config = m_assets->json("/interface/windowconfig/joinrequest.config");
 
   reader.construct(config.get("paneLayout"), this);
 

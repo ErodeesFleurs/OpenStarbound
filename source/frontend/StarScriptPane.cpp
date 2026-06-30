@@ -1,6 +1,4 @@
 #include "StarScriptPane.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -21,10 +19,8 @@
 
 namespace Star {
 
-ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId) : BaseScriptPane(config) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-
+ScriptPane::ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId, BaseScriptPaneServices services)
+  : BaseScriptPane(config, true, std::move(services)) {
   m_client = std::move(client);
   m_sourceEntityId = sourceEntityId;
 
@@ -58,7 +54,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(result->toString());
+      return SimpleTooltipBuilder::buildTooltip(result->toString(), SimpleTooltipServices{m_assets});
     } else {
       PanePtr tooltip = make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
@@ -73,7 +69,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item, m_client->mainPlayer());
+      return ItemTooltipBuilder::buildItemTooltip(item, m_client->mainPlayer(), {m_assets});
     return {};
   }
 }

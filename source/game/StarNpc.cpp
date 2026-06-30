@@ -176,6 +176,7 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
+  m_tools->init(this);
 
   m_armor->setupHumanoid(*humanoid(), forceNude());
 

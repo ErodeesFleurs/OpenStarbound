@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 #include "StarRpcPromise.hpp"
 
@@ -10,7 +11,11 @@ using ConfirmationDialogPtr = SharedPtr<ConfirmationDialog>;
 
 class ConfirmationDialog : public Pane {
 public:
-  ConfirmationDialog();
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
+  ConfirmationDialog(Services services = {});
 
   virtual ~ConfirmationDialog() = default;
 
@@ -31,6 +36,7 @@ private:
   Maybe<EntityId> m_sourceEntityId;
 
   Maybe<RpcPromiseKeeper<Json>> m_resultPromise;
+  IAssetsConstPtr m_assets;
 };
 
 }

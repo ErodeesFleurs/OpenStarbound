@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarUniverseClient.hpp"
@@ -11,9 +13,14 @@ using GraphicsMenuPtr = SharedPtr<GraphicsMenu>;
 class ShadersMenu;
 using ShadersMenuPtr = SharedPtr<ShadersMenu>;
 
+struct GraphicsMenuServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+};
+
 class GraphicsMenu : public Pane {
 public:
-  GraphicsMenu(PaneManager* manager,UniverseClientPtr client);
+  GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services = {});
 
   void show() override;
   void dismissed() override;
@@ -40,6 +47,8 @@ private:
   
   ShadersMenuPtr m_shadersMenu;
   PaneManager* m_paneManager;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
 };
 
 }

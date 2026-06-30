@@ -434,6 +434,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
     } else if (auto sepacket = as<SpawnEntityPacket>(packet)) {
       auto netRules = clientInfo->clientState.netCompatibilityRules();
       auto entity = entityFactory->netLoadEntity(sepacket->entityType, std::move(sepacket->storeData), netRules);
+      // Initial net state is loaded before init because several entity types
+      // consume synchronized position/orientation data during init.
       entity->readNetState(std::move(sepacket->firstNetState), 0.0f, netRules);
       addEntity(std::move(entity));
 
@@ -487,6 +489,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         }
         auto netRules = clientInfo->clientState.netCompatibilityRules();
         auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
+        // Initial net state is loaded before init because several entity types
+        // consume synchronized position/orientation data during init.
         entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
         entity->init(this, entityCreate->entityId, EntityMode::Slave);
         m_entityMap->addEntity(entity);

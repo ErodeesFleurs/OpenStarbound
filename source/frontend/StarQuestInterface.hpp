@@ -3,6 +3,7 @@
 #include "StarQuestManager.hpp"
 #include "StarQuests.hpp"
 #include "StarPane.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -17,9 +18,13 @@ class PaneManager;
 class ItemBag;
 using ItemBagPtr = SharedPtr<ItemBag>;
 
+struct QuestInterfaceServices {
+  IAssetsConstPtr assets;
+};
+
 class QuestLogInterface : public Pane {
 public:
-  QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client);
+  QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services = {});
   virtual ~QuestLogInterface() = default;
 
   virtual void displayed() override;
@@ -41,6 +46,7 @@ private:
   PlayerPtr m_player;
   CinematicPtr m_cinematic;
   UniverseClientPtr m_client;
+  IAssetsConstPtr m_assets;
 
   String m_trackLabel;
   String m_untrackLabel;
@@ -52,7 +58,7 @@ private:
 
 class QuestPane : public Pane {
 protected:
-  QuestPane(QuestPtr const& quest, PlayerPtr player);
+  QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
 
   void commonSetup(Json config, String bodyText, String const& portraitName);
   virtual void close();
@@ -62,6 +68,7 @@ protected:
 
   QuestPtr m_quest;
   PlayerPtr m_player;
+  IAssetsConstPtr m_assets;
 };
 
 class NewQuestInterface : public QuestPane {
@@ -72,7 +79,7 @@ public:
     Cancelled
   };
 
-  NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player);
+  NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
 
 protected:
   void close() override;
@@ -87,7 +94,7 @@ private:
 
 class QuestCompleteInterface : public QuestPane {
 public:
-  QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic);
+  QuestCompleteInterface(QuestPtr const& quest, PlayerPtr player, CinematicPtr cinematic, QuestInterfaceServices services = {});
 
 protected:
   void close() override;
@@ -99,7 +106,7 @@ private:
 
 class QuestFailedInterface : public QuestPane {
 public:
-  QuestFailedInterface(QuestPtr const& quest, PlayerPtr player);
+  QuestFailedInterface(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services = {});
 };
 
 }

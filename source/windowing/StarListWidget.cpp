@@ -4,7 +4,6 @@
 #include "StarRandom.hpp"
 #include "StarImageWidget.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -59,7 +58,7 @@ void ListWidget::setSchema(Json const& schema) {
     m_hoverBG = schema.getString("hoverBG", "");
     m_disabledBG = schema.getString("disabledBG", "");
     if (m_disabledBG.empty() && !m_unselectedBG.empty())
-      m_disabledBG = m_unselectedBG + Root::singleton().assets()->json("/interface.config:disabledButton").toString();
+      m_disabledBG = m_unselectedBG + GuiContext::singleton().assets()->json("/interface.config:disabledButton").toString();
     m_spacing = jsonToVec2I(schema.get("spacing"));
     m_memberSize = jsonToVec2I(schema.get("memberSize"));
   } catch (JsonException const& e) {

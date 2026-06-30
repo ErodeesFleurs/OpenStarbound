@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarHumanoid.hpp"
@@ -8,6 +9,22 @@ namespace Star {
 
 class Player;
 using PlayerPtr = shared_ptr<Player>;
+class PlayerFactory;
+using PlayerFactoryConstPtr = SharedPtr<PlayerFactory const>;
+class SpeciesDatabase;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+class PatternedNameGenerator;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+
+struct CharCreationServices {
+  IAssetsConstPtr assets;
+  PlayerFactoryConstPtr playerFactory;
+  SpeciesDatabaseConstPtr speciesDatabase;
+  PatternedNameGeneratorConstPtr nameGenerator;
+  ItemDatabaseConstPtr itemDatabase;
+};
 
 struct CharCreationExceptionTag { static constexpr char const* typeName = "CharCreationException"; };
 using CharCreationException = TypedException<StarException, CharCreationExceptionTag>;
@@ -17,7 +34,8 @@ public:
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).
-  CharCreationPane(function<void(PlayerPtr)> requestCloseFunc);
+  CharCreationPane(function<void(PlayerPtr)> requestCloseFunc,
+      CharCreationServices services = {});
 
   void randomize();
   void randomizeName();
@@ -33,6 +51,12 @@ private:
   void changed();
 
   void createPlayer();
+
+  IAssetsConstPtr m_assets;
+  PlayerFactoryConstPtr m_playerFactory;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  PatternedNameGeneratorConstPtr m_nameGenerator;
+  ItemDatabaseConstPtr m_itemDatabase;
 
   PlayerPtr m_previewPlayer;
 

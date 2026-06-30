@@ -834,6 +834,8 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
       auto netRules = m_clientState.netCompatibilityRules();
       auto entity = entityFactory->netLoadEntity(entityCreate->entityType, entityCreate->storeData, netRules);
+      // Initial net state is loaded before init because several entity types
+      // consume synchronized position/orientation data during init.
       entity->readNetState(entityCreate->firstNetState, 0.0f, netRules);
       entity->init(this, entityCreate->entityId, EntityMode::Slave);
       m_entityMap->addEntity(entity);

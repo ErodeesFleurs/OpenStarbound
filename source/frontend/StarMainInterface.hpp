@@ -5,6 +5,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
 #include "StarInterfaceCursor.hpp"
+#include "StarListener.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarWarping.hpp"
 #include "StarIAssets.hpp"
@@ -73,6 +74,20 @@ class ChatBubbleManager;
 using ChatBubbleManagerPtr = SharedPtr<ChatBubbleManager>;
 class CanvasWidget;
 using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
+class FunctionDatabase;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class AiDatabase;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+class TechDatabase;
+using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+struct FramesSpecification;
+using FramesSpecificationConstPtr = SharedPtr<FramesSpecification const>;
 
 struct GuiMessage;
 using GuiMessagePtr = SharedPtr<GuiMessage>;
@@ -88,6 +103,24 @@ struct GuiMessage {
   float springState;
 };
 
+struct MainInterfaceServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+  FunctionDatabaseConstPtr functionDatabase;
+  ItemDatabaseConstPtr itemDatabase;
+  ObjectDatabaseConstPtr objectDatabase;
+  AiDatabaseConstPtr aiDatabase;
+  TechDatabaseConstPtr techDatabase;
+  StatusEffectDatabaseConstPtr statusEffectDatabase;
+  function<FramesSpecificationConstPtr(String const&)> imageFrames;
+  function<void(ListenerWeakPtr)> registerReloadListener;
+  function<void()> reloadRoot;
+  function<void()> reloadRootForCommand;
+  function<void()> hotReloadRoot;
+  String outputDirectory;
+};
+
 class MainInterface {
 public:
   enum RunningState {
@@ -95,7 +128,10 @@ public:
     ReturnToTitle
   };
 
-  MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay, IAssetsConstPtr assets, IConfigurationPtr configuration = {});
+  MainInterface(UniverseClientPtr client,
+      WorldPainterPtr painter,
+      CinematicPtr cinematicOverlay,
+      MainInterfaceServices services = {});
 
   ~MainInterface();
 
@@ -192,6 +228,21 @@ private:
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
   GuiContext* m_guiContext{nullptr};
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  AiDatabaseConstPtr m_aiDatabase;
+  TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  function<FramesSpecificationConstPtr(String const&)> m_imageFrames;
+  function<void(ListenerWeakPtr)> m_registerReloadListener;
+  function<void()> m_reloadRoot;
+  function<void()> m_reloadRootForCommand;
+  function<void()> m_hotReloadRoot;
+  String m_outputDirectory;
   MainInterfaceConfigConstPtr m_config;
   InterfaceCursor m_cursor;
 
@@ -264,10 +315,7 @@ private:
 
   ContainerInteractorPtr m_containerInteractor;
 
-  IAssetsConstPtr m_assets;
-  IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
-  IItemDatabaseConstPtr m_itemDatabase;
   ISpeciesDatabaseConstPtr m_speciesDatabase;
   IEntityFactoryConstPtr m_entityFactory;
   ILiquidsDatabaseConstPtr m_liquidsDatabase;

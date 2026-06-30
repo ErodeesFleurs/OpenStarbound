@@ -4,12 +4,12 @@
 #include "StarNametagEntity.hpp"
 #include "StarPlayer.hpp"
 #include "StarGuiContext.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
-NameplatePainter::NameplatePainter() {
-  auto assets = Root::singleton().assets();
-
+NameplatePainter::NameplatePainter(Services services) {
+  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
   Json nametagConfig = assets->json("/interface.config:nametag");
   m_showMasterNames = nametagConfig.getBool("showMasterNames");
   m_opacityRate = nametagConfig.getFloat("opacityRate");

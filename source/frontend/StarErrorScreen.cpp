@@ -9,12 +9,13 @@
 
 namespace Star {
 
-ErrorScreen::ErrorScreen() {
+ErrorScreen::ErrorScreen(ErrorScreenServices services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_imageMetadata(services.imageMetadata ? std::move(services.imageMetadata) : Root::singleton().imageMetadataDatabase()),
+    m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
   m_paneManager = make_shared<PaneManager>();
 
   m_accepted = true;
-
-  auto assets = Root::singleton().assets();
 
   m_guiContext = GuiContext::singletonPtr();
 
@@ -23,7 +24,7 @@ ErrorScreen::ErrorScreen() {
   reader.registerCallback("btnOk", [this](Widget*) {
       m_accepted = true;
     });
-  reader.construct(assets->json("/interface/windowconfig/error.config:paneLayout"), m_errorPane.get());
+  reader.construct(m_assets->json("/interface/windowconfig/error.config:paneLayout"), m_errorPane.get());
 }
 
 void ErrorScreen::setMessage(String const& errorMessage) {

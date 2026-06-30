@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarPane.hpp"
 #include "StarUuid.hpp"
 #include "StarMainInterfaceTypes.hpp"
@@ -70,7 +72,12 @@ private:
 
 class TeamBar : public Pane {
 public:
-  TeamBar(MainInterface* mainInterface, UniverseClientPtr client);
+  struct Services {
+    IAssetsConstPtr assets;
+    IConfigurationPtr configuration;
+  };
+
+  TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services = {});
 
   bool sendEvent(InputEvent const& event) override;
 
@@ -91,6 +98,8 @@ private:
 
   MainInterface* m_mainInterface;
   UniverseClientPtr m_client;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
 
   GuiContext* m_guiContext;
 
@@ -111,6 +120,8 @@ private:
   Color m_energyBarRegenMixColor;
   Color m_energyBarUnusableColor;
 
+  friend class TeamInvite;
+  friend class TeamInvitation;
   friend class TeamMemberMenu;
 };
 

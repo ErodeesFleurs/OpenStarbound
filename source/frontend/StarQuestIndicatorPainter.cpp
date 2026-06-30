@@ -2,18 +2,17 @@
 #include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
 #include "StarQuestManager.hpp"
+#include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
 
 namespace Star {
 
-QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client) {
-  m_client = client;
-}
+QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client, Services services)
+  : m_client(client), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {}
 
-AnimationPtr indicatorAnimation(String indicatorPath) {
-  auto assets = Root::singleton().assets();
-  return make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
+AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPath) const {
+  return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath);
 }
 
 void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {

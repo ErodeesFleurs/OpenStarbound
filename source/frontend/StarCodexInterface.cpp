@@ -1,22 +1,21 @@
 #include "StarCodexInterface.hpp"
+#include "StarAssets.hpp"
 #include "StarCodex.hpp"
 #include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
 #include "StarPlayer.hpp"
+#include "StarRoot.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarListWidget.hpp"
 #include "StarStackWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarButtonGroup.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-CodexInterface::CodexInterface(PlayerPtr player) {
+CodexInterface::CodexInterface(PlayerPtr player, Services services) {
   m_player = player;
-
-  auto assets = Root::singleton().assets();
+  auto assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
 
   GuiReader reader;
 

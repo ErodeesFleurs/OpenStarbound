@@ -9,16 +9,15 @@
 
 namespace Star {
 
-EditBookmarkDialog::EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap) {
-  m_playerUniverseMap = playerUniverseMap;
-
+EditBookmarkDialog::EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services)
+  : m_playerUniverseMap(std::move(playerUniverseMap)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
   GuiReader reader;
-  auto assets = Root::singleton().assets();
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("remove", [this](Widget*) { remove(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("name", [](Widget*) {});
-  reader.construct(assets->json("/interface/windowconfig/editbookmark.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/editbookmark.config:paneLayout"), this);
   dismiss();
 }
 
@@ -45,7 +44,6 @@ void EditBookmarkDialog::show() {
     fetchChild<ButtonWidget>("remove")->show();
   }
 
-  auto assets = Root::singleton().assets();
   fetchChild<ImageWidget>("imgIcon")->setImage(strf("/interface/bookmarks/icons/{}.png", m_bookmark.icon));
 
   fetchChild<LabelWidget>("lblPlanetName")->setText(m_bookmark.targetName);

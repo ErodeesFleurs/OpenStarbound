@@ -13,7 +13,7 @@ using UniverseClientPtr = SharedPtr<UniverseClient>;
 
 class ScriptPane : public BaseScriptPane {
 public:
-  ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId = NullEntityId);
+  ScriptPane(UniverseClientPtr client, Json config, EntityId sourceEntityId = NullEntityId, BaseScriptPaneServices services = {});
 
   void displayed() override;
   void dismissed() override;

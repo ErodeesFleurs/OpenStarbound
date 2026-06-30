@@ -4,6 +4,7 @@
 #include "StarTextPainter.hpp"
 #include "StarDrawablePainter.hpp"
 #include "StarAssetTextureGroup.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarInputEvent.hpp"
 #include "StarDrawable.hpp"
 #include "StarThread.hpp"
@@ -11,11 +12,23 @@
 #include "StarRenderer.hpp"
 #include "StarKeyBindings.hpp"
 #include "StarMixer.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
 struct GuiContextExceptionTag { static constexpr char const* typeName = "GuiContextException"; };
 using GuiContextException = TypedException<StarException, GuiContextExceptionTag>;
+
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+
+struct GuiContextServices {
+  AssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+  ItemDatabaseConstPtr itemDatabase;
+  function<void(ListenerWeakPtr)> registerReloadListener;
+};
 
 class GuiContext {
 public:
@@ -27,7 +40,7 @@ public:
   // is not initialized.
   static GuiContext& singleton();
 
-  GuiContext(MixerPtr mixer, ApplicationControllerPtr appController);
+  GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services = {});
   ~GuiContext();
 
   GuiContext(GuiContext const&) = delete;
@@ -37,6 +50,10 @@ public:
 
   MixerPtr const& mixer() const;
   ApplicationControllerPtr const& applicationController() const;
+  AssetsConstPtr const& assets() const;
+  IConfigurationPtr const& configuration() const;
+  ImageMetadataDatabaseConstPtr const& imageMetadata() const;
+  ItemDatabaseConstPtr const& itemDatabase() const;
   RendererPtr const& renderer() const;
   AssetTextureGroupPtr const& assetTextureGroup() const;
   TextPainterPtr const& textPainter() const;
@@ -140,6 +157,11 @@ private:
 
   MixerPtr m_mixer;
   ApplicationControllerPtr m_applicationController;
+  AssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
+  ItemDatabaseConstPtr m_itemDatabase;
+  function<void(ListenerWeakPtr)> m_registerReloadListener;
   RendererPtr m_renderer;
 
   AssetTextureGroupPtr m_textureCollection;

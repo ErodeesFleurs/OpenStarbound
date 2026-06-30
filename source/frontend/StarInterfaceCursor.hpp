@@ -1,13 +1,20 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarJson.hpp"
 #include "StarAnimation.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
+struct InterfaceCursorServices {
+  IAssetsConstPtr assets;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+};
+
 class InterfaceCursor {
 public:
-  InterfaceCursor();
+  InterfaceCursor(InterfaceCursorServices services = {});
 
   // Sets the cursor to the default defined in interface.config
   void resetCursor();
@@ -29,6 +36,8 @@ private:
   Vec2I m_size;
   unsigned int m_scale;
   MVariant<String, Animation> m_drawable;
+  IAssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
 };
 
 }

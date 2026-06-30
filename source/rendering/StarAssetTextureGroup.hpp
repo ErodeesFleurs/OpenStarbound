@@ -11,13 +11,15 @@ namespace Star {
 
 class AssetTextureGroup;
 using AssetTextureGroupPtr = SharedPtr<AssetTextureGroup>;
+class Assets;
+using AssetsConstPtr = SharedPtr<Assets const>;
 
 // Creates a renderer texture group for textures loaded directly from Assets.
 class AssetTextureGroup {
 public:
   // Creates a texture group using the given renderer and textureFiltering for
   // the managed textures.
-  explicit AssetTextureGroup(TextureGroupPtr textureGroup);
+  explicit AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.
@@ -41,6 +43,7 @@ private:
   TexturePtr loadTexture(AssetPath const& imagePath, bool tryTexture);
 
   TextureGroupPtr m_textureGroup;
+  AssetsConstPtr m_assets;
   HashMap<AssetPath, pair<TexturePtr, int64_t>> m_textureMap;
   HashMap<ImageConstPtr, TexturePtr> m_textureDeduplicationMap;
   TrackerListenerPtr m_reloadTracker;

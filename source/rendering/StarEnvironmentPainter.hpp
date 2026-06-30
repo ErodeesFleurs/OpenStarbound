@@ -15,7 +15,7 @@ using EnvironmentPainterPtr = SharedPtr<EnvironmentPainter>;
 
 class EnvironmentPainter {
 public:
-  explicit EnvironmentPainter(RendererPtr renderer);
+  explicit EnvironmentPainter(RendererPtr renderer, AssetsConstPtr assets = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
 
   void update(float dt);
 

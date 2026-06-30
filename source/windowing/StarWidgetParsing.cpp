@@ -1,5 +1,4 @@
 #include "StarWidgetParsing.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarPane.hpp"
@@ -91,7 +90,7 @@ List<WidgetConstructResult> WidgetParser::constructor(Json const& config) {
           "Malformed gui json: member configuration is either not a map, or does not specify a widget name and type");
     String type = memberConfig.getString("type");
     if (type == "include") {
-      widgets.appendAll(constructor(Root::singleton().assets()->json(memberConfig.getString("file"))));
+      widgets.appendAll(constructor(GuiContext::singleton().assets()->json(memberConfig.getString("file"))));
     } else {
       if (!m_constructors.contains(type)) {
         throw WidgetParserException(strf("Unknown type in gui json. {}", type));
@@ -261,8 +260,8 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
   WidgetCallbackFunc callbackDown = m_callbacks.get(callback + ".down");
   WidgetCallbackFunc callbackUp = m_callbacks.get(callback + ".up");
 
-  auto assets = Root::singleton().assets();
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto const& assets = GuiContext::singleton().assets();
+  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
 
   auto leftBase = assets->json("/interface.config:spinner.leftBase").toString();
   auto leftHover = assets->json("/interface.config:spinner.leftHover").toString();
@@ -639,7 +638,7 @@ WidgetConstructResult WidgetParser::tabSetHandler(String const& name, Json const
   tabSetConfig.tabButtonPressedImageSelected =
       config.getString("tabButtonPressedImageSelected", tabSetConfig.tabButtonHoverImageSelected);
 
-  Json defaultPressedOffset = Root::singleton().assets()->json("/interface.config:buttonPressedOffset");
+  Json defaultPressedOffset = GuiContext::singleton().assets()->json("/interface.config:buttonPressedOffset");
   tabSetConfig.tabButtonPressedOffset = jsonToVec2I(config.get("tabButtonPressedOffset", defaultPressedOffset));
   tabSetConfig.tabButtonTextOffset = config.opt("tabButtonTextOffset").apply(jsonToVec2I).value();
   tabSetConfig.tabButtonSpacing = config.opt("tabButtonSpacing").apply(jsonToVec2I).value();

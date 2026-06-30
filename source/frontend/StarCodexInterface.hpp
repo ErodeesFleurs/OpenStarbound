@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 #include "StarPlayerCodexes.hpp"
 
@@ -21,7 +22,11 @@ class CodexInterface;
 using CodexInterfacePtr = SharedPtr<CodexInterface>;
 class CodexInterface : public Pane {
 public:
-  CodexInterface(PlayerPtr player);
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
+  CodexInterface(PlayerPtr player, Services services = {});
 
   virtual void show() override;
   virtual void tick(float dt) override;

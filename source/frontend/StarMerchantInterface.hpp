@@ -2,6 +2,8 @@
 
 #include "StarWorldClient.hpp"
 #include "StarPane.hpp"
+#include "StarIAssets.hpp"
+#include "StarIItemDatabase.hpp"
 
 namespace Star {
 
@@ -27,9 +29,18 @@ using TabSetWidgetPtr = SharedPtr<TabSetWidget>;
 class MerchantPane;
 using MerchantPanePtr = SharedPtr<MerchantPane>;
 
+struct MerchantPaneServices {
+  IAssetsConstPtr assets;
+  IItemDatabaseConstPtr itemDatabase;
+};
+
 class MerchantPane : public Pane {
 public:
-  MerchantPane(WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId = NullEntityId);
+  MerchantPane(WorldClientPtr worldClient,
+      PlayerPtr player,
+      Json const& settings,
+      EntityId sourceEntityId = NullEntityId,
+      MerchantPaneServices services = {});
 
   void displayed() override;
   void dismissed() override;
@@ -61,6 +72,8 @@ private:
 
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
+  IAssetsConstPtr m_assets;
+  IItemDatabaseConstPtr m_itemDatabase;
   EntityId m_sourceEntityId;
   Json m_settings;
 

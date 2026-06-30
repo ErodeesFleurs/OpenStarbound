@@ -4,6 +4,7 @@
 #include "StarAmbient.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarInterfaceCursor.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarListWidget.hpp"
 
@@ -25,9 +26,29 @@ class CelestialMasterDatabase;
 using CelestialMasterDatabasePtr = SharedPtr<CelestialMasterDatabase>;
 class ButtonWidget;
 using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class Assets;
+using AssetsConstPtr = SharedPtr<Assets const>;
+class PlayerFactory;
+using PlayerFactoryConstPtr = SharedPtr<PlayerFactory const>;
+class SpeciesDatabase;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+class PatternedNameGenerator;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 
 class TitleScreen;
 using TitleScreenPtr = SharedPtr<TitleScreen>;
+
+struct TitleScreenServices {
+  AssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  PlayerFactoryConstPtr playerFactory;
+  SpeciesDatabaseConstPtr speciesDatabase;
+  PatternedNameGeneratorConstPtr nameGenerator;
+  ItemDatabaseConstPtr itemDatabase;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+};
 
 enum class TitleState {
   Main,
@@ -45,7 +66,10 @@ enum class TitleState {
 
 class TitleScreen {
 public:
-  TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, UniverseClientPtr client);
+  TitleScreen(PlayerStoragePtr playerStorage,
+      MixerPtr mixer,
+      UniverseClientPtr client,
+      TitleScreenServices services = {});
 
   void renderInit(RendererPtr renderer);
 
@@ -121,6 +145,13 @@ private:
   TitlePaneManager m_paneManager;
 
   Vec2I m_cursorScreenPos;
+  AssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  PlayerFactoryConstPtr m_playerFactory;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  PatternedNameGeneratorConstPtr m_nameGenerator;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
   InterfaceCursor m_cursor;
   TitleState m_titleState;
 

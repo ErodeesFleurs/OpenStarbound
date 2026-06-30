@@ -21,23 +21,22 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     PaneManager* paneManager,
     Json config,
     EntityId sourceEntityId,
-    TeleportBookmark currentLocation) {
-  m_client = client;
-  m_paneManager = paneManager;
-  m_sourceEntityId = sourceEntityId;
-  m_currentLocation = currentLocation;
-
-  auto assets = Root::singleton().assets();
-
+    TeleportBookmark currentLocation,
+    Services services)
+  : m_sourceEntityId(sourceEntityId),
+    m_client(std::move(client)),
+    m_paneManager(paneManager),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_currentLocation(std::move(currentLocation)) {
   GuiReader reader;
 
   reader.registerCallback("dismiss", [this](Widget*) { Pane::dismiss(); });
   reader.registerCallback("teleport", [this](Widget*) { teleport(); });
   reader.registerCallback("selectDestination", [this](Widget*) { selectDestination(); });
 
-  reader.construct(assets->json("/interface/windowconfig/teleportdialog.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/teleportdialog.config:paneLayout"), this);
 
-  config = assets->fetchJson(config);
+  config = m_assets->fetchJson(config);
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   destList->registerMemberCallback("editBookmark", [this](Widget*) { editBookmark(); });
 
@@ -71,10 +70,10 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     m_destinations.append({warpAction, deploy});
   }
 
-  String beamPartyMember = assets->json("/interface/windowconfig/teleportdialog.config:beamPartyMemberLabel").toString();
-  String deployPartyMember = assets->json("/interface/windowconfig/teleportdialog.config:deployPartyMemberLabel").toString();
-  String beamPartyMemberIcon = assets->json("/interface/windowconfig/teleportdialog.config:beamPartyMemberIcon").toString();
-  String deployPartyMemberIcon = assets->json("/interface/windowconfig/teleportdialog.config:deployPartyMemberIcon").toString();
+  String beamPartyMember = m_assets->json("/interface/windowconfig/teleportdialog.config:beamPartyMemberLabel").toString();
+  String deployPartyMember = m_assets->json("/interface/windowconfig/teleportdialog.config:deployPartyMemberLabel").toString();
+  String beamPartyMemberIcon = m_assets->json("/interface/windowconfig/teleportdialog.config:beamPartyMemberIcon").toString();
+  String deployPartyMemberIcon = m_assets->json("/interface/windowconfig/teleportdialog.config:deployPartyMemberIcon").toString();
 
   if (config.getBool("includePartyMembers", false)) {
     auto teamClient = m_client->teamClient();
@@ -162,7 +161,7 @@ void TeleportDialog::editBookmark() {
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
-      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
+      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets});
       editBookmarkDialog->setBookmark(bookmarks[selectedItem]);
       m_paneManager->displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
     }

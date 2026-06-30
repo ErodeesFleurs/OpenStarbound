@@ -446,7 +446,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
 
   callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& item) {
       if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        auto itemDb = Root::singleton().itemDatabase();
+        auto const& itemDb = parentWidget->context()->itemDatabase();
         itemSlot->setItem(itemDb->fromJson(item));
       }
     });

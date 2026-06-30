@@ -22,15 +22,16 @@
 
 namespace Star {
 
-Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(baseConfig, false) {
-  m_client = client;
+Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices services)
+  : BaseScriptPane(baseConfig, false, BaseScriptPaneServices{services.assets, {}}),
+    m_client(std::move(client)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()) {
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
   m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks((World*)m_client->worldClient().get()));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
   
-  auto assets = Root::singleton().assets();
   auto config = baseConfig.get("config");
   m_timeChatLastActive = Time::monotonicMilliseconds();
   m_chatTextStyle = config.get("textStyle");
@@ -447,8 +448,7 @@ void Chat::updateSize() {
 }
 
 void Chat::updateBottomButton() {
-  auto assets = Root::singleton().assets();
-  auto bottomConfig = assets->json("/interface/chat/chat.config:bottom");
+  auto bottomConfig = m_assets->json("/interface/chat/chat.config:bottom");
   if (m_historyOffset == 0)
     m_bottomButton->setImages(bottomConfig.get("atbottom").getString("base"), bottomConfig.get("atbottom").getString("hover"));
   else

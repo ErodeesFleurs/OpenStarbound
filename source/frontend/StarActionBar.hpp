@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
@@ -17,9 +19,14 @@ using ImageWidgetPtr = SharedPtr<ImageWidget>;
 class ActionBar;
 using ActionBarPtr = SharedPtr<ActionBar>;
 
+struct ActionBarServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+};
+
 class ActionBar : public Pane {
 public:
-  ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player);
+  ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services = {});
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   bool sendEvent(InputEvent const& event) override;
@@ -43,6 +50,8 @@ private:
 
   MainInterfacePaneManager* m_paneManager;
   PlayerPtr m_player;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
   Json m_config;
 
   Vec2I m_actionBarSelectOffset;

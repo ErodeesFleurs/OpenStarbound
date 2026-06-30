@@ -7,6 +7,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
+#include "StarIAssets.hpp"
 #include "StarTechDatabase.hpp"
 #include "StarQuestManager.hpp"
 
@@ -39,9 +40,17 @@ using CompanionPtr = SharedPtr<Companion>;
 struct AiInterfaceExceptionTag { static constexpr char const* typeName = "AiInterfaceException"; };
 using AiInterfaceException = TypedException<StarException, AiInterfaceExceptionTag>;
 
+struct AiInterfaceServices {
+  IAssetsConstPtr assets;
+  AiDatabaseConstPtr aiDatabase;
+};
+
 class AiInterface : public Pane {
 public:
-  AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainInterfacePaneManager* paneManager);
+  AiInterface(UniverseClientPtr client,
+      CinematicPtr cinematic,
+      MainInterfacePaneManager* paneManager,
+      AiInterfaceServices services = {});
 
   void update(float dt) override;
 
@@ -85,6 +94,7 @@ private:
   CinematicPtr m_cinematic;
   MainInterfacePaneManager* m_paneManager;
   QuestManagerPtr m_questManager;
+  IAssetsConstPtr m_assets;
 
   EntityId m_sourceEntityId;
 

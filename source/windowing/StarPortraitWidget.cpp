@@ -1,6 +1,5 @@
 #include "StarPortraitWidget.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarAssets.hpp"
 
@@ -29,7 +28,7 @@ RectI PortraitWidget::getScissorRect() const {
 }
 
 void PortraitWidget::renderImpl() {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
 
   Vec2I offset = Vec2I();
   if (m_iconMode) {
@@ -67,7 +66,7 @@ void PortraitWidget::renderImpl() {
 }
 
 void PortraitWidget::init() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
 
   m_noEntityImageFull = assets->json("/interface.config:portraitNullPlayerImageFull").toString();
   m_noEntityImagePart = assets->json("/interface.config:portraitNullPlayerImagePart").toString();
@@ -106,7 +105,7 @@ bool PortraitWidget::sendEvent(InputEvent const&) {
 }
 
 void PortraitWidget::updateSize() {
-  auto imgMetadata = Root::singleton().imageMetadataDatabase();
+  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
 
   if (m_iconMode) {
     setSize(Vec2I(imgMetadata->imageSize(m_iconImage) * m_scale));

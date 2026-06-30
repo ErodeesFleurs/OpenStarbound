@@ -2,7 +2,6 @@
 #include "StarGameTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -16,7 +15,7 @@ EnumMap<PaneLayer> const PaneLayerNames{
 
 PaneManager::PaneManager()
   : m_context(GuiContext::singletonPtr()), m_prevInterfaceScale(1) {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
   m_tooltipMouseoverRadius = assets->json("/panes.config:tooltipMouseoverRadius").toFloat();
   m_tooltipMouseOffset = jsonToVec2I(assets->json("/panes.config:tooltipMouseoverOffset"));
   m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());

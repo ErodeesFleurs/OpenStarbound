@@ -1,13 +1,12 @@
 #include "StarFuelWidget.hpp"
 #include "StarInterpolation.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
 
 FuelWidget::FuelWidget() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
 
   m_textStyle.fontSize = assets->json("/interface.config:font.buttonSize").toInt();
   m_textStyle.loadJson(assets->json("/interface.config:textStyle"));

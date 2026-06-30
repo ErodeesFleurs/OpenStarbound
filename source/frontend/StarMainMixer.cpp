@@ -11,7 +11,9 @@
 
 namespace Star {
 
-MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
+MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Services services)
+  : m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
   m_mixer = make_shared<Mixer>(sampleRate, channels);
 }
 
@@ -24,8 +26,6 @@ void MainMixer::setWorldPainter(WorldPainterPtr worldPainter) {
 }
 
 void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
-  auto assets = Root::singleton().assets();
-
   auto updateGroupVolume = [&](MixerGroup group, bool muted, String const& settingName) {
       if (m_mutedGroups.contains(group) != muted) {
         if (muted) {
@@ -36,7 +36,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
           m_mixer->setGroupVolume(group, m_groupVolumes[group], 1.0f);
         }
       } else if (!m_mutedGroups.contains(group)) {
-        float volumeSetting = Root::singleton().configuration()->get(settingName).toFloat() / 100.0f;
+        float volumeSetting = m_configuration->get(settingName).toFloat() / 100.0f;
         volumeSetting = perceptualToAmplitude(volumeSetting);
         if (!m_groupVolumes.contains(group) || volumeSetting != m_groupVolumes[group]) {
           m_mixer->setGroupVolume(group, volumeSetting);
@@ -75,9 +75,9 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
         m_mixer->removeEffect("echo", 0.5f);
     }
 
-    float baseMaxDistance = assets->json("/sfx.config:baseMaxDistance").toFloat();
-    Vec2F stereoAdjustmentRange = jsonToVec2F(assets->json("/sfx.config:stereoAdjustmentRange"));
-    float attenuationGamma = assets->json("/sfx.config:attenuationGamma").toFloat();
+    float baseMaxDistance = m_assets->json("/sfx.config:baseMaxDistance").toFloat();
+    Vec2F stereoAdjustmentRange = jsonToVec2F(m_assets->json("/sfx.config:stereoAdjustmentRange"));
+    float attenuationGamma = m_assets->json("/sfx.config:attenuationGamma").toFloat();
     auto playerPos = m_universeClient->mainPlayer()->position();
     auto cameraPos = m_worldPainter->camera().centerWorldPosition();
     auto worldGeometry = currentWorld->geometry();

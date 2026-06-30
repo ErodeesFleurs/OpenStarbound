@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarPane.hpp"
 
@@ -7,7 +8,11 @@ namespace Star {
 
 class EditBookmarkDialog : public Pane {
 public:
-  EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap);
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
+  EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services = {});
 
   virtual void show() override;
 
@@ -19,6 +24,7 @@ public:
 
 private:
   PlayerUniverseMapPtr m_playerUniverseMap;
+  IAssetsConstPtr m_assets;
   TeleportBookmark m_bookmark;
 
   bool m_isNew;

@@ -5,16 +5,19 @@
 #include "StarLabelWidget.hpp"
 #include "StarTextBoxWidget.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
 String const SongPathPrefix = "/songs/";
 
-SongbookInterface::SongbookInterface(PlayerPtr player) {
+SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services) {
   m_player = std::move(player);
-
-  auto assets = Root::singleton().assets();
+  m_assets = services.assets ? std::move(services.assets) : Root::singleton().assets();
+  m_registerReloadListener = std::move(services.registerReloadListener);
+  if (!m_registerReloadListener)
+    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
+      Root::singleton().registerReloadListener(std::move(reloadListener));
+    };
 
   GuiReader reader;
 
@@ -27,9 +30,9 @@ SongbookInterface::SongbookInterface(PlayerPtr player) {
   reader.registerCallback("group", [=](Widget*) {});
   reader.registerCallback("search", [=](Widget*) {});
 
-  reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 
-  Root::singleton().registerReloadListener(
+  m_registerReloadListener(
     m_reloadListener = make_shared<CallbackListener>([this]() {
       refresh(true);
     })
@@ -52,7 +55,7 @@ bool SongbookInterface::play() {
 
   JsonObject song;
   song["resource"] = songName;
-  auto buffer = Root::singleton().assets()->bytes(songName);
+  auto buffer = m_assets->bytes(songName);
   song["abc"] = String(buffer->ptr(), buffer->size());
 
   m_player->songbook()->play(song, group);
@@ -61,7 +64,7 @@ bool SongbookInterface::play() {
 
 void SongbookInterface::refresh(bool reloadFiles) {
   if (reloadFiles) {
-    m_files = Root::singleton().assets()->scanExtension(".abc").values();
+    m_files = m_assets->scan(".abc");
     eraseWhere(m_files, [](String& song) {
       if (!song.beginsWith(SongPathPrefix, String::CaseInsensitive)) {
         Logger::warn("Song '{}' isn't in {}, ignoring", song, SongPathPrefix);

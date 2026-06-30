@@ -2,6 +2,8 @@
 
 #include "StarMixer.hpp"
 #include "StarGameTypes.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
 
 namespace Star {
 
@@ -14,7 +16,12 @@ using MainMixerPtr = SharedPtr<MainMixer>;
 
 class MainMixer {
 public:
-  MainMixer(unsigned sampleRate, unsigned channels);
+  struct Services {
+    IAssetsConstPtr assets;
+    IConfigurationPtr configuration;
+  };
+
+  MainMixer(unsigned sampleRate, unsigned channels, Services services = {});
 
   void setUniverseClient(UniverseClientPtr universeClient);
   void setWorldPainter(WorldPainterPtr worldPainter);
@@ -30,6 +37,8 @@ public:
 private:
   UniverseClientPtr m_universeClient;
   WorldPainterPtr m_worldPainter;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
   MixerPtr m_mixer;
   Set<MixerGroup> m_mutedGroups;
   Map<MixerGroup, float> m_groupVolumes;

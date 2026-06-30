@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarIAssets.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -20,7 +21,11 @@ using QuestTrackerPanePtr = SharedPtr<QuestTrackerPane>;
 
 class QuestTrackerPane : public Pane {
 public:
-  QuestTrackerPane();
+  struct Services {
+    IAssetsConstPtr assets;
+  };
+
+  QuestTrackerPane(Services services = {});
 
   bool sendEvent(InputEvent const& event) override;
   void update(float dt) override;

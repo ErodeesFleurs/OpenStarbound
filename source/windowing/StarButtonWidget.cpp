@@ -1,5 +1,4 @@
 #include "StarButtonWidget.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
@@ -21,7 +20,7 @@ ButtonWidget::ButtonWidget() {
   m_fontColor = Color::White;
   m_fontColorDisabled = Color::Gray;
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = GuiContext::singleton().assets();
 
   auto interfaceConfig = assets->json("/interface.config");
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
@@ -113,7 +112,6 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
     if (event.is<MouseButtonDownEvent>() && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left) {
       if (inMember(*context()->mousePosition(event))) {
         if (!isPressed()) {
-          auto assets = Root::singleton().assets();
           auto sound = Random::randValueFrom(m_clickSounds, "");
           if (!sound.empty())
             context()->playAudio(sound);
@@ -129,7 +127,6 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
       }
     } else if (event.is<MouseButtonUpEvent>()) {
       if (isPressed()) {
-        auto assets = Root::singleton().assets();
         auto sound = Random::randValueFrom(m_releaseSounds, "");
         if (!sound.empty())
           context()->playAudio(sound);
@@ -146,7 +143,6 @@ void ButtonWidget::mouseOver() {
   Widget::mouseOver();
   if (!m_disabled) {
     if (!m_hovered) {
-      auto assets = Root::singleton().assets();
       auto sound = Random::randValueFrom(m_hoverSounds);
       if (!sound.empty())
         context()->playAudio(sound);
@@ -158,7 +154,6 @@ void ButtonWidget::mouseOver() {
 void ButtonWidget::mouseOut() {
   Widget::mouseOut();
   if (!m_disabled && m_hovered) {
-    auto assets = Root::singleton().assets();
     auto sound = Random::randValueFrom(m_hoverOffSounds);
     if (!sound.empty())
       context()->playAudio(sound);
@@ -170,7 +165,6 @@ void ButtonWidget::mouseOut() {
 void ButtonWidget::mouseReturnStillDown() {
   Widget::mouseReturnStillDown();
   if (!isPressed()) {
-    auto assets = Root::singleton().assets();
     auto sound = Random::randValueFrom(m_clickSounds, "");
     if (!sound.empty())
       context()->playAudio(sound);
@@ -291,7 +285,7 @@ void ButtonWidget::setImages(String const& baseImage, String const& hoverImage, 
   m_pressedImage = pressedImage;
   m_disabledImage = disabledImage;
   if (m_disabledImage.empty() && !m_baseImage.empty())
-    m_disabledImage = m_baseImage + Root::singleton().assets()->json("/interface.config:disabledButton").toString();
+    m_disabledImage = m_baseImage + context()->assets()->json("/interface.config:disabledButton").toString();
   updateSize();
 }
 
@@ -302,7 +296,7 @@ void ButtonWidget::setCheckedImages(String const& baseImage, String const& hover
   m_pressedImageChecked = pressedImage;
   m_disabledImageChecked = disabledImage;
   if (m_hasCheckedImages && m_disabledImageChecked.empty())
-    m_disabledImageChecked = m_baseImageChecked + Root::singleton().assets()->json("/interface.config:disabledButton").toString();
+    m_disabledImageChecked = m_baseImageChecked + context()->assets()->json("/interface.config:disabledButton").toString();
   updateSize();
 }
 

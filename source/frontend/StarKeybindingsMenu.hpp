@@ -1,5 +1,7 @@
 #pragma once
 
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -11,9 +13,14 @@ using ListWidgetPtr = SharedPtr<ListWidget>;
 class KeybindingsMenu;
 using KeybindingsMenuPtr = SharedPtr<KeybindingsMenu>;
 
+struct KeybindingsMenuServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+};
+
 class KeybindingsMenu : public Pane {
 public:
-  KeybindingsMenu();
+  KeybindingsMenu(KeybindingsMenuServices services = {});
 
   // We need to handle our own Esc dismissal
   KeyboardCaptureMode keyboardCaptureMode() const override;
@@ -44,6 +51,8 @@ private:
 
   size_t m_maxBindings;
   KeyMod m_currentMods;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
 };
 
 }

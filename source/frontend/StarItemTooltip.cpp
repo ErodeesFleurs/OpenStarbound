@@ -21,7 +21,26 @@
 
 namespace Star {
 
-PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer) {
+namespace {
+IAssetsConstPtr tooltipAssets(ItemTooltipBuilder::Services const& services) {
+  return services.assets ? services.assets : Root::singleton().assets();
+}
+
+ObjectDatabaseConstPtr tooltipObjectDatabase(ItemTooltipBuilder::Services const& services) {
+  return services.objectDatabase ? services.objectDatabase : Root::singleton().objectDatabase();
+}
+
+StatusEffectDatabaseConstPtr tooltipStatusEffectDatabase(ItemTooltipBuilder::Services const& services) {
+  return services.statusEffectDatabase ? services.statusEffectDatabase : Root::singleton().statusEffectDatabase();
+}
+
+String categoryDisplayName(String const& category, ItemTooltipBuilder::Services const& services) {
+  Json categories = tooltipAssets(services)->json("/items/categories.config:labels");
+  return categories.getString(category, category);
+}
+}
+
+PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services) {
   if (!item) {
     return {};
   } else {
@@ -38,7 +57,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
     if (!tooltipKind.endsWith(".tooltip"))
       tooltipKind = "/interface/tooltips/" + tooltipKind + ".tooltip";
 
-    buildItemDescriptionInner(tooltip, item, tooltipKind, title, subTitle, viewer);
+    buildItemDescriptionInner(tooltip, item, tooltipKind, title, subTitle, viewer, services);
 
     auto titleIcon = make_shared<ItemSlotWidget>(item, "/interface/inventory/portrait.png");
     titleIcon->setBackingImageAffinity(true, true);
@@ -49,7 +68,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
   }
 }
 
-void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPtr const& item) {
+void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPtr const& item, Services services) {
   String tooltipKind = item->tooltipKind();
 
   if (tooltipKind.empty())
@@ -59,21 +78,15 @@ void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPt
 
   String title;
   String subTitle;
-  buildItemDescriptionInner(container, item, tooltipKind, title, subTitle);
-}
-
-String categoryDisplayName(String const& category) {
-  Json categories = Root::singleton().assets()->json("/items/categories.config:labels");
-  return categories.getString(category, category);
+  buildItemDescriptionInner(container, item, tooltipKind, title, subTitle, {}, services);
 }
 
 void ItemTooltipBuilder::buildItemDescriptionInner(
-    WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer) {
+    WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer, Services services) {
   GuiReader reader;
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+  auto assets = tooltipAssets(services);
   title = item->friendlyName();
-  subTitle = categoryDisplayName(item->category());
+  subTitle = categoryDisplayName(item->category(), services);
   String description = item->description();
 
   reader.construct(assets->json(tooltipKind), container.get());
@@ -96,7 +109,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 
   if (auto objectItem = as<ObjectItem>(item)) {
     try {
-      auto object = Root::singleton().objectDatabase()->createObject(objectItem->objectName(), objectItem->objectParameters());
+      auto object = tooltipObjectDatabase(services)->createObject(objectItem->objectName(), objectItem->objectParameters());
 
       if (container->containsChild("objectImage")) {
         auto drawables = object->cursorHintDrawables();
@@ -107,7 +120,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
         container->setLabel("slotCountLabel", strf("Holds {} Items", objectItem->instanceValue("slotCount")));
 
       title = object->shortDescription();
-      subTitle = categoryDisplayName(object->category());
+      subTitle = categoryDisplayName(object->category(), services);
       description = object->description();
     } catch (StarException const& e) {
       Logger::error("Failed to instantiate object for object item tooltip. {}", outputException(e, false));
@@ -163,7 +176,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     auto statusList = container->fetchChild<ListWidget>("statusList");
     if (auto statusEffects = as<StatusEffectItem>(item)) {
       for (auto effect : statusEffects->statusEffects())
-        describePersistentEffect(statusList, effect);
+        describePersistentEffect(statusList, effect, services);
     }
   }
 
@@ -192,9 +205,9 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
 }
 
 void ItemTooltipBuilder::describePersistentEffect(
-    ListWidgetPtr const& container, PersistentStatusEffect const& effect) {
+    ListWidgetPtr const& container, PersistentStatusEffect const& effect, Services services) {
   if (auto uniqueStatusEffect = effect.ptr<UniqueStatusEffect>()) {
-    auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
+    auto statusEffectDatabase = tooltipStatusEffectDatabase(services);
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(*uniqueStatusEffect);
     if (effectConfig.icon) {
       auto listItem = container->addItem();
@@ -202,7 +215,7 @@ void ItemTooltipBuilder::describePersistentEffect(
       listItem->fetchChild<ImageWidget>("statusImage")->setImage(*effectConfig.icon);
     }
   } else if (auto modifierEffect = effect.ptr<StatModifier>()) {
-    auto statsConfig = Root::singleton().assets()->json("/interface/stats/stats.config");
+    auto statsConfig = tooltipAssets(services)->json("/interface/stats/stats.config");
     if (auto baseMultiplier = modifierEffect->ptr<StatBaseMultiplier>()) {
       if (statsConfig.contains(baseMultiplier->statName)) {
         auto listItem = container->addItem();

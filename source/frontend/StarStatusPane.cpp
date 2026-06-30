@@ -13,16 +13,17 @@
 
 namespace Star {
 
-StatusPane::StatusPane(MainInterfacePaneManager* paneManager, UniverseClientPtr client) {
-  m_paneManager = paneManager;
-  m_client = client;
+StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
+  : m_client(std::move(client)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_imageMetadataDatabase(services.imageMetadataDatabase ? std::move(services.imageMetadataDatabase) : Root::singleton().imageMetadataDatabase()),
+    m_statusEffectDatabase(services.statusEffectDatabase ? std::move(services.statusEffectDatabase) : Root::singleton().statusEffectDatabase()) {
   m_player = m_client->mainPlayer();
 
   m_guiContext = GuiContext::singletonPtr();
-  auto assets = Root::singleton().assets();
 
   GuiReader reader;
-  reader.construct(assets->json("/interface/windowconfig/statuspane.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/statuspane.config:paneLayout"), this);
   disableScissoring();
 }
 
@@ -31,7 +32,7 @@ PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {
       if (!indicator.label.empty())
-        return SimpleTooltipBuilder::buildTooltip(indicator.label);
+        return SimpleTooltipBuilder::buildTooltip(indicator.label, SimpleTooltipServices{m_assets});
     }
   }
   return {};
@@ -40,16 +41,14 @@ PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
 void StatusPane::renderImpl() {
   Pane::renderImpl();
 
-  auto assets = Root::singleton().assets();
   auto interfaceScale = m_guiContext->interfaceScale();
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
 
-  String statusIconDarkenImage = assets->json("/interface.config:statusIconDarkenImage").toString();
+  String statusIconDarkenImage = m_assets->json("/interface.config:statusIconDarkenImage").toString();
 
   for (auto const& entry : m_statusIndicators) {
     String image = entry.icon;
     if (entry.durationPercentage) {
-      int imageHeight = imageMetadataDatabase->imageSize(image)[1];
+      int imageHeight = m_imageMetadataDatabase->imageSize(image)[1];
       int yOffset = -(int)(*entry.durationPercentage * imageHeight);
       image += "?" + imageOperationToString(BlendImageOperation{
                          BlendImageOperation::Multiply, {statusIconDarkenImage}, Vec2I(0, yOffset)});
@@ -61,24 +60,20 @@ void StatusPane::renderImpl() {
 void StatusPane::update(float dt) {
   Pane::update(dt);
 
-  auto assets = Root::singleton().assets();
   auto interfaceScale = m_guiContext->interfaceScale();
   int roundWindowHeight = ceil(windowHeight() / interfaceScale) * interfaceScale;
 
-  auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
-  auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
-
-  Vec2I statusIconOffset = jsonToVec2I(assets->json("/interface.config:statusIconPos"));
+  Vec2I statusIconOffset = jsonToVec2I(m_assets->json("/interface.config:statusIconPos"));
   Vec2I statusIconPos = Vec2I(statusIconOffset[0] * interfaceScale, roundWindowHeight - statusIconOffset[1] * interfaceScale);
-  Vec2I statusIconShift = jsonToVec2I(assets->json("/interface.config:statusIconShift")) * interfaceScale;
+  Vec2I statusIconShift = jsonToVec2I(m_assets->json("/interface.config:statusIconShift")) * interfaceScale;
 
   RectF boundRect = RectF::null();
 
   m_statusIndicators.clear();
   for (auto const& pair : m_player->activeUniqueStatusEffectSummary()) {
-    auto effectConfig = statusEffectDatabase->uniqueEffectConfig(pair.first);
+    auto effectConfig = m_statusEffectDatabase->uniqueEffectConfig(pair.first);
     if (effectConfig.icon) {
-      RectF rect = RectF::withSize(Vec2F(statusIconPos), Vec2F(imageMetadataDatabase->imageSize(*effectConfig.icon)) * interfaceScale);
+      RectF rect = RectF::withSize(Vec2F(statusIconPos), Vec2F(m_imageMetadataDatabase->imageSize(*effectConfig.icon)) * interfaceScale);
       boundRect.combine(rect);
       m_statusIndicators.append(StatusEffectIndicator{*effectConfig.icon, pair.second, effectConfig.label, rect});
       statusIconPos += statusIconShift;

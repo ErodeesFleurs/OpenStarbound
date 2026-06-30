@@ -1,4 +1,6 @@
 #include "StarTeamBar.hpp"
+#include "StarAssets.hpp"
+#include "StarConfiguration.hpp"
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
@@ -11,27 +13,26 @@
 #include "StarTextBoxWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarMathCommon.hpp"
 
 namespace Star {
 
-TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
-  m_mainInterface = mainInterface;
-  m_client = client;
-
+TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services)
+  : m_mainInterface(mainInterface),
+    m_client(std::move(client)),
+    m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()),
+    m_configuration(services.configuration ? std::move(services.configuration) : Root::singleton().configuration()) {
   m_guiContext = GuiContext::singletonPtr();
-  auto assets = Root::singleton().assets();
 
   m_teamInvite = make_shared<TeamInvite>(this);
   m_teamInvitation = make_shared<TeamInvitation>(this);
   m_teamMemberMenu = make_shared<TeamMemberMenu>(this);
 
-  m_nameStyle = assets->json("/interface.config:teamBarNameStyle");
-  m_nameStyle.fontSize = assets->json("/interface.config:font.nameSize").toInt();
-  m_nameOffset = jsonToVec2F(assets->json("/interface.config:nameOffset"));
+  m_nameStyle = m_assets->json("/interface.config:teamBarNameStyle");
+  m_nameStyle.fontSize = m_assets->json("/interface.config:font.nameSize").toInt();
+  m_nameOffset = jsonToVec2F(m_assets->json("/interface.config:nameOffset"));
 
   GuiReader reader;
 
@@ -39,21 +40,21 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   reader.registerCallback("showSelfMenu", [this](Widget*) {
       if (!m_client->teamClient()->isMemberOfTeam())
         return;
-      auto position = jsonToVec2I(Root::singleton().assets()->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
+      auto position = jsonToVec2I(m_assets->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
       position[1] += windowHeight() / m_guiContext->interfaceScale();
       showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), position);
     });
 
-  reader.construct(assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
+  reader.construct(m_assets->json("/interface/windowconfig/teambar.config:paneLayout"), this);
 
   m_healthBar = fetchChild<ProgressWidget>("healthBar");
   m_energyBar = fetchChild<ProgressWidget>("energyBar");
   m_foodBar = fetchChild<ProgressWidget>("foodBar");
   m_nameLabel = fetchChild<LabelWidget>("name");
 
-  m_energyBarColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
-  m_energyBarRegenMixColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
-  m_energyBarUnusableColor = jsonToColor(assets->json("/interface/windowconfig/teambar.config:energyBarUnusableColor"));
+  m_energyBarColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarColor"));
+  m_energyBarRegenMixColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarRegenMixColor"));
+  m_energyBarUnusableColor = jsonToColor(m_assets->json("/interface/windowconfig/teambar.config:energyBarUnusableColor"));
 
   m_energyBar->setColor(m_energyBarColor);
 
@@ -113,11 +114,10 @@ void TeamBar::updatePlayerResources() {
 
   if (player->modeConfig().hunger) {
     m_foodBar->setCurrentProgressLevel(player->foodPercentage());
-    auto assets = Root::singleton().assets();
-    if (player->foodPercentage() <= assets->json("/player.config:foodLowThreshold").toFloat()) {
-      float flashTime = assets->json("/interface/windowconfig/teambar.config:foodBarFlashTime").toFloat();
+    if (player->foodPercentage() <= m_assets->json("/player.config:foodLowThreshold").toFloat()) {
+      float flashTime = m_assets->json("/interface/windowconfig/teambar.config:foodBarFlashTime").toFloat();
       if (fmod(Time::monotonicTime(), flashTime * 2) < flashTime)
-        m_foodBar->setOverlay(assets->json("/interface/windowconfig/teambar.config:foodBarFlashOverlay").toString());
+        m_foodBar->setOverlay(m_assets->json("/interface/windowconfig/teambar.config:foodBarFlashOverlay").toString());
       else
         m_foodBar->setOverlay("");
     } else {
@@ -147,14 +147,13 @@ void TeamBar::buildTeamBar() {
   auto player = m_client->mainPlayer();
 
   auto list = fetchChild("list");
-  auto assets = Root::singleton().assets();
 
   Vec2I offset;
   size_t controlIndex = 0;
 
-  float portraitScale = assets->json("/interface/windowconfig/teambar.config:memberPortraitScale").toFloat();
-  int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
-  int memberSpacing = assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
+  float portraitScale = m_assets->json("/interface/windowconfig/teambar.config:memberPortraitScale").toFloat();
+  int memberSize = m_assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
+  int memberSpacing = m_assets->json("/interface/windowconfig/teambar.config:memberSpacing").toInt();
 
   Uuid myUuid = player->clientContext()->playerUuid();
   for (auto member : teamClient->members()) {
@@ -172,11 +171,11 @@ void TeamBar::buildTeamBar() {
       cell->markAsContainer();
 
       reader.registerCallback("showMemberMenu", [this](Widget* widget) {
-          auto position = widget->screenPosition() + jsonToVec2I(Root::singleton().assets()->json("/interface/windowconfig/teambar.config:memberMenuOffset"));
+          auto position = widget->screenPosition() + jsonToVec2I(m_assets->json("/interface/windowconfig/teambar.config:memberMenuOffset"));
           showMemberMenu(Uuid(widget->parent()->data().toString()), position);
         });
 
-      reader.construct(assets->json("/interface/windowconfig/teambar.config:entry"), cell.get());
+      reader.construct(m_assets->json("/interface/windowconfig/teambar.config:entry"), cell.get());
 
       list->addChild(cellName, cell);
     }
@@ -227,7 +226,7 @@ void TeamBar::buildTeamBar() {
   noInviteImage->setPosition(inviteOffset - Vec2I{0, noInviteImage->size()[1]});
 
   bool couldInvite = (!teamClient->currentTeam() || teamClient->isTeamLeader())
-      && m_client->teamClient()->members().size() < Root::singleton().configuration()->get("maxTeamSize").toUInt();
+      && m_client->teamClient()->members().size() < m_configuration->get("maxTeamSize").toUInt();
   inviteButton->setVisibility(couldInvite);
   inviteButton->setEnabled(!m_teamInvitation->active());
   noInviteImage->setVisibility(!couldInvite);
@@ -251,11 +250,10 @@ void TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
 TeamInvite::TeamInvite(TeamBar* owner) {
   m_owner = owner;
   GuiReader reader;
-  auto assets = Root::singleton().assets();
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("name", [](Widget*) {});
-  reader.construct(assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
+  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
   dismiss();
 }
 
@@ -277,12 +275,11 @@ void TeamInvite::close() {
 TeamInvitation::TeamInvitation(TeamBar* owner) {
   m_owner = owner;
   GuiReader reader;
-  auto assets = Root::singleton().assets();
 
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
 
-  reader.construct(assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
+  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
   dismiss();
 }
 
@@ -306,20 +303,17 @@ void TeamInvitation::close() {
 TeamMemberMenu::TeamMemberMenu(TeamBar* owner) {
   m_owner = owner;
 
-  auto assets = Root::singleton().assets();
   GuiReader reader;
   reader.registerCallback("beamToShip", [this](Widget*) { beamToShip(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("makeLeader", [this](Widget*) { makeLeader(); });
   reader.registerCallback("removeFromTeam", [this](Widget*) { removeFromTeam(); });
-  reader.construct(assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
+  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
 }
 
 void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
   if (active())
     return;
-
-  auto assets = Root::singleton().assets();
 
   setPosition(position);
 
@@ -365,11 +359,10 @@ void TeamMemberMenu::updateWidgets() {
   fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);
   fetchChild<ButtonWidget>("removeFromTeam")->setEnabled(isLeader || isSelf);
 
-  auto assets = Root::singleton().assets();
   if (isSelf)
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(assets->json("/interface/windowconfig/teammembermenu.config:removeSelfText").toString());
+    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:removeSelfText").toString());
   else
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(assets->json("/interface/windowconfig/teammembermenu.config:removeOtherText").toString());
+    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:removeOtherText").toString());
 }
 
 void TeamMemberMenu::beamToShip() {

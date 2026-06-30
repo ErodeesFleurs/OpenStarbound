@@ -4,6 +4,9 @@
 #include "StarTextPainter.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarChatBubbleSeparation.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarStoredFunctions.hpp"
 
 namespace Star {
@@ -16,9 +19,16 @@ using WorldClientPtr = SharedPtr<WorldClient>;
 class ChatBubbleManager;
 using ChatBubbleManagerPtr = SharedPtr<ChatBubbleManager>;
 
+struct ChatBubbleManagerServices {
+  IAssetsConstPtr assets;
+  IConfigurationPtr configuration;
+  FunctionDatabaseConstPtr functionDatabase;
+  ImageMetadataDatabaseConstPtr imageMetadata;
+};
+
 class ChatBubbleManager {
 public:
-  ChatBubbleManager();
+  ChatBubbleManager(ChatBubbleManagerServices services = {});
 
   void setCamera(WorldCamera const& camera);
 
@@ -62,6 +72,10 @@ private:
   void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
   GuiContext* m_guiContext;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  FunctionDatabaseConstPtr m_functionDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadata;
 
   WorldCamera m_camera;
 

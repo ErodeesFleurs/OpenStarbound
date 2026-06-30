@@ -1,6 +1,5 @@
 #include "StarBaseScriptPane.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -15,15 +14,14 @@
 
 namespace Star {
 
-BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfig(config) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services)
+  : Pane(), m_rawConfig(config), m_assets(services.assets ? std::move(services.assets) : Root::singleton().assets()), m_itemDatabase(services.itemDatabase ? std::move(services.itemDatabase) : Root::singleton().itemDatabase()) {
 
   if (config.type() == Json::Type::Object && config.contains("baseConfig")) {
-    auto baseConfig = assets->fetchJson(config.getString("baseConfig"));
+    auto baseConfig = m_assets->fetchJson(config.getString("baseConfig"));
     m_config = jsonMerge(baseConfig, config);
   } else {
-    m_config = assets->fetchJson(config);
+    m_config = m_assets->fetchJson(config);
   }
   
   m_interactive = m_config.getBool("interactive", true);
@@ -37,7 +35,7 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfi
   }
 
   if (construct)
-    this->construct(assets->fetchJson(m_config.get("gui")));
+    this->construct(m_assets->fetchJson(m_config.get("gui")));
 
   m_callbacksAdded = false;
 }
@@ -102,7 +100,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(result->toString());
+      return SimpleTooltipBuilder::buildTooltip(result->toString(), SimpleTooltipServices{m_assets});
     } else {
       PanePtr tooltip = make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
@@ -117,7 +115,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item);
+      return ItemTooltipBuilder::buildItemTooltip(item, {}, {m_assets});
     return {};
   }
 }
@@ -135,15 +133,13 @@ Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
   if (!result || result->isNull())
     return {};
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   if (result->type() == Json::Type::Bool) {
     if (result->toBool())
-      return itemDatabase->item({});
+      return m_itemDatabase->item({});
     return {};
   }
 
-  return itemDatabase->item(ItemDescriptor(result.value()));
+  return m_itemDatabase->item(ItemDescriptor(result.value()));
 }
 
 GuiReaderPtr BaseScriptPane::reader() {
