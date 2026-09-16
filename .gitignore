@@ -49,3 +49,7 @@ CMakeUserPresets.json
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Nix flake build outputs
+/result
+/result-*

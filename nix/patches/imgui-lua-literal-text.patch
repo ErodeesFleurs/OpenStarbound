@@ -1,0 +1,38 @@
+--- a/source/extern/imgui_iterator.inl
++++ b/source/extern/imgui_iterator.inl
+@@ -625 +625 @@
+-CALL_FUNCTION_NO_RET(Text, fmt)
++CALL_FUNCTION_NO_RET(Text, "%s", fmt)
+@@ -634 +634 @@
+-CALL_FUNCTION_NO_RET(TextColored, col, fmt)
++CALL_FUNCTION_NO_RET(TextColored, col, "%s", fmt)
+@@ -642 +642 @@
+-CALL_FUNCTION_NO_RET(TextDisabled, fmt)
++CALL_FUNCTION_NO_RET(TextDisabled, "%s", fmt)
+@@ -650 +650 @@
+-CALL_FUNCTION_NO_RET(TextWrapped, fmt)
++CALL_FUNCTION_NO_RET(TextWrapped, "%s", fmt)
+@@ -659 +659 @@
+-CALL_FUNCTION_NO_RET(LabelText, label, fmt)
++CALL_FUNCTION_NO_RET(LabelText, label, "%s", fmt)
+@@ -667 +667 @@
+-CALL_FUNCTION_NO_RET(BulletText, fmt)
++CALL_FUNCTION_NO_RET(BulletText, "%s", fmt)
+@@ -1087 +1087 @@
+-CALL_FUNCTION(TreeNode, bool, str_id, fmt)
++CALL_FUNCTION(TreeNode, bool, str_id, "%s", fmt)
+@@ -1112 +1112 @@
+-CALL_FUNCTION(TreeNodeEx, bool, str_id, flags, fmt)
++CALL_FUNCTION(TreeNodeEx, bool, str_id, flags, "%s", fmt)
+@@ -1320 +1320 @@
+-CALL_FUNCTION_NO_RET(SetTooltip, fmt)
++CALL_FUNCTION_NO_RET(SetTooltip, "%s", fmt)
+@@ -1334 +1334 @@
+-CALL_FUNCTION_NO_RET(SetItemTooltip, fmt)
++CALL_FUNCTION_NO_RET(SetItemTooltip, "%s", fmt)
+@@ -1634 +1634 @@
+-CALL_FUNCTION_NO_RET(LogText, fmt)
++CALL_FUNCTION_NO_RET(LogText, "%s", fmt)
+@@ -2070 +2070 @@
+-CALL_FUNCTION_NO_RET(DebugLog, fmt)
++CALL_FUNCTION_NO_RET(DebugLog, "%s", fmt)
