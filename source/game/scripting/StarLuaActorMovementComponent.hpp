@@ -34,7 +34,7 @@ private:
   void clearControls();
 
   ActorMovementController* m_movementController;
-  bool m_autoClearControls;
+  bool m_autoClearControls = false;
 
   float m_controlRotation;
   Vec2F m_controlAcceleration;
@@ -45,13 +45,13 @@ private:
   Maybe<ActorMovementModifiers> m_controlModifiers;
   Maybe<tuple<Direction, bool>> m_controlMove;
   Maybe<Direction> m_controlFace;
-  bool m_controlDown;
-  bool m_controlCrouch;
+  bool m_controlDown = false;
+  bool m_controlCrouch = false;
   Maybe<bool> m_controlJump;
-  bool m_controlHoldJump;
+  bool m_controlHoldJump = false;
   Maybe<Vec2F> m_controlFly;
 
-  bool m_resetPathMove;
+  bool m_resetPathMove = false;
   Maybe<pair<Vec2F, bool>> m_controlPathMove;
   Maybe<pair<Vec2F, bool>> m_pathMoveResult;
 };

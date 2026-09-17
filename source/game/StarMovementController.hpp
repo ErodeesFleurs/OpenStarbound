@@ -281,7 +281,7 @@ private:
   NetElementFloat m_xRelativeSurfaceMovingCollisionPosition;
   NetElementFloat m_yRelativeSurfaceMovingCollisionPosition;
 
-  bool m_appliedForceRegion;
+  bool m_appliedForceRegion = false;
   Vec2F m_collisionCorrection;
   Vec2F m_surfaceSlope;
   Vec2F m_surfaceMovingCollisionPosition;

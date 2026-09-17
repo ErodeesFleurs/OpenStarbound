@@ -137,6 +137,11 @@ inline void ByteArray::append(ByteArray const& b) {
 }
 
 inline void ByteArray::append(const char* data, size_t len) {
+  // memcpy with a null pointer (an empty ByteArray) and a length of 0 is still
+  // undefined behaviour, and both sides can be null here.
+  if (len == 0)
+    return;
+
   resize(m_size + len);
   std::memcpy(m_data + m_size - len, data, len);
 }
@@ -168,6 +173,9 @@ inline size_t ByteArray::capacity() const {
 
 inline void ByteArray::copyTo(char* data, size_t len) const {
   len = min(m_size, len);
+  if (len == 0)
+    return;
+
   std::memcpy(data, m_data, len);
 }
 
@@ -184,6 +192,10 @@ inline void ByteArray::copyTo(char* data, size_t pos, size_t len) const {
 }
 
 inline void ByteArray::writeFrom(const char* data, size_t pos, size_t len) {
+  // Also avoids computing 'm_data + pos' for an empty array.
+  if (len == 0)
+    return;
+
   if (pos + len > m_size)
     resize(pos + len);
 

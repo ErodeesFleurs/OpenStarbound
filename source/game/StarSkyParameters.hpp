@@ -39,7 +39,7 @@ struct SkyParameters {
   Maybe<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
   List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
   List<pair<String, String>> horizonImages;
-  bool horizonClouds;
+  bool horizonClouds = true;
   SkyType skyType;
   Either<SkyColoring, Color> skyColoring;
   Maybe<float> spaceLevel;

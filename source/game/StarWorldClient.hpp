@@ -283,7 +283,7 @@ private:
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
-  bool m_respawnInWorld;
+  bool m_respawnInWorld = false;
   JsonObject m_worldProperties;
 
   EntityMapPtr m_entityMap;
@@ -295,8 +295,8 @@ private:
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
   double m_currentTime;
-  bool m_fullBright;
-  bool m_asyncLighting;
+  bool m_fullBright = false;
+  bool m_asyncLighting = false;
   CellularLightingCalculator m_lightingCalculator;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   ThreadFunction<void> m_lightingThread;
@@ -326,23 +326,23 @@ private:
 
   PlayerPtr m_mainPlayer;
 
-  bool m_collisionDebug;
+  bool m_collisionDebug = false;
 
   // Client side entity updates are not done until m_inWorld is true, which is
   // set to true after we have entered a world *and* the first batch of updates
   // are received.
-  bool m_inWorld;
+  bool m_inWorld = false;
   
-  bool m_headless;
+  bool m_headless = false;
   
   ClientSubWorldId m_subWorldId;
-  bool m_requestedDestroy;
+  bool m_requestedDestroy = false;
 
   GameTimer m_worldDimTimer;
   float m_worldDimLevel;
   Vec3B m_worldDimColor;
 
-  bool m_interactiveHighlightMode;
+  bool m_interactiveHighlightMode = false;
 
   GameTimer m_parallaxFadeTimer;
   ParallaxPtr m_currentParallax;
@@ -398,7 +398,7 @@ private:
   String m_activeSpaceSound;
 
   AmbientNoisesDescriptionPtr m_altMusicTrackDescription;
-  bool m_altMusicActive;
+  bool m_altMusicActive = false;
 
   int m_modifiedTilePredictionTimeout;
   HashMap<Vec2I, PredictedTile> m_predictedTiles;

@@ -123,7 +123,10 @@ DataStream& DataStream::operator<<(double d) {
 DataStream& DataStream::operator>>(bool& d) {
   uint8_t bu;
   readData((char*)&bu, sizeof(bu));
-  d = (bool)bu;
+  // Converting an arbitrary byte to bool is UB when it is neither 0 nor 1, and
+  // a stream can contain anything (a save file written by another version, for
+  // example).  UBSan reports the resulting bool load.
+  d = bu != 0;
   return *this;
 }
 

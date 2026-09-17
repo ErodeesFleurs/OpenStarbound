@@ -96,7 +96,7 @@ namespace AStar {
     Set<Node, std::less<Node>, BlockAllocator<Node, 1024>> m_closedSet;
     Maybe<ScoredNode> m_earlyExploration;
 
-    bool m_finished;
+    bool m_finished = false;
     Maybe<Path<Edge>> m_result;
   };
 

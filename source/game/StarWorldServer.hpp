@@ -380,8 +380,8 @@ private:
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
-  bool m_adjustPlayerStart;
-  bool m_respawnInWorld;
+  bool m_adjustPlayerStart = false;
+  bool m_respawnInWorld = false;
   JsonObject m_worldProperties;
   StringMap<WorldPropertyListener> m_worldPropertyListeners;
 
@@ -434,13 +434,13 @@ private:
 
   List<pair<float, WorldAction>> m_timers;
 
-  bool m_needsGlobalBreakCheck;
+  bool m_needsGlobalBreakCheck = false;
 
-  bool m_generatingDungeon;
+  bool m_generatingDungeon = false;
   HashMap<DungeonId, float> m_dungeonIdGravity;
   HashMap<DungeonId, bool> m_dungeonIdBreathable;
   StableHashSet<DungeonId> m_protectedDungeonIds;
-  bool m_tileProtectionEnabled;
+  bool m_tileProtectionEnabled = true;
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
   HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;

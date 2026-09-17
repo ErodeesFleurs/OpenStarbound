@@ -306,6 +306,11 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::begin() -> iter
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::end() -> iterator {
+  // An empty table has no sentinel bucket, and 'data() + size() - 1' would be a
+  // pointer computed from a null pointer with a negative offset (UB, and UBSan
+  // reports it for every begin()/end() on an empty table).
+  if (m_buckets.empty())
+    return iterator{nullptr};
   return iterator{m_buckets.data() + m_buckets.size() - 1};
 }
 

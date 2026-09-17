@@ -113,6 +113,9 @@ void ByteArray::fill(size_t s, char c) {
   if (s != NPos)
     resize(s);
 
+  if (m_size == 0)
+    return;
+
   memset(m_data, c, m_size);
 }
 

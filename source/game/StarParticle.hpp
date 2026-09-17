@@ -81,15 +81,15 @@ struct Particle {
   Color color;
   Color light;
   float fade;
-  bool fullbright;
+  bool fullbright = false;
 
   Vec2F position;
   Vec2F velocity;
   Vec2F finalVelocity;
   Vec2F approach;
 
-  bool flippable;
-  bool flip;
+  bool flippable = true;
+  bool flip = false;
 
   float rotation;
   float angularVelocity;
@@ -99,18 +99,18 @@ struct Particle {
   DestructionAction destructionAction;
   AssetPath destructionImage;
   float destructionTime;
-  bool destructionSet;
+  bool destructionSet = false;
 
   float timeToLive;
   Layer layer;
 
-  bool collidesForeground;
-  bool collidesLiquid;
-  bool underwaterOnly;
+  bool collidesForeground = true;
+  bool collidesLiquid = true;
+  bool underwaterOnly = false;
 
-  bool ignoreWind;
+  bool ignoreWind = true;
 
-  bool trail;
+  bool trail = false;
 
   Maybe<Animation> animation;
 };

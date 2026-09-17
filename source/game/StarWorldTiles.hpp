@@ -40,13 +40,13 @@ struct WorldTile {
 
   CollisionKind collision;
 
-  bool collisionCacheDirty;
+  bool collisionCacheDirty = false;
   StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace> collisionCache;
 
   BiomeIndex blockBiomeIndex;
   BiomeIndex environmentBiomeIndex;
 
-  bool biomeTransition;
+  bool biomeTransition = false;
 
   TileDamageStatus foregroundDamage;
   TileDamageStatus backgroundDamage;
