@@ -62,6 +62,10 @@
             discordSupport = true;
             qtSupport = true;
           };
+          # ASan + UBSan build: the checkPhase fails on the first sanitizer
+          # report, and `nix run .#sanitized-tests` sweeps game_tests with the
+          # sanitizers halting on the first error.
+          sanitized = openstarbound.override { sanitizers = true; };
         };
     in
     {
@@ -75,6 +79,17 @@
           type = "app";
           program = "${(packagesFor pkgs).default}/bin/run-game-tests";
           meta.description = "Run OpenStarbound's game_tests against your Starbound assets";
+        };
+        # Same sweep, but against the ASan+UBSan build and with the sanitizers
+        # halting on the first report (so a report fails the run).
+        sanitized-tests = {
+          type = "app";
+          program = "${pkgs.writeShellScript "openstarbound-sanitized-tests" ''
+            export ASAN_OPTIONS="detect_leaks=0''${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
+            export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1''${UBSAN_OPTIONS:+:$UBSAN_OPTIONS}"
+            exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
+          ''}";
+          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer and UndefinedBehaviorSanitizer";
         };
       });
 

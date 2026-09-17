@@ -34,6 +34,11 @@
   discordSupport ? false,
   qtSupport ? false,
   withTests ? true,
+  # Build with AddressSanitizer + UndefinedBehaviorSanitizer.  The checkPhase
+  # then fails on the first report, so `nix build .#sanitized` is a hard gate
+  # for undefined behaviour in the code the tests cover; the game_tests sweep
+  # runs through `nix run .#sanitized-tests`.
+  sanitizers ? false,
 }:
 
 let
@@ -102,7 +107,7 @@ assert lib.assertMsg (!(steamSupport || discordSupport) || stdenv.hostPlatform.i
   "The vendored Linux Steam/Discord SDK binaries are x86_64 only.";
 
 stdenv.mkDerivation {
-  pname = "openstarbound";
+  pname = if sanitizers then "openstarbound-sanitized" else "openstarbound";
   inherit version src;
 
   # Deviation from upstream, taken from the verified reference build: the Lua
@@ -163,6 +168,15 @@ stdenv.mkDerivation {
   ]
   ++ lib.optionals discordSupport [
     (lib.cmakeFeature "DISCORD_API_LIBRARY" "${sdks}/lib/libdiscord_game_sdk${sdkExtension}")
+  ]
+  ++ lib.optionals sanitizers [
+    # Note: cmakeFlags elements end up in a shell command, so they must not
+    # contain spaces.  The sanitizer runtimes have to be linked by the compiler
+    # driver, going through NIX_LDFLAGS would hand -fsanitize=... to ld itself.
+    "-DSTAR_USE_JEMALLOC=false"
+    "-DCMAKE_C_FLAGS=-fsanitize=address,undefined"
+    "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined"
+    "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined"
   ];
 
   # core_tests carries the "NoAssets" label and runs without any game assets.
@@ -172,7 +186,7 @@ stdenv.mkDerivation {
   doCheck = withTests;
   checkPhase = ''
     runHook preCheck
-    ctest --output-on-failure -L NoAssets
+    ${lib.optionalString sanitizers "ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 "}ctest --output-on-failure -L NoAssets
     runHook postCheck
   '';
 
