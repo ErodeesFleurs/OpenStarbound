@@ -8,6 +8,7 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
+#include "StarLua.hpp"
 
 namespace Star {
 
@@ -26,9 +27,47 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
 
   m_mainPlayer = root.playerFactory()->create();
   m_mainPlayer->finalizeCreation();
+  // A player only carries a ship species once it has been saved and loaded
+  // (Player::diskStore falls back to the identity species, Player's save/load
+  // ctor reads it back), which is what the real client always does
+  // (StarClientApplication::loadPlayer).  The connect packet sends the ship
+  // species and the server builds the ship world from it, so a player that was
+  // only created in memory cannot connect: the server fails to create its ship
+  // world and drops the connection.
+  m_mainPlayer->setShipSpecies(m_mainPlayer->species());
   m_mainPlayer->setAdmin(true);
   m_mainPlayer->setModeType(PlayerMode::Survival);
   m_client->setMainPlayer(m_mainPlayer);
+  // The real client provides the 'input' callback table to player scripts
+  // (StarClientApplication::setLuaCallbacks -> LuaBindings::makeInputCallbacks).
+  // That binds to the global Input, which a headless harness never initializes,
+  // so provide a stub where nothing is ever bound.  OpenStarbound's player
+  // scripts (e.g. /scripts/opensb/player/copy_paste.lua) call input.bindDown
+  // from update() and would otherwise log a Lua error every frame.
+  LuaCallbacks inputCallbacks;
+  auto bindState = [](String const&, String const&) -> Maybe<unsigned> { return {}; };
+  auto noKey = [](String const&) -> Maybe<unsigned> { return {}; };
+  auto noButton = [](String const&) -> Maybe<List<Vec2F>> { return {}; };
+  inputCallbacks.registerCallback("bindDown", bindState);
+  inputCallbacks.registerCallback("bindUp", bindState);
+  inputCallbacks.registerCallback("bindHeld", [](String const&, String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("bind", [](String const&, String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("keyDown", noKey);
+  inputCallbacks.registerCallback("keyUp", noKey);
+  inputCallbacks.registerCallback("keyHeld", [](String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("key", [](String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("mouseDown", noButton);
+  inputCallbacks.registerCallback("mouseUp", noButton);
+  inputCallbacks.registerCallback("mouseHeld", [](String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("mouse", [](String const&) -> bool { return false; });
+  inputCallbacks.registerCallback("mousePosition", []() -> Vec2F { return {}; });
+  inputCallbacks.registerCallback("getTag", [](String const&) -> unsigned { return 0; });
+  inputCallbacks.registerCallback("events", []() -> Json { return JsonArray(); });
+  inputCallbacks.registerCallback("resetBinds", [](String const&, String const&) {});
+  inputCallbacks.registerCallback("setBinds", [](String const&, String const&, Json const&) {});
+  inputCallbacks.registerCallback("getDefaultBinds", [](String const&, String const&) -> Json { return JsonObject(); });
+  inputCallbacks.registerCallback("getBinds", [](String const&, String const&) -> Json { return JsonObject(); });
+  m_client->setLuaCallbacks("input", inputCallbacks);
   m_client->connect(m_server->addLocalClient(), "test", "");
 }
 
@@ -41,7 +80,11 @@ TestUniverse::~TestUniverse() {
 
 void TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
-  while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
+  // Bounded: if the world cannot be loaded the player stays teleporting
+  // forever, so give up after ~60 seconds and let the caller's expectations
+  // report the failure instead of hanging the test.  A ship flight to a
+  // celestial world legitimately takes tens of seconds.
+  for (size_t i = 0; (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) && i < 3750; ++i) {
     m_client->update(0.016f);
     Thread::sleep(16);
   }

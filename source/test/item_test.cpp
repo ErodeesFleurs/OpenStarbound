@@ -62,6 +62,28 @@ TEST(ItemTest, ItemComparison) {
     ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", JsonObject{{"testParameter", "testValue"}}}})
   };
 
+  // Creating an item can add parameters to it: the perfectly generic item is an
+  // object item, and objects that retain their placement parameters start with
+  // an empty 'scriptStorage' entry so that they stack correctly.  Exact
+  // comparisons therefore work on the parameters the created items carry.
+  ItemDescriptor testItemExact = testItem->descriptor().singular();
+  ItemDescriptor testItemParamsExact = testItemParams->descriptor().singular();
+  EXPECT_EQ(testItemExact.parameters(), JsonObject({{"scriptStorage", JsonObject()}}));
+  EXPECT_EQ(testItemParamsExact.parameters(),
+      JsonObject({{"testParameter", "testValue"}, {"scriptStorage", JsonObject()}}));
+
+  // The same descriptor spellings again, carrying the items' own parameters.
+  List<ItemDescriptor> testItemExactDescriptors = List<ItemDescriptor>{
+    testItemExact,
+    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, testItemExact.parameters()}),
+    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemExact.parameters()}})
+  };
+  List<ItemDescriptor> testItemParamsExactDescriptors = List<ItemDescriptor>{
+    testItemParamsExact,
+    ItemDescriptor(JsonArray{"perfectlygenericitem", 1, testItemParamsExact.parameters()}),
+    ItemDescriptor(JsonObject{{"name", "perfectlygenericitem"}, {"count", 1}, {"parameters", testItemParamsExact.parameters()}})
+  };
+
   // comparisons WITHOUT exactMatch
   for (ItemDescriptor const& id : testItemDescriptors) {
     EXPECT_TRUE(testItem->matches(id));
@@ -86,25 +108,42 @@ TEST(ItemTest, ItemComparison) {
   EXPECT_TRUE(testItem->matches(testItemParams));
   EXPECT_TRUE(testItemParams->matches(testItem));
 
-  // comparisons WITH exactMatch
-    for (ItemDescriptor const& id : testItemDescriptors) {
+  // comparisons WITH exactMatch: the parameterless descriptors match neither
+  // item, and the descriptors carrying an item's own parameters match exactly.
+  for (ItemDescriptor const& id : testItemDescriptors) {
+    EXPECT_FALSE(testItem->matches(id, true));
+    EXPECT_FALSE(testItemParams->matches(id, true));
+    EXPECT_FALSE(id.matches(testItem, true));
+    EXPECT_FALSE(id.matches(testItemParams, true));
+    for (ItemDescriptor const& id2 : testItemDescriptors)
+      EXPECT_TRUE(id.matches(id2, true));
+    for (ItemDescriptor const& id2 : testItemExactDescriptors)
+      EXPECT_FALSE(id.matches(id2, true));
+    for (ItemDescriptor const& id2 : testItemParamsExactDescriptors)
+      EXPECT_FALSE(id.matches(id2, true));
+  }
+  for (ItemDescriptor const& id : testItemExactDescriptors) {
     EXPECT_TRUE(testItem->matches(id, true));
     EXPECT_FALSE(testItemParams->matches(id, true));
     EXPECT_TRUE(id.matches(testItem, true));
     EXPECT_FALSE(id.matches(testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
+      EXPECT_FALSE(id.matches(id2, true));
+    for (ItemDescriptor const& id2 : testItemExactDescriptors)
       EXPECT_TRUE(id.matches(id2, true));
-    for (ItemDescriptor const& id2 : testItemDescriptorsParams)
+    for (ItemDescriptor const& id2 : testItemParamsExactDescriptors)
       EXPECT_FALSE(id.matches(id2, true));
   }
-  for (ItemDescriptor const& id : testItemDescriptorsParams) {
+  for (ItemDescriptor const& id : testItemParamsExactDescriptors) {
     EXPECT_FALSE(testItem->matches(id, true));
     EXPECT_TRUE(testItemParams->matches(id, true));
     EXPECT_FALSE(id.matches(testItem, true));
     EXPECT_TRUE(id.matches(testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_FALSE(id.matches(id2, true));
-    for (ItemDescriptor const& id2 : testItemDescriptorsParams)
+    for (ItemDescriptor const& id2 : testItemExactDescriptors)
+      EXPECT_FALSE(id.matches(id2, true));
+    for (ItemDescriptor const& id2 : testItemParamsExactDescriptors)
       EXPECT_TRUE(id.matches(id2, true));
   }
   EXPECT_FALSE(testItem->matches(testItemParams, true));
