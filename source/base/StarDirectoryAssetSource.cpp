@@ -1,8 +1,25 @@
 #include "StarDirectoryAssetSource.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+
+#include <filesystem>
 
 namespace Star {
+
+namespace {
+  // True when 'directory' resolves to one of the directories the scan is
+  // currently inside of, which can only happen through a symlink loop.
+  bool resolvesToAncestor(String const& directory, List<String> const& ancestors) {
+    std::error_code ec;
+    std::filesystem::path directoryPath(directory.utf8());
+    for (auto const& ancestor : ancestors) {
+      if (std::filesystem::equivalent(directoryPath, std::filesystem::path(ancestor.utf8()), ec) && !ec)
+        return true;
+    }
+    return false;
+  }
+}
 
 DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringList const& ignorePatterns) {
   m_baseDirectory = baseDirectory;
@@ -26,7 +43,7 @@ DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringLi
   m_ignorePatterns.append("^/_metadata$");
   m_ignorePatterns.append("^/\\.metadata$");
 
-  scanAll("/", m_assetPaths);
+  scanAll("/", m_assetPaths, {toFilesystem("/")});
 
   m_assetPaths.sort();
 }
@@ -71,7 +88,7 @@ void DirectoryAssetSource::setMetadata(JsonObject metadata) {
   }
 }
 
-void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& output) const {
+void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& output, List<String> const& ancestorDirectories) const {
   auto shouldIgnore = [this](String const& assetPath) {
     for (auto const& pattern : m_ignorePatterns) {
       if (assetPath.regexMatch(pattern, false, false))
@@ -85,7 +102,16 @@ void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& out
   for (auto entry : File::dirList(fsDirectory)) {
     String assetPath = assetDirectory + entry.first;
     if (entry.second) {
-      scanAll(assetPath + "/", output);
+      String childDirectory = toFilesystem(assetPath);
+      if (resolvesToAncestor(childDirectory, ancestorDirectories)) {
+        Logger::warn(
+            "DirectoryAssetSource: '{}' resolves to one of its own parent directories, not scanning it", assetPath);
+        continue;
+      }
+
+      auto childAncestors = ancestorDirectories;
+      childAncestors.append(std::move(childDirectory));
+      scanAll(assetPath + "/", output, childAncestors);
     } else {
       if (!shouldIgnore(assetPath))
         output.append(std::move(assetPath));

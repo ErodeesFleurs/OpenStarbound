@@ -26,7 +26,10 @@ public:
   void setMetadata(JsonObject metadata);
 
 private:
-  void scanAll(String const& assetDirectory, StringList& output) const;
+  // 'ancestorDirectories' holds the filesystem path of every directory on the
+  // current recursion chain, so that a symlink leading back into one of them is
+  // skipped instead of being followed until the operating system errors out.
+  void scanAll(String const& assetDirectory, StringList& output, List<String> const& ancestorDirectories) const;
 
   String m_baseDirectory;
   List<String> m_ignorePatterns;

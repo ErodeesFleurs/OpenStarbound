@@ -68,10 +68,18 @@ void grepMap(SearchParameters const& search, String file) {
 
 void grepDirectory(SearchParameters const& search, String directory) {
   for (pair<String, bool> entry : File::dirList(directory)) {
+    String entryPath = File::relativeTo(directory, entry.first);
+    // Never follow a symlinked directory: it can point outside of the tree, or
+    // at one of its own parents (which would recurse until the OS errors out).
+    if (entry.second && File::isSymlink(entryPath)) {
+      Logger::warn("map_grep: Not descending into '{}' because it is a symlink", entryPath);
+      continue;
+    }
+
     if (entry.second)
-      grepDirectory(search, File::relativeTo(directory, entry.first));
+      grepDirectory(search, entryPath);
     else if (entry.first.endsWith(MapFilenameSuffix))
-      grepMap(search, File::relativeTo(directory, entry.first));
+      grepMap(search, entryPath);
   }
 }
 

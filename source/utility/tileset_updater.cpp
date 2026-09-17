@@ -259,6 +259,13 @@ void TilesetUpdater::defineAssetSource(String const& source) {
     return;
 
   for (pair<String, bool> entry : File::dirList(imageDir)) {
+    // Never follow a symlinked directory: it can point outside of the asset
+    // source, or at one of its own parents.
+    if (File::isSymlink(unixFileJoin(imageDir, entry.first))) {
+      Logger::warn("TilesetUpdater: Not scanning '{}' because it is a symlink", entry.first);
+      continue;
+    }
+
     if (entry.second) {
       String databaseName = entry.first;
       String databasePath = unixFileJoin(imageDir, databaseName);

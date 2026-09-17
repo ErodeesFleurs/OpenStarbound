@@ -58,10 +58,18 @@ Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPat
 
 void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, function<void(String)> func) {
   for (pair<String, bool> entry : File::dirList(dirName)) {
+    String entryPath = File::relativeTo(dirName, entry.first);
+    // Never follow a symlinked directory: it can point outside of the tree (and
+    // this walk writes to the files it finds), or at one of its own parents.
+    if (entry.second && File::isSymlink(entryPath)) {
+      Logger::warn("fix_embedded_tilesets: Not descending into '{}' because it is a symlink", entryPath);
+      continue;
+    }
+
     if (entry.second)
-      forEachRecursiveFileMatch(File::relativeTo(dirName, entry.first), filenameSuffix, func);
+      forEachRecursiveFileMatch(entryPath, filenameSuffix, func);
     else if (entry.first.endsWith(filenameSuffix))
-      func(File::relativeTo(dirName, entry.first));
+      func(entryPath);
   }
 }
 

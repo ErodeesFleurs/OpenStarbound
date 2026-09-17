@@ -1,9 +1,33 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 
+#include <filesystem>
 #include <fstream>
 
 namespace Star {
+
+namespace {
+  // Removes 'fileName' if it is a symbolic link, without following it, and
+  // returns whether it was one.  Following a link would remove files outside of
+  // the directory being removed, and a link pointing at one of its own parent
+  // directories would walk the same tree until the OS errors out.
+  bool removeSymlink(String const& fileName) {
+    if (!File::isSymlink(fileName))
+      return false;
+
+    auto path = std::filesystem::path(fileName.utf8());
+    std::error_code ec;
+    std::filesystem::remove(path, ec);
+    if (ec)
+      throw IOException::format("remove error: {}", ec.message());
+    return true;
+  }
+}
+
+bool File::isSymlink(String const& path) {
+  std::error_code ec;
+  return std::filesystem::is_symlink(std::filesystem::path(path.utf8()), ec);
+}
 
 void File::makeDirectoryRecursive(String const& fileName) {
   auto parent = dirName(fileName);
@@ -14,6 +38,9 @@ void File::makeDirectoryRecursive(String const& fileName) {
 }
 
 void File::removeDirectoryRecursive(String const& fileName) {
+  if (removeSymlink(fileName))
+    return;
+
   {
     String fileInDir;
     bool isDir;
@@ -22,6 +49,9 @@ void File::removeDirectoryRecursive(String const& fileName) {
       std::tie(fileInDir, isDir) = p;
 
       fileInDir = relativeTo(fileName, fileInDir);
+
+      if (removeSymlink(fileInDir))
+        continue;
 
       if (isDir)
         removeDirectoryRecursive(fileInDir);

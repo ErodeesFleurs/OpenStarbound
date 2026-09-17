@@ -62,6 +62,10 @@ public:
   // Is the file a directory?
   static bool isDirectory(String const& path);
 
+  // Is the path a symbolic link?  Directory walks must not follow those: a link
+  // can point outside of the tree being walked, or at one of its own parents.
+  static bool isSymlink(String const& path);
+
   static void remove(String const& filename);
   static void removeDirectoryRecursive(String const& filename);
 

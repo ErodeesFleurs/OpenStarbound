@@ -1,4 +1,5 @@
 #include "StarFile.hpp"
+#include "StarLogging.hpp"
 #include "json_tool.hpp"
 #include "editor_gui.hpp"
 
@@ -112,6 +113,13 @@ FormattedJson Star::addOrSet(bool add,
 void forEachFileRecursive(String const& directory, function<void(String)> func) {
   for (pair<String, bool> entry : File::dirList(directory)) {
     String filename = File::relativeTo(directory, entry.first);
+    // Never follow a symlinked directory: it can point outside of the tree, or
+    // at one of its own parents (which would recurse until the OS errors out).
+    if (entry.second && File::isSymlink(filename)) {
+      Logger::warn("json_tool: Not descending into '{}' because it is a symlink", filename);
+      continue;
+    }
+
     if (entry.second)
       forEachFileRecursive(filename, func);
     else
