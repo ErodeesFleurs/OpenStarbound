@@ -800,6 +800,13 @@ void UniverseServer::updateShips() {
           shipWorld->setProperty("ship.species", species = p.second->shipSpecies());
 
         p.second->setShipSpecies(species);
+        // The species comes from the ship world or from the client's
+        // 'ship.setShipSpecies' rpc, so it can name a species the server has no
+        // ships for; Map::get would throw out of the server's update loop.
+        if (!m_speciesShips.contains(species)) {
+          Logger::warn("UniverseServer: Client {} has unknown ship species '{}', skipping ship update", p.first, species);
+          return;
+        }
         auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
         unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
@@ -2111,6 +2118,16 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     return;
   }
 
+  // The ship world is built from the ship species, so it has to be one the
+  // server has ships for.  This used to be checked for remote connections only,
+  // which let a local connection reach the ship world creation with an unknown
+  // species, where the lookup threw "MapException: Key '' not found" and the
+  // client was dropped with a confusing error instead.
+  if (!m_speciesShips.contains(clientConnect->shipSpecies)) {
+    connectionFail("Unknown ship species");
+    return;
+  }
+
   if (!remoteAddress) {
     administrator = true;
     Logger::info("UniverseServer: Logged in player '{}' locally", clientConnect->playerName);
@@ -2123,11 +2140,6 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
         connectionFail(clientAssetsMismatchMessage);
         return;
       }
-    }
-
-    if (!m_speciesShips.contains(clientConnect->shipSpecies)) {
-      connectionFail("Unknown ship species");
-      return;
     }
 
     if (!clientConnect->account.empty()) {
@@ -2206,8 +2218,12 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   }
 
   ConnectionId clientId = m_clients.nextId();
+  StringSet validShipSpecies;
+  for (auto const& pair : m_speciesShips)
+    validShipSpecies.add(pair.first);
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
-                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks);
+                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks,
+                                                        std::move(validShipSpecies));
   clientContext->registerRpcHandlers(m_teamManager->authenticatedRpcHandlers(clientContext->playerUuid()));
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
@@ -2622,6 +2638,12 @@ Maybe<UniverseServer::WorldServerPromise> UniverseServer::shipWorldPromise(
     if (!shipWorld) {
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
       auto& species = clientContext->shipSpecies();
+      // Species are validated at login and when the client sets one, but this
+      // promise also runs for later re-creations, so never let an unknown
+      // species reach the Map lookup (it would throw a bare MapException).
+      if (!speciesShips.contains(species))
+        throw StarException::format(
+            "UniverseServer: cannot create ship world {} for unknown ship species '{}'", clientShipWorldId, species);
       auto shipStructure = WorldStructure(speciesShips.get(species).first());
       Vec2U worldSize(2048, 2048);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))

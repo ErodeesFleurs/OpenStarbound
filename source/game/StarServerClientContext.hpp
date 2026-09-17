@@ -21,7 +21,7 @@ STAR_CLASS(ServerClientContext);
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
+      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies);
 
   ConnectionId clientId() const;
   Maybe<HostAddress> const& remoteAddress() const;
@@ -126,6 +126,10 @@ private:
   Uuid const m_playerUuid;
   String const m_playerName;
   String m_shipSpecies;
+  // The species the server has ship worlds for; the client may set its own
+  // ship species through the 'ship.setShipSpecies' rpc, so it is validated
+  // against this.
+  StringSet m_validShipSpecies;
   bool const m_canBecomeAdmin;
   
   bool m_serverDebug = false;

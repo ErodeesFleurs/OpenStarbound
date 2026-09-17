@@ -73,6 +73,7 @@ SET (star_game_tests_SOURCES
       root_test.cpp
       server_test.cpp
       spawn_test.cpp
+      species_test.cpp
       stat_test.cpp
       tile_array_test.cpp
       world_geometry_test.cpp

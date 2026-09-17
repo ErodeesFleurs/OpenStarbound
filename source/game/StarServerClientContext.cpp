@@ -1,6 +1,7 @@
 #include "StarServerClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarLogging.hpp"
 #include "StarWorldServerThread.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarContainerEntity.hpp"
@@ -11,13 +12,14 @@
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
+    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, StringSet validShipSpecies)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
     m_playerUuid(playerUuid),
     m_playerName(playerName),
     m_shipSpecies(shipSpecies),
+    m_validShipSpecies(std::move(validShipSpecies)),
     m_canBecomeAdmin(canBecomeAdmin),
     m_shipChunks(std::move(initialShipChunks)) {
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
@@ -28,7 +30,14 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
 
   m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> Json {
       RecursiveMutexLocker locker(m_mutex);
-      setShipSpecies(species.toString());
+      String newSpecies = species.toString();
+      // The species decides which ship world structure the server builds, and
+      // any client is free to send this rpc, so it cannot be trusted.
+      if (!m_validShipSpecies.contains(newSpecies)) {
+        Logger::warn("ServerClientContext: <User: {}> tried to set unknown ship species '{}'", m_playerName, newSpecies);
+        return false;
+      }
+      setShipSpecies(std::move(newSpecies));
       return true;
     });
 

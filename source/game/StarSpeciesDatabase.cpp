@@ -229,6 +229,18 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
 
   m_ouchNoises = jsonToStringList(config.get("ouchNoises"));
 
+  // Both lists are indexed by Gender, so a species has to provide one entry per
+  // gender.  A shorter list used to be read with operator[], which is an out of
+  // bounds read on the vector (upstream #599: an empty ouchNoises array was an
+  // access violation).
+  if (m_nameGen.size() < GenderNames.size() || m_ouchNoises.size() < GenderNames.size())
+    throw StarException::format("Species '{}' must have at least {} nameGen and {} ouchNoises entries, has {} and {}",
+                                m_kind,
+                                GenderNames.size(),
+                                GenderNames.size(),
+                                m_nameGen.size(),
+                                m_ouchNoises.size());
+
   for (Json v : config.getArray("defaultItems", JsonArray()))
     m_defaultItems.append(ItemDescriptor(v));
 
