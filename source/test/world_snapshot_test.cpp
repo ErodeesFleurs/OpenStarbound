@@ -2,9 +2,13 @@
 #include "StarCelestialDatabase.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFile.hpp"
-#include "StarLogging.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
 #include "StarWorldServer.hpp"
+#include "StarWorldStructure.hpp"
 #include "StarWorldTemplate.hpp"
+
+#include <iostream>
 
 #include "gtest/gtest.h"
 
@@ -24,17 +28,26 @@ namespace {
       hash = (hash ^ (uint8_t)byte) * 1099511628211ull;
     return hash;
   }
+
+  // Samples a fixed grid around the surface of a world.  Reading a tile
+  // generates the sector it is in, so only the sampled sectors are generated.
+  uint64_t sampleWorld(WorldServer& world, float surfaceLevel) {
+    uint64_t hash = 0;
+    for (int x : {0, 128, 256, 384, 512, 640, 768, 896}) {
+      for (int y = (int)surfaceLevel - 1280; y <= (int)surfaceLevel + 512; y += 128)
+        hash ^= tileHash(Vec2I(x, y), world.getServerTile(Vec2I(x, y)));
+    }
+    return hash;
+  }
 }
 
+// World generation is deterministic: it is a pure function of the celestial
+// parameters (the coordinate feeds the planet seed, the system/type fields come
+// from fixed Perlin seeds in the assets), so these hashes are stable across
+// runs and machines and can be compared to a constant.  When world generation
+// changes on purpose, rerun with --gtest_filter='WorldSnapshot.*'; the new hash
+// is printed to stderr.
 TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
-  // The same coordinate on the same celestial database has to produce identical
-  // tiles.  Generation that depends on anything but its parameters would make
-  // differential testing against another implementation meaningless.
-  //
-  // There is no hard coded expected hash: a celestial database file that is
-  // created from scratch gets a random universe uuid, and the uuid feeds the
-  // celestial parameters that the world is generated from.  Keep the storage
-  // file to reproduce a specific world.
   auto storagePath = File::temporaryDirectory();
   auto finallyGuard = finally([&storagePath]() { File::removeDirectoryRecursive(storagePath); });
   auto celestialDatabase = make_shared<CelestialMasterDatabase>(File::relativeTo(storagePath, "universe.chunks"));
@@ -66,20 +79,49 @@ TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
   auto firstWorld = makeWorld();
   auto secondWorld = makeWorld();
 
-  // Sampling a fixed grid around the surface level: reading a tile generates the
-  // sector it is in, so only the sampled sectors are generated.
+  uint64_t firstHash = sampleWorld(*firstWorld, surfaceLevel);
+  uint64_t secondHash = sampleWorld(*secondWorld, surfaceLevel);
+  std::cerr << "WorldSnapshot: " << coordinate->id() << " hashes to 0x" << std::hex << firstHash << std::dec << std::endl;
+
+  EXPECT_EQ(firstHash, secondHash);
+  EXPECT_EQ(firstHash, 0x801745d507acfcaaull) << "update the expected hash (printed above)";
+}
+
+TEST(WorldSnapshot, ShipWorldIsDeterministic) {
+  // The ship world does not depend on celestial parameters, so it has its own
+  // stable hash.
+  auto speciesShips = Root::singleton().assets()->json("/universe_server.config:speciesShips");
+  auto shipStructure = WorldStructure(jsonToStringList(speciesShips.get("human"))[0]);
+  Vec2U worldSize(2048, 2048);
+  if (auto jWorldSize = shipStructure.configValue("worldSize"))
+    worldSize = jsonToVec2U(jWorldSize);
+
+  auto makeWorld = [&]() {
+    auto world = make_shared<WorldServer>(worldSize, File::ephemeralFile());
+    world->setCentralStructure(shipStructure);
+    return world;
+  };
+  auto firstWorld = makeWorld();
+  auto secondWorld = makeWorld();
+
+  // The ship structure is placed around the middle of the world.
+  Vec2I center((int)worldSize[0] / 2, (int)worldSize[1] / 2);
   uint64_t firstHash = 0;
   uint64_t secondHash = 0;
-  unsigned samples = 0;
-  for (int x : {0, 128, 256, 512, 768}) {
-    for (int i = -4; i <= 4; ++i) {
-      Vec2I position(x, (int)surfaceLevel + i * 128);
-      firstHash ^= tileHash(position, firstWorld->getServerTile(position));
+  unsigned nonEmptyTiles = 0;
+  for (int x = -160; x <= 160; x += 16) {
+    for (int y = -160; y <= 160; y += 16) {
+      Vec2I position = center + Vec2I(x, y);
+      auto const& firstTile = firstWorld->getServerTile(position);
+      firstHash ^= tileHash(position, firstTile);
       secondHash ^= tileHash(position, secondWorld->getServerTile(position));
-      ++samples;
+      if (firstTile.foreground != EmptyMaterialId)
+        ++nonEmptyTiles;
     }
   }
+  std::cerr << "WorldSnapshot: ship world hashes to 0x" << std::hex << firstHash << std::dec << std::endl;
 
-  Logger::info("WorldSnapshot: {} samples of {} hash to {:x}", samples, coordinate->id(), firstHash);
+  EXPECT_GT(nonEmptyTiles, 0u) << "the sampled region does not contain any ship structure";
   EXPECT_EQ(firstHash, secondHash);
+  EXPECT_EQ(firstHash, 0x96a3df5c62832b0bull) << "update the expected hash (printed above)";
 }

@@ -566,6 +566,14 @@ TEST(LuaTest, Require) {
     )SCRIPT");
 
   EXPECT_EQ(context.invokePath<LuaString>("res"), String("abc"));
+
+  // The require function above stored closures that capture a Lua reference
+  // (LuaString), and such a closure keeps the engine alive from inside its own
+  // Lua state: the state would never be destroyed and everything it allocated
+  // leaks (LeakSanitizer reports ~22KB for this test alone).  Drop the globals
+  // and collect before the engine goes out of scope.
+  context.load("a = nil b = nil c = nil res = nil");
+  luaEngine->collectGarbage();
 }
 
 TEST(LuaTest, Eval) {

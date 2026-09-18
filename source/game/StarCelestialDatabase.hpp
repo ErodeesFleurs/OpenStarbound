@@ -128,7 +128,7 @@ protected:
 
   struct SystemType {
     String typeName;
-    bool constellationCapable;
+    bool constellationCapable = false;
     Json baseParameters;
     JsonArray variationParameters;
     List<CelestialOrbitRegion> orbitRegions;
