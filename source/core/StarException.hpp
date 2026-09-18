@@ -33,6 +33,9 @@ constexpr bool isRuntimeFormatStringOrString = !std::is_array_v<std::remove_refe
 template <typename... T>
 std::string strf(fmt::format_string<T...> fmt, T&&... args);
 
+template <typename Char, typename... T>
+std::string strfChecked(fmt::basic_format_string<Char, T...> fmt, T const&... args);
+
 class StarException : public std::exception {
 public:
   template <typename... Args>
@@ -103,7 +106,7 @@ void fatalException(std::exception const& e, bool showStackTrace);
   public:                                                                                                                         \
     template <typename... Args>                                                                                                   \
     static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
-      return ClassName(strf(fmt, args...));                                                                                       \
+      return ClassName(strfChecked(fmt, args...));                                                                                \
     }                                                                                                                             \
     template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>                          \
     static ClassName format(S const& fmt, Args const&... args) {                                                                  \
@@ -126,7 +129,7 @@ STAR_EXCEPTION(MemoryException, StarException);
 
 template <typename... Args>
 StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
-  return StarException(strf(fmt, args...));
+  return StarException(strfChecked(fmt, args...));
 }
 
 template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>

@@ -48,6 +48,19 @@ std::string strf(fmt::format_string<T...> fmt, T&&... args) {
   }
 }
 
+// An already checked format string: the argument types have to match it exactly.
+// Used where a wrapper forwards the format_string it received; passing it through
+// the overload above would redo the conversion, which cannot be a constant
+// expression at that point.
+template <typename Char, typename... T>
+std::string strfChecked(fmt::basic_format_string<Char, T...> fmt, T const&... args) {
+  try {
+    return fmt::format(fmt, args...);
+  } catch (std::exception const& e) {
+    throw FormatException(Detail::formatRuntime("Exception thrown during string format: {}", e.what()));
+  }
+}
+
 // Runtime format strings: char pointers, std::string, std::string_view and
 // friends.  String literals are excluded here, they take the overload above.
 template <typename S,

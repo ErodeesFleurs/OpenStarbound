@@ -170,7 +170,7 @@ private:
 template <typename... Args>
 void Logger::logf(LogLevel level, fmt::format_string<Args...> msg, Args const&... args) {
   if (loggable(level)) {
-    std::string output = strf(msg, args...);
+    std::string output = strfChecked(msg, args...);
     MutexLocker locker(s_mutex);
     for (auto const& l : s_sinks) {
       if (l->level() <= level) {

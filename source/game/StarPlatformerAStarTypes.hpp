@@ -96,6 +96,23 @@ inline bool operator==(Node const& a, Node const& b) {
   return a.position == b.position && a.velocity == b.velocity;
 }
 
+inline std::ostream& operator<<(std::ostream& os, Node const& node);
+inline std::ostream& operator<<(std::ostream& os, Action action);
+inline std::ostream& operator<<(std::ostream& os, Edge const& edge);
+
+}
+
+}
+
+// The formatter specializations have to be visible before the stream operators
+// that use them are defined below, otherwise the instantiations come first.
+template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
+template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
+template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};
+
+namespace Star {
+namespace PlatformerAStar {
+
 inline std::ostream& operator<<(std::ostream& os, Node const& node) {
   return os << strf("Node{position = {}, velocity = {}}", node.position, node.velocity);
 }
@@ -145,7 +162,3 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 
 }
 }
-
-template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};
