@@ -38,9 +38,11 @@ struct WorldTile {
   MaterialHue backgroundModHueShift;
   MaterialColorVariant backgroundColorVariant;
 
-  CollisionKind collision;
+  // Same values as WorldTile::WorldTile(), for the paths that do not construct
+  // a tile through it (the members used to be indeterminate there).
+  CollisionKind collision = CollisionKind::Null;
 
-  bool collisionCacheDirty = false;
+  bool collisionCacheDirty = true;
   StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace> collisionCache;
 
   BiomeIndex blockBiomeIndex;
@@ -120,7 +122,7 @@ struct NetTile {
   MaterialColorVariant foregroundColorVariant;
   ModId foregroundMod;
   MaterialHue foregroundModHueShift;
-  CollisionKind collision;
+  CollisionKind collision = CollisionKind::Null;
   BiomeIndex blockBiomeIndex;
   BiomeIndex environmentBiomeIndex;
   LiquidNetUpdate liquid;

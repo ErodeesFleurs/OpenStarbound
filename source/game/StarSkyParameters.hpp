@@ -40,7 +40,7 @@ struct SkyParameters {
   List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
   List<pair<String, String>> horizonImages;
   bool horizonClouds = true;
-  SkyType skyType;
+  SkyType skyType = SkyType::Barren;
   Either<SkyColoring, Color> skyColoring;
   Maybe<float> spaceLevel;
   Maybe<float> surfaceLevel;

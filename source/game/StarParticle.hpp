@@ -96,13 +96,13 @@ struct Particle {
 
   float length;
 
-  DestructionAction destructionAction;
+  DestructionAction destructionAction = DestructionAction::None;
   AssetPath destructionImage;
   float destructionTime;
   bool destructionSet = false;
 
   float timeToLive;
-  Layer layer;
+  Layer layer = Layer::Middle;
 
   bool collidesForeground = true;
   bool collidesLiquid = true;

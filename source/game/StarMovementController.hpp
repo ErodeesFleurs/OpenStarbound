@@ -218,17 +218,17 @@ private:
     Vec2F movement;
     Vec2F correction;
     Maybe<MovingCollisionId> surfaceMovingCollisionId;
-    bool isStuck;
-    bool onGround;
+    bool isStuck = false;
+    bool onGround = false;
     Vec2F groundSlope;
-    CollisionKind collisionKind;
+    CollisionKind collisionKind = CollisionKind::Null;
   };
 
   struct CollisionSeparation {
     Vec2F correction;
-    bool solutionFound;
+    bool solutionFound = false;
     Maybe<MovingCollisionId> movingCollisionId;
-    CollisionKind collisionKind;
+    CollisionKind collisionKind = CollisionKind::Null;
   };
 
   struct CollisionPoly {
@@ -236,7 +236,7 @@ private:
     RectF polyBounds;
     Vec2F sortPosition;
     Maybe<MovingCollisionId> movingCollisionId;
-    CollisionKind collisionKind;
+    CollisionKind collisionKind = CollisionKind::Null;
     float sortDistance;
   };
 
