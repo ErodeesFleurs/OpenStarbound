@@ -77,6 +77,7 @@ SET (star_game_tests_SOURCES
       stat_test.cpp
       tile_array_test.cpp
       world_geometry_test.cpp
+      world_snapshot_test.cpp
       universe_connection_test.cpp
       weather_domain_test.cpp
       weather_test.cpp

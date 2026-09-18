@@ -1,0 +1,65 @@
+# Valgrind suppressions for the test binaries.
+#
+# Every report valgrind currently produces on a clean tree comes from inside
+# libre2: String::regexMatch() constructs an RE2, and RE2::Init()/Prog::Optimize()
+# read uninitialised memory in their own optimizer.  No Starbound code is
+# involved, so suppress any report whose innermost frame is an re2 function and
+# keep everything else visible:
+#
+#   valgrind --suppressions=nix/valgrind.supp --track-origins=yes \
+#     ./dist/game_tests -bootconfig <cfg> --gtest_filter='<cases>'
+#
+# Regenerate (or extend, if a report inside re2 shows a different error kind)
+# with:
+#   valgrind --gen-suppressions=all ./dist/game_tests -bootconfig <cfg> --gtest_filter='<cases>'
+#
+# 'fun:' patterns are mangled symbol names; '*' is a wildcard and a trailing
+# '...' matches the rest of the stack.
+
+{
+   re2-conditional-jump
+   Memcheck:Cond
+   fun:_ZN3re2*
+   ...
+}
+
+{
+   re2-use-of-uninitialised-value-8
+   Memcheck:Value8
+   fun:_ZN3re2*
+   ...
+}
+
+{
+   re2-use-of-uninitialised-value-4
+   Memcheck:Value4
+   fun:_ZN3re2*
+   ...
+}
+
+{
+   re2-use-of-uninitialised-value-2
+   Memcheck:Value2
+   fun:_ZN3re2*
+   ...
+}
+
+{
+   re2-use-of-uninitialised-value-1
+   Memcheck:Value1
+   fun:_ZN3re2*
+   ...
+}
+
+# libunwind probes whether stack addresses are readable by calling write() on
+# them; valgrind reports the probe itself.  It shows up whenever cpptrace takes a
+# stack trace for an exception (StarException_unix.cpp).
+{
+   libunwind-address-probe
+   Memcheck:Param
+   write(buf)
+   fun:syscall
+   fun:_UIx86_64_address_is_valid
+   ...
+}
+

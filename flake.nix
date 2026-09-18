@@ -64,7 +64,10 @@
           };
           # ASan + UBSan build: the checkPhase fails on the first sanitizer
           # report, and `nix run .#sanitized-tests` sweeps game_tests with the
-          # sanitizers halting on the first error.
+          # sanitizers halting on the first error (and a 900s per-case timeout,
+          # world generation is much slower under ASan).
+          # Note: `nix build .#sanitized` overwrites ./result -- pass
+          # `-o result-sanitized` to keep the default package linked there.
           sanitized = openstarbound.override { sanitizers = true; };
         };
     in
@@ -87,9 +90,28 @@
           program = "${pkgs.writeShellScript "openstarbound-sanitized-tests" ''
             export ASAN_OPTIONS="detect_leaks=0''${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
             export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1''${UBSAN_OPTIONS:+:$UBSAN_OPTIONS}"
+            # World generation is several times slower under ASan, so the
+            # default 120s per case is not enough for the SpawnTest scenes.
+            export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
             exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
           ''}";
           meta.description = "Run OpenStarbound's game_tests with AddressSanitizer and UndefinedBehaviorSanitizer";
+        };
+        # Leak checking (LeakSanitizer) for the same sweep.  Separate from
+        # sanitized-tests because core_tests keeps ~22KB of unreachable
+        # allocations alive through the shared Lua state (the same amount with
+        # or without the Lua tests, none when no test runs), which would fail a
+        # hard gate; the game_tests cases measure clean, so this is the opt-in
+        # leak gate.
+        sanitized-leak-tests = {
+          type = "app";
+          program = "${pkgs.writeShellScript "openstarbound-sanitized-leak-tests" ''
+            export ASAN_OPTIONS="detect_leaks=1''${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
+            export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1''${UBSAN_OPTIONS:+:$UBSAN_OPTIONS}"
+            export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
+            exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
+          ''}";
+          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer's leak checker enabled";
         };
       });
 

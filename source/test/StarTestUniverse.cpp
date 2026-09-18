@@ -80,13 +80,18 @@ TestUniverse::~TestUniverse() {
 
 void TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
-  // Bounded: if the world cannot be loaded the player stays teleporting
-  // forever, so give up after ~60 seconds and let the caller's expectations
-  // report the failure instead of hanging the test.  A ship flight to a
-  // celestial world legitimately takes tens of seconds.
-  for (size_t i = 0; (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) && i < 3750; ++i) {
+  // Bounded by wall clock: if the world cannot be loaded the player stays
+  // teleporting forever, so give up after five minutes and let the caller's
+  // expectations report the failure instead of hanging the test.  A ship flight
+  // to a celestial world legitimately takes tens of seconds, and a sanitizer
+  // build several times that, so the runner's per-case timeout
+  // (OPENSTARBOUND_TEST_TIMEOUT) is the practical limit.
+  int64_t startTime = Time::monotonicMilliseconds();
+  while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
     m_client->update(0.016f);
     Thread::sleep(16);
+    if (Time::monotonicMilliseconds() - startTime > 300000)
+      break;
   }
 }
 
