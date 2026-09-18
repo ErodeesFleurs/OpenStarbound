@@ -83,35 +83,19 @@
           program = "${(packagesFor pkgs).default}/bin/run-game-tests";
           meta.description = "Run OpenStarbound's game_tests against your Starbound assets";
         };
-        # Same sweep, but against the ASan+UBSan build and with the sanitizers
-        # halting on the first report (so a report fails the run).
+        # Same sweep, but against the ASan+UBSan build, with the sanitizers
+        # halting on the first report (so a report fails the run), the leak
+        # checker enabled, and a 900s per case timeout because world generation
+        # is several times slower under ASan.
         sanitized-tests = {
           type = "app";
           program = "${pkgs.writeShellScript "openstarbound-sanitized-tests" ''
-            export ASAN_OPTIONS="detect_leaks=0''${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
-            export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1''${UBSAN_OPTIONS:+:$UBSAN_OPTIONS}"
-            # World generation is several times slower under ASan, so the
-            # default 120s per case is not enough for the SpawnTest scenes.
-            export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
-            exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
-          ''}";
-          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer and UndefinedBehaviorSanitizer";
-        };
-        # Leak checking (LeakSanitizer) for the same sweep.  Separate from
-        # sanitized-tests because core_tests keeps ~22KB of unreachable
-        # allocations alive through the shared Lua state (the same amount with
-        # or without the Lua tests, none when no test runs), which would fail a
-        # hard gate; the game_tests cases measure clean, so this is the opt-in
-        # leak gate.
-        sanitized-leak-tests = {
-          type = "app";
-          program = "${pkgs.writeShellScript "openstarbound-sanitized-leak-tests" ''
             export ASAN_OPTIONS="detect_leaks=1''${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
             export UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1''${UBSAN_OPTIONS:+:$UBSAN_OPTIONS}"
             export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
             exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
           ''}";
-          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer's leak checker enabled";
+          meta.description = "Run OpenStarbound's game_tests with AddressSanitizer, UndefinedBehaviorSanitizer and the leak checker";
         };
       });
 

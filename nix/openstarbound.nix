@@ -157,6 +157,9 @@ stdenv.mkDerivation {
   cmakeFlags = [
     (lib.cmakeFeature "STAR_SOURCE_IDENTIFIER" sourceIdentifier)
     (lib.cmakeBool "STAR_BUILD_GUI" guiSupport)
+    # The maintenance utilities (map_grep and the tileset tools) are commented
+    # out in the CMake files; building them here keeps them from rotting.
+    (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
     (lib.cmakeBool "BUILD_TESTING" withTests)
     (lib.cmakeBool "STAR_ENABLE_STEAM_INTEGRATION" steamSupport)
     (lib.cmakeBool "STAR_ENABLE_DISCORD_INTEGRATION" discordSupport)
@@ -175,11 +178,11 @@ stdenv.mkDerivation {
     # driver, going through NIX_LDFLAGS would hand -fsanitize=... to ld itself.
     # 'enum' is not part of -fsanitize=undefined and catches loads of enum
     # values that no enumerator maps to (uninitialised enum members, for
-    # example).
+    # example); signed-integer-overflow is not in it either.
     "-DSTAR_USE_JEMALLOC=false"
-    "-DCMAKE_C_FLAGS=-fsanitize=address,undefined,enum"
-    "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined,enum"
-    "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined,enum"
+    "-DCMAKE_C_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
+    "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
+    "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
   ];
 
   # core_tests carries the "NoAssets" label and runs without any game assets.
@@ -187,15 +190,13 @@ stdenv.mkDerivation {
   # built and installed but never run here: the package ships
   # bin/run-game-tests (nix run .#game-tests) for that.
   #
-  # Leak detection stays off even in the sanitized build: core_tests keeps about
-  # 22KB of unreachable allocations alive through the shared Lua state (measured:
-  # the same amount with or without the Lua tests, none when no test runs).
-  # `nix run .#sanitized-leak-tests` enables it for the game_tests sweep, where
-  # the cases measure clean.
+  # The sanitized build also runs the leak checker; core_tests holds on to
+  # nothing that LeakSanitizer reports (it used to keep ~22KB alive through a
+  # Lua reference cycle in the require test).
   doCheck = withTests;
   checkPhase = ''
     runHook preCheck
-    ${lib.optionalString sanitizers "ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 "}ctest --output-on-failure -L NoAssets
+    ${lib.optionalString sanitizers "ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 "}ctest --output-on-failure -L NoAssets
     runHook postCheck
   '';
 

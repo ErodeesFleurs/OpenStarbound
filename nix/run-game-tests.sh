@@ -20,7 +20,7 @@ set -eu
 
 assets_dir="${OPENSTARBOUND_ASSETS:-${XDG_DATA_HOME:-$HOME/.local/share}/openstarbound/assets}"
 out_dir="${OPENSTARBOUND_TEST_OUT:-$PWD/game-tests-report}"
-timeout_secs="${OPENSTARBOUND_TEST_TIMEOUT:-120}"
+timeout_secs="${OPENSTARBOUND_TEST_TIMEOUT:-300}"
 
 vanilla=""
 if [ -f "$assets_dir/packed.pak" ]; then

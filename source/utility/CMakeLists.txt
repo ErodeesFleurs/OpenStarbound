@@ -46,15 +46,19 @@ TARGET_LINK_LIBRARIES (make_versioned_json ${STAR_EXT_LIBS})
 #  render_terrain_selector.cpp)
 #TARGET_LINK_LIBRARIES (render_terrain_selector ${STAR_EXT_LIBS})
 
-#ADD_EXECUTABLE (update_tilesets
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  update_tilesets.cpp tileset_updater.cpp)
-#TARGET_LINK_LIBRARIES (update_tilesets ${STAR_EXT_LIBS})
+# Maintenance utilities that are not part of a release.  Built when
+# STAR_BUILD_DEV_TOOLS is on, so that they do not rot unnoticed.
+if(STAR_BUILD_DEV_TOOLS)
 
-#ADD_EXECUTABLE (fix_embedded_tilesets
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  fix_embedded_tilesets.cpp)
-#TARGET_LINK_LIBRARIES (fix_embedded_tilesets ${STAR_EXT_LIBS})
+ADD_EXECUTABLE (update_tilesets
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  update_tilesets.cpp tileset_updater.cpp)
+TARGET_LINK_LIBRARIES (update_tilesets ${STAR_EXT_LIBS})
+
+ADD_EXECUTABLE (fix_embedded_tilesets
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  fix_embedded_tilesets.cpp)
+TARGET_LINK_LIBRARIES (fix_embedded_tilesets ${STAR_EXT_LIBS})
 
 #ADD_EXECUTABLE (world_benchmark
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -71,10 +75,12 @@ TARGET_LINK_LIBRARIES (make_versioned_json ${STAR_EXT_LIBS})
 #  dungeon_generation_benchmark.cpp)
 #TARGET_LINK_LIBRARIES (dungeon_generation_benchmark ${STAR_EXT_LIBS})
 
-#ADD_EXECUTABLE (map_grep
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  map_grep.cpp)
-#TARGET_LINK_LIBRARIES (map_grep ${STAR_EXT_LIBS})
+ADD_EXECUTABLE (map_grep
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  map_grep.cpp)
+TARGET_LINK_LIBRARIES (map_grep ${STAR_EXT_LIBS})
+
+endif()
 
 #ADD_EXECUTABLE (word_count
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

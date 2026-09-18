@@ -138,6 +138,8 @@ if(STAR_BUILD_GUI)
   option(STAR_ENABLE_DISCORD_INTEGRATION "Use Discord platform services" OFF)
 endif()
 
+option(STAR_BUILD_DEV_TOOLS "Build the maintenance utilities (map_grep, tileset tools)" OFF)
+
 option(STAR_LUA_APICHECK "Use lua api checks" OFF)
 option(STAR_USE_JEMALLOC "Use jemalloc allocators" OFF)
 option(STAR_USE_MIMALLOC "Use mimalloc allocators" OFF)
