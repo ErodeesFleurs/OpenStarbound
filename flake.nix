@@ -100,17 +100,57 @@
       });
 
       # `nix develop` is for iterating on the C++ tree with cmake/ninja against
-      # the repository's own (unmodified) CMakeLists.txt.  LD_LIBRARY_PATH is
-      # needed because upstream disables CMake's build RPATH, so binaries built
-      # by hand cannot locate their dependencies otherwise.
+      # the repository's own CMakeLists.txt.  LD_LIBRARY_PATH is needed because
+      # upstream disables CMake's build RPATH, so binaries built by hand cannot
+      # locate their dependencies otherwise: the dependencies (and their runtime
+      # closures, which lld linked binaries reference directly) are resolved by
+      # the shell hook from the library outputs.  The shell deliberately does not
+      # depend on the package, so that editing the sources does not rebuild it.
+      #
+      # Hand builds should additionally pass
+      #   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
+      # because linking the test binaries (750MB / 1.8GB sanitized) takes
+      # minutes with the default linker and seconds with lld.  For sanitizer
+      # trees use -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-g1 -fsanitize=..."
+      # (Release has no -g, and the per configuration flags are set with set() in
+      # the CMake files, so they cannot be overridden from the command line).
       devShells = forAllSystems (
         pkgs:
         let
+          # Library outputs to take the runtime library path from.  The package's
+          # buildInputs carry the dev outputs of most of these (headers only), so
+          # they are named here and mapped through getLib.
+          shellLibraryPackages = with pkgs; [
+            zlib-ng
+            zlib
+            libcpr
+            libpng
+            freetype
+            libogg
+            libvorbis
+            zstd
+            libopus
+            re2
+            cpptrace
+            sdl3
+            glew
+            libGL
+            wayland
+            libxkbcommon
+          ];
           shellFor =
             package:
             pkgs.mkShell {
               inputsFrom = [ package ];
-              env.LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath package.buildInputs;
+              shellHook = ''
+                shell_library_path=""
+                for lib in ${nixpkgs.lib.concatStringsSep " " (map (d: "${pkgs.lib.getLib d}") shellLibraryPackages)}; do
+                  for path in $(nix-store -qR "$lib"); do
+                    [ -d "$path/lib" ] && shell_library_path="$shell_library_path:$path/lib"
+                  done
+                done
+                export LD_LIBRARY_PATH="''${shell_library_path#:}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+              '';
               # Upstream's ImGui Lua bindings hand Lua-supplied strings to ImGui
               # as printf format strings, which NixOS' `format` hardening turns
               # into -Werror=format-security.  The packaged build applies

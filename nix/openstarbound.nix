@@ -17,6 +17,7 @@
   libopus,
   re2,
   cpptrace,
+  lld,
   sdl3,
   glew,
   libGL,
@@ -115,7 +116,12 @@ stdenv.mkDerivation {
   patches = [ ./patches/imgui-lua-literal-text.patch ];
 
   strictDeps = true;
-  nativeBuildInputs = [ cmake ninja pkg-config ] ++ lib.optional qtSupport qt5.wrapQtAppsHook;
+  # lld is only there for hand builds (see the devShells in flake.nix):
+  # `-fuse-ld=lld` links the ~750MB test binaries in seconds instead of minutes.
+  # The package itself keeps the default linker: linked with lld, the installed
+  # binaries no longer found their dependencies through CMake's build RPATH
+  # (libz-ng.so.2 went missing in the test phase), which GNU ld provides.
+  nativeBuildInputs = [ cmake ninja pkg-config lld ] ++ lib.optional qtSupport qt5.wrapQtAppsHook;
   buildInputs = [
     zlib-ng
     libcpr
@@ -150,6 +156,19 @@ stdenv.mkDerivation {
         ${lib.escapeShellArg "\${GLEW_LIBRARY}"} \
       --replace-fail 'set(CMAKE_SKIP_BUILD_RPATH TRUE)' \
         'set(CMAKE_SKIP_BUILD_RPATH FALSE)'
+  ''
+  # Linking the ~750MB test binaries with the default GNU ld takes minutes per
+  # link (the sanitized ones are ~1.8GB and took 7), lld does it in seconds.
+  + lib.optionalString sanitizers ''
+    # Line tables only for the sanitized build: it keeps the file:line in
+    # sanitizer and valgrind reports, but cuts the binaries and their link time
+    # down a lot.  The per-configuration flags are set() unconditionally in the
+    # CMake files, so they have to be patched rather than overridden.
+    substituteInPlace source/CMakeLists.txt \
+      --replace-fail 'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
+        'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")' \
+      --replace-fail 'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
+        'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")'
   '';
 
   cmakeDir = "../source";
