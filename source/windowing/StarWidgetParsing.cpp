@@ -830,7 +830,7 @@ ImageStretchSet WidgetParser::parseImageStretchSet(Json const& config) {
   } else if (type == "stretch") {
     res.type = ImageStretchSet::ImageStretchType::Stretch;
   } else {
-    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: {}"));
+    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: {}", type));
   }
 
   return res;

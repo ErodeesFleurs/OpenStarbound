@@ -114,7 +114,7 @@ namespace Star {
 namespace PlatformerAStar {
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node) {
-  return os << strf("Node{position = {}, velocity = {}}", node.position, node.velocity);
+  return os << strf("Node{{position = {}, velocity = {}}}", node.position, node.velocity);
 }
 
 inline std::ostream& operator<<(std::ostream& os, Action action) {
@@ -122,7 +122,7 @@ inline std::ostream& operator<<(std::ostream& os, Action action) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
-  return os << strf("Edge{cost = %f, action = {}, jumpVelocity = {}, source = {}, target = {}}",
+  return os << strf("Edge{{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}}",
           edge.cost,
           edge.action,
           edge.jumpVelocity,

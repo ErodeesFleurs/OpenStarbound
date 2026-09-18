@@ -282,7 +282,7 @@ IODevicePtr Buffer::clone() {
 }
 
 IODevicePtr ExternalBuffer::clone() {
-  Logger::info("Cloning ExternalBuffer from position {}");
+  Logger::info("Cloning ExternalBuffer");
   return make_shared<ExternalBuffer>(*this);
 }
 
