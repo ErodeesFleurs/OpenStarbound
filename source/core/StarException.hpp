@@ -5,8 +5,30 @@
 
 #include <string>
 #include <sstream>
+#include <string_view>
+#include <type_traits>
 
 namespace Star {
+
+// A format string that fmt cannot check at compile time: string literals are
+// excluded (they take the checked overload directly), as are fmt's own
+// format_string types (they are already checked), and Star::String is included
+// through its utf8Ptr() rather than a conversion to string_view.
+template <typename S>
+struct IsFormatStringType : std::false_type {};
+template <typename C, typename... A>
+struct IsFormatStringType<fmt::basic_format_string<C, A...>> : std::true_type {};
+
+template <typename S, typename = void>
+struct HasUtf8Ptr : std::false_type {};
+template <typename S>
+struct HasUtf8Ptr<S, std::void_t<decltype(std::declval<S const&>().utf8Ptr())>> : std::true_type {};
+
+template <typename S>
+constexpr bool isRuntimeFormatStringOrString = !std::is_array_v<std::remove_reference_t<S>>
+    && !IsFormatStringType<std::remove_cv_t<std::remove_reference_t<S>>>::value
+    && (std::is_convertible_v<S const&, std::string_view>
+        || HasUtf8Ptr<std::remove_reference_t<S>>::value);
 
 template <typename... T>
 std::string strf(fmt::format_string<T...> fmt, T&&... args);
@@ -15,6 +37,8 @@ class StarException : public std::exception {
 public:
   template <typename... Args>
   static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
+  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  static StarException format(S const& fmt, Args const&... args);
 
   StarException() noexcept;
   virtual ~StarException() noexcept;
@@ -81,6 +105,10 @@ void fatalException(std::exception const& e, bool showStackTrace);
     static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
       return ClassName(strf(fmt, args...));                                                                                       \
     }                                                                                                                             \
+    template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>                          \
+    static ClassName format(S const& fmt, Args const&... args) {                                                                  \
+      return ClassName(strf(fmt, args...));                                                                                       \
+    }                                                                                                                             \
     ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
     explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, std::move(message), genStackTrace) {} \
     explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                               \
@@ -98,6 +126,11 @@ STAR_EXCEPTION(MemoryException, StarException);
 
 template <typename... Args>
 StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
+  return StarException(strf(fmt, args...));
+}
+
+template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+StarException StarException::format(S const& fmt, Args const&... args) {
   return StarException(strf(fmt, args...));
 }
 

@@ -294,6 +294,7 @@ private:
   std::string m_string;
 };
 
+
 class StringList : public List<String> {
 public:
   typedef List<String> Base;
