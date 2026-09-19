@@ -139,7 +139,7 @@ ItemPtr Item::take(uint64_t max) {
       newItems->setCount(takeCount);
       return newItems;
     } else {
-      Logger::warn(strf("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount).c_str());
+      Logger::warn("Could not clone {}, not moving {} items as requested.", friendlyName(), takeCount);
     }
   }
 

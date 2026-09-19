@@ -265,7 +265,9 @@ bool ExternalBuffer::empty() const {
 }
 
 ExternalBuffer::operator bool() const {
-  return m_size == 0;
+  // Was m_size == 0, i.e. the inverse of empty() and of what a bool conversion
+  // of a buffer is expected to mean.
+  return m_size != 0;
 }
 
 void ExternalBuffer::reset(char const* externalData, size_t len) {

@@ -613,7 +613,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
     customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
-    Logger::warn(strf("Missing inventoryIcon for {}, using default", data.name).c_str());
+    Logger::warn("Missing inventoryIcon for {}, using default", data.name);
   }
   customConfig["itemName"] = data.name;
   if (!customConfig.contains("tooltipKind"))
