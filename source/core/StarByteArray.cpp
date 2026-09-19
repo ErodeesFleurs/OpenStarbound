@@ -126,8 +126,12 @@ void ByteArray::fill(char c) {
 ByteArray ByteArray::sub(size_t b, size_t s) const {
   if (b == 0 && s >= m_size) {
     return ByteArray(*this);
+  } else if (b >= m_size) {
+    return ByteArray();
   } else {
-    return ByteArray(m_data + b, min(m_size, b + s));
+    // The sub range has to be clamped against what is left *after* the offset;
+    // min(m_size, b + s) let the copy read past the end of the buffer.
+    return ByteArray(m_data + b, min(s, m_size - b));
   }
 }
 

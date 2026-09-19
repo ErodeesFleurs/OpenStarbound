@@ -227,7 +227,7 @@ private:
   StringMap<unsigned> m_activeTags;
 
   KeyMod m_pressedMods;
-  bool m_textInputActive;
+  bool m_textInputActive = false;
   Vec2F m_mousePosition;
 
   unsigned m_clipboardAllowed = 0;

@@ -67,7 +67,7 @@ std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot) {
 
   if (location.isNull())
     format(ostream, "InventorySlot{{type: {}}}", type);
-  if (location.isType(Json::Type::String))
+  else if (location.isType(Json::Type::String))
     format(ostream, "InventorySlot{{type: {}, location: {}}}", type, location.toString());
   else
     format(ostream, "InventorySlot{{type: {}, location: {}}}", type, location.toInt());
