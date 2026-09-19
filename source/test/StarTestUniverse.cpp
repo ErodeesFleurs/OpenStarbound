@@ -79,6 +79,15 @@ TestUniverse::~TestUniverse() {
 }
 
 void TestUniverse::warpPlayer(WorldId worldId) {
+  // The client context only exists once the server has answered the connect
+  // handshake, and both the warp call and the caller's expectations read it, so
+  // let the client settle first.
+  int64_t connectStart = Time::monotonicMilliseconds();
+  while (!m_client->clientContext() && Time::monotonicMilliseconds() - connectStart < 60000) {
+    m_client->update(0.016f);
+    Thread::sleep(16);
+  }
+
   m_client->warpPlayer(WarpToWorld(worldId), true);
   // Bounded by wall clock: if the world cannot be loaded the player stays
   // teleporting forever, so give up after five minutes and let the caller's
@@ -96,7 +105,10 @@ void TestUniverse::warpPlayer(WorldId worldId) {
 }
 
 WorldId TestUniverse::currentPlayerWorld() const {
-  return m_client->clientContext()->playerWorldId();
+  if (auto clientContext = m_client->clientContext())
+    return clientContext->playerWorldId();
+
+  return {};
 }
 
 void TestUniverse::update(unsigned times) {

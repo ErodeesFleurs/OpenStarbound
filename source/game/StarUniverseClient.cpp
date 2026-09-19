@@ -553,7 +553,13 @@ bool UniverseClient::playerIsOriginal() const {
 }
 
 WorldId UniverseClient::playerWorld() const {
-  return m_clientContext->playerWorldId();
+  // Before the connect handshake has been answered there is no client context
+  // yet, and a caller (UI, Lua, the warp path below) can ask this question
+  // anyway, so report "no world" instead of dereferencing a null context.
+  if (auto clientContext = m_clientContext)
+    return clientContext->playerWorldId();
+
+  return {};
 }
 
 bool UniverseClient::isAdmin() const {
