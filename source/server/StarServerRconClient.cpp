@@ -46,6 +46,11 @@ ServerCommandResult ServerRconClient::handleCommand(String commandLine) {
 }
 
 void ServerRconClient::receive(size_t size) {
+  // The size comes straight from the client and is used as an allocation size,
+  // so it has to be refused before the buffer is resized for it.
+  if (size > MaxReceivePacketSize)
+    throw OversizedPacket(strf("RCON packet of {} bytes is above the {} byte limit", size, MaxReceivePacketSize));
+
   m_packetBuffer.reset(size);
   auto ptr = m_packetBuffer.ptr();
   while (size > 0) {

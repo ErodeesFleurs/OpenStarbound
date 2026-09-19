@@ -1,4 +1,5 @@
 #include "StarZSTDCompression.hpp"
+#include "StarCompression.hpp"
 #include <zstd.h>
 
 namespace Star {
@@ -138,7 +139,12 @@ ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
   unsigned long long const frameContentSize = ZSTD_getFrameContentSize(in, inLen);
   if (frameContentSize == ZSTD_CONTENTSIZE_ERROR || frameContentSize == ZSTD_CONTENTSIZE_UNKNOWN)
     throw IOException("Cannot determine ZSTD decompressed size");
-  
+
+  // The frame header declares the output size and comes from the data being
+  // decompressed, so refuse an absurd one before allocating for it.
+  if (frameContentSize > MaxUncompressedSize)
+    throw IOException(strf("ZSTD frame declares {} bytes, above the {} byte limit", frameContentSize, MaxUncompressedSize));
+
   ByteArray out(frameContentSize, 0);
   size_t result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
   

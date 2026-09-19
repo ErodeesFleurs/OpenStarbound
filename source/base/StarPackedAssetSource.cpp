@@ -153,6 +153,10 @@ IODevicePtr PackedAssetSource::open(String const& path) {
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
+  // Same as read(): the declared size is untrusted index data.
+  if (p->second < 0 || p->second > m_packedFile->size())
+    throw AssetSourceException::format("Requested file '{}' has an out of range size in the packed assets file", path);
+
   return make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
 }
 
@@ -160,6 +164,11 @@ ByteArray PackedAssetSource::read(String const& path) {
   auto p = m_index.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
+
+  // The index comes from the file, so its declared size cannot be trusted to be
+  // reasonable before it is used as an allocation size.
+  if (p->second < 0 || p->second > m_packedFile->size())
+    throw AssetSourceException::format("Requested file '{}' has an out of range size in the packed assets file", path);
 
   ByteArray data(p->second, 0);
   m_packedFile->readFullAbsolute(p->first, data.ptr(), p->second);

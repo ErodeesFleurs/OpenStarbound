@@ -76,14 +76,13 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
     inflate_res = zng_inflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
+      if (limit && out.size() + BUFSIZE > limit) {
+        zng_inflateEnd(&strm);
+        throw IOException(strf("hit uncompressData limit of {} bytes", limit));
+      }
       out.append((char const*)tempBuffer.get(), BUFSIZE);
       strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
-      if (limit && out.size() >= limit) {
-        zng_inflateEnd(&strm);
-        throw IOException(strf("hit uncompressData limit of {} bytes", limit));
-        break;
-      }
     } else if (inflate_res == Z_BUF_ERROR) {
       break;
     }

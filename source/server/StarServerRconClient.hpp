@@ -27,8 +27,12 @@ protected:
   virtual void run();
 
 private:
-  static size_t const MaxPacketSize = 4096;
+  static constexpr size_t MaxPacketSize = 4096;
+  // Requests are small (a command line); anything larger is refused instead of
+  // being allocated, since the length is client supplied.
+  static constexpr size_t MaxReceivePacketSize = MaxPacketSize * 4;
   STAR_EXCEPTION(NoMoreRequests, StarException);
+  STAR_EXCEPTION(OversizedPacket, StarException);
 
   void receive(size_t size);
   void send(uint32_t requestId, uint32_t cmd, String str = "");

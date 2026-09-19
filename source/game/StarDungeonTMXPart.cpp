@@ -175,9 +175,9 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     if (compression == "") { // uncompressed base64
       bytes = base64Data;
     } else if (compression == "gzip") {
-      bytes = uncompressDataGzip(base64Data);
+      bytes = uncompressDataGzip(base64Data, MaxUncompressedSize);
     } else if (compression == "zlib") {
-      bytes = uncompressData(base64Data);
+      bytes = uncompressData(base64Data, MaxUncompressedSize);
     } else if (compression == "zstd") {
       bytes = ZstdCompression::decompress(base64Data);
     } else {

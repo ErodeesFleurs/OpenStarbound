@@ -35,6 +35,18 @@ int main(int argc, char** argv) {
 
     for (auto file : allFiles) {
       try {
+        // The index of a pak is untrusted input, so an entry must not be able to
+        // escape the output folder when it is used as a path below.
+        bool unsafeName = file.empty();
+        for (auto const& component : file.split('/')) {
+          if (component == ".." || component.find('\\') != NPos)
+            unsafeName = true;
+        }
+        if (unsafeName) {
+          cerrf("Skipping entry with unsafe path: {}\n", file);
+          continue;
+        }
+
         auto fileData = assetsPack.read(file);
         auto relativePath = "." + file;
         auto relativeDir = File::dirName(relativePath);

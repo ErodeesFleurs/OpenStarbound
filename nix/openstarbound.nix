@@ -40,6 +40,11 @@
   # for undefined behaviour in the code the tests cover; the game_tests sweep
   # runs through `nix run .#sanitized-tests`.
   sanitizers ? false,
+  # Build with the project's own assertions live.  RelWithAsserts leaves NDEBUG
+  # undefined, so starAssert and the DebugEnabled code paths actually execute in
+  # the checkPhase and in `nix run .#asserts-tests`; the shipped configurations
+  # all define NDEBUG, so nothing else ever runs them.
+  asserts ? false,
 }:
 
 let
@@ -159,20 +164,27 @@ stdenv.mkDerivation {
   ''
   # Linking the ~750MB test binaries with the default GNU ld takes minutes per
   # link (the sanitized ones are ~1.8GB and took 7), lld does it in seconds.
-  + lib.optionalString sanitizers ''
-    # Line tables only for the sanitized build: it keeps the file:line in
-    # sanitizer and valgrind reports, but cuts the binaries and their link time
-    # down a lot.  The per-configuration flags are set() unconditionally in the
-    # CMake files, so they have to be patched rather than overridden.
+  + lib.optionalString (sanitizers || asserts) ''
+    # Line tables only: it keeps the file:line in sanitizer and valgrind reports
+    # but cuts the binaries and their link time down a lot.  The per-configuration
+    # flags are set() unconditionally in the CMake files, so they have to be
+    # patched rather than overridden.  RelWithAsserts deliberately keeps NDEBUG
+    # off, so its flags carry no -DNDEBUG to patch.
     substituteInPlace source/CMakeLists.txt \
       --replace-fail 'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
         'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")' \
       --replace-fail 'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
-        'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")'
+        'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")' \
+      --replace-fail 'set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")' \
+        'set(CMAKE_C_FLAGS_RELWITHASSERTS "-g1 -O3 -ffast-math")' \
+      --replace-fail 'set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")' \
+        'set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g1 -O3 -ffast-math")'
   '';
 
   cmakeDir = "../source";
-  cmakeBuildType = "RelWithDebInfo";
+  # RelWithAsserts is the only configuration without -DNDEBUG, i.e. the only one
+  # where starAssert and DebugEnabled are compiled in.
+  cmakeBuildType = if asserts then "RelWithAsserts" else "RelWithDebInfo";
   cmakeFlags = [
     (lib.cmakeFeature "STAR_SOURCE_IDENTIFIER" sourceIdentifier)
     (lib.cmakeBool "STAR_BUILD_GUI" guiSupport)

@@ -14,6 +14,11 @@ CompressionLevel const LowCompression = 2;
 CompressionLevel const MediumCompression = 5;
 CompressionLevel const HighCompression = 9;
 
+// Decompression input can come from mods, asset packs or the network, and both
+// zlib and zstd let the compressed data declare the output size, so nothing is
+// allowed to expand past this.
+constexpr size_t MaxUncompressedSize = 256 * 1024 * 1024;
+
 void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
 ByteArray compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
 

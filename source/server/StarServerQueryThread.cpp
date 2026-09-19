@@ -94,6 +94,10 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       // We use -6 and not -5 as the string should be NULL terminated
       // but instead of the std::string constructor stopping at the NULL
       // it includes it :(
+      if (length < 6) {
+        // Without the trailing NULL byte the subtraction below would wrap around
+        return false;
+      }
       std::string str((const char*)(buf + 5), length - 6);
       if (str.compare(A2S_INFO_REQUEST_STRING) != 0) {
         // Invalid request

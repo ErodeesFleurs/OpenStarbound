@@ -69,6 +69,9 @@
           # Note: `nix build .#sanitized` overwrites ./result -- pass
           # `-o result-sanitized` to keep the default package linked there.
           sanitized = openstarbound.override { sanitizers = true; };
+          # RelWithAsserts build: no -DNDEBUG, so the project's own invariants
+          # (starAssert) and DebugEnabled paths are live while the tests run.
+          asserts = openstarbound.override { asserts = true; };
         };
     in
     {
@@ -96,6 +99,16 @@
             exec ${(packagesFor pkgs).sanitized}/bin/run-game-tests "$@"
           ''}";
           meta.description = "Run OpenStarbound's game_tests with AddressSanitizer, UndefinedBehaviorSanitizer and the leak checker";
+        };
+        # Same sweep against the assert-enabled build, so a violated invariant
+        # fails the run instead of being compiled out.
+        asserts-tests = {
+          type = "app";
+          program = "${pkgs.writeShellScript "openstarbound-asserts-tests" ''
+            export OPENSTARBOUND_TEST_TIMEOUT="''${OPENSTARBOUND_TEST_TIMEOUT:-900}"
+            exec ${(packagesFor pkgs).asserts}/bin/run-game-tests "$@"
+          ''}";
+          meta.description = "Run OpenStarbound's game_tests with the project's own assertions enabled";
         };
       });
 
