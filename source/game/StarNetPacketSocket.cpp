@@ -94,12 +94,19 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
     MutexLocker locker(outgoingPipe->mutex);
 
 #ifdef STAR_DEBUG
-    // Test serialization if STAR_DEBUG is enabled
+    // Test serialization if STAR_DEBUG is enabled.
+    // This has to mirror what the real sockets do: packets that only override
+    // the two argument write() write nothing through the one argument form, and
+    // ProtocolResponsePacket::read keys off the compression mode, so both the
+    // stream version, the net rules and the compression mode have to carry over
+    // for the round trip to be readable at all.
     DataStreamBuffer buffer;
     for (auto inPacket : take(packets)) {
       buffer.clear();
-      inPacket->write(buffer);
+      buffer.setStreamCompatibilityVersion(netRules());
+      inPacket->write(buffer, netRules());
       auto outPacket = createPacket(inPacket->type());
+      outPacket->setCompressionMode(inPacket->compressionMode());
       buffer.seek(0);
       outPacket->read(buffer);
       packets.append(outPacket);
