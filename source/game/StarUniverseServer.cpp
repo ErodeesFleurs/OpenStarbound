@@ -243,6 +243,16 @@ Maybe<ConnectionId> UniverseServer::findNick(String const& nick) const {
   return m_chatProcessor->findNick(nick);
 }
 
+String UniverseServer::clientAccount(ConnectionId clientId) const {
+  ReadLocker clientsLocker(m_clientsLock);
+  if (auto clientContext = m_clients.value(clientId)) {
+    if (!clientContext->account().empty())
+      return clientContext->account();
+  }
+  return "<anonymous>";
+}
+
+
 Maybe<Uuid> UniverseServer::uuidForClient(ConnectionId clientId) const {
   ReadLocker clientsLocker(m_clientsLock);
   if (auto clientContext = m_clients.value(clientId))
@@ -2223,7 +2233,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     validShipSpecies.add(pair.first);
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
                                                         clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks,
-                                                        std::move(validShipSpecies));
+                                                        std::move(validShipSpecies), clientConnect->account);
   clientContext->registerRpcHandlers(m_teamManager->authenticatedRpcHandlers(clientContext->playerUuid()));
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
@@ -2330,6 +2340,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
 
   WorldId toWorldId;
   SpawnTarget spawnTarget;
+    /*
   for (auto& p : m_scriptContexts) {
     auto out = p.second->invoke<Json>("overrideWarp", warpActionToJson(warpAction), clientId, deploy);
     if (out && *out) {
@@ -2344,7 +2355,7 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
       }
       return WarpToWorld(toWorldId, spawnTarget);
     }
-  }
+  }*/
 
   if (auto toWorld = warpAction.ptr<WarpToWorld>()) {
     if (!toWorld->world)
