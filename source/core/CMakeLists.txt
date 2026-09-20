@@ -224,11 +224,6 @@ ENDIF ()
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 
-# Everything consumes star_core through $<TARGET_OBJECTS:star_core>, which carries
-# nothing else, so the module target's objects are added here as well; that way
-# each executable gets them without a link line of its own.
-TARGET_SOURCES (star_core PRIVATE $<TARGET_OBJECTS:star_modules>)
-
 # The C++20 modules of this library.  A module interface unit cannot carry the
 # precompiled header the rest of star_core uses (GCC rejects the module
 # declaration when a PCH is forced into it), so the modules get their own target

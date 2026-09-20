@@ -12,7 +12,7 @@ SET (CMAKE_AUTOMOC ON)
 ADD_EXECUTABLE (json_tool WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   json_tool.cpp editor_gui.cpp)
-TARGET_LINK_LIBRARIES (json_tool ${STAR_EXT_LIBS} Qt5::Core Qt5::Gui Qt5::Widgets)
+TARGET_LINK_LIBRARIES (json_tool ${STAR_EXT_LIBS} Qt5::Core Qt5::Gui Qt5::Widgets star_modules)
 
 SET (CMAKE_AUTOMOC OFF)
 SET (CMAKE_INCLUDE_CURRENT_DIR OFF)
