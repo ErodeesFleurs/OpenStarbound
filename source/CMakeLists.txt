@@ -19,11 +19,20 @@ endif()
 
 if(CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
   set(STAR_CCACHE TRUE)
-  set(STAR_PRECOMPILED_HEADERS FALSE)
 else()
   set(STAR_CCACHE FALSE)
-  set(STAR_PRECOMPILED_HEADERS TRUE)
   message(STATUS "Not using CCache")
+endif()
+
+# The default follows the ccache decision (a compiler cache and a precompiled
+# header solve the same problem), but an explicit -DSTAR_PRECOMPILED_HEADERS=...
+# wins, which is how the cost of the precompiled header is measured.
+if(NOT DEFINED STAR_PRECOMPILED_HEADERS)
+  if(STAR_CCACHE)
+    set(STAR_PRECOMPILED_HEADERS FALSE)
+  else()
+    set(STAR_PRECOMPILED_HEADERS TRUE)
+  endif()
 endif()
 
 project(starbound)
