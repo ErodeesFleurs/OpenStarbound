@@ -1,5 +1,7 @@
 #pragma once
 
+#include <compare>
+
 #include <array>
 
 #include "StarHash.hpp"
@@ -52,11 +54,10 @@ public:
   Element const* ptr() const;
 
   bool operator==(Array const& a) const;
-  bool operator!=(Array const& a) const;
-  bool operator<(Array const& a) const;
-  bool operator<=(Array const& a) const;
-  bool operator>(Array const& a) const;
-  bool operator>=(Array const& a) const;
+  // Lexicographic, and deliberately weak: the elements only provide <, so an
+  // element pair that is neither less nor greater is not necessarily equal
+  // (floats with NaN).
+  std::weak_ordering operator<=>(Array const& a) const;
 
   template <size_t Size2>
   Array<ElementT, Size2> toSize() const;
@@ -172,40 +173,14 @@ bool Array<Element, Size>::operator==(Array const& a) const {
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator!=(Array const& a) const {
-  return !operator==(a);
-}
-
-template <typename Element, size_t Size>
-bool Array<Element, Size>::operator<(Array const& a) const {
+std::weak_ordering Array<Element, Size>::operator<=>(Array const& a) const {
   for (size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
-      return true;
-    else if (a[i] < (*this)[i])
-      return false;
+      return std::weak_ordering::less;
+    if (a[i] < (*this)[i])
+      return std::weak_ordering::greater;
   }
-  return false;
-}
-
-template <typename Element, size_t Size>
-bool Array<Element, Size>::operator<=(Array const& a) const {
-  for (size_t i = 0; i < Size; ++i) {
-    if ((*this)[i] < a[i])
-      return true;
-    else if (a[i] < (*this)[i])
-      return false;
-  }
-  return true;
-}
-
-template <typename Element, size_t Size>
-bool Array<Element, Size>::operator>(Array const& a) const {
-  return a < *this;
-}
-
-template <typename Element, size_t Size>
-bool Array<Element, Size>::operator>=(Array const& a) const {
-  return a <= *this;
+  return std::weak_ordering::equivalent;
 }
 
 template <typename Element, size_t Size>

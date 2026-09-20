@@ -70,24 +70,29 @@ public:
 
   template <typename... Args>
   static void logf(LogLevel level, fmt::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static void logf(LogLevel level, S const& msg, Args const&... args);
 
   template <typename... Args>
   static void debug(fmt::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static void debug(S const& msg, Args const&... args);
   template <typename... Args>
   static void info(fmt::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static void info(S const& msg, Args const&... args);
   template <typename... Args>
   static void warn(fmt::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static void warn(S const& msg, Args const&... args);
   template <typename... Args>
   static void error(fmt::format_string<Args...> msg, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static void error(S const& msg, Args const&... args);
 
   static bool loggable(LogLevel level);
@@ -180,7 +185,8 @@ void Logger::logf(LogLevel level, fmt::format_string<Args...> msg, Args const&..
   }
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 void Logger::logf(LogLevel level, S const& msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strf(msg, args...);
@@ -198,7 +204,8 @@ void Logger::debug(fmt::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Debug, msg, args...);
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 void Logger::debug(S const& msg, Args const&... args) {
   logf(LogLevel::Debug, msg, args...);
 }
@@ -208,7 +215,8 @@ void Logger::info(fmt::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Info, msg, args...);
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 void Logger::info(S const& msg, Args const&... args) {
   logf(LogLevel::Info, msg, args...);
 }
@@ -218,7 +226,8 @@ void Logger::warn(fmt::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Warn, msg, args...);
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 void Logger::warn(S const& msg, Args const&... args) {
   logf(LogLevel::Warn, msg, args...);
 }
@@ -228,7 +237,8 @@ void Logger::error(fmt::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Error, msg, args...);
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 void Logger::error(S const& msg, Args const&... args) {
   logf(LogLevel::Error, msg, args...);
 }

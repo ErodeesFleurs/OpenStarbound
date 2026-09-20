@@ -91,32 +91,32 @@ void VisitableWorldParameters::write(DataStream& ds) const {
 
 TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : VisitableWorldParameters(store) {
   auto loadTerrestrialRegion = [](Json const& config) {
-    return TerrestrialRegion{config.getString("biome"),
-        config.getString("blockSelector"),
-        config.getString("fgCaveSelector"),
-        config.getString("bgCaveSelector"),
-        config.getString("fgOreSelector"),
-        config.getString("bgOreSelector"),
-        config.getString("subBlockSelector"),
-        static_cast<LiquidId>(config.getUInt("caveLiquid")),
-        config.getFloat("caveLiquidSeedDensity"),
-        static_cast<LiquidId>(config.getUInt("oceanLiquid")),
-        static_cast<int>(config.getInt("oceanLiquidLevel")),
-        config.getBool("encloseLiquids"),
-        config.getBool("fillMicrodungeons")};
+    return TerrestrialRegion{.biome = config.getString("biome"),
+        .blockSelector = config.getString("blockSelector"),
+        .fgCaveSelector = config.getString("fgCaveSelector"),
+        .bgCaveSelector = config.getString("bgCaveSelector"),
+        .fgOreSelector = config.getString("fgOreSelector"),
+        .bgOreSelector = config.getString("bgOreSelector"),
+        .subBlockSelector = config.getString("subBlockSelector"),
+        .caveLiquid = static_cast<LiquidId>(config.getUInt("caveLiquid")),
+        .caveLiquidSeedDensity = config.getFloat("caveLiquidSeedDensity"),
+        .oceanLiquid = static_cast<LiquidId>(config.getUInt("oceanLiquid")),
+        .oceanLiquidLevel = static_cast<int>(config.getInt("oceanLiquidLevel")),
+        .encloseLiquids = config.getBool("encloseLiquids"),
+        .fillMicrodungeons = config.getBool("fillMicrodungeons")};
   };
 
   auto loadTerrestrialLayer = [loadTerrestrialRegion](Json const& config) {
-    return TerrestrialLayer{static_cast<int>(config.getInt("layerMinHeight")),
-        static_cast<int>(config.getInt("layerBaseHeight")),
-        jsonToStringList(config.get("dungeons")),
-        static_cast<int>(config.getInt("dungeonXVariance")),
-        loadTerrestrialRegion(config.get("primaryRegion")),
-        loadTerrestrialRegion(config.get("primarySubRegion")),
-        config.getArray("secondaryRegions").transformed(loadTerrestrialRegion),
-        config.getArray("secondarySubRegions").transformed(loadTerrestrialRegion),
-        jsonToVec2F(config.get("secondaryRegionSizeRange")),
-        jsonToVec2F(config.get("subRegionSizeRange"))};
+    return TerrestrialLayer{.layerMinHeight = static_cast<int>(config.getInt("layerMinHeight")),
+        .layerBaseHeight = static_cast<int>(config.getInt("layerBaseHeight")),
+        .dungeons = jsonToStringList(config.get("dungeons")),
+        .dungeonXVariance = static_cast<int>(config.getInt("dungeonXVariance")),
+        .primaryRegion = loadTerrestrialRegion(config.get("primaryRegion")),
+        .primarySubRegion = loadTerrestrialRegion(config.get("primarySubRegion")),
+        .secondaryRegions = config.getArray("secondaryRegions").transformed(loadTerrestrialRegion),
+        .secondarySubRegions = config.getArray("secondarySubRegions").transformed(loadTerrestrialRegion),
+        .secondaryRegionSizeRange = jsonToVec2F(config.get("secondaryRegionSizeRange")),
+        .subRegionSizeRange = jsonToVec2F(config.get("subRegionSizeRange"))};
   };
 
   primaryBiome = store.getString("primaryBiome");

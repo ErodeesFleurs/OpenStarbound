@@ -69,8 +69,8 @@ std::string strfChecked(fmt::basic_format_string<Char, T...> fmt, T const&... ar
 // Runtime format strings: char pointers, std::string, std::string_view and
 // friends.  String literals are excluded here, they take the overload above.
 template <typename S,
-    typename... T,
-    std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+    typename... T>
+  requires RuntimeFormatString<S>
 std::string strf(S const& fmt, T&&... args) {
   return Detail::formatRuntime(fmt, std::forward<T>(args)...);
 }
@@ -81,8 +81,8 @@ void format(std::ostream& out, fmt::format_string<T...> fmt, T&&... args) {
 }
 
 template <typename S,
-    typename... T,
-    std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+    typename... T>
+  requires RuntimeFormatString<S>
 void format(std::ostream& out, S const& fmt, T&&... args) {
   out << Detail::formatRuntime(fmt, args...);
 }
@@ -95,8 +95,8 @@ void coutf(fmt::format_string<T...> fmt, T&&... args) {
 }
 
 template <typename S,
-    typename... T,
-    std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+    typename... T>
+  requires RuntimeFormatString<S>
 void coutf(S const& fmt, T&&... args) {
   format(std::cout, fmt, args...);
   std::cout.flush();
@@ -110,8 +110,8 @@ void cerrf(fmt::format_string<T...> fmt, T&&... args) {
 }
 
 template <typename S,
-    typename... T,
-    std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+    typename... T>
+  requires RuntimeFormatString<S>
 void cerrf(S const& fmt, T&&... args) {
   format(std::cerr, fmt, args...);
   std::cerr.flush();

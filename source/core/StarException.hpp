@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string_view>
 #include <type_traits>
+#include <concepts>
 
 namespace Star {
 
@@ -24,8 +25,12 @@ struct HasUtf8Ptr : std::false_type {};
 template <typename S>
 struct HasUtf8Ptr<S, std::void_t<decltype(std::declval<S const&>().utf8Ptr())>> : std::true_type {};
 
+// A format string that is only known at run time: string literals are excluded
+// (they take the checked overload directly), as are fmt's own format_string
+// types (they are already checked), and Star::String is included through its
+// utf8Ptr() rather than a conversion to string_view.
 template <typename S>
-constexpr bool isRuntimeFormatStringOrString = !std::is_array_v<std::remove_reference_t<S>>
+concept RuntimeFormatString = !std::is_array_v<std::remove_reference_t<S>>
     && !IsFormatStringType<std::remove_cv_t<std::remove_reference_t<S>>>::value
     && (std::is_convertible_v<S const&, std::string_view>
         || HasUtf8Ptr<std::remove_reference_t<S>>::value);
@@ -40,7 +45,8 @@ class StarException : public std::exception {
 public:
   template <typename... Args>
   static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
-  template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>
+  template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
   static StarException format(S const& fmt, Args const&... args);
 
   StarException() noexcept;
@@ -108,7 +114,7 @@ void fatalException(std::exception const& e, bool showStackTrace);
     static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
       return ClassName(strfChecked(fmt, args...));                                                                                \
     }                                                                                                                             \
-    template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int> = 0>                          \
+    template <typename S, typename... Args> requires RuntimeFormatString<S>                          \
     static ClassName format(S const& fmt, Args const&... args) {                                                                  \
       return ClassName(strf(fmt, args...));                                                                                       \
     }                                                                                                                             \
@@ -132,7 +138,8 @@ StarException StarException::format(fmt::format_string<Args...> fmt, Args const&
   return StarException(strfChecked(fmt, args...));
 }
 
-template <typename S, typename... Args, std::enable_if_t<isRuntimeFormatStringOrString<S>, int>>
+template <typename S, typename... Args>
+  requires RuntimeFormatString<S>
 StarException StarException::format(S const& fmt, Args const&... args) {
   return StarException(strf(fmt, args...));
 }

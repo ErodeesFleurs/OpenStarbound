@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compare>
 #include <type_traits>
 
 // Defines a new type that behaves nearly identical to 'parentType', with the
@@ -80,23 +81,11 @@
       return t == rhs.t;                        \
     }                                           \
                                                 \
-    bool operator!=(NewType const& rhs) const { \
-      return t != rhs.t;                        \
-    }                                           \
-                                                \
-    bool operator<(NewType const& rhs) const {  \
-      return t < rhs.t;                         \
-    }                                           \
-                                                \
-    bool operator>(NewType const& rhs) const {  \
-      return t > rhs.t;                         \
-    }                                           \
-                                                \
-    bool operator<=(NewType const& rhs) const { \
-      return t <= rhs.t;                        \
-    }                                           \
-                                                \
-    bool operator>=(NewType const& rhs) const { \
-      return t >= rhs.t;                        \
+    std::weak_ordering operator<=>(NewType const& rhs) const { \
+      if (t < rhs.t)                            \
+        return std::weak_ordering::less;        \
+      if (rhs.t < t)                            \
+        return std::weak_ordering::greater;     \
+      return std::weak_ordering::equivalent;    \
     }                                           \
   }

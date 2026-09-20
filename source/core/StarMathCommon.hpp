@@ -48,7 +48,8 @@ inline double log2(double d) {
 
 // Count the number of '1' bits in the given unsigned integer
 template <typename Int>
-typename std::enable_if<std::is_integral<Int>::value && std::is_unsigned<Int>::value, unsigned>::type countSetBits(Int value) {
+  requires std::unsigned_integral<Int>
+unsigned countSetBits(Int value) {
   return (unsigned)std::popcount(value);
 }
 

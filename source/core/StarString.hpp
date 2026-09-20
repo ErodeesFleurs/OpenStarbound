@@ -1,5 +1,7 @@
 #pragma once
 
+#include <compare>
+
 #include "StarUnicode.hpp"
 #include "StarHash.hpp"
 #include "StarByteArray.hpp"
@@ -243,21 +245,16 @@ public:
   friend bool operator==(Char const* s1, String const& s2);
   friend bool operator==(char const* s1, String const& s2);
 
-  friend bool operator!=(String const& s1, String const& s2);
-  friend bool operator!=(String const& s1, std::string const& s2);
-  friend bool operator!=(String const& s1, Char const* s2);
-  friend bool operator!=(String const& s1, char const* c);
-  friend bool operator!=(std::string const& s1, String const& s2);
-  friend bool operator!=(Char const* s1, String const& s2);
-  friend bool operator!=(char const* s1, String const& s2);
-
-  friend bool operator<(String const& s1, String const& s2);
-  friend bool operator<(String const& s1, std::string const& s2);
-  friend bool operator<(String const& s1, Char const* s2);
-  friend bool operator<(String const& s1, char const* s2);
-  friend bool operator<(std::string const& s1, String const& s2);
-  friend bool operator<(Char const* s1, String const& s2);
-  friend bool operator<(char const* s1, String const& s2);
+  // C++20 rewrites !=, >, <= and >= from these, including the mixed operand
+  // forms: any of the seven rewrites produces an ambiguity only if a candidate
+  // with a worse conversion is needed, and every form has a <=> here.
+  friend std::strong_ordering operator<=>(String const& s1, String const& s2);
+  friend std::strong_ordering operator<=>(String const& s1, std::string const& s2);
+  friend std::strong_ordering operator<=>(String const& s1, Char const* s2);
+  friend std::strong_ordering operator<=>(String const& s1, char const* s2);
+  friend std::strong_ordering operator<=>(std::string const& s1, String const& s2);
+  friend std::strong_ordering operator<=>(Char const* s1, String const& s2);
+  friend std::strong_ordering operator<=>(char const* s1, String const& s2);
 
   friend String operator+(String s1, String const& s2);
   friend String operator+(String s1, std::string const& s2);

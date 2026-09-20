@@ -87,7 +87,8 @@ struct KeyChord {
   Key key;
   KeyMod mods;
 
-  bool operator<(KeyChord const& rhs) const;
+  // Was tie(key, mods) < tie(rhs.key, rhs.mods): memberwise order is the same.
+  auto operator<=>(KeyChord const& rhs) const = default;
 };
 
 KeyChord inputDescriptorFromJson(Json const& json);

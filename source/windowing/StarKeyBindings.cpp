@@ -93,10 +93,6 @@ EnumMap<InterfaceAction> const InterfaceActionNames{
     {InterfaceAction::InterfaceCrafting, "InterfaceCrafting"},
 };
 
-bool KeyChord::operator<(KeyChord const& rhs) const {
-  return tie(key, mods) < tie(rhs.key, rhs.mods);
-}
-
 KeyChord inputDescriptorFromJson(Json const& json) {
   Key key;
   auto type = json.getString("type");

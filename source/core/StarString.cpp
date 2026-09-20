@@ -861,60 +861,34 @@ bool operator==(char const* s1, String const& s2) {
   return s1 == s2.m_string;
 }
 
-bool operator!=(String const& s1, String const& s2) {
-  return s1.m_string != s2.m_string;
+// A utf8 std::string compares in byte order, which is the same order as the code
+// points it encodes, so these agree with String::compare.
+std::strong_ordering operator<=>(String const& s1, String const& s2) {
+  return s1.m_string <=> s2.m_string;
 }
 
-bool operator!=(String const& s1, std::string const& s2) {
-  return s1.m_string != s2;
+std::strong_ordering operator<=>(String const& s1, std::string const& s2) {
+  return s1.m_string <=> s2;
 }
 
-bool operator!=(String const& s1, String::Char const* s2) {
-  return s1 != String(s2);
+std::strong_ordering operator<=>(String const& s1, String::Char const* s2) {
+  return s1 <=> String(s2);
 }
 
-bool operator!=(String const& s1, char const* s2) {
-  return s1.m_string != s2;
+std::strong_ordering operator<=>(String const& s1, char const* s2) {
+  return s1.m_string <=> s2;
 }
 
-bool operator!=(std::string const& s1, String const& s2) {
-  return s1 != s2.m_string;
+std::strong_ordering operator<=>(std::string const& s1, String const& s2) {
+  return s1 <=> s2.m_string;
 }
 
-bool operator!=(String::Char const* s1, String const& s2) {
-  return String(s1) != s2;
+std::strong_ordering operator<=>(String::Char const* s1, String const& s2) {
+  return String(s1) <=> s2;
 }
 
-bool operator!=(char const* s1, String const& s2) {
-  return s1 != s2.m_string;
-}
-
-bool operator<(String const& s1, String const& s2) {
-  return s1.m_string < s2.m_string;
-}
-
-bool operator<(String const& s1, std::string const& s2) {
-  return s1.m_string < s2;
-}
-
-bool operator<(String const& s1, String::Char const* s2) {
-  return s1 < String(s2);
-}
-
-bool operator<(String const& s1, char const* s2) {
-  return s1.m_string < s2;
-}
-
-bool operator<(std::string const& s1, String const& s2) {
-  return s1 < s2.m_string;
-}
-
-bool operator<(String::Char const* s1, String const& s2) {
-  return String(s1) < s2;
-}
-
-bool operator<(char const* s1, String const& s2) {
-  return s1 < s2.m_string;
+std::strong_ordering operator<=>(char const* s1, String const& s2) {
+  return s1 <=> s2.m_string;
 }
 
 String operator+(String s1, String const& s2) {

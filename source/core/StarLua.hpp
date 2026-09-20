@@ -138,7 +138,6 @@ public:
   LuaReference& operator=(LuaReference const&) = default;
 
   bool operator==(LuaReference const& rhs) const;
-  bool operator!=(LuaReference const& rhs) const;
 
   LuaEngine& engine() const;
   int handleIndex() const;
@@ -166,13 +165,8 @@ bool operator==(char const* s1, LuaString const& s2);
 bool operator==(std::string const& s1, LuaString const& s2);
 bool operator==(String const& s1, LuaString const& s2);
 
-bool operator!=(LuaString const& s1, LuaString const& s2);
-bool operator!=(LuaString const& s1, char const* s2);
-bool operator!=(LuaString const& s1, std::string const& s2);
-bool operator!=(LuaString const& s1, String const& s2);
-bool operator!=(char const* s1, LuaString const& s2);
-bool operator!=(std::string const& s1, LuaString const& s2);
-bool operator!=(String const& s1, LuaString const& s2);
+// C++20 rewrites != from these.
+bool operator==(LuaString const& s1, LuaString const& s2);
 
 class LuaTable : public LuaReference {
 public:
@@ -1617,12 +1611,8 @@ LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... ar
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
 
-inline bool LuaReference::operator==(LuaReference const& rhs) const {
+inline LuaReference::operator==(LuaReference const& rhs) const {
   return tie(m_handle.engine, m_handle.handleIndex) == tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
-}
-
-inline bool LuaReference::operator!=(LuaReference const& rhs) const {
-  return tie(m_handle.engine, m_handle.handleIndex) != tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
 inline LuaEngine& LuaReference::engine() const {
@@ -1675,34 +1665,6 @@ inline bool operator==(std::string const& s1, LuaString const& s2) {
 
 inline bool operator==(String const& s1, LuaString const& s2) {
   return s2.view() == s1;
-}
-
-inline bool operator!=(LuaString const& s1, LuaString const& s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(LuaString const& s1, char const* s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(LuaString const& s1, std::string const& s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(LuaString const& s1, String const& s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(char const* s1, LuaString const& s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(std::string const& s1, LuaString const& s2) {
-  return !(s1 == s2);
-}
-
-inline bool operator!=(String const& s1, LuaString const& s2) {
-  return !(s1 == s2);
 }
 
 template <typename T, typename K>
