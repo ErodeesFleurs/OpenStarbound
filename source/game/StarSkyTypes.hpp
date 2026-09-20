@@ -6,7 +6,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(SkyException, StarException);
+struct SkyExceptionTag {
+  static constexpr char const* name() { return "SkyException"; }
+};
+using SkyException = StarError<SkyExceptionTag, StarException>;
 
 enum class SkyType : uint8_t {
   Barren,

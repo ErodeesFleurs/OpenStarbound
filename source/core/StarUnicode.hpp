@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(UnicodeException, StarException);
+struct UnicodeExceptionTag {
+  static constexpr char const* name() { return "UnicodeException"; }
+};
+using UnicodeException = StarError<UnicodeExceptionTag, StarException>;
 
 typedef char Utf8Type;
 typedef char32_t Utf32Type;

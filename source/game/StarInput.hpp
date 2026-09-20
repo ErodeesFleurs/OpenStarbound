@@ -8,7 +8,10 @@
 namespace Star {
 
 STAR_CLASS(Input);
-STAR_EXCEPTION(InputException, StarException);
+struct InputExceptionTag {
+  static constexpr char const* name() { return "InputException"; }
+};
+using InputException = StarError<InputExceptionTag, StarException>;
 
 typedef Variant<Key, MouseButton, ControllerButton> InputVariant;
 

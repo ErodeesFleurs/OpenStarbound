@@ -14,7 +14,10 @@ STAR_CLASS(NpcDatabase);
 
 STAR_CLASS(EntityFactory);
 
-STAR_EXCEPTION(EntityFactoryException, StarException);
+struct EntityFactoryExceptionTag {
+  static constexpr char const* name() { return "EntityFactoryException"; }
+};
+using EntityFactoryException = StarError<EntityFactoryExceptionTag, StarException>;
 
 class EntityFactory {
 public:

@@ -11,7 +11,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(VehicleException, StarException);
+struct VehicleExceptionTag {
+  static constexpr char const* name() { return "VehicleException"; }
+};
+using VehicleException = StarError<VehicleExceptionTag, StarException>;
 STAR_CLASS(Vehicle);
 
 class Vehicle : 

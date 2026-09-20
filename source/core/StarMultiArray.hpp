@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(MultiArrayException, StarException);
+struct MultiArrayExceptionTag {
+  static constexpr char const* name() { return "MultiArrayException"; }
+};
+using MultiArrayException = StarError<MultiArrayExceptionTag, StarException>;
 
 // Multidimensional array class that wraps a vector as a simple contiguous N
 // dimensional array.  Values are stored so that the highest dimension is the

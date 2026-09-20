@@ -19,7 +19,10 @@ STAR_CLASS(Assets);
 
 STAR_CLASS(LuaContext);
 
-STAR_EXCEPTION(AssetException, StarException);
+struct AssetExceptionTag {
+  static constexpr char const* name() { return "AssetException"; }
+};
+using AssetException = StarError<AssetExceptionTag, StarException>;
 
 // The contents of an assets .frames file, which can be associated with one or
 // more images, and specifies named sub-rects of those images.

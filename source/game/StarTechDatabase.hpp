@@ -6,7 +6,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(TechDatabaseException, StarException);
+struct TechDatabaseExceptionTag {
+  static constexpr char const* name() { return "TechDatabaseException"; }
+};
+using TechDatabaseException = StarError<TechDatabaseExceptionTag, StarException>;
 
 STAR_CLASS(TechDatabase);
 

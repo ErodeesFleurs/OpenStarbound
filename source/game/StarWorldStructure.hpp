@@ -6,7 +6,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(WorldStructureException, StarException);
+struct WorldStructureExceptionTag {
+  static constexpr char const* name() { return "WorldStructureException"; }
+};
+using WorldStructureException = StarError<WorldStructureExceptionTag, StarException>;
 
 STAR_CLASS(WorldStructure);
 

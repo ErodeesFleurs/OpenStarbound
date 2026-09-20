@@ -4,8 +4,14 @@
 
 namespace Star {
 
-STAR_EXCEPTION(JsonPatchException, JsonException);
-STAR_EXCEPTION(JsonPatchTestFail, StarException);
+struct JsonPatchExceptionTag {
+  static constexpr char const* name() { return "JsonPatchException"; }
+};
+using JsonPatchException = StarError<JsonPatchExceptionTag, JsonException>;
+struct JsonPatchTestFailTag {
+  static constexpr char const* name() { return "JsonPatchTestFail"; }
+};
+using JsonPatchTestFail = StarError<JsonPatchTestFailTag, StarException>;
 
 // Applies the given RFC6902 compliant patch to the base and returns the result
 // Throws JsonPatchException on patch failure.

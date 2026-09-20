@@ -7,7 +7,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StatusException, StarException);
+struct StatusExceptionTag {
+  static constexpr char const* name() { return "StatusException"; }
+};
+using StatusException = StarError<StatusExceptionTag, StarException>;
 
 // Multipliers act exactly the way you'd expect: 0.0 is a 100% reduction of the
 // base stat, while 2.0 is a 100% increase. Since these are *base* multipliers

@@ -10,7 +10,10 @@ namespace Star {
 
 STAR_CLASS(Directives);
 STAR_CLASS(DirectivesGroup);
-STAR_EXCEPTION(DirectivesException, StarException);
+struct DirectivesExceptionTag {
+  static constexpr char const* name() { return "DirectivesException"; }
+};
+using DirectivesException = StarError<DirectivesExceptionTag, StarException>;
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
 class Directives {

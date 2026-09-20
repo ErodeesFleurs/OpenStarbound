@@ -6,7 +6,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(IdMapException, StarException);
+struct IdMapExceptionTag {
+  static constexpr char const* name() { return "IdMapException"; }
+};
+using IdMapException = StarError<IdMapExceptionTag, StarException>;
 
 // Maps key ids to values with auto generated ids in a given id range.  Tries
 // to cycle through ids as new values are added and avoid re-using ids until

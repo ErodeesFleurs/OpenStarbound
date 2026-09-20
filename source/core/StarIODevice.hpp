@@ -7,7 +7,10 @@ namespace Star {
 
 STAR_CLASS(IODevice);
 
-STAR_EXCEPTION(EofException, IOException);
+struct EofExceptionTag {
+  static constexpr char const* name() { return "EofException"; }
+};
+using EofException = StarError<EofExceptionTag, IOException>;
 
 enum class IOMode : uint8_t {
   Closed = 0x0,

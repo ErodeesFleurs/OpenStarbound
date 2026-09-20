@@ -10,7 +10,10 @@ namespace Star {
 STAR_STRUCT(ProjectileConfig);
 STAR_CLASS(ProjectileDatabase);
 
-STAR_EXCEPTION(ProjectileDatabaseException, StarException);
+struct ProjectileDatabaseExceptionTag {
+  static constexpr char const* name() { return "ProjectileDatabaseException"; }
+};
+using ProjectileDatabaseException = StarError<ProjectileDatabaseExceptionTag, StarException>;
 
 struct ProjectileConfig {
   Json config;

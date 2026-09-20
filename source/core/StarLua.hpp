@@ -16,24 +16,39 @@ class LuaEngine;
 typedef RefPtr<LuaEngine> LuaEnginePtr;
 
 // Basic unspecified lua exception
-STAR_EXCEPTION(LuaException, StarException);
+struct LuaExceptionTag {
+  static constexpr char const* name() { return "LuaException"; }
+};
+using LuaException = StarError<LuaExceptionTag, StarException>;
 
 // Thrown when trying to parse an incomplete statement, useful for implementing
 // REPL loops, uses the incomplete statement marker '<eof>' as the standard lua
 // repl does.
-STAR_EXCEPTION(LuaIncompleteStatementException, LuaException);
+struct LuaIncompleteStatementExceptionTag {
+  static constexpr char const* name() { return "LuaIncompleteStatementException"; }
+};
+using LuaIncompleteStatementException = StarError<LuaIncompleteStatementExceptionTag, LuaException>;
 
 // Thrown when the instruction limit is reached, if the instruction limit is
 // set.
-STAR_EXCEPTION(LuaInstructionLimitReached, LuaException);
+struct LuaInstructionLimitReachedTag {
+  static constexpr char const* name() { return "LuaInstructionLimitReached"; }
+};
+using LuaInstructionLimitReached = StarError<LuaInstructionLimitReachedTag, LuaException>;
 
 // Thrown when the engine recursion limit is reached, if the recursion limit is
 // set.
-STAR_EXCEPTION(LuaRecursionLimitReached, LuaException);
+struct LuaRecursionLimitReachedTag {
+  static constexpr char const* name() { return "LuaRecursionLimitReached"; }
+};
+using LuaRecursionLimitReached = StarError<LuaRecursionLimitReachedTag, LuaException>;
 
 // Thrown when an incorrect lua type is passed to something in C++ expecting a
 // different type.
-STAR_EXCEPTION(LuaConversionException, LuaException);
+struct LuaConversionExceptionTag {
+  static constexpr char const* name() { return "LuaConversionException"; }
+};
+using LuaConversionException = StarError<LuaConversionExceptionTag, LuaException>;
 
 typedef Empty LuaNilType;
 typedef bool LuaBoolean;

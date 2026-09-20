@@ -10,7 +10,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(LuaComponentException, LuaException);
+struct LuaComponentExceptionTag {
+  static constexpr char const* name() { return "LuaComponentException"; }
+};
+using LuaComponentException = StarError<LuaComponentExceptionTag, LuaException>;
 
 STAR_CLASS(ScriptableThread);
 

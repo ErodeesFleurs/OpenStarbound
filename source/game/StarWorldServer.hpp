@@ -33,7 +33,10 @@ STAR_CLASS(TileEntity);
 STAR_CLASS(UniverseSettings);
 STAR_CLASS(UniverseServer);
 
-STAR_EXCEPTION(WorldServerException, StarException);
+struct WorldServerExceptionTag {
+  static constexpr char const* name() { return "WorldServerException"; }
+};
+using WorldServerException = StarError<WorldServerExceptionTag, StarException>;
 
 // Describes the amount of optional processing that a call to update() in
 // WorldServer performs for things like liquid simulation, wiring, sector

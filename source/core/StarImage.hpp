@@ -18,7 +18,10 @@ enum class PixelFormat : uint8_t {
 uint8_t bitsPerPixel(PixelFormat pf);
 uint8_t bytesPerPixel(PixelFormat pf);
 
-STAR_EXCEPTION(ImageException, StarException);
+struct ImageExceptionTag {
+  static constexpr char const* name() { return "ImageException"; }
+};
+using ImageException = StarError<ImageExceptionTag, StarException>;
 
 STAR_CLASS(Image);
 

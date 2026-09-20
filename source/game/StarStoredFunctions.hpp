@@ -12,7 +12,10 @@ STAR_CLASS(StoredFunction2);
 STAR_CLASS(StoredConfigFunction);
 STAR_CLASS(FunctionDatabase);
 
-STAR_EXCEPTION(StoredFunctionException, StarException);
+struct StoredFunctionExceptionTag {
+  static constexpr char const* name() { return "StoredFunctionException"; }
+};
+using StoredFunctionException = StarError<StoredFunctionExceptionTag, StarException>;
 
 enum class Monotonicity { Flat, Increasing, Decreasing, None };
 

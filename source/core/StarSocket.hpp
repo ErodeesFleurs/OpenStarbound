@@ -7,7 +7,10 @@ namespace Star {
 
 // Thrown when some call on a socket failed because the socket is *either*
 // closed or shutdown, for other errors sockets will throw NetworkException
-STAR_EXCEPTION(SocketClosedException, NetworkException);
+struct SocketClosedExceptionTag {
+  static constexpr char const* name() { return "SocketClosedException"; }
+};
+using SocketClosedException = StarError<SocketClosedExceptionTag, NetworkException>;
 
 STAR_STRUCT(SocketImpl);
 STAR_CLASS(Socket);

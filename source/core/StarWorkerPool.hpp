@@ -4,7 +4,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(WorkerPoolException, StarException);
+struct WorkerPoolExceptionTag {
+  static constexpr char const* name() { return "WorkerPoolException"; }
+};
+using WorkerPoolException = StarError<WorkerPoolExceptionTag, StarException>;
 
 STAR_CLASS(WorkerPool);
 

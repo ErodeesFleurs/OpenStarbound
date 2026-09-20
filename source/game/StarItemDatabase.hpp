@@ -14,7 +14,10 @@ STAR_CLASS(AugmentItem);
 STAR_CLASS(ItemDatabase);
 STAR_CLASS(Rebuilder);
 
-STAR_EXCEPTION(ItemDatabaseException, ItemException);
+struct ItemDatabaseExceptionTag {
+  static constexpr char const* name() { return "ItemDatabaseException"; }
+};
+using ItemDatabaseException = StarError<ItemDatabaseExceptionTag, ItemException>;
 
 enum class ItemType {
   Generic,

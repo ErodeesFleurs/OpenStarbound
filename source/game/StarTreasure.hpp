@@ -14,7 +14,10 @@ STAR_CLASS(ItemBag);
 STAR_CLASS(ContainerObject);
 STAR_CLASS(TreasureDatabase);
 
-STAR_EXCEPTION(TreasureException, StarException);
+struct TreasureExceptionTag {
+  static constexpr char const* name() { return "TreasureException"; }
+};
+using TreasureException = StarError<TreasureExceptionTag, StarException>;
 
 class TreasureDatabase {
 public:

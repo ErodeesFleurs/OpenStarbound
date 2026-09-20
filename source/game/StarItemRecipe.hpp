@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RecipeException, StarException);
+struct RecipeExceptionTag {
+  static constexpr char const* name() { return "RecipeException"; }
+};
+using RecipeException = StarError<RecipeExceptionTag, StarException>;
 
 struct ItemRecipe {
   Json toJson() const;

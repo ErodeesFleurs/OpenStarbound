@@ -7,7 +7,10 @@ namespace Star {
 
 STAR_CLASS(Rebuilder);
 
-STAR_EXCEPTION(VehicleDatabaseException, StarException);
+struct VehicleDatabaseExceptionTag {
+  static constexpr char const* name() { return "VehicleDatabaseException"; }
+};
+using VehicleDatabaseException = StarError<VehicleDatabaseExceptionTag, StarException>;
 
 class VehicleDatabase {
 public:

@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(CodexDatabaseException, StarException);
+struct CodexDatabaseExceptionTag {
+  static constexpr char const* name() { return "CodexDatabaseException"; }
+};
+using CodexDatabaseException = StarError<CodexDatabaseExceptionTag, StarException>;
 
 STAR_CLASS(CodexDatabase);
 

@@ -12,7 +12,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(FormatException, StarException);
+struct FormatExceptionTag {
+  static constexpr char const* name() { return "FormatException"; }
+};
+using FormatException = StarError<FormatExceptionTag, StarException>;
 
 namespace Detail {
   // Runtime format strings: fmt cannot check those at compile time, so they are

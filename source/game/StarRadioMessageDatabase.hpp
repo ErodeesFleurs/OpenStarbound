@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RadioMessageDatabaseException, StarException);
+struct RadioMessageDatabaseExceptionTag {
+  static constexpr char const* name() { return "RadioMessageDatabaseException"; }
+};
+using RadioMessageDatabaseException = StarError<RadioMessageDatabaseExceptionTag, StarException>;
 STAR_STRUCT(RadioMessage);
 STAR_CLASS(RadioMessageDatabase);
 

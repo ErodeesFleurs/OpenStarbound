@@ -14,7 +14,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(GuiContextException, StarException);
+struct GuiContextExceptionTag {
+  static constexpr char const* name() { return "GuiContextException"; }
+};
+using GuiContextException = StarError<GuiContextExceptionTag, StarException>;
 
 class GuiContext {
 public:

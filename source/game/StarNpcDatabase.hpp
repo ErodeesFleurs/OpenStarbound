@@ -14,7 +14,10 @@ STAR_CLASS(Item);
 STAR_CLASS(Npc);
 STAR_CLASS(NpcDatabase);
 
-STAR_EXCEPTION(NpcException, StarException);
+struct NpcExceptionTag {
+  static constexpr char const* name() { return "NpcException"; }
+};
+using NpcException = StarError<NpcExceptionTag, StarException>;
 
 struct NpcVariant {
   String species;

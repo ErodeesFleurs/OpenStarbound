@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StatusEffectDatabaseException, StarException);
+struct StatusEffectDatabaseExceptionTag {
+  static constexpr char const* name() { return "StatusEffectDatabaseException"; }
+};
+using StatusEffectDatabaseException = StarError<StatusEffectDatabaseExceptionTag, StarException>;
 
 STAR_CLASS(StatusEffectDatabase);
 

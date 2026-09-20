@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(PointerConvertException, StarException);
+struct PointerConvertExceptionTag {
+  static constexpr char const* name() { return "PointerConvertException"; }
+};
+using PointerConvertException = StarError<PointerConvertExceptionTag, StarException>;
 
 template <typename Type1, typename Type2>
 bool is(Type2* p) {

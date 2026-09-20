@@ -18,7 +18,10 @@ STAR_CLASS(CompressedAudioImpl);
 STAR_CLASS(UncompressedAudioImpl);
 STAR_CLASS(Audio);
 
-STAR_EXCEPTION(AudioException, StarException);
+struct AudioExceptionTag {
+  static constexpr char const* name() { return "AudioException"; }
+};
+using AudioException = StarError<AudioExceptionTag, StarException>;
 
 // Simple class for reading audio files in ogg/vorbis and wav format.
 // Reads and allows for decompression of a limited subset of ogg/vorbis.  Does

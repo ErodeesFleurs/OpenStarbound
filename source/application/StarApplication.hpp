@@ -14,7 +14,10 @@ STAR_CLASS(ApplicationController);
 STAR_CLASS(Renderer);
 STAR_CLASS(Application);
 
-STAR_EXCEPTION(ApplicationException, StarException);
+struct ApplicationExceptionTag {
+  static constexpr char const* name() { return "ApplicationException"; }
+};
+using ApplicationException = StarError<ApplicationExceptionTag, StarException>;
 
 enum class WindowMode {
   Normal,

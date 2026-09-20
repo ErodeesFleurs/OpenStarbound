@@ -7,7 +7,10 @@ namespace Star {
 STAR_CLASS(Widget);
 STAR_CLASS(Pane);
 
-STAR_EXCEPTION(WidgetParserException, StarException);
+struct WidgetParserExceptionTag {
+  static constexpr char const* name() { return "WidgetParserException"; }
+};
+using WidgetParserException = StarError<WidgetParserExceptionTag, StarException>;
 
 struct WidgetConstructResult {
   WidgetConstructResult();

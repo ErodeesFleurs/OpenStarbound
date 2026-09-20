@@ -9,7 +9,10 @@ namespace Star {
 class Player;
 typedef shared_ptr<Player> PlayerPtr;
 
-STAR_EXCEPTION(CharCreationException, StarException);
+struct CharCreationExceptionTag {
+  static constexpr char const* name() { return "CharCreationException"; }
+};
+using CharCreationException = StarError<CharCreationExceptionTag, StarException>;
 
 STAR_CLASS(CharCreationPane);
 class CharCreationPane : public Pane {

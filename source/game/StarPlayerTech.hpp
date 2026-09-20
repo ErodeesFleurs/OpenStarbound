@@ -4,7 +4,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(PlayerTechException, StarException);
+struct PlayerTechExceptionTag {
+  static constexpr char const* name() { return "PlayerTechException"; }
+};
+using PlayerTechException = StarError<PlayerTechExceptionTag, StarException>;
 
 STAR_CLASS(PlayerTech);
 

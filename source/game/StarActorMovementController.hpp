@@ -7,7 +7,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(ActorMovementControllerException, MovementControllerException);
+struct ActorMovementControllerExceptionTag {
+  static constexpr char const* name() { return "ActorMovementControllerException"; }
+};
+using ActorMovementControllerException = StarError<ActorMovementControllerExceptionTag, MovementControllerException>;
 
 STAR_CLASS(ActorMovementController);
 STAR_CLASS(PathController);

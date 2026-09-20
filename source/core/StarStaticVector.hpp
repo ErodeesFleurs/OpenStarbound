@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StaticVectorSizeException, StarException);
+struct StaticVectorSizeExceptionTag {
+  static constexpr char const* name() { return "StaticVectorSizeException"; }
+};
+using StaticVectorSizeException = StarError<StaticVectorSizeExceptionTag, StarException>;
 
 // Stack allocated vector of elements with a dynamic size which must be less
 // than a given maximum.  Acts like a vector with a built-in allocator of a

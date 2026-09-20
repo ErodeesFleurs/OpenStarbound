@@ -26,7 +26,10 @@ STAR_CLASS(WorldTemplate);
 STAR_CLASS(WorldServer);
 STAR_CLASS(UniverseSettings);
 
-STAR_EXCEPTION(UniverseServerException, StarException);
+struct UniverseServerExceptionTag {
+  static constexpr char const* name() { return "UniverseServerException"; }
+};
+using UniverseServerException = StarError<UniverseServerExceptionTag, StarException>;
 
 // Manages all running worlds, listens for new client connections and marshalls
 // between all the different worlds and all the different client connections

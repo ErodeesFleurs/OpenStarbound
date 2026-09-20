@@ -7,7 +7,10 @@ namespace Star {
 
 STAR_CLASS(AssetSource);
 
-STAR_EXCEPTION(AssetSourceException, StarException);
+struct AssetSourceExceptionTag {
+  static constexpr char const* name() { return "AssetSourceException"; }
+};
+using AssetSourceException = StarError<AssetSourceExceptionTag, StarException>;
 
 // An asset source could be a directory on a filesystem, where assets are
 // pulled directly from files, or a single pak-like file containing all assets,

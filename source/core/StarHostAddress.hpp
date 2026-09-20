@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(NetworkException, IOException);
+struct NetworkExceptionTag {
+  static constexpr char const* name() { return "NetworkException"; }
+};
+using NetworkException = StarError<NetworkExceptionTag, IOException>;
 
 STAR_CLASS(HostAddress);
 

@@ -8,7 +8,10 @@ namespace Star {
 
 STAR_CLASS(Image);
 
-STAR_EXCEPTION(ImageOperationException, StarException);
+struct ImageOperationExceptionTag {
+  static constexpr char const* name() { return "ImageOperationException"; }
+};
+using ImageOperationException = StarError<ImageOperationExceptionTag, StarException>;
 
 StringList colorDirectivesFromConfig(JsonArray const& directives);
 String paletteSwapDirectivesFromConfig(Json const& swaps);

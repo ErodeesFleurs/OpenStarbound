@@ -4,7 +4,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(GUIBuilderException, StarException);
+struct GUIBuilderExceptionTag {
+  static constexpr char const* name() { return "GUIBuilderException"; }
+};
+using GUIBuilderException = StarError<GUIBuilderExceptionTag, StarException>;
 STAR_CLASS(GuiReader);
 
 class GuiReader : public WidgetParser {

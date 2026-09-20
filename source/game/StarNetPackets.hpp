@@ -20,7 +20,10 @@ namespace Star {
 
 STAR_STRUCT(Packet);
 
-STAR_EXCEPTION(StarPacketException, IOException);
+struct StarPacketExceptionTag {
+  static constexpr char const* name() { return "StarPacketException"; }
+};
+using StarPacketException = StarError<StarPacketExceptionTag, IOException>;
 
 extern VersionNumber const StarProtocolVersion;
 

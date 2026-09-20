@@ -8,7 +8,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(DBException, IOException);
+struct DBExceptionTag {
+  static constexpr char const* name() { return "DBException"; }
+};
+using DBException = StarError<DBExceptionTag, IOException>;
 
 class BTreeDatabase {
 public:

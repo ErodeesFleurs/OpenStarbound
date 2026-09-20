@@ -11,7 +11,10 @@
 namespace Star {
 
 STAR_CLASS(NetworkedAnimator);
-STAR_EXCEPTION(NetworkedAnimatorException, StarException);
+struct NetworkedAnimatorExceptionTag {
+  static constexpr char const* name() { return "NetworkedAnimatorException"; }
+};
+using NetworkedAnimatorException = StarError<NetworkedAnimatorExceptionTag, StarException>;
 
 // Wraps an AnimatedPartSet with a set of optional light sources and particle
 // emitters to produce a network capable animation system.

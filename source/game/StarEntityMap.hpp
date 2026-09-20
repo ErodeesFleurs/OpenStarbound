@@ -9,7 +9,10 @@ STAR_CLASS(EntityMap);
 STAR_CLASS(TileEntity);
 STAR_CLASS(InteractiveEntity);
 
-STAR_EXCEPTION(EntityMapException, StarException);
+struct EntityMapExceptionTag {
+  static constexpr char const* name() { return "EntityMapException"; }
+};
+using EntityMapException = StarError<EntityMapExceptionTag, StarException>;
 
 // Class used by WorldServer and WorldClient to store entites organized in a
 // spatial hash.  Provides convenient ways of querying entities based on

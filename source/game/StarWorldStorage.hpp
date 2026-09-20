@@ -10,7 +10,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(WorldStorageException, StarException);
+struct WorldStorageExceptionTag {
+  static constexpr char const* name() { return "WorldStorageException"; }
+};
+using WorldStorageException = StarError<WorldStorageExceptionTag, StarException>;
 
 STAR_CLASS(EntityMap);
 STAR_STRUCT(WorldGeneratorFacade);

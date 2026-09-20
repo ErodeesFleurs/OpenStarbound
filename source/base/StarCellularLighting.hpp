@@ -11,7 +11,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(LightmapException, StarException);
+struct LightmapExceptionTag {
+  static constexpr char const* name() { return "LightmapException"; }
+};
+using LightmapException = StarError<LightmapExceptionTag, StarException>;
 
 class Lightmap {
 public:

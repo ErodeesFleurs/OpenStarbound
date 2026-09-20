@@ -11,7 +11,10 @@ STAR_STRUCT(ActionState);
 STAR_STRUCT(DecoratorState);
 STAR_STRUCT(CompositeState);
 
-STAR_EXCEPTION(BehaviorException, StarException);
+struct BehaviorExceptionTag {
+  static constexpr char const* name() { return "BehaviorException"; }
+};
+using BehaviorException = StarError<BehaviorExceptionTag, StarException>;
 
 extern List<NodeParameterType> BlackboardTypes;
 

@@ -36,7 +36,10 @@ STAR_CLASS(ClientContext);
 STAR_CLASS(PlayerStorage);
 STAR_STRUCT(OverheadBar);
 
-STAR_EXCEPTION(WorldClientException, StarException);
+struct WorldClientExceptionTag {
+  static constexpr char const* name() { return "WorldClientException"; }
+};
+using WorldClientException = StarError<WorldClientExceptionTag, StarException>;
 
 class WorldClient : public World {
 public:

@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RandomException, StarException);
+struct RandomExceptionTag {
+  static constexpr char const* name() { return "RandomException"; }
+};
+using RandomException = StarError<RandomExceptionTag, StarException>;
 
 // Deterministic random number source.  Uses multiply-with-carry algorithm.
 // Much higher quality than the predictable random number generators.  Not

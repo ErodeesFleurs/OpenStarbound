@@ -11,7 +11,10 @@ namespace Star {
 
 STAR_CLASS(BiomeItemDistribution);
 
-STAR_EXCEPTION(BiomeException, StarException);
+struct BiomeExceptionTag {
+  static constexpr char const* name() { return "BiomeException"; }
+};
+using BiomeException = StarError<BiomeExceptionTag, StarException>;
 
 typedef pair<TreeVariant, TreeVariant> TreePair;
 

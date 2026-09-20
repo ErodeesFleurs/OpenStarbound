@@ -5,7 +5,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(UuidException, StarException);
+struct UuidExceptionTag {
+  static constexpr char const* name() { return "UuidException"; }
+};
+using UuidException = StarError<UuidExceptionTag, StarException>;
 
 size_t const UuidSize = 16;
 

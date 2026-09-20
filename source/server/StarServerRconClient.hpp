@@ -31,8 +31,14 @@ private:
   // Requests are small (a command line); anything larger is refused instead of
   // being allocated, since the length is client supplied.
   static constexpr size_t MaxReceivePacketSize = MaxPacketSize * 4;
-  STAR_EXCEPTION(NoMoreRequests, StarException);
-  STAR_EXCEPTION(OversizedPacket, StarException);
+  struct NoMoreRequestsTag {
+    static constexpr char const* name() { return "NoMoreRequests"; }
+  };
+  using NoMoreRequests = StarError<NoMoreRequestsTag, StarException>;
+  struct OversizedPacketTag {
+    static constexpr char const* name() { return "OversizedPacket"; }
+  };
+  using OversizedPacket = StarError<OversizedPacketTag, StarException>;
 
   void receive(size_t size);
   void send(uint32_t requestId, uint32_t cmd, String str = "");

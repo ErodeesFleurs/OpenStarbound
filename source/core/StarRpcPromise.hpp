@@ -8,7 +8,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RpcPromiseException, StarException);
+struct RpcPromiseExceptionTag {
+  static constexpr char const* name() { return "RpcPromiseException"; }
+};
+using RpcPromiseException = StarError<RpcPromiseExceptionTag, StarException>;
 
 template <typename Result, typename Error>
 class RpcPromise;

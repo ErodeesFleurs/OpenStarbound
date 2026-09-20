@@ -7,7 +7,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(SpawnTypeDatabaseException, StarException);
+struct SpawnTypeDatabaseExceptionTag {
+  static constexpr char const* name() { return "SpawnTypeDatabaseException"; }
+};
+using SpawnTypeDatabaseException = StarError<SpawnTypeDatabaseExceptionTag, StarException>;
 
 STAR_CLASS(SpawnTypeDatabase);
 
