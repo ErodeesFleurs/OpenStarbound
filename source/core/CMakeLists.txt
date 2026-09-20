@@ -238,6 +238,9 @@ ADD_LIBRARY (star_vlq STATIC)
 TARGET_SOURCES (star_vlq PUBLIC FILE_SET CXX_MODULES FILES StarVlqEncoding.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_vlq PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_vlq)
+# Sources that import a module need the module flags and the module dependency
+# scan too; CMake only turns those on for targets that declare module sources.
+SET_TARGET_PROPERTIES (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)

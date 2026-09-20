@@ -63,6 +63,7 @@ ADD_EXECUTABLE (core_tests
 # requirements, so the module target has to be linked in explicitly wherever a
 # source imports it.
 TARGET_LINK_LIBRARIES (core_tests ${STAR_EXT_LIBS} star_vlq)
+SET_TARGET_PROPERTIES (core_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
 ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
 
 SET (star_game_tests_SOURCES
@@ -90,6 +91,7 @@ ADD_EXECUTABLE (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
 TARGET_LINK_LIBRARIES (game_tests ${STAR_EXT_LIBS} star_vlq)
+SET_TARGET_PROPERTIES (game_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
 ADD_TEST (NAME game_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
 
 SET_TESTS_PROPERTIES(core_tests PROPERTIES
