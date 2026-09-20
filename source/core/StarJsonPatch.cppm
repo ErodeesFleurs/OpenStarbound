@@ -1,8 +1,12 @@
-#pragma once
+module;
 
+// GCC has no header units, so the headers this module needs arrive through the
+// global module fragment.
 #include "StarJson.hpp"
 
-namespace Star {
+export module star.json_patch;
+
+export namespace Star {
 
 struct JsonPatchExceptionTag {
   static constexpr char const* name() { return "JsonPatchException"; }

@@ -16,7 +16,6 @@
 #include "StarRootLoader.hpp"
 #include "StarInput.hpp"
 #include "StarVoice.hpp"
-#include "StarCurve25519.hpp"
 #include "StarInterpolation.hpp"
 
 #include "StarUniverseClientLuaBindings.hpp"
@@ -34,6 +33,8 @@
 
 #include "imgui.h"
 #include "imgui_freetype.h"
+
+import star.curve25519;
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>

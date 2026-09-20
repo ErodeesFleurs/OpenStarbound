@@ -1,10 +1,15 @@
-#pragma once
+module;
 
+// GCC has no header units, so the headers this module needs arrive through the
+// global module fragment.
 #include "StarEncode.hpp"
 #include "StarByteArray.hpp"
 #include "StarArray.hpp"
 
-namespace Star::Curve25519 {
+export module star.curve25519;
+
+export namespace Star {
+namespace Curve25519 {
 
 constexpr size_t PublicKeySize = 32;
 constexpr size_t SecretKeySize = 32;
@@ -20,4 +25,5 @@ PublicKey const& publicKey();
 Signature sign(void* data, size_t len);
 bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
 
+}
 }

@@ -1,9 +1,15 @@
-#include "StarCurve25519.hpp"
+module;
+
+// The extern C headers and the project headers this implementation needs go in
+// the global module fragment; the unit itself belongs to the module whose
+// interface declares what it defines.
 #include "StarRandom.hpp"
 #include "StarLogging.hpp"
 
 #include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
+
+module star.curve25519;
 
 namespace Star::Curve25519 {
 

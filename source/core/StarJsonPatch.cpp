@@ -1,6 +1,9 @@
-#include "StarJsonPatch.hpp"
+module;
+
 #include "StarJsonPath.hpp"
 #include "StarLexicalCast.hpp"
+
+module star.json_patch;
 
 namespace Star {
 

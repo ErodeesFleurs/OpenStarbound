@@ -7,7 +7,6 @@
 #include "StarMemoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJsonPatch.hpp"
 #include "StarIterator.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
@@ -21,6 +20,8 @@
 #include "StarLua.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import star.json_patch;
 
 namespace Star {
 

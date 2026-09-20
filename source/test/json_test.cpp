@@ -1,9 +1,10 @@
 #include "StarJson.hpp"
 #include "StarFile.hpp"
-#include "StarJsonPatch.hpp"
 #include "StarJsonPath.hpp"
 
 #include "gtest/gtest.h"
+
+import star.json_patch;
 
 using namespace Star;
 
