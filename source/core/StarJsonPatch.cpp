@@ -1,63 +1,9 @@
-module;
+#include "StarJsonPatch.hpp"
 #include "StarJsonPath.hpp"
 #include "StarLexicalCast.hpp"
 
-
-// GCC has no header units, so the headers this module needs arrive through the
-// global module fragment.
-#include "StarJson.hpp"
-
-export module star.json_patch;
-
-export namespace Star {
-
-struct JsonPatchExceptionTag {
-  static constexpr char const* name() { return "JsonPatchException"; }
-};
-using JsonPatchException = StarError<JsonPatchExceptionTag, JsonException>;
-struct JsonPatchTestFailTag {
-  static constexpr char const* name() { return "JsonPatchTestFail"; }
-};
-using JsonPatchTestFail = StarError<JsonPatchTestFailTag, StarException>;
-
-// Applies the given RFC6902 compliant patch to the base and returns the result
-// Throws JsonPatchException on patch failure.
-Json jsonPatch(Json const& base, JsonArray const& patch);
-
-namespace JsonPatching {
-  // Applies the given single operation
-  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const& external = {});
-
-  // Tests for "value" at "path"
-  // Returns base or throws JsonPatchException
-  Json applyTestOperation(Json const& base, Json const& op);
-
-  // Removes the value at "path"
-  Json applyRemoveOperation(Json const& base, Json const& op);
-
-  // Adds "value" at "path"
-  Json applyAddOperation(Json const& base, Json const& op);
-
-  // Replaces "path" with "value"
-  Json applyReplaceOperation(Json const& base, Json const& op);
-
-  // Moves "from" to "path"
-  Json applyMoveOperation(Json const& base, Json const& op);
-
-  // Copies "from" to "path"
-  Json applyCopyOperation(Json const& base, Json const& op);
-
-  // Merges "value" at "path"
-  Json applyMergeOperation(Json const& base, Json const& op);
-  }
-
-
-
-}
-
-// The definitions are not exported: functionMap has internal linkage, which is
-// not allowed in an exported namespace.
 namespace Star {
+
 Json jsonPatch(Json const& base, JsonArray const& patch) {
   auto res = base;
   try {
@@ -249,6 +195,5 @@ namespace JsonPatching {
     }
   }
 }
-
 
 }

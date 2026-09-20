@@ -22,11 +22,10 @@
 #include "StarStoredFunctions.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarUniverseClient.hpp"
+#include "StarCurve25519.hpp"
 
 #include "StarUniverseClientLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
-
-import star.curve25519;
 
 namespace Star {
 

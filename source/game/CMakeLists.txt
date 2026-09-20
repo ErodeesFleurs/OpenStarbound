@@ -528,10 +528,6 @@ SET (star_game_SOURCES
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 
-# See the note in base/CMakeLists.txt: star_game imports a module too.
-TARGET_LINK_LIBRARIES (star_game star_modules)
-SET_TARGET_PROPERTIES (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
-
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
 ENDIF()
