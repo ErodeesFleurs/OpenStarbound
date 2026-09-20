@@ -17,7 +17,6 @@
 #include "StarSystemWorldClient.hpp"
 #include "StarClientContext.hpp"
 #include "StarTeamClient.hpp"
-#include "StarSha256.hpp"
 #include "StarEncode.hpp"
 #include "StarPlayerCodexes.hpp"
 #include "StarQuestManager.hpp"
@@ -25,6 +24,8 @@
 #include "StarWorldTemplate.hpp"
 
 #include "StarUniverseClientLuaBindings.hpp"
+
+import star.sha256;
 
 namespace Star {
 

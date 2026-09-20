@@ -41,17 +41,35 @@
             stdenv = if pkgs.stdenv.isLinux then pkgs.gcc16Stdenv else pkgs.stdenv;
             # The build inputs are source/, assets/, scripts/, cmake/ and lib/.
             # Keep the flake's own files out of the source tree so that editing
-            # them does not force a rebuild of the ten minute C++ build.
+            # them does not force a rebuild of the ten minute C++ build, and
+            # keep build outputs out: a hand build leaves a `build/` tree with a
+            # CMake cache that names the checkout it was configured from, and
+            # copying that into the store shipped 14 GB of object files into
+            # every build and let stale absolute paths into the sandbox.
             src = nixpkgs.lib.cleanSourceWith {
               src = ./.;
               name = "openstarbound-source";
               filter =
-                path: _type:
-                !builtins.elem (baseNameOf path) [
+                path: type:
+                let
+                  name = baseNameOf path;
+                in
+                !builtins.elem name [
                   "flake.nix"
                   "flake.lock"
                   "nix"
-                ];
+                ]
+                && !(type == "directory" && builtins.elem name [
+                  "build"
+                  "build_linux"
+                  "dist"
+                  "dev"
+                  "out"
+                  "output"
+                  "Output"
+                  ".cache"
+                ])
+                && !(type == "symlink" && builtins.match "result.*" name != null);
             };
             inherit sourceIdentifier;
           };

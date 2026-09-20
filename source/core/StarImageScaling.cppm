@@ -1,6 +1,17 @@
+module;
+
 #include "StarImage.hpp"
-#include "StarImageScaling.hpp"
 #include "StarInterpolation.hpp"
+
+export module star.image_scaling;
+
+export namespace Star {
+
+Image scaleNearest(Image const& srcImage, Vec2F const& scale);
+Image scaleBilinear(Image const& srcImage, Vec2F const& scale);
+Image scaleBicubic(Image const& srcImage, Vec2F const& scale);
+
+}
 
 namespace Star {
 

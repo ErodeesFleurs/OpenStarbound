@@ -16,11 +16,12 @@
 #include "StarAudio.hpp"
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarSha256.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarLua.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import star.sha256;
 
 namespace Star {
 

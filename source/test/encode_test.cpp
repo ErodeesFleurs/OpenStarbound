@@ -1,7 +1,8 @@
 #include "StarEncode.hpp"
-#include "StarSha256.hpp"
 
 #include "gtest/gtest.h"
+
+import star.sha256;
 
 using namespace Star;
 

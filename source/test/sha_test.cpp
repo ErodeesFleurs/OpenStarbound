@@ -1,8 +1,9 @@
-#include "StarSha256.hpp"
 #include "StarEncode.hpp"
 #include "StarPythonic.hpp"
 
 #include "gtest/gtest.h"
+
+import star.sha256;
 
 using namespace Star;
 

@@ -12,13 +12,14 @@
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarSecureRandom.hpp"
-#include "StarSha256.hpp"
 #include "StarSky.hpp"
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarVersioningDatabase.hpp"
+
+import star.sha256;
 
 namespace Star {
 

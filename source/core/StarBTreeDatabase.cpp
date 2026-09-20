@@ -1,6 +1,7 @@
 #include "StarBTreeDatabase.hpp"
-#include "StarSha256.hpp"
 #include "StarLogging.hpp"
+
+import star.sha256;
 
 import star.vlq;
 

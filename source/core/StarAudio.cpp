@@ -11,8 +11,9 @@
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarSha256.hpp"
 #include "StarEncode.hpp"
+
+import star.sha256;
 
 namespace Star {
 

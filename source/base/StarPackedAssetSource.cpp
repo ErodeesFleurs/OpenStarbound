@@ -3,8 +3,9 @@
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarSha256.hpp"
 #include "StarFile.hpp"
+
+import star.sha256;
 
 namespace Star {
 

@@ -21,7 +21,6 @@ SET (star_core_HEADERS
     StarColor.hpp
     StarCompression.hpp
     StarConfig.hpp
-    StarCurve25519.hpp
     StarDataStream.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
@@ -42,7 +41,6 @@ SET (star_core_HEADERS
     StarIdMap.hpp
     StarImage.hpp
     StarImageProcessing.hpp
-    StarImageScaling.hpp
     StarInputEvent.hpp
     StarInterpolation.hpp
     StarRefPtr.hpp
@@ -105,7 +103,6 @@ SET (star_core_HEADERS
     StarSectorArray2D.hpp
     StarSecureRandom.hpp
     StarSet.hpp
-    StarSha256.hpp
     StarShellParser.hpp
     StarSignalHandler.hpp
     StarSocket.hpp
@@ -143,7 +140,6 @@ SET (star_core_SOURCES
     StarColor.cpp
     StarIODeviceCallbacks.cpp
     StarCompression.cpp
-    StarCurve25519.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
     StarDirectives.cpp
@@ -155,7 +151,6 @@ SET (star_core_SOURCES
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
-    StarImageScaling.cpp
     StarInputEvent.cpp
     StarJson.cpp
     StarJsonBuilder.cpp
@@ -178,7 +173,6 @@ SET (star_core_SOURCES
     StarOptionParser.cpp
     StarPerlin.cpp
     StarRandom.cpp
-    StarSha256.cpp
     StarShellParser.cpp
     StarSocket.cpp
     StarString.cpp
@@ -230,14 +224,26 @@ ENDIF ()
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 
-# StarVlqEncoding is a C++20 module.  A module interface unit cannot carry the
+# Everything consumes star_core through $<TARGET_OBJECTS:star_core>, which carries
+# nothing else, so the module target's objects are added here as well; that way
+# each executable gets them without a link line of its own.
+TARGET_SOURCES (star_core PRIVATE $<TARGET_OBJECTS:star_modules>)
+
+# The C++20 modules of this library.  A module interface unit cannot carry the
 # precompiled header the rest of star_core uses (GCC rejects the module
-# declaration when a PCH is forced into it), so the module gets its own target
-# with no PCH; star_core links it and the sources that need it import it.
-ADD_LIBRARY (star_vlq STATIC)
-TARGET_SOURCES (star_vlq PUBLIC FILE_SET CXX_MODULES FILES StarVlqEncoding.cppm)
-TARGET_INCLUDE_DIRECTORIES (star_vlq PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
-TARGET_LINK_LIBRARIES (star_core PUBLIC star_vlq)
+# declaration when a PCH is forced into it), so the modules get their own target
+# with no PCH; their implementation units live here too, because the definitions
+# of what a module interface declares have to belong to that module.  star_core
+# links it and the sources that need a module import it.
+# The modules are single-file: CMake rejects an implementation unit in this file
+# set ("does not provide a module interface unit or partition") and gives a
+# source outside it no module flags, so the definitions live in the interface.
+ADD_LIBRARY (star_modules STATIC)
+TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
+    FILES StarVlqEncoding.cppm StarCurve25519.cppm
+          StarSha256.cppm StarImageScaling.cppm)
+TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
+TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency
 # scan too; CMake only turns those on for targets that declare module sources.
 SET_TARGET_PROPERTIES (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)

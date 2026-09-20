@@ -1,5 +1,4 @@
 #include "StarImageProcessing.hpp"
-#include "StarImageScaling.hpp"
 #include "StarMatrix3.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLexicalCast.hpp"
@@ -8,6 +7,8 @@
 #include "StarStringView.hpp"
 #include "StarEncode.hpp"
 #include "StarLogging.hpp"
+
+import star.image_scaling;
 
 namespace Star {
 
