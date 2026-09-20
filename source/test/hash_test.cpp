@@ -17,8 +17,8 @@ TEST(HashTest, All) {
 
 TEST(HashTest, StringHashCoversEveryUtf8Byte) {
   auto hashOf = [](char const* str) {
-    XXHash64 hash(0);
-    xxHash64Push(hash, String(str));
+    Star::XXHash64 hash(0);
+    Star::xxHash64Push(hash, Star::String(str));
     return hash.digest();
   };
 

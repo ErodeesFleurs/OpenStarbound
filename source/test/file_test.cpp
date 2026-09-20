@@ -3,6 +3,7 @@
 #include "StarFormat.hpp"
 
 #include <filesystem>
+#include <limits>
 
 #include "gtest/gtest.h"
 

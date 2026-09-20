@@ -1,6 +1,8 @@
 #include "StarRandom.hpp"
 #include "StarStaticRandom.hpp"
 
+#include <vector>
+
 #include "gtest/gtest.h"
 
 using namespace Star;
@@ -8,10 +10,10 @@ using namespace Star;
 TEST(StaticRandomTest, FromEmptyContainerThrows) {
   // size() - 1 on an empty container used to wrap around to SIZE_MAX, which
   // became -1 and then a division by zero inside staticRandomI32Range.
-  List<int> const empty;
+  std::vector<int> const empty;
   EXPECT_THROW(staticRandomFrom(empty, 1), StarException);
 
-  List<int> const one{7};
+  std::vector<int> const one{7};
   EXPECT_EQ(staticRandomFrom(one, 1), 7);
 }
 
