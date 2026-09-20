@@ -237,14 +237,12 @@ TARGET_SOURCES (star_core PRIVATE $<TARGET_OBJECTS:star_modules>)
 # with no PCH; their implementation units live here too, because the definitions
 # of what a module interface declares have to belong to that module.  star_core
 # links it and the sources that need a module import it.
-# The implementation units belong in the CXX_MODULES file set too: they are
-# module-providing sources (they say `module star.X;`), and CMake only gives a
-# source the module flags when it is in that file set or is scanned as an
-# importer.
+# The modules are single-file: CMake rejects an implementation unit in this file
+# set ("does not provide a module interface unit or partition") and gives a
+# source outside it no module flags, so the definitions live in the interface.
 ADD_LIBRARY (star_modules STATIC)
 TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
-    FILES StarVlqEncoding.cppm StarCurve25519.cppm StarJsonPatch.cppm
-          StarCurve25519.cpp StarJsonPatch.cpp)
+    FILES StarVlqEncoding.cppm StarCurve25519.cppm StarJsonPatch.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency
