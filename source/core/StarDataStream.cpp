@@ -1,9 +1,8 @@
 #include "StarDataStream.hpp"
 #include "StarBytes.hpp"
+#include "StarVlqEncoding.hpp"
 
 #include <string.h>
-
-import star.vlq;
 
 namespace Star {
 

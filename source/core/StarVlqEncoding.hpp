@@ -1,12 +1,8 @@
-module;
+#pragma once
 
-// GCC has no header units, so what the module needs arrives through the global
-// module fragment.  StarMemory.hpp is this facility's only dependency.
 #include "StarMemory.hpp"
 
-export module star.vlq;
-
-export namespace Star {
+namespace Star {
 
 // Write an unsigned integer as a VLQ (Variable Length Quantity).  Writes the
 // integer in 7 byte chunks, with the 8th bit of each octet indicates whether

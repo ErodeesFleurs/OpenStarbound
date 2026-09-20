@@ -1,8 +1,7 @@
 #include "StarBTreeDatabase.hpp"
 #include "StarSha256.hpp"
+#include "StarVlqEncoding.hpp"
 #include "StarLogging.hpp"
-
-import star.vlq;
 
 namespace Star {
 

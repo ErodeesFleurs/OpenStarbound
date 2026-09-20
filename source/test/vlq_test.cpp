@@ -1,6 +1,6 @@
-#include "gtest/gtest.h"
+#include "StarVlqEncoding.hpp"
 
-import star.vlq;
+#include "gtest/gtest.h"
 
 using namespace Star;
 
