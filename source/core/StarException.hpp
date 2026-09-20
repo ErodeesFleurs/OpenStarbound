@@ -39,6 +39,14 @@ concept RuntimeFormatString = !std::is_array_v<std::remove_reference_t<S>>
 template <typename... T>
 std::string strf(fmt::format_string<T...> fmt, T&&... args);
 
+// The runtime overload is declared here as well: StarError is defined in this
+// header, and a call to strf from inside it only sees the declarations above it
+// (ADL cannot help, the arguments are not Star types).  The macro this replaced
+// expanded at the call site, where StarFormat.hpp had already been included.
+template <typename S, typename... T>
+  requires RuntimeFormatString<S>
+std::string strf(S const& fmt, T&&... args);
+
 template <typename Char, typename... T>
 std::string strfChecked(fmt::basic_format_string<Char, T...> fmt, T const&... args);
 
