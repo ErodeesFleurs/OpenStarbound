@@ -30,9 +30,6 @@ PublicKey const& publicKey();
 Signature sign(void* data, size_t len);
 bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
 
-}
-
-namespace Star::Curve25519 {
 
 struct KeySet {
   PrivateKey privateKey;

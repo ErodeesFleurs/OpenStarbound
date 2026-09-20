@@ -52,7 +52,6 @@ namespace JsonPatching {
   }
 
 
-namespace Star {
 
 Json jsonPatch(Json const& base, JsonArray const& patch) {
   auto res = base;
@@ -246,6 +245,5 @@ namespace JsonPatching {
   }
 }
 
-}
 
 }
