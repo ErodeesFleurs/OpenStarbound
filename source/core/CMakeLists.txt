@@ -127,7 +127,6 @@ SET (star_core_HEADERS
     StarUuid.hpp
     StarVector.hpp
     StarVersion.hpp
-    StarVlqEncoding.hpp
     StarWeightedPool.hpp
     StarWorkerPool.hpp
     StarXXHash.hpp
@@ -230,6 +229,15 @@ ENDIF ()
 
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+
+# StarVlqEncoding is a C++20 module.  A module interface unit cannot carry the
+# precompiled header the rest of star_core uses (GCC rejects the module
+# declaration when a PCH is forced into it), so the module gets its own target
+# with no PCH; star_core links it and the sources that need it import it.
+ADD_LIBRARY (star_vlq STATIC)
+TARGET_SOURCES (star_vlq PUBLIC FILE_SET CXX_MODULES FILES StarVlqEncoding.cppm)
+TARGET_INCLUDE_DIRECTORIES (star_vlq PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
+TARGET_LINK_LIBRARIES (star_core PUBLIC star_vlq)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
