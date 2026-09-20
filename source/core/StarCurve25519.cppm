@@ -1,8 +1,9 @@
+module;
 #include "StarRandom.hpp"
 #include "StarLogging.hpp"
 #include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
-module;
+
 
 // GCC has no header units, so the headers this module needs arrive through the
 // global module fragment.

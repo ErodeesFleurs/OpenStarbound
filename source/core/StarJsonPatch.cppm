@@ -1,6 +1,7 @@
+module;
 #include "StarJsonPath.hpp"
 #include "StarLexicalCast.hpp"
-module;
+
 
 // GCC has no header units, so the headers this module needs arrive through the
 // global module fragment.
