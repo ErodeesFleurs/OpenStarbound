@@ -45,47 +45,49 @@
   };                                                                                                                \
   typedef NewType##Wrapper<ParentType> NewType
 
-// Version of strong_typedef for builtin types.
-#define strong_typedef_builtin(Type, NewType)   \
-  struct NewType {                              \
-    Type t;                                     \
-                                                \
-    explicit NewType(const Type t_)             \
-      : t(t_){};                                \
-                                                \
-    NewType()                                   \
-      : t(Type()) {}                            \
-                                                \
-    NewType(const NewType& t_)                  \
-      : t(t_.t) {}                              \
-                                                \
-    NewType& operator=(const NewType& rhs) {    \
-      t = rhs.t;                                \
-      return *this;                             \
-    }                                           \
-                                                \
-    NewType& operator=(Type const& rhs) {       \
-      t = rhs;                                  \
-      return *this;                             \
-    }                                           \
-                                                \
-    operator const Type&() const {              \
-      return t;                                 \
-    }                                           \
-                                                \
-    operator Type&() {                          \
-      return t;                                 \
-    }                                           \
-                                                \
-    bool operator==(NewType const& rhs) const { \
-      return t == rhs.t;                        \
-    }                                           \
-                                                \
-    std::weak_ordering operator<=>(NewType const& rhs) const { \
-      if (t < rhs.t)                            \
-        return std::weak_ordering::less;        \
-      if (rhs.t < t)                            \
-        return std::weak_ordering::greater;     \
-      return std::weak_ordering::equivalent;    \
-    }                                           \
+// strong_typedef for builtin types, as a real class template rather than a macro
+// so that a module can export it.  The tag type keeps two typedefs over the same
+// underlying type distinct, which is what a separate struct per name used to do.
+template <typename Type, typename Tag>
+struct StrongTypedefBuiltin {
+  Type t;
+
+  explicit StrongTypedefBuiltin(const Type t_)
+    : t(t_){}
+
+  StrongTypedefBuiltin()
+    : t(Type()) {}
+
+  StrongTypedefBuiltin(const StrongTypedefBuiltin& t_)
+    : t(t_.t) {}
+
+  StrongTypedefBuiltin& operator=(const StrongTypedefBuiltin& rhs) {
+    t = rhs.t;
+    return *this;
   }
+
+  StrongTypedefBuiltin& operator=(Type const& rhs) {
+    t = rhs;
+    return *this;
+  }
+
+  operator const Type&() const {
+    return t;
+  }
+
+  operator Type&() {
+    return t;
+  }
+
+  bool operator==(StrongTypedefBuiltin const& rhs) const {
+    return t == rhs.t;
+  }
+
+  std::weak_ordering operator<=>(StrongTypedefBuiltin const& rhs) const {
+    if (t < rhs.t)
+      return std::weak_ordering::less;
+    if (rhs.t < t)
+      return std::weak_ordering::greater;
+    return std::weak_ordering::equivalent;
+  }
+};

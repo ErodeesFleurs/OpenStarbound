@@ -92,7 +92,4 @@ typedef int64_t StreamOffset;
   using StructName##UPtr = std::unique_ptr<StructName>;             \
   using StructName##ConstUPtr = std::unique_ptr<const StructName>
 
-#define STAR_QUOTE(name) #name
-#define STAR_STR(macro) STAR_QUOTE(macro)
-
 }

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <type_traits>
 #include <concepts>
+#include <source_location>
 
 namespace Star {
 
@@ -90,21 +91,38 @@ void printStack(char const* message);
 void fatalError(char const* message, bool showStackTrace);
 void fatalException(std::exception const& e, bool showStackTrace);
 
+// The file and line of an assertion are a language construct now
+// (std::source_location) instead of __FILE__/__LINE__ stringification.
+// starAssert stays a macro only because a release build must not evaluate its
+// condition at all, which a function call cannot express; everything else lives
+// in these functions.
+inline void starAssertFailed(bool condition, std::source_location location = std::source_location::current()) {
 #ifdef STAR_DEBUG
-#define debugPrintStack() \
-  { Star::printStack("Debug: file " STAR_STR(__FILE__) " line " STAR_STR(__LINE__)); }
-#define starAssert(COND)                                                                                \
-  {                                                                                                     \
-    if (COND)                                                                                           \
-      ;                                                                                                 \
-    else                                                                                                \
-      Star::fatalError("assert failure in file " STAR_STR(__FILE__) " line " STAR_STR(__LINE__), true); \
-  }
+  if (condition)
+    return;
+
+  std::string const message = strf("assert failure in file {} line {}", location.file_name(), location.line());
+  Star::fatalError(message.c_str(), true);
 #else
-#define debugPrintStack() \
-  {}
-#define starAssert(COND) \
-  {}
+  (void)condition;
+  (void)location;
+#endif
+}
+
+inline void debugPrintStack(std::source_location location = std::source_location::current()) {
+#ifdef STAR_DEBUG
+  // The message outlives the call: printStack may hand it on before returning.
+  std::string const message = strf("Debug: file {} line {}", location.file_name(), location.line());
+  Star::printStack(message.c_str());
+#else
+  (void)location;
+#endif
+}
+
+#ifdef STAR_DEBUG
+#define starAssert(COND) Star::starAssertFailed((COND), std::source_location::current())
+#else
+#define starAssert(COND) ((void)0)
 #endif
 
 #define STAR_EXCEPTION(ClassName, BaseName)                                                                                       \

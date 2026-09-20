@@ -7,7 +7,7 @@ strong_typedef(BaseType, DerivedType1);
 strong_typedef(BaseType, DerivedType2);
 void func(DerivedType1) {}
 
-strong_typedef_builtin(int, AlsoInt);
+using AlsoInt = StrongTypedefBuiltin<int, struct AlsoIntTag>;
 
 TEST(StrongTypedefTest, All) {
   AlsoInt i = AlsoInt(0);

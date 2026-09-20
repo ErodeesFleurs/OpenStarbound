@@ -72,7 +72,7 @@ std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
 strong_typedef(String, SpawnTargetUniqueEntity);
 strong_typedef(Vec2F, SpawnTargetPosition);
-strong_typedef_builtin(float, SpawnTargetX);
+using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
 typedef MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
 
 Json spawnTargetToJson(SpawnTarget spawnTarget);
