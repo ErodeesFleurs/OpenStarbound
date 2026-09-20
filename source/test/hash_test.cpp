@@ -1,4 +1,5 @@
 #include "StarHash.hpp"
+#include "StarXXHash.hpp"
 
 #include "gtest/gtest.h"
 
@@ -12,4 +13,18 @@ TEST(HashTest, All) {
   // but it's not!
   EXPECT_NE(Star::hash<decltype(testTuple)>()(testTuple), 0u);
   EXPECT_NE(Star::hash<decltype(testPair)>()(testPair), 0u);
+}
+
+TEST(HashTest, StringHashCoversEveryUtf8Byte) {
+  auto hashOf = [](char const* str) {
+    XXHash64 hash(0);
+    xxHash64Push(hash, String(str));
+    return hash.digest();
+  };
+
+  // These two share their first two bytes but differ afterwards.  They used to
+  // hash identically because the byte count hashed was String::size(), which is
+  // a code point count, not the number of utf8 bytes.
+  EXPECT_NE(hashOf("a\xC3\xA9"), hashOf("a\xC3\x83"));
+  EXPECT_EQ(hashOf("a\xC3\xA9"), hashOf("a\xC3\xA9"));
 }

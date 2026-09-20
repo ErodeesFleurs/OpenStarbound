@@ -284,11 +284,25 @@ StreamOffset File::fsize(void* file) {
 }
 
 size_t File::pread(void* file, char* data, size_t len, StreamOffset position) {
-  return ::pread(fdFromHandle(file), data, len, position);
+  auto ret = ::pread(fdFromHandle(file), data, len, position);
+  if (ret < 0) {
+    if (errno == EAGAIN || errno == EINTR)
+      return 0;
+    throw IOException::format("Read error: {}", strerror(errno));
+  } else {
+    return ret;
+  }
 }
 
 size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset position) {
-  return ::pwrite(fdFromHandle(file), data, len, position);
+  auto ret = ::pwrite(fdFromHandle(file), data, len, position);
+  if (ret < 0) {
+    if (errno == EAGAIN || errno == EINTR)
+      return 0;
+    throw IOException::format("Write error: {}", strerror(errno));
+  } else {
+    return ret;
+  }
 }
 
 void File::resize(void* f, StreamOffset size) {

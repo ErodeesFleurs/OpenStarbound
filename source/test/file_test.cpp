@@ -9,6 +9,29 @@
 using namespace Star;
 
 namespace {
+  // An IODevice that reports more bytes than it was asked for, the way
+  // File::pread used to turn a failed read into SIZE_MAX.
+  struct OverlongReadDevice : IODevice {
+    size_t read(char*, size_t) override { return 0; }
+    size_t write(char const*, size_t) override { return 0; }
+    StreamOffset pos() override { return 0; }
+    void seek(StreamOffset, IOSeek) override {}
+    size_t readAbsolute(StreamOffset, char*, size_t) override { return std::numeric_limits<size_t>::max(); }
+    size_t writeAbsolute(StreamOffset, char const*, size_t) override { return std::numeric_limits<size_t>::max(); }
+    IODevicePtr clone() override { return make_shared<OverlongReadDevice>(); }
+  };
+}
+
+TEST(FileTest, FullReadRejectsImpossibleLengths) {
+  auto device = make_shared<OverlongReadDevice>();
+  char buffer[4];
+  // Without the length check these underflow the remaining length and loop
+  // forever instead of failing.
+  EXPECT_THROW(device->readFullAbsolute(0, buffer, sizeof(buffer)), IOException);
+  EXPECT_THROW(device->writeFullAbsolute(0, buffer, sizeof(buffer)), IOException);
+}
+
+namespace {
   std::filesystem::path fsPath(String const& path) {
     return std::filesystem::path(path.utf8());
   }

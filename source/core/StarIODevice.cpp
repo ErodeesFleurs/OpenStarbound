@@ -90,7 +90,9 @@ size_t IODevice::writeAbsolute(StreamOffset writePosition, char const* data, siz
 void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t len) {
   while (len > 0) {
     size_t r = readAbsolute(readPosition, data, len);
-    if (r == 0)
+    // A read cannot report more than it was asked for; a larger value would make
+    // the subtraction below wrap around and loop forever instead of failing.
+    if (r == 0 || r > len)
       throw IOException("Failed to read full buffer in readFullAbsolute");
     readPosition += r;
     data += r;
@@ -101,7 +103,7 @@ void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t le
 void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, size_t len) {
   while (len > 0) {
     size_t r = writeAbsolute(writePosition, data, len);
-    if (r == 0)
+    if (r == 0 || r > len)
       throw IOException("Failed to write full buffer in writeFullAbsolute");
     writePosition += r;
     data += r;

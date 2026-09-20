@@ -2,6 +2,7 @@
 
 #include "StarString.hpp"
 #include "StarXXHash.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
@@ -94,15 +95,19 @@ double staticRandomDoubleRange(double min, double max, T const& d, TL const&... 
 
 template <typename Container, typename T, typename... TL>
 typename Container::value_type& staticRandomFrom(Container& container, T const& d, TL const&... rest) {
+  if (container.empty())
+    throw StarException::format("staticRandomFrom called on an empty container");
   auto i = container.begin();
-  std::advance(i, staticRandomI32Range(0, container.size() - 1, d, rest...));
+  std::advance(i, staticRandomI32Range(0, (int32_t)(container.size() - 1), d, rest...));
   return *i;
 }
 
 template <typename Container, typename T, typename... TL>
 typename Container::value_type const& staticRandomFrom(Container const& container, T const& d, TL const&... rest) {
+  if (container.empty())
+    throw StarException::format("staticRandomFrom called on an empty container");
   auto i = container.begin();
-  std::advance(i, staticRandomI32Range(0, container.size() - 1, d, rest...));
+  std::advance(i, staticRandomI32Range(0, (int32_t)(container.size() - 1), d, rest...));
   return *i;
 }
 

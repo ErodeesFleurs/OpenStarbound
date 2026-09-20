@@ -46,7 +46,7 @@ AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr const& p)
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr&& p)
-  : m_ptr(std::move(p.m_ptr)) {}
+  : m_ptr(p.load()) {}
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(SharedPtr p)
@@ -85,7 +85,8 @@ AtomicSharedPtr<T>::operator bool() const {
 template <typename T>
 bool AtomicSharedPtr<T>::unique() const {
   SpinLocker locker(m_lock);
-  return m_ptr.unique();
+  // shared_ptr::unique() was removed in C++20.
+  return m_ptr.use_count() == 1;
 }
 
 template <typename T>
@@ -103,8 +104,11 @@ AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr const& p) {
 
 template <typename T>
 AtomicSharedPtr<T>& AtomicSharedPtr<T>::operator=(AtomicSharedPtr&& p) {
+  // Take the source value through its own lock before touching ours: reading
+  // p.m_ptr directly, as this used to, raced with concurrent writers of p.
+  SharedPtr moved = p.load();
   SpinLocker locker(m_lock);
-  m_ptr = std::move(p.m_ptr);
+  m_ptr = std::move(moved);
   return *this;
 }
 

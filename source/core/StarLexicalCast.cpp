@@ -13,9 +13,11 @@ void throwLexicalCastError(std::errc ec, const char* first, const char* last) {
 template <>
 bool tryLexicalCast(bool& result, const char* first, const char* last) {
   size_t len = last - first;
-  if (strncmp(first, "true", len) == 0)
+  // Compare the whole literal, not just its first len characters: strncmp with
+  // the input length accepted short prefixes such as "t" or "tru".
+  if (len == 4 && memcmp(first, "true", 4) == 0)
     result = true;
-  else if (strncmp(first, "false", len) != 0)
+  else if (len != 5 || memcmp(first, "false", 5) != 0)
     return false;
 
   result = false;
@@ -25,9 +27,9 @@ bool tryLexicalCast(bool& result, const char* first, const char* last) {
 template <>
 bool lexicalCast(const char* first, const char* last) {
   size_t len = last - first;
-  if (strncmp(first, "true", len) == 0)
+  if (len == 4 && memcmp(first, "true", 4) == 0)
     return true;
-  else if (strncmp(first, "false", len) != 0)
+  else if (len != 5 || memcmp(first, "false", 5) != 0)
     throwLexicalCastError(std::errc(), first, last);
 
   return false;

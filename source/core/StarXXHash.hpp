@@ -112,7 +112,8 @@ inline void xxHash32Push(XXHash32& hash, char const* str) {
 }
 
 inline void xxHash32Push(XXHash32& hash, String const& str) {
-  hash.push(str.utf8Ptr(), str.size());
+  // String::size() is a code point count, the bytes hashed are utf8 bytes.
+  hash.push(str.utf8Ptr(), str.utf8Size());
 }
 
 inline void xxHash64Push(XXHash64& hash, char const* str) {
@@ -120,7 +121,8 @@ inline void xxHash64Push(XXHash64& hash, char const* str) {
 }
 
 inline void xxHash64Push(XXHash64& hash, String const& str) {
-  hash.push(str.utf8Ptr(), str.size());
+  // String::size() is a code point count, the bytes hashed are utf8 bytes.
+  hash.push(str.utf8Ptr(), str.utf8Size());
 }
 
 inline void xxHash3Push(XXHash3& hash, char const* str) {
