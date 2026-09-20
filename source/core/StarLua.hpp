@@ -1611,7 +1611,7 @@ LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... ar
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
 
-inline LuaReference::operator==(LuaReference const& rhs) const {
+inline bool LuaReference::operator==(LuaReference const& rhs) const {
   return tie(m_handle.engine, m_handle.handleIndex) == tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
