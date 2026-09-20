@@ -96,7 +96,12 @@ void fatalException(std::exception const& e, bool showStackTrace);
 // starAssert stays a macro only because a release build must not evaluate its
 // condition at all, which a function call cannot express; everything else lives
 // in these functions.
-inline void starAssertFailed(bool condition, std::source_location location = std::source_location::current()) {
+// The condition is a forwarding reference, not a bool: it has to go through the
+// same contextual conversion the old macro's `if (COND)` performed, otherwise
+// types with an explicit operator bool (std::unique_ptr, for instance) stop
+// compiling.
+template <typename T>
+inline void starAssertFailed(T&& condition, std::source_location location = std::source_location::current()) {
 #ifdef STAR_DEBUG
   if (condition)
     return;
