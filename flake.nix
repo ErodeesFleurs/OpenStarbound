@@ -33,6 +33,12 @@
         pkgs:
         let
           openstarbound = pkgs.callPackage ./nix/openstarbound.nix {
+            # GCC 16 for the C++20 module in star_core: GCC 15.3 dies on it with
+            # an internal compiler error (in tree_node, at cp/module.cc:10037)
+            # while 14.2 and 16.2 compile the same file.  Darwin keeps its own
+            # stdenv; the module needs a header fallback there until Apple Clang
+            # supports C++20 modules.
+            stdenv = if pkgs.stdenv.isLinux then pkgs.gcc16Stdenv else pkgs.stdenv;
             # The build inputs are source/, assets/, scripts/, cmake/ and lib/.
             # Keep the flake's own files out of the source tree so that editing
             # them does not force a rebuild of the ten minute C++ build.
