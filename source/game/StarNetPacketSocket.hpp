@@ -1,7 +1,9 @@
 #pragma once
 
 #include "StarTcp.hpp"
-#include "StarAtomicSharedPtr.hpp"
+#include <atomic>
+
+#include "StarThread.hpp"
 #include "StarP2PNetworkingService.hpp"
 #include "StarNetPackets.hpp"
 #include "StarZSTDCompression.hpp"
@@ -122,7 +124,7 @@ private:
 
   LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
 
-  AtomicSharedPtr<Pipe> m_incomingPipe;
+  std::atomic<shared_ptr<Pipe>> m_incomingPipe;
   weak_ptr<Pipe> m_outgoingPipe;
 };
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bit>
+
 #include <type_traits>
 #include <limits>
 
@@ -47,12 +49,7 @@ inline double log2(double d) {
 // Count the number of '1' bits in the given unsigned integer
 template <typename Int>
 typename std::enable_if<std::is_integral<Int>::value && std::is_unsigned<Int>::value, unsigned>::type countSetBits(Int value) {
-  unsigned count = 0;
-  while (value != 0) {
-    value &= (value - 1);
-    ++count;
-  }
-  return count;
+  return (unsigned)std::popcount(value);
 }
 
 template <typename T, typename T2>
@@ -170,25 +167,6 @@ IntType intPow(IntType i, PowType p) {
     return tmp * tmp;
   else
     return i * tmp * tmp;
-}
-
-template <typename Int>
-bool isPowerOf2(Int x) {
-  if (x < 1)
-    return false;
-  return (x & (x - 1)) == 0;
-}
-
-inline uint64_t ceilPowerOf2(uint64_t v) {
-  v--;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  v |= v >> 32;
-  v++;
-  return v;
 }
 
 template <typename Float>

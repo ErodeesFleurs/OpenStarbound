@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bit>
+
 #include "StarMemory.hpp"
 
 namespace Star {
@@ -55,11 +57,7 @@ T fromLittleEndian(T const& t) {
 }
 
 inline ByteOrder platformByteOrder() {
-#if STAR_LITTLE_ENDIAN
-  return ByteOrder::LittleEndian;
-#else
-  return ByteOrder::BigEndian;
-#endif
+  return std::endian::native == std::endian::little ? ByteOrder::LittleEndian : ByteOrder::BigEndian;
 }
 
 inline void swapByteOrder(void* ptr, size_t len) {

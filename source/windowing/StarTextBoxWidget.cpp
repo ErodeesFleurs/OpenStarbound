@@ -1,4 +1,7 @@
 #include "StarTextBoxWidget.hpp"
+
+#include <limits>
+#include <utility>
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
@@ -113,7 +116,7 @@ void TextBoxWidget::update(float dt) {
     if (Time::monotonicMilliseconds() >= m_repeatKeyThreshold) {
       m_repeatKeyThreshold += 50;
       if (m_repeatCode == SpecialRepeatKeyCodes::Delete) {
-        if (m_cursorOffset < (int)m_text.size())
+        if (std::cmp_less(m_cursorOffset, m_text.size()))
           modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
       } else if (m_repeatCode == SpecialRepeatKeyCodes::Backspace) {
         if (m_cursorOffset > 0) {
@@ -127,10 +130,10 @@ void TextBoxWidget::update(float dt) {
             m_cursorOffset = 0;
         }
       } else if (m_repeatCode == SpecialRepeatKeyCodes::Right) {
-        if (m_cursorOffset < (int)m_text.size()) {
+        if (std::cmp_less(m_cursorOffset, m_text.size())) {
           m_cursorOffset++;
-          if (m_cursorOffset > (int)m_text.size())
-            m_cursorOffset = m_text.size();
+          if (std::cmp_greater(m_cursorOffset, m_text.size()))
+            m_cursorOffset = (int)m_text.size();
         }
       }
     }
@@ -150,8 +153,8 @@ bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) 
 
   m_text = text;
   size_t size = m_text.size();
-  if (moveCursor || (size_t)m_cursorOffset > size)
-    m_cursorOffset = size;
+  if (moveCursor || std::cmp_greater(m_cursorOffset, size))
+    m_cursorOffset = (int)size;
 
   m_repeatCode = SpecialRepeatKeyCodes::None;
   if (callback)
@@ -172,7 +175,7 @@ int const& TextBoxWidget::getCursorPosition() const {
 }
 
 void TextBoxWidget::setCursorPosition(int cursorPosition) {
-  m_cursorOffset = clamp(cursorPosition, 0, (int)m_text.size());
+  m_cursorOffset = clamp(cursorPosition, 0, (int)std::min<size_t>(m_text.size(), (size_t)std::numeric_limits<int>::max()));
 }
 
 bool TextBoxWidget::getHidden() const {
@@ -379,7 +382,7 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       int steps = calculateSteps(true);
       m_repeatCode = SpecialRepeatKeyCodes::Delete;
       for (int i = 0; i < steps; i++) {
-        if (m_cursorOffset < (int)m_text.size())
+        if (std::cmp_less(m_cursorOffset, m_text.size()))
           modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
       }
       return true;
@@ -399,8 +402,8 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       m_repeatCode = SpecialRepeatKeyCodes::Right;
       for (int i = 0; i < steps; i++) {
         m_cursorOffset++;
-        if (m_cursorOffset > (int)m_text.size())
-          m_cursorOffset = m_text.size();
+        if (std::cmp_greater(m_cursorOffset, m_text.size()))
+          m_cursorOffset = (int)m_text.size();
       }
       return true;
     }

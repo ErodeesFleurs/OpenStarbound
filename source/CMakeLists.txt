@@ -59,17 +59,6 @@ if(NOT DEFINED STAR_ARCHITECTURE)
   target_architecture(STAR_ARCHITECTURE)
 endif()
 
-# Either TRUE or FALSE
-if(NOT DEFINED STAR_LITTLE_ENDIAN)
-  include(TestBigEndian)
-  test_big_endian(BIGENDIAN)
-  if(NOT BIGENDIAN)
-    set(STAR_LITTLE_ENDIAN TRUE)
-  else()
-    set(STAR_LITTLE_ENDIAN FALSE)
-  endif()
-endif()
-
 # System name, like windows, macos, linux, freebsd, or (generic) unix
 if(NOT DEFINED STAR_SYSTEM)
   if(WIN32)
@@ -149,7 +138,6 @@ option(STAR_USE_RPMALLOC "Use rpmalloc allocators" OFF)
 
 message(STATUS "Source ID: ${STAR_SOURCE_IDENTIFIER}")
 message(STATUS "Architecture: ${STAR_ARCHITECTURE}")
-message(STATUS "Little Endian: ${STAR_LITTLE_ENDIAN}")
 message(STATUS "System: ${STAR_SYSTEM}")
 message(STATUS "System family: ${STAR_SYSTEM_FAMILY}")
 message(STATUS "C/C++ compiler: ${STAR_COMPILER}")
@@ -193,12 +181,6 @@ function(SET_FLAG flagValue)
   set(${flagValue} TRUE PARENT_SCOPE)
   add_definitions(-D${flagValue})
 endfunction()
-
-if(STAR_LITTLE_ENDIAN)
-  set_flag(STAR_LITTLE_ENDIAN)
-else()
-  set_flag(STAR_BIG_ENDIAN)
-endif()
 
 if(STAR_ARCHITECTURE STREQUAL "i386")
   set_flag(STAR_ARCHITECTURE_I386)

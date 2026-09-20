@@ -311,11 +311,9 @@ public:
     // overflow
     bufferSize *= 2;
     do {
-#if STAR_LITTLE_ENDIAN
-      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 0, 2, 1, &bitstream);
-#else
-      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 1, 2, 1, &bitstream);
-#endif
+      // ov_read's fourth argument says whether the data has to be byte swapped
+      // for the host, which is exactly the host being big endian.
+      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, std::endian::native == std::endian::big, 2, 1, &bitstream);
     } while (read == OV_HOLE);
     if (read < 0)
       throw AudioException::format("Error in Audio::read ({})", read);

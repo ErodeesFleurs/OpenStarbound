@@ -8,7 +8,6 @@ SET (star_core_HEADERS
     StarAlgorithm.hpp
     StarArray.hpp
     StarAssetPath.hpp
-    StarAtomicSharedPtr.hpp
     StarAudio.hpp
     StarIODeviceCallbacks.hpp
     StarBTree.hpp

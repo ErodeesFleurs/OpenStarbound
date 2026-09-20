@@ -79,11 +79,11 @@ pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair()
 }
 
 bool LocalPacketSocket::isOpen() const {
-  return m_incomingPipe && !m_outgoingPipe.expired();
+  return m_incomingPipe.load() && !m_outgoingPipe.expired();
 }
 
 void LocalPacketSocket::close() {
-  m_incomingPipe.reset();
+  m_incomingPipe.store(nullptr);
 }
 
 void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
@@ -120,9 +120,15 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
 }
 
 List<PacketPtr> LocalPacketSocket::receivePackets() {
-  MutexLocker locker(m_incomingPipe->mutex);
+  // One snapshot: the mutex and the queue must belong to the same pipe, and the
+  // pipe can be closed by another thread between two loads.
+  auto incomingPipe = m_incomingPipe.load();
+  if (!incomingPipe)
+    return {};
+
+  MutexLocker locker(incomingPipe->mutex);
   List<PacketPtr> packets;
-  packets.appendAll(take(m_incomingPipe->queue));
+  packets.appendAll(take(incomingPipe->queue));
   return packets;
 }
 

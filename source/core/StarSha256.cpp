@@ -1,4 +1,6 @@
 #include "StarSha256.hpp"
+
+#include <bit>
 #include "StarFormat.hpp"
 #include "StarEncode.hpp"
 
@@ -84,7 +86,7 @@ static const uint32_t K[64] = {0x428a2f98U,
 // Various logical functions
 #define Ch(x, y, z) ((x & y) ^ (~x & z))
 #define Maj(x, y, z) ((x & y) ^ (x & z) ^ (y & z))
-#define S(x, n) (((x) >> ((n)&31)) | ((x) << (32 - ((n)&31))))
+#define S(x, n) std::rotl((x), (n))
 #define R(x, n) ((x) >> (n))
 #define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
 #define Sigma1(x) (S(x, 6) ^ S(x, 11) ^ S(x, 25))

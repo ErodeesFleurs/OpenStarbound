@@ -819,7 +819,11 @@ void UniverseServer::updateShips() {
         }
         auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
-        unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
+        // speciesShips.size() - 1 wrapped around for a species without any ship
+        // definitions, which let a level through that the species cannot have.
+        unsigned newShipLevel = speciesShips.empty()
+          ? 0u
+          : min<unsigned>((unsigned)(speciesShips.size() - 1), newShipUpgrades.shipLevel);
 
         if (jOldShipLevel.isType(Json::Type::Int)) {
           auto oldShipLevel = jOldShipLevel.toUInt();
