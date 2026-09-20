@@ -31,6 +31,13 @@ Signature sign(void* data, size_t len);
 bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
 
 
+}
+}
+
+// The definitions are not exported: staticKeys has internal linkage, which is
+// not allowed in an exported namespace.
+namespace Star {
+namespace Curve25519 {
 struct KeySet {
   PrivateKey privateKey;
   PublicKey publicKey;

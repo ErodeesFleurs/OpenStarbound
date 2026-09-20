@@ -53,6 +53,11 @@ namespace JsonPatching {
 
 
 
+}
+
+// The definitions are not exported: functionMap has internal linkage, which is
+// not allowed in an exported namespace.
+namespace Star {
 Json jsonPatch(Json const& base, JsonArray const& patch) {
   auto res = base;
   try {
