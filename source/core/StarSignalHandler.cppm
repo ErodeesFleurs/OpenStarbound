@@ -1,13 +1,54 @@
+module;
+
+#include "StarException.hpp"
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
 #include "StarMiniDump.hpp"
-#include "StarSignalHandler.hpp"
 #include "StarFormat.hpp"
 #include "StarString.hpp"
 #include "StarLogging.hpp"
-
 #define NOMINMAX
 #include <windows.h>
+#else
+#include <signal.h>
+#endif
+
+export module star.signal_handler;
+
+export namespace Star {
+
+STAR_STRUCT(SignalHandlerImpl);
+
+// Singleton signal handler that registers handlers for segfault, fpe,
+// illegal instructions etc as well as non-fatal interrupts.
+class SignalHandler {
+public:
+  SignalHandler();
+  ~SignalHandler();
+
+  // If enabled, will catch segfault, fpe, and illegal instructions and output
+  // error information before dying.
+  void setHandleFatal(bool handleFatal);
+  bool handlingFatal() const;
+
+  // If enabled, non-fatal interrupt signal will be caught and will not kill
+  // the process and will instead set the interrupted flag.
+  void setHandleInterrupt(bool handleInterrupt);
+  bool handlingInterrupt() const;
+
+  bool interruptCaught() const;
+
+private:
+  friend SignalHandlerImpl;
+
+  static SignalHandlerImplUPtr s_singleton;
+};
+
+}
 
 namespace Star {
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
 
 String g_sehMessage;
 
@@ -162,6 +203,62 @@ struct SignalHandlerImpl {
     return true;
   }
 };
+
+#else
+
+struct SignalHandlerImpl {
+  bool handlingFatal;
+  bool handlingInterrupt;
+  bool interrupted;
+
+  SignalHandlerImpl() : handlingFatal(false), handlingInterrupt(false), interrupted(false) {}
+
+  ~SignalHandlerImpl() {
+    setHandleFatal(false);
+    setHandleInterrupt(false);
+  }
+
+  void setHandleFatal(bool b) {
+    handlingFatal = b;
+    if (handlingFatal) {
+      signal(SIGSEGV, handleFatal);
+      signal(SIGILL, handleFatal);
+      signal(SIGFPE, handleFatal);
+      signal(SIGBUS, handleFatal);
+    } else {
+      signal(SIGSEGV, SIG_DFL);
+      signal(SIGILL, SIG_DFL);
+      signal(SIGFPE, SIG_DFL);
+      signal(SIGBUS, SIG_DFL);
+    }
+  }
+
+  void setHandleInterrupt(bool b) {
+    handlingInterrupt = b;
+    if (handlingInterrupt)
+      signal(SIGINT, handleInterrupt);
+    else
+      signal(SIGINT, SIG_DFL);
+  }
+
+  static void handleFatal(int signum) {
+    if (signum == SIGSEGV)
+      fatalError("Segfault Encountered!", true);
+    else if (signum == SIGILL)
+      fatalError("Illegal Instruction Encountered!", true);
+    else if (signum == SIGFPE)
+      fatalError("Floating Point Exception Encountered!", true);
+    else if (signum == SIGBUS)
+      fatalError("Bus Error Encountered!", true);
+  }
+
+  static void handleInterrupt(int) {
+    if (SignalHandler::s_singleton)
+      SignalHandler::s_singleton->interrupted = true;
+  }
+};
+
+#endif
 
 SignalHandlerImplUPtr SignalHandler::s_singleton;
 

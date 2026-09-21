@@ -63,6 +63,8 @@ IF (STAR_ENABLE_DISCORD_INTEGRATION)
 ENDIF ()
 
 ADD_LIBRARY (star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
+TARGET_LINK_LIBRARIES (star_application PUBLIC star_modules)
+SET_TARGET_PROPERTIES (star_application PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)

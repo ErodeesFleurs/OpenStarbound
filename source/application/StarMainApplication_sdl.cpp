@@ -1,6 +1,5 @@
 #include "StarMainApplication.hpp"
 #include "StarLogging.hpp"
-#include "StarSignalHandler.hpp"
 #include "StarTickRateMonitor.hpp"
 #include "StarRenderer_opengl.hpp"
 #include "StarTtlCache.hpp"
@@ -19,6 +18,8 @@
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+
+import star.signal_handler;
 
 namespace Star {
 

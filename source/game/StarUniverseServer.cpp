@@ -11,7 +11,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarSecureRandom.hpp"
 #include "StarSky.hpp"
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
@@ -20,6 +19,7 @@
 #include "StarVersioningDatabase.hpp"
 
 import star.sha256;
+import star.secure_random;
 
 namespace Star {
 

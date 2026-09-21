@@ -8,13 +8,14 @@
 #include "StarVersionOptionParser.hpp"
 #include "StarServerQueryThread.hpp"
 #include "StarServerRconThread.hpp"
-#include "StarSignalHandler.hpp"
-
-using namespace Star;
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>
 #endif
+
+import star.signal_handler;
+
+using namespace Star;
 
 Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     {

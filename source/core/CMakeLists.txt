@@ -101,10 +101,8 @@ SET (star_core_HEADERS
     StarRect.hpp
     StarRpcPromise.hpp
     StarSectorArray2D.hpp
-    StarSecureRandom.hpp
     StarSet.hpp
     StarShellParser.hpp
-    StarSignalHandler.hpp
     StarSocket.hpp
     StarSpatialHash2D.hpp
     StarSpline.hpp
@@ -196,8 +194,6 @@ IF (STAR_SYSTEM_FAMILY_UNIX)
       StarException_unix.cpp
       StarFile_unix.cpp
       StarLockFile_unix.cpp
-      StarSecureRandom_unix.cpp
-      StarSignalHandler_unix.cpp
       StarThread_unix.cpp
       StarTime_unix.cpp
     )
@@ -211,12 +207,10 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarFile_windows.cpp
       StarLockFile_windows.cpp
       StarMiniDump_windows.cpp
-      StarSignalHandler_windows.cpp
       StarString_windows.cpp
       StarThread_windows.cpp
       StarTime_windows.cpp
       StarException_windows.cpp
-      StarSecureRandom_windows.cpp
     )
 
 ENDIF ()
@@ -236,7 +230,8 @@ ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_
 ADD_LIBRARY (star_modules STATIC)
 TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
-          StarSha256.cppm StarImageScaling.cppm)
+          StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
+          StarSignalHandler.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency
