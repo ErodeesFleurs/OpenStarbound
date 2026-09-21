@@ -123,17 +123,17 @@ OpenGlRenderer::OpenGlRenderer() {
     //glDebugMessageCallback(GlMessageCallback, this);
   }
 
+  m_limitTextureGroupSize = false;
+  m_useMultiTexturing = true;
+  m_multiSampling = false;
+  m_hdrSetting = true;
+
   m_whiteTexture = createGlTexture(Image::filled({1, 1}, Vec4B(255, 255, 255, 255), PixelFormat::RGBA32),
       TextureAddressing::Clamp,
       TextureFiltering::Nearest);
   m_immediateRenderBuffer = createGlRenderBuffer();
 
   loadEffectConfig("internal", JsonObject(), {{"vertex", DefaultVertexShader}, {"fragment", DefaultFragmentShader}});
-
-  m_limitTextureGroupSize = false;
-  m_useMultiTexturing = true;
-  m_multiSampling = false;
-  m_hdrSetting = true;
 
   logGlErrorSummary("OpenGL errors during renderer initialization");
 }

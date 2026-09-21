@@ -16,8 +16,9 @@
 #include "StarCanvasWidget.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"
-#include "StarSimpleTooltip.hpp"
 #include "StarImageWidget.hpp"
+
+import star.simple_tooltip;
 
 namespace Star {
 

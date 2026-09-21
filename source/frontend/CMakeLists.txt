@@ -53,7 +53,6 @@ SET (star_frontend_HEADERS
     StarTeamBar.hpp
     StarTitleScreen.hpp
     StarScriptPane.hpp
-    StarSimpleTooltip.hpp
     StarSongbookInterface.hpp
     StarStatusPane.hpp
     StarShadersMenu.hpp
@@ -107,7 +106,6 @@ SET (star_frontend_SOURCES
     StarTeamBar.cpp
     StarTitleScreen.cpp
     StarScriptPane.cpp
-    StarSimpleTooltip.cpp
     StarSongbookInterface.cpp
     StarStatusPane.cpp
     StarShadersMenu.cpp
@@ -118,7 +116,12 @@ SET (star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
+ADD_LIBRARY (star_frontend_modules STATIC)
+TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES StarSimpleTooltip.cppm)
+
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
+TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_frontend_modules)
+SET_TARGET_PROPERTIES (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)

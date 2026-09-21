@@ -1,8 +1,16 @@
-#include "StarSimpleTooltip.hpp"
+module;
+
+#include "StarString.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPane.hpp"
+
+export module star.simple_tooltip;
+
+export namespace Star::SimpleTooltipBuilder {
+  PanePtr buildTooltip(String const& text);
+}
 
 namespace Star {
 

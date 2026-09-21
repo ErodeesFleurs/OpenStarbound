@@ -7,13 +7,11 @@ INCLUDE_DIRECTORIES (
   )
 
 SET (star_server_HEADERS
-    StarServerQueryThread.hpp
     StarServerRconClient.hpp
     StarServerRconThread.hpp
   )
 
 SET (star_server_SOURCES
-    StarServerQueryThread.cpp
     StarServerRconClient.cpp
     StarServerRconThread.cpp
     main.cpp
@@ -25,6 +23,9 @@ IF (STAR_SYSTEM_WINDOWS)
       starbound_server.exe.manifest
     )
 ENDIF ()
+
+ADD_LIBRARY (star_server_modules STATIC)
+TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES StarServerQueryThread.cppm)
 
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -41,4 +42,4 @@ ELSEIF (UNIX)
   SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
-TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS} star_modules)
+TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS} star_modules star_server_modules)

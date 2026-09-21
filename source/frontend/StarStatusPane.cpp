@@ -9,7 +9,8 @@
 #include "StarStatusEffectDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarSimpleTooltip.hpp"
+
+import star.simple_tooltip;
 
 namespace Star {
 

@@ -3,10 +3,13 @@
 #include "StarConfiguration.hpp"
 #include "StarException.hpp"
 #include "StarFormat.hpp"
-#include "StarHttpClient.hpp"
+#include "StarWorkerPool.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
 #include "StarRpcPromise.hpp"
+
+import star.http_client;
+
 namespace Star {
 
 struct LuaHttpResponse {

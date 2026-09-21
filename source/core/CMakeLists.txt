@@ -25,7 +25,6 @@ SET (star_core_HEADERS
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
     StarDirectives.hpp
-    StarDynamicLib.hpp
     StarEither.hpp
     StarEncode.hpp
     StarException.hpp
@@ -36,7 +35,6 @@ SET (star_core_HEADERS
     StarFormat.hpp
     StarHash.hpp
     StarHostAddress.hpp
-    StarHttpClient.hpp
     StarIODevice.hpp
     StarIdMap.hpp
     StarImage.hpp
@@ -145,7 +143,6 @@ SET (star_core_SOURCES
     StarFile.cpp
     StarFont.cpp
     StarHostAddress.cpp
-    StarHttpClient.cpp
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
@@ -190,7 +187,6 @@ SET (star_core_SOURCES
 
 IF (STAR_SYSTEM_FAMILY_UNIX)
   SET (star_core_SOURCES ${star_core_SOURCES}
-      StarDynamicLib_unix.cpp
       StarException_unix.cpp
       StarFile_unix.cpp
       StarLockFile_unix.cpp
@@ -203,7 +199,6 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
     )
 
   SET (star_core_SOURCES ${star_core_SOURCES}
-      StarDynamicLib_windows.cpp
       StarFile_windows.cpp
       StarLockFile_windows.cpp
       StarMiniDump_windows.cpp
@@ -231,7 +226,7 @@ ADD_LIBRARY (star_modules STATIC)
 TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
-          StarSignalHandler.cppm)
+          StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency

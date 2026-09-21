@@ -1,7 +1,6 @@
 #include "StarInventory.hpp"
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
-#include "StarSimpleTooltip.hpp"
 #include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarItemGridWidget.hpp"
@@ -22,6 +21,8 @@
 #include "StarAugmentItem.hpp"
 #include "StarObjectItem.hpp"
 #include "StarInteractionTypes.hpp"
+
+import star.simple_tooltip;
 
 namespace Star {
 

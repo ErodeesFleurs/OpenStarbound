@@ -6,7 +6,6 @@
 #include "StarRootLoader.hpp"
 #include "StarConfiguration.hpp"
 #include "StarVersionOptionParser.hpp"
-#include "StarServerQueryThread.hpp"
 #include "StarServerRconThread.hpp"
 
 #if defined STAR_SYSTEM_WINDOWS
@@ -14,6 +13,7 @@
 #endif
 
 import star.signal_handler;
+import star.server_query;
 
 using namespace Star;
 
