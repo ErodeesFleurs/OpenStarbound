@@ -177,7 +177,9 @@
           ];
           shellFor =
             package:
-            pkgs.mkShell {
+            (pkgs.mkShell.override {
+              stdenv = if pkgs.stdenv.isLinux then pkgs.gcc16Stdenv else pkgs.stdenv;
+            }) {
               inputsFrom = [ package ];
               shellHook = ''
                 shell_library_path=""

@@ -43,6 +43,7 @@ CMakeUserPresets.json
 
 
 .vscode/
+/.zed/
 
 # Local History for Visual Studio Code
 .history/
