@@ -115,7 +115,6 @@ SET (star_core_HEADERS
     StarTickRateMonitor.hpp
     StarTime.hpp
     StarTtlCache.hpp
-    StarUdp.hpp
     StarUnicode.hpp
     StarUuid.hpp
     StarVector.hpp
@@ -177,7 +176,6 @@ SET (star_core_SOURCES
     StarThread.cpp
     StarTime.cpp
     StarTickRateMonitor.cpp
-    StarUdp.cpp
     StarUnicode.cpp
     StarUuid.cpp
     StarWorkerPool.cpp
@@ -226,7 +224,7 @@ ADD_LIBRARY (star_modules STATIC)
 TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
-          StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm)
+          StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency

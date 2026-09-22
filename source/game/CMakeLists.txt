@@ -234,8 +234,6 @@ SET (star_game_HEADERS
     objects/StarContainerObject.hpp
     objects/StarFarmableObject.hpp
     objects/StarLoungeableObject.hpp
-    objects/StarPhysicsObject.hpp
-    objects/StarTeleporterObject.hpp
 
     scripting/StarCameraLuaBindings.hpp
     scripting/StarCelestialLuaBindings.hpp
@@ -265,18 +263,6 @@ SET (star_game_HEADERS
     scripting/StarScriptableThread.hpp
 
     terrain/StarCacheSelector.hpp
-    terrain/StarConstantSelector.hpp
-    terrain/StarDisplacementSelector.hpp
-    terrain/StarFlatSurfaceSelector.hpp
-    terrain/StarIslandSurfaceSelector.hpp
-    terrain/StarKarstCave.hpp
-    terrain/StarMaxSelector.hpp
-    terrain/StarMinMaxSelector.hpp
-    terrain/StarMixSelector.hpp
-    terrain/StarPerlinSelector.hpp
-    terrain/StarRidgeBlocksSelector.hpp
-    terrain/StarRotateSelector.hpp
-    terrain/StarWormCave.hpp
   )
 
 SET (star_game_SOURCES
@@ -482,8 +468,6 @@ SET (star_game_SOURCES
     objects/StarContainerObject.cpp
     objects/StarFarmableObject.cpp
     objects/StarLoungeableObject.cpp
-    objects/StarPhysicsObject.cpp
-    objects/StarTeleporterObject.cpp
 
     scripting/StarCameraLuaBindings.cpp
     scripting/StarCelestialLuaBindings.cpp
@@ -512,24 +496,26 @@ SET (star_game_SOURCES
     scripting/StarScriptableThread.cpp
 
     terrain/StarCacheSelector.cpp
-    terrain/StarConstantSelector.cpp
-    terrain/StarDisplacementSelector.cpp
-    terrain/StarFlatSurfaceSelector.cpp
-    terrain/StarIslandSurfaceSelector.cpp
-    terrain/StarKarstCave.cpp
-    terrain/StarMaxSelector.cpp
-    terrain/StarMinMaxSelector.cpp
-    terrain/StarMixSelector.cpp
-    terrain/StarPerlinSelector.cpp
-    terrain/StarRidgeBlocksSelector.cpp
-    terrain/StarRotateSelector.cpp
-    terrain/StarWormCave.cpp
+  )
+
+ADD_LIBRARY (star_game_modules STATIC)
+TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+    terrain/StarBasicSelectors.cppm
+    terrain/StarCompositionSelectors.cppm
+    terrain/StarTransformSelectors.cppm
+    terrain/StarPerlinSelector.cppm
+    terrain/StarIslandSurfaceSelector.cppm
+    terrain/StarRidgeBlocksSelector.cppm
+    terrain/StarKarstCave.cppm
+    terrain/StarWormCave.cppm
+    objects/StarTeleporterObject.cppm
+    objects/StarPhysicsObject.cppm
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 
 # See the note in base/CMakeLists.txt: star_game imports a module too.
-TARGET_LINK_LIBRARIES (star_game star_modules)
+TARGET_LINK_LIBRARIES (star_game star_modules star_game_modules)
 SET_TARGET_PROPERTIES (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)

@@ -1,5 +1,27 @@
-#include "StarPerlinSelector.hpp"
+module;
+
+#include "StarTerrainDatabase.hpp"
+#include "StarPerlin.hpp"
 #include "StarRandom.hpp"
+
+export module star.terrain_perlin;
+
+export namespace Star {
+
+struct PerlinSelector : TerrainSelector {
+  static char const* const Name;
+
+  PerlinSelector(Json const& config, TerrainSelectorParameters const& parameters);
+
+  float get(int x, int y) const override;
+
+  PerlinF function;
+
+  float xInfluence;
+  float yInfluence;
+};
+
+}
 
 namespace Star {
 

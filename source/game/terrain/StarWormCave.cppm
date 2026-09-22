@@ -1,7 +1,47 @@
-#include "StarWormCave.hpp"
+module;
+
+#include "StarTerrainDatabase.hpp"
+#include "StarLruCache.hpp"
+#include "StarVector.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarInterpolation.hpp"
+
+export module star.terrain_worm_cave;
+
+export namespace Star {
+
+class WormCaveSector {
+public:
+  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, size_t seed, float commonality);
+
+  float get(int x, int y);
+
+private:
+  bool inside(int x, int y);
+  void set(int x, int y, float value);
+
+  int m_sectorSize;
+  Vec2I m_sector;
+  List<float> m_values;
+
+  float m_maxValue;
+};
+
+class WormCaveSelector : public TerrainSelector {
+public:
+  static char const* const Name;
+
+  WormCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
+
+  float get(int x, int y) const override;
+
+private:
+  int m_sectorSize;
+  mutable HashLruCache<Vec2I, WormCaveSector> m_cache;
+};
+
+}
 
 namespace Star {
 

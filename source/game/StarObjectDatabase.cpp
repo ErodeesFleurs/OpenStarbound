@@ -11,11 +11,12 @@
 #include "StarLoungeableObject.hpp"
 #include "StarContainerObject.hpp"
 #include "StarFarmableObject.hpp"
-#include "StarTeleporterObject.hpp"
-#include "StarPhysicsObject.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+
+import star.teleporter_object;
+import star.physics_object;
 
 namespace Star {
 

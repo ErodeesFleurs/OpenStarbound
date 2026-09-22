@@ -1,5 +1,21 @@
-#include "StarTeleporterObject.hpp"
+module;
+
+#include "StarWarpTargetEntity.hpp"
+#include "StarObject.hpp"
 #include "StarJsonExtra.hpp"
+
+export module star.teleporter_object;
+
+export namespace Star {
+
+class TeleporterObject : public Object, public WarpTargetEntity {
+public:
+  TeleporterObject(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
+
+  Vec2F footPosition() const override;
+};
+
+}
 
 namespace Star {
 

@@ -2,7 +2,6 @@ module;
 
 #include "StarThread.hpp"
 #include "StarHostAddress.hpp"
-#include "StarUdp.hpp"
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"
 
@@ -16,6 +15,8 @@ module;
 #include "StarIterator.hpp"
 
 export module star.server_query;
+
+import star.udp;
 
 export namespace Star {
 

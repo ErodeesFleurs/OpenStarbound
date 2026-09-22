@@ -26,6 +26,7 @@ ENDIF ()
 
 ADD_LIBRARY (star_server_modules STATIC)
 TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES StarServerQueryThread.cppm)
+TARGET_LINK_LIBRARIES (star_server_modules PUBLIC star_modules)
 
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -42,4 +43,4 @@ ELSEIF (UNIX)
   SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
-TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS} star_modules star_server_modules)
+TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS} star_modules star_server_modules star_game_modules)

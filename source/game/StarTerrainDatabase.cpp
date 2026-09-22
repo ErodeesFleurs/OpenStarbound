@@ -1,21 +1,18 @@
 #include "StarTerrainDatabase.hpp"
-#include "StarRidgeBlocksSelector.hpp"
-#include "StarKarstCave.hpp"
-#include "StarWormCave.hpp"
-#include "StarConstantSelector.hpp"
-#include "StarMaxSelector.hpp"
-#include "StarMinMaxSelector.hpp"
-#include "StarFlatSurfaceSelector.hpp"
-#include "StarDisplacementSelector.hpp"
-#include "StarRotateSelector.hpp"
-#include "StarMixSelector.hpp"
-#include "StarPerlinSelector.hpp"
 #include "StarCacheSelector.hpp"
-#include "StarIslandSurfaceSelector.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.terrain_basic;
+import star.terrain_composition;
+import star.terrain_transform;
+import star.terrain_perlin;
+import star.terrain_island_surface;
+import star.terrain_ridge_blocks;
+import star.terrain_karst_cave;
+import star.terrain_worm_cave;
 
 namespace Star {
 

@@ -1,8 +1,80 @@
-#include "StarDisplacementSelector.hpp"
+module;
+
+#include "StarTerrainDatabase.hpp"
+#include "StarPerlin.hpp"
+#include "StarVector.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
+export module star.terrain_transform;
+
+export namespace Star {
+
+struct RotateSelector : TerrainSelector {
+  static char const* const Name;
+
+  RotateSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+
+  float get(int x, int y) const override;
+
+  float rotation;
+  Vec2F rotationCenter;
+
+  TerrainSelectorConstPtr m_source;
+};
+
+
+
+struct DisplacementSelector : TerrainSelector {
+  static char const* const Name;
+
+  DisplacementSelector(
+      Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+
+  float get(int x, int y) const override;
+
+  PerlinF xDisplacementFunction;
+  PerlinF yDisplacementFunction;
+
+  float xXInfluence;
+  float xYInfluence;
+  float yXInfluence;
+  float yYInfluence;
+
+  bool yClamp;
+  Vec2F yClampRange;
+  float yClampSmoothing;
+
+  float clampY(float v) const;
+
+  TerrainSelectorConstPtr m_source;
+};
+
+}
+
 namespace Star {
+
+char const* const RotateSelector::Name = "rotate";
+
+RotateSelector::RotateSelector(
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
+  : TerrainSelector(Name, config, parameters) {
+  RandomSource random(parameters.seed);
+
+  rotation = config.getFloat("rotation");
+  rotationCenter = Vec2F(parameters.worldWidth / 2, 0);
+
+  auto sourceConfig = config.get("source");
+  String sourceType = sourceConfig.getString("type");
+  m_source = database->createSelectorType(sourceType, sourceConfig, parameters);
+}
+
+float RotateSelector::get(int x, int y) const {
+  auto pos = (Vec2F(x, y) - rotationCenter).rotate(rotation) + rotationCenter;
+  return m_source->get(pos[0], pos[1]);
+}
+
+
 
 char const* const DisplacementSelector::Name = "displacement";
 
