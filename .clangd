@@ -1,8 +1,7 @@
 # Regenerate after changing CMake sources or the Nix toolchain (no game build):
-# nix develop -c cmake -S source -B build/clangd -G Ninja \
-#   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-#   -DSTAR_PRECOMPILED_HEADERS=OFF -DBUILD_TESTING=ON -DSTAR_BUILD_DEV_TOOLS=ON
-# Zed's query-driver setting supplies Nix system headers; see .zed/settings.json.
+# nix develop -c bash scripts/ide/configure-clangd.sh
+# clangd needs --experimental-modules-support for importers and --query-driver
+# for Nix system headers (with LC_ALL=C, LANGUAGE=C); see .zed/settings.json.
 CompileFlags:
   CompilationDatabase: build/clangd
   # GCC's module mapper and BMI flags are not understood by Clang.
