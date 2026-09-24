@@ -8,11 +8,12 @@
 #include "StarWorld.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarMaterialItem.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarItemLuaBindings.hpp"
+
+import star.material_item;
 
 namespace Star {
 

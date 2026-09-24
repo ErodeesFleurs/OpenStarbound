@@ -120,7 +120,7 @@ ADD_LIBRARY (star_frontend_modules STATIC)
 TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES StarSimpleTooltip.cppm)
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_frontend_modules)
+TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_frontend_modules star_game_modules)
 SET_TARGET_PROPERTIES (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)

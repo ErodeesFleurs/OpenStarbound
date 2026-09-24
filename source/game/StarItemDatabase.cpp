@@ -4,19 +4,8 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
-#include "StarCurrency.hpp"
-#include "StarConsumableItem.hpp"
-#include "StarBlueprintItem.hpp"
-#include "StarCodexItem.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
 #include "StarObjectItem.hpp"
 #include "StarItemDrop.hpp"
-#include "StarInspectionTool.hpp"
-#include "StarInstrumentItem.hpp"
-#include "StarThrownItem.hpp"
-#include "StarUnlockItem.hpp"
-#include "StarActiveItem.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarTools.hpp"
 #include "StarArmors.hpp"
@@ -27,6 +16,20 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarRebuilder.hpp"
+
+import star.thrown_item;
+import star.unlock_item;
+import star.blueprint_item;
+import star.codex_item;
+import star.currency_item;
+import star.consumable_item;
+import star.inspection_tool;
+import star.instrument_item;
+import star.liquid_item;
+import star.material_item;
+import star.active_item;
+import star.flashlight;
+import star.tilling_tool;
 
 namespace Star {
 

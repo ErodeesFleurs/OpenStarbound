@@ -4,8 +4,6 @@
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
 #include "StarObject.hpp"
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"

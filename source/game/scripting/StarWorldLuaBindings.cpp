@@ -8,7 +8,7 @@
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
-#include "StarLoungeableObject.hpp"
+#include "StarLoungingEntities.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarRoot.hpp"
@@ -24,13 +24,15 @@
 #include "StarItem.hpp"
 #include "StarTreasure.hpp"
 #include "StarContainerObject.hpp"
-#include "StarFarmableObject.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarVehicleDatabase.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarBiome.hpp"
+
+import star.loungeable_object;
+import star.farmable_object;
 
 namespace Star {
 namespace LuaBindings {

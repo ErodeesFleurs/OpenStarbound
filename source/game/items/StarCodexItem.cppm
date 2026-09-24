@@ -1,10 +1,39 @@
-#include "StarCodexItem.hpp"
+module;
+
+#include "StarItem.hpp"
+#include "StarPlayerCodexes.hpp"
+#include "StarSwingableItem.hpp"
+
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarClientContext.hpp"
 #include "StarCodex.hpp"
+
+export module star.codex_item;
+
+export namespace Star {
+
+class CodexItem : public Item, public SwingableItem {
+public:
+  CodexItem(Json const& config, String const& directory, Json const& data);
+  virtual ItemPtr clone() const override;
+
+  virtual List<Drawable> drawables() const override;
+
+  virtual void fireTriggered() override;
+
+  virtual List<Drawable> iconDrawables() const override;
+  virtual List<Drawable> dropDrawables() const override;
+
+private:
+  String m_codexId;
+  List<Drawable> m_iconDrawables;
+  List<Drawable> m_worldDrawables;
+};
+
+}
 
 namespace Star {
 

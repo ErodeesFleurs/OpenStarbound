@@ -215,25 +215,12 @@ SET (star_game_HEADERS
     interfaces/StarWorld.hpp
     interfaces/StarUniverse.hpp
 
-    items/StarActiveItem.hpp
     items/StarArmors.hpp
     items/StarAugmentItem.hpp
-    items/StarBlueprintItem.hpp
-    items/StarCodexItem.hpp
-    items/StarCurrency.hpp
-    items/StarConsumableItem.hpp
-    items/StarInspectionTool.hpp
-    items/StarInstrumentItem.hpp
-    items/StarLiquidItem.hpp
-    items/StarMaterialItem.hpp
     items/StarObjectItem.hpp
-    items/StarThrownItem.hpp
     items/StarTools.hpp
-    items/StarUnlockItem.hpp
 
     objects/StarContainerObject.hpp
-    objects/StarFarmableObject.hpp
-    objects/StarLoungeableObject.hpp
 
     scripting/StarCameraLuaBindings.hpp
     scripting/StarCelestialLuaBindings.hpp
@@ -449,25 +436,12 @@ SET (star_game_SOURCES
     interfaces/StarToolUserItem.cpp
     interfaces/StarWorld.cpp
 
-    items/StarActiveItem.cpp
     items/StarArmors.cpp
     items/StarAugmentItem.cpp
-    items/StarBlueprintItem.cpp
-    items/StarCodexItem.cpp
-    items/StarCurrency.cpp
-    items/StarConsumableItem.cpp
-    items/StarInspectionTool.cpp
-    items/StarInstrumentItem.cpp
-    items/StarLiquidItem.cpp
-    items/StarMaterialItem.cpp
     items/StarObjectItem.cpp
-    items/StarThrownItem.cpp
     items/StarTools.cpp
-    items/StarUnlockItem.cpp
 
     objects/StarContainerObject.cpp
-    objects/StarFarmableObject.cpp
-    objects/StarLoungeableObject.cpp
 
     scripting/StarCameraLuaBindings.cpp
     scripting/StarCelestialLuaBindings.cpp
@@ -510,6 +484,21 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     terrain/StarWormCave.cppm
     objects/StarTeleporterObject.cppm
     objects/StarPhysicsObject.cppm
+    objects/StarLoungeableObject.cppm
+    objects/StarFarmableObject.cppm
+    items/StarThrownItem.cppm
+    items/StarUnlockItem.cppm
+    items/StarBlueprintItem.cppm
+    items/StarCodexItem.cppm
+    items/StarCurrency.cppm
+    items/StarConsumableItem.cppm
+    items/StarInspectionTool.cppm
+    items/StarInstrumentItem.cppm
+    items/StarLiquidItem.cppm
+    items/StarMaterialItem.cppm
+    items/StarActiveItem.cppm
+    items/StarFlashlight.cppm
+    items/StarTillingTool.cppm
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})

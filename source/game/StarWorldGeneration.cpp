@@ -1,6 +1,5 @@
 #include "StarWorldGeneration.hpp"
 #include "StarWorldServer.hpp"
-#include "StarMaterialItem.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarNpcDatabase.hpp"
 #include "StarMonsterDatabase.hpp"

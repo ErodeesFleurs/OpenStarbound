@@ -4,8 +4,7 @@
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
+#include "StarRenderableItem.hpp"
 #include "StarObject.hpp"
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
@@ -13,9 +12,11 @@
 #include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
-#include "StarActiveItem.hpp"
 #include "StarStatusController.hpp"
-#include "StarInspectionTool.hpp"
+
+import star.inspection_tool;
+import star.active_item;
+import star.flashlight;
 
 namespace Star {
 

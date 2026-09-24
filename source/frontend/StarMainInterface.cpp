@@ -53,13 +53,14 @@
 #include "StarWorldTemplate.hpp"
 #include "StarRadioMessagePopup.hpp"
 #include "StarAiTypes.hpp"
-#include "StarActiveItem.hpp"
-#include "StarInspectionTool.hpp"
 #include "StarQuestTracker.hpp"
 #include "StarContainerInteractor.hpp"
 #include "StarChatBubbleManager.hpp"
 #include "StarNpc.hpp"
 #include "StarCharSelection.hpp"
+
+import star.inspection_tool;
+import star.active_item;
 
 namespace Star {
 

@@ -11,13 +11,13 @@
 #include "StarStagehand.hpp"
 #include "StarVehicle.hpp"
 #include "StarContainerObject.hpp"
-#include "StarFarmableObject.hpp"
-#include "StarLoungeableObject.hpp"
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
+
+import star.farmable_object;
 
 namespace Star {
 

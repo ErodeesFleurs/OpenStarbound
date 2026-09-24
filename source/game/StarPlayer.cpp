@@ -33,7 +33,6 @@
 #include "StarQuestManager.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarStatistics.hpp"
-#include "StarInspectionTool.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
@@ -41,6 +40,8 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarUniverseClient.hpp"
+
+import star.inspection_tool;
 
 namespace Star {
 

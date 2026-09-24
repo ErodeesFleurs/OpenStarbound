@@ -1,6 +1,38 @@
-#include "StarCurrency.hpp"
+module;
+
+#include "StarItem.hpp"
+
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
+
+export module star.currency_item;
+
+export namespace Star {
+
+STAR_CLASS(CurrencyItem);
+
+class CurrencyItem : public Item {
+public:
+  CurrencyItem(Json const& config, String const& directory);
+
+  virtual ItemPtr clone() const override;
+
+  virtual String pickupSound() const override;
+
+  String currencyType();
+
+  // Value of a single instance of this currency
+  uint64_t currencyValue();
+
+  // Total value of all currencies (so currencyValue * count)
+  uint64_t totalValue();
+
+private:
+  String m_currency;
+  uint64_t m_value;
+};
+
+}
 
 namespace Star {
 

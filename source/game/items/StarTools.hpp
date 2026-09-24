@@ -18,9 +18,7 @@ STAR_CLASS(ToolUserEntity);
 STAR_CLASS(MiningTool);
 STAR_CLASS(HarvestingTool);
 STAR_CLASS(WireTool);
-STAR_CLASS(Flashlight);
 STAR_CLASS(BeamMiningTool);
-STAR_CLASS(TillingTool);
 STAR_CLASS(PaintingBeamTool);
 
 class MiningTool : public Item, public SwingableItem, public DurabilityItem {
@@ -90,24 +88,6 @@ private:
   float m_harvestPower;
 };
 
-class Flashlight : public Item, public PointableItem, public ToolUserItem {
-public:
-  Flashlight(Json const& config, String const& directory, Json const& parameters = JsonObject());
-
-  ItemPtr clone() const override;
-
-  List<Drawable> drawables() const override;
-
-  List<LightSource> lightSources() const;
-
-private:
-  String m_image;
-  Vec2F m_handPosition;
-  Vec2F m_lightPosition;
-  Color m_lightColor;
-  float m_beamWidth;
-  float m_ambientFactor;
-};
 
 class WireTool : public Item, public FireableItem, public PointableItem, public BeamItem {
 public:
@@ -175,33 +155,6 @@ private:
   List<PersistentStatusEffect> m_inhandStatusEffects;
 };
 
-class TillingTool : public Item, public SwingableItem {
-public:
-  TillingTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
-
-  ItemPtr clone() const override;
-
-  List<Drawable> drawables() const override;
-  // In pixels, offset from image center
-  Vec2F handPosition() const override;
-  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
-  float getAngle(float aimAngle) override;
-
-private:
-  String m_image;
-  int m_frames;
-  float m_frameCycle;
-  float m_frameTiming;
-  List<String> m_animationFrame;
-  String m_idleFrame;
-
-  Vec2F m_handPosition;
-
-  String m_idleSound;
-  StringList m_strikeSounds;
-  float m_toolVolume;
-};
 
 class PaintingBeamTool
   : public Item,

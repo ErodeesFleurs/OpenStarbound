@@ -8,15 +8,15 @@
 #include "StarRoot.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarLoungeableObject.hpp"
 #include "StarContainerObject.hpp"
-#include "StarFarmableObject.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 
 import star.teleporter_object;
 import star.physics_object;
+import star.loungeable_object;
+import star.farmable_object;
 
 namespace Star {
 
