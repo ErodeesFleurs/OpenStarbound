@@ -3,8 +3,6 @@
 #include "StarFile.hpp"
 #include "StarTime.hpp"
 #include "StarDirectoryAssetSource.hpp"
-#include "StarPackedAssetSource.hpp"
-#include "StarMemoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarJsonPatch.hpp"
@@ -22,6 +20,8 @@
 #include "StarUtilityLuaBindings.hpp"
 
 import star.sha256;
+import star.memory_asset_source;
+import star.packed_asset_source;
 
 namespace Star {
 

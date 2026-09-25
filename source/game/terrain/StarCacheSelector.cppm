@@ -1,4 +1,25 @@
-#include "StarCacheSelector.hpp"
+module;
+
+#include "StarTerrainDatabase.hpp"
+#include "StarLruCache.hpp"
+#include "StarVector.hpp"
+
+export module star.terrain_cache;
+
+export namespace Star {
+
+struct CacheSelector : TerrainSelector {
+  static char const* const Name;
+
+  CacheSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+
+  float get(int x, int y) const override;
+
+  TerrainSelectorConstPtr m_source;
+  mutable HashLruCache<Vec2I, float> m_cache;
+};
+
+}
 
 namespace Star {
 

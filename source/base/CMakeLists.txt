@@ -14,9 +14,7 @@ SET (star_base_HEADERS
     StarCellularLiquid.hpp
     StarConfiguration.hpp
     StarDirectoryAssetSource.hpp
-    StarMemoryAssetSource.hpp
     StarMixer.hpp
-    StarPackedAssetSource.hpp
     StarRootBase.hpp
     StarVersionOptionParser.hpp
     StarWorldGeometry.hpp
@@ -30,20 +28,24 @@ SET (star_base_SOURCES
     StarCellularLighting.cpp
     StarConfiguration.cpp
     StarDirectoryAssetSource.cpp
-    StarMemoryAssetSource.cpp
     StarMixer.cpp
-    StarPackedAssetSource.cpp
     StarRootBase.cpp
     StarVersionOptionParser.cpp
     StarWorldGeometry.cpp
     scripting/StarImageLuaBindings.cpp
   )
 
+ADD_LIBRARY (star_base_modules STATIC)
+TARGET_SOURCES (star_base_modules PUBLIC FILE_SET CXX_MODULES FILES
+    StarMemoryAssetSource.cppm
+    StarPackedAssetSource.cppm)
+TARGET_LINK_LIBRARIES (star_base_modules PUBLIC star_modules)
+
 ADD_LIBRARY (star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS})
 
-# star_base imports a C++20 module from star_modules: the link brings in the
-# module flags, and the property turns on the dependency scan for its sources.
-TARGET_LINK_LIBRARIES (star_base star_modules)
+# star_base imports core and base C++20 modules; the links bring in their
+# module flags, and scanning tracks imports in its sources.
+TARGET_LINK_LIBRARIES (star_base star_modules star_base_modules)
 SET_TARGET_PROPERTIES (star_base PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)

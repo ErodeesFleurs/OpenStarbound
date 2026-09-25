@@ -18,13 +18,14 @@
 #include "StarImageStretchWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarConfiguration.hpp"
-#include "StarObjectItem.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarMixer.hpp"
+
+import star.object_item;
 
 namespace Star {
 

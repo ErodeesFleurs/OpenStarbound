@@ -5,7 +5,6 @@
 #include "StarLabelWidget.hpp"
 #include "StarRoot.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarObjectItem.hpp"
 #include "StarImageWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarPreviewableItem.hpp"
@@ -18,6 +17,7 @@
 #include "StarObjectDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarJsonExtra.hpp"
+import star.object_item;
 
 namespace Star {
 

@@ -10,7 +10,6 @@
 
 namespace Star {
 
-STAR_CLASS(ObjectItem);
 STAR_CLASS(ArmorItem);
 STAR_CLASS(HeadArmor);
 STAR_CLASS(ChestArmor);

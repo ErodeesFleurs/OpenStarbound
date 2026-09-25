@@ -4,7 +4,6 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
-#include "StarObjectItem.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarTools.hpp"
@@ -18,6 +17,7 @@
 #include "StarRebuilder.hpp"
 
 import star.thrown_item;
+import star.object_item;
 import star.unlock_item;
 import star.blueprint_item;
 import star.codex_item;

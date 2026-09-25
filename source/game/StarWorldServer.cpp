@@ -6,7 +6,7 @@
 #include "StarWireProcessor.hpp"
 #include "StarWireEntity.hpp"
 #include "StarWorldImpl.hpp"
-#include "StarWorldGeneration.hpp"
+#include "StarDungeonGenerator.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItemDrop.hpp"
 #include "StarObjectDatabase.hpp"
@@ -26,6 +26,7 @@
 #include "StarUniverseServer.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
+import star.world_generation;
 
 namespace Star {
 

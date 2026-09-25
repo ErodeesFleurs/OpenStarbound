@@ -9,8 +9,8 @@
 #include "StarFile.hpp"
 #include "StarThread.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarPackedAssetSource.hpp"
 #include "StarStringConversion.hpp"
+import star.packed_asset_source;
 
 namespace Star {
 

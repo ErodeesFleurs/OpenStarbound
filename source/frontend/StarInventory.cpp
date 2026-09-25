@@ -19,10 +19,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarStatistics.hpp"
 #include "StarAugmentItem.hpp"
-#include "StarObjectItem.hpp"
 #include "StarInteractionTypes.hpp"
 
 import star.simple_tooltip;
+import star.object_item;
 
 namespace Star {
 

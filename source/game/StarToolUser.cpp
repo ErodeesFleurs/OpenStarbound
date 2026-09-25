@@ -8,7 +8,6 @@
 #include "StarObject.hpp"
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
-#include "StarObjectItem.hpp"
 #include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
@@ -17,6 +16,7 @@
 import star.inspection_tool;
 import star.active_item;
 import star.flashlight;
+import star.object_item;
 
 namespace Star {
 

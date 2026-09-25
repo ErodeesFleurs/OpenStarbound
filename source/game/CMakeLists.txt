@@ -40,8 +40,6 @@ SET (star_game_HEADERS
     StarDanceDatabase.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
-    StarDungeonImagePart.hpp
-    StarDungeonTMXPart.hpp
     StarEffectEmitter.hpp
     StarEffectSourceDatabase.hpp
     StarEmoteProcessor.hpp
@@ -167,7 +165,6 @@ SET (star_game_HEADERS
     StarWorldClient.hpp
     StarWorldClientThread.hpp
     StarWorldClientState.hpp
-    StarWorldGeneration.hpp
     StarWorldImpl.hpp
     StarWorldLayout.hpp
     StarWorldParameters.hpp
@@ -217,7 +214,6 @@ SET (star_game_HEADERS
 
     items/StarArmors.hpp
     items/StarAugmentItem.hpp
-    items/StarObjectItem.hpp
     items/StarTools.hpp
 
     objects/StarContainerObject.hpp
@@ -248,8 +244,6 @@ SET (star_game_HEADERS
     scripting/StarUniverseServerLuaBindings.hpp
     scripting/StarUniverseClientLuaBindings.hpp
     scripting/StarScriptableThread.hpp
-
-    terrain/StarCacheSelector.hpp
   )
 
 SET (star_game_SOURCES
@@ -286,8 +280,6 @@ SET (star_game_SOURCES
     StarDanceDatabase.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
-    StarDungeonImagePart.cpp
-    StarDungeonTMXPart.cpp
     StarEffectEmitter.cpp
     StarEffectSourceDatabase.cpp
     StarEmoteProcessor.cpp
@@ -411,7 +403,6 @@ SET (star_game_SOURCES
     StarWorldClient.cpp
     StarWorldClientThread.cpp
     StarWorldClientState.cpp
-    StarWorldGeneration.cpp
     StarWorldLayout.cpp
     StarWorldParameters.cpp
     StarWorldServer.cpp
@@ -438,7 +429,6 @@ SET (star_game_SOURCES
 
     items/StarArmors.cpp
     items/StarAugmentItem.cpp
-    items/StarObjectItem.cpp
     items/StarTools.cpp
 
     objects/StarContainerObject.cpp
@@ -468,8 +458,6 @@ SET (star_game_SOURCES
     scripting/StarUniverseServerLuaBindings.cpp
     scripting/StarUniverseClientLuaBindings.cpp
     scripting/StarScriptableThread.cpp
-
-    terrain/StarCacheSelector.cpp
   )
 
 ADD_LIBRARY (star_game_modules STATIC)
@@ -482,6 +470,7 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     terrain/StarRidgeBlocksSelector.cppm
     terrain/StarKarstCave.cppm
     terrain/StarWormCave.cppm
+    terrain/StarCacheSelector.cppm
     objects/StarTeleporterObject.cppm
     objects/StarPhysicsObject.cppm
     objects/StarLoungeableObject.cppm
@@ -499,12 +488,16 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     items/StarActiveItem.cppm
     items/StarFlashlight.cppm
     items/StarTillingTool.cppm
+    items/StarObjectItem.cppm
+    StarDungeonImagePart.cppm
+    StarDungeonTMXPart.cppm
+    StarWorldGeneration.cppm
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 
 # See the note in base/CMakeLists.txt: star_game imports a module too.
-TARGET_LINK_LIBRARIES (star_game star_modules star_game_modules)
+TARGET_LINK_LIBRARIES (star_game star_modules star_base_modules star_game_modules)
 SET_TARGET_PROPERTIES (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)

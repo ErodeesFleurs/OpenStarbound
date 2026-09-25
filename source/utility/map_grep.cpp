@@ -1,7 +1,10 @@
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
-#include "StarDungeonTMXPart.hpp"
+#include "StarDungeonGenerator.hpp"
+#include "StarTilesetDatabase.hpp"
+
+import star.dungeon_tmx_part;
 
 using namespace Star;
 using namespace Star::Dungeon;

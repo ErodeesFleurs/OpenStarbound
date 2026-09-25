@@ -12,7 +12,6 @@
 
 namespace Star {
 
-STAR_CLASS(ObjectItem);
 STAR_CLASS(ToolUserEntity);
 STAR_CLASS(Item);
 STAR_CLASS(World);
@@ -144,7 +143,7 @@ private:
 
   List<Drawable> m_cachedObjectPreview;
   Vec2I m_cachedObjectPreviewPosition;
-  ObjectItemPtr m_cachedObjectItem;
+  ItemPtr m_cachedObjectItem;
 };
 
 }

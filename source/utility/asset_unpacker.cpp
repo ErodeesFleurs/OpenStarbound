@@ -1,8 +1,9 @@
-#include "StarPackedAssetSource.hpp"
+#include "StarAssetSource.hpp"
 #include "StarTime.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarVersionOptionParser.hpp"
+import star.packed_asset_source;
 
 using namespace Star;
 

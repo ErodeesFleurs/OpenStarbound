@@ -8,8 +8,8 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarDungeonImagePart.hpp"
-#include "StarDungeonTMXPart.hpp"
+import star.dungeon_image_part;
+import star.dungeon_tmx_part;
 
 namespace Star {
 

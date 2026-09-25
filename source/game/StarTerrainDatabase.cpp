@@ -1,5 +1,4 @@
 #include "StarTerrainDatabase.hpp"
-#include "StarCacheSelector.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarRandom.hpp"
@@ -13,6 +12,7 @@ import star.terrain_island_surface;
 import star.terrain_ridge_blocks;
 import star.terrain_karst_cave;
 import star.terrain_worm_cave;
+import star.terrain_cache;
 
 namespace Star {
 

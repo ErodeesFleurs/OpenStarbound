@@ -38,7 +38,6 @@
 #include "StarObjectDatabase.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarDirectoryAssetSource.hpp"
-#include "StarPackedAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarQuestTemplateDatabase.hpp"
 #include "StarAiDatabase.hpp"
@@ -52,6 +51,8 @@
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarRadioMessageDatabase.hpp"
 #include "StarCollectionDatabase.hpp"
+
+import star.packed_asset_source;
 
 namespace Star {
 
