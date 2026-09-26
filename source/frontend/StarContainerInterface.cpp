@@ -3,7 +3,6 @@
 #include "StarContainerEntity.hpp"
 #include "StarWorldClient.hpp"
 #include "StarRoot.hpp"
-#include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -19,6 +18,8 @@
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarInput.hpp"
+
+import star.item_tooltip;
 
 namespace Star {
 

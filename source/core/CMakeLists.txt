@@ -9,7 +9,6 @@ SET (star_core_HEADERS
     StarArray.hpp
     StarAssetPath.hpp
     StarAudio.hpp
-    StarIODeviceCallbacks.hpp
     StarBTree.hpp
     StarBTreeDatabase.hpp
     StarBiMap.hpp
@@ -19,7 +18,6 @@ SET (star_core_HEADERS
     StarBytes.hpp
     StarCasting.hpp
     StarColor.hpp
-    StarCompression.hpp
     StarConfig.hpp
     StarDataStream.hpp
     StarDataStreamDevices.hpp
@@ -48,7 +46,6 @@ SET (star_core_HEADERS
     StarJsonExtra.hpp
     StarJsonParser.hpp
     StarJsonPath.hpp
-    StarJsonPatch.hpp
     StarJsonRpc.hpp
     StarFormattedJson.hpp
     StarLexicalCast.hpp
@@ -112,7 +109,6 @@ SET (star_core_HEADERS
     StarTcp.hpp
     StarText.hpp
     StarThread.hpp
-    StarTickRateMonitor.hpp
     StarTime.hpp
     StarTtlCache.hpp
     StarUnicode.hpp
@@ -133,8 +129,6 @@ SET (star_core_SOURCES
     StarBuffer.cpp
     StarByteArray.cpp
     StarColor.cpp
-    StarIODeviceCallbacks.cpp
-    StarCompression.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
     StarDirectives.cpp
@@ -150,7 +144,6 @@ SET (star_core_SOURCES
     StarJsonBuilder.cpp
     StarJsonExtra.cpp
     StarJsonPath.cpp
-    StarJsonPatch.cpp
     StarJsonRpc.cpp
     StarFormattedJson.cpp
     StarLexicalCast.cpp
@@ -175,7 +168,6 @@ SET (star_core_SOURCES
     StarText.cpp
     StarThread.cpp
     StarTime.cpp
-    StarTickRateMonitor.cpp
     StarUnicode.cpp
     StarUuid.cpp
     StarWorkerPool.cpp
@@ -224,7 +216,9 @@ ADD_LIBRARY (star_modules STATIC)
 TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
-          StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm)
+          StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm
+          StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
+          StarTickRateMonitor.cppm)
 TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
 # Sources that import a module need the module flags and the module dependency

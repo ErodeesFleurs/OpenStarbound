@@ -1,6 +1,5 @@
 #include "StarWorldStorage.hpp"
 #include "StarFile.hpp"
-#include "StarCompression.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarIterator.hpp"
@@ -12,6 +11,7 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 
+import star.compression;
 namespace Star {
 
 WorldChunks WorldStorage::getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) {

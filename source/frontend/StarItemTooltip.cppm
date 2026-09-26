@@ -1,4 +1,7 @@
-#include "StarItemTooltip.hpp"
+module;
+
+#include "StarString.hpp"
+#include "StarStatusTypes.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPane.hpp"
 #include "StarListWidget.hpp"
@@ -17,7 +20,22 @@
 #include "StarObjectDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarJsonExtra.hpp"
+
+export module star.item_tooltip;
+
 import star.object_item;
+
+export namespace Star {
+namespace ItemTooltipBuilder {
+  PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer = {});
+
+  void buildItemDescription(WidgetPtr const& container, ItemPtr const& item);
+  void buildItemDescriptionInner(
+      WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subtitle, PlayerPtr const& viewer = {});
+
+  void describePersistentEffect(ListWidgetPtr const& container, PersistentStatusEffect const& effect);
+};
+}
 
 namespace Star {
 

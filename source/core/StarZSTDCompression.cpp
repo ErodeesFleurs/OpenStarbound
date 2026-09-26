@@ -1,6 +1,7 @@
 #include "StarZSTDCompression.hpp"
-#include "StarCompression.hpp"
 #include <zstd.h>
+
+import star.compression;
 
 namespace Star {
 

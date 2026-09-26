@@ -1,10 +1,93 @@
-#include "StarServerRconThread.hpp"
-#include "StarServerRconClient.hpp"
+module;
+
+#include "StarThread.hpp"
+#include "StarTcp.hpp"
+#include "StarMap.hpp"
+#include "StarGameTypes.hpp"
+#include "StarDataStreamDevices.hpp"
+#include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarIterator.hpp"
+
+export module star.server_rcon;
+
+export namespace Star {
+
+class ServerRconClient : public Thread {
+public:
+  static const uint32_t SERVERDATA_AUTH = 0x03;
+  static const uint32_t SERVERDATA_EXECCOMMAND = 0x02;
+  static const uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
+  static const uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
+  static const uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
+  ServerRconClient(UniverseServer* universe, TcpSocketPtr socket);
+  ~ServerRconClient();
+
+  void start();
+  void stop();
+
+protected:
+  virtual void run();
+
+private:
+  static constexpr size_t MaxPacketSize = 4096;
+  // Requests are small (a command line); anything larger is refused instead of
+  // being allocated, since the length is client supplied.
+  static constexpr size_t MaxReceivePacketSize = MaxPacketSize * 4;
+  struct NoMoreRequestsTag {
+    static constexpr char const* name() { return "NoMoreRequests"; }
+  };
+  using NoMoreRequests = StarError<NoMoreRequestsTag, StarException>;
+  struct OversizedPacketTag {
+    static constexpr char const* name() { return "OversizedPacket"; }
+  };
+  using OversizedPacket = StarError<OversizedPacketTag, StarException>;
+
+  void receive(size_t size);
+  void send(uint32_t requestId, uint32_t cmd, String str = "");
+  void sendAuthFailure();
+  void sendCmdResponse(uint32_t requestId, String response);
+  void closeSocket();
+  void processRequest();
+  ServerCommandResult handleCommand(String commandLine);
+
+  UniverseServer* m_universe;
+  TcpSocketPtr m_socket;
+  DataStreamBuffer m_packetBuffer;
+  bool m_stop;
+  bool m_authed;
+  String m_rconPassword;
+
+  HashMap<uint32_t,RpcPromise<String>> m_commandPromises;
+};
+typedef shared_ptr<ServerRconClient> ServerRconClientPtr;
+
+STAR_CLASS(ServerRconThread);
+
+class ServerRconThread : public Thread {
+public:
+  ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address);
+  ~ServerRconThread();
+
+  void start();
+  void stop();
+
+protected:
+  virtual void run();
+
+private:
+  void clearClients(bool all = false);
+
+  UniverseServer* m_universe;
+  TcpServer m_rconServer;
+  bool m_stop;
+  HashMap<HostAddress, ServerRconClientPtr> m_clients;
+};
+
+}
 
 namespace Star {
 
@@ -159,6 +242,58 @@ void ServerRconClient::run() {
   } catch (NoMoreRequests const&) {
   } catch (std::exception const& e) {
     Logger::error("ServerRconClient exception caught: {}", outputException(e, false));
+  }
+}
+
+
+ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address)
+  : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_stop(true) {
+  if (Root::singleton().configuration()->get("rconServerPassword").toString().empty())
+    Logger::warn("rconServerPassword is not configured requests will NOT be processed");
+}
+
+ServerRconThread::~ServerRconThread() {
+  stop();
+  join();
+}
+
+void ServerRconThread::clearClients(bool all) {
+  auto it = makeSMutableMapIterator(m_clients);
+  while (it.hasNext()) {
+    auto const& pair = it.next();
+    auto client = pair.second;
+    if (all)
+      client->stop();
+    else if (!client->isRunning())
+      it.remove();
+  }
+}
+
+void ServerRconThread::start() {
+  m_stop = false;
+  Thread::start();
+}
+
+void ServerRconThread::stop() {
+  m_stop = true;
+  m_rconServer.stop();
+  clearClients(true);
+}
+
+void ServerRconThread::run() {
+  try {
+    auto timeout = Root::singleton().configuration()->get("rconServerTimeout").toInt();
+    while (!m_stop) {
+      if (auto client = m_rconServer.accept(100)) {
+        client->setTimeout(timeout);
+        auto rconClient = make_shared<ServerRconClient>(m_universe, client);
+        rconClient->start();
+        m_clients[client->remoteAddress().address()] = rconClient;
+        clearClients();
+      }
+    }
+  } catch (std::exception const& e) {
+    Logger::error("ServerRconThread exception caught: {}", e.what());
   }
 }
 

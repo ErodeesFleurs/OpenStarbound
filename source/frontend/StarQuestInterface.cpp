@@ -17,7 +17,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarVerticalLayout.hpp"
-#include "StarItemTooltip.hpp"
+
+import star.item_tooltip;
 
 namespace Star {
 

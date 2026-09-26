@@ -5,7 +5,6 @@
 #include "StarDirectoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJsonPatch.hpp"
 #include "StarIterator.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
@@ -22,6 +21,7 @@
 import star.sha256;
 import star.memory_asset_source;
 import star.packed_asset_source;
+import star.json_patch;
 
 namespace Star {
 

@@ -1,6 +1,7 @@
 #include "StarSystemWorldServerThread.hpp"
-#include "StarTickRateMonitor.hpp"
 #include "StarNetPackets.hpp"
+
+import star.tick_rate_monitor;
 
 namespace Star {
 

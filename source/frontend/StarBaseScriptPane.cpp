@@ -8,11 +8,11 @@
 #include "StarWidgetLuaBindings.hpp"
 #include "StarCanvasWidget.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarItemTooltip.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarImageWidget.hpp"
 
 import star.simple_tooltip;
+import star.item_tooltip;
 
 namespace Star {
 

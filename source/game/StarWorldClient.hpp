@@ -15,7 +15,6 @@
 #include "StarGameTimers.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarTickRateMonitor.hpp"
 
 namespace Star {
 

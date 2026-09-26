@@ -1,6 +1,5 @@
 module;
 
-#include "StarCompression.hpp"
 #include "StarZSTDCompression.hpp"
 #include "StarEncode.hpp"
 #include "StarRoot.hpp"
@@ -15,6 +14,7 @@ module;
 #include "StarJsonExtra.hpp"
 
 export module star.dungeon_tmx_part;
+import star.compression;
 
 export namespace Star {
 

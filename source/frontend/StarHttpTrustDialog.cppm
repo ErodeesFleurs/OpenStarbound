@@ -1,10 +1,43 @@
-#include "StarHttpTrustDialog.hpp"
+module;
+
+#include "StarPane.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
+
+export module star.http_trust_dialog;
+
+export namespace Star {
+
+STAR_CLASS(HttpTrustDialog);
+
+enum class HttpTrustReply {
+  Allow,
+  Deny
+};
+
+class HttpTrustDialog final : public Pane {
+public:
+  HttpTrustDialog();
+
+  ~HttpTrustDialog() override = default;
+
+  void displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback);
+
+  void dismissed() override;
+
+private:
+  void reply(HttpTrustReply replyType);
+
+  String m_domain;
+  bool m_confirmed;
+  function<void(HttpTrustReply, bool)> m_callback;
+};
+
+}
 
 namespace Star {
 
@@ -85,8 +118,3 @@ void HttpTrustDialog::dismissed() {
 }
 
 }
-
-
-
-
-

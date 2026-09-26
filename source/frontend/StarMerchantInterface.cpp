@@ -3,7 +3,6 @@
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRoot.hpp"
-#include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
 #include "StarWorldClient.hpp"
 #include "StarButtonWidget.hpp"
@@ -18,6 +17,8 @@
 #include "StarPlayerInventory.hpp"
 #include "StarItemBag.hpp"
 #include "StarQuestManager.hpp"
+
+import star.item_tooltip;
 
 namespace Star {
 

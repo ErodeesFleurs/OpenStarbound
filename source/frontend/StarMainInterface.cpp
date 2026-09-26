@@ -13,7 +13,6 @@
 #include "StarQuestManager.hpp"
 #include "StarPopupInterface.hpp"
 #include "StarConfirmationDialog.hpp"
-#include "StarHttpTrustDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarGuiReader.hpp"
@@ -61,6 +60,7 @@
 
 import star.inspection_tool;
 import star.active_item;
+import star.http_trust_dialog;
 
 namespace Star {
 

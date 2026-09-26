@@ -1,4 +1,6 @@
 #include "StarFile.hpp"
+#include "StarBuffer.hpp"
+#include "vorbis/vorbisfile.h"
 #include "StarString.hpp"
 #include "StarFormat.hpp"
 
@@ -6,6 +8,7 @@
 #include <limits>
 
 #include "gtest/gtest.h"
+import star.io_device_callbacks;
 
 using namespace Star;
 
@@ -133,4 +136,22 @@ TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {
 
   EXPECT_NO_THROW(File::removeDirectoryRecursive(dir));
   EXPECT_FALSE(File::isDirectory(dir));
+}
+
+TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
+  auto device = make_shared<Buffer>(ByteArray::fromCString("abcdef"));
+  IODeviceCallbacks adapter(device);
+  ov_callbacks callbacks{};
+  adapter.setupOggCallbacks(callbacks);
+
+  char output[4]{};
+  EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 2u);
+  EXPECT_EQ(ByteArray(output, 4), ByteArray::fromCString("abcd"));
+  EXPECT_EQ(callbacks.tell_func(&adapter), 4);
+
+  EXPECT_EQ(callbacks.seek_func(&adapter, -2, SEEK_CUR), 0);
+  EXPECT_EQ(callbacks.tell_func(&adapter), 2);
+  EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 2u);
+  EXPECT_EQ(ByteArray(output, 4), ByteArray::fromCString("cdef"));
+  EXPECT_EQ(callbacks.read_func(output, 2, 2, &adapter), 0u);
 }

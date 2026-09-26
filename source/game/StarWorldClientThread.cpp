@@ -1,10 +1,11 @@
 #include "StarWorldClientThread.hpp"
-#include "StarTickRateMonitor.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
+
+import star.tick_rate_monitor;
 
 namespace Star {
 

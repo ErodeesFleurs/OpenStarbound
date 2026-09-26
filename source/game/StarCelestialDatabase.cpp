@@ -2,7 +2,6 @@
 #include "StarLexicalCast.hpp"
 #include "StarCasting.hpp"
 #include "StarRandom.hpp"
-#include "StarCompression.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -10,6 +9,7 @@
 #include "StarAssets.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarIterator.hpp"
+import star.compression;
 
 namespace Star {
 

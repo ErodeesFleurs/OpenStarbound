@@ -1,7 +1,11 @@
-#include "StarCameraLuaBindings.hpp"
+module;
+
+#include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarRoot.hpp"
+
+module star.camera_lua_bindings;
 
 namespace Star {
 

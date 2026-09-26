@@ -1,12 +1,13 @@
 #include "StarScriptableThread.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarConfigLuaBindings.hpp"
-#include "StarTickRateMonitor.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarAssets.hpp"
+
+import star.tick_rate_monitor;
 
 namespace Star {
 

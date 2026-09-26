@@ -1,7 +1,7 @@
 #include "StarNetPacketSocket.hpp"
 #include "StarIterator.hpp"
-#include "StarCompression.hpp"
 #include "StarLogging.hpp"
+import star.compression;
 
 namespace Star {
 

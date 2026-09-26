@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarGuiReader.hpp"
-#include "StarItemTooltip.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarItemSlotWidget.hpp"
@@ -15,6 +14,8 @@
 #include "StarImageMetadataDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarMerchantInterface.hpp"
+
+import star.item_tooltip;
 
 namespace Star {
 

@@ -6,7 +6,6 @@ module;
 #include "StarFallingBlocksAgent.hpp"
 #include "StarSpawner.hpp"
 #include "StarWorldStorage.hpp"
-#include "StarMicroDungeon.hpp"
 #include "StarCellularLiquid.hpp"
 #include "StarBiomePlacement.hpp"
 
@@ -37,6 +36,7 @@ module;
 #include "StarVehicleDatabase.hpp"
 
 export module star.world_generation;
+import star.micro_dungeon;
 
 export namespace Star {
 

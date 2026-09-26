@@ -6,7 +6,6 @@
 
 #include "StarAudio.hpp"
 #include "StarBuffer.hpp"
-#include "StarIODeviceCallbacks.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
@@ -14,6 +13,7 @@
 #include "StarEncode.hpp"
 
 import star.sha256;
+import star.io_device_callbacks;
 
 namespace Star {
 

@@ -1,8 +1,19 @@
-#include "StarClipboardLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarApplicationController.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarInput.hpp"
 #include "StarBuffer.hpp"
 #include "StarRootBase.hpp"
+
+export module star.clipboard_lua_bindings;
+
+export namespace Star::LuaBindings {
+LuaCallbacks makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow);
+}
 
 namespace Star {
 
@@ -62,6 +73,6 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
   });
 
   return callbacks;
-};
+}
 
 }

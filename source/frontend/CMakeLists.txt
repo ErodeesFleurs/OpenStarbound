@@ -23,10 +23,8 @@ SET (star_frontend_HEADERS
     StarChatBubbleManager.hpp
     StarCinematic.hpp
     StarClientCommandProcessor.hpp
-    StarClipboardLuaBindings.hpp
     StarCodexInterface.hpp
     StarConfirmationDialog.hpp
-    StarHttpTrustDialog.hpp
     StarContainerInterface.hpp
     StarContainerInteractor.hpp
     StarCraftingInterface.hpp
@@ -35,7 +33,6 @@ SET (star_frontend_HEADERS
     StarInventory.hpp
     StarInterfaceCursor.hpp
     StarInterfaceLuaBindings.hpp
-    StarItemTooltip.hpp
     StarJoinRequestDialog.hpp
     StarKeybindingsMenu.hpp
     StarMainInterface.hpp
@@ -76,10 +73,8 @@ SET (star_frontend_SOURCES
     StarChatBubbleManager.cpp
     StarCinematic.cpp
     StarClientCommandProcessor.cpp
-    StarClipboardLuaBindings.cpp
     StarCodexInterface.cpp
     StarConfirmationDialog.cpp
-    StarHttpTrustDialog.cpp
     StarContainerInterface.cpp
     StarContainerInteractor.cpp
     StarCraftingInterface.cpp
@@ -88,7 +83,6 @@ SET (star_frontend_SOURCES
     StarInventory.cpp
     StarInterfaceCursor.cpp
     StarInterfaceLuaBindings.cpp
-    StarItemTooltip.cpp
     StarJoinRequestDialog.cpp
     StarKeybindingsMenu.cpp
     StarMainInterface.cpp
@@ -117,7 +111,13 @@ SET (star_frontend_SOURCES
   )
 
 ADD_LIBRARY (star_frontend_modules STATIC)
-TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES StarSimpleTooltip.cppm)
+TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
+    StarSimpleTooltip.cppm
+    StarHttpTrustDialog.cppm
+    StarItemTooltip.cppm
+    StarClipboardLuaBindings.cppm
+  )
+TARGET_LINK_LIBRARIES (star_frontend_modules PUBLIC star_game_modules)
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_frontend_modules star_game_modules)

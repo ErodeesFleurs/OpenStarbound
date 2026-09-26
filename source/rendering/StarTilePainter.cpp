@@ -141,7 +141,7 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
     //renderTile.hashPushLiquid(hasher);
-    buffer.append((char*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
+    buffer.append((char*)&renderTile.liquidId, sizeof(renderTile.liquidId) + sizeof(renderTile.liquidLevel));
   });
 
   //return hasher.digest();

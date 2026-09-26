@@ -70,7 +70,6 @@ SET (star_game_HEADERS
     StarMaterialDatabase.hpp
     StarMaterialRenderProfile.hpp
     StarMaterialTypes.hpp
-    StarMicroDungeon.hpp
     StarMonster.hpp
     StarMonsterDatabase.hpp
     StarMovementController.hpp
@@ -218,7 +217,7 @@ SET (star_game_HEADERS
 
     objects/StarContainerObject.hpp
 
-    scripting/StarCameraLuaBindings.hpp
+    scripting/StarCameraLuaBindingsFwd.hpp
     scripting/StarCelestialLuaBindings.hpp
     scripting/StarBehaviorLuaBindings.hpp
     scripting/StarConfigLuaBindings.hpp
@@ -309,7 +308,6 @@ SET (star_game_SOURCES
     StarLiquidTypes.cpp
     StarMaterialDatabase.cpp
     StarMaterialRenderProfile.cpp
-    StarMicroDungeon.cpp
     StarMonster.cpp
     StarMonsterDatabase.cpp
     StarMovementController.cpp
@@ -433,7 +431,6 @@ SET (star_game_SOURCES
 
     objects/StarContainerObject.cpp
 
-    scripting/StarCameraLuaBindings.cpp
     scripting/StarCelestialLuaBindings.cpp
     scripting/StarBehaviorLuaBindings.cpp
     scripting/StarConfigLuaBindings.cpp
@@ -462,6 +459,7 @@ SET (star_game_SOURCES
 
 ADD_LIBRARY (star_game_modules STATIC)
 TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+    scripting/StarCameraLuaBindings.cppm
     terrain/StarBasicSelectors.cppm
     terrain/StarCompositionSelectors.cppm
     terrain/StarTransformSelectors.cppm
@@ -491,8 +489,12 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     items/StarObjectItem.cppm
     StarDungeonImagePart.cppm
     StarDungeonTMXPart.cppm
+    StarMicroDungeon.cppm
     StarWorldGeneration.cppm
   )
+TARGET_LINK_LIBRARIES (star_game_modules PRIVATE star_modules)
+TARGET_SOURCES (star_game_modules PRIVATE scripting/StarCameraLuaBindings.cpp)
+SET_TARGET_PROPERTIES (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 

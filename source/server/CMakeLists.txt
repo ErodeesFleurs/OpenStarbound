@@ -6,16 +6,6 @@ INCLUDE_DIRECTORIES (
     ${STAR_GAME_INCLUDES}
   )
 
-SET (star_server_HEADERS
-    StarServerRconClient.hpp
-    StarServerRconThread.hpp
-  )
-
-SET (star_server_SOURCES
-    StarServerRconClient.cpp
-    StarServerRconThread.cpp
-    main.cpp
-  )
 
 IF (STAR_SYSTEM_WINDOWS)
   SET (star_server_RESOURCES
@@ -25,12 +15,14 @@ IF (STAR_SYSTEM_WINDOWS)
 ENDIF ()
 
 ADD_LIBRARY (star_server_modules STATIC)
-TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES StarServerQueryThread.cppm)
+TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES
+    StarServerQueryThread.cppm
+    StarServerRconThread.cppm)
 TARGET_LINK_LIBRARIES (star_server_modules PUBLIC star_modules)
 
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
+  main.cpp ${star_server_RESOURCES})
 SET_TARGET_PROPERTIES (starbound_server PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 IF(STAR_PRECOMPILED_HEADERS)

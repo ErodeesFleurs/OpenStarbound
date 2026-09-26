@@ -1,6 +1,5 @@
 #include "StarInventory.hpp"
 #include "StarGuiReader.hpp"
-#include "StarItemTooltip.hpp"
 #include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarItemGridWidget.hpp"
@@ -23,6 +22,7 @@
 
 import star.simple_tooltip;
 import star.object_item;
+import star.item_tooltip;
 
 namespace Star {
 

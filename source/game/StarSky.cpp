@@ -8,8 +8,8 @@
 #include "StarTime.hpp"
 #include "StarRandomPoint.hpp"
 #include "StarMixer.hpp"
-#include "StarCompression.hpp"
 
+import star.compression;
 namespace Star {
 
 Sky::Sky() {
