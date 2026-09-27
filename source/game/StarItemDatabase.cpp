@@ -11,7 +11,6 @@
 #include "StarObjectDatabase.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarItemLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarRebuilder.hpp"
@@ -30,6 +29,7 @@ import star.material_item;
 import star.active_item;
 import star.flashlight;
 import star.tilling_tool;
+import star.config_lua_bindings;
 
 namespace Star {
 

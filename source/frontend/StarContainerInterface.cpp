@@ -12,7 +12,6 @@
 #include "StarItemDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarWidgetLuaBindings.hpp"
@@ -20,6 +19,7 @@
 #include "StarInput.hpp"
 
 import star.item_tooltip;
+import star.config_lua_bindings;
 
 namespace Star {
 

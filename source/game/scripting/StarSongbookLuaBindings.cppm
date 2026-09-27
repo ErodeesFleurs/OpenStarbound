@@ -1,5 +1,16 @@
-#include "StarSongbookLuaBindings.hpp"
+module;
+
+// Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarSongbook.hpp"
 #include "StarLuaConverters.hpp"
+
+export module star.songbook_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeSongbookCallbacks(Songbook* songbook);
+}
 
 namespace Star {
 

@@ -13,10 +13,11 @@
 #include "StarAssets.hpp"
 #include "StarItemDrop.hpp"
 #include "StarIterator.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarParticleDatabase.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

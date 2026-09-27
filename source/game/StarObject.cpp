@@ -13,14 +13,15 @@
 #include "StarMixer.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarAssets.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
+
+import star.scripted_animator_lua_bindings;
+import star.config_lua_bindings;
 
 namespace Star {
 

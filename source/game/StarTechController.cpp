@@ -4,7 +4,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarWorldLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarPlayer.hpp"
@@ -15,6 +14,8 @@
 #include "StarLoungingEntities.hpp"
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

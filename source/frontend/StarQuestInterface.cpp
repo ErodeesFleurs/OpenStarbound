@@ -54,12 +54,12 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
 
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
-  mainQuestList->setCallback([sideQuestList](Widget* widget) {
+  mainQuestList->setCallback([sideQuestList = sideQuestList.get()](Widget* widget) {
       auto listWidget = as<ListWidget>(widget);
       if (listWidget->selectedItem() != NPos)
         sideQuestList->clearSelected();
     });
-  sideQuestList->setCallback([mainQuestList](Widget* widget) {
+  sideQuestList->setCallback([mainQuestList = mainQuestList.get()](Widget* widget) {
       auto listWidget = as<ListWidget>(widget);
       if (listWidget->selectedItem() != NPos)
         mainQuestList->clearSelected();

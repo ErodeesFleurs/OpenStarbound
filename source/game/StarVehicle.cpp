@@ -1,15 +1,16 @@
 #include "StarVehicle.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarAssets.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarPlayer.hpp"
+
+import star.scripted_animator_lua_bindings;
+import star.config_lua_bindings;
 
 namespace Star {
 

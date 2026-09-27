@@ -18,14 +18,8 @@
 #include "StarVoice.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarUniverseClientLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
-#include "StarInputLuaBindings.hpp"
-#include "StarInterfaceLuaBindings.hpp"
 #include "StarLuaHttpBindings.hpp"
-#include "StarRenderingLuaBindings.hpp"
-#include "StarTeamClientLuaBindings.hpp"
-#include "StarVoiceLuaBindings.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
 #include "imgui.h"
@@ -35,6 +29,12 @@ import star.curve25519;
 import star.camera_lua_bindings;
 import star.http_trust_dialog;
 import star.clipboard_lua_bindings;
+import star.input_lua_bindings;
+import star.team_client_lua_bindings;
+import star.voice_lua_bindings;
+import star.interface_lua_bindings;
+import star.rendering_lua_bindings;
+import star.universe_client_lua_bindings;
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>

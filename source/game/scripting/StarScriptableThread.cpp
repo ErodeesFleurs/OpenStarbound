@@ -1,6 +1,7 @@
+// Match module include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
 #include "StarScriptableThread.hpp"
 #include "StarLuaRoot.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
@@ -8,6 +9,7 @@
 #include "StarAssets.hpp"
 
 import star.tick_rate_monitor;
+import star.config_lua_bindings;
 
 namespace Star {
 

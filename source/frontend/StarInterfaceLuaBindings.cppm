@@ -1,4 +1,8 @@
-#include "StarInterfaceLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
@@ -7,6 +11,13 @@
 #include "StarChat.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarClientCommandProcessor.hpp"
+
+export module star.interface_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeInterfaceCallbacks(MainInterface* mainInterface);
+  LuaCallbacks makeChatCallbacks(MainInterface* mainInterface, UniverseClient* client);
+}
 
 namespace Star {
 
@@ -24,13 +35,12 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     return {};
   });
 
-  
   callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> Maybe<LuaCallbacks> {
     if (auto pane = mainInterface->paneManager()->maybeRegisteredPane(MainInterfacePanesNames.getLeft(registeredPaneName)))
       return pane->makePaneCallbacks();
     return {};
   });
-  
+
   callbacks.registerCallback("displayRegisteredPane", [mainInterface](String const& registeredPaneName) {
     auto pane = MainInterfacePanesNames.getLeft(registeredPaneName);
     auto paneManager = mainInterface->paneManager();
@@ -45,7 +55,6 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   callbacks.registerCallback("queueMessage", [mainInterface](String const& message, Maybe<float> cooldown, Maybe<float> springState) {
     mainInterface->queueMessage(message, cooldown, springState.value(0));
   });
-
 
   return callbacks;
 }

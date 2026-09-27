@@ -43,8 +43,8 @@ ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,
 }
 
 ButtonWidget::~ButtonWidget() {
-  if (m_buttonGroup)
-    m_buttonGroup->removeButton(this);
+  if (auto group = m_buttonGroup.lock())
+    group->removeButton(this);
 }
 
 void ButtonWidget::renderImpl() {
@@ -190,26 +190,26 @@ void ButtonWidget::setCallback(WidgetCallbackFunc callback) {
 }
 
 ButtonGroupPtr ButtonWidget::buttonGroup() const {
-  return m_buttonGroup;
+  return m_buttonGroup.lock();
 }
 
 void ButtonWidget::setButtonGroup(ButtonGroupPtr newGroup, int id) {
-  if (m_buttonGroup != newGroup) {
-    if (m_buttonGroup)
-      m_buttonGroup->removeButton(this);
+  if (auto oldGroup = m_buttonGroup.lock()) {
+    if (oldGroup == newGroup)
+      return;
+    oldGroup->removeButton(this);
+  }
 
-    m_buttonGroup = std::move(newGroup);
-
-    if (m_buttonGroup) {
-      setCheckable(true);
-      m_buttonGroup->addButton(this, id);
-    }
+  m_buttonGroup = newGroup;
+  if (newGroup) {
+    setCheckable(true);
+    newGroup->addButton(this, id);
   }
 }
 
 int ButtonWidget::buttonGroupId() {
-  if (m_buttonGroup)
-    return m_buttonGroup->id(this);
+  if (auto group = m_buttonGroup.lock())
+    return group->id(this);
   else
     return ButtonGroup::NoButton;
 }
@@ -266,10 +266,10 @@ void ButtonWidget::check() {
   if (m_checkable) {
     // If we are part of an exclusive button group, then don't uncheck if
     // we are already checked and pressed again.
-    if (m_buttonGroup) {
-      if (m_buttonGroup->toggle() || !isChecked()) {
-        setChecked(!m_buttonGroup->toggle() || !isChecked());
-        m_buttonGroup->wasChecked(this);
+    if (auto group = m_buttonGroup.lock()) {
+      if (group->toggle() || !isChecked()) {
+        setChecked(!group->toggle() || !isChecked());
+        group->wasChecked(this);
       }
     } else {
       setChecked(!isChecked());

@@ -39,15 +39,15 @@ struct Parameters {
   // If true, returns the path to the closest node to the target found, if a
   // path to the target itself could not be found.
   // Otherwise, findPath will return a None value.
-  bool returnBest;
+  bool returnBest{false};
   // If true, end the path only on ground
-  bool mustEndOnGround;
+  bool mustEndOnGround{false};
   // If true, allows jumps to have the entity's walk speed as horizontal
   // velocity
-  bool enableWalkSpeedJumps;
+  bool enableWalkSpeedJumps{false};
   // if true, allows perfectly vertical jumps to change horizontal velocity at
   // the peak
-  bool enableVerticalJumpAirControl;
+  bool enableVerticalJumpAirControl{false};
   // Multiplies the cost of edges going through liquids. Can be used to
   // penalize or promote paths involving swiming.
   Maybe<float> swimCost;

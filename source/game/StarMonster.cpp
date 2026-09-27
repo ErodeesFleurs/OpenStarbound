@@ -6,19 +6,20 @@
 #include "StarDamageDatabase.hpp"
 #include "StarTreasure.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarBehaviorLuaBindings.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarStatusController.hpp"
+
+import star.behavior_lua_bindings;
+import star.scripted_animator_lua_bindings;
+import star.config_lua_bindings;
 
 namespace Star {
 

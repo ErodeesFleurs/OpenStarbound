@@ -1,6 +1,16 @@
-#include "StarInputLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarInput.hpp"
+
+export module star.input_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeInputCallbacks();
+}
 
 namespace Star {
 
@@ -31,7 +41,7 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
   callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> Maybe<List<Vec2F>>
     { return input->mouseDown(MouseButtonNames.getLeft(buttonName)); });
-  
+
   auto mouseHeld = [input](String const& buttonName) -> bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); };
   callbacks.registerCallback("mouseHeld", mouseHeld);
   callbacks.registerCallback("mouse",     mouseHeld);
@@ -59,6 +69,5 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
   return callbacks;
 }
-
 
 }

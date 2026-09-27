@@ -32,7 +32,6 @@ SET (star_frontend_HEADERS
     StarGraphicsMenu.hpp
     StarInventory.hpp
     StarInterfaceCursor.hpp
-    StarInterfaceLuaBindings.hpp
     StarJoinRequestDialog.hpp
     StarKeybindingsMenu.hpp
     StarMainInterface.hpp
@@ -55,7 +54,6 @@ SET (star_frontend_HEADERS
     StarShadersMenu.hpp
     StarTeleportDialog.hpp
     StarVoice.hpp
-    StarVoiceLuaBindings.hpp
     StarVoiceSettingsMenu.hpp
     StarWireInterface.hpp
   )
@@ -82,7 +80,6 @@ SET (star_frontend_SOURCES
     StarGraphicsMenu.cpp
     StarInventory.cpp
     StarInterfaceCursor.cpp
-    StarInterfaceLuaBindings.cpp
     StarJoinRequestDialog.cpp
     StarKeybindingsMenu.cpp
     StarMainInterface.cpp
@@ -105,7 +102,6 @@ SET (star_frontend_SOURCES
     StarShadersMenu.cpp
     StarTeleportDialog.cpp
     StarVoice.cpp
-    StarVoiceLuaBindings.cpp
     StarVoiceSettingsMenu.cpp
     StarWireInterface.cpp
   )
@@ -116,6 +112,8 @@ TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarHttpTrustDialog.cppm
     StarItemTooltip.cppm
     StarClipboardLuaBindings.cppm
+    StarVoiceLuaBindings.cppm
+    StarInterfaceLuaBindings.cppm
   )
 TARGET_LINK_LIBRARIES (star_frontend_modules PUBLIC star_game_modules)
 

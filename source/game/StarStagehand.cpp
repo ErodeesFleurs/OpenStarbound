@@ -1,10 +1,11 @@
 #include "StarStagehand.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
-#include "StarBehaviorLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
+
+import star.behavior_lua_bindings;
+import star.config_lua_bindings;
 
 namespace Star {
 

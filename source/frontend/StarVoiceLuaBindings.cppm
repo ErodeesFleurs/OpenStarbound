@@ -1,7 +1,16 @@
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarVoiceLuaBindings.hpp"
 #include "StarVoice.hpp"
 
+export module star.voice_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeVoiceCallbacks();
+}
 
 namespace Star {
 

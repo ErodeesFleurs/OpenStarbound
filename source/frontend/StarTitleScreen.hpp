@@ -96,7 +96,7 @@ private:
   void switchState(TitleState titleState);
   void back();
 
-  void populateServerList(ListWidgetPtr list);
+  void populateServerList(ListWidget* list);
 
   float interfaceScale() const;
   unsigned windowHeight() const;

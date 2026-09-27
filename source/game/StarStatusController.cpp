@@ -6,11 +6,12 @@
 #include "StarWorldLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarLiquidsDatabase.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

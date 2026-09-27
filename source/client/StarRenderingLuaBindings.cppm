@@ -1,8 +1,18 @@
-#include "StarRenderingLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarClientApplication.hpp"
 #include "StarRenderer.hpp"
+
+export module star.rendering_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeRenderingCallbacks(ClientApplication* app);
+}
 
 namespace Star {
 
@@ -44,6 +54,5 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
 
   return callbacks;
 }
-
 
 }

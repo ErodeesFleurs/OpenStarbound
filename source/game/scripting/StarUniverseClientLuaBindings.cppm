@@ -1,9 +1,22 @@
-#include "StarUniverseClientLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarGameTypes.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWarping.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarWorldTemplate.hpp"
+
+export module star.universe_client_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeUniverseClientThreadCallbacks(UniverseClient* universe); // thread-safe callbacks
+  LuaCallbacks makeUniverseClientCallbacks(UniverseClient* universe); // non-thread-safe callbacks
+}
 
 namespace Star {
 

@@ -1,9 +1,10 @@
 #include "StarStatistics.hpp"
 #include "StarStatisticsDatabase.hpp"
 #include "StarStatisticsService.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

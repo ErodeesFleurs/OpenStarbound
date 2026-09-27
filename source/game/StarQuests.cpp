@@ -14,7 +14,6 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerTech.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
@@ -23,6 +22,8 @@
 #include "StarUuid.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarUniverseClient.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

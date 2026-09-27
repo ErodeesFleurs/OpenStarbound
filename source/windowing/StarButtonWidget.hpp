@@ -93,7 +93,7 @@ protected:
   void updateSize();
 
   WidgetCallbackFunc m_callback;
-  ButtonGroupPtr m_buttonGroup;
+  ButtonGroupWeakPtr m_buttonGroup;
 
   bool m_hovered;
   bool m_pressed;

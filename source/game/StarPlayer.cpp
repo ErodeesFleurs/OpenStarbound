@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
-#include "StarSongbookLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarDamageManager.hpp"
@@ -36,12 +35,13 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarUniverseClient.hpp"
 
 import star.inspection_tool;
+import star.songbook_lua_bindings;
+import star.scripted_animator_lua_bindings;
 
 namespace Star {
 

@@ -3,16 +3,13 @@
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
-#include "StarSongbookLuaBindings.hpp"
 #include "StarDamageManager.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
-#include "StarBehaviorLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarTreasure.hpp"
 #include "StarEncode.hpp"
@@ -28,7 +25,11 @@
 #include "StarDanceDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
+
+import star.songbook_lua_bindings;
+import star.behavior_lua_bindings;
+import star.scripted_animator_lua_bindings;
+import star.config_lua_bindings;
 
 namespace Star {
 

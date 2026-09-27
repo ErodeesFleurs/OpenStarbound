@@ -7,8 +7,9 @@
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

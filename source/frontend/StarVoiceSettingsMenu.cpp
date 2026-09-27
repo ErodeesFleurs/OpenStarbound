@@ -1,5 +1,6 @@
 #include "StarVoiceSettingsMenu.hpp"
-#include "StarVoiceLuaBindings.hpp"
+
+import star.voice_lua_bindings;
 
 namespace Star {
 

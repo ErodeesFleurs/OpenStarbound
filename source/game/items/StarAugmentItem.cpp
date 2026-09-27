@@ -4,8 +4,9 @@
 #include "StarItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarItemLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

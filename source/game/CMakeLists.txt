@@ -219,11 +219,8 @@ SET (star_game_HEADERS
 
     scripting/StarCameraLuaBindingsFwd.hpp
     scripting/StarCelestialLuaBindings.hpp
-    scripting/StarBehaviorLuaBindings.hpp
-    scripting/StarConfigLuaBindings.hpp
     scripting/StarEntityLuaBindings.hpp
     scripting/StarFireableItemLuaBindings.hpp
-    scripting/StarInputLuaBindings.hpp
     scripting/StarItemLuaBindings.hpp
     scripting/StarLuaHttpBindings.hpp
     scripting/StarLuaActorMovementComponent.hpp
@@ -235,13 +232,9 @@ SET (star_game_HEADERS
     scripting/StarNetworkedAnimatorLuaBindings.hpp
     scripting/StarPlayerLuaBindings.hpp
     scripting/StarRootLuaBindings.hpp
-    scripting/StarScriptedAnimatorLuaBindings.hpp
-    scripting/StarSongbookLuaBindings.hpp
     scripting/StarStatusControllerLuaBindings.hpp
-    scripting/StarTeamClientLuaBindings.hpp
     scripting/StarWorldLuaBindings.hpp
     scripting/StarUniverseServerLuaBindings.hpp
-    scripting/StarUniverseClientLuaBindings.hpp
     scripting/StarScriptableThread.hpp
   )
 
@@ -432,11 +425,8 @@ SET (star_game_SOURCES
     objects/StarContainerObject.cpp
 
     scripting/StarCelestialLuaBindings.cpp
-    scripting/StarBehaviorLuaBindings.cpp
-    scripting/StarConfigLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarFireableItemLuaBindings.cpp
-    scripting/StarInputLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp
     scripting/StarLuaHttpBindings.cpp
     scripting/StarLuaComponents.cpp
@@ -447,19 +437,22 @@ SET (star_game_SOURCES
     scripting/StarNetworkedAnimatorLuaBindings.cpp
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarRootLuaBindings.cpp
-    scripting/StarScriptedAnimatorLuaBindings.cpp
-    scripting/StarSongbookLuaBindings.cpp
     scripting/StarStatusControllerLuaBindings.cpp
-    scripting/StarTeamClientLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
     scripting/StarUniverseServerLuaBindings.cpp
-    scripting/StarUniverseClientLuaBindings.cpp
     scripting/StarScriptableThread.cpp
   )
 
 ADD_LIBRARY (star_game_modules STATIC)
 TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     scripting/StarCameraLuaBindings.cppm
+    scripting/StarInputLuaBindings.cppm
+    scripting/StarTeamClientLuaBindings.cppm
+    scripting/StarSongbookLuaBindings.cppm
+    scripting/StarBehaviorLuaBindings.cppm
+    scripting/StarUniverseClientLuaBindings.cppm
+    scripting/StarScriptedAnimatorLuaBindings.cppm
+    scripting/StarConfigLuaBindings.cppm
     terrain/StarBasicSelectors.cppm
     terrain/StarCompositionSelectors.cppm
     terrain/StarTransformSelectors.cppm

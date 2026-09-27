@@ -23,9 +23,8 @@
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
 
-#include "StarUniverseClientLuaBindings.hpp"
-
 import star.sha256;
+import star.universe_client_lua_bindings;
 
 namespace Star {
 

@@ -1,6 +1,17 @@
-#include "StarScriptedAnimatorLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarNetworkedAnimator.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
+
+export module star.scripted_animator_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeScriptedAnimatorCallbacks(NetworkedAnimator* animator, function<Json(String const&, Json const&)> getParameter);
+}
 
 namespace Star {
 

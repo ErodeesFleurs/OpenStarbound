@@ -10,7 +10,6 @@
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"
 #include "StarStatistics.hpp"
-#include "StarInterfaceLuaBindings.hpp"
 #include "StarInput.hpp"
 
 namespace Star {

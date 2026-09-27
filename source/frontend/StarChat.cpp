@@ -14,11 +14,12 @@
 #include "StarTeamClient.hpp"
 
 #include "StarPlayer.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

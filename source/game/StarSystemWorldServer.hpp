@@ -67,7 +67,7 @@ private:
   SkyParameters locationSkyParameters(SystemLocation const& location) const;
 
   // setting this to true asynchronously triggers storage from the server thread
-  bool m_triggerStorage;
+  bool m_triggerStorage{false};
   
   double m_lastSpawn;
   double m_objectSpawnTime;

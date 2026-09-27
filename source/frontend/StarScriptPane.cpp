@@ -3,7 +3,6 @@
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
@@ -12,13 +11,13 @@
 #include "StarPlayer.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarWidgetLuaBindings.hpp"
-#include "StarInterfaceLuaBindings.hpp"
 #include "StarCanvasWidget.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarImageWidget.hpp"
 
 import star.simple_tooltip;
 import star.item_tooltip;
+import star.config_lua_bindings;
 
 namespace Star {
 

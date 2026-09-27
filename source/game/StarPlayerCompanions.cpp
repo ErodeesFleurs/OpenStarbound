@@ -1,10 +1,11 @@
 #include "StarPlayerCompanions.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
+
+import star.config_lua_bindings;
 
 namespace Star {
 

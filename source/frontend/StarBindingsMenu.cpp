@@ -1,5 +1,6 @@
 #include "StarBindingsMenu.hpp"
-#include "StarInputLuaBindings.hpp"
+
+import star.input_lua_bindings;
 
 namespace Star {
 

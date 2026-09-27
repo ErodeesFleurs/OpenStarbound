@@ -289,8 +289,8 @@ void TitleScreen::initCharSelectionMenu() {
 
   GuiReader reader;
 
-  reader.registerCallback("delete", [=](Widget*) { deleteDialog->dismiss(); });
-  reader.registerCallback("cancel", [=](Widget*) { deleteDialog->dismiss(); });
+  reader.registerCallback("delete", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
+  reader.registerCallback("cancel", [dialog = deleteDialog.get()](Widget*) { dialog->dismiss(); });
 
   reader.construct(Root::singleton().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
 
@@ -312,9 +312,9 @@ void TitleScreen::initCharSelectionMenu() {
         }
     }, [=](Uuid playerUuid) {
       auto deleteDialog = m_paneManager.registeredPane("deleteDialog");
-      deleteDialog->fetchChild<ButtonWidget>("delete")->setCallback([=](Widget*) {
+      deleteDialog->fetchChild<ButtonWidget>("delete")->setCallback([this, playerUuid, dialog = deleteDialog.get()](Widget*) {
         m_playerStorage->deletePlayer(playerUuid);
-        deleteDialog->dismiss();
+        dialog->dismiss();
       });
       m_paneManager.displayRegisteredPane("deleteDialog");
     });
@@ -343,7 +343,7 @@ void TitleScreen::initCharCreationMenu() {
 }
 
 
-void TitleScreen::populateServerList(ListWidgetPtr list){
+void TitleScreen::populateServerList(ListWidget* list){
   if (!m_serverList.isNull()) {
     list->clear();
     for (auto const& server : m_serverList.iterateArray()) {
@@ -384,7 +384,7 @@ void TitleScreen::initMultiPlayerMenu() {
       m_serverList = m_serverList.insert(0, serverData);
     }
 
-    populateServerList(serverList);
+    populateServerList(serverList.get());
     Root::singleton().configuration()->set("serverList", m_serverList);
   });
 
@@ -394,16 +394,16 @@ void TitleScreen::initMultiPlayerMenu() {
 
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
   
-  serverList->registerMemberCallback("delete", [=](Widget*) {
-    if (auto const pos = serverList->selectedItem(); pos != NPos) {
+  serverList->registerMemberCallback("delete", [this, list = serverList.get()](Widget*) {
+    if (auto const pos = list->selectedItem(); pos != NPos) {
       m_serverList = m_serverList.eraseIndex(pos);
     }
-    populateServerList(serverList);
+    populateServerList(list);
     Root::singleton().configuration()->set("serverList", m_serverList);
   });
 
-  serverList->setCallback([=](Widget*) {
-    if (auto selectedItem = serverList->selectedWidget()) {
+  serverList->setCallback([this, list = serverList.get()](Widget*) {
+    if (auto selectedItem = list->selectedWidget()) {
       if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
         return;
       auto& data = selectedItem->data();
@@ -413,8 +413,8 @@ void TitleScreen::initMultiPlayerMenu() {
       setMultiPlayerPassword(data.getString("password", ""));
       setMultiPlayerForceLegacy(data.getBool("forceLegacy", false));
 
-    if (auto passwordWidget = m_multiPlayerMenu->fetchChild("password"))
-      passwordWidget->focus();
+      if (auto passwordWidget = m_multiPlayerMenu->fetchChild("password"))
+        passwordWidget->focus();
     }
   });
 
@@ -446,7 +446,7 @@ void TitleScreen::initMultiPlayerMenu() {
 
   readerConnect.construct(assets->json("/interface/windowconfig/multiplayer.config"), m_multiPlayerMenu.get());
 
-  populateServerList(serverList);
+  populateServerList(serverList.get());
 
   m_paneManager.registerPane("multiplayerMenu", PaneLayer::Hud, m_multiPlayerMenu);
   m_paneManager.registerPane("serverSelect", PaneLayer::Hud, m_serverSelectPane, [=](PanePtr const&) {
