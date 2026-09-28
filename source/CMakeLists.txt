@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 3.28)
 
 # Find SCCache or CCache
 if (NOT CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
@@ -46,6 +46,9 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+# Only the targets that import modules opt into scanning; module file sets are
+# scanned regardless. Avoid scanning every unrelated C++20 translation unit.
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")

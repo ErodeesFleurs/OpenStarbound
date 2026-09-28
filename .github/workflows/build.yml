@@ -303,6 +303,13 @@ jobs:
         with:
           llvm-version: 22
 
+      - name: Check module toolchain
+        run: |
+          "$LLVM_PATH/bin/clang++" --version
+          "$LLVM_PATH/bin/clang-scan-deps" --version
+          cmake --version
+          ninja --version
+
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
@@ -498,6 +505,19 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
+      - name: Setup LLVM
+        id: llvm
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
+      - name: Check module toolchain
+        run: |
+          "$LLVM_PATH/bin/clang++" --version
+          "$LLVM_PATH/bin/clang-scan-deps" --version
+          cmake --version
+          ninja --version
+
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
@@ -592,6 +612,19 @@ jobs:
         with:
           cmakeVersion: 3.29.0
 
+      - name: Setup LLVM
+        id: llvm
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
+      - name: Check module toolchain
+        run: |
+          "$LLVM_PATH/bin/clang++" --version
+          "$LLVM_PATH/bin/clang-scan-deps" --version
+          cmake --version
+          ninja --version
+
       - name: sccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -617,6 +650,8 @@ jobs:
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
           VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          CC: ${{ steps.llvm.outputs.llvm-path }}/bin/clang
+          CXX: ${{ steps.llvm.outputs.llvm-path }}/bin/clang++
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-release'
@@ -676,6 +711,19 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
+      - name: Setup LLVM
+        id: llvm
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
+
+      - name: Check module toolchain
+        run: |
+          "$LLVM_PATH/bin/clang++" --version
+          "$LLVM_PATH/bin/clang-scan-deps" --version
+          cmake --version
+          ninja --version
+
       - name: sccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -701,6 +749,8 @@ jobs:
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
           VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          CC: ${{ steps.llvm.outputs.llvm-path }}/bin/clang
+          CXX: ${{ steps.llvm.outputs.llvm-path }}/bin/clang++
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-arm-release'

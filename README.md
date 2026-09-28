@@ -145,7 +145,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
   * If you're using Visual Studio, don't forget to run `vcpkg integrate install`!
 * Set the **`VCPKG_ROOT`** environment value to your vcpkg dir, so that CMake can find it.
 * Install [Ninja](https://ninja-build.org/ "Ninja Build System"). Either add it to your [**`PATH`**](## "Environment Value"), or just use [Scoop](https://scoop.sh/) (`scoop install ninja`)
-* Check to see if your IDE has CMake support, and that it's [actually installed](## "If you're using VS, open Visual Studio Installer to install CMake.").
+* Use CMake 3.28 or newer (C++20 module dependency scanning is required); check that your IDE supplies a supported compiler and CMake.
 * Open the repo directory in your IDE - it should detect the CMake project.
 * Build.
   * If you're using an IDE, it should detect the correct preset and allow you to build from within.
@@ -156,7 +156,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 <details>
 <summary><b>Linux (Ubuntu)</b></summary>
  
-* Make sure you're using CMake 3.23 or newer - you may need to [add Kitware's APT repo](https://apt.kitware.com/) to install a newer version.
+* Use CMake 3.28 or newer, Ninja 1.11 or newer, and a compiler with C++20 module scanning support (GCC 14+ or LLVM Clang 16+). Ubuntu 22.04's default compiler is too old; the CI Clang jobs install LLVM 22.
 * Install dependencies:
   * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
@@ -174,7 +174,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 
 Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
 
-* CMake is a C++ build scenario generator and your first target. You need at least version 3.23. Where Ubuntu uses APT, Fedora uses DNF as package manager.
+* CMake 3.28+, Ninja 1.11+, and GCC 14+ or LLVM Clang 16+ are required for the C++20 modules. Where Ubuntu uses APT, Fedora uses DNF as package manager.
 
   1. `sudo dnf upgrade --refresh` to ensure your OS is up-to-date
   2. `sudo dnf install cmake`
@@ -260,6 +260,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 * Install cmake using `brew install cmake`
 * Install ninja using `brew install ninja`
 * Install pkg config using `brew install pkg-config`
+* Install an upstream LLVM Clang (16 or newer) and use its matching `clang-scan-deps`; Apple's bundled Clang is not supported by CMake's module scanner. For example, `brew install llvm@22`, then set `CC="$(brew --prefix llvm@22)/bin/clang"` and `CXX="$(brew --prefix llvm@22)/bin/clang++"` before configuring either macOS preset.
 * Next, install vcpkg by following the commands below.
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
