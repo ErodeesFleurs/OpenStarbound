@@ -73,6 +73,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
     * `/admin`
       * You can now admin other players: `/admin playerSpecifier` (requires OpenSB server)
 ### Bug Fixes
+* Fixed C++20 shared-pointer builds on Windows and Ubuntu 22.04, and static vcpkg library link order with C++20 modules.
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 * Fix vanilla world file size bloating issue.
 * Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
@@ -260,7 +261,8 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 * Install cmake using `brew install cmake`
 * Install ninja using `brew install ninja`
 * Install pkg config using `brew install pkg-config`
-* Install an upstream LLVM Clang (16 or newer) and use its matching `clang-scan-deps`; Apple's bundled Clang is not supported by CMake's module scanner. For example, `brew install llvm@22`, then set `CC="$(brew --prefix llvm@22)/bin/clang"` and `CXX="$(brew --prefix llvm@22)/bin/clang++"` before configuring either macOS preset.
+* Install an upstream LLVM Clang (16 or newer) and use its matching `clang-scan-deps`; Apple's bundled Clang is not supported by CMake's module scanner. For example, `brew install llvm@22`, then set `CC="$(brew --prefix llvm@22)/bin/clang"` and `CXX="$(brew --prefix llvm@22)/bin/clang++"` before configuring either macOS preset. Homebrew provides a prebuilt `llvm@22` bottle for macOS 15 ARM (used by CI, targeting macOS 14); on macOS 14 ARM and macOS Intel, installing this version may instead build LLVM from source for hours.
+* The Intel macOS CI job downloads the [official prebuilt LLVM 20.1.7 X64 release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-20.1.7) and verifies its SHA-256 instead of building `llvm@22` from source. Both CI jobs use the `clang-scan-deps` shipped with their selected Clang.
 * Next, install vcpkg by following the commands below.
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `

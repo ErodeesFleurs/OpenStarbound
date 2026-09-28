@@ -612,11 +612,31 @@ jobs:
         with:
           cmakeVersion: 3.29.0
 
+      # LLVM 22 has no Intel macOS bottle or upstream X64 archive.
       - name: Setup LLVM
         id: llvm
-        uses: ZhongRuoyu/setup-llvm@v0
-        with:
-          llvm-version: 22
+        run: |
+          archive="$RUNNER_TEMP/LLVM-20.1.7-macOS-X64.tar.xz"
+          llvm_path="$RUNNER_TEMP/llvm-20.1.7"
+          curl -fL --output "$archive" \
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.7/LLVM-20.1.7-macOS-X64.tar.xz
+          echo "ccf82ffe7e136ee49659cb57157856a7963d0950fac3d05aabba0db75bfba26f  $archive" | shasum -a 256 -c -
+          mkdir -p "$llvm_path"
+          # The full SDK expands to 6.7 GB; macOS runners have 14 GB of disk.
+          tar -xJf "$archive" -C "$llvm_path" --strip-components=1 \
+            LLVM-20.1.7-macOS-X64/bin/clang-20 \
+            LLVM-20.1.7-macOS-X64/bin/clang \
+            LLVM-20.1.7-macOS-X64/bin/clang++ \
+            LLVM-20.1.7-macOS-X64/bin/clang-scan-deps \
+            LLVM-20.1.7-macOS-X64/lib/clang
+          rm "$archive"
+          test -x "$llvm_path/bin/clang"
+          test -x "$llvm_path/bin/clang++"
+          test -x "$llvm_path/bin/clang-scan-deps"
+          test -d "$llvm_path/lib/clang/20"
+          echo "LLVM_PATH=$llvm_path" >> "$GITHUB_ENV"
+          echo "$llvm_path/bin" >> "$GITHUB_PATH"
+          echo "llvm-path=$llvm_path" >> "$GITHUB_OUTPUT"
 
       - name: Check module toolchain
         run: |
@@ -694,7 +714,7 @@ jobs:
 
   build-mac-arm:
     name: Build OpenStarbound macOS arm64
-    runs-on: macos-14
+    runs-on: macos-15
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
     steps:
@@ -751,6 +771,7 @@ jobs:
           VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
           CC: ${{ steps.llvm.outputs.llvm-path }}/bin/clang
           CXX: ${{ steps.llvm.outputs.llvm-path }}/bin/clang++
+          MACOSX_DEPLOYMENT_TARGET: "14.0"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'macos-arm-release'

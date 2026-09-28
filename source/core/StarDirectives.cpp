@@ -117,7 +117,7 @@ void Directives::loadOperations() const {
     return;
 
   MutexLocker locker(m_shared->mutex, false);
-  if (!m_shared.unique())
+  if (m_shared.use_count() != 1)
     locker.lock();
   for (auto& entry : m_shared->entries)
     entry.loadOperation(*m_shared);

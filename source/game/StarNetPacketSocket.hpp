@@ -2,6 +2,7 @@
 
 #include "StarTcp.hpp"
 #include <atomic>
+#include <memory>
 
 #include "StarThread.hpp"
 #include "StarP2PNetworkingService.hpp"
@@ -124,7 +125,8 @@ private:
 
   LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
 
-  std::atomic<shared_ptr<Pipe>> m_incomingPipe;
+  // Ubuntu 22.04's libstdc++ lacks std::atomic<shared_ptr<T>>.
+  shared_ptr<Pipe> m_incomingPipe;
   weak_ptr<Pipe> m_outgoingPipe;
 };
 

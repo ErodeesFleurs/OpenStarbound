@@ -35,4 +35,4 @@ ELSEIF (UNIX)
   SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
-TARGET_LINK_LIBRARIES (starbound_server ${STAR_EXT_LIBS} star_modules star_base_modules star_server_modules star_game_modules)
+TARGET_LINK_LIBRARIES (starbound_server star_modules star_base_modules star_server_modules star_game_modules ${STAR_EXT_LIBS})

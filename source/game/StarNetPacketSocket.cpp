@@ -79,11 +79,11 @@ pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair()
 }
 
 bool LocalPacketSocket::isOpen() const {
-  return m_incomingPipe.load() && !m_outgoingPipe.expired();
+  return std::atomic_load(&m_incomingPipe) && !m_outgoingPipe.expired();
 }
 
 void LocalPacketSocket::close() {
-  m_incomingPipe.store(nullptr);
+  std::atomic_store(&m_incomingPipe, shared_ptr<Pipe>());
 }
 
 void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
@@ -122,7 +122,7 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
 List<PacketPtr> LocalPacketSocket::receivePackets() {
   // One snapshot: the mutex and the queue must belong to the same pipe, and the
   // pipe can be closed by another thread between two loads.
-  auto incomingPipe = m_incomingPipe.load();
+  auto incomingPipe = std::atomic_load(&m_incomingPipe);
   if (!incomingPipe)
     return {};
 
