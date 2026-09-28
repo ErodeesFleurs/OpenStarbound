@@ -637,6 +637,10 @@ jobs:
           echo "LLVM_PATH=$llvm_path" >> "$GITHUB_ENV"
           echo "$llvm_path/bin" >> "$GITHUB_PATH"
           echo "llvm-path=$llvm_path" >> "$GITHUB_OUTPUT"
+          # Upstream Clang does not ask xcrun for the SDK; pass it to vcpkg and CMake.
+          sdkroot="$(xcrun --sdk macosx --show-sdk-path)"
+          test -f "$sdkroot/usr/include/stdlib.h"
+          echo "SDKROOT=$sdkroot" >> "$GITHUB_ENV"
 
       - name: Check module toolchain
         run: |

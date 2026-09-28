@@ -262,7 +262,7 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 * Install ninja using `brew install ninja`
 * Install pkg config using `brew install pkg-config`
 * Install an upstream LLVM Clang (16 or newer) and use its matching `clang-scan-deps`; Apple's bundled Clang is not supported by CMake's module scanner. For example, `brew install llvm@22`, then set `CC="$(brew --prefix llvm@22)/bin/clang"` and `CXX="$(brew --prefix llvm@22)/bin/clang++"` before configuring either macOS preset. Homebrew provides a prebuilt `llvm@22` bottle for macOS 15 ARM (used by CI, targeting macOS 14); on macOS 14 ARM and macOS Intel, installing this version may instead build LLVM from source for hours.
-* The Intel macOS CI job downloads the [official prebuilt LLVM 20.1.7 X64 release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-20.1.7) and verifies its SHA-256 instead of building `llvm@22` from source. Both CI jobs use the `clang-scan-deps` shipped with their selected Clang.
+* The Intel macOS CI job downloads the [official prebuilt LLVM 20.1.7 X64 release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-20.1.7) and verifies its SHA-256 instead of building `llvm@22` from source. Both CI jobs use the `clang-scan-deps` shipped with their selected Clang. When using upstream LLVM Clang on macOS, also set `export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"` before running vcpkg or CMake so Clang can find system headers in the macOS SDK.
 * Next, install vcpkg by following the commands below.
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
