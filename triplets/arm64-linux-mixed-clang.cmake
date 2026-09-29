@@ -5,6 +5,12 @@ set(VCPKG_LIBRARY_LINKAGE static)
 set(VCPKG_CMAKE_SYSTEM_NAME Linux)
 set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/../toolchains/linux-clang.cmake)
 
+if(PORT STREQUAL "alsa")
+  # alsa's autodetected pkgconfdir may resolve to /usr/lib/pkgconfig;
+  # vcpkg validates .pc files under the triplet's lib/pkgconfig directory.
+  set(VCPKG_MAKE_CONFIGURE_OPTIONS "--with-pkgconfdir=\\\${prefix}/lib/pkgconfig")
+endif()
+
 if(PORT MATCHES "opus")
   string(CONCAT VCPKG_CMAKE_CONFIGURE_OPTIONS
     "-DOPUS_INSTALL_PKG_CONFIG_MODULE=OFF"
