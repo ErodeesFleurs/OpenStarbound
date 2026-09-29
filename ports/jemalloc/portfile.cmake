@@ -22,6 +22,11 @@ vcpkg_make_configure(
 
 vcpkg_make_install()
 
+# vcpkg-make can stage ARM64 jemalloc under DESTDIR/usr/local.
+if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+    include("${CMAKE_CURRENT_LIST_DIR}/../normalize-arm64-vcpkg-make-install.cmake")
+endif()
+
 if(VCPKG_TARGET_IS_WINDOWS)
     file(COPY "${SOURCE_PATH}/include/msvc_compat/strings.h" DESTINATION "${CURRENT_PACKAGES_DIR}/include/jemalloc/msvc_compat")
     vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/include/jemalloc/jemalloc.h" "<strings.h>" "\"msvc_compat/strings.h\"")

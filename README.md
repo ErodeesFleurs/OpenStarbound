@@ -122,7 +122,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
 Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
 
 CI caches compiler outputs with sccache and vcpkg binary packages per platform using GitHub Actions cache; changes to the dependency manifests or overlay ports invalidate the vcpkg cache.
-The Linux ARM64 Clang build uses an ALSA vcpkg overlay port to normalize files staged under `usr/` before vcpkg validates `.pc` files and imports libraries.
+The Linux ARM64 Clang ALSA and jemalloc vcpkg overlay ports move files staged under `usr/` or `usr/local/` into the package root before vcpkg validates pkg-config files and imports libraries.
 
 <details>
 <summary>template sbinit.config for dist/ after build</summary>

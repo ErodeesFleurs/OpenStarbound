@@ -50,9 +50,9 @@ vcpkg_make_configure(
 
 vcpkg_make_install()
 
-# On arm64 vcpkg-make may stage under DESTDIR/usr rather than the package root.
+# vcpkg-make can stage ARM64 ALSA under DESTDIR/usr.
 if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
-    include("${CMAKE_CURRENT_LIST_DIR}/normalize-arm64-install.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/../normalize-arm64-vcpkg-make-install.cmake")
 endif()
 
 vcpkg_fixup_pkgconfig()
