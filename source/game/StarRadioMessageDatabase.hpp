@@ -16,6 +16,9 @@ enum class RadioMessageType { Generic, Mission, Quest, Tutorial };
 extern EnumMap<RadioMessageType> const RadioMessageTypeNames;
 
 struct RadioMessage {
+  // Break the default-construction trait cycle in the recursive StringMap members.
+  RadioMessage() = default;
+
   String messageId;
   RadioMessageType type;
   bool unique;
