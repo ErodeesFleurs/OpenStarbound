@@ -157,7 +157,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 <details>
 <summary><b>Linux (Ubuntu)</b></summary>
  
-* Use CMake 3.28 or newer, Ninja 1.11 or newer, and a compiler with C++20 module scanning support (GCC 14+ or LLVM Clang 16+). Ubuntu 22.04's default compiler is too old; the CI Clang jobs install LLVM 22.
+* Use CMake 3.28 or newer, Ninja 1.11 or newer, and a compiler with C++20 module scanning support. Although CMake supports GCC 14+, this project needs GCC 16: GCC 14.4 fails compiling `StarActiveItem.cppm`, and GCC 15.3 hits a module compiler bug. Ubuntu 22.04's default GCC 11 cannot scan modules. Linux GCC CI uses Ubuntu 24.04 with GCC 16 from the [Ubuntu Toolchain test PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test), setting `CC=/usr/bin/gcc-16` and `CXX=/usr/bin/g++-16` before vcpkg and CMake configuration. The CI Clang jobs install LLVM 22.
 * Install dependencies:
   * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
@@ -175,7 +175,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 
 Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
 
-* CMake 3.28+, Ninja 1.11+, and GCC 14+ or LLVM Clang 16+ are required for the C++20 modules. Where Ubuntu uses APT, Fedora uses DNF as package manager.
+* CMake 3.28+, Ninja 1.11+, and GCC 16 or a compatible LLVM Clang are required for the C++20 modules. Where Ubuntu uses APT, Fedora uses DNF as package manager.
 
   1. `sudo dnf upgrade --refresh` to ensure your OS is up-to-date
   2. `sudo dnf install cmake`
