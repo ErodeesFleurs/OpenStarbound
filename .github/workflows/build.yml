@@ -599,6 +599,10 @@ jobs:
           configurePreset: 'linux-arm-release-clang'
           buildPreset: 'linux-arm-release-clang'
 
+      - name: Prepare jemalloc runtime
+        working-directory: ${{ github.workspace }}
+        run: scripts/ci/linux/prepare-jemalloc-runtime.sh build/linux-arm-release-clang/vcpkg_installed/arm64-linux-mixed-clang
+
       - name: Prepare Artifacts
         working-directory: ${{ github.workspace }}
         run: tarlz -c9vf OpenStarbound-Linux-ARM-Clang.tar.lz dist
