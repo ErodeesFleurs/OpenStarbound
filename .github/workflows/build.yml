@@ -46,9 +46,12 @@ jobs:
     name: Build OpenStarbound Windows x64
     runs-on: windows-latest
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.windows == true)) }}
+    env:
+      SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+      SCCACHE_CACHE_SIZE: 1G
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -65,12 +68,18 @@ jobs:
       - name: setup 7-Zip action
         uses: milliewalky/setup-7-zip@v2
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - name: Restore compiler cache
+        uses: actions/cache@v5
         with:
-          variant: sccache
-          key: ${{ github.job }}-${{ runner.os }}
-          max-size: 1000M
+          path: ${{ github.workspace }}/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.18.0
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -143,7 +152,7 @@ jobs:
           set "ISCC_PATH=%programfiles%\Inno Setup 7\ISCC.exe"
           
           if exist "%ISCC_PATH%" (
-            echo ::warning::Inno Setup is already installed
+            echo Inno Setup is already installed
             exit /b 0
           )
           
@@ -162,7 +171,7 @@ jobs:
             exit 1
           )
           
-          echo ::warning::Inno Setup installed successfully!
+          echo Inno Setup installed successfully!
         shell: cmd
 
       - name: Create Installer
@@ -205,7 +214,7 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -216,17 +225,22 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release'
@@ -247,7 +261,7 @@ jobs:
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
@@ -281,6 +295,8 @@ jobs:
     env:
         CC: clang
         CXX: clang++
+        SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+        SCCACHE_CACHE_SIZE: 250M
     steps:
       - name: Install Packages
         run: |
@@ -309,16 +325,22 @@ jobs:
           cmake --version
           ninja --version
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - name: Restore compiler cache
+        uses: actions/cache@v5
         with:
-          variant: sccache
-          key: ${{ github.job }}-${{ runner.os }}
-          max-size: 250M
+          path: ${{ github.workspace }}/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.18.0
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -327,17 +349,22 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-release-clang'
@@ -358,7 +385,7 @@ jobs:
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-release'
@@ -411,7 +438,7 @@ jobs:
         with:
           cmakeVersion: 3.29.2
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -422,17 +449,22 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-arm-release'
@@ -453,7 +485,7 @@ jobs:
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-arm-release'
@@ -487,6 +519,8 @@ jobs:
     env:
         CC: clang
         CXX: clang++
+        SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+        SCCACHE_CACHE_SIZE: 250M
     steps:
       - name: Install Packages
         run: |
@@ -516,16 +550,22 @@ jobs:
           cmake --version
           ninja --version
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - name: Restore compiler cache
+        uses: actions/cache@v5
         with:
-          variant: sccache
-          key: ${{ github.job }}-${{ runner.os }}
-          max-size: 250M
+          path: ${{ github.workspace }}/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.18.0
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -534,17 +574,22 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           configurePreset: 'linux-arm-release-clang'
@@ -565,7 +610,7 @@ jobs:
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
         with:
           cmakeListsTxtPath: '${{ github.workspace }}/source/CMakeLists.txt'
           testPreset: 'linux-arm-release'
@@ -596,8 +641,11 @@ jobs:
     runs-on: macos-15-intel
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    env:
+      SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+      SCCACHE_CACHE_SIZE: 250M
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -647,12 +695,18 @@ jobs:
           cmake --version
           ninja --version
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - name: Restore compiler cache
+        uses: actions/cache@v5
         with:
-          variant: sccache
-          key: ${{ github.job }}-Intel-${{ runner.os }}
-          max-size: 250M
+          path: ${{ github.workspace }}/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+        with:
+          version: v0.18.0
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -661,17 +715,22 @@ jobs:
           vcpkgJsonGlob: '**/source/vcpkg.json'
           vcpkgConfigurationJsonGlob: '**/source/vcpkg-configuration.json'
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: Run CMake
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
           CC: ${{ steps.llvm.outputs.llvm-path }}/bin/clang
           CXX: ${{ steps.llvm.outputs.llvm-path }}/bin/clang++
         with:
@@ -719,8 +778,11 @@ jobs:
     runs-on: macos-15
     if: ${{ (github.event_name != 'pull_request') && ((github.event_name != 'workflow_dispatch') || (inputs.macOS == true)) }}
     #if: ${{ (github.event_name == 'workflow_dispatch') && (inputs.macOS == true) }}
+    env:
+      SCCACHE_DIR: ${{ github.workspace }}/.cache/sccache
+      SCCACHE_CACHE_SIZE: 250M
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
 
@@ -746,18 +808,29 @@ jobs:
           cmake --version
           ninja --version
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - name: Restore compiler cache
+        uses: actions/cache@v5
         with:
-          variant: sccache
-          key: ${{ github.job }}-ARM-${{ runner.os }}
-          max-size: 250M
+          path: ${{ github.workspace }}/.cache/sccache
+          key: sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            sccache-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
 
-      - name: Restore vcpkg cache
-        id: vcpkg-cache
-        uses: TAServers/vcpkg-cache@v3
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          version: v0.18.0
+
+      - name: Restore vcpkg binary cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/.cache/vcpkg
+          key: vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ hashFiles('source/vcpkg.json', 'source/vcpkg-configuration.json', 'ports/**', 'triplets/**') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p "$GITHUB_WORKSPACE/.cache/vcpkg"
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
@@ -770,7 +843,7 @@ jobs:
         uses: lukka/run-cmake@v10
         env:
           VCPKG_FEATURE_FLAGS: "binarycaching"
-          VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
+          VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.cache/vcpkg,readwrite"
           CC: ${{ steps.llvm.outputs.llvm-path }}/bin/clang
           CXX: ${{ steps.llvm.outputs.llvm-path }}/bin/clang++
           MACOSX_DEPLOYMENT_TARGET: "14.0"

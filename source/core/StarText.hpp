@@ -9,7 +9,7 @@
 namespace Star {
 
 unsigned const DefaultFontSize = 8;
-float const DefaultLineSpacing = 1.3f;
+inline constexpr float DefaultLineSpacing = 1.3f;
 
 struct TextStyle {
   float lineSpacing = DefaultLineSpacing;

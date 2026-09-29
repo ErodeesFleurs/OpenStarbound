@@ -20,7 +20,7 @@ enum class PerlinType {
 };
 extern EnumMap<PerlinType> const PerlinTypeNames;
 
-int const PerlinSampleSize = 512;
+inline constexpr int PerlinSampleSize = 512;
 
 template <typename Float>
 class Perlin {

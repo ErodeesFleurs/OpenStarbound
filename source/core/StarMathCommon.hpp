@@ -15,10 +15,10 @@ struct MathExceptionTag {
 using MathException = StarError<MathExceptionTag, StarException>;
 
 namespace Constants {
-  double constexpr pi = 3.14159265358979323846;
+  inline constexpr double pi = 3.14159265358979323846;
   double constexpr rad2deg = 57.2957795130823208768;
   double constexpr deg2rad = 1 / rad2deg;
-  double constexpr sqrt2 = 1.41421356237309504880;
+  inline constexpr double sqrt2 = 1.41421356237309504880;
   double constexpr log2e = 1.44269504088896340736;
 }
 

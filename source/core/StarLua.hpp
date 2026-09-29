@@ -272,7 +272,7 @@ public:
   T& get() const;
 };
 
-LuaValue const LuaNil = LuaValue();
+inline const LuaValue LuaNil = LuaValue();
 
 class LuaCallbacks {
 public:

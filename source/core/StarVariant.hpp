@@ -19,7 +19,7 @@ struct BadVariantTypeTag {
 using BadVariantType = StarError<BadVariantTypeTag, StarException>;
 
 typedef uint8_t VariantTypeIndex;
-VariantTypeIndex const InvalidVariantType = 255;
+inline constexpr VariantTypeIndex InvalidVariantType = 255;
 
 namespace detail {
   template <typename T, typename... Args>

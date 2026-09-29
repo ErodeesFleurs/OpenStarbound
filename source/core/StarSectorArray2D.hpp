@@ -435,7 +435,7 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPrivPar(
 
     size_t x_ = xSector * SectorSize;
 
-    futures.push_back(workerPool.addWork([=, &function]() {
+    futures.push_back(workerPool.addWork([=, &function, this]() {
       for (size_t ySector = minYSector; ySector <= maxYSector; ++ySector) {
         Array* array = m_sectors(xSector, ySector).get();
 

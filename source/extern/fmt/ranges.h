@@ -208,7 +208,7 @@ class is_tuple_formattable_ {
 template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
   template <std::size_t... Is>
   static auto check2(index_sequence<Is...>,
-                     integer_sequence<bool, (Is == Is)...>) -> std::true_type;
+                     integer_sequence<bool, (static_cast<void>(Is), true)...>) -> std::true_type;
   static auto check2(...) -> std::false_type;
   template <std::size_t... Is>
   static auto check(index_sequence<Is...>) -> decltype(check2(

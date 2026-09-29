@@ -105,7 +105,7 @@ float const SystemWorldTimestep = 1.0f / 20.0f;
 size_t const WorldSectorSize = 32;
 
 typedef int32_t EntityId;
-EntityId const NullEntityId = 0;
+inline constexpr EntityId NullEntityId = 0;
 EntityId const MinServerEntityId = 1;
 EntityId const MaxServerEntityId = highest<EntityId>();
 
@@ -138,7 +138,7 @@ inline ConnectionId subWorldToMainConnectionId(ConnectionId const& id) {
 // for client sub-world threads. indexes by *world* rather than by thread.
 // this should allow the client to possibly split the subworlds to multiple threads in the future.
 typedef uint16_t ClientSubWorldId;
-ConnectionId const MainClientWorldId = 0;
+inline constexpr ConnectionId MainClientWorldId = 0;
 ConnectionId const MinClientSubWorldId = 1;
 ConnectionId const MaxClientSubWorldId = highest<ClientSubWorldId>();
 

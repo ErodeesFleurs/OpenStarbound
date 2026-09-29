@@ -39,13 +39,13 @@ MaterialId const FirstEngineMetaMaterialId = 65500;
 MaterialId const FirstMetaMaterialId = 65000;
 
 typedef uint8_t MaterialColorVariant;
-MaterialColorVariant const DefaultMaterialColorVariant = 0;
+inline constexpr MaterialColorVariant DefaultMaterialColorVariant = 0;
 MaterialColorVariant const MaxMaterialColorVariant = 8;
 
 typedef uint16_t ModId;
 
 // Tile has no tilemod
-ModId const NoModId = 65535;
+inline constexpr ModId NoModId = 65535;
 
 // Placeholder mod used in dungeon generation for biome native ground mod.
 ModId const BiomeModId = 65534;
