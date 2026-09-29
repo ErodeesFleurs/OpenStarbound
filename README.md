@@ -161,7 +161,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 * The pinned vcpkg registry still packages jemalloc 5.3.1, which calls a libstdc++ helper removed in GCC 16. The project's `ports/jemalloc` overlay builds upstream jemalloc 5.4.0 instead; keep the overlay when configuring through `source/vcpkg-configuration.json`.
 * Linux Clang CI uses LLVM 22 with libstdc++ 12. Keep `RadioMessage`'s explicit default constructor: without it, libstdc++ recursively checks the default constructibility of its `StringMap<RadioMessage>` members while compiling `StarPlayer.cpp`.
 * Install dependencies:
-  * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build`
+  * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build libltdl-dev`
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
 * Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
   *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
