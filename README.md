@@ -122,7 +122,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
 Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
 
 CI caches compiler outputs with sccache and vcpkg binary packages per platform using GitHub Actions cache; changes to the dependency manifests or overlay ports invalidate the vcpkg cache.
-The Linux ARM64 Clang triplet explicitly installs ALSA's `.pc` files under the vcpkg prefix's `lib/pkgconfig`; vcpkg checks that location when installing the ALSA dependency.
+The Linux ARM64 Clang build uses an ALSA vcpkg overlay port to normalize files staged under `usr/` before vcpkg validates `.pc` files and imports libraries.
 
 <details>
 <summary>template sbinit.config for dist/ after build</summary>
