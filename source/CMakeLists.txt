@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.28)
+project(starbound)
 
-# Find SCCache or CCache
-if (NOT CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
+# GCC module interfaces produce .gcm files; sccache 0.7.7 restores only .o
+# on cache hits. Disable C++ launchers so importers always find their BMIs.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set(CMAKE_CXX_COMPILER_LAUNCHER "")
+elseif(NOT CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
   find_program(SCCACHE_PATH sccache)
   if(SCCACHE_PATH)
     message(STATUS "Using SCCache at ${SCCACHE_PATH}")
@@ -35,7 +39,6 @@ if(NOT DEFINED STAR_PRECOMPILED_HEADERS)
   endif()
 endif()
 
-project(starbound)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 # One place for the language standard.  The per-platform flag blocks below used

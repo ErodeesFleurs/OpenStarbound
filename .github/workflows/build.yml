@@ -209,13 +209,6 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          variant: sccache
-          key: ${{ github.job }}-${{ runner.os }}
-          max-size: 250M
-
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
         id: runvcpkg
@@ -421,13 +414,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
-
-      - name: sccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          variant: sccache
-          key: ${{ github.job }}-${{ runner.os }}
-          max-size: 250M
 
       - name: vcpkg
         uses: lukka/run-vcpkg@v11
