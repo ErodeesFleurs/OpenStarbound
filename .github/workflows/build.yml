@@ -29,6 +29,8 @@ on:
       - 'source/**'
       - 'toolchains/**'
       - 'triplets/**'
+      - 'ports/**'
+      - '.github/workflows/build.yml'
     branches:
       - '*' 
 
@@ -38,6 +40,8 @@ on:
       - 'source/**'
       - 'toolchains/**'
       - 'triplets/**'
+      - 'ports/**'
+      - '.github/workflows/build.yml'
     branches:
       - '*'
 
