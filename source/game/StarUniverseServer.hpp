@@ -37,7 +37,7 @@ using UniverseServerException = StarError<UniverseServerExceptionTag, StarExcept
 class UniverseServer : public Universe, public Thread {
 public:
   UniverseServer(String const& storageDir, bool const& isLocal = false);
-  ~UniverseServer();
+  ~UniverseServer() override;
 
   // If enabled, will listen on the configured server port for incoming
   // connections.

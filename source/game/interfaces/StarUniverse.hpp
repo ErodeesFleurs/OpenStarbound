@@ -17,6 +17,8 @@ public:
     JsonArray args;
     Variant<pair<Uuid,ConnectionId>,RpcPromiseKeeper<Json>> keeper;
   };
+
+  virtual ~Universe() = default;
   
   virtual CelestialDatabasePtr celestialDatabase() = 0;
   

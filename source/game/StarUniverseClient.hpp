@@ -42,7 +42,7 @@ public:
   typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
   
   UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir);
-  ~UniverseClient();
+  ~UniverseClient() override;
 
   void setMainPlayer(PlayerPtr player);
   PlayerPtr mainPlayer() const;
