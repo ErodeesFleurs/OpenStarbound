@@ -49,7 +49,7 @@ namespace Star {
     ::free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, size_t) {
     ::free(ptr);
   }
 #endif

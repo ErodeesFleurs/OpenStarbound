@@ -1077,7 +1077,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundColorVariant.reset();
             else
               p.backgroundColorVariant.reset();
-          } else if (auto placeLiquid = modification.second.ptr<PlaceLiquid>()) {
+          } else if (modification.second.is<PlaceLiquid>()) {
             p.liquid.reset();
           }
 
@@ -2483,7 +2483,7 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
-Maybe<String> WorldClient::activeWeather(Vec2F const& pos) const {
+Maybe<String> WorldClient::activeWeather(Vec2F const&) const {
   if (!inWorld())
     return {};
   return m_weather.activeWeather();
