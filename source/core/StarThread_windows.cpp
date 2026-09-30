@@ -559,7 +559,7 @@ bool RecursiveMutex::tryLock() {
     auto str = strf("RecursiveMutex tryLock success, LockCount {}", m_impl->criticalSection.LockCount);
     printStack(str.c_str());
   }
-  #endif;
+  #endif
   return result;
 }
 

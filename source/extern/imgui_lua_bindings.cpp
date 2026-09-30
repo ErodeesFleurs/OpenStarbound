@@ -36,9 +36,9 @@ static void AddToStack(int type) {
   endStack.push_back(type);
 }
 
-static void PopEndStack(int type) {
+static void PopEndStack() {
   if (!endStack.empty()) {
-    endStack.pop_back(); // hopefully the type matches
+    endStack.pop_back();
   }
 }
 
@@ -285,7 +285,7 @@ static int impl_##name(lua_State *L) { \
   AddToStack(type);
 
 #define POP_END_STACK(type) \
-  PopEndStack(type);
+  PopEndStack();
 
 #define END_STACK_START \
 static void ImEndStack(int type) { \

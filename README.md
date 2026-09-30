@@ -124,6 +124,7 @@ Note: Some of these [texts](## "hi :3") are just tooltips rather than links.
 CI caches compiler outputs with sccache and vcpkg binary packages per platform using GitHub Actions cache; changes to the dependency manifests or overlay ports invalidate the vcpkg cache.
 The Linux ARM64 Clang ALSA and jemalloc vcpkg overlay ports move files staged under `usr/` or `usr/local/` into the package root before vcpkg validates pkg-config files and imports libraries.
 The Linux ARM64 Clang CI also bundles jemalloc's `libjemalloc.so.2` and copyright notice in the raw `dist/` artifact and both client/server archives. Release utilities use `$ORIGIN` to load the library from their executable directory, including when `asset_packer` runs during assembly.
+GitHub Actions combines warnings from every platform job. Repeated source diagnostics, vcpkg/SDL dependency probes, and `run-cmake` log-collection messages all contribute to the annotation count; inspect the annotated step and file before treating it as a distinct compiler warning.
 
 <details>
 <summary>template sbinit.config for dist/ after build</summary>
