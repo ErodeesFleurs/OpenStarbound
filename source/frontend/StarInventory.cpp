@@ -161,7 +161,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
         else
           throw GuiException("Invalid object type, expected ItemSlotWidget");
       });
-    invWindowReader.registerCallback(name + ".right", [this, slot, rightClickCallback](Widget* paneObj) {
+    invWindowReader.registerCallback(name + ".right", [slot, rightClickCallback](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           rightClickCallback(slot);
         else
@@ -172,7 +172,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     EquipmentSlot slot = p.first;
     registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget*) {
       auto inventory = m_player->inventory();
       inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
     });

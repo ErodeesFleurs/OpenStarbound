@@ -95,7 +95,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("itemGrid.right", [this, rightClickCallback](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
@@ -108,7 +108,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("itemGrid2.right", [this, rightClickCallback](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid2.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
@@ -121,7 +121,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("outputItemGrid.right", [this, rightClickCallback](Widget* paneObj) {
+  m_reader.registerCallback("outputItemGrid.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
