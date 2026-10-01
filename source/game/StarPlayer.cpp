@@ -20,7 +20,6 @@
 #include "StarEntitySplash.hpp"
 #include "StarWorld.hpp"
 #include "StarStatusController.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarPlayerBlueprints.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarPlayerCodexes.hpp"
@@ -33,15 +32,16 @@
 #include "StarAiDatabase.hpp"
 #include "StarStatistics.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.networked_animator_lua_bindings;
 import star.inspection_tool;
 import star.songbook_lua_bindings;
 import star.scripted_animator_lua_bindings;
+import star.celestial_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 

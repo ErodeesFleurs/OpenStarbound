@@ -24,8 +24,8 @@
 #include "StarWarpTargetEntity.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarUniverseServerLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
+import star.universe_server_lua_bindings;
+import star.celestial_lua_bindings;
 import star.world_generation;
 
 namespace Star {

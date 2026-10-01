@@ -1,3 +1,4 @@
+#include "StarJson.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarClientContext.hpp"
 #include "StarItem.hpp"
@@ -14,8 +15,9 @@
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
 #include "StarPlayerCodexes.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarCodex.hpp"
+
+import star.networked_animator_lua_bindings;
 
 namespace Star {
 

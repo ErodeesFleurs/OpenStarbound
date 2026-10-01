@@ -3,7 +3,6 @@
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarItemLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 
 import star.config_lua_bindings;

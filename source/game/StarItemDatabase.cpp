@@ -10,7 +10,6 @@
 #include "StarArmors.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarItemLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarRebuilder.hpp"
@@ -30,6 +29,7 @@ import star.active_item;
 import star.flashlight;
 import star.tilling_tool;
 import star.config_lua_bindings;
+import star.item_lua_bindings;
 
 namespace Star {
 

@@ -5,10 +5,10 @@
 #include "StarLuaGameConverters.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
 
+import star.networked_animator_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 

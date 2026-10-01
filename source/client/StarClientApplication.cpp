@@ -18,7 +18,6 @@
 #include "StarVoice.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarCelestialLuaBindings.hpp"
 #include "StarLuaHttpBindings.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
@@ -35,6 +34,7 @@ import star.voice_lua_bindings;
 import star.interface_lua_bindings;
 import star.rendering_lua_bindings;
 import star.universe_client_lua_bindings;
+import star.celestial_lua_bindings;
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>

@@ -14,10 +14,10 @@
 #include "StarSky.hpp"
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
-#include "StarUniverseServerLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
 #include "StarVersioningDatabase.hpp"
 
+import star.universe_server_lua_bindings;
+import star.celestial_lua_bindings;
 import star.sha256;
 import star.secure_random;
 

@@ -126,6 +126,8 @@ The Linux ARM64 Clang ALSA and jemalloc vcpkg overlay ports move files staged un
 The Linux ARM64 Clang CI also bundles jemalloc's `libjemalloc.so.2` and copyright notice in the raw `dist/` artifact and both client/server archives. Release utilities use `$ORIGIN` to load the library from their executable directory, including when `asset_packer` runs during assembly.
 GitHub Actions [limits warning annotations to 10 per step](https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md#limitations), so five platform builds can still show about 50 after fixes expose later diagnostics. Source warnings repeat across platforms; vcpkg/SDL dependency probes and `run-cmake` log-collection messages also contribute to the count. Check individual build logs instead of treating the visible total as the complete warning list.
 
+Game Lua callback factories migrated to C++20 modules live in `source/game/scripting/*.cppm`, including `star.item_lua_bindings` and `star.status_controller_lua_bindings`. Callers import them instead of including the removed binding headers: after normal includes in `.cpp` files, or after `export module` in another module interface. Register new game interfaces in the `star_game_modules` CMake file set in `source/game/CMakeLists.txt`.
+
 <details>
 <summary>template sbinit.config for dist/ after build</summary>
 <br>

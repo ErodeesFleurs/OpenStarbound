@@ -218,10 +218,7 @@ SET (star_game_HEADERS
     objects/StarContainerObject.hpp
 
     scripting/StarCameraLuaBindingsFwd.hpp
-    scripting/StarCelestialLuaBindings.hpp
     scripting/StarEntityLuaBindings.hpp
-    scripting/StarFireableItemLuaBindings.hpp
-    scripting/StarItemLuaBindings.hpp
     scripting/StarLuaHttpBindings.hpp
     scripting/StarLuaActorMovementComponent.hpp
     scripting/StarLuaAnimationComponent.hpp
@@ -229,12 +226,9 @@ SET (star_game_HEADERS
     scripting/StarLuaComponents.hpp
     scripting/StarLuaRoot.hpp
     scripting/StarMovementControllerLuaBindings.hpp
-    scripting/StarNetworkedAnimatorLuaBindings.hpp
     scripting/StarPlayerLuaBindings.hpp
     scripting/StarRootLuaBindings.hpp
-    scripting/StarStatusControllerLuaBindings.hpp
     scripting/StarWorldLuaBindings.hpp
-    scripting/StarUniverseServerLuaBindings.hpp
     scripting/StarScriptableThread.hpp
   )
 
@@ -424,27 +418,27 @@ SET (star_game_SOURCES
 
     objects/StarContainerObject.cpp
 
-    scripting/StarCelestialLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
-    scripting/StarFireableItemLuaBindings.cpp
-    scripting/StarItemLuaBindings.cpp
     scripting/StarLuaHttpBindings.cpp
     scripting/StarLuaComponents.cpp
     scripting/StarLuaEntityUserdata.cpp
     scripting/StarLuaGameConverters.cpp
     scripting/StarLuaRoot.cpp
     scripting/StarMovementControllerLuaBindings.cpp
-    scripting/StarNetworkedAnimatorLuaBindings.cpp
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarRootLuaBindings.cpp
-    scripting/StarStatusControllerLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
-    scripting/StarUniverseServerLuaBindings.cpp
     scripting/StarScriptableThread.cpp
   )
 
 ADD_LIBRARY (star_game_modules STATIC)
 TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+    scripting/StarItemLuaBindings.cppm
+    scripting/StarStatusControllerLuaBindings.cppm
+    scripting/StarFireableItemLuaBindings.cppm
+    scripting/StarNetworkedAnimatorLuaBindings.cppm
+    scripting/StarCelestialLuaBindings.cppm
+    scripting/StarUniverseServerLuaBindings.cppm
     scripting/StarCameraLuaBindings.cppm
     scripting/StarInputLuaBindings.cppm
     scripting/StarTeamClientLuaBindings.cppm

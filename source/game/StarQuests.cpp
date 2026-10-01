@@ -16,14 +16,14 @@
 #include "StarPlayerTech.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarQuestManager.hpp"
 #include "StarClientContext.hpp"
 #include "StarUuid.hpp"
-#include "StarCelestialLuaBindings.hpp"
 #include "StarUniverseClient.hpp"
 
 import star.config_lua_bindings;
+import star.celestial_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 

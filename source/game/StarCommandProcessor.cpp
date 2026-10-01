@@ -20,9 +20,10 @@
 #include "StarChatProcessor.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldLuaBindings.hpp"
-#include "StarUniverseServerLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
 #include "StarString.hpp"
+
+import star.universe_server_lua_bindings;
+import star.celestial_lua_bindings;
 
 namespace Star {
 

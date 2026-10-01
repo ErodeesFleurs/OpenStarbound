@@ -3,10 +3,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarEntityRendering.hpp"
 
 import star.config_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 

@@ -1,10 +1,21 @@
-#include "StarCelestialLuaBindings.hpp"
+module;
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLuaGameConverters.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarSystemWorldClient.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarBiomeDatabase.hpp"
-#include "StarJsonExtra.hpp"
+
+export module star.celestial_lua_bindings;
+
+export namespace Star::LuaBindings {
+  LuaCallbacks makeCelestialCallbacks(CelestialDatabasePtr database);
+  LuaCallbacks makeCelestialCallbacks(Universe* universe);
+}
 
 namespace Star {
 LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialDatabase) {

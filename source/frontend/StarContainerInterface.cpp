@@ -13,13 +13,13 @@
 #include "StarObject.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarInput.hpp"
 
 import star.item_tooltip;
 import star.config_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 

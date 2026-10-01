@@ -15,11 +15,11 @@
 #include "StarAssets.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
 
+import star.networked_animator_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 

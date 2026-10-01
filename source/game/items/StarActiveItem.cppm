@@ -11,9 +11,6 @@ module;
 #include "StarDurabilityItem.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarItemLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
@@ -22,6 +19,9 @@ module;
 #include "StarEmoteEntity.hpp"
 
 export module star.active_item;
+import star.networked_animator_lua_bindings;
+import star.item_lua_bindings;
+import star.status_controller_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 

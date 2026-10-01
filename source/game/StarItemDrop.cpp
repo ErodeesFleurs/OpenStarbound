@@ -10,10 +10,10 @@
 #include "StarPlayer.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
-#include "StarItemLuaBindings.hpp"
 
 import star.material_item;
 import star.config_lua_bindings;
+import star.item_lua_bindings;
 
 namespace Star {
 

@@ -23,10 +23,9 @@
 #include "StarInspectableEntity.hpp"
 #include "StarUniverseClient.hpp"
 
-#include "StarCelestialLuaBindings.hpp"
-
 import star.curve25519;
 import star.universe_client_lua_bindings;
+import star.celestial_lua_bindings;
 
 namespace Star {
 

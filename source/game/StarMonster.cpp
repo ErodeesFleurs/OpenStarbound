@@ -8,8 +8,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarWorldLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarItemDrop.hpp"
@@ -17,9 +15,11 @@
 #include "StarTime.hpp"
 #include "StarStatusController.hpp"
 
+import star.networked_animator_lua_bindings;
 import star.behavior_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 

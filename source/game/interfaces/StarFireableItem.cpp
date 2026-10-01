@@ -1,12 +1,12 @@
 #include "StarFireableItem.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorldLuaBindings.hpp"
-#include "StarItemLuaBindings.hpp"
-#include "StarFireableItemLuaBindings.hpp"
 #include "StarItem.hpp"
 #include "StarWorld.hpp"
 
 import star.config_lua_bindings;
+import star.fireable_item_lua_bindings;
+import star.item_lua_bindings;
 
 namespace Star {
 

@@ -7,15 +7,15 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarPlayerLuaBindings.hpp"
 #include "StarPlayer.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
 #include "StarRoot.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarLoungingEntities.hpp"
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 
+import star.networked_animator_lua_bindings;
 import star.config_lua_bindings;
+import star.status_controller_lua_bindings;
 
 namespace Star {
 
