@@ -52,8 +52,14 @@ let
   # "version" field in assets/opensb/_metadata or Root refuses to load assets.
   version = "0.1.15.1";
   sdkExtension = stdenv.hostPlatform.extensions.sharedLibrary;
-  imgui = callPackage ./imgui.nix { };
   opusCmake = callPackage ./opus-cmake-config.nix { };
+  # SDL 3.4.14's ALSA backend omits two matching frees on audio shutdown.
+  # Keep the normal ALSA driver; patch its ownership rather than hiding leaks
+  # by selecting the dummy audio driver.
+  patchedSdl3 = sdl3.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ./patches/sdl3-alsa-cleanup.patch ];
+  });
+  imgui = callPackage ./imgui.nix { sdl3 = patchedSdl3; };
 
   # Optional prebuilt Steam/Discord SDKs, vendored under lib/linux in the
   # repository.  They are unfree redistribution-wise and x86_64 only, hence the
@@ -142,7 +148,7 @@ stdenv.mkDerivation {
     cpptrace
   ]
   ++ lib.optionals guiSupport [
-    sdl3
+    patchedSdl3
     glew
     libGL
     wayland

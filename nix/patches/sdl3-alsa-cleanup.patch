@@ -1,0 +1,19 @@
+diff --git a/src/audio/alsa/SDL_alsa_audio.c b/src/audio/alsa/SDL_alsa_audio.c
+--- a/src/audio/alsa/SDL_alsa_audio.c
++++ b/src/audio/alsa/SDL_alsa_audio.c
+@@ -295,4 +295,7 @@ static void ALSA_guess_device_prefix(void)
+                 }
+             }
+         }
++        if (hints) {
++            ALSA_snd_device_name_free_hint(hints);
++        }
+     }
+@@ -1554,6 +1557,7 @@ static void ALSA_DeinitializeStart(void)
+         //SDL_LogInfo(SDL_LOG_CATEGORY_AUDIO, "ALSA: at shutdown, removing %s device '%s'", dev->recording ? "recording" : "playback", dev->name);
+         next = dev->next;
+         SDL_free(dev->name);
++        SDL_free(dev->id);
+         SDL_free(dev);
+     }
+     hotplug_devices = NULL;
