@@ -47,7 +47,10 @@ if (STAR_SYSTEM_MACOS)
   set_target_properties (starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
 endif()
 
-target_link_libraries (starbound PRIVATE star_modules star_base_modules star_frontend_modules star_game_modules star_build_config star_gui_dependencies)
+target_link_libraries (starbound PRIVATE
+  star_base_modules star_frontend_modules star_build_config star_client_dependencies
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
+  $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
 set_target_properties (starbound PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)

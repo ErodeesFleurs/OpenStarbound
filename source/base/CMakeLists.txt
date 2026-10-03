@@ -49,7 +49,7 @@ target_include_directories (star_base PRIVATE
 
 # star_base imports core and base C++20 modules; the links bring in their
 # module flags, and scanning tracks imports in its sources.
-target_link_libraries (star_base PUBLIC star_modules star_base_modules PRIVATE star_build_config)
+target_link_libraries (star_base PRIVATE star_base_modules star_build_config)
 set_target_properties (star_base PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(STAR_PRECOMPILED_HEADERS)

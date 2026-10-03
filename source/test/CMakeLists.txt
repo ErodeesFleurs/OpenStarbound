@@ -60,7 +60,8 @@ target_include_directories (core_tests PRIVATE
 # The star libraries are referenced by their objects, which carries no usage
 # requirements, so the module target has to be linked in explicitly wherever a
 # source imports it.
-target_link_libraries (core_tests PRIVATE star_modules star_build_config)
+target_link_libraries (core_tests PRIVATE star_modules star_build_config star_vorbis_dependencies
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (core_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
 add_test (NAME core_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:core_tests> COMMAND core_tests)
 
@@ -96,7 +97,8 @@ target_include_directories (game_tests PRIVATE
     ${STAR_GAME_INCLUDES}
     ${CMAKE_CURRENT_SOURCE_DIR}
   )
-target_link_libraries (game_tests PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (game_tests PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (game_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
 add_test (NAME game_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:game_tests> COMMAND game_tests)
 

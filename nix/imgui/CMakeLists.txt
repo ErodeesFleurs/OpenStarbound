@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.23)
 project(imgui VERSION 1.92.8 LANGUAGES CXX)
 
-# Match the source set and features in the OpenStarbound vcpkg baseline
-# d015e31e90838a4c9dfa3eed45979bc70d9357fc, without vcpkg's FreeType target name.
-find_package(SDL3 CONFIG REQUIRED)
+# Match the ImGui ABI in the OpenStarbound vcpkg baseline. Headless builds keep
+# the Lua bindings and FreeType renderer, but do not need windowing backends.
+option(IMGUI_BUILD_GUI_BACKENDS "Build SDL3 and OpenGL3 backends" ON)
 find_package(Freetype REQUIRED)
-find_package(OpenGL REQUIRED)
+if(IMGUI_BUILD_GUI_BACKENDS)
+    find_package(SDL3 CONFIG REQUIRED)
+    find_package(OpenGL REQUIRED)
+endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
@@ -17,8 +20,6 @@ add_library(imgui STATIC
     imgui_widgets.cpp
     misc/cpp/imgui_stdlib.cpp
     misc/freetype/imgui_freetype.cpp
-    backends/imgui_impl_sdl3.cpp
-    backends/imgui_impl_opengl3.cpp
 )
 add_library(imgui::imgui ALIAS imgui)
 target_compile_features(imgui PUBLIC cxx_std_11)
@@ -27,7 +28,16 @@ target_include_directories(imgui PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_link_libraries(imgui PUBLIC SDL3::SDL3 Freetype::Freetype OpenGL::GL ${CMAKE_DL_LIBS})
+target_link_libraries(imgui PUBLIC Freetype::Freetype)
+if(IMGUI_BUILD_GUI_BACKENDS)
+    add_library(imgui_backends STATIC
+        backends/imgui_impl_sdl3.cpp
+        backends/imgui_impl_opengl3.cpp
+    )
+    add_library(imgui::imgui_backends ALIAS imgui_backends)
+    target_link_libraries(imgui_backends PUBLIC imgui SDL3::SDL3 OpenGL::GL ${CMAKE_DL_LIBS})
+    install(TARGETS imgui_backends EXPORT imgui-targets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 install(TARGETS imgui EXPORT imgui-targets ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES

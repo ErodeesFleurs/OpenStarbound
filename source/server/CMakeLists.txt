@@ -40,7 +40,8 @@ elseif (UNIX)
   target_link_options (starbound_server PRIVATE "LINKER:--export-dynamic" "LINKER:-rpath,$ORIGIN")
 endif()
 
-target_link_libraries (starbound_server PRIVATE star_modules star_base_modules star_server_modules star_game_modules star_build_config)
+target_link_libraries (starbound_server PRIVATE star_base_modules star_server_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
   set_target_properties (star_server_modules starbound_server PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")

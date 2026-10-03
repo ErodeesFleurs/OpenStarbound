@@ -62,7 +62,7 @@ target_include_directories (star_application PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_APPLICATION_INCLUDES}
   )
-target_link_libraries (star_application PUBLIC star_modules PRIVATE star_build_config star_gui_dependencies)
+target_link_libraries (star_application PRIVATE star_modules star_build_config star_application_dependencies)
 set_target_properties (star_application PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(STAR_PRECOMPILED_HEADERS)

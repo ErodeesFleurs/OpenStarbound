@@ -30,7 +30,7 @@ target_include_directories (star_rendering PRIVATE
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
   )
-target_link_libraries (star_rendering PRIVATE star_build_config star_gui_dependencies)
+target_link_libraries (star_rendering PRIVATE star_build_config)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers (star_rendering REUSE_FROM star_core)

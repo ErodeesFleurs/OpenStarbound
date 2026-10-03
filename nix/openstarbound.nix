@@ -21,8 +21,6 @@
   sdl3,
   glew,
   libGL,
-  wayland,
-  libxkbcommon,
   qt5,
   # This repository's source tree; the CMake layout expects the repository root
   # (source/CMakeLists.txt is configured through `cmakeDir`).
@@ -59,7 +57,7 @@ let
   patchedSdl3 = sdl3.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ./patches/sdl3-alsa-cleanup.patch ];
   });
-  imgui = callPackage ./imgui.nix { sdl3 = patchedSdl3; };
+  imgui = callPackage ./imgui.nix { sdl3 = patchedSdl3; inherit guiSupport; };
 
   # Optional prebuilt Steam/Discord SDKs, vendored under lib/linux in the
   # repository.  They are unfree redistribution-wise and x86_64 only, hence the
@@ -142,8 +140,6 @@ stdenv.mkDerivation {
     libvorbis
     zstd
     imgui
-    libopus
-    opusCmake
     re2
     cpptrace
   ]
@@ -151,18 +147,11 @@ stdenv.mkDerivation {
     patchedSdl3
     glew
     libGL
-    wayland
-    libxkbcommon
+    libopus
+    opusCmake
   ]
   ++ lib.optional (steamSupport || discordSupport) sdks
   ++ lib.optional qtSupport qt5.qtbase;
-
-  # CMake's GLEW module does not provide the vendored GLEW fallback target.
-  postPatch = ''
-    substituteInPlace source/CMakeLists.txt \
-      --replace-fail '$<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>' \
-        ${lib.escapeShellArg "\${GLEW_LIBRARY}"}
-  '';
 
   # Append rather than replace the caller's compiler/linker flags. These are
   # compiler-driver options: NIX_LDFLAGS would pass them directly to ld.

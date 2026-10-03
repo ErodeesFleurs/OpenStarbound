@@ -182,7 +182,10 @@ if(NOT STAR_DEBUG_SYMBOL_LEVEL MATCHES "^(default|minimal|full)$")
 endif()
 
 add_library(star_build_config INTERFACE)
-add_library(star_gui_dependencies INTERFACE)
+add_library(star_core_dependencies INTERFACE)
+add_library(star_module_dependencies INTERFACE)
+add_library(star_extern_dependencies INTERFACE)
+add_library(star_vorbis_dependencies INTERFACE)
 
 # Report all the discovered system / environment settings and all options.
 
@@ -303,37 +306,43 @@ if((STAR_COMPILER_GNU OR STAR_COMPILER_CLANG) AND NOT DEFINED CMAKE_SKIP_BUILD_R
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 endif()
 
+# External usage requirements belong to their implementation layer, not to
+# star_build_config. Object expressions do not forward them; executable targets
+# explicitly link the relevant groups with LINK_ONLY for their object closure.
 if(STAR_SYSTEM_WINDOWS)
   enable_language(RC)
-  target_link_libraries(star_build_config INTERFACE ws2_32 iphlpapi shlwapi dbghelp)
+  target_link_libraries(star_core_dependencies INTERFACE ws2_32 iphlpapi shlwapi dbghelp)
+  target_link_libraries(star_module_dependencies INTERFACE ws2_32 iphlpapi)
 elseif(STAR_SYSTEM_LINUX)
-  target_link_libraries(star_build_config INTERFACE pthread ${CMAKE_DL_LIBS} rt)
+  target_link_libraries(star_core_dependencies INTERFACE pthread ${CMAKE_DL_LIBS} rt)
 elseif(STAR_SYSTEM_FREEBSD)
-  target_link_libraries(star_build_config INTERFACE pthread rt)
+  target_link_libraries(star_core_dependencies INTERFACE pthread rt)
 elseif(STAR_SYSTEM_NETBSD)
-  target_link_libraries(star_build_config INTERFACE pthread rt execinfo)
+  target_link_libraries(star_core_dependencies INTERFACE pthread rt execinfo)
 elseif(STAR_SYSTEM_HAIKU)
-  target_link_libraries(star_build_config INTERFACE pthread execinfo network)
+  target_link_libraries(star_core_dependencies INTERFACE pthread execinfo network)
+  target_link_libraries(star_module_dependencies INTERFACE network)
 endif()
-
-# Find all required external libraries, based on build settings...
-find_package(PkgConfig)
+target_link_libraries(star_module_dependencies INTERFACE ${CMAKE_DL_LIBS})
+target_link_libraries(star_extern_dependencies INTERFACE ${CMAKE_DL_LIBS})
 
 if(STAR_USE_JEMALLOC)
+  find_package(PkgConfig REQUIRED)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
-
-  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
-  if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
+  target_link_libraries(star_core_dependencies INTERFACE PkgConfig::JEMALLOC)
+  if(STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
     set_flag(STAR_JEMALLOC_IS_PREFIXED)
   endif()
 endif()
 
-if (STAR_USE_MIMALLOC)
+if(STAR_USE_MIMALLOC)
   find_package(mimalloc CONFIG REQUIRED)
-  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
+  target_link_libraries(star_core_dependencies INTERFACE
+    $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
 endif()
 
 find_package(zlib-ng CONFIG REQUIRED)
+# Keep project-wide definitions identical for targets reusing star_core's PCH.
 target_compile_definitions(star_build_config INTERFACE WITH_GZFILEOP)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
@@ -341,79 +350,77 @@ find_package(cpr CONFIG REQUIRED)
 find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-if (NOT STAR_SYSTEM_HAIKU)
-	find_package(Opus CONFIG REQUIRED)
-	find_package(re2 CONFIG REQUIRED)
+if(NOT STAR_SYSTEM_HAIKU)
+  find_package(re2 CONFIG REQUIRED)
 endif()
-target_include_directories(star_build_config SYSTEM INTERFACE
-    ${FREETYPE_INCLUDE_DIRS}
-    ${OGGVORBIS_INCLUDE_DIR}
-)
 
-set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
-    zlib-ng::zlib
-    PNG::PNG
-    cpr::cpr
-    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
-    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
-    $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
-    imgui::imgui
-    ${VORBISFILE_LIBRARY}
-    ${VORBIS_LIBRARY}
-    ${OGG_LIBRARY}
-)
+target_include_directories(star_vorbis_dependencies SYSTEM INTERFACE
+  ${VORBIS_INCLUDE_DIR} ${OGG_INCLUDE_DIR})
+target_link_libraries(star_vorbis_dependencies INTERFACE
+  ${VORBISFILE_LIBRARY} ${VORBIS_LIBRARY} ${OGG_LIBRARY})
 
-pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
-if (PKG_WAYLAND_FOUND)
-  message(STATUS "Wayland was found")
-else()
-  message(STATUS "Wayland was not found")
-endif()
+target_include_directories(star_core_dependencies SYSTEM INTERFACE ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(star_core_dependencies INTERFACE
+  PNG::PNG
+  $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
+  star_vorbis_dependencies
+  $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
+  $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>)
+target_link_libraries(star_module_dependencies INTERFACE
+  zlib-ng::zlib cpr::cpr star_vorbis_dependencies)
+# Lua's ImGui bindings are available in headless builds too.
+target_link_libraries(star_extern_dependencies INTERFACE imgui::imgui)
 
 if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
-  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
+  target_link_libraries(star_core_dependencies INTERFACE cpptrace::cpptrace)
   message(STATUS "Using cpptrace")
 endif()
 
 if(STAR_BUILD_GUI)
+  add_library(star_application_dependencies INTERFACE)
+  add_library(star_voice_dependencies INTERFACE)
+  add_library(star_client_dependencies INTERFACE)
+
   find_package(SDL3 CONFIG REQUIRED)
-
-  set(STAR_EXT_GUI_LIBS
-    $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>
-    $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
-  )
-
+  set(STAR_SDL_TARGET $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
+  if(NOT STAR_SYSTEM_HAIKU)
+    find_package(Opus CONFIG REQUIRED)
+  endif()
 
-  target_include_directories(star_gui_dependencies SYSTEM INTERFACE ${GLEW_INCLUDE_DIR})
-  set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
-      ${OPENGL_LIBRARY}
-      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
-  )
+  target_link_libraries(star_application_dependencies INTERFACE
+    ${STAR_SDL_TARGET}
+    OpenGL::GL
+    $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW::GLEW>
+    $<IF:$<TARGET_EXISTS:imgui::imgui_backends>,imgui::imgui_backends,imgui::imgui>)
+  target_link_libraries(star_voice_dependencies INTERFACE
+    ${STAR_SDL_TARGET}
+    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>)
+  target_include_directories(star_client_dependencies SYSTEM INTERFACE ${FREETYPE_INCLUDE_DIRS})
+  target_link_libraries(star_client_dependencies INTERFACE
+    imgui::imgui
+    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
+    $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>)
 
   if(STAR_SYSTEM_MACOS)
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} "-framework CoreAudio")
+    target_link_libraries(star_application_dependencies INTERFACE "-framework CoreAudio")
   endif()
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-    target_include_directories(star_gui_dependencies SYSTEM INTERFACE ${STEAM_API_INCLUDE_DIR})
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
+    add_library(star_steam_dependencies INTERFACE)
+    target_include_directories(star_steam_dependencies SYSTEM INTERFACE ${STEAM_API_INCLUDE_DIR})
+    target_link_libraries(star_steam_dependencies INTERFACE ${STEAM_API_LIBRARY})
+    target_link_libraries(star_application_dependencies INTERFACE star_steam_dependencies)
   endif()
 
   if(STAR_ENABLE_DISCORD_INTEGRATION)
     find_package(DiscordApi REQUIRED)
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
+    target_link_libraries(star_application_dependencies INTERFACE ${DISCORD_API_LIBRARY})
   endif()
-endif()
-
-target_link_libraries(star_build_config INTERFACE ${STAR_EXT_LIBS})
-if(STAR_BUILD_GUI)
-  target_link_libraries(star_gui_dependencies INTERFACE ${STAR_EXT_GUI_LIBS})
 endif()
 
 # Set basic build flags, include all the relevant source directories, based on

@@ -216,8 +216,8 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
           StarTickRateMonitor.cppm)
 target_include_directories (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
-target_link_libraries (star_modules PRIVATE star_build_config)
-target_link_libraries (star_core PUBLIC star_modules PRIVATE star_build_config)
+target_link_libraries (star_modules PRIVATE star_build_config star_module_dependencies)
+target_link_libraries (star_core PRIVATE star_modules star_build_config star_core_dependencies)
 # Sources that import a module need the module flags and the module dependency
 # scan too; CMake only turns those on for targets that declare module sources.
 set_target_properties (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)

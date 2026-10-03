@@ -492,7 +492,7 @@ target_include_directories (star_game PRIVATE
   )
 
 # See the note in base/CMakeLists.txt: star_game imports a module too.
-target_link_libraries (star_game PUBLIC star_modules star_base_modules star_game_modules PRIVATE star_build_config)
+target_link_libraries (star_game PRIVATE star_base_modules star_game_modules star_build_config)
 set_target_properties (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(STAR_PRECOMPILED_HEADERS)

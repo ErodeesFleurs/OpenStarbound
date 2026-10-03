@@ -1,4 +1,4 @@
-{ lib, stdenv, fetchFromGitHub, cmake, ninja, sdl3, freetype, libGL }:
+{ lib, stdenv, fetchFromGitHub, cmake, ninja, sdl3, freetype, libGL, guiSupport ? true }:
 
 stdenv.mkDerivation {
   pname = "openstarbound-imgui";
@@ -16,7 +16,10 @@ stdenv.mkDerivation {
 
   strictDeps = true;
   nativeBuildInputs = [ cmake ninja ];
-  propagatedBuildInputs = [ sdl3 freetype ] ++ lib.optional stdenv.hostPlatform.isLinux libGL;
+  propagatedBuildInputs = [ freetype ]
+    ++ lib.optional guiSupport sdl3
+    ++ lib.optional (guiSupport && stdenv.hostPlatform.isLinux) libGL;
+  cmakeFlags = [ (lib.cmakeBool "IMGUI_BUILD_GUI_BACKENDS" guiSupport) ];
 
   postPatch = ''
     cp ${./imgui/CMakeLists.txt} CMakeLists.txt
@@ -27,7 +30,7 @@ stdenv.mkDerivation {
   '';
 
   meta = {
-    description = "ImGui 1.92.8 with SDL3, OpenGL3 and FreeType, as OpenStarbound builds it";
+    description = "ImGui 1.92.8 with FreeType and optional SDL3/OpenGL3 backends";
     homepage = "https://github.com/ocornut/imgui";
     license = lib.licenses.mit;
     platforms = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];

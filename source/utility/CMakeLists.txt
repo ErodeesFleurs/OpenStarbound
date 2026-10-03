@@ -8,7 +8,8 @@ target_include_directories (asset_packer PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (asset_packer PRIVATE star_modules star_base_modules star_build_config)
+target_link_libraries (asset_packer PRIVATE star_base_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (asset_packer PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_executable (asset_unpacker
@@ -21,7 +22,8 @@ target_include_directories (asset_unpacker PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (asset_unpacker PRIVATE star_modules star_base_modules star_build_config)
+target_link_libraries (asset_unpacker PRIVATE star_base_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (asset_unpacker PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_executable (btree_repacker
@@ -34,7 +36,8 @@ target_include_directories (btree_repacker PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (btree_repacker PRIVATE star_modules star_base_modules star_build_config)
+target_link_libraries (btree_repacker PRIVATE star_base_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 
 add_executable (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -46,7 +49,8 @@ target_include_directories (dump_versioned_json PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (dump_versioned_json PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (dump_versioned_json PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 
 add_executable (make_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -58,7 +62,8 @@ target_include_directories (make_versioned_json PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (make_versioned_json PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (make_versioned_json PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
   set_target_properties (asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json
@@ -79,7 +84,8 @@ target_include_directories (update_tilesets PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (update_tilesets PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (update_tilesets PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (update_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_executable (fix_embedded_tilesets
@@ -92,7 +98,8 @@ target_include_directories (fix_embedded_tilesets PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (fix_embedded_tilesets PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (fix_embedded_tilesets PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (fix_embedded_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_executable (map_grep
@@ -105,7 +112,8 @@ target_include_directories (map_grep PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (map_grep PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+target_link_libraries (map_grep PRIVATE star_base_modules star_game_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (map_grep PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)

@@ -173,8 +173,6 @@
             sdl3
             glew
             libGL
-            wayland
-            libxkbcommon
           ];
           shellFor =
             package:

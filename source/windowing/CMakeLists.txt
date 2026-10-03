@@ -75,7 +75,7 @@ target_include_directories (star_windowing PRIVATE
     ${STAR_RENDERING_INCLUDES}
     ${STAR_WINDOWING_INCLUDES}
   )
-target_link_libraries (star_windowing PRIVATE star_game_modules star_build_config star_gui_dependencies)
+target_link_libraries (star_windowing PRIVATE star_game_modules star_build_config)
 set_target_properties (star_windowing PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)

@@ -114,7 +114,7 @@ target_include_directories (star_frontend_modules PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_link_libraries (star_frontend_modules PUBLIC star_game_modules PRIVATE star_build_config star_gui_dependencies)
+target_link_libraries (star_frontend_modules PUBLIC star_game_modules PRIVATE star_build_config)
 
 add_library (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 target_include_directories (star_frontend PRIVATE
@@ -128,7 +128,7 @@ target_include_directories (star_frontend PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_link_libraries (star_frontend PUBLIC star_frontend_modules star_game_modules PRIVATE star_build_config star_gui_dependencies)
+target_link_libraries (star_frontend PRIVATE star_frontend_modules star_build_config star_voice_dependencies)
 set_target_properties (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(STAR_PRECOMPILED_HEADERS)

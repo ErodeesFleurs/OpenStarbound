@@ -10,7 +10,9 @@ target_include_directories (json_tool PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
   )
-target_link_libraries (json_tool PRIVATE star_modules star_build_config star_gui_dependencies Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries (json_tool PRIVATE star_modules star_build_config
+  $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
+  Qt5::Core Qt5::Gui Qt5::Widgets)
 
 set_target_properties (json_tool PROPERTIES AUTOMOC ON)
 
