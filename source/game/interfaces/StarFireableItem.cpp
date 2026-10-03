@@ -1,6 +1,5 @@
 #include "StarFireableItem.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarWorldLuaBindings.hpp"
 #include "StarItem.hpp"
 #include "StarWorld.hpp"
 

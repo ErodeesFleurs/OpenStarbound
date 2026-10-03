@@ -6,9 +6,6 @@
 #include "StarDamageManager.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarEmoteProcessor.hpp"
 #include "StarTreasure.hpp"
 #include "StarEncode.hpp"
@@ -25,6 +22,7 @@
 #include "StarSpeciesDatabase.hpp"
 
 import star.networked_animator_lua_bindings;
+import star.entity_lua_bindings;
 import star.songbook_lua_bindings;
 import star.behavior_lua_bindings;
 import star.scripted_animator_lua_bindings;

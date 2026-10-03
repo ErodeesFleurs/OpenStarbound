@@ -18,7 +18,7 @@ ADD_LIBRARY (star_server_modules STATIC)
 TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarServerQueryThread.cppm
     StarServerRconThread.cppm)
-TARGET_LINK_LIBRARIES (star_server_modules PUBLIC star_modules)
+TARGET_LINK_LIBRARIES (star_server_modules PUBLIC star_modules PRIVATE star_game_modules)
 
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

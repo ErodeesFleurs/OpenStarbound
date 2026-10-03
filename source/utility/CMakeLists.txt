@@ -56,11 +56,13 @@ ADD_EXECUTABLE (update_tilesets
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   update_tilesets.cpp tileset_updater.cpp)
 TARGET_LINK_LIBRARIES (update_tilesets star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
+SET_TARGET_PROPERTIES (update_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 ADD_EXECUTABLE (fix_embedded_tilesets
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   fix_embedded_tilesets.cpp)
 TARGET_LINK_LIBRARIES (fix_embedded_tilesets star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
+SET_TARGET_PROPERTIES (fix_embedded_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 #ADD_EXECUTABLE (world_benchmark
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

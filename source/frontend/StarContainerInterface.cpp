@@ -12,11 +12,11 @@
 #include "StarItemDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarInput.hpp"
 
+import star.player_lua_bindings;
 import star.item_tooltip;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;

@@ -76,3 +76,5 @@ SET (star_windowing_SOURCES
     )
 
 ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
+TARGET_LINK_LIBRARIES (star_windowing PRIVATE star_game_modules)
+SET_TARGET_PROPERTIES (star_windowing PROPERTIES CXX_SCAN_FOR_MODULES ON)

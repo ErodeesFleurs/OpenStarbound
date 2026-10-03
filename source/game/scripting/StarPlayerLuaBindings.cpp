@@ -1,5 +1,7 @@
+module;
+
 #include "StarJson.hpp"
-#include "StarPlayerLuaBindings.hpp"
+#include "StarLua.hpp"
 #include "StarClientContext.hpp"
 #include "StarItem.hpp"
 #include "StarItemDatabase.hpp"
@@ -17,6 +19,7 @@
 #include "StarPlayerCodexes.hpp"
 #include "StarCodex.hpp"
 
+module star.player_lua_bindings;
 import star.networked_animator_lua_bindings;
 
 namespace Star {

@@ -27,15 +27,15 @@
 #include "StarPlayerCompanions.hpp"
 #include "StarPlayerDeployment.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarQuestManager.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarStatistics.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
 #include "StarDanceDatabase.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.player_lua_bindings;
+import star.entity_lua_bindings;
 import star.networked_animator_lua_bindings;
 import star.inspection_tool;
 import star.songbook_lua_bindings;

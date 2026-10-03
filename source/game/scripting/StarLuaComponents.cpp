@@ -1,7 +1,8 @@
 #include "StarLuaComponents.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarScriptableThread.hpp"
+
+import star.root_lua_bindings;
 
 namespace Star {
 

@@ -1,10 +1,24 @@
-#include "StarEntityLuaBindings.hpp"
+module;
+
+#include "StarJson.hpp"
+#include "StarLua.hpp"
+#include "StarEntity.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarWorld.hpp"
+
+module star.entity_lua_bindings;
+
+namespace Star::LuaBindings::EntityCallbacks {
+  EntityId id(Entity const* entity);
+  LuaTable damageTeam(Entity const* entity, LuaEngine& engine);
+  bool isValidTarget(Entity const* entity, EntityId entityId);
+  Vec2F distanceToEntity(Entity const* entity, EntityId entityId);
+  bool entityInSight(Entity const* entity, EntityId entityId);
+}
 
 namespace Star {
 

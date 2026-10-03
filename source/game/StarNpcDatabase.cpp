@@ -11,7 +11,6 @@
 #include "StarAssets.hpp"
 #include "StarEncode.hpp"
 #include "StarArmors.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 

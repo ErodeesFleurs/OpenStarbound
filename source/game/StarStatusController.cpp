@@ -3,13 +3,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarWorld.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarLiquidsDatabase.hpp"
 
 import star.networked_animator_lua_bindings;
+import star.entity_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 

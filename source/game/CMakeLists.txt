@@ -218,17 +218,11 @@ SET (star_game_HEADERS
     objects/StarContainerObject.hpp
 
     scripting/StarCameraLuaBindingsFwd.hpp
-    scripting/StarEntityLuaBindings.hpp
-    scripting/StarLuaHttpBindings.hpp
     scripting/StarLuaActorMovementComponent.hpp
     scripting/StarLuaAnimationComponent.hpp
     scripting/StarLuaGameConverters.hpp
     scripting/StarLuaComponents.hpp
     scripting/StarLuaRoot.hpp
-    scripting/StarMovementControllerLuaBindings.hpp
-    scripting/StarPlayerLuaBindings.hpp
-    scripting/StarRootLuaBindings.hpp
-    scripting/StarWorldLuaBindings.hpp
     scripting/StarScriptableThread.hpp
   )
 
@@ -418,21 +412,21 @@ SET (star_game_SOURCES
 
     objects/StarContainerObject.cpp
 
-    scripting/StarEntityLuaBindings.cpp
-    scripting/StarLuaHttpBindings.cpp
     scripting/StarLuaComponents.cpp
     scripting/StarLuaEntityUserdata.cpp
     scripting/StarLuaGameConverters.cpp
     scripting/StarLuaRoot.cpp
-    scripting/StarMovementControllerLuaBindings.cpp
-    scripting/StarPlayerLuaBindings.cpp
-    scripting/StarRootLuaBindings.cpp
-    scripting/StarWorldLuaBindings.cpp
     scripting/StarScriptableThread.cpp
   )
 
 ADD_LIBRARY (star_game_modules STATIC)
 TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+    scripting/StarEntityLuaBindings.cppm
+    scripting/StarMovementControllerLuaBindings.cppm
+    scripting/StarWorldLuaBindings.cppm
+    scripting/StarLuaHttpBindings.cppm
+    scripting/StarPlayerLuaBindings.cppm
+    scripting/StarRootLuaBindings.cppm
     scripting/StarItemLuaBindings.cppm
     scripting/StarStatusControllerLuaBindings.cppm
     scripting/StarFireableItemLuaBindings.cppm
@@ -480,7 +474,13 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarWorldGeneration.cppm
   )
 TARGET_LINK_LIBRARIES (star_game_modules PRIVATE star_modules)
-TARGET_SOURCES (star_game_modules PRIVATE scripting/StarCameraLuaBindings.cpp)
+TARGET_SOURCES (star_game_modules PRIVATE
+    scripting/StarCameraLuaBindings.cpp
+    scripting/StarEntityLuaBindings.cpp
+    scripting/StarPlayerLuaBindings.cpp
+    scripting/StarMovementControllerLuaBindings.cpp
+    scripting/StarWorldLuaBindings.cpp
+  )
 SET_TARGET_PROPERTIES (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})

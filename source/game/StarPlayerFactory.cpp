@@ -3,7 +3,6 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 

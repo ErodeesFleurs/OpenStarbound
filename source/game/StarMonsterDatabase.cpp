@@ -5,7 +5,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 

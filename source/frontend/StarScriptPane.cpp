@@ -3,7 +3,6 @@
 #include "StarAssets.hpp"
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarWorldClient.hpp"
 #include "StarPlayer.hpp"
@@ -13,6 +12,7 @@
 #include "StarItemGridWidget.hpp"
 #include "StarImageWidget.hpp"
 
+import star.player_lua_bindings;
 import star.simple_tooltip;
 import star.item_tooltip;
 import star.config_lua_bindings;

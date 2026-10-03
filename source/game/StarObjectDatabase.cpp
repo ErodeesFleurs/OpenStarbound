@@ -9,7 +9,6 @@
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
 #include "StarContainerObject.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 

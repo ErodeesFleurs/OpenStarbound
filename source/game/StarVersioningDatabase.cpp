@@ -4,8 +4,6 @@
 #include "StarLexicalCast.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarAssets.hpp"
 #include "StarStoredFunctions.hpp"
@@ -13,6 +11,8 @@
 #include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.root_lua_bindings;
 
 namespace Star {
 

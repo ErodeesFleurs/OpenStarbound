@@ -19,7 +19,6 @@
 #include "StarLiquidsDatabase.hpp"
 #include "StarChatProcessor.hpp"
 #include "StarAssets.hpp"
-#include "StarWorldLuaBindings.hpp"
 #include "StarString.hpp"
 
 import star.universe_server_lua_bindings;

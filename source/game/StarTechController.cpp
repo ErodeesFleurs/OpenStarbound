@@ -3,9 +3,6 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarPlayer.hpp"
 #include "StarRoot.hpp"
 #include "StarScriptedEntity.hpp"
@@ -13,6 +10,8 @@
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 
+import star.player_lua_bindings;
+import star.entity_lua_bindings;
 import star.networked_animator_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;

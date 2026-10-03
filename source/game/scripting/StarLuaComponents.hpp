@@ -4,9 +4,10 @@
 #include "StarLogging.hpp"
 #include "StarListener.hpp"
 #include "StarWorld.hpp"
-#include "StarWorldLuaBindings.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarLuaGameConverters.hpp"
+
+import star.world_lua_bindings;
 
 namespace Star {
 

@@ -6,10 +6,10 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 
 import star.config_lua_bindings;
+import star.root_lua_bindings;
 
 namespace Star {
 

@@ -1,7 +1,7 @@
 #include "StarRootLoader.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
+
+import star.root_lua_bindings;
 
 using namespace Star;
 

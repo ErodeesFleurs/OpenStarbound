@@ -14,13 +14,13 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerTech.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarQuestManager.hpp"
 #include "StarClientContext.hpp"
 #include "StarUuid.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.player_lua_bindings;
+import star.entity_lua_bindings;
 import star.config_lua_bindings;
 import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;

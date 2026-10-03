@@ -1,6 +1,9 @@
-#include "StarMovementControllerLuaBindings.hpp"
+module;
+#include "StarLua.hpp"
 #include "StarMovementController.hpp"
 #include "StarLuaGameConverters.hpp"
+
+module star.movement_controller_lua_bindings;
 
 namespace Star {
 

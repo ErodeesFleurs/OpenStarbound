@@ -1,10 +1,10 @@
 #include "StarPlayerDeployment.hpp"
-#include "StarEntityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLuaBindings.hpp"
 #include "StarEntityRendering.hpp"
 
+import star.player_lua_bindings;
+import star.entity_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 

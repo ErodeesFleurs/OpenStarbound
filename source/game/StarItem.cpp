@@ -4,7 +4,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLogging.hpp"
-#include "StarWorldLuaBindings.hpp"
 
 namespace Star {
 

@@ -2,8 +2,9 @@
 #include "StarAssets.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLua.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import star.root_lua_bindings;
 
 namespace Star {
 
