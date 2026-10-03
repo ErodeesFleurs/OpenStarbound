@@ -157,50 +157,39 @@ stdenv.mkDerivation {
   ++ lib.optional (steamSupport || discordSupport) sdks
   ++ lib.optional qtSupport qt5.qtbase;
 
-  # Dependency discovery adaptations for nixpkgs, no upstream source change:
-  # CMake ships no `GLEW::glew_s` target, and upstream disables the build RPATH
-  # even though these binaries are copied out of the build tree instead of being
-  # installed by CMake.
+  # CMake's GLEW module does not provide the vendored GLEW fallback target.
   postPatch = ''
     substituteInPlace source/CMakeLists.txt \
       --replace-fail '$<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>' \
-        ${lib.escapeShellArg "\${GLEW_LIBRARY}"} \
-      --replace-fail 'set(CMAKE_SKIP_BUILD_RPATH TRUE)' \
-        'set(CMAKE_SKIP_BUILD_RPATH FALSE)'
-  ''
-  # Linking the ~750MB test binaries with the default GNU ld takes minutes per
-  # link (the sanitized ones are ~1.8GB and took 7), lld does it in seconds.
-  + lib.optionalString (sanitizers || asserts) ''
-    # Line tables only: it keeps the file:line in sanitizer and valgrind reports
-    # but cuts the binaries and their link time down a lot.  The per-configuration
-    # flags are set() unconditionally in the CMake files, so they have to be
-    # patched rather than overridden.  RelWithAsserts deliberately keeps NDEBUG
-    # off, so its flags carry no -DNDEBUG to patch.
-    substituteInPlace source/CMakeLists.txt \
-      --replace-fail 'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
-        'set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")' \
-      --replace-fail 'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")' \
-        'set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g1 -DNDEBUG -O3 -ffast-math")' \
-      --replace-fail 'set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")' \
-        'set(CMAKE_C_FLAGS_RELWITHASSERTS "-g1 -O3 -ffast-math")' \
-      --replace-fail 'set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")' \
-        'set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g1 -O3 -ffast-math")'
+        ${lib.escapeShellArg "\${GLEW_LIBRARY}"}
+  '';
+
+  # Append rather than replace the caller's compiler/linker flags. These are
+  # compiler-driver options: NIX_LDFLAGS would pass them directly to ld.
+  preConfigure = lib.optionalString sanitizers ''
+    sanitizerFlags="-fsanitize=address,undefined,enum,signed-integer-overflow"
+    export CFLAGS="''${CFLAGS-} $sanitizerFlags"
+    export CXXFLAGS="''${CXXFLAGS-} $sanitizerFlags"
+    export LDFLAGS="''${LDFLAGS-} $sanitizerFlags"
   '';
 
   cmakeDir = "../source";
-  # RelWithAsserts is the only configuration without -DNDEBUG, i.e. the only one
-  # where starAssert and DebugEnabled are compiled in.
+  # RelWithAsserts keeps optimization but omits NDEBUG, so starAssert and
+  # DebugEnabled remain live.
   cmakeBuildType = if asserts then "RelWithAsserts" else "RelWithDebInfo";
   cmakeFlags = [
     (lib.cmakeFeature "STAR_SOURCE_IDENTIFIER" sourceIdentifier)
     (lib.cmakeBool "STAR_BUILD_GUI" guiSupport)
-    # The maintenance utilities (map_grep and the tileset tools) are commented
-    # out in the CMake files; building them here keeps them from rotting.
+    # Include maintenance utilities (map_grep and tileset tools) in package builds.
     (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
     (lib.cmakeBool "BUILD_TESTING" withTests)
     (lib.cmakeBool "STAR_ENABLE_STEAM_INTEGRATION" steamSupport)
     (lib.cmakeBool "STAR_ENABLE_DISCORD_INTEGRATION" discordSupport)
     (lib.cmakeBool "STAR_BUILD_QT_TOOLS" qtSupport)
+    # These binaries are copied from the build tree instead of CMake-installed.
+    (lib.cmakeBool "CMAKE_SKIP_BUILD_RPATH" false)
+    # Line tables retain file:line diagnostics without enormous test binaries.
+    (lib.cmakeFeature "STAR_DEBUG_SYMBOL_LEVEL" (if sanitizers || asserts then "minimal" else "default"))
   ]
   ++ lib.optionals steamSupport [
     (lib.cmakeFeature "STEAM_API_INCLUDE_DIR" "${sdks}/include")
@@ -210,16 +199,7 @@ stdenv.mkDerivation {
     (lib.cmakeFeature "DISCORD_API_LIBRARY" "${sdks}/lib/libdiscord_game_sdk${sdkExtension}")
   ]
   ++ lib.optionals sanitizers [
-    # Note: cmakeFlags elements end up in a shell command, so they must not
-    # contain spaces.  The sanitizer runtimes have to be linked by the compiler
-    # driver, going through NIX_LDFLAGS would hand -fsanitize=... to ld itself.
-    # 'enum' is not part of -fsanitize=undefined and catches loads of enum
-    # values that no enumerator maps to (uninitialised enum members, for
-    # example); signed-integer-overflow is not in it either.
-    "-DSTAR_USE_JEMALLOC=false"
-    "-DCMAKE_C_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
-    "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
-    "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined,enum,signed-integer-overflow"
+    (lib.cmakeBool "STAR_USE_JEMALLOC" false)
   ];
 
   # core_tests carries the "NoAssets" label and runs without any game assets.

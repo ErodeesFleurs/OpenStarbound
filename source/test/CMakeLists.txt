@@ -1,15 +1,4 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
-
-# Add top-level test directory so  gtest-all.cc can find its own include file
-INCLUDE_DIRECTORIES (.)
-
-SET (star_core_tests_SOURCES
+set (star_core_tests_SOURCES
       gtest/gtest-all.cc
 
       core_tests_main.cpp
@@ -56,17 +45,26 @@ SET (star_core_tests_SOURCES
       variant_test.cpp
       vlq_test.cpp
     )
-ADD_EXECUTABLE (core_tests
+add_executable (core_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   ${star_core_tests_SOURCES})
+# gtest-all.cc includes its implementation files relative to the test directory.
+target_include_directories (core_tests PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 # The star libraries are referenced by their objects, which carries no usage
 # requirements, so the module target has to be linked in explicitly wherever a
 # source imports it.
-TARGET_LINK_LIBRARIES (core_tests star_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (core_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
-ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
+target_link_libraries (core_tests PRIVATE star_modules star_build_config)
+set_target_properties (core_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
+add_test (NAME core_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:core_tests> COMMAND core_tests)
 
-SET (star_game_tests_SOURCES
+set (star_game_tests_SOURCES
       gtest/gtest-all.cc
 
       game_tests_main.cpp
@@ -87,12 +85,24 @@ SET (star_game_tests_SOURCES
       weather_domain_test.cpp
       weather_test.cpp
     )
-ADD_EXECUTABLE (game_tests
+add_executable (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
-TARGET_LINK_LIBRARIES (game_tests star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (game_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
-ADD_TEST (NAME game_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
+target_include_directories (game_tests PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+target_link_libraries (game_tests PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+set_target_properties (game_tests PROPERTIES CXX_SCAN_FOR_MODULES ON)
+add_test (NAME game_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:game_tests> COMMAND game_tests)
 
-SET_TESTS_PROPERTIES(core_tests PROPERTIES
+set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets")
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (core_tests game_tests PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

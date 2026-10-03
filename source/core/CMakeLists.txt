@@ -1,9 +1,4 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-  )
-
-SET (star_core_HEADERS
+set (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
@@ -122,7 +117,7 @@ SET (star_core_HEADERS
     scripting/StarUtilityLuaBindings.hpp
   )
 
-SET (star_core_SOURCES
+set (star_core_SOURCES
     StarAudio.cpp
     StarAssetPath.cpp
     StarBTreeDatabase.cpp
@@ -175,20 +170,20 @@ SET (star_core_SOURCES
     scripting/StarUtilityLuaBindings.cpp
   )
 
-IF (STAR_SYSTEM_FAMILY_UNIX)
-  SET (star_core_SOURCES ${star_core_SOURCES}
+if (STAR_SYSTEM_FAMILY_UNIX)
+  set (star_core_SOURCES ${star_core_SOURCES}
       StarException_unix.cpp
       StarFile_unix.cpp
       StarLockFile_unix.cpp
       StarThread_unix.cpp
       StarTime_unix.cpp
     )
-ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
-  SET (star_core_HEADERS ${star_core_HEADERS}
+elseif (STAR_SYSTEM_FAMILY_WINDOWS)
+  set (star_core_HEADERS ${star_core_HEADERS}
       StarString_windows.hpp
     )
 
-  SET (star_core_SOURCES ${star_core_SOURCES}
+  set (star_core_SOURCES ${star_core_SOURCES}
       StarFile_windows.cpp
       StarLockFile_windows.cpp
       StarMiniDump_windows.cpp
@@ -198,10 +193,11 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarException_windows.cpp
     )
 
-ENDIF ()
+endif ()
 
-CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
-ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
 # The C++20 modules of this library.  A module interface unit cannot carry the
 # precompiled header the rest of star_core uses (GCC rejects the module
@@ -212,29 +208,34 @@ ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_
 # The modules are single-file: CMake rejects an implementation unit in this file
 # set ("does not provide a module interface unit or partition") and gives a
 # source outside it no module flags, so the definitions live in the interface.
-ADD_LIBRARY (star_modules STATIC)
-TARGET_SOURCES (star_modules PUBLIC FILE_SET CXX_MODULES
+add_library (star_modules STATIC)
+target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
           StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm
           StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
           StarTickRateMonitor.cppm)
-TARGET_INCLUDE_DIRECTORIES (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
-TARGET_LINK_LIBRARIES (star_core PUBLIC star_modules)
+target_include_directories (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
+target_link_libraries (star_modules PRIVATE star_build_config)
+target_link_libraries (star_core PUBLIC star_modules PRIVATE star_build_config)
 # Sources that import a module need the module flags and the module dependency
 # scan too; CMake only turns those on for targets that declare module sources.
-SET_TARGET_PROPERTIES (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)
+set_target_properties (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers (star_core PUBLIC StarPch.hpp)
+endif()
 
-IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
-  SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
-ENDIF()
+if(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
+  set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_OPTIONS "-fno-fast-math;-fassociative-math;-freciprocal-math")
+endif()
 
-IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
-  SET_SOURCE_FILES_PROPERTIES(StarMemory.cpp PROPERTIES
+if(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
+  set_source_files_properties(StarMemory.cpp PROPERTIES
           COMPILE_DEFINITIONS STAR_JEMALLOC_IS_PREFIXED
           )
-ENDIF()
+endif()
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (star_core star_modules PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

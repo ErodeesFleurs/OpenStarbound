@@ -1,15 +1,4 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_WINDOWING_INCLUDES}
-  )
-
-SET (star_windowing_HEADERS
+set (star_windowing_HEADERS
         StarButtonGroup.hpp
         StarButtonWidget.hpp
         StarCanvasWidget.hpp
@@ -42,7 +31,7 @@ SET (star_windowing_HEADERS
         StarWidgetParsing.hpp
     )
 
-SET (star_windowing_SOURCES
+set (star_windowing_SOURCES
         StarButtonGroup.cpp
         StarButtonWidget.cpp
         StarCanvasWidget.cpp
@@ -75,6 +64,20 @@ SET (star_windowing_SOURCES
         StarWidgetParsing.cpp
     )
 
-ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
-TARGET_LINK_LIBRARIES (star_windowing PRIVATE star_game_modules)
-SET_TARGET_PROPERTIES (star_windowing PROPERTIES CXX_SCAN_FOR_MODULES ON)
+add_library (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
+target_include_directories (star_windowing PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES}
+    ${STAR_WINDOWING_INCLUDES}
+  )
+target_link_libraries (star_windowing PRIVATE star_game_modules star_build_config star_gui_dependencies)
+set_target_properties (star_windowing PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (star_windowing PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

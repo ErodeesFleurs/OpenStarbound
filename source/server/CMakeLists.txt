@@ -1,38 +1,47 @@
-INCLUDE_DIRECTORIES (
+if (STAR_SYSTEM_WINDOWS)
+  set (star_server_RESOURCES
+      starbound_server.rc
+      starbound_server.exe.manifest
+    )
+endif ()
+
+add_library (star_server_modules STATIC)
+target_sources (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES
+    StarServerQueryThread.cppm
+    StarServerRconThread.cppm)
+target_include_directories (star_server_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
+target_link_libraries (star_server_modules PUBLIC star_modules PRIVATE star_game_modules star_build_config)
 
-
-IF (STAR_SYSTEM_WINDOWS)
-  SET (star_server_RESOURCES
-      starbound_server.rc
-      starbound_server.exe.manifest
-    )
-ENDIF ()
-
-ADD_LIBRARY (star_server_modules STATIC)
-TARGET_SOURCES (star_server_modules PUBLIC FILE_SET CXX_MODULES FILES
-    StarServerQueryThread.cppm
-    StarServerRconThread.cppm)
-TARGET_LINK_LIBRARIES (star_server_modules PUBLIC star_modules PRIVATE star_game_modules)
-
-ADD_EXECUTABLE (starbound_server
+add_executable (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   main.cpp ${star_server_RESOURCES})
-SET_TARGET_PROPERTIES (starbound_server PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (starbound_server PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+set_target_properties (starbound_server PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers (starbound_server REUSE_FROM star_core)
+endif()
 
-IF(STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
-ELSEIF (UNIX)
-  SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
-ENDIF()
+if(STAR_SYSTEM_MACOS)
+  target_link_options (starbound_server PRIVATE "LINKER:-rpath,@executable_path")
+elseif (UNIX)
+  target_link_options (starbound_server PRIVATE "LINKER:--export-dynamic" "LINKER:-rpath,$ORIGIN")
+endif()
 
-TARGET_LINK_LIBRARIES (starbound_server star_modules star_base_modules star_server_modules star_game_modules ${STAR_EXT_LIBS})
+target_link_libraries (starbound_server PRIVATE star_modules star_base_modules star_server_modules star_game_modules star_build_config)
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (star_server_modules starbound_server PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

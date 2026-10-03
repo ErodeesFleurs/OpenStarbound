@@ -1,18 +1,19 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-  )
+find_package (Qt5Core)
+find_package (Qt5Widgets)
 
-FIND_PACKAGE (Qt5Core)
-FIND_PACKAGE (Qt5Widgets)
-
-SET (CMAKE_INCLUDE_CURRENT_DIR ON)
-SET (CMAKE_AUTOMOC ON)
-
-ADD_EXECUTABLE (json_tool WIN32
+add_executable (json_tool WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   json_tool.cpp editor_gui.cpp)
-TARGET_LINK_LIBRARIES (json_tool star_modules ${STAR_EXT_LIBS} Qt5::Core Qt5::Gui Qt5::Widgets)
+target_include_directories (json_tool PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+  )
+target_link_libraries (json_tool PRIVATE star_modules star_build_config star_gui_dependencies Qt5::Core Qt5::Gui Qt5::Widgets)
 
-SET (CMAKE_AUTOMOC OFF)
-SET (CMAKE_INCLUDE_CURRENT_DIR OFF)
+set_target_properties (json_tool PROPERTIES AUTOMOC ON)
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (json_tool PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

@@ -1,16 +1,4 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_WINDOWING_INCLUDES}
-    ${STAR_FRONTEND_INCLUDES}
-  )
-
-SET (star_frontend_HEADERS
+set (star_frontend_HEADERS
     StarActionBar.hpp
     StarAiInterface.hpp
     StarBaseScriptPane.hpp
@@ -58,7 +46,7 @@ SET (star_frontend_HEADERS
     StarWireInterface.hpp
   )
 
-SET (star_frontend_SOURCES
+set (star_frontend_SOURCES
     StarActionBar.cpp
     StarAiInterface.cpp
     StarBaseScriptPane.cpp
@@ -106,8 +94,8 @@ SET (star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
-ADD_LIBRARY (star_frontend_modules STATIC)
-TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
+add_library (star_frontend_modules STATIC)
+target_sources (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarSimpleTooltip.cppm
     StarHttpTrustDialog.cppm
     StarItemTooltip.cppm
@@ -115,12 +103,38 @@ TARGET_SOURCES (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarVoiceLuaBindings.cppm
     StarInterfaceLuaBindings.cppm
   )
-TARGET_LINK_LIBRARIES (star_frontend_modules PUBLIC star_game_modules)
+target_include_directories (star_frontend_modules PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES}
+    ${STAR_WINDOWING_INCLUDES}
+    ${STAR_FRONTEND_INCLUDES}
+  )
+target_link_libraries (star_frontend_modules PUBLIC star_game_modules PRIVATE star_build_config star_gui_dependencies)
 
-ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-TARGET_LINK_LIBRARIES (star_frontend PUBLIC star_frontend_modules star_game_modules)
-SET_TARGET_PROPERTIES (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
+add_library (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
+target_include_directories (star_frontend PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES}
+    ${STAR_WINDOWING_INCLUDES}
+    ${STAR_FRONTEND_INCLUDES}
+  )
+target_link_libraries (star_frontend PUBLIC star_frontend_modules star_game_modules PRIVATE star_build_config star_gui_dependencies)
+set_target_properties (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers (star_frontend REUSE_FROM star_core)
+endif()
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (star_frontend_modules star_frontend PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

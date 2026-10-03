@@ -1,93 +1,116 @@
-INCLUDE_DIRECTORIES (
+add_executable (asset_packer
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
+  asset_packer.cpp)
+target_include_directories (asset_packer PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
+target_link_libraries (asset_packer PRIVATE star_modules star_base_modules star_build_config)
+set_target_properties (asset_packer PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-ADD_EXECUTABLE (asset_packer
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
-  asset_packer.cpp)
-TARGET_LINK_LIBRARIES (asset_packer star_modules star_base_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (asset_packer PROPERTIES CXX_SCAN_FOR_MODULES ON)
-
-ADD_EXECUTABLE (asset_unpacker
+add_executable (asset_unpacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_unpacker.cpp)
-TARGET_LINK_LIBRARIES (asset_unpacker star_modules star_base_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (asset_unpacker PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (asset_unpacker PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (asset_unpacker PRIVATE star_modules star_base_modules star_build_config)
+set_target_properties (asset_unpacker PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-ADD_EXECUTABLE (btree_repacker
+add_executable (btree_repacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   btree_repacker.cpp)
-TARGET_LINK_LIBRARIES (btree_repacker star_modules star_base_modules ${STAR_EXT_LIBS})
+target_include_directories (btree_repacker PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (btree_repacker PRIVATE star_modules star_base_modules star_build_config)
 
-ADD_EXECUTABLE (dump_versioned_json
+add_executable (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
-TARGET_LINK_LIBRARIES (dump_versioned_json star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
+target_include_directories (dump_versioned_json PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (dump_versioned_json PRIVATE star_modules star_base_modules star_game_modules star_build_config)
 
-#ADD_EXECUTABLE (game_repl
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  game_repl.cpp)
-#TARGET_LINK_LIBRARIES (game_repl ${STAR_EXT_LIBS})
-
-ADD_EXECUTABLE (make_versioned_json
+add_executable (make_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   make_versioned_json.cpp)
-TARGET_LINK_LIBRARIES (make_versioned_json star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
+target_include_directories (make_versioned_json PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (make_versioned_json PRIVATE star_modules star_base_modules star_game_modules star_build_config)
 
-#ADD_EXECUTABLE (planet_mapgen
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  planet_mapgen.cpp)
-#TARGET_LINK_LIBRARIES (planet_mapgen ${STAR_EXT_LIBS})
-
-#ADD_EXECUTABLE (render_terrain_selector
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  render_terrain_selector.cpp)
-#TARGET_LINK_LIBRARIES (render_terrain_selector ${STAR_EXT_LIBS})
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json
+      PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()
 
 # Maintenance utilities that are not part of a release.  Built when
 # STAR_BUILD_DEV_TOOLS is on, so that they do not rot unnoticed.
 if(STAR_BUILD_DEV_TOOLS)
 
-ADD_EXECUTABLE (update_tilesets
+add_executable (update_tilesets
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   update_tilesets.cpp tileset_updater.cpp)
-TARGET_LINK_LIBRARIES (update_tilesets star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (update_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (update_tilesets PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (update_tilesets PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+set_target_properties (update_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-ADD_EXECUTABLE (fix_embedded_tilesets
+add_executable (fix_embedded_tilesets
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   fix_embedded_tilesets.cpp)
-TARGET_LINK_LIBRARIES (fix_embedded_tilesets star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (fix_embedded_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (fix_embedded_tilesets PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (fix_embedded_tilesets PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+set_target_properties (fix_embedded_tilesets PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-#ADD_EXECUTABLE (world_benchmark
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  world_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (world_benchmark ${STAR_EXT_LIBS})
-
-#ADD_EXECUTABLE (generation_benchmark
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  generation_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (generation_benchmark ${STAR_EXT_LIBS})
-
-#ADD_EXECUTABLE (dungeon_generation_benchmark
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  dungeon_generation_benchmark.cpp)
-#TARGET_LINK_LIBRARIES (dungeon_generation_benchmark ${STAR_EXT_LIBS})
-
-ADD_EXECUTABLE (map_grep
+add_executable (map_grep
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   map_grep.cpp)
-TARGET_LINK_LIBRARIES (map_grep star_modules star_base_modules star_game_modules ${STAR_EXT_LIBS})
-SET_TARGET_PROPERTIES (map_grep PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (map_grep PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (map_grep PRIVATE star_modules star_base_modules star_game_modules star_build_config)
+set_target_properties (map_grep PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (update_tilesets fix_embedded_tilesets map_grep
+      PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()
 
-#ADD_EXECUTABLE (word_count
-#  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-#  word_count.cpp)
-#TARGET_LINK_LIBRARIES (word_count ${STAR_EXT_LIBS})
+endif()

@@ -1,12 +1,4 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
-
-SET (star_game_HEADERS
+set (star_game_HEADERS
     StarActorMovementController.hpp
     StarAiDatabase.hpp
     StarAiTypes.hpp
@@ -226,7 +218,7 @@ SET (star_game_HEADERS
     scripting/StarScriptableThread.hpp
   )
 
-SET (star_game_SOURCES
+set (star_game_SOURCES
     StarActorMovementController.cpp
     StarAiDatabase.cpp
     StarAiTypes.cpp
@@ -419,8 +411,8 @@ SET (star_game_SOURCES
     scripting/StarScriptableThread.cpp
   )
 
-ADD_LIBRARY (star_game_modules STATIC)
-TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+add_library (star_game_modules STATIC)
+target_sources (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     scripting/StarEntityLuaBindings.cppm
     scripting/StarMovementControllerLuaBindings.cppm
     scripting/StarWorldLuaBindings.cppm
@@ -473,22 +465,40 @@ TARGET_SOURCES (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarMicroDungeon.cppm
     StarWorldGeneration.cppm
   )
-TARGET_LINK_LIBRARIES (star_game_modules PRIVATE star_modules)
-TARGET_SOURCES (star_game_modules PRIVATE
+target_include_directories (star_game_modules PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_link_libraries (star_game_modules PRIVATE star_modules star_build_config)
+target_sources (star_game_modules PRIVATE
     scripting/StarCameraLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarMovementControllerLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
   )
-SET_TARGET_PROPERTIES (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
+set_target_properties (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+add_library (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+target_include_directories (star_game PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
 
 # See the note in base/CMakeLists.txt: star_game imports a module too.
-TARGET_LINK_LIBRARIES (star_game star_modules star_base_modules star_game_modules)
-SET_TARGET_PROPERTIES (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_link_libraries (star_game PUBLIC star_modules star_base_modules star_game_modules PRIVATE star_build_config)
+set_target_properties (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
-ENDIF()
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers (star_game REUSE_FROM star_core)
+endif()
+
+if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
+  set_target_properties (star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+endif()

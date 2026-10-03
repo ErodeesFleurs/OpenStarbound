@@ -1,31 +1,59 @@
 cmake_minimum_required(VERSION 3.28)
+# Remember command-line configuration flags before project() gives cache entries
+# their normal types. These values take precedence over project defaults.
+foreach(language C CXX)
+  foreach(config DEBUG RELWITHASSERTS RELWITHDEBINFO RELEASE)
+    set(flag_variable CMAKE_${language}_FLAGS_${config})
+    if(NOT DEFINED ${flag_variable})
+      unset(STAR_EXPLICIT_${language}_FLAGS_${config} CACHE)
+    endif()
+    get_property(flag_type CACHE ${flag_variable} PROPERTY TYPE)
+    get_property(flag_help CACHE ${flag_variable} PROPERTY HELPSTRING)
+    if(flag_type STREQUAL "UNINITIALIZED" OR flag_help MATCHES "specified on the command line")
+      set(STAR_EXPLICIT_${language}_FLAGS_${config} TRUE CACHE INTERNAL "Caller-selected configuration flags")
+    endif()
+  endforeach()
+endforeach()
+
+if(NOT DEFINED CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release CACHE STRING "Available build configurations")
+endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compiler commands")
 project(starbound)
 
-# GCC module interfaces produce .gcm files; sccache 0.7.7 restores only .o
-# on cache hits. Disable C++ launchers so importers always find their BMIs.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+# GCC module interfaces produce .gcm files; sccache cache hits restore only
+# object files, not BMIs. Other explicitly selected launchers are preserved.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_LAUNCHER MATCHES "(^|[/;])sccache([.;]|$)")
+  message(WARNING "Disabling the C++ sccache launcher: GCC module BMIs are not cached")
   set(CMAKE_CXX_COMPILER_LAUNCHER "")
-elseif(NOT CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
+endif()
+
+if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER OR
+    (NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
   find_program(SCCACHE_PATH sccache)
   if(SCCACHE_PATH)
-    message(STATUS "Using SCCache at ${SCCACHE_PATH}")
-    set(CMAKE_C_COMPILER_LAUNCHER ${SCCACHE_PATH})
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${SCCACHE_PATH})
+    set(STAR_DEFAULT_COMPILER_LAUNCHER "${SCCACHE_PATH}")
   else()
     find_program(CCACHE_PATH ccache)
     if(CCACHE_PATH)
-      set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PATH}")
-      set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PATH}")
-      message(STATUS "Using CCache")
+      set(STAR_DEFAULT_COMPILER_LAUNCHER "${CCACHE_PATH}")
+    endif()
+  endif()
+  if(STAR_DEFAULT_COMPILER_LAUNCHER)
+    if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER)
+      set(CMAKE_C_COMPILER_LAUNCHER "${STAR_DEFAULT_COMPILER_LAUNCHER}")
+    endif()
+    if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      set(CMAKE_CXX_COMPILER_LAUNCHER "${STAR_DEFAULT_COMPILER_LAUNCHER}")
     endif()
   endif()
 endif()
 
-if(CMAKE_CXX_COMPILER_LAUNCHER MATCHES "ccache")
+if(CMAKE_CXX_COMPILER_LAUNCHER MATCHES "(^|[/;])ccache([.;]|$)")
   set(STAR_CCACHE TRUE)
 else()
   set(STAR_CCACHE FALSE)
-  message(STATUS "Not using CCache")
 endif()
 
 # The default follows the ccache decision (a compiler cache and a precompiled
@@ -39,7 +67,7 @@ if(NOT DEFINED STAR_PRECOMPILED_HEADERS)
   endif()
 endif()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cmake")
 
 # One place for the language standard.  The per-platform flag blocks below used
 # to pass -std=c++20 for GNU/Clang while MSVC, Xcode and the vcpkg presets were
@@ -53,19 +81,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # scanned regardless. Avoid scanning every unrelated C++20 translation unit.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
-set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
-
-#include(CheckIPOSupported)
-#check_ipo_supported(RESULT lto_supported OUTPUT lto_output)
-#if(lto_supported)
-#  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-#endif()
-
-# Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
-# allow
-# SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
 
 # Discover all the relevant environment / system information and place the
 # result in STAR_* cmake variables.
@@ -122,7 +137,7 @@ if(NOT DEFINED STAR_COMPILER)
 
   if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
     set(STAR_COMPILER "clang")
-  elseif(CMAKE_COMPILER_IS_GNUC)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(STAR_COMPILER "gnu")
   elseif(MSVC)
     set(STAR_COMPILER "msvc")
@@ -157,6 +172,17 @@ option(STAR_LUA_APICHECK "Use lua api checks" OFF)
 option(STAR_USE_JEMALLOC "Use jemalloc allocators" OFF)
 option(STAR_USE_MIMALLOC "Use mimalloc allocators" OFF)
 option(STAR_USE_RPMALLOC "Use rpmalloc allocators" OFF)
+
+# "default" preserves Clang's line-table-only RelWithDebInfo behavior; "full"
+# requests full symbols and "minimal" is useful for sanitizer/assert packages.
+set(STAR_DEBUG_SYMBOL_LEVEL "default" CACHE STRING "Debug symbols: default, minimal, or full")
+set_property(CACHE STAR_DEBUG_SYMBOL_LEVEL PROPERTY STRINGS default minimal full)
+if(NOT STAR_DEBUG_SYMBOL_LEVEL MATCHES "^(default|minimal|full)$")
+  message(FATAL_ERROR "STAR_DEBUG_SYMBOL_LEVEL must be default, minimal, or full")
+endif()
+
+add_library(star_build_config INTERFACE)
+add_library(star_gui_dependencies INTERFACE)
 
 # Report all the discovered system / environment settings and all options.
 
@@ -204,7 +230,7 @@ message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
 # Set a cmake variable to true and define a corresponding C/C++ definition
 function(SET_FLAG flagValue)
   set(${flagValue} TRUE PARENT_SCOPE)
-  add_definitions(-D${flagValue})
+  target_compile_definitions(star_build_config INTERFACE ${flagValue})
 endfunction()
 
 if(STAR_ARCHITECTURE STREQUAL "i386")
@@ -242,241 +268,52 @@ elseif(STAR_COMPILER STREQUAL "msvc")
 endif()
 
 if(STAR_LUA_APICHECK)
-  add_definitions(-DLUA_USE_APICHECK)
+  target_compile_definitions(star_build_config INTERFACE LUA_USE_APICHECK)
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
   # LUA_USE_WINDOWS is automatically defined in luaconf if _WIN32 is defined
 elseif(STAR_SYSTEM_MACOS)
-  add_definitions(-DLUA_USE_MACOSX)
+  target_compile_definitions(star_build_config INTERFACE LUA_USE_MACOSX)
 elseif(STAR_SYSTEM_LINUX)
-  add_definitions(-DLUA_USE_LINUX)
+  target_compile_definitions(star_build_config INTERFACE LUA_USE_LINUX)
 elseif(STAR_SYSTEM_FAMILY_UNIX)
-  add_definitions(-DLUA_USE_POSIX)
+  target_compile_definitions(star_build_config INTERFACE LUA_USE_POSIX)
 endif()
 
 if(STAR_ENABLE_STEAM_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_STEAM_INTEGRATION)
+  target_compile_definitions(star_build_config INTERFACE STAR_ENABLE_STEAM_INTEGRATION)
 endif()
 
 if(STAR_ENABLE_DISCORD_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_DISCORD_INTEGRATION)
+  target_compile_definitions(star_build_config INTERFACE STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
 if(STAR_USE_JEMALLOC)
-  add_definitions(-DSTAR_USE_JEMALLOC)
+  target_compile_definitions(star_build_config INTERFACE STAR_USE_JEMALLOC)
 elseif(STAR_USE_MIMALLOC)
-  add_definitions(-DSTAR_USE_MIMALLOC)
+  target_compile_definitions(star_build_config INTERFACE STAR_USE_MIMALLOC)
 elseif(STAR_USE_RPMALLOC)
-  add_definitions(-DSTAR_USE_RPMALLOC -DENABLE_PRELOAD)
+  target_compile_definitions(star_build_config INTERFACE STAR_USE_RPMALLOC ENABLE_PRELOAD)
 endif()
 
-# Set C/C++ compiler flags based on build environment...
-
-if(STAR_COMPILER_GNU)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
-
-  if(STAR_SYSTEM_FAMILY_WINDOWS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthreads")
-  else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
-  endif()
-
-  if(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-  endif()
-
-  if(STAR_ENABLE_GCC_PROFILING)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-  endif()
-
-  set(CMAKE_C_FLAGS_DEBUG "-g -Og")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-
+# Compiler/configuration defaults belong only to in-tree compiled targets.
+include(StarBuildOptions)
+if((STAR_COMPILER_GNU OR STAR_COMPILER_CLANG) AND NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
-
-elseif(STAR_COMPILER_CLANG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
-
-  if(STAR_SYSTEM_MACOS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-export_dynamic")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-export_dynamic")
-    set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
-  elseif(NOT STAR_SYSTEM_WINDOWS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--export-dynamic")
-  endif()
-
-  set(CMAKE_C_FLAGS_DEBUG "-g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-
-	set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -DNDEBUG -O3 -ffast-math")
-
-	if(STAR_SYSTEM_WINDOWS)
-		set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gcodeview")
-		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gcodeview")
-	else()
-		set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gz=zlib")
-		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -gz=zlib")
-	endif()
-
-  set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-
-  set(CMAKE_SKIP_BUILD_RPATH TRUE)
-
-elseif(STAR_COMPILER_MSVC)
-  # /MP      - Multi-processor building
-  # /EHsc    - Enable normal C++ exception handling
-  # /bigobj  - More sections in .obj files (Cannot build in Debug without it)
-  # /MT      - Use multi-threaded statically linked C runtime library
-  # /GA      - Optimize for windows application
-  # /Ox      - Full optimization
-  # /fp:fast - Equivalent to -ffast-math
-  # /GS-     - Disable buffers security check
-  # /Zi      - Generates debugging information without Edit and Continue
-  # /Z7      - Like the above, but debugging information is stored per-object
-  # /Gy      - Use function-level linking
-  # /wd4996  - Disable warnings about unsafe C functions
-  # /wd4351  - Disable warnings about new behavior of default initialization of
-  #            arrays (which is the correct behavior anyway)
-  # /wd4800  - Disable warnings about using non-bool as true or false (useless
-  #            performance warning)
-  # /wd4244  - Disable warnings about type conversion loss of data, it's a nice
-  #            warning, but it triggers on lots and lots of harmless things that no
-  #            other compiler warns about, like passing an int as a float parameter
-  # /wd4305  - Disable warnings about truncation from double to float
-  # /wd4267  - Disable warnings about 64 - 32 bit truncation
-  # /wd4456  - Disable warnings about hiding previous local declaration
-  # /wd4503  - Silence warnings about MSVC generating a name so long it has to
-  #            truncate it
-  # /wd4250  - Silence "XX inherits YY via dominance"
-  # /wd4624  - Silence implicitly deleted destructor warnings that show up when
-  #            using unions in interesting ways.
-
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-
-  if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
-  endif()
-
-  set(CMAKE_C_FLAGS_DEBUG "/Z7 /Od")
-  set(CMAKE_CXX_FLAGS_DEBUG "/Z7 /Od")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-
-  set(CMAKE_C_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
-
-  if(STAR_ARCHITECTURE_I386)
-    # Assume all 32 bit target cpus support MMX, SSE, and SSE2
-
-    set(CMAKE_C_FLAGS_RELWITHASSERTS "${CMAKE_C_FLAGS_RELWITHASSERTS} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHASSERTS "${CMAKE_CXX_FLAGS_RELWITHASSERTS} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
-  endif()
-
-  add_definitions(/DUNICODE)
-  add_definitions(/D_UNICODE)
-  add_definitions(/DNOMINMAX)
-
-else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pthread -D_REENTRANT")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -D_REENTRANT")
-
-  set(CMAKE_C_FLAGS_DEBUG "-g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O2")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O2")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-DNDEBUG -g -O2")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-DNDEBUG -g -O2")
-
-  set(CMAKE_C_FLAGS_RELEASE "$-DNDEBUG -O2")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O2")
-
-endif()
-
-# Set other global build settings based on environment...
-
-if(STAR_SYSTEM_MACOS)
-  set(CMAKE_MODULE_LINKER_FLAGS "-flat_namespace -undefined suppress")
-elseif(STAR_SYSTEM_WINDOWS)
-  set(CMAKE_RC_COMPILER_INIT windres)
-
-  enable_language(RC) 
-  #if(STAR_COMPILER STREQUAL "msvc")
-    set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> /fo <OBJECT> <SOURCE>")
-  #else()
-  #  set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> <FLAGS> -O coff <DEFINES> -i <SOURCE> -o <OBJECT>")
-  #endif()
-endif()
-
-if(STAR_COMPILER STREQUAL "msvc")
-  # /largeaddressaware - Make 32 bit build able to use 3GB addresses
-  # /OPT:REF           - Eliminates functions and data that are never referenced
-  # /OPT:ICF           - Performs identical COMDAT folding
-  # /PDBCompress       - Hint to windows that it should compress the resulting PDB files
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress")
-
-  # Make sure RelWithAsserts has debugging enabled
-  set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS} /DEBUG")
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lws2_32 -liphlpapi -lshlwapi -ldbghelp")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lws2_32 -liphlpapi -lshlwapi -ldbghelp")
-
+  enable_language(RC)
+  target_link_libraries(star_build_config INTERFACE ws2_32 iphlpapi shlwapi dbghelp)
 elseif(STAR_SYSTEM_LINUX)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -ldl -lrt")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -ldl -lrt")
-
+  target_link_libraries(star_build_config INTERFACE pthread ${CMAKE_DL_LIBS} rt)
 elseif(STAR_SYSTEM_FREEBSD)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt")
-
+  target_link_libraries(star_build_config INTERFACE pthread rt)
 elseif(STAR_SYSTEM_NETBSD)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
-
+  target_link_libraries(star_build_config INTERFACE pthread rt execinfo)
 elseif(STAR_SYSTEM_HAIKU)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
-
+  target_link_libraries(star_build_config INTERFACE pthread execinfo network)
 endif()
 
 # Find all required external libraries, based on build settings...
@@ -497,7 +334,7 @@ if (STAR_USE_MIMALLOC)
 endif()
 
 find_package(zlib-ng CONFIG REQUIRED)
-add_compile_definitions(WITH_GZFILEOP) # Needed to make zlib-ng have gz
+target_compile_definitions(star_build_config INTERFACE WITH_GZFILEOP)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(cpr CONFIG REQUIRED)
@@ -508,7 +345,7 @@ if (NOT STAR_SYSTEM_HAIKU)
 	find_package(Opus CONFIG REQUIRED)
 	find_package(re2 CONFIG REQUIRED)
 endif()
-include_directories(SYSTEM
+target_include_directories(star_build_config SYSTEM INTERFACE
     ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
 )
@@ -552,7 +389,7 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
+  target_include_directories(star_gui_dependencies SYSTEM INTERFACE ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
       ${OPENGL_LIBRARY}
       $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
@@ -564,7 +401,7 @@ if(STAR_BUILD_GUI)
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-    include_directories(SYSTEM ${STEAM_API_INCLUDE_DIR})
+    target_include_directories(star_gui_dependencies SYSTEM INTERFACE ${STEAM_API_INCLUDE_DIR})
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
   endif()
 
@@ -572,6 +409,11 @@ if(STAR_BUILD_GUI)
     find_package(DiscordApi REQUIRED)
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
   endif()
+endif()
+
+target_link_libraries(star_build_config INTERFACE ${STAR_EXT_LIBS})
+if(STAR_BUILD_GUI)
+  target_link_libraries(star_gui_dependencies INTERFACE ${STAR_EXT_GUI_LIBS})
 endif()
 
 # Set basic build flags, include all the relevant source directories, based on

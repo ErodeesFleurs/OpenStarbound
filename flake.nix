@@ -146,11 +146,12 @@
       #
       # Hand builds should additionally pass
       #   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
-      # because linking the test binaries (750MB / 1.8GB sanitized) takes
-      # minutes with the default linker and seconds with lld.  For sanitizer
-      # trees use -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-g1 -fsanitize=..."
-      # (Release has no -g, and the per configuration flags are set with set() in
-      # the CMake files, so they cannot be overridden from the command line).
+      # because linking the test binaries with the default linker takes minutes,
+      # while lld takes seconds. For sanitizer trees also select
+      #   -DSTAR_DEBUG_SYMBOL_LEVEL=minimal
+      # and append sanitizer options to CFLAGS/CXXFLAGS/LDFLAGS. Caller compiler
+      # flags are preserved; CMAKE_SKIP_BUILD_RPATH=FALSE avoids requiring the
+      # shell's runtime library path for the resulting binaries.
       devShells = forAllSystems (
         pkgs:
         let
