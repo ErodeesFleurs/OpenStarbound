@@ -31,7 +31,6 @@
 #include "StarAiDatabase.hpp"
 #include "StarStatistics.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarDanceDatabase.hpp"
 #include "StarUniverseClient.hpp"
 
 import star.player_lua_bindings;
@@ -42,6 +41,7 @@ import star.songbook_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
+import star.dance_database;
 
 namespace Star {
 

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
@@ -49,4 +49,17 @@ private:
   StringMap<TechConfig> m_tech;
 };
 
+}
+
+export module star.tech_database;
+
+export namespace Star {
+  using ::Star::TechDatabaseExceptionTag;
+  using ::Star::TechDatabaseException;
+  using ::Star::TechDatabase;
+  using ::Star::TechDatabasePtr;
+  using ::Star::TechDatabaseConstPtr;
+  using ::Star::TechType;
+  using ::Star::TechTypeNames;
+  using ::Star::TechConfig;
 }

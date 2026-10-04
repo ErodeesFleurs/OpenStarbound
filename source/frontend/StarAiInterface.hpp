@@ -7,7 +7,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
-#include "StarTechDatabase.hpp"
+import star.tech_database;
 
 namespace Star {
 

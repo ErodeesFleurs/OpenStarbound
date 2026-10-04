@@ -6,7 +6,7 @@
 #include "StarParticleDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarDanceDatabase.hpp"
+import star.dance_database;
 
 namespace Star {
 

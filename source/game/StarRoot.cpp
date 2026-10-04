@@ -41,18 +41,18 @@
 #include "StarJsonBuilder.hpp"
 #include "StarQuestTemplateDatabase.hpp"
 #include "StarAiDatabase.hpp"
-#include "StarTechDatabase.hpp"
 #include "StarWorkerPool.hpp"
 #include "StarCodexDatabase.hpp"
 #include "StarBehaviorDatabase.hpp"
 #include "StarTenantDatabase.hpp"
 #include "StarNameGenerator.hpp"
-#include "StarDanceDatabase.hpp"
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarRadioMessageDatabase.hpp"
 #include "StarCollectionDatabase.hpp"
 
 import star.packed_asset_source;
+import star.dance_database;
+import star.tech_database;
 
 namespace Star {
 

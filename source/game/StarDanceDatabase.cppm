@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -41,4 +41,18 @@ private:
   StringMap<DancePtr> m_dances;
 };
 
+}
+
+export module star.dance_database;
+
+export namespace Star {
+  using ::Star::DanceStep;
+  using ::Star::DanceStepPtr;
+  using ::Star::DanceStepConstPtr;
+  using ::Star::Dance;
+  using ::Star::DancePtr;
+  using ::Star::DanceConstPtr;
+  using ::Star::DanceDatabase;
+  using ::Star::DanceDatabasePtr;
+  using ::Star::DanceDatabaseConstPtr;
 }

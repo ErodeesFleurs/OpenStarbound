@@ -29,7 +29,6 @@ set (star_game_HEADERS
     StarDamageDatabase.hpp
     StarDamageManager.hpp
     StarDamageTypes.hpp
-    StarDanceDatabase.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarEffectEmitter.hpp
@@ -130,7 +129,6 @@ set (star_game_HEADERS
     StarTeamClient.hpp
     StarTeamManager.hpp
     StarTechController.hpp
-    StarTechDatabase.hpp
     StarTenantDatabase.hpp
     StarTerrainDatabase.hpp
     StarTileDamage.hpp
@@ -464,6 +462,8 @@ target_sources (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarDungeonTMXPart.cppm
     StarMicroDungeon.cppm
     StarWorldGeneration.cppm
+    StarDanceDatabase.cppm
+    StarTechDatabase.cppm
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -479,6 +479,13 @@ target_sources (star_game_modules PRIVATE
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarMovementControllerLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp
+    scripting/StarStatusControllerLuaBindings.cpp
+    scripting/StarCelestialLuaBindings.cpp
+    scripting/StarLuaHttpBindings.cpp
+    scripting/StarUniverseClientLuaBindings.cpp
+    scripting/StarTeamClientLuaBindings.cpp
+    scripting/StarInputLuaBindings.cpp
+    scripting/StarConfigLuaBindings.cpp
   )
 set_target_properties (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 

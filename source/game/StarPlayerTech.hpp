@@ -1,6 +1,10 @@
 #pragma once
 
-#include "StarTechDatabase.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarGameTypes.hpp"
+
+import star.tech_database;
 
 namespace Star {
 

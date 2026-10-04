@@ -1,7 +1,9 @@
-#include "StarTechDatabase.hpp"
+#include "StarGameTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.tech_database;
 
 namespace Star {
 

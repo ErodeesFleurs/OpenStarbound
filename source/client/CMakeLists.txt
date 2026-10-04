@@ -4,6 +4,7 @@ set (star_client_HEADERS
 
 set (star_client_SOURCES
       StarClientApplication.cpp
+      StarRenderingLuaBindings.cpp
     )
 
 if (STAR_SYSTEM_WINDOWS)
@@ -31,7 +32,7 @@ target_include_directories (starbound PRIVATE
 target_sources (starbound PRIVATE FILE_SET CXX_MODULES FILES
     StarRenderingLuaBindings.cppm
   )
-set_source_files_properties (StarRenderingLuaBindings.cppm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties (StarRenderingLuaBindings.cppm StarRenderingLuaBindings.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 if (STAR_PRECOMPILED_HEADERS)
   target_precompile_headers (starbound REUSE_FROM star_core)

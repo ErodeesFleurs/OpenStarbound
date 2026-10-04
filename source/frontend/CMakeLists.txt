@@ -103,6 +103,12 @@ target_sources (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarVoiceLuaBindings.cppm
     StarInterfaceLuaBindings.cppm
   )
+target_sources (star_frontend_modules PRIVATE
+    StarInterfaceLuaBindings.cpp
+    StarHttpTrustDialog.cpp
+    StarVoiceLuaBindings.cpp
+    StarClipboardLuaBindings.cpp
+  )
 target_include_directories (star_frontend_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
@@ -115,6 +121,7 @@ target_include_directories (star_frontend_modules PRIVATE
     ${STAR_FRONTEND_INCLUDES}
   )
 target_link_libraries (star_frontend_modules PUBLIC star_game_modules PRIVATE star_build_config)
+set_target_properties (star_frontend_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_library (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 target_include_directories (star_frontend PRIVATE

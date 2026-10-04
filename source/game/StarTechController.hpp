@@ -4,8 +4,9 @@
 #include "StarNetworkedAnimator.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
-#include "StarTechDatabase.hpp"
 #include "StarDirectives.hpp"
+
+import star.tech_database;
 
 namespace Star {
 

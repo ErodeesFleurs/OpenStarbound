@@ -13,7 +13,6 @@ module;
 #include "StarLiquidsDatabase.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarTenantDatabase.hpp"
-#include "StarTechDatabase.hpp"
 #include "StarTreasure.hpp"
 #include "StarBehaviorDatabase.hpp"
 #include "StarNameGenerator.hpp"
@@ -32,6 +31,7 @@ module;
 #include "StarStatusEffectDatabase.hpp"
 
 export module star.root_lua_bindings;
+import star.tech_database;
 
 export namespace Star::LuaBindings {
   LuaCallbacks makeRootCallbacks();
