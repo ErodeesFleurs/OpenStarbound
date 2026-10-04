@@ -207,7 +207,6 @@ set (star_game_HEADERS
 
     objects/StarContainerObject.hpp
 
-    scripting/StarCameraLuaBindingsFwd.hpp
     scripting/StarLuaActorMovementComponent.hpp
     scripting/StarLuaAnimationComponent.hpp
     scripting/StarLuaGameConverters.hpp
@@ -247,7 +246,6 @@ set (star_game_SOURCES
     StarDamageDatabase.cpp
     StarDamageManager.cpp
     StarDamageTypes.cpp
-    StarDanceDatabase.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarEffectEmitter.cpp
@@ -347,7 +345,6 @@ set (star_game_SOURCES
     StarTeamClient.cpp
     StarTeamManager.cpp
     StarTechController.cpp
-    StarTechDatabase.cpp
     StarTenantDatabase.cpp
     StarTerrainDatabase.cpp
     StarTileDamage.cpp
@@ -409,8 +406,8 @@ set (star_game_SOURCES
     scripting/StarScriptableThread.cpp
   )
 
-add_library (star_game_modules STATIC)
-target_sources (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
+add_library (star_game_module_interfaces OBJECT)
+target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     scripting/StarEntityLuaBindings.cppm
     scripting/StarMovementControllerLuaBindings.cppm
     scripting/StarWorldLuaBindings.cppm
@@ -465,29 +462,46 @@ target_sources (star_game_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarDanceDatabase.cppm
     StarTechDatabase.cppm
   )
-target_include_directories (star_game_modules PRIVATE
+target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (star_game_modules PRIVATE star_modules star_build_config)
-target_sources (star_game_modules PRIVATE
-    scripting/StarCameraLuaBindings.cpp
-    scripting/StarEntityLuaBindings.cpp
-    scripting/StarPlayerLuaBindings.cpp
-    scripting/StarMovementControllerLuaBindings.cpp
-    scripting/StarWorldLuaBindings.cpp
-    scripting/StarStatusControllerLuaBindings.cpp
-    scripting/StarCelestialLuaBindings.cpp
-    scripting/StarLuaHttpBindings.cpp
-    scripting/StarUniverseClientLuaBindings.cpp
-    scripting/StarTeamClientLuaBindings.cpp
-    scripting/StarInputLuaBindings.cpp
-    scripting/StarConfigLuaBindings.cpp
+target_link_libraries (star_game_module_interfaces PRIVATE star_modules star_build_config)
+
+# Compile the implementation branch of the same sources without exposing its
+# template instantiations in interface BMIs. Archive both sets of objects.
+add_library (star_game_module_implementations OBJECT
+    scripting/StarCameraLuaBindings.cppm
+    scripting/StarEntityLuaBindings.cppm
+    scripting/StarPlayerLuaBindings.cppm
+    scripting/StarMovementControllerLuaBindings.cppm
+    scripting/StarWorldLuaBindings.cppm
+    scripting/StarStatusControllerLuaBindings.cppm
+    scripting/StarCelestialLuaBindings.cppm
+    scripting/StarLuaHttpBindings.cppm
+    scripting/StarUniverseClientLuaBindings.cppm
+    scripting/StarTeamClientLuaBindings.cppm
+    scripting/StarInputLuaBindings.cppm
+    scripting/StarConfigLuaBindings.cppm
+    StarDanceDatabase.cppm
+    StarTechDatabase.cppm
   )
-set_target_properties (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_include_directories (star_game_module_implementations PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+  )
+target_compile_definitions (star_game_module_implementations PRIVATE STAR_MODULE_IMPLEMENTATION)
+target_link_libraries (star_game_module_implementations PRIVATE star_game_module_interfaces star_modules star_build_config)
+set_target_properties (star_game_module_implementations PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+add_library (star_game_modules STATIC $<TARGET_OBJECTS:star_game_module_implementations>)
+target_link_libraries (star_game_modules PUBLIC star_game_module_interfaces)
 
 add_library (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 target_include_directories (star_game PRIVATE
@@ -507,5 +521,5 @@ if(STAR_PRECOMPILED_HEADERS)
 endif()
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+  set_target_properties (star_game_module_interfaces star_game_module_implementations star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()

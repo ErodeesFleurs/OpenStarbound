@@ -57,7 +57,6 @@ set (star_core_HEADERS
     StarMatrix3.hpp
     StarMaybe.hpp
     StarMemory.hpp
-    StarMiniDump.hpp
     StarMultiArray.hpp
     StarMultiArrayInterpolator.hpp
     StarMultiTable.hpp
@@ -186,7 +185,6 @@ elseif (STAR_SYSTEM_FAMILY_WINDOWS)
   set (star_core_SOURCES ${star_core_SOURCES}
       StarFile_windows.cpp
       StarLockFile_windows.cpp
-      StarMiniDump_windows.cpp
       StarString_windows.cpp
       StarThread_windows.cpp
       StarTime_windows.cpp
@@ -199,15 +197,8 @@ configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
-# The C++20 modules of this library.  A module interface unit cannot carry the
-# precompiled header the rest of star_core uses (GCC rejects the module
-# declaration when a PCH is forced into it), so the modules get their own target
-# with no PCH; their implementation units live here too, because the definitions
-# of what a module interface declares have to belong to that module.  star_core
-# links it and the sources that need a module import it.
-# The modules are single-file: CMake rejects an implementation unit in this file
-# set ("does not provide a module interface unit or partition") and gives a
-# source outside it no module flags, so the definitions live in the interface.
+# Module sources have no PCH: GCC rejects a forced PCH before a module
+# declaration. These core interfaces contain their implementations directly.
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm

@@ -94,8 +94,8 @@ set (star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
-add_library (star_frontend_modules STATIC)
-target_sources (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
+add_library (star_frontend_module_interfaces OBJECT)
+target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarSimpleTooltip.cppm
     StarHttpTrustDialog.cppm
     StarItemTooltip.cppm
@@ -103,13 +103,7 @@ target_sources (star_frontend_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarVoiceLuaBindings.cppm
     StarInterfaceLuaBindings.cppm
   )
-target_sources (star_frontend_modules PRIVATE
-    StarInterfaceLuaBindings.cpp
-    StarHttpTrustDialog.cpp
-    StarVoiceLuaBindings.cpp
-    StarClipboardLuaBindings.cpp
-  )
-target_include_directories (star_frontend_modules PRIVATE
+target_include_directories (star_frontend_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_BASE_INCLUDES}
@@ -120,8 +114,31 @@ target_include_directories (star_frontend_modules PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_link_libraries (star_frontend_modules PUBLIC star_game_modules PRIVATE star_build_config)
-set_target_properties (star_frontend_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
+target_link_libraries (star_frontend_module_interfaces PUBLIC star_game_module_interfaces PRIVATE star_build_config)
+
+add_library (star_frontend_module_implementations OBJECT
+    StarInterfaceLuaBindings.cppm
+    StarHttpTrustDialog.cppm
+    StarVoiceLuaBindings.cppm
+    StarClipboardLuaBindings.cppm
+  )
+target_include_directories (star_frontend_module_implementations PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES}
+    ${STAR_WINDOWING_INCLUDES}
+    ${STAR_FRONTEND_INCLUDES}
+  )
+target_compile_definitions (star_frontend_module_implementations PRIVATE STAR_MODULE_IMPLEMENTATION)
+target_link_libraries (star_frontend_module_implementations PRIVATE star_frontend_module_interfaces star_build_config)
+set_target_properties (star_frontend_module_implementations PROPERTIES CXX_SCAN_FOR_MODULES ON)
+
+add_library (star_frontend_modules STATIC $<TARGET_OBJECTS:star_frontend_module_implementations>)
+target_link_libraries (star_frontend_modules PUBLIC star_frontend_module_interfaces star_game_modules)
 
 add_library (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 target_include_directories (star_frontend PRIVATE
@@ -143,5 +160,5 @@ if(STAR_PRECOMPILED_HEADERS)
 endif()
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_frontend_modules star_frontend PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+  set_target_properties (star_frontend_module_interfaces star_frontend_module_implementations star_frontend_modules star_frontend PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()

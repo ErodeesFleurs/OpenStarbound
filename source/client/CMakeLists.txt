@@ -4,7 +4,6 @@ set (star_client_HEADERS
 
 set (star_client_SOURCES
       StarClientApplication.cpp
-      StarRenderingLuaBindings.cpp
     )
 
 if (STAR_SYSTEM_WINDOWS)
@@ -29,10 +28,29 @@ target_include_directories (starbound PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_sources (starbound PRIVATE FILE_SET CXX_MODULES FILES
+add_library (star_client_module_interfaces OBJECT)
+target_sources (star_client_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarRenderingLuaBindings.cppm
   )
-set_source_files_properties (StarRenderingLuaBindings.cppm StarRenderingLuaBindings.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+target_link_libraries (star_client_module_interfaces PRIVATE star_build_config)
+
+add_library (star_client_module_implementations OBJECT StarRenderingLuaBindings.cppm)
+target_include_directories (star_client_module_implementations PRIVATE
+    ${STAR_EXTERN_INCLUDES}
+    ${STAR_CORE_INCLUDES}
+    ${STAR_BASE_INCLUDES}
+    ${STAR_GAME_INCLUDES}
+    ${STAR_PLATFORM_INCLUDES}
+    ${STAR_APPLICATION_INCLUDES}
+    ${STAR_RENDERING_INCLUDES}
+    ${STAR_WINDOWING_INCLUDES}
+    ${STAR_FRONTEND_INCLUDES}
+  )
+target_compile_definitions (star_client_module_implementations PRIVATE STAR_MODULE_IMPLEMENTATION)
+target_link_libraries (star_client_module_implementations PRIVATE
+    star_client_module_interfaces star_base_modules star_frontend_module_interfaces star_build_config star_client_dependencies)
+set_target_properties (star_client_module_implementations PROPERTIES CXX_SCAN_FOR_MODULES ON)
+set_source_files_properties (StarRenderingLuaBindings.cppm PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 if (STAR_PRECOMPILED_HEADERS)
   target_precompile_headers (starbound REUSE_FROM star_core)
@@ -49,11 +67,12 @@ if (STAR_SYSTEM_MACOS)
 endif()
 
 target_link_libraries (starbound PRIVATE
+  star_client_module_interfaces $<TARGET_OBJECTS:star_client_module_implementations>
   star_base_modules star_frontend_modules star_build_config star_client_dependencies
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
   $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
 set_target_properties (starbound PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (starbound PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+  set_target_properties (star_client_module_interfaces star_client_module_implementations starbound PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()
