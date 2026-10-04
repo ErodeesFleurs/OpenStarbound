@@ -22,9 +22,7 @@ module;
 #include "StarBiomeDatabase.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarCollectionDatabase.hpp"
 #include "StarBehaviorDatabase.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarSpeciesDatabase.hpp"
@@ -32,6 +30,8 @@ module;
 
 export module star.root_lua_bindings;
 import star.tech_database;
+import star.collection_database;
+import star.damage_database;
 
 export namespace Star::LuaBindings {
   LuaCallbacks makeRootCallbacks();

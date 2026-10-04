@@ -3,7 +3,6 @@
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDamageManager.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarTreasure.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarStoredFunctions.hpp"

@@ -1,8 +1,9 @@
-#include "StarStagehandDatabase.hpp"
 #include "StarStagehand.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.stagehand_database;
 
 namespace Star {
 

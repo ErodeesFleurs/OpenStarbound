@@ -8,7 +8,6 @@
 #include "StarLiquidsDatabase.hpp"
 #include "StarMonster.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDrop.hpp"

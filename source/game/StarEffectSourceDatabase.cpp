@@ -1,4 +1,3 @@
-#include "StarEffectSourceDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarRoot.hpp"
@@ -6,6 +5,8 @@
 #include "StarRandom.hpp"
 #include "StarMixer.hpp"
 #include "StarAssets.hpp"
+
+import star.effect_source_database;
 
 namespace Star {
 

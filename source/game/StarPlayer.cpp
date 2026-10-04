@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
-#include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarDamageManager.hpp"
 #include "StarTools.hpp"
@@ -42,6 +41,8 @@ import star.scripted_animator_lua_bindings;
 import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.dance_database;
+import star.collection_database;
+import star.emote_processor;
 
 namespace Star {
 

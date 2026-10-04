@@ -5,6 +5,8 @@
 #include "StarEntityRendering.hpp"
 #include "StarDataStreamExtra.hpp"
 
+import star.effect_source_database;
+
 namespace Star {
 
 EffectEmitter::EffectEmitter() {

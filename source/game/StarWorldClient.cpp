@@ -5,7 +5,6 @@
 #include "StarBiome.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarLiquidTypes.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarParticleManager.hpp"
 #include "StarWorldImpl.hpp"
@@ -26,6 +25,8 @@
 import star.curve25519;
 import star.universe_client_lua_bindings;
 import star.celestial_lua_bindings;
+import star.damage_database;
+import star.effect_source_database;
 
 namespace Star {
 

@@ -1,9 +1,7 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarJson.hpp"
-#include "StarThread.hpp"
-#include "StarParticle.hpp"
 
 namespace Star {
 
@@ -11,6 +9,7 @@ STAR_CLASS(AudioInstance);
 STAR_CLASS(EffectSource);
 STAR_CLASS(EffectSourceConfig);
 STAR_CLASS(EffectSourceDatabase);
+struct Particle;
 
 class EffectSource {
 public:
@@ -68,4 +67,24 @@ private:
 List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position = Vec2F());
 List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& position = Vec2F());
 
+}
+
+export module star.effect_source_database;
+
+export namespace Star {
+  using ::Star::AudioInstance;
+  using ::Star::AudioInstancePtr;
+  using ::Star::AudioInstanceConstPtr;
+  using ::Star::Particle;
+  using ::Star::EffectSource;
+  using ::Star::EffectSourcePtr;
+  using ::Star::EffectSourceConstPtr;
+  using ::Star::EffectSourceConfig;
+  using ::Star::EffectSourceConfigPtr;
+  using ::Star::EffectSourceConfigConstPtr;
+  using ::Star::EffectSourceDatabase;
+  using ::Star::EffectSourceDatabasePtr;
+  using ::Star::EffectSourceDatabaseConstPtr;
+  using ::Star::particlesFromDefinition;
+  using ::Star::soundsFromDefinition;
 }

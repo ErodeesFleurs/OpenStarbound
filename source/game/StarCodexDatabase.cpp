@@ -1,7 +1,10 @@
-#include "StarCodexDatabase.hpp"
+#include "StarJson.hpp"
+#include "StarCodex.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.codex_database;
 
 namespace Star {
 

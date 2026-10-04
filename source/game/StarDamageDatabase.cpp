@@ -1,7 +1,9 @@
-#include "StarDamageDatabase.hpp"
+#include "StarDamageTypes.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.damage_database;
 
 namespace Star {
 

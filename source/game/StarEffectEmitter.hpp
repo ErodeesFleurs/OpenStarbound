@@ -1,13 +1,13 @@
 #pragma once
 
 #include "StarNetElementSystem.hpp"
-#include "StarEffectSourceDatabase.hpp"
 #include "StarGameTypes.hpp"
 
 namespace Star {
 
 STAR_CLASS(RenderCallback);
 STAR_CLASS(EffectEmitter);
+STAR_CLASS(EffectSource);
 
 class EffectEmitter : public NetElementGroup {
 public:

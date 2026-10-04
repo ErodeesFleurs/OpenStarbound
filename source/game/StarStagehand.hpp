@@ -5,7 +5,6 @@
 #include "StarScriptedEntity.hpp"
 #include "StarBehaviorState.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarStagehandDatabase.hpp"
 #include "StarRoot.hpp"
 
 namespace Star {

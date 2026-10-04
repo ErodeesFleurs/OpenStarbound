@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 
@@ -23,4 +23,17 @@ private:
   StringMap<Json> m_stagehandTypes;
 };
 
+}
+
+export module star.stagehand_database;
+
+export namespace Star {
+  using ::Star::StagehandDatabaseExceptionTag;
+  using ::Star::StagehandDatabaseException;
+  using ::Star::Stagehand;
+  using ::Star::StagehandPtr;
+  using ::Star::StagehandConstPtr;
+  using ::Star::StagehandDatabase;
+  using ::Star::StagehandDatabasePtr;
+  using ::Star::StagehandDatabaseConstPtr;
 }

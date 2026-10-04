@@ -1,5 +1,4 @@
 #include "StarItemDatabase.hpp"
-#include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -30,6 +29,7 @@ import star.tilling_tool;
 import star.config_lua_bindings;
 import star.root_lua_bindings;
 import star.item_lua_bindings;
+import star.codex_database;
 
 namespace Star {
 

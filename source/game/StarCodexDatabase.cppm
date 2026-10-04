@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarCodex.hpp"
@@ -23,4 +23,14 @@ private:
   StringMap<CodexConstPtr> m_codexes;
 };
 
+}
+
+export module star.codex_database;
+
+export namespace Star {
+  using ::Star::CodexDatabaseExceptionTag;
+  using ::Star::CodexDatabaseException;
+  using ::Star::CodexDatabase;
+  using ::Star::CodexDatabasePtr;
+  using ::Star::CodexDatabaseConstPtr;
 }

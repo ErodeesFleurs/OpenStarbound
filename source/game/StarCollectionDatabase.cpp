@@ -1,8 +1,11 @@
-#include "StarCollectionDatabase.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarMonsterDatabase.hpp"
 #include "StarItemDatabase.hpp"
+
+import star.collection_database;
 
 namespace Star {
 

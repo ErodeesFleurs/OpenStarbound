@@ -1,7 +1,9 @@
-#include "StarEmoteProcessor.hpp"
+#include "StarHumanoid.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.emote_processor;
 
 namespace Star {
 

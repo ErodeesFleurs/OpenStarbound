@@ -1,5 +1,7 @@
 #include "StarLuaGameConverters.hpp"
 
+import star.collection_database;
+
 namespace Star {
 
 LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {

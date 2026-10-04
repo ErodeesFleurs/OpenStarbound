@@ -1,9 +1,10 @@
-#pragma once
+module;
 
-#include "StarGameTypes.hpp"
-#include "StarJson.hpp"
+#include "StarBiMap.hpp"
 
 namespace Star {
+
+class Json;
 
 struct CollectionDatabaseExceptionTag {
   static constexpr char const* name() { return "CollectionDatabaseException"; }
@@ -60,4 +61,18 @@ private:
 };
 
 
+}
+
+export module star.collection_database;
+
+export namespace Star {
+  using ::Star::CollectionDatabaseExceptionTag;
+  using ::Star::CollectionDatabaseException;
+  using ::Star::CollectionDatabase;
+  using ::Star::CollectionDatabasePtr;
+  using ::Star::CollectionDatabaseConstPtr;
+  using ::Star::CollectionType;
+  using ::Star::CollectionTypeNames;
+  using ::Star::Collectable;
+  using ::Star::Collection;
 }

@@ -20,20 +20,15 @@ set (star_game_HEADERS
     StarChatTypes.hpp
     StarClientContext.hpp
     StarCodex.hpp
-    StarCodexDatabase.hpp
-    StarCollectionDatabase.hpp
     StarCollisionBlock.hpp
     StarCollisionGenerator.hpp
     StarCommandProcessor.hpp
     StarDamage.hpp
-    StarDamageDatabase.hpp
     StarDamageManager.hpp
     StarDamageTypes.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarEffectEmitter.hpp
-    StarEffectSourceDatabase.hpp
-    StarEmoteProcessor.hpp
     StarEntityFactory.hpp
     StarEntityMap.hpp
     StarEntityRendering.hpp
@@ -113,7 +108,6 @@ set (star_game_HEADERS
     StarSpawnTypeDatabase.hpp
     StarSpeciesDatabase.hpp
     StarStagehand.hpp
-    StarStagehandDatabase.hpp
     StarStatCollection.hpp
     StarStatistics.hpp
     StarStatisticsDatabase.hpp
@@ -237,20 +231,15 @@ set (star_game_SOURCES
     StarChatTypes.cpp
     StarClientContext.cpp
     StarCodex.cpp
-    StarCodexDatabase.cpp
-    StarCollectionDatabase.cpp
     StarCollisionBlock.cpp
     StarCollisionGenerator.cpp
     StarCommandProcessor.cpp
     StarDamage.cpp
-    StarDamageDatabase.cpp
     StarDamageManager.cpp
     StarDamageTypes.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarEffectEmitter.cpp
-    StarEffectSourceDatabase.cpp
-    StarEmoteProcessor.cpp
     StarEntityFactory.cpp
     StarEntityMap.cpp
     StarEntityRendering.cpp
@@ -329,7 +318,6 @@ set (star_game_SOURCES
     StarSpawnTypeDatabase.cpp
     StarSpeciesDatabase.cpp
     StarStagehand.cpp
-    StarStagehandDatabase.cpp
     StarStatCollection.cpp
     StarStatistics.cpp
     StarStatisticsDatabase.cpp
@@ -461,6 +449,12 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarWorldGeneration.cppm
     StarDanceDatabase.cppm
     StarTechDatabase.cppm
+    StarCodexDatabase.cppm
+    StarCollectionDatabase.cppm
+    StarStagehandDatabase.cppm
+    StarEmoteProcessor.cppm
+    StarDamageDatabase.cppm
+    StarEffectSourceDatabase.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -471,37 +465,38 @@ target_include_directories (star_game_module_interfaces PRIVATE
   )
 target_link_libraries (star_game_module_interfaces PRIVATE star_modules star_build_config)
 
-# Compile the implementation branch of the same sources without exposing its
-# template instantiations in interface BMIs. Archive both sets of objects.
-add_library (star_game_module_implementations OBJECT
-    scripting/StarCameraLuaBindings.cppm
-    scripting/StarEntityLuaBindings.cppm
-    scripting/StarPlayerLuaBindings.cppm
-    scripting/StarMovementControllerLuaBindings.cppm
-    scripting/StarWorldLuaBindings.cppm
-    scripting/StarStatusControllerLuaBindings.cppm
-    scripting/StarCelestialLuaBindings.cppm
-    scripting/StarLuaHttpBindings.cppm
-    scripting/StarUniverseClientLuaBindings.cppm
-    scripting/StarTeamClientLuaBindings.cppm
-    scripting/StarInputLuaBindings.cppm
-    scripting/StarConfigLuaBindings.cppm
-    StarDanceDatabase.cppm
-    StarTechDatabase.cppm
+# Keep implementation template instantiations out of interface BMIs.
+add_library (star_game_modules STATIC
+    scripting/StarCameraLuaBindings.cpp
+    scripting/StarEntityLuaBindings.cpp
+    scripting/StarPlayerLuaBindings.cpp
+    scripting/StarMovementControllerLuaBindings.cpp
+    scripting/StarWorldLuaBindings.cpp
+    scripting/StarStatusControllerLuaBindings.cpp
+    scripting/StarCelestialLuaBindings.cpp
+    scripting/StarLuaHttpBindings.cpp
+    scripting/StarUniverseClientLuaBindings.cpp
+    scripting/StarTeamClientLuaBindings.cpp
+    scripting/StarInputLuaBindings.cpp
+    scripting/StarConfigLuaBindings.cpp
+    StarDanceDatabase.cpp
+    StarTechDatabase.cpp
+    StarCodexDatabase.cpp
+    StarCollectionDatabase.cpp
+    StarStagehandDatabase.cpp
+    StarEmoteProcessor.cpp
+    StarDamageDatabase.cpp
+    StarEffectSourceDatabase.cpp
   )
-target_include_directories (star_game_module_implementations PRIVATE
+target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_BASE_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_compile_definitions (star_game_module_implementations PRIVATE STAR_MODULE_IMPLEMENTATION)
-target_link_libraries (star_game_module_implementations PRIVATE star_game_module_interfaces star_modules star_build_config)
-set_target_properties (star_game_module_implementations PROPERTIES CXX_SCAN_FOR_MODULES ON)
-
-add_library (star_game_modules STATIC $<TARGET_OBJECTS:star_game_module_implementations>)
-target_link_libraries (star_game_modules PUBLIC star_game_module_interfaces)
+target_link_libraries (star_game_modules PUBLIC star_game_module_interfaces PRIVATE star_modules star_build_config)
+set_target_properties (star_game_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_library (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 target_include_directories (star_game PRIVATE
@@ -521,5 +516,5 @@ if(STAR_PRECOMPILED_HEADERS)
 endif()
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_game_module_interfaces star_game_module_implementations star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+  set_target_properties (star_game_module_interfaces star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()

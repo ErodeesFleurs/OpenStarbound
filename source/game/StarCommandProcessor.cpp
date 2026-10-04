@@ -15,7 +15,6 @@
 #include "StarMonster.hpp"
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
-#include "StarStagehandDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarChatProcessor.hpp"
 #include "StarAssets.hpp"
@@ -23,6 +22,7 @@
 
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;
+import star.stagehand_database;
 
 namespace Star {
 

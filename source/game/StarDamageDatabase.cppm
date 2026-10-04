@@ -1,10 +1,10 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
-#include "StarThread.hpp"
-#include "StarDamageTypes.hpp"
 
 namespace Star {
+
+enum class HitType;
 
 STAR_STRUCT(DamageKind);
 STAR_CLASS(DamageDatabase);
@@ -40,4 +40,21 @@ private:
   StringMap<ElementalType> m_elementalTypes;
 };
 
+}
+
+export module star.damage_database;
+
+export namespace Star {
+  using ::Star::HitType;
+  using ::Star::TargetMaterial;
+  using ::Star::DamageEffect;
+  using ::Star::DamageKind;
+  using ::Star::DamageKindPtr;
+  using ::Star::DamageKindConstPtr;
+  using ::Star::ElementalType;
+  using ::Star::ElementalTypePtr;
+  using ::Star::ElementalTypeConstPtr;
+  using ::Star::DamageDatabase;
+  using ::Star::DamageDatabasePtr;
+  using ::Star::DamageDatabaseConstPtr;
 }

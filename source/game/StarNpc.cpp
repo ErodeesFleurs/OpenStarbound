@@ -4,9 +4,7 @@
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
 #include "StarDamageManager.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarEmoteProcessor.hpp"
 #include "StarTreasure.hpp"
 #include "StarEncode.hpp"
 #include "StarItemDatabase.hpp"
@@ -28,6 +26,7 @@ import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.dance_database;
+import star.emote_processor;
 
 namespace Star {
 

@@ -37,6 +37,7 @@ module;
 
 export module star.world_generation;
 import star.micro_dungeon;
+import star.stagehand_database;
 
 export namespace Star {
 

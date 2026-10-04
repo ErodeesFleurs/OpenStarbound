@@ -11,7 +11,6 @@
 #include "StarBiomeDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarMonster.hpp"
@@ -19,17 +18,14 @@
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
 #include "StarPlantDrop.hpp"
-#include "StarStagehandDatabase.hpp"
 #include "StarVehicleDatabase.hpp"
 #include "StarPlayer.hpp"
 #include "StarItemDrop.hpp"
-#include "StarEffectSourceDatabase.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarTreasure.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarTilesetDatabase.hpp"
 #include "StarStatisticsDatabase.hpp"
-#include "StarEmoteProcessor.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
@@ -42,17 +38,21 @@
 #include "StarQuestTemplateDatabase.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarWorkerPool.hpp"
-#include "StarCodexDatabase.hpp"
 #include "StarBehaviorDatabase.hpp"
 #include "StarTenantDatabase.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarSpawnTypeDatabase.hpp"
 #include "StarRadioMessageDatabase.hpp"
-#include "StarCollectionDatabase.hpp"
 
 import star.packed_asset_source;
 import star.dance_database;
 import star.tech_database;
+import star.codex_database;
+import star.collection_database;
+import star.stagehand_database;
+import star.emote_processor;
+import star.damage_database;
+import star.effect_source_database;
 
 namespace Star {
 
