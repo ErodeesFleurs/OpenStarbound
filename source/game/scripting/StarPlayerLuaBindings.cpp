@@ -4,19 +4,15 @@ module;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarRoot.hpp"
-#include "StarClientContext.hpp"
 #include "StarItem.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
 import star.player_tech;
 import star.player_log;
 #include "StarQuestManager.hpp"
 #include "StarWarping.hpp"
-#include "StarStatistics.hpp"
 import star.player_universe_map;
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarTeamClient.hpp"
 import star.player_codexes;
 #include "StarCodex.hpp"
 
@@ -25,6 +21,12 @@ import star.networked_animator_lua_bindings;
 import star.tech_database;
 import star.item_database;
 
+
+import star.client_context;
+import star.player_inventory;
+import star.statistics;
+import star.item_bag;
+import star.team_client;
 
 namespace Star {
 

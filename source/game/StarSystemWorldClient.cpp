@@ -1,7 +1,6 @@
 #include "StarCelestialTypes.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarRoot.hpp"
-#include "StarClientContext.hpp"
 import star.player_universe_map;
 
 

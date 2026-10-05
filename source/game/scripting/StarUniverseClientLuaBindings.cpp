@@ -12,6 +12,7 @@ module;
 #include "StarWorldTemplate.hpp"
 
 module star.universe_client_lua_bindings;
+import star.client_context;
 
 namespace Star {
 

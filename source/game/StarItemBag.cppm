@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarMathCommon.hpp"
 #include "StarItemDescriptor.hpp"
@@ -115,4 +115,23 @@ private:
   List<ItemPtr> m_items;
 };
 
+}
+
+export module star.item_bag;
+
+export namespace Star {
+using ::Star::Item;
+using ::Star::ItemPtr;
+using ::Star::ItemConstPtr;
+using ::Star::ItemWeakPtr;
+using ::Star::ItemConstWeakPtr;
+using ::Star::ItemUPtr;
+using ::Star::ItemConstUPtr;
+using ::Star::ItemBag;
+using ::Star::ItemBagPtr;
+using ::Star::ItemBagConstPtr;
+using ::Star::ItemBagWeakPtr;
+using ::Star::ItemBagConstWeakPtr;
+using ::Star::ItemBagUPtr;
+using ::Star::ItemBagConstUPtr;
 }

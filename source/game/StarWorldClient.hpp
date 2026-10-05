@@ -1,11 +1,9 @@
 #pragma once
 
-#include "StarWorldClientState.hpp"
 #include "StarNetPackets.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarWeather.hpp"
-#include "StarInterpolationTracker.hpp"
 import star.world_structure;
 #include "StarChatAction.hpp"
 #include "StarWiring.hpp"
@@ -14,6 +12,8 @@ import star.world_structure;
 #include "StarGameTimers.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
+import star.world_client_state;
+import star.interpolation_tracker;
 import star.ambient;
 
 namespace Star {

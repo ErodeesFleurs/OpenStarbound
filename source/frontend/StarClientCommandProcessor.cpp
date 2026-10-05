@@ -5,16 +5,17 @@
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
 import star.player_tech;
-#include "StarPlayerInventory.hpp"
 import star.player_log;
 #include "StarWorldClient.hpp"
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"
-#include "StarStatistics.hpp"
 #include "StarInput.hpp"
 
 
 import star.item_database;
+
+import star.player_inventory;
+import star.statistics;
 
 namespace Star {
 

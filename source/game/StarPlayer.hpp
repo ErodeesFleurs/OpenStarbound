@@ -16,7 +16,6 @@
 #include "StarActorMovementController.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarAiTypes.hpp"
-#include "StarItemBag.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarToolUser.hpp"

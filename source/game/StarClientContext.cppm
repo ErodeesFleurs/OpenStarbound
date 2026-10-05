@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarJsonRpc.hpp"
@@ -70,4 +70,23 @@ private:
   StringMap<WorldChunks> m_newCustomWorldUpdates;
 };
 
+}
+
+export module star.client_context;
+
+export namespace Star {
+using ::Star::CelestialLog;
+using ::Star::CelestialLogPtr;
+using ::Star::CelestialLogConstPtr;
+using ::Star::CelestialLogWeakPtr;
+using ::Star::CelestialLogConstWeakPtr;
+using ::Star::CelestialLogUPtr;
+using ::Star::CelestialLogConstUPtr;
+using ::Star::ClientContext;
+using ::Star::ClientContextPtr;
+using ::Star::ClientContextConstPtr;
+using ::Star::ClientContextWeakPtr;
+using ::Star::ClientContextConstWeakPtr;
+using ::Star::ClientContextUPtr;
+using ::Star::ClientContextConstUPtr;
 }

@@ -11,7 +11,6 @@ import star.chat_processor;
 #include "StarRoot.hpp"
 #include "StarSky.hpp"
 #include "StarTcp.hpp"
-#include "StarTeamManager.hpp"
 
 import star.ai_database;
 import star.versioning_database;
@@ -22,6 +21,9 @@ import star.secure_random;
 import star.biome_database;
 import star.celestial_database;
 
+
+import star.server_client_context;
+import star.team_manager;
 
 namespace Star {
 

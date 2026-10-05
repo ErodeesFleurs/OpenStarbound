@@ -1,7 +1,11 @@
-#include "StarWorldClientState.hpp"
+#include "StarRect.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarGameTypes.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.world_client_state;
 
 namespace Star {
 

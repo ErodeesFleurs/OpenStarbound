@@ -2,10 +2,11 @@ module;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
+#include "StarUuid.hpp"
 #include "StarLua.hpp"
-#include "StarTeamClient.hpp"
 
 module star.team_client_lua_bindings;
+import star.team_client;
 
 namespace Star {
 

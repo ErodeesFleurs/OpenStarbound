@@ -1,6 +1,12 @@
-#include "StarPlayerCompanions.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
+#include "StarUuid.hpp"
+#include "StarDrawable.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarWorld.hpp"
+
+import star.player_companions;
 
 import star.player_lua_bindings;
 import star.entity_lua_bindings;

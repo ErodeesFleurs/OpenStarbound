@@ -1,10 +1,18 @@
-#include "StarTeamManager.hpp"
+#include "StarDrawable.hpp"
+#include "StarUuid.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarWarping.hpp"
+#include "StarThread.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarVersion.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarText.hpp"
 #include "StarLogging.hpp"
+
+import star.team_manager;
 
 namespace Star {
   

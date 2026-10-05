@@ -34,12 +34,10 @@ import star.player_log;
 #include "StarMonster.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarItem.hpp"
 #include "StarAiInterface.hpp"
 #include "StarDrawable.hpp"
 #include "StarFireableItem.hpp"
-#include "StarClientContext.hpp"
 #include "StarToolUserEntity.hpp"
 #include "StarTeleportDialog.hpp"
 #include "StarCinematic.hpp"
@@ -64,6 +62,10 @@ import star.http_trust_dialog;
 import star.image_metadata_database;
 import star.celestial_database;
 
+
+import star.player_inventory;
+import star.client_context;
+import star.player_storage;
 
 namespace Star {
 

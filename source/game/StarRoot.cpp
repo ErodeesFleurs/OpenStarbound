@@ -25,13 +25,13 @@
 #include "StarWeightedPool.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarLogging.hpp"
-#include "StarPlayerFactory.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarWorkerPool.hpp"
 #include "StarRandom.hpp"
 #include "StarVehicle.hpp"
+import star.player_factory;
+import star.entity_factory;
 import star.stored_functions;
 import star.treasure;
 import star.name_generator;

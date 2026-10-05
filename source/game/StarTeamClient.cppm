@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
@@ -89,4 +89,31 @@ private:
   int m_teamManagerVersion = 0;
 };
 
+}
+
+export module star.team_client;
+
+export namespace Star {
+using ::Star::TeamClientVersion;
+using ::Star::Player;
+using ::Star::PlayerPtr;
+using ::Star::PlayerConstPtr;
+using ::Star::PlayerWeakPtr;
+using ::Star::PlayerConstWeakPtr;
+using ::Star::PlayerUPtr;
+using ::Star::PlayerConstUPtr;
+using ::Star::ClientContext;
+using ::Star::ClientContextPtr;
+using ::Star::ClientContextConstPtr;
+using ::Star::ClientContextWeakPtr;
+using ::Star::ClientContextConstWeakPtr;
+using ::Star::ClientContextUPtr;
+using ::Star::ClientContextConstUPtr;
+using ::Star::TeamClient;
+using ::Star::TeamClientPtr;
+using ::Star::TeamClientConstPtr;
+using ::Star::TeamClientWeakPtr;
+using ::Star::TeamClientConstWeakPtr;
+using ::Star::TeamClientUPtr;
+using ::Star::TeamClientConstUPtr;
 }

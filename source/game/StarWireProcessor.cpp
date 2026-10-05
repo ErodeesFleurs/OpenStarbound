@@ -1,4 +1,6 @@
-#include "StarWireProcessor.hpp"
+#include "StarJson.hpp"
+#include "StarWiring.hpp"
+import star.wire_processor;
 #include "StarWorldStorage.hpp"
 #include "StarEntityMap.hpp"
 #include "StarWireEntity.hpp"

@@ -6,7 +6,9 @@
 #include "StarWorkerPool.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCelestialCoordinate.hpp"
-#include "StarServerClientContext.hpp"
+#include "StarHostAddress.hpp"
+#include "StarUuid.hpp"
+#include "StarWorldStorage.hpp"
 #include "StarWorldServerThread.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarSystemWorldServerThread.hpp"
@@ -26,6 +28,7 @@ STAR_CLASS(WorldTemplate);
 STAR_CLASS(CelestialMasterDatabase);
 STAR_CLASS(WorldServer);
 STAR_CLASS(UniverseSettings);
+STAR_CLASS(ServerClientContext);
 
 struct UniverseServerExceptionTag {
   static constexpr char const* name() { return "UniverseServerException"; }

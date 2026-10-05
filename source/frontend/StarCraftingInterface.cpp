@@ -20,7 +20,6 @@ import star.player_blueprints;
 #include "StarItemSlotWidget.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerInventory.hpp"
 import star.player_log;
 #include "StarMixer.hpp"
 
@@ -29,6 +28,8 @@ import star.item_tooltip;
 import star.item_database;
 import star.object_database;
 
+
+import star.player_inventory;
 
 namespace Star {
 

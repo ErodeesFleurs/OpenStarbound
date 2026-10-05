@@ -10,7 +10,6 @@
 #include "StarImageWidget.hpp"
 #include "StarPaneManager.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarAssets.hpp"
 #include "StarItem.hpp"
 #include "StarMerchantInterface.hpp"
@@ -18,6 +17,8 @@
 import star.item_tooltip;
 import star.image_metadata_database;
 
+
+import star.player_inventory;
 
 namespace Star {
 

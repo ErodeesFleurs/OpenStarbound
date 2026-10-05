@@ -1,18 +1,25 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
-#include "StarPlayerInventory.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarMultiArray.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarRoot.hpp"
 #include "StarArmors.hpp"
 #include "StarPointableItem.hpp"
-#include "StarItemBag.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+
+// Import before Player's global forward declaration so GCC 16 emits the vtable.
+import star.player_inventory;
+
 #include "StarPlayer.hpp"
 
 import star.currency_item;
 import star.material_item;
 import star.object_item;
 import star.item_database;
+import star.item_bag;
 
 
 namespace Star {

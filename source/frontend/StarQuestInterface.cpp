@@ -24,6 +24,8 @@ import star.quest_template_database;
 import star.item_database;
 
 
+import star.item_bag;
+
 namespace Star {
 
 QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client) {

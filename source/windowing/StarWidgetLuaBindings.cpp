@@ -21,6 +21,7 @@
 
 
 import star.item_database;
+import star.item_bag;
 
 namespace Star {
 

@@ -15,14 +15,15 @@
 #include "StarImageWidget.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerFactory.hpp"
-#include "StarPlayerInventory.hpp"
 import star.player_log;
 import star.name_generator;
 
 import star.species_database;
 import star.item_database;
 
+
+import star.player_inventory;
+import star.player_factory;
 
 namespace Star {
 

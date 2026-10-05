@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarDrawable.hpp"
 #include "StarUuid.hpp"
@@ -92,4 +92,17 @@ private:
   Json makeLeader(Json const& args);
 };
 
+}
+
+export module star.team_manager;
+
+export namespace Star {
+using ::Star::TeamManagerVersion;
+using ::Star::TeamManager;
+using ::Star::TeamManagerPtr;
+using ::Star::TeamManagerConstPtr;
+using ::Star::TeamManagerWeakPtr;
+using ::Star::TeamManagerConstWeakPtr;
+using ::Star::TeamManagerUPtr;
+using ::Star::TeamManagerConstUPtr;
 }

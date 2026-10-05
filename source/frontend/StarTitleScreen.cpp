@@ -23,6 +23,8 @@
 
 import star.celestial_database;
 
+import star.player_storage;
+
 namespace Star {
 
 TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, UniverseClientPtr client)

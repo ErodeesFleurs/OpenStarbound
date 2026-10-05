@@ -17,7 +17,6 @@
 #include "StarToolUserEntity.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
-#include "StarItemBag.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarToolUser.hpp"
 #include "StarPhysicsEntity.hpp"

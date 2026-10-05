@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarInventoryTypes.hpp"
 #include "StarMultiArray.hpp"
@@ -245,4 +245,74 @@ private:
   Player* m_player;
 };
 
+}
+
+export module star.player_inventory;
+
+export namespace Star {
+using ::Star::Item;
+using ::Star::ItemPtr;
+using ::Star::ItemConstPtr;
+using ::Star::ItemWeakPtr;
+using ::Star::ItemConstWeakPtr;
+using ::Star::ItemUPtr;
+using ::Star::ItemConstUPtr;
+using ::Star::ItemBag;
+using ::Star::ItemBagPtr;
+using ::Star::ItemBagConstPtr;
+using ::Star::ItemBagWeakPtr;
+using ::Star::ItemBagConstWeakPtr;
+using ::Star::ItemBagUPtr;
+using ::Star::ItemBagConstUPtr;
+using ::Star::ArmorItem;
+using ::Star::ArmorItemPtr;
+using ::Star::ArmorItemConstPtr;
+using ::Star::ArmorItemWeakPtr;
+using ::Star::ArmorItemConstWeakPtr;
+using ::Star::ArmorItemUPtr;
+using ::Star::ArmorItemConstUPtr;
+using ::Star::HeadArmor;
+using ::Star::HeadArmorPtr;
+using ::Star::HeadArmorConstPtr;
+using ::Star::HeadArmorWeakPtr;
+using ::Star::HeadArmorConstWeakPtr;
+using ::Star::HeadArmorUPtr;
+using ::Star::HeadArmorConstUPtr;
+using ::Star::ChestArmor;
+using ::Star::ChestArmorPtr;
+using ::Star::ChestArmorConstPtr;
+using ::Star::ChestArmorWeakPtr;
+using ::Star::ChestArmorConstWeakPtr;
+using ::Star::ChestArmorUPtr;
+using ::Star::ChestArmorConstUPtr;
+using ::Star::LegsArmor;
+using ::Star::LegsArmorPtr;
+using ::Star::LegsArmorConstPtr;
+using ::Star::LegsArmorWeakPtr;
+using ::Star::LegsArmorConstWeakPtr;
+using ::Star::LegsArmorUPtr;
+using ::Star::LegsArmorConstUPtr;
+using ::Star::BackArmor;
+using ::Star::BackArmorPtr;
+using ::Star::BackArmorConstPtr;
+using ::Star::BackArmorWeakPtr;
+using ::Star::BackArmorConstWeakPtr;
+using ::Star::BackArmorUPtr;
+using ::Star::BackArmorConstUPtr;
+using ::Star::Player;
+using ::Star::PlayerPtr;
+using ::Star::PlayerConstPtr;
+using ::Star::PlayerWeakPtr;
+using ::Star::PlayerConstWeakPtr;
+using ::Star::PlayerUPtr;
+using ::Star::PlayerConstUPtr;
+using ::Star::PlayerInventory;
+using ::Star::PlayerInventoryPtr;
+using ::Star::PlayerInventoryConstPtr;
+using ::Star::PlayerInventoryWeakPtr;
+using ::Star::PlayerInventoryConstWeakPtr;
+using ::Star::PlayerInventoryUPtr;
+using ::Star::PlayerInventoryConstUPtr;
+using ::Star::InventoryExceptionTag;
+using ::Star::InventoryException;
 }

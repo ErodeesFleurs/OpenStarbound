@@ -8,13 +8,13 @@
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarEntityMap.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarAssets.hpp"
 
 import star.liquids_database;
 import star.versioning_database;
 import star.compression;
 import star.material_database;
+import star.entity_factory;
 
 namespace Star {
 

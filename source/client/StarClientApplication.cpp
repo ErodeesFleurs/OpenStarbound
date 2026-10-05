@@ -8,7 +8,6 @@
 #include "StarRoot.hpp"
 #include "StarVersionOptionParser.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerStorage.hpp"
 import star.player_log;
 #include "StarAssets.hpp"
 #include "StarWorldTemplate.hpp"
@@ -45,6 +44,10 @@ extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
 // https://docs.kicad.org/doxygen/windows_2app_8cpp_source.html L45
 extern "C" __declspec(dllexport) void NoHotPatch() { return; }
 #endif 
+
+import star.player_storage;
+import star.statistics;
+import star.client_context;
 
 namespace Star {
 

@@ -1,7 +1,12 @@
-#include "StarPlayerDeployment.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarEntityRendering.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarWorld.hpp"
+
+import star.player_deployment;
 
 import star.player_lua_bindings;
 import star.entity_lua_bindings;

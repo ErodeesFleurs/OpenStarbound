@@ -12,7 +12,8 @@
 #include "StarInteractionTypes.hpp"
 #include "StarWarping.hpp"
 #include "StarWiring.hpp"
-#include "StarClientContext.hpp"
+#include "StarWorldStorage.hpp"
+#include "StarPlayerTypes.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarNetCompatibility.hpp"
 

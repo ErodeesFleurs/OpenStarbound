@@ -11,7 +11,6 @@ set (star_game_HEADERS
     StarCelestialTypes.hpp
     StarChatAction.hpp
     StarChatTypes.hpp
-    StarClientContext.hpp
     StarCodex.hpp
     StarCollisionBlock.hpp
     StarCollisionGenerator.hpp
@@ -22,7 +21,6 @@ set (star_game_HEADERS
     StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarEffectEmitter.hpp
-    StarEntityFactory.hpp
     StarEntityMap.hpp
     StarEntityRendering.hpp
     StarEntityRenderingTypes.hpp
@@ -34,10 +32,8 @@ set (star_game_HEADERS
     StarHumanoid.hpp
     StarInput.hpp
     StarInteractionTypes.hpp
-    StarInterpolationTracker.hpp
     StarInventoryTypes.hpp
     StarItem.hpp
-    StarItemBag.hpp
     StarItemDescriptor.hpp
     StarItemDrop.hpp
     StarItemRecipe.hpp
@@ -54,17 +50,11 @@ set (star_game_HEADERS
     StarObject.hpp
     StarParallax.hpp
     StarParticle.hpp
-    StarParticleManager.hpp
     StarPlant.hpp
     StarPlantDrop.hpp
     StarPlatformerAStar.hpp
     StarPlatformerAStarTypes.hpp
     StarPlayer.hpp
-    StarPlayerCompanions.hpp
-    StarPlayerDeployment.hpp
-    StarPlayerFactory.hpp
-    StarPlayerInventory.hpp
-    StarPlayerStorage.hpp
     StarPlayerTypes.hpp
     StarProjectile.hpp
     StarQuestDescriptor.hpp
@@ -72,7 +62,6 @@ set (star_game_HEADERS
     StarQuests.hpp
     StarRoot.hpp
     StarRootLoader.hpp
-    StarServerClientContext.hpp
     StarSky.hpp
     StarSkyParameters.hpp
     StarSkyRenderData.hpp
@@ -80,15 +69,12 @@ set (star_game_HEADERS
     StarSongbook.hpp
     StarSpawner.hpp
     StarStagehand.hpp
-    StarStatistics.hpp
     StarStatusController.hpp
     StarStatusTypes.hpp
     StarSystemWorld.hpp
     StarSystemWorldClient.hpp
     StarSystemWorldServer.hpp
     StarSystemWorldServerThread.hpp
-    StarTeamClient.hpp
-    StarTeamManager.hpp
     StarTechController.hpp
     StarTileDamage.hpp
     StarTileDrawer.hpp
@@ -102,12 +88,10 @@ set (star_game_HEADERS
     StarWarping.hpp
     StarWeather.hpp
     StarWeatherTypes.hpp
-    StarWireProcessor.hpp
     StarWiring.hpp
     StarWorldCamera.hpp
     StarWorldClient.hpp
     StarWorldClientThread.hpp
-    StarWorldClientState.hpp
     StarWorldImpl.hpp
     StarWorldLayout.hpp
     StarWorldParameters.hpp
@@ -181,7 +165,6 @@ set (star_game_SOURCES
     StarCelestialTypes.cpp
     StarChatAction.cpp
     StarChatTypes.cpp
-    StarClientContext.cpp
     StarCodex.cpp
     StarCollisionBlock.cpp
     StarCollisionGenerator.cpp
@@ -192,7 +175,6 @@ set (star_game_SOURCES
     StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarEffectEmitter.cpp
-    StarEntityFactory.cpp
     StarEntityMap.cpp
     StarEntityRendering.cpp
     StarEntityRenderingTypes.cpp
@@ -204,10 +186,8 @@ set (star_game_SOURCES
     StarHumanoid.cpp
     StarInput.cpp
     StarInteractionTypes.cpp
-    StarInterpolationTracker.cpp
     StarInventoryTypes.cpp
     StarItem.cpp
-    StarItemBag.cpp
     StarItemDescriptor.cpp
     StarItemDrop.cpp
     StarItemRecipe.cpp
@@ -223,17 +203,11 @@ set (star_game_SOURCES
     StarObject.cpp
     StarParallax.cpp
     StarParticle.cpp
-    StarParticleManager.cpp
     StarPlant.cpp
     StarPlantDrop.cpp
     StarPlatformerAStar.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
-    StarPlayerCompanions.cpp
-    StarPlayerDeployment.cpp
-    StarPlayerFactory.cpp
-    StarPlayerInventory.cpp
-    StarPlayerStorage.cpp
     StarPlayerTypes.cpp
     StarProjectile.cpp
     StarQuestDescriptor.cpp
@@ -241,7 +215,6 @@ set (star_game_SOURCES
     StarQuests.cpp
     StarRoot.cpp
     StarRootLoader.cpp
-    StarServerClientContext.cpp
     StarSky.cpp
     StarSkyParameters.cpp
     StarSkyRenderData.cpp
@@ -249,15 +222,12 @@ set (star_game_SOURCES
     StarSongbook.cpp
     StarSpawner.cpp
     StarStagehand.cpp
-    StarStatistics.cpp
     StarStatusController.cpp
     StarStatusTypes.cpp
     StarSystemWorld.cpp
     StarSystemWorldClient.cpp
     StarSystemWorldServer.cpp
     StarSystemWorldServerThread.cpp
-    StarTeamClient.cpp
-    StarTeamManager.cpp
     StarTechController.cpp
     StarTileDamage.cpp
     StarTileDrawer.cpp
@@ -270,12 +240,10 @@ set (star_game_SOURCES
     StarWarping.cpp
     StarWeather.cpp
     StarWeatherTypes.cpp
-    StarWireProcessor.cpp
     StarWiring.cpp
     StarWorldCamera.cpp
     StarWorldClient.cpp
     StarWorldClientThread.cpp
-    StarWorldClientState.cpp
     StarWorldLayout.cpp
     StarWorldParameters.cpp
     StarWorldServer.cpp
@@ -414,6 +382,22 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarUniverseSettings.cppm
     StarWorldStructure.cppm
     StarChatProcessor.cppm
+    StarItemBag.cppm
+    StarPlayerInventory.cppm
+    StarPlayerStorage.cppm
+    StarStatistics.cppm
+    StarPlayerCompanions.cppm
+    StarPlayerDeployment.cppm
+    StarClientContext.cppm
+    StarServerClientContext.cppm
+    StarPlayerFactory.cppm
+    StarEntityFactory.cppm
+    StarTeamClient.cppm
+    StarTeamManager.cppm
+    StarWorldClientState.cppm
+    StarInterpolationTracker.cppm
+    StarParticleManager.cppm
+    StarWireProcessor.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -442,6 +426,22 @@ add_library (star_game_modules STATIC
     StarUniverseSettings.cpp
     StarWorldStructure.cpp
     StarChatProcessor.cpp
+    StarItemBag.cpp
+    StarPlayerInventory.cpp
+    StarPlayerStorage.cpp
+    StarStatistics.cpp
+    StarPlayerCompanions.cpp
+    StarPlayerDeployment.cpp
+    StarClientContext.cpp
+    StarServerClientContext.cpp
+    StarPlayerFactory.cpp
+    StarEntityFactory.cpp
+    StarTeamClient.cpp
+    StarTeamManager.cpp
+    StarWorldClientState.cpp
+    StarInterpolationTracker.cpp
+    StarParticleManager.cpp
+    StarWireProcessor.cpp
     scripting/StarCameraLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp

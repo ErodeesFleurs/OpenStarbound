@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
@@ -72,4 +72,39 @@ private:
   RebuilderPtr m_rebuilder;
 };
 
+}
+
+export module star.player_factory;
+
+export namespace Star {
+  using ::Star::Rebuilder;
+  using ::Star::RebuilderPtr;
+  using ::Star::RebuilderConstPtr;
+  using ::Star::RebuilderWeakPtr;
+  using ::Star::RebuilderConstWeakPtr;
+  using ::Star::RebuilderUPtr;
+  using ::Star::RebuilderConstUPtr;
+  using ::Star::Player;
+  using ::Star::PlayerPtr;
+  using ::Star::PlayerConstPtr;
+  using ::Star::PlayerWeakPtr;
+  using ::Star::PlayerConstWeakPtr;
+  using ::Star::PlayerUPtr;
+  using ::Star::PlayerConstUPtr;
+  using ::Star::PlayerConfig;
+  using ::Star::PlayerConfigPtr;
+  using ::Star::PlayerConfigConstPtr;
+  using ::Star::PlayerConfigWeakPtr;
+  using ::Star::PlayerConfigConstWeakPtr;
+  using ::Star::PlayerConfigUPtr;
+  using ::Star::PlayerConfigConstUPtr;
+  using ::Star::PlayerFactory;
+  using ::Star::PlayerFactoryPtr;
+  using ::Star::PlayerFactoryConstPtr;
+  using ::Star::PlayerFactoryWeakPtr;
+  using ::Star::PlayerFactoryConstWeakPtr;
+  using ::Star::PlayerFactoryUPtr;
+  using ::Star::PlayerFactoryConstUPtr;
+  using ::Star::PlayerExceptionTag;
+  using ::Star::PlayerException;
 }

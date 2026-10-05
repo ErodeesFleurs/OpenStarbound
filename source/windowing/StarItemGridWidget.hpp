@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarItemBag.hpp"
 #include "StarWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarItem.hpp"
@@ -8,6 +7,7 @@
 namespace Star {
 
 STAR_CLASS(ItemGridWidget);
+STAR_CLASS(ItemBag);
 
 class ItemGridWidget : public Widget {
 public:

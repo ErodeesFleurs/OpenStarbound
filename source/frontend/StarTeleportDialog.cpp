@@ -2,8 +2,6 @@
 #include "StarTeleportDialog.hpp"
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarClientContext.hpp"
-#include "StarTeamClient.hpp"
 #include "StarPlayer.hpp"
 #include "StarQuestManager.hpp"
 #include "StarAssets.hpp"
@@ -17,6 +15,9 @@
 
 
 import star.celestial_database;
+
+import star.client_context;
+import star.team_client;
 
 namespace Star {
 

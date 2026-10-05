@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarItemBag.hpp"
 #include "StarObject.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarContainerEntity.hpp"

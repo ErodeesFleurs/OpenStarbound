@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarRect.hpp"
 #include "StarNetElementSystem.hpp"
@@ -59,4 +59,16 @@ private:
   NetCompatibilityRules m_netCompatibilityRules;
 };
 
+}
+
+export module star.world_client_state;
+
+export namespace Star {
+using ::Star::WorldClientState;
+using ::Star::WorldClientStatePtr;
+using ::Star::WorldClientStateConstPtr;
+using ::Star::WorldClientStateWeakPtr;
+using ::Star::WorldClientStateConstWeakPtr;
+using ::Star::WorldClientStateUPtr;
+using ::Star::WorldClientStateConstUPtr;
 }

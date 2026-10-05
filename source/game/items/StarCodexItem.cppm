@@ -7,7 +7,6 @@ module;
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarClientContext.hpp"
 #include "StarCodex.hpp"
 
 export module star.codex_item;

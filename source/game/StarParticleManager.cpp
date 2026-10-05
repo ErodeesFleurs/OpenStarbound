@@ -1,6 +1,11 @@
-#include "StarParticleManager.hpp"
+#include "StarJson.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarParticle.hpp"
+#include "StarWorldTiles.hpp"
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
+
+import star.particle_manager;
 
 namespace Star {
 

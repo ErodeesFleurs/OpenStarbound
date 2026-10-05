@@ -1,6 +1,18 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
-#include "StarServerClientContext.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarThread.hpp"
+#include "StarUuid.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarGameTypes.hpp"
+#include "StarHostAddress.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarWarping.hpp"
+#include "StarPlayerTypes.hpp"
+#include "StarWorldStorage.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarLogging.hpp"
@@ -8,6 +20,7 @@
 #include "StarScriptedEntity.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarRoot.hpp"
+import star.server_client_context;
 import star.universe_settings;
 
 

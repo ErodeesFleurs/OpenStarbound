@@ -2,14 +2,16 @@
 #include "StarRoot.hpp"
 #include "StarFile.hpp"
 #include "StarQuests.hpp"
-#include "StarPlayerFactory.hpp"
-#include "StarPlayerStorage.hpp"
-#include "StarStatistics.hpp"
 #include "StarStatisticsService.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 #include "StarLua.hpp"
+
+import star.player_storage;
+import star.statistics;
+import star.client_context;
+import star.player_factory;
 
 namespace Star {
 

@@ -12,12 +12,8 @@
 #include "StarTools.hpp"
 #include "StarItemDrop.hpp"
 #include "StarArmors.hpp"
-#include "StarPlayerFactory.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarTechController.hpp"
-#include "StarClientContext.hpp"
-#include "StarItemBag.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarWorld.hpp"
 #include "StarStatusController.hpp"
@@ -25,11 +21,8 @@ import star.player_blueprints;
 import star.player_universe_map;
 import star.player_codexes;
 import star.player_tech;
-#include "StarPlayerCompanions.hpp"
-#include "StarPlayerDeployment.hpp"
 import star.player_log;
 #include "StarQuestManager.hpp"
-#include "StarStatistics.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseClient.hpp"
 
@@ -50,6 +43,14 @@ import star.radio_message_database;
 import star.material_database;
 import star.item_database;
 
+
+import star.player_inventory;
+import star.client_context;
+import star.item_bag;
+import star.player_companions;
+import star.player_deployment;
+import star.statistics;
+import star.player_factory;
 
 namespace Star {
 

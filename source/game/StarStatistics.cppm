@@ -1,10 +1,13 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarStatisticsService.hpp"
+#include "StarLua.hpp"
 
 namespace Star {
+
+class LuaCallbacks;
+STAR_CLASS(LuaRoot);
+STAR_CLASS(StatisticsService);
 
 STAR_CLASS(Statistics);
 
@@ -61,4 +64,16 @@ private:
   LuaRootPtr m_luaRoot;
 };
 
+}
+
+export module star.statistics;
+
+export namespace Star {
+using ::Star::Statistics;
+using ::Star::StatisticsPtr;
+using ::Star::StatisticsConstPtr;
+using ::Star::StatisticsWeakPtr;
+using ::Star::StatisticsConstWeakPtr;
+using ::Star::StatisticsUPtr;
+using ::Star::StatisticsConstUPtr;
 }

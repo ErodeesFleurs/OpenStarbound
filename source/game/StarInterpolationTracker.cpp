@@ -1,6 +1,8 @@
-#include "StarInterpolationTracker.hpp"
+#include "StarJson.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.interpolation_tracker;
 
 namespace Star {
 

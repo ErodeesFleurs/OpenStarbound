@@ -20,6 +20,8 @@ import star.treasure;
 import star.item_database;
 import star.object_database;
 
+import star.item_bag;
+
 namespace Star {
 
 ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {

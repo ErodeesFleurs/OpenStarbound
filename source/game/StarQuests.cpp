@@ -12,10 +12,8 @@
 #include "StarNpc.hpp"
 #include "StarObject.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
 import star.player_tech;
 #include "StarQuestManager.hpp"
-#include "StarClientContext.hpp"
 #include "StarUuid.hpp"
 #include "StarUniverseClient.hpp"
 
@@ -29,6 +27,9 @@ import star.versioning_database;
 import star.item_database;
 import star.object_database;
 
+
+import star.player_inventory;
+import star.client_context;
 
 namespace Star {
 

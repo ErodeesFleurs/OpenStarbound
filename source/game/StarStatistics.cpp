@@ -1,4 +1,5 @@
-#include "StarStatistics.hpp"
+#include "StarJson.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarFile.hpp"
@@ -9,6 +10,7 @@
 import star.statistics_database;
 import star.versioning_database;
 import star.config_lua_bindings;
+import star.statistics;
 
 namespace Star {
 

@@ -5,7 +5,6 @@
 #include "StarUniverseClient.hpp"
 #include "StarGuiReader.hpp"
 #include "StarButtonWidget.hpp"
-#include "StarTeamClient.hpp"
 #include "StarImageWidget.hpp"
 #include "StarProgressWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -15,6 +14,9 @@
 #include "StarWorldClient.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarMathCommon.hpp"
+
+import star.client_context;
+import star.team_client;
 
 namespace Star {
 

@@ -10,8 +10,6 @@
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarPlayerStorage.hpp"
-#include "StarTeamClient.hpp"
 
 #include "StarPlayer.hpp"
 #include "StarLuaGameConverters.hpp"
@@ -20,6 +18,9 @@ import star.player_lua_bindings;
 import star.config_lua_bindings;
 import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
+
+import star.player_storage;
+import star.team_client;
 
 namespace Star {
 

@@ -7,16 +7,11 @@
 #include "StarJsonRpc.hpp"
 #include "StarAssets.hpp"
 #include "StarContainerEntity.hpp"
-#include "StarItemBag.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerCompanions.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarQuests.hpp"
 #include "StarQuestManager.hpp"
 #include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarPlayerStorage.hpp"
-#include "StarClientContext.hpp"
 #include "StarCanvasWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
@@ -34,6 +29,9 @@
 import star.ai_database;
 import star.item_database;
 
+
+import star.player_companions;
+import star.client_context;
 
 namespace Star {
 

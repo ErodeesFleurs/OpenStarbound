@@ -1,4 +1,10 @@
-#include "StarPlayerStorage.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBiMap.hpp"
+#include "StarUuid.hpp"
+#include "StarThread.hpp"
+#include "StarJson.hpp"
+#include "StarByteArray.hpp"
+#include "StarWorldStorage.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
@@ -6,11 +12,13 @@
 #include "StarConfiguration.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarRoot.hpp"
 #include "StarText.hpp"
 
 import star.versioning_database;
+import star.player_storage;
+import star.player_factory;
+import star.entity_factory;
 
 namespace Star {
 

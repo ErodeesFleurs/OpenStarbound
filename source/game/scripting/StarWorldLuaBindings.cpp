@@ -15,7 +15,6 @@
 #include "StarBlocksAlongLine.hpp"
 #include "StarSky.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
@@ -49,6 +48,9 @@ import star.object_database;
 import star.item_database;
 import star.image_metadata_database;
 
+
+import star.player_inventory;
+import star.item_bag;
 
 namespace Star {
 

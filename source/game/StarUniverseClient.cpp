@@ -5,7 +5,6 @@
 #include "StarVersion.hpp"
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
-#include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
 import star.player_log;
 #include "StarAssets.hpp"
@@ -14,8 +13,6 @@ import star.player_log;
 #include "StarTcp.hpp"
 #include "StarWorldClient.hpp"
 #include "StarSystemWorldClient.hpp"
-#include "StarClientContext.hpp"
-#include "StarTeamClient.hpp"
 #include "StarEncode.hpp"
 #include "StarQuestManager.hpp"
 import star.player_universe_map;
@@ -26,6 +23,11 @@ import star.projectile_database;
 import star.sha256;
 import star.universe_client_lua_bindings;
 import star.celestial_database;
+
+import star.player_storage;
+import star.client_context;
+import star.statistics;
+import star.team_client;
 
 namespace Star {
 

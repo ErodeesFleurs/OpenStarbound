@@ -6,6 +6,9 @@
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarInputEvent.hpp"
+#include "StarPlayer.hpp"
+
+import star.player_storage;
 
 namespace Star {
 

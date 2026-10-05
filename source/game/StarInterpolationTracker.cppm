@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 
@@ -36,4 +36,10 @@ private:
   Maybe<double> m_predictedTime;
 };
 
+}
+
+export module star.interpolation_tracker;
+
+export namespace Star {
+using ::Star::InterpolationTracker;
 }

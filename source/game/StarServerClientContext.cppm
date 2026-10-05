@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
@@ -8,7 +8,9 @@
 #include "StarDamageTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarHostAddress.hpp"
-#include "StarClientContext.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarWarping.hpp"
+#include "StarPlayerTypes.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarSystemWorld.hpp"
 
@@ -166,4 +168,30 @@ private:
   NetElementData<CelestialCoordinate> m_shipCoordinate;
 };
 
+}
+
+export module star.server_client_context;
+
+export namespace Star {
+using ::Star::WorldServerThread;
+using ::Star::WorldServerThreadPtr;
+using ::Star::WorldServerThreadConstPtr;
+using ::Star::WorldServerThreadWeakPtr;
+using ::Star::WorldServerThreadConstWeakPtr;
+using ::Star::WorldServerThreadUPtr;
+using ::Star::WorldServerThreadConstUPtr;
+using ::Star::SystemWorldServerThread;
+using ::Star::SystemWorldServerThreadPtr;
+using ::Star::SystemWorldServerThreadConstPtr;
+using ::Star::SystemWorldServerThreadWeakPtr;
+using ::Star::SystemWorldServerThreadConstWeakPtr;
+using ::Star::SystemWorldServerThreadUPtr;
+using ::Star::SystemWorldServerThreadConstUPtr;
+using ::Star::ServerClientContext;
+using ::Star::ServerClientContextPtr;
+using ::Star::ServerClientContextConstPtr;
+using ::Star::ServerClientContextWeakPtr;
+using ::Star::ServerClientContextConstWeakPtr;
+using ::Star::ServerClientContextUPtr;
+using ::Star::ServerClientContextConstUPtr;
 }

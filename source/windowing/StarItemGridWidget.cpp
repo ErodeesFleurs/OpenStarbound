@@ -3,6 +3,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 
+import star.item_bag;
+
 namespace Star {
 
 ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)

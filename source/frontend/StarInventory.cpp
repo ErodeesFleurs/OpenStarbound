@@ -8,15 +8,12 @@
 #include "StarPaneManager.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarPlayerInventory.hpp"
-#include "StarPlayerCompanions.hpp"
 #include "StarWorldClient.hpp"
 #include "StarAssets.hpp"
 #include "StarItem.hpp"
 #include "StarMainInterface.hpp"
 #include "StarMerchantInterface.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarStatistics.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarInteractionTypes.hpp"
 
@@ -25,6 +22,10 @@ import star.object_item;
 import star.item_tooltip;
 import star.player_tech;
 import star.tech_database;
+
+import star.player_inventory;
+import star.player_companions;
+import star.statistics;
 
 namespace Star {
 

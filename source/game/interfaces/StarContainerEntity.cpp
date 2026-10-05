@@ -1,5 +1,6 @@
 #include "StarContainerEntity.hpp"
-#include "StarItemBag.hpp"
+
+import star.item_bag;
 
 namespace Star {
 

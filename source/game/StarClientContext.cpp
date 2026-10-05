@@ -1,6 +1,15 @@
-#include "StarClientContext.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarGameTypes.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarWarping.hpp"
+#include "StarWorldStorage.hpp"
+#include "StarPlayerTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+
+import star.client_context;
 
 namespace Star {
 

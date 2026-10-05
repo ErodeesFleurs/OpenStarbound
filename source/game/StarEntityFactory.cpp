@@ -1,6 +1,5 @@
-#include "StarEntityFactory.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerFactory.hpp"
 #include "StarMonster.hpp"
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
@@ -17,6 +16,10 @@ import star.vehicle_database;
 import star.versioning_database;
 import star.object_database;
 
+import star.player_factory;
+import star.entity_factory;
+import star.monster_database;
+import star.npc_database;
 
 namespace Star {
 

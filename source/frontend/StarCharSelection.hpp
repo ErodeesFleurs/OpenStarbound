@@ -1,11 +1,12 @@
 #pragma once
 
 #include "StarPane.hpp"
-#include "StarPlayerStorage.hpp"
+#include "StarUuid.hpp"
 
 namespace Star {
 
 STAR_CLASS(PlayerStorage);
+STAR_CLASS(Player);
 
 class CharSelectionPane : public Pane {
 public:

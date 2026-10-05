@@ -6,7 +6,6 @@
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarBiome.hpp"
-#include "StarWireProcessor.hpp"
 #include "StarWireEntity.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarDungeonGenerator.hpp"
@@ -14,11 +13,9 @@
 #include "StarItemDrop.hpp"
 #include "StarObject.hpp"
 #include "StarContainerEntity.hpp"
-#include "StarItemBag.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarProjectile.hpp"
 #include "StarPlayer.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
@@ -32,6 +29,8 @@ import star.versioning_database;
 import star.object_database;
 import star.item_database;
 import star.biome_database;
+import star.wire_processor;
+import star.entity_factory;
 
 
 namespace Star {

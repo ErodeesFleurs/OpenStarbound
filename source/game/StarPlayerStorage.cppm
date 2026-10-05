@@ -1,13 +1,15 @@
-#pragma once
+module;
 
 #include "StarOrderedMap.hpp"
 #include "StarUuid.hpp"
-#include "StarPlayerFactory.hpp"
-#include "StarThread.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
 #include "StarWorldStorage.hpp"
-#include "StarStatistics.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
+
+STAR_CLASS(Player);
 
 class PlayerStorage {
 public:
@@ -56,4 +58,10 @@ private:
   JsonObject m_metadata;
 };
 
+}
+
+export module star.player_storage;
+
+export namespace Star {
+using ::Star::PlayerStorage;
 }

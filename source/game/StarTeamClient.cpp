@@ -1,13 +1,18 @@
-#include "StarTeamClient.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarUuid.hpp"
+#include "StarDrawable.hpp"
+#include "StarWarping.hpp"
+#include "StarVersion.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarPlayer.hpp"
 import star.player_log;
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarClientContext.hpp"
 #include "StarWorldClient.hpp"
 #include "StarJsonRpc.hpp"
+
+import star.client_context;
+import star.team_client;
 
 namespace Star {
   

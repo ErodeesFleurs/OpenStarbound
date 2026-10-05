@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarWorldGeometry.hpp"
 #include "StarParticle.hpp"
@@ -37,4 +37,16 @@ private:
   ClientTileSectorArrayPtr m_tileSectorArray;
 };
 
+}
+
+export module star.particle_manager;
+
+export namespace Star {
+using ::Star::ParticleManager;
+using ::Star::ParticleManagerPtr;
+using ::Star::ParticleManagerConstPtr;
+using ::Star::ParticleManagerWeakPtr;
+using ::Star::ParticleManagerConstWeakPtr;
+using ::Star::ParticleManagerUPtr;
+using ::Star::ParticleManagerConstUPtr;
 }

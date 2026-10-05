@@ -13,6 +13,7 @@ module;
 #include "StarClientCommandProcessor.hpp"
 
 module star.interface_lua_bindings;
+import star.client_context;
 
 namespace Star {
 

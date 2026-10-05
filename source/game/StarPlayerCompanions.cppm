@@ -1,6 +1,6 @@
-#pragma once
+module;
 
-#include "StarAiTypes.hpp"
+#include "StarJson.hpp"
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
 #include "StarLuaComponents.hpp"
@@ -60,4 +60,23 @@ private:
       m_scriptComponent;
 };
 
+}
+
+export module star.player_companions;
+
+export namespace Star {
+using ::Star::Companion;
+using ::Star::CompanionPtr;
+using ::Star::CompanionConstPtr;
+using ::Star::CompanionWeakPtr;
+using ::Star::CompanionConstWeakPtr;
+using ::Star::CompanionUPtr;
+using ::Star::CompanionConstUPtr;
+using ::Star::PlayerCompanions;
+using ::Star::PlayerCompanionsPtr;
+using ::Star::PlayerCompanionsConstPtr;
+using ::Star::PlayerCompanionsWeakPtr;
+using ::Star::PlayerCompanionsConstWeakPtr;
+using ::Star::PlayerCompanionsUPtr;
+using ::Star::PlayerCompanionsConstUPtr;
 }

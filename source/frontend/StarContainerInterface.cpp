@@ -12,7 +12,6 @@
 #include "StarFuelWidget.hpp"
 #include "StarPlayer.hpp"
 #include "StarObject.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarInput.hpp"
@@ -23,6 +22,9 @@ import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.item_database;
 
+
+import star.player_inventory;
+import star.item_bag;
 
 namespace Star {
 

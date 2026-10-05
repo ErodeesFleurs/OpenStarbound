@@ -8,7 +8,6 @@
 #include "StarBiome.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarLiquidTypes.hpp"
-#include "StarParticleManager.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarPlayer.hpp"
 import star.player_log;
@@ -16,7 +15,6 @@ import star.player_log;
 #include "StarPhysicsEntity.hpp"
 #include "StarItemDrop.hpp"
 #include "StarObject.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarJson.hpp"
 #include "StarParametricFunction.hpp"
@@ -34,6 +32,10 @@ import star.particle_database;
 import star.item_database;
 import star.object_database;
 
+
+import star.client_context;
+import star.particle_manager;
+import star.entity_factory;
 
 namespace Star {
 

@@ -2,7 +2,6 @@
 #include "StarSystemWorldServer.hpp"
 #include "StarRoot.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarClientContext.hpp"
 #include "StarNetPackets.hpp"
 #include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"

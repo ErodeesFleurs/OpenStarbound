@@ -6,7 +6,6 @@
 #include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
@@ -20,6 +19,9 @@
 import star.farmable_object;
 import star.item_database;
 
+
+import star.player_inventory;
+import star.item_bag;
 
 namespace Star {
 
