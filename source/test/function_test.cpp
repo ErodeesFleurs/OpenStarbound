@@ -1,6 +1,9 @@
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 
 #include "gtest/gtest.h"
+import star.stored_functions;
 
 using namespace Star;
 

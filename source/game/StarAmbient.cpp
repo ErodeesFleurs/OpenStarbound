@@ -1,4 +1,3 @@
-#include "StarAmbient.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
 #include "StarMixer.hpp"
@@ -6,6 +5,8 @@
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
+
+import star.ambient;
 
 namespace Star {
 

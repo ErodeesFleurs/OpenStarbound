@@ -1,6 +1,4 @@
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarTreasure.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarItemBag.hpp"
@@ -11,6 +9,7 @@
 
 import star.object_database;
 import star.item_database;
+import star.treasure;
 
 namespace Star {
 

@@ -4,7 +4,6 @@
 #include "StarTextPainter.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarChatBubbleSeparation.hpp"
-#include "StarStoredFunctions.hpp"
 
 namespace Star {
 
@@ -12,6 +11,7 @@ STAR_CLASS(GuiContext);
 STAR_CLASS(AssetTextureGroup);
 STAR_CLASS(WorldClient);
 STAR_CLASS(ChatBubbleManager);
+STAR_CLASS(StoredFunction);
 
 class ChatBubbleManager {
 public:

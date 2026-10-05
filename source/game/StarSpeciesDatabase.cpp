@@ -9,11 +9,12 @@
 #include "StarTtlCache.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarJson.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarUtilityLuaBindings.hpp"
+import star.name_generator;
 
 import star.species_database;
 import star.config_lua_bindings;

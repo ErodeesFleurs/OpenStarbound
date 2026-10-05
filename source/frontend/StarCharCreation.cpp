@@ -3,7 +3,8 @@
 #include "StarCharCreation.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarJson.hpp"
+#include "StarRandom.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
@@ -17,6 +18,7 @@
 #include "StarPlayerFactory.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
+import star.name_generator;
 
 import star.species_database;
 import star.item_database;

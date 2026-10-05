@@ -10,7 +10,10 @@
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarItemDrop.hpp"
-#include "StarTreasure.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarLogging.hpp"
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
@@ -19,6 +22,7 @@
 #include "StarAssets.hpp"
 #include "StarString.hpp"
 #include "StarVehicle.hpp"
+import star.treasure;
 
 import star.vehicle_database;
 import star.liquids_database;

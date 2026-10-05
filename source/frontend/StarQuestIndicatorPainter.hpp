@@ -7,6 +7,7 @@ namespace Star {
 
 STAR_CLASS(UniverseClient);
 STAR_CLASS(QuestIndicatorPainter);
+STAR_CLASS(Animation);
 
 class QuestIndicatorPainter {
 public:

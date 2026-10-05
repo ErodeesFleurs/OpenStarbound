@@ -2,8 +2,8 @@
 
 #include "StarVector.hpp"
 #include "StarString.hpp"
-#include "StarInterfaceCursor.hpp"
 #include "StarInputEvent.hpp"
+#include "StarInterfaceCursor.hpp"
 
 namespace Star {
 

@@ -1,7 +1,8 @@
 #include "StarAssetPath.hpp"
+#include "StarDrawable.hpp"
+#include "StarRoot.hpp"
 #include "StarInterfaceCursor.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 
@@ -66,4 +66,39 @@ private:
   bool m_volumeChanged = false;
 };
 
+}
+
+export module star.ambient;
+
+export namespace Star {
+  using ::Star::AudioInstance;
+  using ::Star::AudioInstancePtr;
+  using ::Star::AudioInstanceConstPtr;
+  using ::Star::AudioInstanceWeakPtr;
+  using ::Star::AudioInstanceConstWeakPtr;
+  using ::Star::AudioInstanceUPtr;
+  using ::Star::AudioInstanceConstUPtr;
+  using ::Star::AmbientTrackGroup;
+  using ::Star::AmbientTrackGroupPtr;
+  using ::Star::AmbientTrackGroupConstPtr;
+  using ::Star::AmbientTrackGroupWeakPtr;
+  using ::Star::AmbientTrackGroupConstWeakPtr;
+  using ::Star::AmbientTrackGroupUPtr;
+  using ::Star::AmbientTrackGroupConstUPtr;
+  using ::Star::AmbientNoisesDescription;
+  using ::Star::AmbientNoisesDescriptionPtr;
+  using ::Star::AmbientNoisesDescriptionConstPtr;
+  using ::Star::AmbientNoisesDescriptionWeakPtr;
+  using ::Star::AmbientNoisesDescriptionConstWeakPtr;
+  using ::Star::AmbientNoisesDescriptionUPtr;
+  using ::Star::AmbientNoisesDescriptionConstUPtr;
+  using ::Star::AmbientManager;
+  using ::Star::AmbientManagerPtr;
+  using ::Star::AmbientManagerConstPtr;
+  using ::Star::AmbientManagerWeakPtr;
+  using ::Star::AmbientManagerConstWeakPtr;
+  using ::Star::AmbientManagerUPtr;
+  using ::Star::AmbientManagerConstUPtr;
+  using ::Star::WeatherNoisesDescription;
+  using ::Star::WeatherNoisesDescriptionPtr;
 }

@@ -3,6 +3,9 @@
 #include "StarThread.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarDrawable.hpp"
+// Parse JSON iterator templates before Particle imports animation (GCC 16).
+#include "StarJsonExtra.hpp"
 #include "StarParticle.hpp"
 #include "StarSet.hpp"
 #include "StarTileDamage.hpp"
@@ -11,7 +14,6 @@
 #include "StarEntityRenderingTypes.hpp"
 #include "StarLightSource.hpp"
 #include "StarObject.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarIterator.hpp"
 #include "StarWorld.hpp"
 #include "StarAssets.hpp"
@@ -19,7 +21,7 @@
 #include "StarLogging.hpp"
 #include "StarContainerObject.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarJson.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarAssetPath.hpp"
 
@@ -30,6 +32,7 @@ import star.loungeable_object;
 import star.farmable_object;
 import star.material_database;
 import star.image_metadata_database;
+import star.rebuilder;
 
 namespace Star {
 

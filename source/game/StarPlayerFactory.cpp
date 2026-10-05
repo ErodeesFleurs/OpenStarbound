@@ -4,7 +4,9 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+import star.rebuilder;
 
 namespace Star {
 

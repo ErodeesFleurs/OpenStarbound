@@ -1,10 +1,12 @@
-#include "StarAnimation.hpp"
+#include "StarDrawable.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLexicalCast.hpp"
+
+import star.animation;
 
 namespace Star {
 

@@ -1,6 +1,9 @@
-#include "StarStoredFunctions.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.stored_functions;
 
 namespace Star {
 

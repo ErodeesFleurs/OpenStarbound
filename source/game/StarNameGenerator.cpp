@@ -1,7 +1,9 @@
-#include "StarNameGenerator.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRandom.hpp"
+
+import star.name_generator;
 
 namespace Star {
 

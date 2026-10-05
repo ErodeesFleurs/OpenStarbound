@@ -1,10 +1,11 @@
+// Parse JSON iterator templates before game headers import modules (GCC 16).
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarItemDrop.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
 #include "StarDataStreamExtra.hpp"

@@ -1,6 +1,10 @@
-#include "StarStatCollection.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarEither.hpp"
 
 #include "gtest/gtest.h"
+import star.stat_collection;
+import star.stat_set;
 
 using namespace Star;
 

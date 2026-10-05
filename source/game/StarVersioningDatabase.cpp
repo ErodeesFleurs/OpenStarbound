@@ -8,9 +8,11 @@
 #include "StarLogging.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarAssets.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
+import star.stored_functions;
 
 import star.versioning_database;
 import star.root_lua_bindings;

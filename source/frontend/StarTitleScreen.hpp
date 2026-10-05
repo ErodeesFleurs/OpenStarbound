@@ -1,11 +1,11 @@
 #pragma once
 
 #include "StarSky.hpp"
-#include "StarAmbient.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarInterfaceCursor.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarListWidget.hpp"
+import star.ambient;
 
 namespace Star {
 

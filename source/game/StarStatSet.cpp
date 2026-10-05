@@ -1,5 +1,7 @@
-#include "StarStatSet.hpp"
+#include "StarStatusTypes.hpp"
 #include "StarMathCommon.hpp"
+
+import star.stat_set;
 
 namespace Star {
 

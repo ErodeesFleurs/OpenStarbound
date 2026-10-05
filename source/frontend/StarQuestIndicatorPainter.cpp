@@ -6,6 +6,7 @@
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.animation;
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client) {

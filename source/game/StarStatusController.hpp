@@ -3,12 +3,14 @@
 #include "StarObserverStream.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarNetElementExt.hpp"
-#include "StarStatCollection.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarEither.hpp"
 #include "StarDamage.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarEntityRenderingTypes.hpp"
+import star.stat_collection;
 
 import star.status_effect_database;
 

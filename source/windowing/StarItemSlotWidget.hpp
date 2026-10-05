@@ -2,7 +2,7 @@
 
 #include "StarWidget.hpp"
 #include "StarProgressWidget.hpp"
-#include "StarAnimation.hpp"
+import star.animation;
 
 namespace Star {
 

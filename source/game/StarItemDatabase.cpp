@@ -14,7 +14,8 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarRebuilder.hpp"
+#include "StarJson.hpp"
+import star.rebuilder;
 
 import star.item_database;
 import star.thrown_item;

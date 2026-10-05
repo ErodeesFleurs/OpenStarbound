@@ -1,4 +1,5 @@
 #include "StarAssetPath.hpp"
+#include "StarDrawable.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"

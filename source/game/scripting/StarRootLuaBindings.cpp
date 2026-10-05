@@ -12,9 +12,10 @@ module;
 #include "StarLua.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarTreasure.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
 #include "StarNpc.hpp"
 #include "StarMonster.hpp"
 #include "StarJsonExtra.hpp"
@@ -22,6 +23,9 @@ module;
 #include "StarImageLuaBindings.hpp"
 
 module star.root_lua_bindings;
+import star.stored_functions;
+import star.treasure;
+import star.name_generator;
 import star.projectile_database;
 import star.liquids_database;
 import star.behavior_database;

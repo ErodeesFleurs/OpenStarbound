@@ -64,6 +64,7 @@ import star.npc_database;
 import star.monster_database;
 import star.item_database;
 import star.object_database;
+import star.treasure;
 
 
 namespace Star {

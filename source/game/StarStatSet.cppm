@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarStatusTypes.hpp"
 
@@ -147,4 +147,16 @@ private:
   StringMap<Resource> m_resources;
 };
 
+}
+
+export module star.stat_set;
+
+export namespace Star {
+  using ::Star::StatSet;
+  using ::Star::StatSetPtr;
+  using ::Star::StatSetConstPtr;
+  using ::Star::StatSetWeakPtr;
+  using ::Star::StatSetConstWeakPtr;
+  using ::Star::StatSetUPtr;
+  using ::Star::StatSetConstUPtr;
 }

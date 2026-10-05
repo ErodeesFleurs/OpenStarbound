@@ -7,7 +7,9 @@ module;
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarRoot.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarImageWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarPreviewableItem.hpp"
@@ -20,6 +22,7 @@ module;
 #include "StarJsonExtra.hpp"
 
 export module star.item_tooltip;
+import star.stored_functions;
 
 import star.object_item;
 import star.status_effect_database;

@@ -8,9 +8,12 @@
 #include "StarRandom.hpp"
 #include "StarPlant.hpp"
 #include "StarWorldServer.hpp"
-#include "StarTreasure.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
+import star.treasure;
 
 import star.farmable_object;
 import star.plant_database;

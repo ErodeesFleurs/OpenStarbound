@@ -1,7 +1,9 @@
 #pragma once
 
 #include "StarJson.hpp"
-#include "StarAnimation.hpp"
+#include "StarDrawable.hpp"
+
+import star.animation;
 
 namespace Star {
 

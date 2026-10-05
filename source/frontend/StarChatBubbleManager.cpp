@@ -10,6 +10,7 @@
 #include "StarAssetTextureGroup.hpp"
 #include "StarGuiContext.hpp"
 
+import star.stored_functions;
 
 import star.image_metadata_database;
 

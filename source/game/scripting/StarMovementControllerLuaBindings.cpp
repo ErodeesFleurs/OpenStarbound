@@ -1,4 +1,5 @@
 module;
+#include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarMovementController.hpp"
 #include "StarLuaGameConverters.hpp"

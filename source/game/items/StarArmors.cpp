@@ -4,9 +4,12 @@
 #include "StarImageProcessing.hpp"
 #include "StarHumanoid.hpp"
 #include "StarRoot.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarPlayer.hpp"
 #include "StarDirectives.hpp"
+import star.stored_functions;
 
 namespace Star {
 

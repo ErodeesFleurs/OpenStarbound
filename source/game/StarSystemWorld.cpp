@@ -4,7 +4,9 @@
 #include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarSystemWorldServer.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarJson.hpp"
+#include "StarRandom.hpp"
+import star.name_generator;
 
 
 import star.celestial_database;

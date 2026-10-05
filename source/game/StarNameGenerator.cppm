@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarRandom.hpp"
@@ -39,4 +39,19 @@ private:
   StringSet m_profanityFilter;
 };
 
+}
+
+export module star.name_generator;
+
+export namespace Star {
+  using ::Star::NameGeneratorExceptionTag;
+  using ::Star::NameGeneratorException;
+  using ::Star::MarkovSource;
+  using ::Star::PatternedNameGenerator;
+  using ::Star::PatternedNameGeneratorPtr;
+  using ::Star::PatternedNameGeneratorConstPtr;
+  using ::Star::PatternedNameGeneratorWeakPtr;
+  using ::Star::PatternedNameGeneratorConstWeakPtr;
+  using ::Star::PatternedNameGeneratorUPtr;
+  using ::Star::PatternedNameGeneratorConstUPtr;
 }

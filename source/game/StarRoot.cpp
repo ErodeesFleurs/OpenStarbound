@@ -18,8 +18,11 @@
 #include "StarPlantDrop.hpp"
 #include "StarPlayer.hpp"
 #include "StarItemDrop.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarTreasure.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarLogging.hpp"
 #include "StarPlayerFactory.hpp"
@@ -27,8 +30,11 @@
 #include "StarDirectoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarWorkerPool.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarRandom.hpp"
 #include "StarVehicle.hpp"
+import star.stored_functions;
+import star.treasure;
+import star.name_generator;
 
 import star.terrain_database;
 import star.liquids_database;

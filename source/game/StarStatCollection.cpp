@@ -1,7 +1,12 @@
-#include "StarStatCollection.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarStatusTypes.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLogging.hpp"
+
+import star.stat_set;
+import star.stat_collection;
 
 namespace Star {
 

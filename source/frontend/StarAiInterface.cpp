@@ -1,5 +1,6 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
+#include "StarDrawable.hpp"
 #include "StarAiInterface.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"

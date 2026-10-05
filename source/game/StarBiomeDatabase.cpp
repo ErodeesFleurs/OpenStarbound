@@ -4,10 +4,13 @@
 #include "StarRandom.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarParallax.hpp"
-#include "StarAmbient.hpp"
 #include "StarAssets.hpp"
+import star.stored_functions;
+import star.ambient;
 
 import star.biome_database;
 import star.material_database;

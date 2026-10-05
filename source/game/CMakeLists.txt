@@ -1,8 +1,6 @@
 set (star_game_HEADERS
     StarActorMovementController.hpp
     StarAiTypes.hpp
-    StarAmbient.hpp
-    StarAnimation.hpp
     StarArmorWearer.hpp
     StarBehaviorState.hpp
     StarBiome.hpp
@@ -50,7 +48,6 @@ set (star_game_HEADERS
     StarMaterialTypes.hpp
     StarMonster.hpp
     StarMovementController.hpp
-    StarNameGenerator.hpp
     StarNetPackets.hpp
     StarNetPacketSocket.hpp
     StarNetworkedAnimator.hpp
@@ -79,7 +76,6 @@ set (star_game_HEADERS
     StarQuestDescriptor.hpp
     StarQuestManager.hpp
     StarQuests.hpp
-    StarRebuilder.hpp
     StarRoot.hpp
     StarRootLoader.hpp
     StarServerClientContext.hpp
@@ -90,12 +86,9 @@ set (star_game_HEADERS
     StarSongbook.hpp
     StarSpawner.hpp
     StarStagehand.hpp
-    StarStatCollection.hpp
     StarStatistics.hpp
-    StarStatSet.hpp
     StarStatusController.hpp
     StarStatusTypes.hpp
-    StarStoredFunctions.hpp
     StarSystemWorld.hpp
     StarSystemWorldClient.hpp
     StarSystemWorldServer.hpp
@@ -108,7 +101,6 @@ set (star_game_HEADERS
     StarTileModification.hpp
     StarTileSectorArray.hpp
     StarToolUser.hpp
-    StarTreasure.hpp
     StarUniverseClient.hpp
     StarUniverseConnection.hpp
     StarUniverseServer.hpp
@@ -187,8 +179,6 @@ set (star_game_HEADERS
 set (star_game_SOURCES
     StarActorMovementController.cpp
     StarAiTypes.cpp
-    StarAmbient.cpp
-    StarAnimation.cpp
     StarArmorWearer.cpp
     StarBehaviorState.cpp
     StarBiome.cpp
@@ -235,7 +225,6 @@ set (star_game_SOURCES
     StarMaterialRenderProfile.cpp
     StarMonster.cpp
     StarMovementController.cpp
-    StarNameGenerator.cpp
     StarNetPackets.cpp
     StarNetPacketSocket.cpp
     StarNetworkedAnimator.cpp
@@ -264,7 +253,6 @@ set (star_game_SOURCES
     StarQuestDescriptor.cpp
     StarQuestManager.cpp
     StarQuests.cpp
-    StarRebuilder.cpp
     StarRoot.cpp
     StarRootLoader.cpp
     StarServerClientContext.cpp
@@ -275,12 +263,9 @@ set (star_game_SOURCES
     StarSongbook.cpp
     StarSpawner.cpp
     StarStagehand.cpp
-    StarStatCollection.cpp
     StarStatistics.cpp
-    StarStatSet.cpp
     StarStatusController.cpp
     StarStatusTypes.cpp
-    StarStoredFunctions.cpp
     StarSystemWorld.cpp
     StarSystemWorldClient.cpp
     StarSystemWorldServer.cpp
@@ -292,7 +277,6 @@ set (star_game_SOURCES
     StarTileDrawer.cpp
     StarTileModification.cpp
     StarToolUser.cpp
-    StarTreasure.cpp
     StarUniverseClient.cpp
     StarUniverseConnection.cpp
     StarUniverseServer.cpp
@@ -430,6 +414,14 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarCelestialDatabase.cppm
     StarImageMetadataDatabase.cppm
     StarBiomeDatabase.cppm
+    StarStoredFunctions.cppm
+    StarTreasure.cppm
+    StarNameGenerator.cppm
+    StarRebuilder.cppm
+    StarStatSet.cppm
+    StarStatCollection.cppm
+    StarAnimation.cppm
+    StarAmbient.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -442,8 +434,17 @@ target_link_libraries (star_game_module_interfaces PRIVATE star_modules star_bui
 
 # Keep implementation template instantiations out of interface BMIs.
 add_library (star_game_modules STATIC
+    StarStoredFunctions.cpp
+    StarTreasure.cpp
+    StarNameGenerator.cpp
+    StarRebuilder.cpp
+    StarStatSet.cpp
+    StarStatCollection.cpp
+    StarAnimation.cpp
+    StarAmbient.cpp
     scripting/StarCameraLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
+    scripting/StarItemLuaBindings.cpp
     scripting/StarPlayerLuaBindings.cpp
     scripting/StarMovementControllerLuaBindings.cpp
     scripting/StarWorldLuaBindings.cpp

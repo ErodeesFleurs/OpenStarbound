@@ -18,9 +18,12 @@
 #include "StarObject.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarUniverseClient.hpp"
+import star.stored_functions;
 
 import star.curve25519;
 import star.universe_client_lua_bindings;

@@ -4,13 +4,17 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarTreasure.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
 #include "StarWorld.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarMixer.hpp"
 #include "StarAugmentItem.hpp"
+import star.treasure;
 
 
 import star.item_database;

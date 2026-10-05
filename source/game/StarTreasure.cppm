@@ -1,6 +1,5 @@
-#pragma once
+module;
 
-#include "StarThread.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarItemDescriptor.hpp"
@@ -90,4 +89,46 @@ private:
   StringMap<TreasureChestSet> m_treasureChestSets;
 };
 
+}
+
+export module star.treasure;
+
+export namespace Star {
+  using ::Star::TreasureExceptionTag;
+  using ::Star::TreasureException;
+  using ::Star::World;
+  using ::Star::WorldPtr;
+  using ::Star::WorldConstPtr;
+  using ::Star::WorldWeakPtr;
+  using ::Star::WorldConstWeakPtr;
+  using ::Star::WorldUPtr;
+  using ::Star::WorldConstUPtr;
+  using ::Star::Item;
+  using ::Star::ItemPtr;
+  using ::Star::ItemConstPtr;
+  using ::Star::ItemWeakPtr;
+  using ::Star::ItemConstWeakPtr;
+  using ::Star::ItemUPtr;
+  using ::Star::ItemConstUPtr;
+  using ::Star::ItemBag;
+  using ::Star::ItemBagPtr;
+  using ::Star::ItemBagConstPtr;
+  using ::Star::ItemBagWeakPtr;
+  using ::Star::ItemBagConstWeakPtr;
+  using ::Star::ItemBagUPtr;
+  using ::Star::ItemBagConstUPtr;
+  using ::Star::ContainerObject;
+  using ::Star::ContainerObjectPtr;
+  using ::Star::ContainerObjectConstPtr;
+  using ::Star::ContainerObjectWeakPtr;
+  using ::Star::ContainerObjectConstWeakPtr;
+  using ::Star::ContainerObjectUPtr;
+  using ::Star::ContainerObjectConstUPtr;
+  using ::Star::TreasureDatabase;
+  using ::Star::TreasureDatabasePtr;
+  using ::Star::TreasureDatabaseConstPtr;
+  using ::Star::TreasureDatabaseWeakPtr;
+  using ::Star::TreasureDatabaseConstWeakPtr;
+  using ::Star::TreasureDatabaseUPtr;
+  using ::Star::TreasureDatabaseConstUPtr;
 }

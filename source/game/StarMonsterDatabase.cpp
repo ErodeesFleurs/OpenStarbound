@@ -13,7 +13,8 @@
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarJson.hpp"
+import star.rebuilder;
 
 import star.monster_database;
 

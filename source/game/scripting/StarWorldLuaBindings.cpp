@@ -29,13 +29,15 @@
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
 #include "StarItem.hpp"
-#include "StarTreasure.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarContainerObject.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarBiome.hpp"
 #include "StarVehicle.hpp"
+import star.treasure;
 
 import star.projectile_database;
 import star.vehicle_database;

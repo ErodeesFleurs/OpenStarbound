@@ -3,13 +3,19 @@
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDamageManager.hpp"
-#include "StarTreasure.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarMultiTable.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarStatusController.hpp"
+import star.treasure;
+import star.stored_functions;
 
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;

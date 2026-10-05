@@ -1,9 +1,8 @@
-#pragma once
+module;
 
 #include "StarParametricFunction.hpp"
 #include "StarJson.hpp"
 #include "StarMultiTable.hpp"
-#include "StarThread.hpp"
 
 namespace Star {
 
@@ -98,4 +97,40 @@ private:
   StringMap<StoredConfigFunctionPtr> m_configFunctions;
 };
 
+}
+
+export module star.stored_functions;
+
+export namespace Star {
+  using ::Star::StoredFunctionExceptionTag;
+  using ::Star::StoredFunctionException;
+  using ::Star::Monotonicity;
+  using ::Star::StoredFunction;
+  using ::Star::StoredFunctionPtr;
+  using ::Star::StoredFunctionConstPtr;
+  using ::Star::StoredFunctionWeakPtr;
+  using ::Star::StoredFunctionConstWeakPtr;
+  using ::Star::StoredFunctionUPtr;
+  using ::Star::StoredFunctionConstUPtr;
+  using ::Star::StoredFunction2;
+  using ::Star::StoredFunction2Ptr;
+  using ::Star::StoredFunction2ConstPtr;
+  using ::Star::StoredFunction2WeakPtr;
+  using ::Star::StoredFunction2ConstWeakPtr;
+  using ::Star::StoredFunction2UPtr;
+  using ::Star::StoredFunction2ConstUPtr;
+  using ::Star::StoredConfigFunction;
+  using ::Star::StoredConfigFunctionPtr;
+  using ::Star::StoredConfigFunctionConstPtr;
+  using ::Star::StoredConfigFunctionWeakPtr;
+  using ::Star::StoredConfigFunctionConstWeakPtr;
+  using ::Star::StoredConfigFunctionUPtr;
+  using ::Star::StoredConfigFunctionConstUPtr;
+  using ::Star::FunctionDatabase;
+  using ::Star::FunctionDatabasePtr;
+  using ::Star::FunctionDatabaseConstPtr;
+  using ::Star::FunctionDatabaseWeakPtr;
+  using ::Star::FunctionDatabaseConstWeakPtr;
+  using ::Star::FunctionDatabaseUPtr;
+  using ::Star::FunctionDatabaseConstUPtr;
 }

@@ -2,7 +2,6 @@
 
 #include "StarOrderedSet.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarAnimation.hpp"
 #include "StarQuestDescriptor.hpp"
 
 namespace Star {

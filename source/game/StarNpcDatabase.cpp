@@ -9,13 +9,17 @@
 #include "StarJsonExtra.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
-#include "StarNameGenerator.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarAssets.hpp"
 #include "StarEncode.hpp"
 #include "StarArmors.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarThread.hpp"
+import star.name_generator;
+import star.stored_functions;
+import star.rebuilder;
 
 import star.npc_database;
 import star.item_database;

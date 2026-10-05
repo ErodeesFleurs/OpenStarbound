@@ -1,7 +1,8 @@
 #include "StarBiome.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarParallax.hpp"
-#include "StarAmbient.hpp"
+#include "StarJson.hpp"
+import star.ambient;
 
 namespace Star {
 

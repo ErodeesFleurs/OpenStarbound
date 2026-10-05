@@ -5,6 +5,7 @@
 #include "StarAssets.hpp"
 
 import star.ai_database;
+import star.animation;
 
 namespace Star {
 

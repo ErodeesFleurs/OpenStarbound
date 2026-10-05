@@ -4,7 +4,6 @@
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarRegisteredPaneManager.hpp"
-#include "StarAnimation.hpp"
 #include "StarText.hpp"
 
 namespace Star {

@@ -7,10 +7,13 @@
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarMonster.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarJson.hpp"
+#include "StarParametricFunction.hpp"
+#include "StarMultiTable.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDrop.hpp"
 #include "StarIterator.hpp"
+import star.stored_functions;
 
 import star.liquids_database;
 import star.projectile_database;

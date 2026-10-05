@@ -6,12 +6,12 @@
 #include "StarBiomePlacement.hpp"
 #include "StarCelestialTypes.hpp"
 #include "StarSkyParameters.hpp"
-#include "StarAmbient.hpp"
 
 namespace Star {
 
 STAR_CLASS(WorldTemplate);
 STAR_CLASS(CelestialDatabase);
+STAR_STRUCT(AmbientNoisesDescription);
 
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)

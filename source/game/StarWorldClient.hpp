@@ -3,7 +3,6 @@
 #include "StarWorldClientState.hpp"
 #include "StarNetPackets.hpp"
 #include "StarWorldRenderData.hpp"
-#include "StarAmbient.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarWeather.hpp"
 #include "StarInterpolationTracker.hpp"
@@ -15,6 +14,7 @@
 #include "StarGameTimers.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
+import star.ambient;
 
 namespace Star {
 

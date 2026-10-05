@@ -1,9 +1,11 @@
 #include "StarWorldPainter.hpp"
-#include "StarAnimation.hpp"
+#include "StarDrawable.hpp"
+#include "StarBiMap.hpp"
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+import star.animation;
 
 namespace Star {
 

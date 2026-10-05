@@ -1,8 +1,10 @@
-#pragma once
+module;
 
 #include "StarEither.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarStatSet.hpp"
+#include "StarStatusTypes.hpp"
+
+import star.stat_set;
 
 namespace Star {
 
@@ -64,4 +66,10 @@ private:
   StableStringMap<NetElementBool> m_resourceLockedNetStates;
 };
 
+}
+
+export module star.stat_collection;
+
+export namespace Star {
+  using ::Star::StatCollection;
 }

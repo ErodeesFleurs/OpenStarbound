@@ -7,7 +7,10 @@
 #include "StarSongbook.hpp"
 #include "StarDamageManager.hpp"
 #include "StarLogging.hpp"
-#include "StarTreasure.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarEncode.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
@@ -17,6 +20,7 @@
 #include "StarFireableItem.hpp"
 #include "StarStatusController.hpp"
 #include "StarJsonExtra.hpp"
+import star.treasure;
 
 import star.species_database;
 import star.networked_animator_lua_bindings;

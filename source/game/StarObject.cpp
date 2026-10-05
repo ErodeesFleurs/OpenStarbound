@@ -7,13 +7,16 @@
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarDamageManager.hpp"
-#include "StarTreasure.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParametricFunction.hpp"
 #include "StarItemDrop.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarMixer.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaGameConverters.hpp"
+import star.treasure;
 
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;

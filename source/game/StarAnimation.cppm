@@ -1,10 +1,13 @@
-#pragma once
+module;
 
-#include "StarDrawable.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
 
 namespace Star {
 
+struct Drawable;
 STAR_CLASS(Animation);
 
 class Animation {
@@ -53,4 +56,17 @@ private:
   bool m_completed;
 };
 
+}
+
+export module star.animation;
+
+export namespace Star {
+  using ::Star::Drawable;
+  using ::Star::Animation;
+  using ::Star::AnimationPtr;
+  using ::Star::AnimationConstPtr;
+  using ::Star::AnimationWeakPtr;
+  using ::Star::AnimationConstWeakPtr;
+  using ::Star::AnimationUPtr;
+  using ::Star::AnimationConstUPtr;
 }

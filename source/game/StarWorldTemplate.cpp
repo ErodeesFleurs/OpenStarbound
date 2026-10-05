@@ -12,6 +12,7 @@
 import star.terrain_database;
 import star.biome_database;
 import star.celestial_database;
+import star.ambient;
 
 
 namespace Star {

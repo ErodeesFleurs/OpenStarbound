@@ -3,8 +3,9 @@
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarAnimation.hpp"
+#include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
+import star.animation;
 
 namespace Star {
 

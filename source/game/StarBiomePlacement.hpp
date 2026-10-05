@@ -4,7 +4,6 @@
 #include "StarWeightedPool.hpp"
 #include "StarBiMap.hpp"
 #include "StarPlant.hpp"
-#include "StarTreasure.hpp"
 #include "StarStrongTypedef.hpp"
 
 import star.plant_database;

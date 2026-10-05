@@ -1,4 +1,3 @@
-#include "StarRebuilder.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaRoot.hpp"
@@ -6,6 +5,7 @@
 #include "StarUtilityLuaBindings.hpp"
 
 import star.root_lua_bindings;
+import star.rebuilder;
 
 namespace Star {
 

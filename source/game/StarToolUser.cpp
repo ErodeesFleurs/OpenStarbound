@@ -1,3 +1,5 @@
+// Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
+#include "StarObject.hpp"
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarToolUser.hpp"
@@ -6,7 +8,6 @@
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarRenderableItem.hpp"
-#include "StarObject.hpp"
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarAssets.hpp"

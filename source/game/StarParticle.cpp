@@ -1,9 +1,11 @@
 #include "StarParticle.hpp"
 #include "StarAssets.hpp"
-#include "StarAnimation.hpp"
+#include "StarDrawable.hpp"
+#include "StarBiMap.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"
+import star.animation;
 
 namespace Star {
 

@@ -2,6 +2,8 @@ module;
 
 #include "StarAiTypes.hpp"
 
+import star.animation;
+
 namespace Star {
 
 STAR_CLASS(AiDatabase);

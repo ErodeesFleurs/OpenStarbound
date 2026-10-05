@@ -4,7 +4,8 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarThread.hpp"
+import star.rebuilder;
 
 import star.vehicle_database;
 
