@@ -8,7 +8,7 @@
 #include "StarScriptedEntity.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarRoot.hpp"
-#include "StarUniverseSettings.hpp"
+import star.universe_settings;
 
 
 import star.item_database;

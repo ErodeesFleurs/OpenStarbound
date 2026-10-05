@@ -4,9 +4,9 @@
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerTech.hpp"
+import star.player_tech;
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarWorldClient.hpp"
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"

@@ -9,7 +9,7 @@
 #include "StarVersionOptionParser.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerStorage.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarAssets.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarWorldClient.hpp"

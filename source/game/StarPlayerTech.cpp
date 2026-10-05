@@ -1,6 +1,12 @@
-#include "StarPlayerTech.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarGameTypes.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 #include "StarRoot.hpp"
+
+import star.tech_database;
+import star.player_tech;
 
 namespace Star {
 

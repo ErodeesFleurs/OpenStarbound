@@ -2,7 +2,7 @@
 #include "StarSystemWorldClient.hpp"
 #include "StarRoot.hpp"
 #include "StarClientContext.hpp"
-#include "StarPlayerUniverseMap.hpp"
+import star.player_universe_map;
 
 
 import star.celestial_database;

@@ -6,7 +6,7 @@
 #include "StarCellularLighting.hpp"
 #include "StarWeather.hpp"
 #include "StarInterpolationTracker.hpp"
-#include "StarWorldStructure.hpp"
+import star.world_structure;
 #include "StarChatAction.hpp"
 #include "StarWiring.hpp"
 #include "StarEntityRendering.hpp"

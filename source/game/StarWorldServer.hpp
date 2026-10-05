@@ -9,7 +9,7 @@
 #include "StarCellularLiquid.hpp"
 #include "StarWeather.hpp"
 #include "StarInterpolationTracker.hpp"
-#include "StarWorldStructure.hpp"
+import star.world_structure;
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarWorldRenderData.hpp"

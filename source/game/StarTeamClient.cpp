@@ -2,7 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarClientContext.hpp"

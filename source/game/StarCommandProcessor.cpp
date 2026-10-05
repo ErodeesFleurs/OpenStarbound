@@ -6,7 +6,7 @@
 #include "StarNpc.hpp"
 #include "StarWorldServer.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarUniverseSettings.hpp"
+import star.universe_settings;
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarItemDrop.hpp"
@@ -18,7 +18,7 @@
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarStagehand.hpp"
-#include "StarChatProcessor.hpp"
+import star.chat_processor;
 #include "StarAssets.hpp"
 #include "StarString.hpp"
 #include "StarVehicle.hpp"

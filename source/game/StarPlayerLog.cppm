@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarSet.hpp"
 #include "StarJson.hpp"
@@ -51,4 +51,16 @@ private:
   StringMap<StringSet> m_collections;
 };
 
+}
+
+export module star.player_log;
+
+export namespace Star {
+using ::Star::PlayerLog;
+using ::Star::PlayerLogPtr;
+using ::Star::PlayerLogConstPtr;
+using ::Star::PlayerLogWeakPtr;
+using ::Star::PlayerLogConstWeakPtr;
+using ::Star::PlayerLogUPtr;
+using ::Star::PlayerLogConstUPtr;
 }

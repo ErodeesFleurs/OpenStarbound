@@ -23,6 +23,8 @@
 import star.simple_tooltip;
 import star.object_item;
 import star.item_tooltip;
+import star.player_tech;
+import star.tech_database;
 
 namespace Star {
 

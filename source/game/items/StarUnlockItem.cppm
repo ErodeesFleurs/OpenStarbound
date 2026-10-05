@@ -9,7 +9,6 @@ module;
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarClientContext.hpp"
-#include "StarPlayerBlueprints.hpp"
 
 export module star.unlock_item;
 

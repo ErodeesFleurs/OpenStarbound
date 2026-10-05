@@ -1,7 +1,9 @@
 #pragma once
 
+// Keep Uuid's textual definition ahead of the global codex interface on GCC.
+#include "StarUuid.hpp"
 #include "StarPane.hpp"
-#include "StarPlayerCodexes.hpp"
+import star.player_codexes;
 
 namespace Star {
 

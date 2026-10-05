@@ -1,5 +1,8 @@
-#include "StarPlayerBlueprints.hpp"
+#include "StarByteArray.hpp"
+#include "StarSet.hpp"
 #include "StarItemDescriptor.hpp"
+
+import star.player_blueprints;
 
 namespace Star {
 

@@ -30,7 +30,7 @@
 #include "StarItemSlotWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarMonster.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
@@ -48,7 +48,7 @@
 #include "StarScriptPane.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarWarpTargetEntity.hpp"
-#include "StarPlayerUniverseMap.hpp"
+import star.player_universe_map;
 #include "StarWorldTemplate.hpp"
 #include "StarRadioMessagePopup.hpp"
 #include "StarAiTypes.hpp"

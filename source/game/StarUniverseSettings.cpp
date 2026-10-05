@@ -1,7 +1,12 @@
-#include "StarUniverseSettings.hpp"
+#include "StarThread.hpp"
+#include "StarJson.hpp"
+#include "StarUuid.hpp"
+#include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.universe_settings;
 
 namespace Star {
 

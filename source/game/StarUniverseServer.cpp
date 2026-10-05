@@ -1,7 +1,7 @@
 #include "StarCelestialTypes.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarAssets.hpp"
-#include "StarChatProcessor.hpp"
+import star.chat_processor;
 #include "StarCommandProcessor.hpp"
 #include "StarConfiguration.hpp"
 #include "StarEncode.hpp"

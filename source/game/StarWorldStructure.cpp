@@ -1,7 +1,9 @@
 #include "StarCollisionBlock.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarAssetPath.hpp"
-#include "StarWorldStructure.hpp"
+#include "StarJson.hpp"
+#include "StarRect.hpp"
+#include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -9,6 +11,7 @@
 #include "StarAssets.hpp"
 
 
+import star.world_structure;
 import star.material_database;
 import star.image_metadata_database;
 

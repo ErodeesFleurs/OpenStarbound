@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
@@ -47,4 +47,18 @@ private:
   HashMap<TechType, String> m_equippedTechs;
 };
 
+}
+
+export module star.player_tech;
+
+export namespace Star {
+using ::Star::PlayerTech;
+using ::Star::PlayerTechPtr;
+using ::Star::PlayerTechConstPtr;
+using ::Star::PlayerTechWeakPtr;
+using ::Star::PlayerTechConstWeakPtr;
+using ::Star::PlayerTechUPtr;
+using ::Star::PlayerTechConstUPtr;
+using ::Star::PlayerTechExceptionTag;
+using ::Star::PlayerTechException;
 }

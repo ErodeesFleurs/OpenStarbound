@@ -22,7 +22,7 @@
 #include "StarLiquidTypes.hpp"
 #include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
-#include "StarUniverseSettings.hpp"
+import star.universe_settings;
 #include "StarUniverseServer.hpp"
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;

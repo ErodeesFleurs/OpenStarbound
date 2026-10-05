@@ -1,5 +1,8 @@
-#include "StarPlayerLog.hpp"
+#include "StarSet.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.player_log;
 
 namespace Star {
 

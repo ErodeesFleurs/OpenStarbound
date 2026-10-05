@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
@@ -46,4 +46,19 @@ private:
   List<UniverseFlagAction> m_pendingFlagActions;
 };
 
+}
+
+export module star.universe_settings;
+
+export namespace Star {
+  using ::Star::PlaceDungeonFlagAction;
+  using ::Star::UniverseFlagAction;
+  using ::Star::parseUniverseFlagAction;
+  using ::Star::UniverseSettings;
+  using ::Star::UniverseSettingsPtr;
+  using ::Star::UniverseSettingsConstPtr;
+  using ::Star::UniverseSettingsWeakPtr;
+  using ::Star::UniverseSettingsConstWeakPtr;
+  using ::Star::UniverseSettingsUPtr;
+  using ::Star::UniverseSettingsConstUPtr;
 }

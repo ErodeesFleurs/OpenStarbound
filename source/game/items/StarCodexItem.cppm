@@ -1,7 +1,6 @@
 module;
 
 #include "StarItem.hpp"
-#include "StarPlayerCodexes.hpp"
 #include "StarSwingableItem.hpp"
 
 #include "StarRoot.hpp"
@@ -12,6 +11,7 @@ module;
 #include "StarCodex.hpp"
 
 export module star.codex_item;
+import star.player_codexes;
 
 export namespace Star {
 

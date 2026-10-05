@@ -26,8 +26,6 @@
 #include "StarButtonWidget.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarTabSet.hpp"
-#include "StarPlayerTech.hpp"
-#include "StarPlayerBlueprints.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarStackWidget.hpp"
 #include "StarCinematic.hpp"

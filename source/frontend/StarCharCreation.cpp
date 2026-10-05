@@ -17,7 +17,7 @@
 #include "StarAssets.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 import star.name_generator;
 
 import star.species_database;

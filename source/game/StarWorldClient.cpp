@@ -11,7 +11,7 @@
 #include "StarParticleManager.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarAggressiveEntity.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarItemDrop.hpp"

@@ -13,7 +13,7 @@
 #include "StarObject.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerTech.hpp"
+import star.player_tech;
 #include "StarQuestManager.hpp"
 #include "StarClientContext.hpp"
 #include "StarUuid.hpp"

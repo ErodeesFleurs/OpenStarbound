@@ -7,7 +7,7 @@
 #include "StarConfiguration.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
@@ -17,9 +17,8 @@
 #include "StarClientContext.hpp"
 #include "StarTeamClient.hpp"
 #include "StarEncode.hpp"
-#include "StarPlayerCodexes.hpp"
 #include "StarQuestManager.hpp"
-#include "StarPlayerUniverseMap.hpp"
+import star.player_universe_map;
 #include "StarWorldTemplate.hpp"
 #include "StarProjectile.hpp"
 

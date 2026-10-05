@@ -11,7 +11,7 @@
 #include "StarWorldTemplate.hpp"
 #include "StarSystemWorldServerThread.hpp"
 #include "StarUniverseConnection.hpp"
-#include "StarUniverseSettings.hpp"
+import star.universe_settings;
 
 namespace Star {
 

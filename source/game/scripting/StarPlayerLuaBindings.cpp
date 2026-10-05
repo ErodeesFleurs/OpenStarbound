@@ -8,20 +8,21 @@ module;
 #include "StarItem.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerTech.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_tech;
+import star.player_log;
 #include "StarQuestManager.hpp"
 #include "StarWarping.hpp"
 #include "StarStatistics.hpp"
-#include "StarPlayerUniverseMap.hpp"
+import star.player_universe_map;
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarTeamClient.hpp"
-#include "StarPlayerCodexes.hpp"
+import star.player_codexes;
 #include "StarCodex.hpp"
 
 module star.player_lua_bindings;
 import star.networked_animator_lua_bindings;
+import star.tech_database;
 import star.item_database;
 
 

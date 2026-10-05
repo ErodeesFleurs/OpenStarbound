@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarRect.hpp"
@@ -102,4 +102,18 @@ private:
   StringMap<List<Vec2I>> m_flaggedBlocks;
 };
 
+}
+
+export module star.world_structure;
+
+export namespace Star {
+  using ::Star::WorldStructureExceptionTag;
+  using ::Star::WorldStructureException;
+  using ::Star::WorldStructure;
+  using ::Star::WorldStructurePtr;
+  using ::Star::WorldStructureConstPtr;
+  using ::Star::WorldStructureWeakPtr;
+  using ::Star::WorldStructureConstWeakPtr;
+  using ::Star::WorldStructureUPtr;
+  using ::Star::WorldStructureConstUPtr;
 }

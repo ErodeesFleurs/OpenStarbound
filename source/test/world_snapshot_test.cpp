@@ -5,7 +5,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldServer.hpp"
-#include "StarWorldStructure.hpp"
+import star.world_structure;
 #include "StarWorldTemplate.hpp"
 
 #include <iostream>

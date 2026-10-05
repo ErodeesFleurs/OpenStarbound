@@ -1,7 +1,12 @@
 #pragma once
 
-#include "StarPlayerUniverseMap.hpp"
+// Parse foundations before importing global bookmark value types on GCC.
+#include "StarJson.hpp"
+#include "StarWarping.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarPane.hpp"
+import star.player_universe_map;
 
 namespace Star {
 

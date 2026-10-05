@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarChatTypes.hpp"
 #include "StarSet.hpp"
@@ -85,4 +85,16 @@ private:
   HashMap<Uuid,pair<ConnectionId,RpcPromise<String>>> m_commandPromises;
 };
 
+}
+
+export module star.chat_processor;
+
+export namespace Star {
+  using ::Star::ChatProcessor;
+  using ::Star::ChatProcessorPtr;
+  using ::Star::ChatProcessorConstPtr;
+  using ::Star::ChatProcessorWeakPtr;
+  using ::Star::ChatProcessorConstWeakPtr;
+  using ::Star::ChatProcessorUPtr;
+  using ::Star::ChatProcessorConstUPtr;
 }

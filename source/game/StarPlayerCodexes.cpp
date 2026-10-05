@@ -1,10 +1,12 @@
-#include "StarPlayerCodexes.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
 #include "StarCodex.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
 import star.codex_database;
+import star.player_codexes;
 
 namespace Star {
 

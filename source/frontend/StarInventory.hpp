@@ -3,7 +3,6 @@
 #include "StarPane.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarPlayerTech.hpp"
 #include "StarGameTimers.hpp"
 #include "StarContainerInteractor.hpp"
 

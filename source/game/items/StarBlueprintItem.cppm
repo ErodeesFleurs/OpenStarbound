@@ -8,7 +8,6 @@ module;
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerBlueprints.hpp"
 
 export module star.blueprint_item;
 

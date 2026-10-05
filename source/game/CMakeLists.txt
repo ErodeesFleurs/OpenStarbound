@@ -10,7 +10,6 @@ set (star_game_HEADERS
     StarCelestialParameters.hpp
     StarCelestialTypes.hpp
     StarChatAction.hpp
-    StarChatProcessor.hpp
     StarChatTypes.hpp
     StarClientContext.hpp
     StarCodex.hpp
@@ -61,17 +60,12 @@ set (star_game_HEADERS
     StarPlatformerAStar.hpp
     StarPlatformerAStarTypes.hpp
     StarPlayer.hpp
-    StarPlayerBlueprints.hpp
-    StarPlayerCodexes.hpp
     StarPlayerCompanions.hpp
     StarPlayerDeployment.hpp
     StarPlayerFactory.hpp
     StarPlayerInventory.hpp
-    StarPlayerLog.hpp
     StarPlayerStorage.hpp
-    StarPlayerTech.hpp
     StarPlayerTypes.hpp
-    StarPlayerUniverseMap.hpp
     StarProjectile.hpp
     StarQuestDescriptor.hpp
     StarQuestManager.hpp
@@ -104,7 +98,6 @@ set (star_game_HEADERS
     StarUniverseClient.hpp
     StarUniverseConnection.hpp
     StarUniverseServer.hpp
-    StarUniverseSettings.hpp
     StarVehicle.hpp
     StarWarping.hpp
     StarWeather.hpp
@@ -122,7 +115,6 @@ set (star_game_HEADERS
     StarWorldServer.hpp
     StarWorldServerThread.hpp
     StarWorldStorage.hpp
-    StarWorldStructure.hpp
     StarWorldTemplate.hpp
     StarWorldTiles.hpp
 
@@ -188,7 +180,6 @@ set (star_game_SOURCES
     StarCelestialParameters.cpp
     StarCelestialTypes.cpp
     StarChatAction.cpp
-    StarChatProcessor.cpp
     StarChatTypes.cpp
     StarClientContext.cpp
     StarCodex.cpp
@@ -238,17 +229,12 @@ set (star_game_SOURCES
     StarPlatformerAStar.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
-    StarPlayerBlueprints.cpp
-    StarPlayerCodexes.cpp
     StarPlayerCompanions.cpp
     StarPlayerDeployment.cpp
     StarPlayerFactory.cpp
     StarPlayerInventory.cpp
-    StarPlayerLog.cpp
     StarPlayerStorage.cpp
-    StarPlayerTech.cpp
     StarPlayerTypes.cpp
-    StarPlayerUniverseMap.cpp
     StarProjectile.cpp
     StarQuestDescriptor.cpp
     StarQuestManager.cpp
@@ -280,7 +266,6 @@ set (star_game_SOURCES
     StarUniverseClient.cpp
     StarUniverseConnection.cpp
     StarUniverseServer.cpp
-    StarUniverseSettings.cpp
     StarVehicle.cpp
     StarWarping.cpp
     StarWeather.cpp
@@ -296,7 +281,6 @@ set (star_game_SOURCES
     StarWorldServer.cpp
     StarWorldServerThread.cpp
     StarWorldStorage.cpp
-    StarWorldStructure.cpp
     StarWorldTemplate.cpp
     StarWorldTiles.cpp
 
@@ -422,6 +406,14 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarStatCollection.cppm
     StarAnimation.cppm
     StarAmbient.cppm
+    StarPlayerBlueprints.cppm
+    StarPlayerCodexes.cppm
+    StarPlayerLog.cppm
+    StarPlayerTech.cppm
+    StarPlayerUniverseMap.cppm
+    StarUniverseSettings.cppm
+    StarWorldStructure.cppm
+    StarChatProcessor.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -442,6 +434,14 @@ add_library (star_game_modules STATIC
     StarStatCollection.cpp
     StarAnimation.cpp
     StarAmbient.cpp
+    StarPlayerBlueprints.cpp
+    StarPlayerCodexes.cpp
+    StarPlayerLog.cpp
+    StarPlayerTech.cpp
+    StarPlayerUniverseMap.cpp
+    StarUniverseSettings.cpp
+    StarWorldStructure.cpp
+    StarChatProcessor.cpp
     scripting/StarCameraLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp

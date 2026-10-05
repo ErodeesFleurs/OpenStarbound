@@ -34,7 +34,7 @@
 #include "StarContainerObject.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarUniverseSettings.hpp"
+import star.universe_settings;
 #include "StarBiome.hpp"
 #include "StarVehicle.hpp"
 import star.treasure;

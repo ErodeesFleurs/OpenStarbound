@@ -1,6 +1,11 @@
-#include "StarPlayerUniverseMap.hpp"
+#include "StarJson.hpp"
+#include "StarWarping.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.player_universe_map;
 
 namespace Star {
 

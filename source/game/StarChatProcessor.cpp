@@ -1,4 +1,9 @@
-#include "StarChatProcessor.hpp"
+#include "StarChatTypes.hpp"
+#include "StarSet.hpp"
+#include "StarThread.hpp"
+#include "StarUuid.hpp"
+
+import star.chat_processor;
 
 namespace Star {
 

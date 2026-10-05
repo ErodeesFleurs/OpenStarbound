@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarWarping.hpp"
@@ -114,4 +114,23 @@ bool Bookmark<T>::operator<(Bookmark<T> const& rhs) const {
   return target < rhs.target;
 }
 
+}
+
+export module star.player_universe_map;
+
+export namespace Star {
+  using ::Star::jsonFromBookmarkTarget;
+  using ::Star::jsonToBookmarkTarget;
+  using ::Star::Bookmark;
+  using ::Star::OrbitTarget;
+  using ::Star::TeleportTarget;
+  using ::Star::OrbitBookmark;
+  using ::Star::TeleportBookmark;
+  using ::Star::PlayerUniverseMap;
+  using ::Star::PlayerUniverseMapPtr;
+  using ::Star::PlayerUniverseMapConstPtr;
+  using ::Star::PlayerUniverseMapWeakPtr;
+  using ::Star::PlayerUniverseMapConstWeakPtr;
+  using ::Star::PlayerUniverseMapUPtr;
+  using ::Star::PlayerUniverseMapConstUPtr;
 }

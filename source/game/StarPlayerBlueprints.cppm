@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarByteArray.hpp"
 #include "StarSet.hpp"
@@ -25,4 +25,16 @@ private:
   HashSet<ItemDescriptor> m_newBlueprints;
 };
 
+}
+
+export module star.player_blueprints;
+
+export namespace Star {
+  using ::Star::PlayerBlueprints;
+  using ::Star::PlayerBlueprintsPtr;
+  using ::Star::PlayerBlueprintsConstPtr;
+  using ::Star::PlayerBlueprintsWeakPtr;
+  using ::Star::PlayerBlueprintsConstWeakPtr;
+  using ::Star::PlayerBlueprintsUPtr;
+  using ::Star::PlayerBlueprintsConstUPtr;
 }

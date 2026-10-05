@@ -2,8 +2,8 @@
 
 #include "StarPane.hpp"
 #include "StarWarping.hpp"
-#include "StarPlayerUniverseMap.hpp"
 #include "StarBookmarkInterface.hpp"
+import star.player_universe_map;
 
 namespace Star {
 

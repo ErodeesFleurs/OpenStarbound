@@ -8,7 +8,7 @@
 #include "StarPlayer.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarWorldClient.hpp"
-#include "StarPlayerBlueprints.hpp"
+import star.player_blueprints;
 #include "StarButtonWidget.hpp"
 #include "StarPaneManager.hpp"
 #include "StarPortraitWidget.hpp"
@@ -21,7 +21,7 @@
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerLog.hpp"
+import star.player_log;
 #include "StarMixer.hpp"
 
 import star.object_item;
