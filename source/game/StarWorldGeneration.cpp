@@ -1,3 +1,7 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include <utility>
 
 #include "StarDungeonGenerator.hpp"
@@ -8,9 +12,6 @@
 #include "StarBiomePlacement.hpp"
 
 #include "StarWorldServer.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarNpcDatabase.hpp"
-#include "StarMonsterDatabase.hpp"
 #include "StarNpc.hpp"
 #include "StarBiome.hpp"
 #include "StarSky.hpp"
@@ -20,18 +21,16 @@
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarContainerObject.hpp"
 #include "StarMonster.hpp"
 #include "StarEntityMap.hpp"
 #include "StarPlant.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
+#include "StarVehicle.hpp"
+
+import star.material_database;
 
 namespace Star {
 namespace {
@@ -55,9 +54,17 @@ CollisionKind biomeForegroundCollision(MaterialDatabaseConstPtr const& materialD
 }
 }
 
+import star.projectile_database;
+import star.liquids_database;
+import star.vehicle_database;
 import star.world_generation;
 import star.micro_dungeon;
 import star.stagehand_database;
+import star.npc_database;
+import star.monster_database;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

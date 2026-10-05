@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarCharCreation.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
@@ -5,7 +7,6 @@
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -14,9 +15,12 @@
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
+
+import star.species_database;
+import star.item_database;
+
 
 namespace Star {
 

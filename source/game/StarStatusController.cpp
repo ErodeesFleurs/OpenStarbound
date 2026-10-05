@@ -5,8 +5,8 @@
 #include "StarLuaGameConverters.hpp"
 #include "StarWorld.hpp"
 #include "StarStatusEffectEntity.hpp"
-#include "StarLiquidsDatabase.hpp"
 
+import star.liquids_database;
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;
 import star.config_lua_bindings;

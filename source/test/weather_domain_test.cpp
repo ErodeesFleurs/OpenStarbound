@@ -1,10 +1,12 @@
-#include "StarBiomeDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarWorldParameters.hpp"
 #include "StarWorldTemplate.hpp"
 
 #include "gtest/gtest.h"
+
+
+import star.biome_database;
 
 using namespace Star;
 

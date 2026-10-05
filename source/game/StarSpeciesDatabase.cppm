@@ -1,11 +1,10 @@
-#pragma once
+module;
 
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarLuaRoot.hpp"
-#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -121,4 +120,27 @@ private:
   LuaRootPtr m_luaRoot;
 };
 
+}
+
+export module star.species_database;
+
+export namespace Star {
+  using ::Star::SpeciesCharCreationTooltip;
+  using ::Star::SpeciesGenderOption;
+  using ::Star::SpeciesOption;
+  using ::Star::CharacterCreationResult;
+  using ::Star::SpeciesDefinition;
+  using ::Star::SpeciesDefinitionPtr;
+  using ::Star::SpeciesDefinitionConstPtr;
+  using ::Star::SpeciesDefinitionWeakPtr;
+  using ::Star::SpeciesDefinitionConstWeakPtr;
+  using ::Star::SpeciesDefinitionUPtr;
+  using ::Star::SpeciesDefinitionConstUPtr;
+  using ::Star::SpeciesDatabase;
+  using ::Star::SpeciesDatabasePtr;
+  using ::Star::SpeciesDatabaseConstPtr;
+  using ::Star::SpeciesDatabaseWeakPtr;
+  using ::Star::SpeciesDatabaseConstWeakPtr;
+  using ::Star::SpeciesDatabaseUPtr;
+  using ::Star::SpeciesDatabaseConstUPtr;
 }

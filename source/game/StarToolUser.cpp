@@ -1,6 +1,7 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarToolUser.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
@@ -9,7 +10,6 @@
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarAssets.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarStatusController.hpp"
 
@@ -17,6 +17,9 @@ import star.inspection_tool;
 import star.active_item;
 import star.flashlight;
 import star.object_item;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

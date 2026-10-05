@@ -1,16 +1,20 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarContainerObject.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarTreasure.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
 #include "StarWorld.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarMixer.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarAugmentItem.hpp"
+
+
+import star.item_database;
+import star.object_database;
 
 namespace Star {
 

@@ -1,3 +1,5 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarCasting.hpp"
 #include "StarRandom.hpp"
@@ -5,11 +7,12 @@
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarLiquidsDatabase.hpp"
+import star.liquids_database;
 import star.dungeon_image_part;
 import star.dungeon_tmx_part;
+import star.material_database;
+
 
 namespace Star {
 

@@ -1,3 +1,4 @@
+#include "StarAssetPath.hpp"
 #include "StarChatBubbleManager.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
@@ -7,8 +8,10 @@
 #include "StarChattyEntity.hpp"
 #include "StarAssets.hpp"
 #include "StarAssetTextureGroup.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarGuiContext.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

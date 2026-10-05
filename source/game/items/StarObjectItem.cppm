@@ -6,11 +6,12 @@ module;
 #include "StarRoot.hpp"
 #include "StarObject.hpp"
 #include "StarLogging.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarJsonExtra.hpp"
 
 export module star.object_item;
+import star.object_database;
+
 
 export namespace Star {
 

@@ -1,5 +1,5 @@
+#include "StarCelestialTypes.hpp"
 #include "StarCelestialCoordinate.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
@@ -11,6 +11,9 @@
 #include <iostream>
 
 #include "gtest/gtest.h"
+
+
+import star.celestial_database;
 
 using namespace Star;
 

@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarServerClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -5,9 +7,11 @@
 #include "StarWorldServerThread.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarContainerEntity.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarUniverseSettings.hpp"
+
+
+import star.item_database;
 
 namespace Star {
 

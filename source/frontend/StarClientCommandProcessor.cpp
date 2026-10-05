@@ -1,8 +1,8 @@
+#include "StarItemRecipe.hpp"
 #include "StarClientCommandProcessor.hpp"
 #include "StarRoot.hpp"
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerTech.hpp"
 #include "StarPlayerInventory.hpp"
@@ -12,6 +12,9 @@
 #include "StarQuestInterface.hpp"
 #include "StarStatistics.hpp"
 #include "StarInput.hpp"
+
+
+import star.item_database;
 
 namespace Star {
 

@@ -1,11 +1,14 @@
+#include "StarAssetPath.hpp"
 #include "StarDrawable.hpp"
 #include "StarColor.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

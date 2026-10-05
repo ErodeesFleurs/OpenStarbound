@@ -1,12 +1,12 @@
 #pragma once
 
+#include "StarTtlCache.hpp"
 #include "StarEntity.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarEffectEmitter.hpp"
-#include "StarMonsterDatabase.hpp"
 #include "StarDamageBarEntity.hpp"
 #include "StarNametagEntity.hpp"
 #include "StarPortraitEntity.hpp"
@@ -19,6 +19,8 @@
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
+
+import star.monster_database;
 
 namespace Star {
 

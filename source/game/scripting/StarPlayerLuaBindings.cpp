@@ -1,11 +1,11 @@
 module;
 
+#include "StarItemRecipe.hpp"
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarRoot.hpp"
 #include "StarClientContext.hpp"
 #include "StarItem.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerTech.hpp"
@@ -22,6 +22,8 @@ module;
 
 module star.player_lua_bindings;
 import star.networked_animator_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

@@ -1,3 +1,4 @@
+#include "StarAssetPath.hpp"
 #include "StarStatusPane.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
@@ -6,11 +7,12 @@
 #include "StarImageWidget.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarImageProcessing.hpp"
 
 import star.simple_tooltip;
 import star.status_effect_database;
+import star.image_metadata_database;
+
 
 namespace Star {
 

@@ -1,12 +1,13 @@
-#pragma once
+module;
 
 #include "StarColor.hpp"
-#include "StarCollisionBlock.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarTileDamage.hpp"
-#include "StarItemDescriptor.hpp"
 
 namespace Star {
+
+enum class CollisionKind : uint8_t;
+class ItemDescriptor;
 
 STAR_CLASS(ParticleConfig);
 STAR_CLASS(MaterialDatabase);
@@ -277,4 +278,27 @@ inline Maybe<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteract
 inline Maybe<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
   return m_liquidModInteractions.maybe({liquid, modId});
 }
+}
+
+export module star.material_database;
+
+export namespace Star {
+  using ::Star::MaterialExceptionTag;
+  using ::Star::MaterialException;
+  using ::Star::LiquidMaterialInteraction;
+  using ::Star::LiquidModInteraction;
+  using ::Star::ParticleConfig;
+  using ::Star::ParticleConfigPtr;
+  using ::Star::ParticleConfigConstPtr;
+  using ::Star::ParticleConfigWeakPtr;
+  using ::Star::ParticleConfigConstWeakPtr;
+  using ::Star::ParticleConfigUPtr;
+  using ::Star::ParticleConfigConstUPtr;
+  using ::Star::MaterialDatabase;
+  using ::Star::MaterialDatabasePtr;
+  using ::Star::MaterialDatabaseConstPtr;
+  using ::Star::MaterialDatabaseWeakPtr;
+  using ::Star::MaterialDatabaseConstWeakPtr;
+  using ::Star::MaterialDatabaseUPtr;
+  using ::Star::MaterialDatabaseConstUPtr;
 }

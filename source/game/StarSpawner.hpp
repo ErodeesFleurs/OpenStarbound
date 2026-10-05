@@ -4,7 +4,6 @@
 #include "StarIdMap.hpp"
 #include "StarTtlCache.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarMonsterDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarWeightedPool.hpp"
@@ -15,6 +14,7 @@ namespace Star {
 
 STAR_CLASS(SpawnerFacade);
 STAR_CLASS(Spawner);
+STAR_CLASS(Entity);
 
 class SpawnerFacade {
 public:

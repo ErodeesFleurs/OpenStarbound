@@ -2,7 +2,6 @@
 
 #include "StarWidget.hpp"
 #include "StarBiMap.hpp"
-#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -10,6 +9,7 @@ STAR_CLASS(Pane);
 STAR_CLASS(LuaCallbacks);
 STAR_CLASS(AudioInstance);
 STAR_CLASS(GuiReader);
+STAR_CLASS(Item);
 
 enum class PaneAnchor {
   None,

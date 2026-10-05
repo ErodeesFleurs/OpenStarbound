@@ -1,15 +1,25 @@
-#include "StarSpeciesDatabase.hpp"
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
+#include "StarThread.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarHumanoid.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarTtlCache.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarUtilityLuaBindings.hpp"
 
+import star.species_database;
 import star.config_lua_bindings;
 import star.root_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

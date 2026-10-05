@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarCelestialDatabase.hpp"
+#include "StarCelestialParameters.hpp"
 
 namespace Star {
 

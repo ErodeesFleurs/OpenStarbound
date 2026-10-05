@@ -1,8 +1,6 @@
+#include "StarCelestialTypes.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarAiDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarChatProcessor.hpp"
 #include "StarCommandProcessor.hpp"
 #include "StarConfiguration.hpp"
@@ -15,11 +13,15 @@
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
 
+import star.ai_database;
 import star.versioning_database;
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;
 import star.sha256;
 import star.secure_random;
+import star.biome_database;
+import star.celestial_database;
+
 
 namespace Star {
 

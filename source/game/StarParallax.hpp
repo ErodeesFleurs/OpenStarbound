@@ -2,8 +2,11 @@
 
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarPlantDatabase.hpp"
+#include "StarJson.hpp"
 #include "StarDirectives.hpp"
+#include "StarTileDamage.hpp"
+
+import star.plant_database;
 
 namespace Star {
 

@@ -1,4 +1,5 @@
 #include "StarLuaGameConverters.hpp"
+#include "StarBehaviorState.hpp"
 
 import star.collection_database;
 

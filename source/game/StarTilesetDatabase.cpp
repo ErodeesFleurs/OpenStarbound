@@ -1,7 +1,13 @@
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarRoot.hpp"
-#include "StarTilesetDatabase.hpp"
+#include "StarDungeonGenerator.hpp"
+#include "StarJson.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarLruCache.hpp"
+#include "StarSet.hpp"
+
+import star.tileset_database;
 
 namespace Star {
 

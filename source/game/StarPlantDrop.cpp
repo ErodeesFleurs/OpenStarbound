@@ -1,8 +1,8 @@
+#include "StarAssetPath.hpp"
 #include "StarPlantDrop.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarRoot.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarEntityRendering.hpp"
@@ -10,6 +10,8 @@
 #include "StarRandom.hpp"
 
 import star.particle_database;
+import star.image_metadata_database;
+
 
 namespace Star {
 

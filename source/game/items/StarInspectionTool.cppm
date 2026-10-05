@@ -1,5 +1,7 @@
 module;
 
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
 #include "StarPointableItem.hpp"
 #include "StarToolUserItem.hpp"
@@ -7,11 +9,12 @@ module;
 #include "StarInspectableEntity.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarRoot.hpp"
 
 export module star.inspection_tool;
+import star.liquids_database;
+import star.material_database;
+
 
 export namespace Star {
 

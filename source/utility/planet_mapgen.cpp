@@ -1,9 +1,12 @@
+#include "StarCelestialTypes.hpp"
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarImage.hpp"
 #include "StarRootLoader.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarWorldTemplate.hpp"
+
+
+import star.celestial_database;
 
 using namespace Star;
 

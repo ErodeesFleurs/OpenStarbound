@@ -1,10 +1,13 @@
+#include "StarCelestialTypes.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarRoot.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarSystemWorldServer.hpp"
 #include "StarNameGenerator.hpp"
+
+
+import star.celestial_database;
 
 namespace Star {
 

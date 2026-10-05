@@ -1,7 +1,10 @@
-#include "StarBehaviorDatabase.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.behavior_database;
 
 namespace Star {
 

@@ -3,7 +3,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarBiomeDatabase.hpp"
+
+
+import star.biome_database;
 
 namespace Star {
 

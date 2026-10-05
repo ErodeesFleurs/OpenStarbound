@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarQuestInterface.hpp"
 #include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
@@ -12,7 +14,6 @@
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
@@ -20,6 +21,8 @@
 
 import star.item_tooltip;
 import star.quest_template_database;
+import star.item_database;
+
 
 namespace Star {
 

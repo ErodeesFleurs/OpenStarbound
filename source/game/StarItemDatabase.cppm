@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarThread.hpp"
 #include "StarItemRecipe.hpp"
@@ -13,6 +13,7 @@ STAR_CLASS(AugmentItem);
 
 STAR_CLASS(ItemDatabase);
 STAR_CLASS(Rebuilder);
+STAR_CLASS(LuaRoot);
 
 struct ItemDatabaseExceptionTag {
   static constexpr char const* name() { return "ItemDatabaseException"; }
@@ -220,4 +221,41 @@ bool ItemDatabase::diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) c
     return false;
   }
 }
+}
+
+export module star.item_database;
+
+export namespace Star {
+  using ::Star::ItemDatabaseExceptionTag;
+  using ::Star::ItemDatabaseException;
+  using ::Star::ItemType;
+  using ::Star::ItemTypeNames;
+  using ::Star::RecipeDatabase;
+  using ::Star::RecipeDatabasePtr;
+  using ::Star::RecipeDatabaseConstPtr;
+  using ::Star::RecipeDatabaseWeakPtr;
+  using ::Star::RecipeDatabaseConstWeakPtr;
+  using ::Star::RecipeDatabaseUPtr;
+  using ::Star::RecipeDatabaseConstUPtr;
+  using ::Star::AugmentItem;
+  using ::Star::AugmentItemPtr;
+  using ::Star::AugmentItemConstPtr;
+  using ::Star::AugmentItemWeakPtr;
+  using ::Star::AugmentItemConstWeakPtr;
+  using ::Star::AugmentItemUPtr;
+  using ::Star::AugmentItemConstUPtr;
+  using ::Star::ItemDatabase;
+  using ::Star::ItemDatabasePtr;
+  using ::Star::ItemDatabaseConstPtr;
+  using ::Star::ItemDatabaseWeakPtr;
+  using ::Star::ItemDatabaseConstWeakPtr;
+  using ::Star::ItemDatabaseUPtr;
+  using ::Star::ItemDatabaseConstUPtr;
+  using ::Star::Rebuilder;
+  using ::Star::RebuilderPtr;
+  using ::Star::RebuilderConstPtr;
+  using ::Star::RebuilderWeakPtr;
+  using ::Star::RebuilderConstWeakPtr;
+  using ::Star::RebuilderUPtr;
+  using ::Star::RebuilderConstUPtr;
 }

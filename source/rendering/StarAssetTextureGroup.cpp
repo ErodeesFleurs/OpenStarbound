@@ -1,9 +1,12 @@
+#include "StarAssetPath.hpp"
 #include "StarAssetTextureGroup.hpp"
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

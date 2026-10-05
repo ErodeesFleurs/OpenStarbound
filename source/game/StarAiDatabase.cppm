@@ -1,8 +1,10 @@
-#pragma once
+module;
 
 #include "StarAiTypes.hpp"
 
 namespace Star {
+
+STAR_CLASS(AiDatabase);
 
 class AiDatabase {
 public:
@@ -56,4 +58,22 @@ private:
   AiAnimationConfig m_animationConfig;
 };
 
+}
+
+export module star.ai_database;
+
+export namespace Star {
+  using ::Star::AiExceptionTag;
+  using ::Star::AiException;
+  using ::Star::AiSpeech;
+  using ::Star::AiState;
+  using ::Star::AiSpeciesMissionText;
+  using ::Star::AiMission;
+  using ::Star::AiDatabase;
+  using ::Star::AiDatabasePtr;
+  using ::Star::AiDatabaseConstPtr;
+  using ::Star::AiDatabaseWeakPtr;
+  using ::Star::AiDatabaseConstWeakPtr;
+  using ::Star::AiDatabaseUPtr;
+  using ::Star::AiDatabaseConstUPtr;
 }

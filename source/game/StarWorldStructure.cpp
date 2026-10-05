@@ -1,11 +1,16 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarAssetPath.hpp"
 #include "StarWorldStructure.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarImage.hpp"
 #include "StarAssets.hpp"
+
+
+import star.material_database;
+import star.image_metadata_database;
 
 namespace Star {
 

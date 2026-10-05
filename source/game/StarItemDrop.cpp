@@ -1,8 +1,9 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarItemDrop.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
@@ -14,6 +15,8 @@ import star.config_lua_bindings;
 import star.entity_lua_bindings;
 import star.item_lua_bindings;
 import star.movement_controller_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

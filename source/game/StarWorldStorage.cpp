@@ -1,3 +1,5 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
@@ -8,11 +10,12 @@
 #include "StarEntityMap.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarAssets.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 
+import star.liquids_database;
 import star.versioning_database;
 import star.compression;
+import star.material_database;
+
 namespace Star {
 
 WorldChunks WorldStorage::getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) {

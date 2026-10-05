@@ -23,6 +23,7 @@ STAR_CLASS(CommandProcessor);
 STAR_CLASS(TeamManager);
 STAR_CLASS(UniverseServer);
 STAR_CLASS(WorldTemplate);
+STAR_CLASS(CelestialMasterDatabase);
 STAR_CLASS(WorldServer);
 STAR_CLASS(UniverseSettings);
 

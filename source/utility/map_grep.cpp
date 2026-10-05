@@ -2,8 +2,8 @@
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
 #include "StarDungeonGenerator.hpp"
-#include "StarTilesetDatabase.hpp"
 
+import star.tileset_database;
 import star.dungeon_tmx_part;
 
 using namespace Star;

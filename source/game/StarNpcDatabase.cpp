@@ -1,11 +1,14 @@
-#include "StarNpcDatabase.hpp"
+#include "StarHumanoid.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarEntitySplash.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarEncode.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarAssets.hpp"
@@ -13,6 +16,10 @@
 #include "StarArmors.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+
+import star.npc_database;
+import star.item_database;
+import star.species_database;
 
 namespace Star {
 

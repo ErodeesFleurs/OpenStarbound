@@ -1,8 +1,6 @@
-#pragma once
+module;
 
 #include "StarRect.hpp"
-#include "StarMap.hpp"
-#include "StarString.hpp"
 #include "StarThread.hpp"
 #include "StarAssetPath.hpp"
 #include "StarTtlCache.hpp"
@@ -38,4 +36,16 @@ private:
   mutable HashTtlCache<AssetPath, RectU> m_regionCache;
 };
 
+}
+
+export module star.image_metadata_database;
+
+export namespace Star {
+  using ::Star::ImageMetadataDatabase;
+  using ::Star::ImageMetadataDatabasePtr;
+  using ::Star::ImageMetadataDatabaseConstPtr;
+  using ::Star::ImageMetadataDatabaseWeakPtr;
+  using ::Star::ImageMetadataDatabaseConstWeakPtr;
+  using ::Star::ImageMetadataDatabaseUPtr;
+  using ::Star::ImageMetadataDatabaseConstUPtr;
 }

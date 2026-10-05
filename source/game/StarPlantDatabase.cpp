@@ -1,8 +1,11 @@
-#include "StarPlantDatabase.hpp"
+#include "StarJson.hpp"
+#include "StarTileDamage.hpp"
 #include "StarPlant.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.plant_database;
 
 namespace Star {
 

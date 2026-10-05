@@ -1,3 +1,4 @@
+#include "StarCelestialTypes.hpp"
 #include "StarTitleScreen.hpp"
 #include "StarEncode.hpp"
 #include "StarGuiReader.hpp"
@@ -17,8 +18,10 @@
 #include "StarOptionsMenu.hpp"
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarEnvironmentPainter.hpp"
+
+
+import star.celestial_database;
 
 namespace Star {
 

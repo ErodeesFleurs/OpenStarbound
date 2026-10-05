@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarDungeonGenerator.hpp"
 #include "StarJson.hpp"
@@ -136,4 +136,39 @@ namespace Tiled {
   }
 }
 
+}
+
+export module star.tileset_database;
+
+export namespace Star {
+  using ::Star::TilesetDatabase;
+  using ::Star::TilesetDatabasePtr;
+  using ::Star::TilesetDatabaseConstPtr;
+  using ::Star::TilesetDatabaseWeakPtr;
+  using ::Star::TilesetDatabaseConstWeakPtr;
+  using ::Star::TilesetDatabaseUPtr;
+  using ::Star::TilesetDatabaseConstUPtr;
+}
+
+export namespace Star::Tiled {
+  using ::Star::Tiled::LayerNames;
+  using ::Star::Tiled::Properties;
+  using ::Star::Tiled::Tile;
+  using ::Star::Tiled::Tileset;
+  using ::Star::Tiled::PropertyConverter;
+  using ::Star::Tiled::getProperty;
+  using ::Star::Tiled::optProperty;
+  using ::Star::Tiled::setProperty;
+  using ::Star::Tiled::TilePtr;
+  using ::Star::Tiled::TileConstPtr;
+  using ::Star::Tiled::TileWeakPtr;
+  using ::Star::Tiled::TileConstWeakPtr;
+  using ::Star::Tiled::TileUPtr;
+  using ::Star::Tiled::TileConstUPtr;
+  using ::Star::Tiled::TilesetPtr;
+  using ::Star::Tiled::TilesetConstPtr;
+  using ::Star::Tiled::TilesetWeakPtr;
+  using ::Star::Tiled::TilesetConstWeakPtr;
+  using ::Star::Tiled::TilesetUPtr;
+  using ::Star::Tiled::TilesetConstUPtr;
 }

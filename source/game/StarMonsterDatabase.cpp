@@ -1,4 +1,11 @@
-#include "StarMonsterDatabase.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarTtlCache.hpp"
+#include "StarThread.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarImageProcessing.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarMonster.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
@@ -7,6 +14,8 @@
 #include "StarLexicalCast.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+
+import star.monster_database;
 
 namespace Star {
 

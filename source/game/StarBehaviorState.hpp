@@ -1,7 +1,10 @@
 #pragma once
 
-#include "StarBehaviorDatabase.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 #include "StarLua.hpp"
+
+import star.behavior_database;
 
 namespace Star {
 

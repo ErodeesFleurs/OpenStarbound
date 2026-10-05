@@ -1,10 +1,11 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarTerrainDatabase.hpp"
 #include "StarPerlin.hpp"
 #include "StarRandom.hpp"
 
 export module star.terrain_perlin;
+import star.terrain_database;
 
 export namespace Star {
 

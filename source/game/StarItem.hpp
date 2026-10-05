@@ -3,7 +3,7 @@
 #include "StarSet.hpp"
 #include "StarDrawable.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarQuests.hpp"
+#include "StarQuestDescriptor.hpp"
 
 namespace Star {
 

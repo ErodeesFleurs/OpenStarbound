@@ -1,10 +1,14 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarImage.hpp"
 #include "StarRootLoader.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarJson.hpp"
+
+
+import star.item_database;
 
 using namespace Star;
 

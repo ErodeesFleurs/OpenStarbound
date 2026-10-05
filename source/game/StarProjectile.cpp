@@ -1,22 +1,25 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarProjectile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarMonster.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDrop.hpp"
 #include "StarIterator.hpp"
 
+import star.liquids_database;
+import star.projectile_database;
 import star.config_lua_bindings;
 import star.entity_lua_bindings;
 import star.movement_controller_lua_bindings;
 import star.particle_database;
+import star.material_database;
+
 
 namespace Star {
 

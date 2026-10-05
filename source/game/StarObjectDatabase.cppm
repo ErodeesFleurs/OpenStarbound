@@ -1,15 +1,15 @@
-#pragma once
+module;
 
 #include "StarPeriodicFunction.hpp"
 #include "StarTtlCache.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarParticle.hpp"
-#include "StarSet.hpp"
 #include "StarTileDamage.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarStatusTypes.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarLightSource.hpp"
 #include "StarTileEntity.hpp"
 
 namespace Star {
@@ -225,4 +225,81 @@ private:
   RebuilderPtr m_rebuilder;
 };
 
+}
+
+export module star.object_database;
+
+export namespace Star {
+  using ::Star::ObjectExceptionTag;
+  using ::Star::ObjectException;
+  using ::Star::World;
+  using ::Star::WorldPtr;
+  using ::Star::WorldConstPtr;
+  using ::Star::WorldWeakPtr;
+  using ::Star::WorldConstWeakPtr;
+  using ::Star::WorldUPtr;
+  using ::Star::WorldConstUPtr;
+  using ::Star::Image;
+  using ::Star::ImagePtr;
+  using ::Star::ImageConstPtr;
+  using ::Star::ImageWeakPtr;
+  using ::Star::ImageConstWeakPtr;
+  using ::Star::ImageUPtr;
+  using ::Star::ImageConstUPtr;
+  using ::Star::ItemDatabase;
+  using ::Star::ItemDatabasePtr;
+  using ::Star::ItemDatabaseConstPtr;
+  using ::Star::ItemDatabaseWeakPtr;
+  using ::Star::ItemDatabaseConstWeakPtr;
+  using ::Star::ItemDatabaseUPtr;
+  using ::Star::ItemDatabaseConstUPtr;
+  using ::Star::RecipeDatabase;
+  using ::Star::RecipeDatabasePtr;
+  using ::Star::RecipeDatabaseConstPtr;
+  using ::Star::RecipeDatabaseWeakPtr;
+  using ::Star::RecipeDatabaseConstWeakPtr;
+  using ::Star::RecipeDatabaseUPtr;
+  using ::Star::RecipeDatabaseConstUPtr;
+  using ::Star::Object;
+  using ::Star::ObjectPtr;
+  using ::Star::ObjectConstPtr;
+  using ::Star::ObjectWeakPtr;
+  using ::Star::ObjectConstWeakPtr;
+  using ::Star::ObjectUPtr;
+  using ::Star::ObjectConstUPtr;
+  using ::Star::ObjectOrientation;
+  using ::Star::ObjectOrientationPtr;
+  using ::Star::ObjectOrientationConstPtr;
+  using ::Star::ObjectOrientationWeakPtr;
+  using ::Star::ObjectOrientationConstWeakPtr;
+  using ::Star::ObjectOrientationUPtr;
+  using ::Star::ObjectOrientationConstUPtr;
+  using ::Star::ObjectConfig;
+  using ::Star::ObjectConfigPtr;
+  using ::Star::ObjectConfigConstPtr;
+  using ::Star::ObjectConfigWeakPtr;
+  using ::Star::ObjectConfigConstWeakPtr;
+  using ::Star::ObjectConfigUPtr;
+  using ::Star::ObjectConfigConstUPtr;
+  using ::Star::ObjectDatabase;
+  using ::Star::ObjectDatabasePtr;
+  using ::Star::ObjectDatabaseConstPtr;
+  using ::Star::ObjectDatabaseWeakPtr;
+  using ::Star::ObjectDatabaseConstWeakPtr;
+  using ::Star::ObjectDatabaseUPtr;
+  using ::Star::ObjectDatabaseConstUPtr;
+  using ::Star::LuaRoot;
+  using ::Star::LuaRootPtr;
+  using ::Star::LuaRootConstPtr;
+  using ::Star::LuaRootWeakPtr;
+  using ::Star::LuaRootConstWeakPtr;
+  using ::Star::LuaRootUPtr;
+  using ::Star::LuaRootConstUPtr;
+  using ::Star::Rebuilder;
+  using ::Star::RebuilderPtr;
+  using ::Star::RebuilderConstPtr;
+  using ::Star::RebuilderWeakPtr;
+  using ::Star::RebuilderConstWeakPtr;
+  using ::Star::RebuilderUPtr;
+  using ::Star::RebuilderConstUPtr;
 }

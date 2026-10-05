@@ -1,7 +1,7 @@
+#include "StarAssetPath.hpp"
 #include "StarWidgetParsing.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarPane.hpp"
 #include "StarButtonGroup.hpp"
 #include "StarButtonWidget.hpp"
@@ -23,6 +23,9 @@
 #include "StarFlowLayout.hpp"
 #include "StarVerticalLayout.hpp"
 #include "StarTabSet.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

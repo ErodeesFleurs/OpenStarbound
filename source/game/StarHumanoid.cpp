@@ -4,7 +4,7 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
-#include "StarSpeciesDatabase.hpp"
+import star.species_database;
 import star.dance_database;
 import star.particle_database;
 

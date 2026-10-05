@@ -6,12 +6,12 @@ module;
 #include "StarEntityRendering.hpp"
 #include "StarPreviewTileTool.hpp"
 #include "StarJson.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarWorld.hpp"
 
 export module star.liquid_item;
+import star.liquids_database;
 
 export namespace Star {
 

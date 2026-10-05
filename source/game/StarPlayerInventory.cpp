@@ -1,7 +1,8 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarRoot.hpp"
 #include "StarArmors.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPointableItem.hpp"
 #include "StarItemBag.hpp"
 #include "StarAssets.hpp"
@@ -11,6 +12,8 @@
 import star.currency_item;
 import star.material_item;
 import star.object_item;
+import star.item_database;
+
 
 namespace Star {
 

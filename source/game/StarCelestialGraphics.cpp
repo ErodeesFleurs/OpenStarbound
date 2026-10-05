@@ -1,15 +1,19 @@
+#include "StarCelestialTypes.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarFormat.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarParallax.hpp"
 #include "StarRoot.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarAssets.hpp"
+
+import star.terrain_database;
+import star.liquids_database;
+import star.celestial_database;
+import star.biome_database;
+
 
 namespace Star {
 

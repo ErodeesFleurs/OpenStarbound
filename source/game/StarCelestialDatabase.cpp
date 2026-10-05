@@ -1,4 +1,10 @@
-#include "StarCelestialDatabase.hpp"
+#include "StarRect.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarThread.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarCelestialTypes.hpp"
+#include "StarPerlin.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarCasting.hpp"
 #include "StarRandom.hpp"
@@ -8,6 +14,8 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarIterator.hpp"
+
+import star.celestial_database;
 import star.versioning_database;
 import star.compression;
 

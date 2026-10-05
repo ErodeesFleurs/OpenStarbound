@@ -3,7 +3,7 @@
 #include "StarDataStream.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarCelestialDatabase.hpp"
+#include "StarCelestialTypes.hpp"
 #include "StarDamageManager.hpp"
 #include "StarChatTypes.hpp"
 #include "StarUuid.hpp"

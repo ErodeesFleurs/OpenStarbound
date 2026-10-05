@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarNpc.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarWorld.hpp"
@@ -7,7 +9,6 @@
 #include "StarLogging.hpp"
 #include "StarTreasure.hpp"
 #include "StarEncode.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarEntityRendering.hpp"
@@ -16,8 +17,8 @@
 #include "StarFireableItem.hpp"
 #include "StarStatusController.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarSpeciesDatabase.hpp"
 
+import star.species_database;
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;
 import star.songbook_lua_bindings;
@@ -27,6 +28,8 @@ import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.dance_database;
 import star.emote_processor;
+import star.item_database;
+
 
 namespace Star {
 

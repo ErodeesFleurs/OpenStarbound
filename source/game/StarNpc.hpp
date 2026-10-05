@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarNpcDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarActorMovementController.hpp"
@@ -23,6 +22,8 @@
 #include "StarToolUser.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
+
+import star.npc_database;
 
 namespace Star {
 

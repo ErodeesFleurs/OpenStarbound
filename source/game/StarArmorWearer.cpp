@@ -1,6 +1,7 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
@@ -8,10 +9,12 @@
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarAssets.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 
 import star.object_item;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

@@ -1,9 +1,12 @@
+#include "StarAssetPath.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarRoot.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

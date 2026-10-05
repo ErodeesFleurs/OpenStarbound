@@ -17,13 +17,14 @@ module;
 #include "StarObject.hpp"
 #include "StarLogging.hpp"
 #include "StarAssets.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarJsonExtra.hpp"
 
 export module star.item_tooltip;
 
 import star.object_item;
 import star.status_effect_database;
+import star.object_database;
+
 
 export namespace Star {
 namespace ItemTooltipBuilder {

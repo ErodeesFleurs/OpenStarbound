@@ -1,8 +1,10 @@
-#include "StarAiDatabase.hpp"
+#include "StarAiTypes.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.ai_database;
 
 namespace Star {
 

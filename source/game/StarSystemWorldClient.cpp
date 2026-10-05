@@ -1,8 +1,11 @@
+#include "StarCelestialTypes.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarRoot.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarClientContext.hpp"
 #include "StarPlayerUniverseMap.hpp"
+
+
+import star.celestial_database;
 
 namespace Star {
 

@@ -1,5 +1,7 @@
 #include "StarImage.hpp"
-#include "StarTilesetDatabase.hpp"
+#include "StarJson.hpp"
+
+import star.tileset_database;
 
 namespace Star {
 

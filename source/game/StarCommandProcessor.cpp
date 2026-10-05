@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarCommandProcessor.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
@@ -6,7 +8,6 @@
 #include "StarUniverseServer.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarConfiguration.hpp"
 #include "StarItemDrop.hpp"
 #include "StarTreasure.hpp"
@@ -14,15 +15,19 @@
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarChatProcessor.hpp"
 #include "StarAssets.hpp"
 #include "StarString.hpp"
+#include "StarVehicle.hpp"
 
+import star.vehicle_database;
+import star.liquids_database;
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;
 import star.stagehand_database;
+import star.item_database;
+import star.celestial_database;
+
 
 namespace Star {
 

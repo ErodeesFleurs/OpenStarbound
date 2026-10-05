@@ -1,10 +1,11 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
 #include "StarVector.hpp"
 
 export module star.terrain_cache;
+import star.terrain_database;
 
 export namespace Star {
 

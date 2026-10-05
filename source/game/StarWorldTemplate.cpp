@@ -3,13 +3,16 @@
 #include "StarInterpolation.hpp"
 #include "StarIterator.hpp"
 #include "StarBiome.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarTerrainDatabase.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarAssets.hpp"
 #include "StarLogging.hpp"
 #include "StarDungeonGenerator.hpp"
+
+import star.terrain_database;
+import star.biome_database;
+import star.celestial_database;
+
 
 namespace Star {
 

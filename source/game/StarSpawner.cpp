@@ -8,6 +8,8 @@
 #include "StarWeightedPool.hpp"
 #include "StarLogging.hpp"
 
+import star.monster_database;
+
 namespace Star {
 
 Spawner::Spawner() {

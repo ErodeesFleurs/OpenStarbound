@@ -1,20 +1,21 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarPlayer.hpp"
 #include "StarEncode.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarSongbook.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarDamageManager.hpp"
 #include "StarTools.hpp"
 #include "StarItemDrop.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarTechController.hpp"
 #include "StarClientContext.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItemBag.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarWorld.hpp"
@@ -27,11 +28,12 @@
 #include "StarPlayerDeployment.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarQuestManager.hpp"
-#include "StarAiDatabase.hpp"
 #include "StarStatistics.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.species_database;
+import star.ai_database;
 import star.player_lua_bindings;
 import star.entity_lua_bindings;
 import star.networked_animator_lua_bindings;
@@ -44,6 +46,9 @@ import star.dance_database;
 import star.collection_database;
 import star.emote_processor;
 import star.radio_message_database;
+import star.material_database;
+import star.item_database;
+
 
 namespace Star {
 

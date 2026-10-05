@@ -1,9 +1,12 @@
+#include "StarCelestialTypes.hpp"
 #include "StarSkyParameters.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarCasting.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+
+
+import star.celestial_database;
 
 namespace Star {
 

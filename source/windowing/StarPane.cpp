@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarPane.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
@@ -5,8 +7,10 @@
 #include "StarWidgetLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImageWidget.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarGuiReader.hpp"
+
+
+import star.item_database;
 
 namespace Star {
 

@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarWorldClient.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -13,8 +15,6 @@
 #include "StarAggressiveEntity.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarWorldTemplate.hpp"
@@ -28,6 +28,9 @@ import star.celestial_lua_bindings;
 import star.damage_database;
 import star.effect_source_database;
 import star.particle_database;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

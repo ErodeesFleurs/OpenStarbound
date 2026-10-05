@@ -1,15 +1,18 @@
+#include "StarAssetPath.hpp"
 #include "StarPlant.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarPlantDrop.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarImage.hpp"
 #include "StarEntityRendering.hpp"
 
 import star.particle_database;
+import star.object_database;
+import star.image_metadata_database;
+import star.plant_database;
+
 
 namespace Star {
 

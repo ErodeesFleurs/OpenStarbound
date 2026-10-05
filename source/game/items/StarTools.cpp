@@ -1,6 +1,7 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarTools.hpp"
 #include "StarRoot.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarWiring.hpp"
@@ -8,6 +9,8 @@
 #include "StarWorldClient.hpp"
 
 import star.particle_database;
+import star.material_database;
+
 
 namespace Star {
 

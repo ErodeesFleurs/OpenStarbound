@@ -7,13 +7,14 @@
 #include "StarBiome.hpp"
 #include "StarSky.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarRoot.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTileModification.hpp"
+
+import star.liquids_database;
+import star.material_database;
 
 namespace Star {
 

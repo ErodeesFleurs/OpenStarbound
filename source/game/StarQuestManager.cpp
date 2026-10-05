@@ -1,9 +1,10 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarQuestManager.hpp"
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
@@ -12,6 +13,8 @@
 
 import star.quest_template_database;
 import star.versioning_database;
+import star.item_database;
+
 
 namespace Star {
 

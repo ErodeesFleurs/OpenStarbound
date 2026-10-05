@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarBaseScriptPane.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -6,13 +8,14 @@
 #include "StarLuaGameConverters.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarCanvasWidget.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarImageWidget.hpp"
 
 import star.simple_tooltip;
 import star.item_tooltip;
 import star.config_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

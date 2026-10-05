@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
@@ -13,10 +15,12 @@
 #include "StarSliderBar.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarItemSlotWidget.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarFlowLayout.hpp"
 #include "StarImageStretchWidget.hpp"
 #include "StarScrollArea.hpp"
+
+
+import star.item_database;
 
 namespace Star {
 

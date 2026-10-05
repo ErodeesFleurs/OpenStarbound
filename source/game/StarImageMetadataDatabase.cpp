@@ -1,4 +1,7 @@
-#include "StarImageMetadataDatabase.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarAssetPath.hpp"
+#include "StarTtlCache.hpp"
 #include "StarFile.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
@@ -7,6 +10,8 @@
 #include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.image_metadata_database;
 
 namespace Star {
 

@@ -4,9 +4,10 @@ module;
 #include "StarLoungingEntities.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarObjectDatabase.hpp"
 
 module star.loungeable_object;
+import star.object_database;
+
 
 namespace Star {
 

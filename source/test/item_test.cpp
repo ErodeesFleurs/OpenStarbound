@@ -1,9 +1,13 @@
-#include "StarItemDatabase.hpp"
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarRoot.hpp"
 
 #include <list>
 
 #include "gtest/gtest.h"
+
+
+import star.item_database;
 
 using namespace Star;
 

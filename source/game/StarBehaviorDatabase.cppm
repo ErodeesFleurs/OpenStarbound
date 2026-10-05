@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -149,4 +149,92 @@ private:
   BehaviorNodeConstPtr behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
 };
 
+}
+
+export module star.behavior_database;
+
+export namespace Star {
+  using ::Star::CompositeNode;
+  using ::Star::BehaviorNode;
+  using ::Star::BehaviorNodeConstPtr;
+  using ::Star::NodeParameterType;
+  using ::Star::NodeParameterTypeNames;
+  using ::Star::NodeParameterValue;
+  using ::Star::NodeParameter;
+  using ::Star::NodeOutput;
+  using ::Star::nodeParameterValueFromJson;
+  using ::Star::jsonFromNodeParameter;
+  using ::Star::jsonToNodeParameter;
+  using ::Star::jsonFromNodeOutput;
+  using ::Star::jsonToNodeOutput;
+  using ::Star::BehaviorNodeType;
+  using ::Star::BehaviorNodeTypeNames;
+  using ::Star::CompositeType;
+  using ::Star::CompositeTypeNames;
+  using ::Star::replaceBehaviorTag;
+  using ::Star::replaceOutputBehaviorTag;
+  using ::Star::applyTreeParameters;
+  using ::Star::BehaviorDatabase;
+  using ::Star::BehaviorDatabasePtr;
+  using ::Star::BehaviorDatabaseConstPtr;
+  using ::Star::BehaviorDatabaseWeakPtr;
+  using ::Star::BehaviorDatabaseConstWeakPtr;
+  using ::Star::BehaviorDatabaseUPtr;
+  using ::Star::BehaviorDatabaseConstUPtr;
+  using ::Star::ActionNode;
+  using ::Star::ActionNodePtr;
+  using ::Star::ActionNodeConstPtr;
+  using ::Star::ActionNodeWeakPtr;
+  using ::Star::ActionNodeConstWeakPtr;
+  using ::Star::ActionNodeUPtr;
+  using ::Star::ActionNodeConstUPtr;
+  using ::Star::DecoratorNode;
+  using ::Star::DecoratorNodePtr;
+  using ::Star::DecoratorNodeConstPtr;
+  using ::Star::DecoratorNodeWeakPtr;
+  using ::Star::DecoratorNodeConstWeakPtr;
+  using ::Star::DecoratorNodeUPtr;
+  using ::Star::DecoratorNodeConstUPtr;
+  using ::Star::SequenceNode;
+  using ::Star::SequenceNodePtr;
+  using ::Star::SequenceNodeConstPtr;
+  using ::Star::SequenceNodeWeakPtr;
+  using ::Star::SequenceNodeConstWeakPtr;
+  using ::Star::SequenceNodeUPtr;
+  using ::Star::SequenceNodeConstUPtr;
+  using ::Star::SelectorNode;
+  using ::Star::SelectorNodePtr;
+  using ::Star::SelectorNodeConstPtr;
+  using ::Star::SelectorNodeWeakPtr;
+  using ::Star::SelectorNodeConstWeakPtr;
+  using ::Star::SelectorNodeUPtr;
+  using ::Star::SelectorNodeConstUPtr;
+  using ::Star::ParallelNode;
+  using ::Star::ParallelNodePtr;
+  using ::Star::ParallelNodeConstPtr;
+  using ::Star::ParallelNodeWeakPtr;
+  using ::Star::ParallelNodeConstWeakPtr;
+  using ::Star::ParallelNodeUPtr;
+  using ::Star::ParallelNodeConstUPtr;
+  using ::Star::DynamicNode;
+  using ::Star::DynamicNodePtr;
+  using ::Star::DynamicNodeConstPtr;
+  using ::Star::DynamicNodeWeakPtr;
+  using ::Star::DynamicNodeConstWeakPtr;
+  using ::Star::DynamicNodeUPtr;
+  using ::Star::DynamicNodeConstUPtr;
+  using ::Star::RandomizeNode;
+  using ::Star::RandomizeNodePtr;
+  using ::Star::RandomizeNodeConstPtr;
+  using ::Star::RandomizeNodeWeakPtr;
+  using ::Star::RandomizeNodeConstWeakPtr;
+  using ::Star::RandomizeNodeUPtr;
+  using ::Star::RandomizeNodeConstUPtr;
+  using ::Star::BehaviorTree;
+  using ::Star::BehaviorTreePtr;
+  using ::Star::BehaviorTreeConstPtr;
+  using ::Star::BehaviorTreeWeakPtr;
+  using ::Star::BehaviorTreeConstWeakPtr;
+  using ::Star::BehaviorTreeUPtr;
+  using ::Star::BehaviorTreeConstUPtr;
 }

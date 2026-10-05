@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarEither.hpp"
@@ -100,4 +100,26 @@ inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
   return Vec3F();
 }
 
+}
+
+export module star.liquids_database;
+
+export namespace Star {
+  using ::Star::LiquidExceptionTag;
+  using ::Star::LiquidException;
+  using ::Star::LiquidInteractionResult;
+  using ::Star::LiquidSettings;
+  using ::Star::LiquidSettingsPtr;
+  using ::Star::LiquidSettingsConstPtr;
+  using ::Star::LiquidSettingsWeakPtr;
+  using ::Star::LiquidSettingsConstWeakPtr;
+  using ::Star::LiquidSettingsUPtr;
+  using ::Star::LiquidSettingsConstUPtr;
+  using ::Star::LiquidsDatabase;
+  using ::Star::LiquidsDatabasePtr;
+  using ::Star::LiquidsDatabaseConstPtr;
+  using ::Star::LiquidsDatabaseWeakPtr;
+  using ::Star::LiquidsDatabaseConstWeakPtr;
+  using ::Star::LiquidsDatabaseUPtr;
+  using ::Star::LiquidsDatabaseConstUPtr;
 }

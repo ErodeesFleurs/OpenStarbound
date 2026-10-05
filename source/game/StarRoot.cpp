@@ -1,3 +1,8 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarAssetPath.hpp"
 #include "StarRoot.hpp"
 #include "StarIterator.hpp"
 #include "StarJsonExtra.hpp"
@@ -5,38 +10,34 @@
 #include "StarEncode.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
 #include "StarPlantDrop.hpp"
-#include "StarVehicleDatabase.hpp"
 #include "StarPlayer.hpp"
 #include "StarItemDrop.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarTreasure.hpp"
 #include "StarDungeonGenerator.hpp"
-#include "StarTilesetDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarEntityFactory.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
-#include "StarAiDatabase.hpp"
 #include "StarWorkerPool.hpp"
-#include "StarBehaviorDatabase.hpp"
 #include "StarNameGenerator.hpp"
+#include "StarVehicle.hpp"
 
+import star.terrain_database;
+import star.liquids_database;
+import star.vehicle_database;
+import star.tileset_database;
+import star.species_database;
+import star.projectile_database;
+import star.ai_database;
+import star.behavior_database;
 import star.packed_asset_source;
 import star.dance_database;
 import star.tech_database;
@@ -54,6 +55,13 @@ import star.spawn_type_database;
 import star.tenant_database;
 import star.statistics_database;
 import star.versioning_database;
+import star.item_database;
+import star.material_database;
+import star.biome_database;
+import star.image_metadata_database;
+import star.object_database;
+import star.plant_database;
+
 
 namespace Star {
 

@@ -1,9 +1,11 @@
-#include "StarTerrainDatabase.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
+import star.terrain_database;
 import star.terrain_basic;
 import star.terrain_composition;
 import star.terrain_transform;

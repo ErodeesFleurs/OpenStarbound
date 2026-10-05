@@ -3,18 +3,20 @@
 #include "StarPlayerFactory.hpp"
 #include "StarMonster.hpp"
 #include "StarObject.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarPlantDrop.hpp"
 #include "StarProjectile.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarItemDrop.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
+#include "StarVehicle.hpp"
 
+import star.projectile_database;
+import star.vehicle_database;
 import star.versioning_database;
+import star.object_database;
+
 
 namespace Star {
 

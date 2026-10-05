@@ -1,10 +1,14 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarAssets.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarObject.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarRootLoader.hpp"
 #include "tileset_updater.hpp"
+
+import star.liquids_database;
+import star.material_database;
+import star.object_database;
+
 
 using namespace Star;
 

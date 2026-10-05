@@ -1,19 +1,22 @@
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarObject.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
-#include "StarPlantDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarWorldServer.hpp"
 #include "StarTreasure.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
 
 import star.farmable_object;
+import star.plant_database;
+import star.object_database;
+import star.material_database;
+
 
 namespace Star {
 

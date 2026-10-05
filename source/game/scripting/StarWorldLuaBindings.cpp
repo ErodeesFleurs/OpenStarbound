@@ -1,3 +1,6 @@
+#include "StarItemDescriptor.hpp"
+#include "StarItemRecipe.hpp"
+#include "StarAssetPath.hpp"
 #include "StarBiMap.hpp"
 #include "StarRect.hpp"
 #include "StarPoly.hpp"
@@ -17,7 +20,6 @@
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
 #include "StarLoungingEntities.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldServer.hpp"
@@ -25,23 +27,26 @@
 #include "StarWorldTemplate.hpp"
 #include "StarWorldParameters.hpp"
 #include "StarItemDrop.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarTreasure.hpp"
 #include "StarContainerObject.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarVehicleDatabase.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseSettings.hpp"
 #include "StarBiome.hpp"
+#include "StarVehicle.hpp"
 
+import star.projectile_database;
+import star.vehicle_database;
 import star.loungeable_object;
 import star.farmable_object;
 import star.stagehand_database;
+import star.material_database;
+import star.object_database;
+import star.item_database;
+import star.image_metadata_database;
+
 
 namespace Star {
 

@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarQuests.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
@@ -5,11 +7,9 @@
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarRandom.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
@@ -26,6 +26,9 @@ import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.quest_template_database;
 import star.versioning_database;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

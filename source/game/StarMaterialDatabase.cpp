@@ -1,10 +1,16 @@
-#include "StarMaterialDatabase.hpp"
+#include "StarColor.hpp"
+#include "StarCollisionBlock.hpp"
+#include "StarMaterialRenderProfile.hpp"
+#include "StarTileDamage.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFormat.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 
+import star.material_database;
 import star.particle_database;
 
 namespace Star {

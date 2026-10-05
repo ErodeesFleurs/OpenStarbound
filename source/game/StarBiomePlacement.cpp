@@ -4,6 +4,8 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 
+import star.plant_database;
+
 namespace Star {
 
 BiomeItem variantToBiomeItem(Json const& store) {

@@ -18,6 +18,7 @@ import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 
+import star.monster_database;
 namespace Star {
 
 Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {

@@ -1,11 +1,16 @@
-#include "StarBiomeDatabase.hpp"
+#include "StarBiome.hpp"
+#include "StarWeatherTypes.hpp"
+#include "StarSkyTypes.hpp"
+#include "StarRandom.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarParallax.hpp"
 #include "StarAmbient.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarAssets.hpp"
+
+import star.biome_database;
+import star.material_database;
 
 namespace Star {
 

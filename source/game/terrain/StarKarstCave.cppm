@@ -1,6 +1,6 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
 #include "StarVector.hpp"
 #include "StarPerlin.hpp"
@@ -11,6 +11,7 @@ module;
 #include "StarLogging.hpp"
 
 export module star.terrain_karst_cave;
+import star.terrain_database;
 
 export namespace Star {
 

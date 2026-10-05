@@ -1,3 +1,4 @@
+#include "StarCollisionBlock.hpp"
 #include "StarObject.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
@@ -9,18 +10,19 @@
 #include "StarTreasure.hpp"
 #include "StarItemDrop.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarMixer.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarMaterialDatabase.hpp"
 
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
 import star.particle_database;
+import star.object_database;
+import star.material_database;
+
 
 namespace Star {
 

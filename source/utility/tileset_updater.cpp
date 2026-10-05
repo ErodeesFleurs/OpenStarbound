@@ -1,4 +1,6 @@
 #include "StarLogging.hpp"
+#include "StarGameTypes.hpp"
+#include "StarLexicalCast.hpp"
 #include "tileset_updater.hpp"
 
 using namespace Star;

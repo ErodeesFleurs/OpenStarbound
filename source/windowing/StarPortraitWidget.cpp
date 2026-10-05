@@ -1,8 +1,11 @@
+#include "StarAssetPath.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarAssets.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

@@ -1,7 +1,6 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
-#include "StarThread.hpp"
 #include "StarTileDamage.hpp"
 
 namespace Star {
@@ -138,4 +137,28 @@ private:
   StringMap<Config> m_bushConfigs;
 };
 
+}
+
+export module star.plant_database;
+
+export namespace Star {
+  using ::Star::PlantDatabaseExceptionTag;
+  using ::Star::PlantDatabaseException;
+  using ::Star::TreeVariant;
+  using ::Star::GrassVariant;
+  using ::Star::BushVariant;
+  using ::Star::Plant;
+  using ::Star::PlantPtr;
+  using ::Star::PlantConstPtr;
+  using ::Star::PlantWeakPtr;
+  using ::Star::PlantConstWeakPtr;
+  using ::Star::PlantUPtr;
+  using ::Star::PlantConstUPtr;
+  using ::Star::PlantDatabase;
+  using ::Star::PlantDatabasePtr;
+  using ::Star::PlantDatabaseConstPtr;
+  using ::Star::PlantDatabaseWeakPtr;
+  using ::Star::PlantDatabaseConstWeakPtr;
+  using ::Star::PlantDatabaseUPtr;
+  using ::Star::PlantDatabaseConstUPtr;
 }

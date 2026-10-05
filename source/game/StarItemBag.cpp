@@ -1,7 +1,11 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarItemBag.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
+
+
+import star.item_database;
 
 namespace Star {
 

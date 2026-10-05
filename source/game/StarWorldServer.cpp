@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarWorldServer.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
@@ -10,16 +12,13 @@
 #include "StarDungeonGenerator.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItemDrop.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarItemBag.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarProjectile.hpp"
 #include "StarPlayer.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
@@ -30,6 +29,10 @@ import star.celestial_lua_bindings;
 import star.world_generation;
 import star.radio_message_database;
 import star.versioning_database;
+import star.object_database;
+import star.item_database;
+import star.biome_database;
+
 
 namespace Star {
 

@@ -1,4 +1,8 @@
-#include "StarItemDatabase.hpp"
+#include "StarThread.hpp"
+#include "StarItemRecipe.hpp"
+#include "StarItem.hpp"
+#include "StarTtlCache.hpp"
+#include "StarGameTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -7,11 +11,12 @@
 #include "StarAugmentItem.hpp"
 #include "StarTools.hpp"
 #include "StarArmors.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarRebuilder.hpp"
 
+import star.item_database;
 import star.thrown_item;
 import star.object_item;
 import star.unlock_item;
@@ -30,6 +35,7 @@ import star.config_lua_bindings;
 import star.root_lua_bindings;
 import star.item_lua_bindings;
 import star.codex_database;
+import star.object_database;
 
 namespace Star {
 

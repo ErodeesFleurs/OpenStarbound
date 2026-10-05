@@ -1,15 +1,18 @@
 module;
 
+#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
 #include "StarSwingableItem.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarRoot.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarWorld.hpp"
 
 export module star.tilling_tool;
+import star.material_database;
+
 
 export namespace Star {
 

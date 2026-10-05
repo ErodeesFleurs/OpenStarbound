@@ -1,3 +1,4 @@
+#include "StarItemRecipe.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarStatusController.hpp"
 #include "StarActorMovementController.hpp"
@@ -13,11 +14,12 @@
 #include "StarContainerObject.hpp"
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
 
 import star.farmable_object;
+import star.item_database;
+
 
 namespace Star {
 

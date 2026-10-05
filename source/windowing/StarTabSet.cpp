@@ -1,3 +1,4 @@
+#include "StarAssetPath.hpp"
 #include "StarTabSet.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarStackWidget.hpp"
@@ -5,7 +6,9 @@
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarImageMetadataDatabase.hpp"
+
+
+import star.image_metadata_database;
 
 namespace Star {
 

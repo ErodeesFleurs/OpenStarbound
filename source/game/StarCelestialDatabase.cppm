@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarRect.hpp"
 #include "StarTtlCache.hpp"
@@ -227,4 +227,30 @@ private:
   HashMap<Vec3I, Timer> m_pendingSystemRequests;
 };
 
+}
+
+export module star.celestial_database;
+
+export namespace Star {
+  using ::Star::CelestialDatabase;
+  using ::Star::CelestialDatabasePtr;
+  using ::Star::CelestialDatabaseConstPtr;
+  using ::Star::CelestialDatabaseWeakPtr;
+  using ::Star::CelestialDatabaseConstWeakPtr;
+  using ::Star::CelestialDatabaseUPtr;
+  using ::Star::CelestialDatabaseConstUPtr;
+  using ::Star::CelestialMasterDatabase;
+  using ::Star::CelestialMasterDatabasePtr;
+  using ::Star::CelestialMasterDatabaseConstPtr;
+  using ::Star::CelestialMasterDatabaseWeakPtr;
+  using ::Star::CelestialMasterDatabaseConstWeakPtr;
+  using ::Star::CelestialMasterDatabaseUPtr;
+  using ::Star::CelestialMasterDatabaseConstUPtr;
+  using ::Star::CelestialSlaveDatabase;
+  using ::Star::CelestialSlaveDatabasePtr;
+  using ::Star::CelestialSlaveDatabaseConstPtr;
+  using ::Star::CelestialSlaveDatabaseWeakPtr;
+  using ::Star::CelestialSlaveDatabaseConstWeakPtr;
+  using ::Star::CelestialSlaveDatabaseUPtr;
+  using ::Star::CelestialSlaveDatabaseConstUPtr;
 }

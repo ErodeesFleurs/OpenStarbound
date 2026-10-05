@@ -1,8 +1,8 @@
+#include "StarCelestialTypes.hpp"
 #include "StarSky.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
@@ -10,6 +10,8 @@
 #include "StarMixer.hpp"
 
 import star.compression;
+import star.celestial_database;
+
 namespace Star {
 
 Sky::Sky() {

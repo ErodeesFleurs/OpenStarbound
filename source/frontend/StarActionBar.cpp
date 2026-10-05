@@ -1,3 +1,4 @@
+#include "StarAssetPath.hpp"
 #include "StarActionBar.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
@@ -11,11 +12,12 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarMerchantInterface.hpp"
 
 import star.item_tooltip;
+import star.image_metadata_database;
+
 
 namespace Star {
 

@@ -1,5 +1,6 @@
 module;
 
+#include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
 #include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
@@ -10,7 +11,6 @@ module;
 #include "StarCollisionBlock.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarWorld.hpp"
@@ -21,6 +21,8 @@ module;
 #include "StarPlayer.hpp"
 
 export module star.material_item;
+import star.material_database;
+
 
 export namespace Star {
 

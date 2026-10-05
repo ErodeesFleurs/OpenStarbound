@@ -1,11 +1,14 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarJsonExtra.hpp"
 
 import star.config_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

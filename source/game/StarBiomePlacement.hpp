@@ -7,6 +7,8 @@
 #include "StarTreasure.hpp"
 #include "StarStrongTypedef.hpp"
 
+import star.plant_database;
+
 namespace Star {
 
 STAR_CLASS(BiomeItemDistribution);

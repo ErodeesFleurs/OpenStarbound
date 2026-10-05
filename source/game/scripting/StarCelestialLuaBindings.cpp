@@ -8,10 +8,12 @@ module;
 #include "StarUniverseClient.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarRoot.hpp"
 
 module star.celestial_lua_bindings;
+import star.biome_database;
+import star.celestial_database;
+
 
 namespace Star {
 LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialDatabase) {

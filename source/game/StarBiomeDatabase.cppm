@@ -1,10 +1,13 @@
-#pragma once
+module;
 
-#include "StarBiome.hpp"
+#include "StarGameTypes.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarSkyTypes.hpp"
 
 namespace Star {
+
+STAR_STRUCT(Biome);
+struct BiomePlaceables;
 
 STAR_CLASS(BiomeDatabase);
 
@@ -48,4 +51,23 @@ private:
   ConfigMap m_weathers;
 };
 
+}
+
+export module star.biome_database;
+
+export namespace Star {
+  using ::Star::Biome;
+  using ::Star::BiomePtr;
+  using ::Star::BiomeConstPtr;
+  using ::Star::BiomeWeakPtr;
+  using ::Star::BiomeConstWeakPtr;
+  using ::Star::BiomeUPtr;
+  using ::Star::BiomeConstUPtr;
+  using ::Star::BiomeDatabase;
+  using ::Star::BiomeDatabasePtr;
+  using ::Star::BiomeDatabaseConstPtr;
+  using ::Star::BiomeDatabaseWeakPtr;
+  using ::Star::BiomeDatabaseConstWeakPtr;
+  using ::Star::BiomeDatabaseUPtr;
+  using ::Star::BiomeDatabaseConstUPtr;
 }

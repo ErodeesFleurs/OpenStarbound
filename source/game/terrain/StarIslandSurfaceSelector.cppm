@@ -1,13 +1,14 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarLruCache.hpp"
 #include "StarPerlin.hpp"
-#include "StarTerrainDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
 export module star.terrain_island_surface;
+import star.terrain_database;
 
 export namespace Star {
 

@@ -1,11 +1,14 @@
 #include "StarWorldLayout.hpp"
+#include "StarBiome.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorldGeometry.hpp"
 #include "StarAssets.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
 #include "StarParallax.hpp"
 #include "StarRoot.hpp"
+
+import star.terrain_database;
+import star.biome_database;
+
 
 namespace Star {
 

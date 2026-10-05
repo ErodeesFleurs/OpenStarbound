@@ -1,10 +1,13 @@
 #include "StarWorldParameters.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
+
+import star.liquids_database;
+import star.biome_database;
+
 
 namespace Star {
 

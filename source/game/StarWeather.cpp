@@ -4,9 +4,11 @@
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarAssets.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
-#include "StarBiomeDatabase.hpp"
+
+import star.projectile_database;
+import star.biome_database;
+
 
 namespace Star {
 

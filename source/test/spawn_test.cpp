@@ -1,9 +1,12 @@
+#include "StarCelestialTypes.hpp"
 #include "StarAssets.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarRoot.hpp"
 
 #include "StarTestUniverse.hpp"
 #include "gtest/gtest.h"
+
+
+import star.celestial_database;
 
 using namespace Star;
 

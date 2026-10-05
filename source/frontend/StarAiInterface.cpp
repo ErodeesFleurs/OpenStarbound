@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarAiInterface.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
@@ -5,7 +7,6 @@
 #include "StarAssets.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarItemBag.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerCompanions.hpp"
 #include "StarPlayerInventory.hpp"
@@ -23,7 +24,6 @@
 #include "StarListWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarAiDatabase.hpp"
 #include "StarTabSet.hpp"
 #include "StarPlayerTech.hpp"
 #include "StarPlayerBlueprints.hpp"
@@ -31,6 +31,10 @@
 #include "StarStackWidget.hpp"
 #include "StarCinematic.hpp"
 #include "StarWorldClient.hpp"
+
+import star.ai_database;
+import star.item_database;
+
 
 namespace Star {
 

@@ -30,7 +30,8 @@ target_include_directories (star_rendering PRIVATE
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
   )
-target_link_libraries (star_rendering PRIVATE star_build_config)
+target_link_libraries (star_rendering PRIVATE star_game_module_interfaces star_build_config)
+set_target_properties (star_rendering PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers (star_rendering REUSE_FROM star_core)

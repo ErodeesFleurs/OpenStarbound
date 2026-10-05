@@ -1,10 +1,12 @@
-#include "StarVehicleDatabase.hpp"
+#include "StarJson.hpp"
 #include "StarVehicle.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+
+import star.vehicle_database;
 
 namespace Star {
 

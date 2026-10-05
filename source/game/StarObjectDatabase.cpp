@@ -1,21 +1,35 @@
-#include "StarObjectDatabase.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarTtlCache.hpp"
+#include "StarThread.hpp"
+#include "StarGameTypes.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarParticle.hpp"
+#include "StarSet.hpp"
+#include "StarTileDamage.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarLightSource.hpp"
 #include "StarObject.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIterator.hpp"
 #include "StarWorld.hpp"
 #include "StarAssets.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
 #include "StarContainerObject.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+#include "StarCollisionBlock.hpp"
+#include "StarAssetPath.hpp"
 
+import star.object_database;
 import star.teleporter_object;
 import star.physics_object;
 import star.loungeable_object;
 import star.farmable_object;
+import star.material_database;
+import star.image_metadata_database;
 
 namespace Star {
 

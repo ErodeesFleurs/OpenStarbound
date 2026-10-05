@@ -1,6 +1,5 @@
-#pragma once
+module;
 
-#include "StarThread.hpp"
 #include "StarHumanoid.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarStatusTypes.hpp"
@@ -90,4 +89,40 @@ private:
   StringMap<Json> m_npcTypes;
 };
 
+}
+
+export module star.npc_database;
+
+export namespace Star {
+  using ::Star::NpcExceptionTag;
+  using ::Star::NpcException;
+  using ::Star::NpcVariant;
+  using ::Star::Rebuilder;
+  using ::Star::RebuilderPtr;
+  using ::Star::RebuilderConstPtr;
+  using ::Star::RebuilderWeakPtr;
+  using ::Star::RebuilderConstWeakPtr;
+  using ::Star::RebuilderUPtr;
+  using ::Star::RebuilderConstUPtr;
+  using ::Star::Item;
+  using ::Star::ItemPtr;
+  using ::Star::ItemConstPtr;
+  using ::Star::ItemWeakPtr;
+  using ::Star::ItemConstWeakPtr;
+  using ::Star::ItemUPtr;
+  using ::Star::ItemConstUPtr;
+  using ::Star::Npc;
+  using ::Star::NpcPtr;
+  using ::Star::NpcConstPtr;
+  using ::Star::NpcWeakPtr;
+  using ::Star::NpcConstWeakPtr;
+  using ::Star::NpcUPtr;
+  using ::Star::NpcConstUPtr;
+  using ::Star::NpcDatabase;
+  using ::Star::NpcDatabasePtr;
+  using ::Star::NpcDatabaseConstPtr;
+  using ::Star::NpcDatabaseWeakPtr;
+  using ::Star::NpcDatabaseConstWeakPtr;
+  using ::Star::NpcDatabaseUPtr;
+  using ::Star::NpcDatabaseConstUPtr;
 }

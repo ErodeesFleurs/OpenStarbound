@@ -3,7 +3,7 @@
 #include "StarSet.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarTileEntity.hpp"
-#include "StarPlantDatabase.hpp"
+#include "StarTileDamage.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
 
@@ -11,6 +11,9 @@ namespace Star {
 
 STAR_CLASS(RenderCallback);
 STAR_CLASS(Plant);
+struct TreeVariant;
+struct GrassVariant;
+struct BushVariant;
 
 struct PlantExceptionTag {
   static constexpr char const* name() { return "PlantException"; }

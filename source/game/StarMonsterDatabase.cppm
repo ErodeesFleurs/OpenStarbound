@@ -1,10 +1,9 @@
-#pragma once
+module;
 
-#include "StarNetworkedAnimator.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarTtlCache.hpp"
+#include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarEntityRenderingTypes.hpp"
 
@@ -206,4 +205,47 @@ private:
   mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
 };
 
+}
+
+export module star.monster_database;
+
+export namespace Star {
+  using ::Star::MonsterExceptionTag;
+  using ::Star::MonsterException;
+  using ::Star::MonsterVariant;
+  using ::Star::LuaRoot;
+  using ::Star::LuaRootPtr;
+  using ::Star::LuaRootConstPtr;
+  using ::Star::LuaRootWeakPtr;
+  using ::Star::LuaRootConstWeakPtr;
+  using ::Star::LuaRootUPtr;
+  using ::Star::LuaRootConstUPtr;
+  using ::Star::Rebuilder;
+  using ::Star::RebuilderPtr;
+  using ::Star::RebuilderConstPtr;
+  using ::Star::RebuilderWeakPtr;
+  using ::Star::RebuilderConstWeakPtr;
+  using ::Star::RebuilderUPtr;
+  using ::Star::RebuilderConstUPtr;
+  using ::Star::RandomSource;
+  using ::Star::RandomSourcePtr;
+  using ::Star::RandomSourceConstPtr;
+  using ::Star::RandomSourceWeakPtr;
+  using ::Star::RandomSourceConstWeakPtr;
+  using ::Star::RandomSourceUPtr;
+  using ::Star::RandomSourceConstUPtr;
+  using ::Star::Monster;
+  using ::Star::MonsterPtr;
+  using ::Star::MonsterConstPtr;
+  using ::Star::MonsterWeakPtr;
+  using ::Star::MonsterConstWeakPtr;
+  using ::Star::MonsterUPtr;
+  using ::Star::MonsterConstUPtr;
+  using ::Star::MonsterDatabase;
+  using ::Star::MonsterDatabasePtr;
+  using ::Star::MonsterDatabaseConstPtr;
+  using ::Star::MonsterDatabaseWeakPtr;
+  using ::Star::MonsterDatabaseConstWeakPtr;
+  using ::Star::MonsterDatabaseUPtr;
+  using ::Star::MonsterDatabaseConstUPtr;
 }

@@ -7,7 +7,6 @@
 #include "StarPlatformerAStar.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarDamage.hpp"
-#include "StarBehaviorState.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarDrawable.hpp"
 #include "StarEntity.hpp"
@@ -17,6 +16,9 @@ namespace Star {
 
 struct Collection;
 struct Collectable;
+STAR_CLASS(BehaviorState);
+STAR_CLASS(Blackboard);
+enum class NodeStatus;
 
 template <>
 struct LuaConverter<InventorySlot> {

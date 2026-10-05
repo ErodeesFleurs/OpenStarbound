@@ -8,10 +8,10 @@ module;
 #include "StarProjectile.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarWorld.hpp"
 
 export module star.thrown_item;
+import star.projectile_database;
 
 export namespace Star {
 

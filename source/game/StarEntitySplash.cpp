@@ -1,8 +1,9 @@
 #include "StarEntitySplash.hpp"
 #include "StarWorld.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.liquids_database;
 
 namespace Star {
 

@@ -5,10 +5,11 @@ module;
 #include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRoot.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarLuaConverters.hpp"
 
 module star.physics_object;
+import star.object_database;
+
 
 namespace Star {
 

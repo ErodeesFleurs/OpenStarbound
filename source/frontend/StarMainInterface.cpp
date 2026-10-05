@@ -1,3 +1,5 @@
+#include "StarAssetPath.hpp"
+#include "StarCelestialTypes.hpp"
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
@@ -14,7 +16,6 @@
 #include "StarPopupInterface.hpp"
 #include "StarConfirmationDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarGuiReader.hpp"
 #include "StarPaneManager.hpp"
 #include "StarClientCommandProcessor.hpp"
@@ -34,7 +35,6 @@
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarAiInterface.hpp"
 #include "StarDrawable.hpp"
@@ -61,6 +61,9 @@
 import star.inspection_tool;
 import star.active_item;
 import star.http_trust_dialog;
+import star.image_metadata_database;
+import star.celestial_database;
+
 
 namespace Star {
 

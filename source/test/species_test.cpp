@@ -1,8 +1,9 @@
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarSpeciesDatabase.hpp"
 
 #include "gtest/gtest.h"
+
+import star.species_database;
 
 using namespace Star;
 

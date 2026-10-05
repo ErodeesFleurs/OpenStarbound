@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarCraftingInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
@@ -18,14 +20,15 @@
 #include "StarItemSlotWidget.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarMixer.hpp"
 
 import star.object_item;
 import star.item_tooltip;
+import star.item_database;
+import star.object_database;
+
 
 namespace Star {
 

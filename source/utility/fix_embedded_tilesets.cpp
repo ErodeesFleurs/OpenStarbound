@@ -1,7 +1,8 @@
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
-#include "StarTilesetDatabase.hpp"
+
+import star.tileset_database;
 
 using namespace Star;
 

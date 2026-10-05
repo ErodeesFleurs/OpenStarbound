@@ -1,8 +1,12 @@
-#include "StarProjectileDatabase.hpp"
+#include "StarSet.hpp"
+#include "StarThread.hpp"
+#include "StarEntityRenderingTypes.hpp"
 #include "StarProjectile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.projectile_database;
 
 namespace Star {
 

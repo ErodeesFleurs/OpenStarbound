@@ -1,8 +1,9 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarTerrainDatabase.hpp"
 
 export module star.terrain_basic;
+import star.terrain_database;
 
 export namespace Star {
 

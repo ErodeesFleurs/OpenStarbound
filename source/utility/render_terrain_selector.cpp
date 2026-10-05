@@ -2,11 +2,12 @@
 #include "StarLexicalCast.hpp"
 #include "StarImage.hpp"
 #include "StarRootLoader.hpp"
-#include "StarTerrainDatabase.hpp"
 #include "StarJson.hpp"
 #include "StarRandom.hpp"
 #include "StarColor.hpp"
 #include "StarMultiArray.hpp"
+
+import star.terrain_database;
 
 using namespace Star;
 

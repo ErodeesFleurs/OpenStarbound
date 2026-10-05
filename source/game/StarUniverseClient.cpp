@@ -5,7 +5,6 @@
 #include "StarVersion.hpp"
 #include "StarRoot.hpp"
 #include "StarConfiguration.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
@@ -22,9 +21,12 @@
 #include "StarQuestManager.hpp"
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
+#include "StarProjectile.hpp"
 
+import star.projectile_database;
 import star.sha256;
 import star.universe_client_lua_bindings;
+import star.celestial_database;
 
 namespace Star {
 

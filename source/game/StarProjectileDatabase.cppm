@@ -1,13 +1,15 @@
-#pragma once
+module;
 
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarEntityRenderingTypes.hpp"
-#include "StarProjectile.hpp"
+#include "StarEntity.hpp"
+#include "StarStatusTypes.hpp"
 
 namespace Star {
 
 STAR_STRUCT(ProjectileConfig);
+STAR_CLASS(Projectile);
 STAR_CLASS(ProjectileDatabase);
 
 struct ProjectileDatabaseExceptionTag {
@@ -122,4 +124,32 @@ private:
   StringMap<ProjectileConfigPtr> m_configs;
 };
 
+}
+
+export module star.projectile_database;
+
+export namespace Star {
+  using ::Star::ProjectileDatabaseExceptionTag;
+  using ::Star::ProjectileDatabaseException;
+  using ::Star::ProjectileConfig;
+  using ::Star::ProjectileConfigPtr;
+  using ::Star::ProjectileConfigConstPtr;
+  using ::Star::ProjectileConfigWeakPtr;
+  using ::Star::ProjectileConfigConstWeakPtr;
+  using ::Star::ProjectileConfigUPtr;
+  using ::Star::ProjectileConfigConstUPtr;
+  using ::Star::Projectile;
+  using ::Star::ProjectilePtr;
+  using ::Star::ProjectileConstPtr;
+  using ::Star::ProjectileWeakPtr;
+  using ::Star::ProjectileConstWeakPtr;
+  using ::Star::ProjectileUPtr;
+  using ::Star::ProjectileConstUPtr;
+  using ::Star::ProjectileDatabase;
+  using ::Star::ProjectileDatabasePtr;
+  using ::Star::ProjectileDatabaseConstPtr;
+  using ::Star::ProjectileDatabaseWeakPtr;
+  using ::Star::ProjectileDatabaseConstWeakPtr;
+  using ::Star::ProjectileDatabaseUPtr;
+  using ::Star::ProjectileDatabaseConstUPtr;
 }

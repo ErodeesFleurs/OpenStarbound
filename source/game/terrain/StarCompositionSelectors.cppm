@@ -1,10 +1,11 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarTerrainDatabase.hpp"
 #include "StarMathCommon.hpp"
 #include "StarInterpolation.hpp"
 
 export module star.terrain_composition;
+import star.terrain_database;
 
 export namespace Star {
 

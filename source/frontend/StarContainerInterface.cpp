@@ -1,3 +1,5 @@
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
 #include "StarContainerInterface.hpp"
 #include "StarCasting.hpp"
 #include "StarContainerEntity.hpp"
@@ -9,7 +11,6 @@
 #include "StarPaneManager.hpp"
 #include "StarFuelWidget.hpp"
 #include "StarPlayer.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarWidgetLuaBindings.hpp"
@@ -20,6 +21,8 @@ import star.player_lua_bindings;
 import star.item_tooltip;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
+import star.item_database;
+
 
 namespace Star {
 

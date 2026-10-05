@@ -1,7 +1,6 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
-#include "StarThread.hpp"
 
 namespace Star {
 
@@ -63,4 +62,26 @@ private:
   StringMap<Config> m_terrainSelectors;
 };
 
+}
+
+export module star.terrain_database;
+
+export namespace Star {
+  using ::Star::TerrainExceptionTag;
+  using ::Star::TerrainException;
+  using ::Star::TerrainSelectorParameters;
+  using ::Star::TerrainSelector;
+  using ::Star::TerrainSelectorPtr;
+  using ::Star::TerrainSelectorConstPtr;
+  using ::Star::TerrainSelectorWeakPtr;
+  using ::Star::TerrainSelectorConstWeakPtr;
+  using ::Star::TerrainSelectorUPtr;
+  using ::Star::TerrainSelectorConstUPtr;
+  using ::Star::TerrainDatabase;
+  using ::Star::TerrainDatabasePtr;
+  using ::Star::TerrainDatabaseConstPtr;
+  using ::Star::TerrainDatabaseWeakPtr;
+  using ::Star::TerrainDatabaseConstWeakPtr;
+  using ::Star::TerrainDatabaseUPtr;
+  using ::Star::TerrainDatabaseConstUPtr;
 }
