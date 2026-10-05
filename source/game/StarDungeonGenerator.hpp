@@ -265,10 +265,7 @@ namespace Dungeon {
 
   class DoNotConnectToPartRule : public Rule {
   public:
-    DoNotConnectToPartRule(Json const& rule) {
-      for (auto entry : rule.toArray()[1].toArray())
-        m_partNames.add(entry.toString());
-    }
+    DoNotConnectToPartRule(Json const& rule);
 
     virtual bool doesNotConnectToPart(String const& name) const override {
       return m_partNames.contains(name);
@@ -280,10 +277,7 @@ namespace Dungeon {
 
   class DoNotCombineWithRule : public Rule {
   public:
-    DoNotCombineWithRule(Json const& rule) {
-      for (auto part : rule.toArray()[1].toArray())
-        m_parts.add(part.toString());
-    }
+    DoNotCombineWithRule(Json const& rule);
 
     virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const override {
       for (auto part : m_parts) {

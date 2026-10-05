@@ -1,4 +1,5 @@
 #include "StarRebuilder.hpp"
+#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLua.hpp"

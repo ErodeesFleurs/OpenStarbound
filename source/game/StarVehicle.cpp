@@ -1,4 +1,5 @@
 #include "StarVehicle.hpp"
+#include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"

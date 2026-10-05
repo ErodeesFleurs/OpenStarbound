@@ -1,7 +1,5 @@
-#pragma once
+module;
 
-#include "StarJson.hpp"
-#include "StarThread.hpp"
 #include "StarParticle.hpp"
 
 namespace Star {
@@ -41,4 +39,17 @@ private:
   StringMap<ParticleConfigPtr> m_configs;
 };
 
+}
+
+export module star.particle_database;
+
+export namespace Star {
+  using ::Star::Particle;
+  using ::Star::ParticleVariantCreator;
+  using ::Star::ParticleConfig;
+  using ::Star::ParticleConfigPtr;
+  using ::Star::ParticleConfigConstPtr;
+  using ::Star::ParticleDatabase;
+  using ::Star::ParticleDatabasePtr;
+  using ::Star::ParticleDatabaseConstPtr;
 }

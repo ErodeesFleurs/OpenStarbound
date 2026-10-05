@@ -1,5 +1,7 @@
 #include "StarFile.hpp"
-#include "StarVersioningDatabase.hpp"
+#include "StarJson.hpp"
+
+import star.versioning_database;
 
 using namespace Star;
 

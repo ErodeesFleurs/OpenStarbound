@@ -7,8 +7,8 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarVersioningDatabase.hpp"
 #include "StarIterator.hpp"
+import star.versioning_database;
 import star.compression;
 
 namespace Star {

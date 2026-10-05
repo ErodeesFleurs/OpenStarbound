@@ -2,6 +2,7 @@ module;
 
 #include "StarJson.hpp"
 #include "StarLua.hpp"
+#include "StarRoot.hpp"
 #include "StarClientContext.hpp"
 #include "StarItem.hpp"
 #include "StarItemDatabase.hpp"

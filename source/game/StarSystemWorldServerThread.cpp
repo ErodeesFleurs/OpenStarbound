@@ -1,6 +1,8 @@
 #include "StarSystemWorldServerThread.hpp"
+#include "StarRoot.hpp"
 #include "StarNetPackets.hpp"
 
+import star.versioning_database;
 import star.tick_rate_monitor;
 
 namespace Star {

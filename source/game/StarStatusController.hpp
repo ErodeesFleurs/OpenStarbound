@@ -4,12 +4,13 @@
 #include "StarNetElementSystem.hpp"
 #include "StarNetElementExt.hpp"
 #include "StarStatCollection.hpp"
-#include "StarStatusEffectDatabase.hpp"
 #include "StarDamage.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarEntityRenderingTypes.hpp"
+
+import star.status_effect_database;
 
 namespace Star {
 

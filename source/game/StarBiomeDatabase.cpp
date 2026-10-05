@@ -6,7 +6,6 @@
 #include "StarAmbient.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarSpawnTypeDatabase.hpp"
 
 namespace Star {
 

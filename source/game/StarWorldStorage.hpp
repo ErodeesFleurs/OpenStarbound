@@ -1,12 +1,14 @@
 #pragma once
 
 #include "StarBTreeDatabase.hpp"
-#include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarBiomePlacement.hpp"
+#include "StarLuaRoot.hpp"
+
+import star.versioning_database;
 
 namespace Star {
 

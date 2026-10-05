@@ -1,4 +1,5 @@
 #include "StarQuestIndicatorPainter.hpp"
+#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
 #include "StarQuestManager.hpp"

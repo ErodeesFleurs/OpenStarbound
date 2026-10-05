@@ -1,4 +1,5 @@
 #include "StarTestUniverse.hpp"
+#include "StarRoot.hpp"
 #include "StarFile.hpp"
 #include "StarQuests.hpp"
 #include "StarPlayerFactory.hpp"

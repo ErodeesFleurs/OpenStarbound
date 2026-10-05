@@ -14,13 +14,13 @@
 #include "StarEntityRendering.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
 
 import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;
 import star.scripted_animator_lua_bindings;
 import star.config_lua_bindings;
+import star.particle_database;
 
 namespace Star {
 

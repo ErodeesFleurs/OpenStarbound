@@ -1,9 +1,7 @@
-#pragma once
+module;
 
 #include "StarItemDescriptor.hpp"
-#include "StarThread.hpp"
 #include "StarVector.hpp"
-#include "StarStrongTypedef.hpp"
 
 namespace Star {
 
@@ -77,4 +75,21 @@ private:
   StringMap<QuestTemplatePtr> m_templates;
 };
 
+}
+
+export module star.quest_template_database;
+
+export namespace Star {
+  using ::Star::SpeciesTextVariants;
+  using ::Star::SpeciesTextVariantsPtr;
+  using ::Star::SpeciesTextVariantsConstPtr;
+  using ::Star::PositionalTextVariants;
+  using ::Star::PositionalTextVariantsPtr;
+  using ::Star::PositionalTextVariantsConstPtr;
+  using ::Star::QuestTemplate;
+  using ::Star::QuestTemplatePtr;
+  using ::Star::QuestTemplateConstPtr;
+  using ::Star::QuestTemplateDatabase;
+  using ::Star::QuestTemplateDatabasePtr;
+  using ::Star::QuestTemplateDatabaseConstPtr;
 }

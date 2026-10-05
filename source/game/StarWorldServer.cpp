@@ -1,4 +1,5 @@
 #include "StarWorldServer.hpp"
+#include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -27,6 +28,8 @@
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;
 import star.world_generation;
+import star.radio_message_database;
+import star.versioning_database;
 
 namespace Star {
 

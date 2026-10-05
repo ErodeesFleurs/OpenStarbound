@@ -1,4 +1,5 @@
 #include "StarItemDatabase.hpp"
+#include "StarRoot.hpp"
 
 #include <list>
 

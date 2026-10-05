@@ -1,6 +1,5 @@
-#pragma once
+module;
 
-#include "StarThread.hpp"
 #include "StarStatusTypes.hpp"
 
 namespace Star {
@@ -43,4 +42,15 @@ private:
   HashMap<UniqueStatusEffect, UniqueStatusEffectConfig> m_uniqueEffects;
 };
 
+}
+
+export module star.status_effect_database;
+
+export namespace Star {
+  using ::Star::StatusEffectDatabaseExceptionTag;
+  using ::Star::StatusEffectDatabaseException;
+  using ::Star::StatusEffectDatabase;
+  using ::Star::StatusEffectDatabasePtr;
+  using ::Star::StatusEffectDatabaseConstPtr;
+  using ::Star::UniqueStatusEffectConfig;
 }

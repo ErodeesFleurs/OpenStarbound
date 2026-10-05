@@ -1,6 +1,8 @@
-#include "StarRadioMessageDatabase.hpp"
+#include "StarBiMap.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.radio_message_database;
 
 namespace Star {
 

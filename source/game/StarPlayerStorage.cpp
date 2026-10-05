@@ -10,6 +10,8 @@
 #include "StarRoot.hpp"
 #include "StarText.hpp"
 
+import star.versioning_database;
+
 namespace Star {
 
 PlayerStorage::PlayerStorage(String const& storageDir) {

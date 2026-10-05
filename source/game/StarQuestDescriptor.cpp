@@ -1,4 +1,5 @@
 #include "StarQuestDescriptor.hpp"
+#include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
@@ -6,7 +7,8 @@
 #include "StarMonsterDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarObjectDatabase.hpp"
-#include "StarVersioningDatabase.hpp"
+
+import star.versioning_database;
 
 namespace Star {
 

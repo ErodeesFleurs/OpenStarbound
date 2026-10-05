@@ -3,7 +3,8 @@
 #include "StarGameTimers.hpp"
 #include "StarPane.hpp"
 #include "StarAiTypes.hpp"
-#include "StarRadioMessageDatabase.hpp"
+
+import star.radio_message_database;
 
 namespace Star {
 

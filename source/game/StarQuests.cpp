@@ -24,6 +24,8 @@ import star.entity_lua_bindings;
 import star.config_lua_bindings;
 import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
+import star.quest_template_database;
+import star.versioning_database;
 
 namespace Star {
 

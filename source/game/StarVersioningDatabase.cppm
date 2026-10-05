@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
@@ -94,4 +94,22 @@ private:
   StringMap<HashMap<VersionNumber,StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
 };
 
+}
+
+export module star.versioning_database;
+
+export namespace Star {
+  using ::Star::VersionNumber;
+  using ::Star::VersionedJson;
+  using ::Star::VersionedJsonPtr;
+  using ::Star::VersionedJsonConstPtr;
+  using ::Star::VersionedJsonExceptionTag;
+  using ::Star::VersionedJsonException;
+  using ::Star::VersioningDatabaseExceptionTag;
+  using ::Star::VersioningDatabaseException;
+  using ::Star::VersioningDatabase;
+  using ::Star::VersioningDatabasePtr;
+  using ::Star::VersioningDatabaseConstPtr;
+  using ::Star::operator>>;
+  using ::Star::operator<<;
 }

@@ -1,9 +1,9 @@
-#include "StarQuestTemplateDatabase.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.quest_template_database;
 
 namespace Star {
 

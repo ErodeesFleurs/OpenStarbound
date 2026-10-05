@@ -1,7 +1,9 @@
-#include "StarStatusEffectDatabase.hpp"
+#include "StarStatusTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.status_effect_database;
 
 namespace Star {
 

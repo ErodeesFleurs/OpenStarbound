@@ -1,4 +1,5 @@
 #include "StarNameplatePainter.hpp"
+#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarNametagEntity.hpp"

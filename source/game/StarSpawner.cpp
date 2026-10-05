@@ -1,5 +1,4 @@
 #include "StarSpawner.hpp"
-#include "StarSpawnTypeDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"

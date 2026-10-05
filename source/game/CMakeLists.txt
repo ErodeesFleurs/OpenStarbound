@@ -69,7 +69,6 @@ set (star_game_HEADERS
     StarObjectDatabase.hpp
     StarParallax.hpp
     StarParticle.hpp
-    StarParticleDatabase.hpp
     StarParticleManager.hpp
     StarPlant.hpp
     StarPlantDatabase.hpp
@@ -93,8 +92,6 @@ set (star_game_HEADERS
     StarQuestDescriptor.hpp
     StarQuestManager.hpp
     StarQuests.hpp
-    StarQuestTemplateDatabase.hpp
-    StarRadioMessageDatabase.hpp
     StarRebuilder.hpp
     StarRoot.hpp
     StarRootLoader.hpp
@@ -105,15 +102,12 @@ set (star_game_HEADERS
     StarSkyTypes.hpp
     StarSongbook.hpp
     StarSpawner.hpp
-    StarSpawnTypeDatabase.hpp
     StarSpeciesDatabase.hpp
     StarStagehand.hpp
     StarStatCollection.hpp
     StarStatistics.hpp
-    StarStatisticsDatabase.hpp
     StarStatSet.hpp
     StarStatusController.hpp
-    StarStatusEffectDatabase.hpp
     StarStatusTypes.hpp
     StarStoredFunctions.hpp
     StarSystemWorld.hpp
@@ -123,7 +117,6 @@ set (star_game_HEADERS
     StarTeamClient.hpp
     StarTeamManager.hpp
     StarTechController.hpp
-    StarTenantDatabase.hpp
     StarTerrainDatabase.hpp
     StarTileDamage.hpp
     StarTileDrawer.hpp
@@ -138,7 +131,6 @@ set (star_game_HEADERS
     StarUniverseSettings.hpp
     StarVehicle.hpp
     StarVehicleDatabase.hpp
-    StarVersioningDatabase.hpp
     StarWarping.hpp
     StarWeather.hpp
     StarWeatherTypes.hpp
@@ -279,7 +271,6 @@ set (star_game_SOURCES
     StarObjectDatabase.cpp
     StarParallax.cpp
     StarParticle.cpp
-    StarParticleDatabase.cpp
     StarParticleManager.cpp
     StarPlant.cpp
     StarPlantDatabase.cpp
@@ -303,8 +294,6 @@ set (star_game_SOURCES
     StarQuestDescriptor.cpp
     StarQuestManager.cpp
     StarQuests.cpp
-    StarQuestTemplateDatabase.cpp
-    StarRadioMessageDatabase.cpp
     StarRebuilder.cpp
     StarRoot.cpp
     StarRootLoader.cpp
@@ -315,15 +304,12 @@ set (star_game_SOURCES
     StarSkyTypes.cpp
     StarSongbook.cpp
     StarSpawner.cpp
-    StarSpawnTypeDatabase.cpp
     StarSpeciesDatabase.cpp
     StarStagehand.cpp
     StarStatCollection.cpp
     StarStatistics.cpp
-    StarStatisticsDatabase.cpp
     StarStatSet.cpp
     StarStatusController.cpp
-    StarStatusEffectDatabase.cpp
     StarStatusTypes.cpp
     StarStoredFunctions.cpp
     StarSystemWorld.cpp
@@ -333,7 +319,6 @@ set (star_game_SOURCES
     StarTeamClient.cpp
     StarTeamManager.cpp
     StarTechController.cpp
-    StarTenantDatabase.cpp
     StarTerrainDatabase.cpp
     StarTileDamage.cpp
     StarTileDrawer.cpp
@@ -347,7 +332,6 @@ set (star_game_SOURCES
     StarUniverseSettings.cpp
     StarVehicle.cpp
     StarVehicleDatabase.cpp
-    StarVersioningDatabase.cpp
     StarWarping.cpp
     StarWeather.cpp
     StarWeatherTypes.cpp
@@ -455,6 +439,14 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarEmoteProcessor.cppm
     StarDamageDatabase.cppm
     StarEffectSourceDatabase.cppm
+    StarParticleDatabase.cppm
+    StarRadioMessageDatabase.cppm
+    StarStatusEffectDatabase.cppm
+    StarQuestTemplateDatabase.cppm
+    StarSpawnTypeDatabase.cppm
+    StarTenantDatabase.cppm
+    StarStatisticsDatabase.cppm
+    StarVersioningDatabase.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -476,9 +468,15 @@ add_library (star_game_modules STATIC
     scripting/StarCelestialLuaBindings.cpp
     scripting/StarLuaHttpBindings.cpp
     scripting/StarUniverseClientLuaBindings.cpp
+    scripting/StarUniverseServerLuaBindings.cpp
     scripting/StarTeamClientLuaBindings.cpp
     scripting/StarInputLuaBindings.cpp
     scripting/StarConfigLuaBindings.cpp
+    StarWorldGeneration.cpp
+    StarMicroDungeon.cpp
+    objects/StarFarmableObject.cpp
+    objects/StarLoungeableObject.cpp
+    objects/StarPhysicsObject.cpp
     StarDanceDatabase.cpp
     StarTechDatabase.cpp
     StarCodexDatabase.cpp
@@ -487,6 +485,14 @@ add_library (star_game_modules STATIC
     StarEmoteProcessor.cpp
     StarDamageDatabase.cpp
     StarEffectSourceDatabase.cpp
+    StarParticleDatabase.cpp
+    StarRadioMessageDatabase.cpp
+    StarStatusEffectDatabase.cpp
+    StarQuestTemplateDatabase.cpp
+    StarSpawnTypeDatabase.cpp
+    StarTenantDatabase.cpp
+    StarStatisticsDatabase.cpp
+    StarVersioningDatabase.cpp
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

@@ -64,6 +64,7 @@ target_include_directories (make_versioned_json PRIVATE
   )
 target_link_libraries (make_versioned_json PRIVATE star_base_modules star_game_modules star_build_config
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
+set_target_properties (dump_versioned_json make_versioned_json PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
   set_target_properties (asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json

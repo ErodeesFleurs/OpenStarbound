@@ -10,8 +10,6 @@
 #include "StarTerrainDatabase.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarProjectile.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
@@ -25,7 +23,6 @@
 #include "StarTreasure.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarTilesetDatabase.hpp"
-#include "StarStatisticsDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
@@ -35,14 +32,10 @@
 #include "StarEntityFactory.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
-#include "StarQuestTemplateDatabase.hpp"
 #include "StarAiDatabase.hpp"
 #include "StarWorkerPool.hpp"
 #include "StarBehaviorDatabase.hpp"
-#include "StarTenantDatabase.hpp"
 #include "StarNameGenerator.hpp"
-#include "StarSpawnTypeDatabase.hpp"
-#include "StarRadioMessageDatabase.hpp"
 
 import star.packed_asset_source;
 import star.dance_database;
@@ -53,6 +46,14 @@ import star.stagehand_database;
 import star.emote_processor;
 import star.damage_database;
 import star.effect_source_database;
+import star.particle_database;
+import star.radio_message_database;
+import star.status_effect_database;
+import star.quest_template_database;
+import star.spawn_type_database;
+import star.tenant_database;
+import star.statistics_database;
+import star.versioning_database;
 
 namespace Star {
 

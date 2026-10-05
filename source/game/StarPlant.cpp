@@ -8,7 +8,8 @@
 #include "StarAssets.hpp"
 #include "StarImage.hpp"
 #include "StarEntityRendering.hpp"
-#include "StarParticleDatabase.hpp"
+
+import star.particle_database;
 
 namespace Star {
 

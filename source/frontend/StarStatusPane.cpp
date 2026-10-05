@@ -6,11 +6,11 @@
 #include "StarImageWidget.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarStatusEffectDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarImageProcessing.hpp"
 
 import star.simple_tooltip;
+import star.status_effect_database;
 
 namespace Star {
 

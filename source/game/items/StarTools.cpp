@@ -6,7 +6,8 @@
 #include "StarWiring.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
-#include "StarParticleDatabase.hpp"
+
+import star.particle_database;
 
 namespace Star {
 

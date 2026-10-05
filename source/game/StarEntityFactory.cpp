@@ -14,6 +14,8 @@
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
 
+import star.versioning_database;
+
 namespace Star {
 
 EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{

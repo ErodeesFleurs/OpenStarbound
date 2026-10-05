@@ -1,7 +1,8 @@
-#include "StarSpawnTypeDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.spawn_type_database;
 
 namespace Star {
 

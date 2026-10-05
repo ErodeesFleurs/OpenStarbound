@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -91,4 +91,19 @@ private:
   StringMap<SpawnType> m_spawnTypes;
 };
 
+}
+
+export module star.spawn_type_database;
+
+export namespace Star {
+  using ::Star::SpawnTypeDatabaseExceptionTag;
+  using ::Star::SpawnTypeDatabaseException;
+  using ::Star::SpawnTypeDatabase;
+  using ::Star::SpawnTypeDatabasePtr;
+  using ::Star::SpawnTypeDatabaseConstPtr;
+  using ::Star::SpawnParameters;
+  using ::Star::SpawnType;
+  using ::Star::SpawnProfile;
+  using ::Star::spawnTypeFromJson;
+  using ::Star::constructSpawnProfile;
 }

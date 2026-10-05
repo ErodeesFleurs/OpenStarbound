@@ -1,13 +1,14 @@
 #include "StarNetworkedAnimator.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIterator.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
+
+import star.particle_database;
 
 namespace Star {
 

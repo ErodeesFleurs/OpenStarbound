@@ -3,10 +3,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarArmors.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarAssets.hpp"
 #include "StarSpeciesDatabase.hpp"
 import star.dance_database;
+import star.particle_database;
 
 namespace Star {
 

@@ -1,4 +1,5 @@
 #include "StarClientCommandProcessor.hpp"
+#include "StarRoot.hpp"
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"

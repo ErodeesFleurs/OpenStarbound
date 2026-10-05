@@ -1,7 +1,7 @@
-#pragma once
+module;
 
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
 #include "StarLruCache.hpp"
 
 namespace Star {
@@ -45,4 +45,18 @@ private:
   mutable HashLruCache<String, AchievementPtr> m_achievementCache;
 };
 
+}
+
+export module star.statistics_database;
+
+export namespace Star {
+  using ::Star::StatEvent;
+  using ::Star::StatEventPtr;
+  using ::Star::StatEventConstPtr;
+  using ::Star::Achievement;
+  using ::Star::AchievementPtr;
+  using ::Star::AchievementConstPtr;
+  using ::Star::StatisticsDatabase;
+  using ::Star::StatisticsDatabasePtr;
+  using ::Star::StatisticsDatabaseConstPtr;
 }

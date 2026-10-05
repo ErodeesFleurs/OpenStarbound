@@ -1,4 +1,4 @@
-#include "StarVersioningDatabase.hpp"
+#include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarFormat.hpp"
 #include "StarLexicalCast.hpp"
@@ -12,6 +12,7 @@
 #include "StarCelestialDatabase.hpp"
 #include "StarJsonExtra.hpp"
 
+import star.versioning_database;
 import star.root_lua_bindings;
 
 namespace Star {

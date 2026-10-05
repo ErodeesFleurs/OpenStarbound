@@ -1,7 +1,8 @@
-#pragma once
+module;
 
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarThread.hpp"
 #include "StarTtlCache.hpp"
 
 namespace Star {
@@ -72,4 +73,21 @@ private:
   mutable HashTtlCache<String, TenantPtr> m_tenantCache;
 };
 
+}
+
+export module star.tenant_database;
+
+export namespace Star {
+  using ::Star::Tenant;
+  using ::Star::TenantPtr;
+  using ::Star::TenantConstPtr;
+  using ::Star::TenantDatabase;
+  using ::Star::TenantDatabasePtr;
+  using ::Star::TenantDatabaseConstPtr;
+  using ::Star::TenantExceptionTag;
+  using ::Star::TenantException;
+  using ::Star::TenantNpcSpawnable;
+  using ::Star::TenantMonsterSpawnable;
+  using ::Star::TenantSpawnable;
+  using ::Star::TenantRent;
 }

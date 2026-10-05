@@ -43,6 +43,7 @@ import star.status_controller_lua_bindings;
 import star.dance_database;
 import star.collection_database;
 import star.emote_processor;
+import star.radio_message_database;
 
 namespace Star {
 

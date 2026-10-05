@@ -12,7 +12,6 @@ module;
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarTenantDatabase.hpp"
 #include "StarTreasure.hpp"
 #include "StarBehaviorDatabase.hpp"
 #include "StarNameGenerator.hpp"
@@ -20,18 +19,20 @@ module;
 #include "StarMonster.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiomeDatabase.hpp"
-#include "StarVersioningDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarBehaviorDatabase.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
 
 export module star.root_lua_bindings;
 import star.tech_database;
 import star.collection_database;
 import star.damage_database;
+import star.status_effect_database;
+import star.quest_template_database;
+import star.tenant_database;
+import star.versioning_database;
 
 export namespace Star::LuaBindings {
   LuaCallbacks makeRootCallbacks();

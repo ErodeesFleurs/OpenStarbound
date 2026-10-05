@@ -7,7 +7,6 @@
 #include "StarCelestialCoordinate.hpp"
 #include "StarThread.hpp"
 #include "StarQuestDescriptor.hpp"
-#include "StarQuestTemplateDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarWarping.hpp"
@@ -17,6 +16,7 @@ namespace Star {
 STAR_CLASS(Quest);
 STAR_CLASS(Player);
 STAR_CLASS(UniverseClient);
+STAR_CLASS(QuestTemplate);
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)

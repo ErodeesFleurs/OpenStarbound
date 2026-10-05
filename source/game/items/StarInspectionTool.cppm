@@ -9,6 +9,7 @@ module;
 #include "StarAssets.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarRoot.hpp"
 
 export module star.inspection_tool;
 

@@ -21,10 +21,11 @@
 #include "StarEntityRendering.hpp"
 #include "StarToolUser.hpp"
 #include "StarPlayerTypes.hpp"
-#include "StarRadioMessageDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
+
+import star.radio_message_database;
 
 namespace Star {
 

@@ -7,7 +7,9 @@
 #include "StarMonsterDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
-#include "StarSpawnTypeDatabase.hpp"
+#include "StarWeightedPool.hpp"
+
+import star.spawn_type_database;
 
 namespace Star {
 

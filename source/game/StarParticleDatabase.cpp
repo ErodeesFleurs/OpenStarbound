@@ -1,7 +1,9 @@
-#include "StarParticleDatabase.hpp"
+#include "StarParticle.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
+
+import star.particle_database;
 
 namespace Star {
 

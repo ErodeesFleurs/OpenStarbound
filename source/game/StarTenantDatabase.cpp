@@ -1,5 +1,8 @@
-#include "StarTenantDatabase.hpp"
+#include "StarRoot.hpp"
+#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.tenant_database;
 
 namespace Star {
 

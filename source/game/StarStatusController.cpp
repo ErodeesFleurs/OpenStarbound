@@ -1,9 +1,9 @@
 #include "StarStatusController.hpp"
+#include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarWorld.hpp"
-#include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarLiquidsDatabase.hpp"
 

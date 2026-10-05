@@ -11,6 +11,7 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 
+import star.versioning_database;
 import star.compression;
 namespace Star {
 

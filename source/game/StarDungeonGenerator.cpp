@@ -69,6 +69,16 @@ namespace Dungeon {
     return options.takeAt(options.size() - 1);
   }
 
+  DoNotConnectToPartRule::DoNotConnectToPartRule(Json const& rule) {
+    for (auto entry : rule.toArray()[1].toArray())
+      m_partNames.add(entry.toString());
+  }
+
+  DoNotCombineWithRule::DoNotCombineWithRule(Json const& rule) {
+    for (auto part : rule.toArray()[1].toArray())
+      m_parts.add(part.toString());
+  }
+
   List<RuleConstPtr> Rule::readRules(Json const& rules) {
     List<RuleConstPtr> result;
     for (auto const& list : rules.iterateArray()) {

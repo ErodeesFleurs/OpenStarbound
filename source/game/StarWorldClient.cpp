@@ -1,11 +1,11 @@
 #include "StarWorldClient.hpp"
+#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarBiome.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarLiquidTypes.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarParticleManager.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarPlayer.hpp"
@@ -27,6 +27,7 @@ import star.universe_client_lua_bindings;
 import star.celestial_lua_bindings;
 import star.damage_database;
 import star.effect_source_database;
+import star.particle_database;
 
 namespace Star {
 

@@ -19,6 +19,7 @@
 #include "StarVerticalLayout.hpp"
 
 import star.item_tooltip;
+import star.quest_template_database;
 
 namespace Star {
 

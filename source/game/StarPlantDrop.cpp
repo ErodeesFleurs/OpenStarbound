@@ -8,7 +8,8 @@
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
 #include "StarRandom.hpp"
-#include "StarParticleDatabase.hpp"
+
+import star.particle_database;
 
 namespace Star {
 

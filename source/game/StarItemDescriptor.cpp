@@ -1,7 +1,8 @@
 #include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
-#include "StarVersioningDatabase.hpp"
+
+import star.versioning_database;
 
 namespace Star {
 

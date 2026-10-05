@@ -1,5 +1,5 @@
 #include "StarGameTypes.hpp"
-#include "StarParticleDatabase.hpp"
+#include "StarParticle.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
@@ -7,6 +7,7 @@
 #include "StarAssets.hpp"
 
 import star.effect_source_database;
+import star.particle_database;
 
 namespace Star {
 

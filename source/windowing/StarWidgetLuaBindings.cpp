@@ -1,4 +1,5 @@
 #include "StarWidgetLuaBindings.hpp"
+#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarGuiReader.hpp"

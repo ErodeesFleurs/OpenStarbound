@@ -1,10 +1,12 @@
 #pragma once
 
-#include "StarVersioningDatabase.hpp"
+#include "StarThread.hpp"
 #include "StarEntity.hpp"
 
 namespace Star {
 
+STAR_STRUCT(VersionedJson);
+STAR_CLASS(VehicleDatabase);
 STAR_CLASS(VersioningDatabase);
 STAR_CLASS(PlayerFactory);
 STAR_CLASS(MonsterDatabase);

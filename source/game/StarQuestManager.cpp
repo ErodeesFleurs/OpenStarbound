@@ -10,6 +10,9 @@
 #include "StarClientContext.hpp"
 #include "StarUniverseClient.hpp"
 
+import star.quest_template_database;
+import star.versioning_database;
+
 namespace Star {
 
 QuestManager::QuestManager(Player* player) {

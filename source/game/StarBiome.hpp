@@ -1,7 +1,8 @@
 #pragma once
 
 #include "StarBiomePlacement.hpp"
-#include "StarSpawner.hpp"
+
+import star.spawn_type_database;
 
 namespace Star {
 

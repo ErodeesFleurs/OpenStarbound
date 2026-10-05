@@ -9,6 +9,7 @@ module;
 #include "StarSystemWorldClient.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarBiomeDatabase.hpp"
+#include "StarRoot.hpp"
 
 module star.celestial_lua_bindings;
 

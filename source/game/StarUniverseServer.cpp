@@ -14,8 +14,8 @@
 #include "StarSky.hpp"
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
-#include "StarVersioningDatabase.hpp"
 
+import star.versioning_database;
 import star.universe_server_lua_bindings;
 import star.celestial_lua_bindings;
 import star.sha256;

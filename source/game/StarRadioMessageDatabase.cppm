@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarBiMap.hpp"
 #include "StarJson.hpp"
@@ -47,4 +47,19 @@ private:
   StringMap<RadioMessage> m_radioMessages;
 };
 
+}
+
+export module star.radio_message_database;
+
+export namespace Star {
+  using ::Star::RadioMessageDatabaseExceptionTag;
+  using ::Star::RadioMessageDatabaseException;
+  using ::Star::RadioMessageType;
+  using ::Star::RadioMessageTypeNames;
+  using ::Star::RadioMessage;
+  using ::Star::RadioMessagePtr;
+  using ::Star::RadioMessageConstPtr;
+  using ::Star::RadioMessageDatabase;
+  using ::Star::RadioMessageDatabasePtr;
+  using ::Star::RadioMessageDatabaseConstPtr;
 }

@@ -6,11 +6,12 @@
 #include "StarDrawable.hpp"
 #include "StarEntityRenderingTypes.hpp"
 #include "StarMixer.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarParticle.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaConverters.hpp"
+
+import star.particle_database;
 
 namespace Star {
 
