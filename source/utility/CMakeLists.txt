@@ -38,6 +38,7 @@ target_include_directories (btree_repacker PRIVATE
   )
 target_link_libraries (btree_repacker PRIVATE star_base_modules star_build_config
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
+set_target_properties (btree_repacker PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 add_executable (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

@@ -1,11 +1,12 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 import star.damage_types;
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
@@ -15,6 +16,9 @@ import star.status_types;
 namespace Star {
 
 struct DamageSource {
+  friend DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
+  friend DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
+
   typedef MVariant<PolyF, Line2F> DamageArea;
   typedef MVariant<float, Vec2F> Knockback;
 
@@ -74,6 +78,9 @@ DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
 DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
 
 struct DamageRequest {
+  friend DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
+  friend DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
+
   DamageRequest();
   DamageRequest(Json const& v);
   DamageRequest(HitType hitType,
@@ -101,6 +108,9 @@ DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
 DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
 
 struct DamageNotification {
+  friend DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
+  friend DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
+
   DamageNotification();
   DamageNotification(Json const& v);
   DamageNotification(EntityId sourceEntityId,
@@ -126,4 +136,12 @@ struct DamageNotification {
 
 DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
 DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
+}
+
+export module star.damage;
+
+export namespace Star {
+  using ::Star::DamageSource;
+  using ::Star::DamageRequest;
+  using ::Star::DamageNotification;
 }

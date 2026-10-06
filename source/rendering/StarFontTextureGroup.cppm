@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarColor.hpp"
 #include "StarFont.hpp"
@@ -53,4 +53,16 @@ private:
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
 };
 
+}
+
+export module star.font_texture_group;
+
+export namespace Star {
+  using ::Star::FontTextureGroup;
+  using ::Star::FontTextureGroupPtr;
+  using ::Star::FontTextureGroupConstPtr;
+  using ::Star::FontTextureGroupWeakPtr;
+  using ::Star::FontTextureGroupConstWeakPtr;
+  using ::Star::FontTextureGroupUPtr;
+  using ::Star::FontTextureGroupConstUPtr;
 }

@@ -2,7 +2,11 @@
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarWorld.hpp"
-#include "StarPlatformerAStarTypes.hpp"
+#include "StarVector.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarAStar.hpp"
+import star.platformer_astar_types;
 #include "StarActorMovementController.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"

@@ -11,7 +11,13 @@ import star.damage_types;
 #include "StarIdMap.hpp"
 import star.status_types;
 #include "StarJson.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarItemDescriptor.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarEncode.hpp"

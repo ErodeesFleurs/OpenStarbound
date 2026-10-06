@@ -9,7 +9,10 @@
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"

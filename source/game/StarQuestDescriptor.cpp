@@ -1,16 +1,27 @@
 #include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
+import star.item_database;
 import star.item_recipe;
-#include "StarQuestDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.quest_descriptor;
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarMonster.hpp"
 #include "StarObject.hpp"
 
 import star.versioning_database;
-import star.item_database;
 import star.monster_database;
 import star.object_database;
 

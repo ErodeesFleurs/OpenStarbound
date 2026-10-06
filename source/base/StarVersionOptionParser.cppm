@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarOptionParser.hpp"
 #include "StarVersion.hpp"
@@ -25,4 +25,10 @@ private:
   Maybe<String> m_versionName;
 };
 
+}
+
+export module star.version_option_parser;
+
+export namespace Star {
+  using ::Star::VersionOptionParser;
 }

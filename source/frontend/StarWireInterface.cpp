@@ -3,7 +3,8 @@
 #include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWireEntity.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarWorldPainter.hpp"
 #include "StarPlayer.hpp"
 #include "StarTools.hpp"

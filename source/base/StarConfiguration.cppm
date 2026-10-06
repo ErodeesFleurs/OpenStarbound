@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
@@ -37,4 +37,18 @@ private:
   Json m_currentConfig;
 };
 
+}
+
+export module star.configuration;
+
+export namespace Star {
+  using ::Star::ConfigurationExceptionTag;
+  using ::Star::ConfigurationException;
+  using ::Star::Configuration;
+  using ::Star::ConfigurationPtr;
+  using ::Star::ConfigurationConstPtr;
+  using ::Star::ConfigurationWeakPtr;
+  using ::Star::ConfigurationConstWeakPtr;
+  using ::Star::ConfigurationUPtr;
+  using ::Star::ConfigurationConstUPtr;
 }

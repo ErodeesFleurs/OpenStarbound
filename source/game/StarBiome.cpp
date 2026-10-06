@@ -1,6 +1,23 @@
-#include "StarBiome.hpp"
+#include "StarPerlin.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarBiMap.hpp"
+#include "StarPlant.hpp"
+#include "StarStrongTypedef.hpp"
+import star.plant_database;
+import star.biome_placement;
+import star.spawn_type_database;
+import star.biome;
 #include "StarJsonExtra.hpp"
-#include "StarParallax.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarDirectives.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
+import star.plant_database;
+import star.parallax;
 #include "StarJson.hpp"
 import star.ambient;
 

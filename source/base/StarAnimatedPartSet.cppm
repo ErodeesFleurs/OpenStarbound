@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarOrderedMap.hpp"
 #include "StarJson.hpp"
@@ -189,4 +189,12 @@ private:
   uint8_t m_animatorVersion;
 };
 
+}
+
+export module star.animated_part_set;
+
+export namespace Star {
+  using ::Star::AnimatedPartSetExceptionTag;
+  using ::Star::AnimatedPartSetException;
+  using ::Star::AnimatedPartSet;
 }

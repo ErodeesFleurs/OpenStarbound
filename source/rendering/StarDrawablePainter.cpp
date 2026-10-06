@@ -1,4 +1,16 @@
-#include "StarDrawablePainter.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarRenderer.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+#include "StarListener.hpp"
+import star.asset_texture_group;
+import star.drawable_painter;
 
 namespace Star {
 

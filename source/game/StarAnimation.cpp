@@ -1,4 +1,10 @@
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarRoot.hpp"

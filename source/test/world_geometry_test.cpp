@@ -1,5 +1,6 @@
 #include "StarPoly.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 
 #include "gtest/gtest.h"
 

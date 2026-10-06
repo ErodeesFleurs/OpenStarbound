@@ -1,7 +1,12 @@
 module;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarMovementController.hpp"
+#include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
+import star.movement_controller;
 #include "StarLuaGameConverters.hpp"
 
 module star.movement_controller_lua_bindings;

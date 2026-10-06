@@ -1,3 +1,4 @@
+#include "StarJsonExtra.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"

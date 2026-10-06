@@ -11,7 +11,8 @@ import star.interaction_types;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"

@@ -8,7 +8,13 @@
 #include "StarGameTypes.hpp"
 import star.item_database;
 import star.item_recipe;
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarUuid.hpp"
 #include "StarLuaComponents.hpp"
 import star.player_companions;

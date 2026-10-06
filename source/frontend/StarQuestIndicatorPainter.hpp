@@ -1,5 +1,6 @@
 #pragma once
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
 

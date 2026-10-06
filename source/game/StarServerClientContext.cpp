@@ -22,7 +22,13 @@ import star.damage_types;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"

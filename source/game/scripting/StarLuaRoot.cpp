@@ -1,3 +1,4 @@
+#include "StarJsonExtra.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"

@@ -3,7 +3,13 @@ module;
 #include "StarGameTypes.hpp"
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 import star.weather_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"

@@ -1,4 +1,4 @@
-#pragma once
+module;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarJson.hpp"
@@ -10,7 +10,13 @@
 import star.sky_types;
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 import star.weather_types;
 
 import star.force_regions;
@@ -196,4 +202,50 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
 
+}
+
+export module star.world_parameters;
+
+export namespace Star {
+  using ::Star::WorldParametersType;
+  using ::Star::WorldParametersTypeNames;
+  using ::Star::BeamUpRule;
+  using ::Star::BeamUpRuleNames;
+  using ::Star::WorldEdgeForceRegionType;
+  using ::Star::WorldEdgeForceRegionTypeNames;
+  using ::Star::diskStoreVisitableWorldParameters;
+  using ::Star::diskLoadVisitableWorldParameters;
+  using ::Star::netStoreVisitableWorldParameters;
+  using ::Star::netLoadVisitableWorldParameters;
+  using ::Star::generateTerrestrialWorldParameters;
+  using ::Star::generateAsteroidsWorldParameters;
+  using ::Star::generateFloatingDungeonWorldParameters;
+  using ::Star::VisitableWorldParameters;
+  using ::Star::VisitableWorldParametersPtr;
+  using ::Star::VisitableWorldParametersConstPtr;
+  using ::Star::VisitableWorldParametersWeakPtr;
+  using ::Star::VisitableWorldParametersConstWeakPtr;
+  using ::Star::VisitableWorldParametersUPtr;
+  using ::Star::VisitableWorldParametersConstUPtr;
+  using ::Star::TerrestrialWorldParameters;
+  using ::Star::TerrestrialWorldParametersPtr;
+  using ::Star::TerrestrialWorldParametersConstPtr;
+  using ::Star::TerrestrialWorldParametersWeakPtr;
+  using ::Star::TerrestrialWorldParametersConstWeakPtr;
+  using ::Star::TerrestrialWorldParametersUPtr;
+  using ::Star::TerrestrialWorldParametersConstUPtr;
+  using ::Star::AsteroidsWorldParameters;
+  using ::Star::AsteroidsWorldParametersPtr;
+  using ::Star::AsteroidsWorldParametersConstPtr;
+  using ::Star::AsteroidsWorldParametersWeakPtr;
+  using ::Star::AsteroidsWorldParametersConstWeakPtr;
+  using ::Star::AsteroidsWorldParametersUPtr;
+  using ::Star::AsteroidsWorldParametersConstUPtr;
+  using ::Star::FloatingDungeonWorldParameters;
+  using ::Star::FloatingDungeonWorldParametersPtr;
+  using ::Star::FloatingDungeonWorldParametersConstPtr;
+  using ::Star::FloatingDungeonWorldParametersWeakPtr;
+  using ::Star::FloatingDungeonWorldParametersConstWeakPtr;
+  using ::Star::FloatingDungeonWorldParametersUPtr;
+  using ::Star::FloatingDungeonWorldParametersConstUPtr;
 }

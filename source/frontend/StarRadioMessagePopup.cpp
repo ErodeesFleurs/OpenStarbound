@@ -9,7 +9,17 @@
 #include "StarInterpolation.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarMixer.hpp"
-#include "StarTextPainter.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
+#include "StarBiMap.hpp"
+import star.anchor_types;
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+import star.text_painter;
 
 namespace Star {
 

@@ -1,4 +1,10 @@
-#include "StarBiomePlacement.hpp"
+#include "StarPerlin.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarBiMap.hpp"
+#include "StarPlant.hpp"
+#include "StarStrongTypedef.hpp"
+import star.plant_database;
+import star.biome_placement;
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"

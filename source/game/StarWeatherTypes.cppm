@@ -2,7 +2,13 @@ module;
 
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 
 namespace Star {
 

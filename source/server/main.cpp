@@ -4,8 +4,13 @@
 #include "StarLogging.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarRootLoader.hpp"
-#include "StarConfiguration.hpp"
-#include "StarVersionOptionParser.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
+#include "StarOptionParser.hpp"
+#include "StarVersion.hpp"
+import star.version_option_parser;
 
 #if defined STAR_SYSTEM_WINDOWS
 #include <windows.h>

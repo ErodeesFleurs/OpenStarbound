@@ -5,7 +5,11 @@ module;
 #include "StarAStar.hpp"
 #include "StarWorld.hpp"
 #include "StarActorMovementController.hpp"
-#include "StarPlatformerAStarTypes.hpp"
+#include "StarVector.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarAStar.hpp"
+import star.platformer_astar_types;
 
 namespace Star {
 namespace PlatformerAStar {

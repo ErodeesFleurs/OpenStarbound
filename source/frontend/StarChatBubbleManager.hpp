@@ -1,10 +1,21 @@
 #pragma once
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
 
 import star.chat_action;
-#include "StarTextPainter.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
+#include "StarBiMap.hpp"
+import star.anchor_types;
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+import star.text_painter;
 #include "StarChatBubbleSeparation.hpp"
 
 import star.world_camera;

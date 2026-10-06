@@ -2,7 +2,10 @@ module;
 
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 #include "StarWorkerPool.hpp"

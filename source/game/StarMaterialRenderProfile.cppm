@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarRect.hpp"
 #include "StarJson.hpp"
@@ -90,7 +90,7 @@ typedef StringMap<MaterialRenderMatchList> MatchMap;
 // influence" that a tile can have on other tile's rendering.  A value of 1
 // here means "1 away", so would be interpreted as a 3x3 block with the
 // rendered tile in the center.
-int const MaterialRenderProfileMaxNeighborDistance = 2;
+inline constexpr int MaterialRenderProfileMaxNeighborDistance = 2;
 
 STAR_STRUCT(MaterialRenderProfile);
 
@@ -128,4 +128,48 @@ struct MaterialRenderProfile {
 
 MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath = "");
 
+}
+
+export module star.material_render_profile;
+
+export namespace Star {
+  using ::Star::MaterialRenderProfileExceptionTag;
+  using ::Star::MaterialRenderProfileException;
+  using ::Star::MaterialJoinType;
+  using ::Star::MaterialJoinTypeNames;
+  using ::Star::MaterialRule;
+  using ::Star::MaterialRulePtr;
+  using ::Star::MaterialRuleConstPtr;
+  using ::Star::MaterialRuleWeakPtr;
+  using ::Star::MaterialRuleConstWeakPtr;
+  using ::Star::MaterialRuleUPtr;
+  using ::Star::MaterialRuleConstUPtr;
+  using ::Star::RuleMap;
+  using ::Star::MaterialMatchPoint;
+  using ::Star::MaterialRenderPiece;
+  using ::Star::MaterialRenderPiecePtr;
+  using ::Star::MaterialRenderPieceConstPtr;
+  using ::Star::MaterialRenderPieceWeakPtr;
+  using ::Star::MaterialRenderPieceConstWeakPtr;
+  using ::Star::MaterialRenderPieceUPtr;
+  using ::Star::MaterialRenderPieceConstUPtr;
+  using ::Star::MaterialRenderMatch;
+  using ::Star::MaterialRenderMatchPtr;
+  using ::Star::MaterialRenderMatchConstPtr;
+  using ::Star::MaterialRenderMatchWeakPtr;
+  using ::Star::MaterialRenderMatchConstWeakPtr;
+  using ::Star::MaterialRenderMatchUPtr;
+  using ::Star::MaterialRenderMatchConstUPtr;
+  using ::Star::MaterialRenderMatchList;
+  using ::Star::PieceMap;
+  using ::Star::MatchMap;
+  using ::Star::MaterialRenderProfileMaxNeighborDistance;
+  using ::Star::MaterialRenderProfile;
+  using ::Star::MaterialRenderProfilePtr;
+  using ::Star::MaterialRenderProfileConstPtr;
+  using ::Star::MaterialRenderProfileWeakPtr;
+  using ::Star::MaterialRenderProfileConstWeakPtr;
+  using ::Star::MaterialRenderProfileUPtr;
+  using ::Star::MaterialRenderProfileConstUPtr;
+  using ::Star::parseMaterialRenderProfile;
 }

@@ -1,4 +1,7 @@
-#include "StarAnimatedPartSet.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarJson.hpp"
+#include "StarMatrix3.hpp"
+import star.animated_part_set;
 #include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"

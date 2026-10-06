@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarRect.hpp"
@@ -11,6 +11,9 @@ namespace PlatformerAStar {
 STAR_CLASS(PathFinder);
 
 struct Node {
+  friend bool operator==(Node const& a, Node const& b);
+  friend std::ostream& operator<<(std::ostream& os, Node const& node);
+
   Node withVelocity(Vec2F velocity) const;
 
   bool operator<(Node const& other) const;
@@ -23,6 +26,8 @@ enum class Action { Walk, Jump, Arc, Drop, Swim, Fly, Land };
 extern EnumMap<Action> const ActionNames;
 
 struct Edge {
+  friend std::ostream& operator<<(std::ostream& os, Edge const& edge);
+
   float cost;
   Action action;
   Vec2F jumpVelocity;
@@ -33,6 +38,9 @@ struct Edge {
 typedef AStar::Path<Edge> Path;
 
 struct Parameters {
+  friend bool operator==(Parameters const& lhs, Parameters const& rhs);
+  friend bool operator!=(Parameters const& lhs, Parameters const& rhs);
+
   // Maximum distance from the start node to search for a path to the target
   // node
   Maybe<float> maxDistance;
@@ -161,4 +169,23 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 }
 
 }
+}
+
+export module star.platformer_astar_types;
+
+export namespace Star::PlatformerAStar {
+  using ::Star::PlatformerAStar::PathFinder;
+  using ::Star::PlatformerAStar::PathFinderPtr;
+  using ::Star::PlatformerAStar::PathFinderConstPtr;
+  using ::Star::PlatformerAStar::PathFinderWeakPtr;
+  using ::Star::PlatformerAStar::PathFinderConstWeakPtr;
+  using ::Star::PlatformerAStar::PathFinderUPtr;
+  using ::Star::PlatformerAStar::PathFinderConstUPtr;
+  using ::Star::PlatformerAStar::Node;
+  using ::Star::PlatformerAStar::Action;
+  using ::Star::PlatformerAStar::ActionNames;
+  using ::Star::PlatformerAStar::Edge;
+  using ::Star::PlatformerAStar::Path;
+  using ::Star::PlatformerAStar::Parameters;
+  using ::Star::PlatformerAStar::operator<<;
 }

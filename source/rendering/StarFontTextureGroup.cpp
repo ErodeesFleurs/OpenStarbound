@@ -1,4 +1,8 @@
-#include "StarFontTextureGroup.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
 #include "StarTime.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"

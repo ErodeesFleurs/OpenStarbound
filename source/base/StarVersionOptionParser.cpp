@@ -1,4 +1,6 @@
-#include "StarVersionOptionParser.hpp"
+#include "StarOptionParser.hpp"
+#include "StarVersion.hpp"
+import star.version_option_parser;
 #include "StarFile.hpp"
 
 namespace Star {

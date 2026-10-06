@@ -1,7 +1,13 @@
 #pragma once
 
 #include "StarPane.hpp"
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 #include "StarBookmarkInterface.hpp"
 import star.player_universe_map;
 

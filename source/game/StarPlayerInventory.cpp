@@ -1,7 +1,12 @@
 #include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
+import star.item_database;
 import star.item_recipe;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
@@ -23,7 +28,6 @@ import star.player_inventory;
 import star.currency_item;
 import star.material_item;
 import star.object_item;
-import star.item_database;
 import star.item_bag;
 
 

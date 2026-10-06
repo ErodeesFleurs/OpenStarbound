@@ -4,7 +4,10 @@
 #include "StarJson.hpp"
 #include "StarLogging.hpp"
 #include "StarListener.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 
 namespace Star {
 

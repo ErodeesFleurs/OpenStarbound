@@ -1,7 +1,10 @@
 #include "StarGraphicsMenu.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarGuiReader.hpp"
 #include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"

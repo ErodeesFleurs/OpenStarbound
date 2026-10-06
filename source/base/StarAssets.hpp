@@ -5,7 +5,9 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
-#include "StarAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
 #include "StarAssetPath.hpp"
 #include "StarRefPtr.hpp"
 

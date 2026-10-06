@@ -10,7 +10,13 @@ import star.sky_parameters;
 import star.sky_render_data;
 #include "StarDataStreamExtra.hpp"
 #include "StarRandomPoint.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 
 namespace Star {
 

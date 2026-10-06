@@ -1,8 +1,13 @@
 #include "StarJsonExtra.hpp"
 // Parse JSON iterator templates before game headers import modules (GCC 16).
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
+import star.item_database;
 import star.item_recipe;
 #include "StarItemDrop.hpp"
 #include "StarRandom.hpp"
@@ -18,7 +23,6 @@ import star.config_lua_bindings;
 import star.entity_lua_bindings;
 import star.item_lua_bindings;
 import star.movement_controller_lua_bindings;
-import star.item_database;
 
 
 namespace Star {

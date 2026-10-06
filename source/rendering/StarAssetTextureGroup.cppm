@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
@@ -45,4 +45,16 @@ private:
   TrackerListenerPtr m_reloadTracker;
 };
 
+}
+
+export module star.asset_texture_group;
+
+export namespace Star {
+  using ::Star::AssetTextureGroup;
+  using ::Star::AssetTextureGroupPtr;
+  using ::Star::AssetTextureGroupConstPtr;
+  using ::Star::AssetTextureGroupWeakPtr;
+  using ::Star::AssetTextureGroupConstWeakPtr;
+  using ::Star::AssetTextureGroupUPtr;
+  using ::Star::AssetTextureGroupConstUPtr;
 }

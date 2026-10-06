@@ -4,9 +4,22 @@
 
 #include "StarOrderedSet.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarQuestDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.quest_descriptor;
 import star.ai_types;
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"

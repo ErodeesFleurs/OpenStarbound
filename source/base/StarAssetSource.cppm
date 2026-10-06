@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarIODevice.hpp"
 #include "StarJson.hpp"
@@ -32,4 +32,18 @@ public:
   virtual ByteArray read(String const& path) = 0;
 };
 
+}
+
+export module star.asset_source;
+
+export namespace Star {
+  using ::Star::AssetSourceExceptionTag;
+  using ::Star::AssetSourceException;
+  using ::Star::AssetSource;
+  using ::Star::AssetSourcePtr;
+  using ::Star::AssetSourceConstPtr;
+  using ::Star::AssetSourceWeakPtr;
+  using ::Star::AssetSourceConstWeakPtr;
+  using ::Star::AssetSourceUPtr;
+  using ::Star::AssetSourceConstUPtr;
 }

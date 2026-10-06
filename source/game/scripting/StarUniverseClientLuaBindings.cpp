@@ -6,7 +6,13 @@ module;
 #include "StarGameTypes.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 #include "StarLuaGameConverters.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarWorldTemplate.hpp"

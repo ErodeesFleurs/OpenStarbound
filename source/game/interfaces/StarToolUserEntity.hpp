@@ -1,7 +1,13 @@
 #pragma once
 
 #include "StarEntity.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"

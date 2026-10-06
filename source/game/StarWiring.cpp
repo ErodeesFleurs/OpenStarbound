@@ -1,5 +1,6 @@
 #include "StarGameTypes.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarDataStream.hpp"
 import star.wiring;
 #include "StarDataStreamExtra.hpp"

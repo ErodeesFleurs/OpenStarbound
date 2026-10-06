@@ -1,8 +1,20 @@
 module;
 
 #include "StarUuid.hpp"
-#include "StarDrawable.hpp"
-#include "StarWarping.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 #include "StarJsonRpc.hpp"
 #include "StarVersion.hpp"
 

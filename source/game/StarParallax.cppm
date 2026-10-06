@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
@@ -18,6 +18,9 @@ STAR_CLASS(Parallax);
 STAR_STRUCT(ParallaxLayer);
 
 struct ParallaxLayer {
+  friend DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
+  friend DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+
   ParallaxLayer();
   ParallaxLayer(Json const& store);
 
@@ -82,4 +85,24 @@ private:
   ParallaxLayers m_layers;
 };
 
+}
+
+export module star.parallax;
+
+export namespace Star {
+  using ::Star::Parallax;
+  using ::Star::ParallaxPtr;
+  using ::Star::ParallaxConstPtr;
+  using ::Star::ParallaxWeakPtr;
+  using ::Star::ParallaxConstWeakPtr;
+  using ::Star::ParallaxUPtr;
+  using ::Star::ParallaxConstUPtr;
+  using ::Star::ParallaxLayer;
+  using ::Star::ParallaxLayerPtr;
+  using ::Star::ParallaxLayerConstPtr;
+  using ::Star::ParallaxLayerWeakPtr;
+  using ::Star::ParallaxLayerConstWeakPtr;
+  using ::Star::ParallaxLayerUPtr;
+  using ::Star::ParallaxLayerConstUPtr;
+  using ::Star::ParallaxLayers;
 }

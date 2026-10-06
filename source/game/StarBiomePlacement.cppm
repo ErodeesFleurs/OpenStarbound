@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarPerlin.hpp"
 #include "StarWeightedPool.hpp"
@@ -100,4 +100,31 @@ private:
   List<pair<BiomeItem, PerlinF>> m_weightedItems;
 };
 
+}
+
+export module star.biome_placement;
+
+export namespace Star {
+  using ::Star::BiomeItemDistribution;
+  using ::Star::BiomeItemDistributionPtr;
+  using ::Star::BiomeItemDistributionConstPtr;
+  using ::Star::BiomeItemDistributionWeakPtr;
+  using ::Star::BiomeItemDistributionConstWeakPtr;
+  using ::Star::BiomeItemDistributionUPtr;
+  using ::Star::BiomeItemDistributionConstUPtr;
+  using ::Star::BiomeExceptionTag;
+  using ::Star::BiomeException;
+  using ::Star::TreePair;
+  using ::Star::ObjectPool;
+  using ::Star::TreasureBoxSetWrapper;
+  using ::Star::TreasureBoxSet;
+  using ::Star::MicroDungeonNamesWrapper;
+  using ::Star::MicroDungeonNames;
+  using ::Star::BiomeItem;
+  using ::Star::variantToBiomeItem;
+  using ::Star::variantFromBiomeItem;
+  using ::Star::BiomePlacementArea;
+  using ::Star::BiomePlacementMode;
+  using ::Star::BiomePlacementModeNames;
+  using ::Star::BiomeItemPlacement;
 }

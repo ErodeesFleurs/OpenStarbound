@@ -18,7 +18,10 @@ import star.command_processor;
 #include "StarUniverseServer.hpp"
 import star.universe_settings;
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarItemDrop.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"

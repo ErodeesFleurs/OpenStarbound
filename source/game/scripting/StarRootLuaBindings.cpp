@@ -19,7 +19,15 @@ import star.collision_block;
 #include "StarJson.hpp"
 #include "StarRect.hpp"
 #include "StarGameTypes.hpp"
-#include "StarBiome.hpp"
+#include "StarPerlin.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarBiMap.hpp"
+#include "StarPlant.hpp"
+#include "StarStrongTypedef.hpp"
+import star.plant_database;
+import star.biome_placement;
+import star.spawn_type_database;
+import star.biome;
 #include "StarLua.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"

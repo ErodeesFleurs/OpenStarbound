@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
 #include "StarString.hpp"
 
 namespace Star {
@@ -38,4 +40,16 @@ private:
   StringList m_assetPaths;
 };
 
+}
+
+export module star.directory_asset_source;
+
+export namespace Star {
+  using ::Star::DirectoryAssetSource;
+  using ::Star::DirectoryAssetSourcePtr;
+  using ::Star::DirectoryAssetSourceConstPtr;
+  using ::Star::DirectoryAssetSourceWeakPtr;
+  using ::Star::DirectoryAssetSourceConstWeakPtr;
+  using ::Star::DirectoryAssetSourceUPtr;
+  using ::Star::DirectoryAssetSourceConstUPtr;
 }

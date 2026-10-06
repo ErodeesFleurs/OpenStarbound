@@ -1,4 +1,8 @@
-#include "StarDirectoryAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
+#include "StarString.hpp"
+import star.directory_asset_source;
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"

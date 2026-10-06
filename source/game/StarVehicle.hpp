@@ -3,7 +3,12 @@
 #include "StarNetElementSystem.hpp"
 #include "StarMobileEntity.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarMovementController.hpp"
+#include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
+import star.movement_controller;
 #include "StarLuaComponents.hpp"
 #include "StarLoungingEntities.hpp"
 #include "StarScriptedEntity.hpp"

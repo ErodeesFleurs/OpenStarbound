@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarColor.hpp"
@@ -10,6 +10,9 @@ import star.animation;
 namespace Star {
 
 struct Particle {
+  friend DataStream& operator<<(DataStream& ds, Particle const& particle);
+  friend DataStream& operator>>(DataStream& ds, Particle& particle);
+
   enum class Type {
     // Variance is basically a null type, used only for varying other particles
     // by amounts.
@@ -122,4 +125,12 @@ DataStream& operator>>(DataStream& ds, Particle& particle);
 typedef function<Particle()> ParticleVariantCreator;
 ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
 
+}
+
+export module star.particle;
+
+export namespace Star {
+  using ::Star::Particle;
+  using ::Star::ParticleVariantCreator;
+  using ::Star::makeParticleVariantCreator;
 }

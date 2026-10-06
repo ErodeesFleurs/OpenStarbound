@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarPoly.hpp"
 
@@ -257,4 +257,16 @@ inline Vec2F WorldGeometry::nearestTo(Vec2F const& source, Vec2F const& target) 
   return Vec2F(nearestTo(source[0], target[0]), target[1]);
 }
 
+}
+
+export module star.world_geometry;
+
+export namespace Star {
+  using ::Star::WorldGeometry;
+  using ::Star::WorldGeometryPtr;
+  using ::Star::WorldGeometryConstPtr;
+  using ::Star::WorldGeometryWeakPtr;
+  using ::Star::WorldGeometryConstWeakPtr;
+  using ::Star::WorldGeometryUPtr;
+  using ::Star::WorldGeometryConstUPtr;
 }

@@ -4,7 +4,11 @@ module;
 
 #include "StarOrderedMap.hpp"
 #include "StarFile.hpp"
-#include "StarDirectoryAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
+#include "StarString.hpp"
+import star.directory_asset_source;
 
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"

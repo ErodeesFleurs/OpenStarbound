@@ -3,11 +3,20 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarWorldClient.hpp"
 #include "StarChattyEntity.hpp"
 #include "StarAssets.hpp"
-#include "StarAssetTextureGroup.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+#include "StarBiMap.hpp"
+#include "StarListener.hpp"
+#include "StarRenderer.hpp"
+#include "StarAssetPath.hpp"
+import star.asset_texture_group;
 #include "StarGuiContext.hpp"
 
 import star.stored_functions;

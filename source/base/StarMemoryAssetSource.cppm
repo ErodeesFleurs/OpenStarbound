@@ -2,7 +2,9 @@ module;
 
 #include <utility>
 
-#include "StarAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
 #include "StarIODevice.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"

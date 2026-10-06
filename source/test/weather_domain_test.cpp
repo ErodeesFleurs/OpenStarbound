@@ -7,7 +7,22 @@ import star.sky_types;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 import star.sky_parameters;
-#include "StarWorldParameters.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+import star.sky_types;
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
 #include "StarWorldTemplate.hpp"
 
 #include "gtest/gtest.h"

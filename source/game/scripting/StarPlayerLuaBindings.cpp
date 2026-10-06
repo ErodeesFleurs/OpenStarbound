@@ -16,11 +16,24 @@ import star.item_recipe;
 #include "StarPlayer.hpp"
 import star.player_tech;
 import star.player_log;
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 import star.player_universe_map;
 #include "StarUniverseClient.hpp"
 import star.player_codexes;
-#include "StarQuestDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.quest_descriptor;
 
 module star.player_lua_bindings;
 import star.codex;

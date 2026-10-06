@@ -1,7 +1,12 @@
-#pragma once
+module;
 
-#include "StarFontTextureGroup.hpp"
-#include "StarAnchorTypes.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
+#include "StarBiMap.hpp"
+import star.anchor_types;
 #include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
@@ -103,4 +108,19 @@ private:
   TrackerListenerPtr m_reloadTracker;
 };
 
+}
+
+export module star.text_painter;
+
+export namespace Star {
+  using ::Star::FontMode;
+  using ::Star::fontModeToColor;
+  using ::Star::TextPositioning;
+  using ::Star::TextPainter;
+  using ::Star::TextPainterPtr;
+  using ::Star::TextPainterConstPtr;
+  using ::Star::TextPainterWeakPtr;
+  using ::Star::TextPainterConstWeakPtr;
+  using ::Star::TextPainterUPtr;
+  using ::Star::TextPainterConstUPtr;
 }

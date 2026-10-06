@@ -1,6 +1,25 @@
-#pragma once
+module;
 
-#include "StarCelestialParameters.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+import star.sky_types;
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
 
 namespace Star {
 
@@ -54,4 +73,17 @@ public:
 private:
 };
 
+}
+
+export module star.celestial_graphics;
+
+export namespace Star {
+  using ::Star::CelestialGraphics;
+  using ::Star::CelestialDatabase;
+  using ::Star::CelestialDatabasePtr;
+  using ::Star::CelestialDatabaseConstPtr;
+  using ::Star::CelestialDatabaseWeakPtr;
+  using ::Star::CelestialDatabaseConstWeakPtr;
+  using ::Star::CelestialDatabaseUPtr;
+  using ::Star::CelestialDatabaseConstUPtr;
 }

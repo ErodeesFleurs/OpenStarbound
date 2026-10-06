@@ -8,7 +8,8 @@ import star.collision_block;
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGameTypes.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarDataStream.hpp"
 import star.wiring;
 #include "StarWorld.hpp"

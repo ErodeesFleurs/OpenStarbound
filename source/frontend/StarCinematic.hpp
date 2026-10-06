@@ -2,9 +2,25 @@
 
 #include "StarTime.hpp"
 #include "StarRenderer.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarInputEvent.hpp"
-#include "StarTextPainter.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
+#include "StarBiMap.hpp"
+import star.anchor_types;
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+import star.text_painter;
 #include "StarMixer.hpp"
 
 namespace Star {

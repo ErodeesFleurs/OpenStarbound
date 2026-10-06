@@ -1,4 +1,5 @@
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 
 namespace Star {
 

@@ -1,7 +1,9 @@
 #include "StarBTreeDatabase.hpp"
 #include "StarTime.hpp"
 #include "StarFile.hpp"
-#include "StarVersionOptionParser.hpp"
+#include "StarOptionParser.hpp"
+#include "StarVersion.hpp"
+import star.version_option_parser;
 
 using namespace Star;
 

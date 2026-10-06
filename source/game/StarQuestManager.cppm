@@ -1,7 +1,14 @@
 module;
 
 #include "StarSet.hpp"
-#include "StarQuestDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.quest_descriptor;
 
 namespace Star {
 

@@ -3,7 +3,13 @@ module;
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
 #include "StarJson.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 
 import star.entity_splash;
 

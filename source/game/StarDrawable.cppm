@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -10,6 +10,9 @@
 namespace Star {
 
 struct Drawable {
+  friend DataStream& operator>>(DataStream& ds, Drawable& drawable);
+  friend DataStream& operator<<(DataStream& ds, Drawable const& drawable);
+
   struct LinePart {
     Line2F line;
     float width;
@@ -184,4 +187,10 @@ inline Drawable::ImagePart const& Drawable::imagePart() const {
   return part.get<ImagePart>();
 }
 
+}
+
+export module star.drawable;
+
+export namespace Star {
+  using ::Star::Drawable;
 }

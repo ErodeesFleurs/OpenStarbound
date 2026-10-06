@@ -1,6 +1,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"

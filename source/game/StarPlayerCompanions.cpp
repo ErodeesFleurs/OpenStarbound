@@ -2,7 +2,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarUuid.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarLuaComponents.hpp"
 #include "StarWorld.hpp"
 

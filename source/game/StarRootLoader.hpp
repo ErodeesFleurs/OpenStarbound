@@ -1,6 +1,8 @@
 #pragma once
 
-#include "StarVersionOptionParser.hpp"
+#include "StarOptionParser.hpp"
+#include "StarVersion.hpp"
+import star.version_option_parser;
 #include "StarRoot.hpp"
 
 namespace Star {

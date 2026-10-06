@@ -1,4 +1,7 @@
-#pragma once
+module;
+
+#include <cstdint>
+#include <cmath>
 
 namespace Star {
 
@@ -6,41 +9,41 @@ typedef uint16_t MaterialId;
 typedef uint8_t MaterialHue;
 
 // Empty and non-colliding.
-MaterialId const EmptyMaterialId = 65535;
+inline constexpr MaterialId EmptyMaterialId = 65535;
 
 // Empty and colliding. Also used as a placeholder in world generation, and to
 // signal a block which has not yet been loaded
-MaterialId const NullMaterialId = 65534;
+inline constexpr MaterialId NullMaterialId = 65534;
 
 // Invisible colliding material used for pre-drawn world strucutres.
-MaterialId const StructureMaterialId = 65533;
+inline constexpr MaterialId StructureMaterialId = 65533;
 
 // Placeholder material used in dungeon generation for biome native ground
 // material.
-MaterialId const Biome5MaterialId = 65532;
-MaterialId const Biome4MaterialId = 65531;
-MaterialId const Biome3MaterialId = 65530;
-MaterialId const Biome2MaterialId = 65529;
-MaterialId const Biome1MaterialId = 65528;
-MaterialId const BiomeMaterialId = 65527;
+inline constexpr MaterialId Biome5MaterialId = 65532;
+inline constexpr MaterialId Biome4MaterialId = 65531;
+inline constexpr MaterialId Biome3MaterialId = 65530;
+inline constexpr MaterialId Biome2MaterialId = 65529;
+inline constexpr MaterialId Biome1MaterialId = 65528;
+inline constexpr MaterialId BiomeMaterialId = 65527;
 
 // invisible walls that can't be connected to or grappled
-MaterialId const BoundaryMaterialId = 65526;
+inline constexpr MaterialId BoundaryMaterialId = 65526;
 
 // default generic object metamaterials
-MaterialId const ObjectSolidMaterialId = 65500;
-MaterialId const ObjectPlatformMaterialId = 65501;
+inline constexpr MaterialId ObjectSolidMaterialId = 65500;
+inline constexpr MaterialId ObjectPlatformMaterialId = 65501;
 
 // Material IDs 65500 and above are reserved for engine-specified metamaterials
-MaterialId const FirstEngineMetaMaterialId = 65500;
+inline constexpr MaterialId FirstEngineMetaMaterialId = 65500;
 
 // Material IDs 65000 - 65499 are reserved for configurable metamaterials
 // to be used by tile entities or scripts
-MaterialId const FirstMetaMaterialId = 65000;
+inline constexpr MaterialId FirstMetaMaterialId = 65000;
 
 typedef uint8_t MaterialColorVariant;
 inline constexpr MaterialColorVariant DefaultMaterialColorVariant = 0;
-MaterialColorVariant const MaxMaterialColorVariant = 8;
+inline constexpr MaterialColorVariant MaxMaterialColorVariant = 8;
 
 typedef uint16_t ModId;
 
@@ -48,11 +51,11 @@ typedef uint16_t ModId;
 inline constexpr ModId NoModId = 65535;
 
 // Placeholder mod used in dungeon generation for biome native ground mod.
-ModId const BiomeModId = 65534;
-ModId const UndergroundBiomeModId = 65533;
+inline constexpr ModId BiomeModId = 65534;
+inline constexpr ModId UndergroundBiomeModId = 65533;
 
 // The first mod id that is reserved for special hard-coded mod values.
-ModId const FirstMetaMod = 65520;
+inline constexpr ModId FirstMetaMod = 65520;
 
 float materialHueToDegrees(MaterialHue hue);
 MaterialHue materialHueFromDegrees(float degrees);
@@ -94,4 +97,40 @@ inline bool isRealMod(ModId mod) {
 inline bool isBiomeMod(ModId mod) {
   return mod == BiomeModId || mod == UndergroundBiomeModId;
 }
+}
+
+export module star.material_types;
+
+export namespace Star {
+  using ::Star::MaterialId;
+  using ::Star::MaterialHue;
+  using ::Star::EmptyMaterialId;
+  using ::Star::NullMaterialId;
+  using ::Star::StructureMaterialId;
+  using ::Star::Biome5MaterialId;
+  using ::Star::Biome4MaterialId;
+  using ::Star::Biome3MaterialId;
+  using ::Star::Biome2MaterialId;
+  using ::Star::Biome1MaterialId;
+  using ::Star::BiomeMaterialId;
+  using ::Star::BoundaryMaterialId;
+  using ::Star::ObjectSolidMaterialId;
+  using ::Star::ObjectPlatformMaterialId;
+  using ::Star::FirstEngineMetaMaterialId;
+  using ::Star::FirstMetaMaterialId;
+  using ::Star::MaterialColorVariant;
+  using ::Star::DefaultMaterialColorVariant;
+  using ::Star::MaxMaterialColorVariant;
+  using ::Star::ModId;
+  using ::Star::NoModId;
+  using ::Star::BiomeModId;
+  using ::Star::UndergroundBiomeModId;
+  using ::Star::FirstMetaMod;
+  using ::Star::materialHueToDegrees;
+  using ::Star::materialHueFromDegrees;
+  using ::Star::isRealMaterial;
+  using ::Star::isConnectableMaterial;
+  using ::Star::isBiomeMaterial;
+  using ::Star::isRealMod;
+  using ::Star::isBiomeMod;
 }

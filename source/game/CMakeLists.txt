@@ -1,11 +1,5 @@
 set (star_game_HEADERS
     StarActorMovementController.hpp
-    StarBiome.hpp
-    StarBiomePlacement.hpp
-    StarCelestialGraphics.hpp
-    StarCelestialParameters.hpp
-    StarDamage.hpp
-    StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarEntityRendering.hpp
     StarGameTypes.hpp
@@ -14,22 +8,15 @@ set (star_game_HEADERS
     StarItem.hpp
     StarItemDescriptor.hpp
     StarItemDrop.hpp
-    StarMaterialRenderProfile.hpp
-    StarMaterialTypes.hpp
     StarMonster.hpp
-    StarMovementController.hpp
     StarNetPackets.hpp
     StarNetPacketSocket.hpp
     StarNetworkedAnimator.hpp
     StarNpc.hpp
     StarObject.hpp
-    StarParallax.hpp
-    StarParticle.hpp
     StarPlant.hpp
-    StarPlatformerAStarTypes.hpp
     StarPlayer.hpp
     StarProjectile.hpp
-    StarQuestDescriptor.hpp
     StarRoot.hpp
     StarRootLoader.hpp
     StarStagehand.hpp
@@ -43,18 +30,14 @@ set (star_game_HEADERS
     StarUniverseConnection.hpp
     StarUniverseServer.hpp
     StarVehicle.hpp
-    StarWarping.hpp
     StarWorldClient.hpp
     StarWorldClientThread.hpp
     StarWorldImpl.hpp
     StarWorldLayout.hpp
-    StarWorldParameters.hpp
-    StarWorldRenderData.hpp
     StarWorldServer.hpp
     StarWorldServerThread.hpp
     StarWorldStorage.hpp
     StarWorldTemplate.hpp
-    StarWorldTiles.hpp
 
     interfaces/StarActorEntity.hpp
     interfaces/StarAnchorableEntity.hpp
@@ -108,12 +91,6 @@ set (star_game_HEADERS
 
 set (star_game_SOURCES
     StarActorMovementController.cpp
-    StarBiome.cpp
-    StarBiomePlacement.cpp
-    StarCelestialGraphics.cpp
-    StarCelestialParameters.cpp
-    StarDamage.cpp
-    StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarEntityRendering.cpp
     StarGameTypes.cpp
@@ -122,21 +99,15 @@ set (star_game_SOURCES
     StarItem.cpp
     StarItemDescriptor.cpp
     StarItemDrop.cpp
-    StarMaterialRenderProfile.cpp
     StarMonster.cpp
-    StarMovementController.cpp
     StarNetPackets.cpp
     StarNetPacketSocket.cpp
     StarNetworkedAnimator.cpp
     StarNpc.cpp
     StarObject.cpp
-    StarParallax.cpp
-    StarParticle.cpp
     StarPlant.cpp
-    StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
     StarProjectile.cpp
-    StarQuestDescriptor.cpp
     StarRoot.cpp
     StarRootLoader.cpp
     StarStagehand.cpp
@@ -149,16 +120,13 @@ set (star_game_SOURCES
     StarUniverseConnection.cpp
     StarUniverseServer.cpp
     StarVehicle.cpp
-    StarWarping.cpp
     StarWorldClient.cpp
     StarWorldClientThread.cpp
     StarWorldLayout.cpp
-    StarWorldParameters.cpp
     StarWorldServer.cpp
     StarWorldServerThread.cpp
     StarWorldStorage.cpp
     StarWorldTemplate.cpp
-    StarWorldTiles.cpp
 
     interfaces/StarAnchorableEntity.cpp
     interfaces/StarBeamItem.cpp
@@ -352,6 +320,23 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarEntityRenderingTypes.cppm
     StarSkyRenderData.cppm
     StarSkyParameters.cppm
+    StarDamage.cppm
+    StarWarping.cppm
+    StarQuestDescriptor.cppm
+    StarPlatformerAStarTypes.cppm
+    StarMaterialTypes.cppm
+    StarMaterialRenderProfile.cppm
+    StarBiomePlacement.cppm
+    StarParallax.cppm
+    StarParticle.cppm
+    StarDrawable.cppm
+    StarWorldRenderData.cppm
+    StarCelestialParameters.cppm
+    StarWorldParameters.cppm
+    StarBiome.cppm
+    StarCelestialGraphics.cppm
+    StarWorldTiles.cppm
+    StarMovementController.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -360,7 +345,7 @@ target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (star_game_module_interfaces PRIVATE star_modules star_build_config)
+target_link_libraries (star_game_module_interfaces PUBLIC star_base_modules PRIVATE star_modules star_build_config)
 
 # Keep implementation template instantiations out of interface BMIs.
 add_library (star_game_modules STATIC
@@ -499,6 +484,21 @@ add_library (star_game_modules STATIC
     StarEntityRenderingTypes.cpp
     StarSkyRenderData.cpp
     StarSkyParameters.cpp
+    StarDamage.cpp
+    StarWarping.cpp
+    StarQuestDescriptor.cpp
+    StarPlatformerAStarTypes.cpp
+    StarMaterialRenderProfile.cpp
+    StarBiomePlacement.cpp
+    StarParallax.cpp
+    StarParticle.cpp
+    StarDrawable.cpp
+    StarCelestialParameters.cpp
+    StarWorldParameters.cpp
+    StarBiome.cpp
+    StarCelestialGraphics.cpp
+    StarWorldTiles.cpp
+    StarMovementController.cpp
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

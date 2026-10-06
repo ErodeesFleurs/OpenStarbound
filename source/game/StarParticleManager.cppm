@@ -1,8 +1,33 @@
 module;
 
-#include "StarWorldGeometry.hpp"
-#include "StarParticle.hpp"
-#include "StarWorldTiles.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
+#include "StarMultiArray.hpp"
+#include <functional>
+#include "StarGameTypes.hpp"
+#include "StarXXHash.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+import star.tile_damage;
+#include "StarTileSectorArray.hpp"
+#include "StarWorldLayout.hpp"
+#include "StarVersion.hpp"
+import star.collision_generator;
+import star.world_tiles;
 
 namespace Star {
 

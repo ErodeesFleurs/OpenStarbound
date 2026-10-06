@@ -7,7 +7,26 @@ module;
 #include "StarLuaGameConverters.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarSystemWorldClient.hpp"
-#include "StarCelestialGraphics.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarGameTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+import star.sky_types;
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.celestial_graphics;
 #include "StarRoot.hpp"
 
 module star.celestial_lua_bindings;

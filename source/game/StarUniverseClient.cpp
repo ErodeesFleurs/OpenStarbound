@@ -4,7 +4,10 @@
 #include "StarLogging.hpp"
 #include "StarVersion.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarPlayer.hpp"
 import star.player_log;
 #include "StarAssets.hpp"

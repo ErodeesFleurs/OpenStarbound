@@ -1,7 +1,10 @@
 #include "StarMainMixer.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarUniverseClient.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"

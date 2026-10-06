@@ -1,7 +1,8 @@
 #include "StarPeriodic.hpp"
 #include "StarIdMap.hpp"
 #include "StarTtlCache.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"

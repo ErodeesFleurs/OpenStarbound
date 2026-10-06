@@ -20,7 +20,10 @@ import star.player_blueprints;
 #include "StarListWidget.hpp"
 #include "StarImageStretchWidget.hpp"
 #include "StarItemSlotWidget.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarAssets.hpp"
 import star.player_log;
 #include "StarMixer.hpp"

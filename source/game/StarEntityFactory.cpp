@@ -4,7 +4,12 @@
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarMovementController.hpp"
+#include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
+import star.movement_controller;
 #include "StarMobileEntity.hpp"
 #include "StarAssetPath.hpp"
 #include "StarProjectile.hpp"

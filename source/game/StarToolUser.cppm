@@ -1,7 +1,13 @@
 module;
 
 #include "StarGameTypes.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarJson.hpp"
@@ -12,10 +18,26 @@ import star.status_types;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarDamage.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
+#include "StarPoly.hpp"
+import star.world_geometry;
+#include "StarStrongTypedef.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+import star.damage;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarGameTypes.hpp"
 import star.entity_rendering_types;
 #include "StarPhysicsEntity.hpp"

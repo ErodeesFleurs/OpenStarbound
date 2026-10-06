@@ -9,7 +9,10 @@ module;
 
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarVersion.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarIterator.hpp"

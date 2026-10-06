@@ -2,8 +2,20 @@
 
 #include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
-#include "StarDrawable.hpp"
-#include "StarParticle.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarNetworkedAnimator.hpp"
 #include "StarNetElement.hpp"
 

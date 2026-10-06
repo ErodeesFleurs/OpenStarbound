@@ -1,10 +1,34 @@
-#pragma once
+module;
 
 #include "StarImage.hpp"
-#include "StarWorldTiles.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
+#include "StarMultiArray.hpp"
+#include <functional>
+#include "StarGameTypes.hpp"
+#include "StarXXHash.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+import star.tile_damage;
+#include "StarTileSectorArray.hpp"
+#include "StarWorldLayout.hpp"
+#include "StarVersion.hpp"
+import star.collision_generator;
+import star.world_tiles;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarGameTypes.hpp"
 import star.entity_rendering_types;
 #include "StarColor.hpp"
@@ -16,11 +40,32 @@ import star.sky_types;
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
-#include "StarParallax.hpp"
-#include "StarParticle.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarDirectives.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
+import star.plant_database;
+import star.parallax;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 import star.weather_types;
 #include "StarEntity.hpp"
 #include "StarThread.hpp"
@@ -74,4 +119,11 @@ inline void WorldRenderData::clear() {
   parallaxLayers.clear();
 }
 
+}
+
+export module star.world_render_data;
+
+export namespace Star {
+  using ::Star::EntityDrawables;
+  using ::Star::WorldRenderData;
 }

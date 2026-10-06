@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarBiMap.hpp"
 
@@ -18,4 +18,13 @@ enum class VerticalAnchor {
 };
 extern EnumMap<VerticalAnchor> const VerticalAnchorNames;
 
+}
+
+export module star.anchor_types;
+
+export namespace Star {
+  using ::Star::HorizontalAnchor;
+  using ::Star::HorizontalAnchorNames;
+  using ::Star::VerticalAnchor;
+  using ::Star::VerticalAnchorNames;
 }

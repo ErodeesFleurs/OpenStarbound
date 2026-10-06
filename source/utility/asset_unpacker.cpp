@@ -1,8 +1,12 @@
-#include "StarAssetSource.hpp"
+#include "StarIODevice.hpp"
+#include "StarJson.hpp"
+import star.asset_source;
 #include "StarTime.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
-#include "StarVersionOptionParser.hpp"
+#include "StarOptionParser.hpp"
+#include "StarVersion.hpp"
+import star.version_option_parser;
 import star.packed_asset_source;
 
 using namespace Star;

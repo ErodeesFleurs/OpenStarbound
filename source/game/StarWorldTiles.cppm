@@ -1,4 +1,4 @@
-#pragma once
+module;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -122,6 +122,8 @@ typedef shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
+  friend DataStream& operator>>(DataStream& ds, NetTile& value);
+  friend DataStream& operator<<(DataStream& ds, NetTile const& value);
   NetTile();
 
   MaterialId background;
@@ -178,6 +180,8 @@ struct PredictedTile {
 // out specifically to avoid padding bytes so that a fast path can be taken
 // when hashing for chunk render caching.
 struct RenderTile {
+  friend DataStream& operator>>(DataStream& ds, RenderTile& value);
+  friend DataStream& operator<<(DataStream& ds, RenderTile const& value);
   MaterialId foreground;
   ModId foregroundMod;
 
@@ -384,4 +388,20 @@ inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
   hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
 }
 
+}
+
+export module star.world_tiles;
+
+export namespace Star {
+  using ::Star::WorldTile;
+  using ::Star::ServerTile;
+  using ::Star::ServerTileSectorArray;
+  using ::Star::ServerTileSectorArrayPtr;
+  using ::Star::ClientTile;
+  using ::Star::ClientTileSectorArray;
+  using ::Star::ClientTileSectorArrayPtr;
+  using ::Star::NetTile;
+  using ::Star::PredictedTile;
+  using ::Star::RenderTile;
+  using ::Star::RenderTileArray;
 }

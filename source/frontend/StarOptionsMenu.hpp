@@ -1,7 +1,10 @@
 #pragma once
 
 #include "StarPane.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 #include "StarMainInterfaceTypes.hpp"
 #include "StarUniverseClient.hpp"
 

@@ -1,4 +1,5 @@
-#include "StarAnchorTypes.hpp"
+#include "StarBiMap.hpp"
+import star.anchor_types;
 
 namespace Star {
 

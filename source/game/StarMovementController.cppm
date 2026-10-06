@@ -1,12 +1,15 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWorld.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
 #include "StarPhysicsEntity.hpp"
 
 namespace Star {
+
+class World;
 
 struct MovementControllerExceptionTag {
   static constexpr char const* name() { return "MovementControllerException"; }
@@ -19,6 +22,8 @@ STAR_CLASS(MovementController);
 // object.  Each parameter is optional so that this structure can be used to
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
+  friend DataStream& operator>>(DataStream& ds, MovementParameters& value);
+  friend DataStream& operator<<(DataStream& ds, MovementParameters const& value);
   // Load sensible defaults from a config file.
   static MovementParameters sensibleDefaults();
 
@@ -299,4 +304,19 @@ private:
   List<PolyF> m_collisionBuffers;
 };
 
+}
+
+export module star.movement_controller;
+
+export namespace Star {
+  using ::Star::MovementControllerExceptionTag;
+  using ::Star::MovementControllerException;
+  using ::Star::MovementParameters;
+  using ::Star::MovementController;
+  using ::Star::MovementControllerPtr;
+  using ::Star::MovementControllerConstPtr;
+  using ::Star::MovementControllerWeakPtr;
+  using ::Star::MovementControllerConstWeakPtr;
+  using ::Star::MovementControllerUPtr;
+  using ::Star::MovementControllerConstUPtr;
 }

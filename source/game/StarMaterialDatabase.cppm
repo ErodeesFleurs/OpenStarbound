@@ -1,7 +1,16 @@
 module;
 
 #include "StarColor.hpp"
-#include "StarMaterialRenderProfile.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarMultiArray.hpp"
+#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+import star.tile_damage;
+#include "StarDirectives.hpp"
+import star.material_render_profile;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"

@@ -8,7 +8,13 @@ import star.interaction_types;
 #include "StarGameTypes.hpp"
 #include "StarInterfaceCursor.hpp"
 #include "StarMainInterfaceTypes.hpp"
-#include "StarWarping.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarUuid.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
 
 namespace Star {
 

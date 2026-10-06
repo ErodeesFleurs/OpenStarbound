@@ -7,7 +7,9 @@
 #include "StarRpcPromise.hpp"
 #include "StarMathCommon.hpp"
 import star.liquid_types;
-#include "StarMaterialTypes.hpp"
+#include <cstdint>
+#include <cmath>
+import star.material_types;
 
 namespace Star {
 

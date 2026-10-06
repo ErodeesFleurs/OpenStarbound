@@ -6,7 +6,10 @@ module;
 #include "StarLabelWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+import star.configuration;
 
 module star.http_trust_dialog;
 

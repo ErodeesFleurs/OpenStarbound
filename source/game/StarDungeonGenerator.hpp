@@ -2,7 +2,8 @@
 
 #include "StarImage.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarRandom.hpp"
 #include "StarSet.hpp"

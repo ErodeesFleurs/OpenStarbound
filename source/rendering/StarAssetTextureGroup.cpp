@@ -1,5 +1,11 @@
 #include "StarAssetPath.hpp"
-#include "StarAssetTextureGroup.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+#include "StarBiMap.hpp"
+#include "StarListener.hpp"
+#include "StarRenderer.hpp"
+#include "StarAssetPath.hpp"
+import star.asset_texture_group;
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
 #include "StarRoot.hpp"

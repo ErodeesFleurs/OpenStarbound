@@ -6,8 +6,19 @@
 #include "StarScriptedEntity.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarMovementController.hpp"
-#include "StarParticle.hpp"
+#include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
+import star.movement_controller;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+import star.animation;
+import star.particle;
 #include "StarLuaComponents.hpp"
 
 import star.effect_emitter;

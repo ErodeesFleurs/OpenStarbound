@@ -4,7 +4,13 @@ module;
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarColor.hpp"
-#include "StarDrawable.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
 #include "StarGameTypes.hpp"
 import star.entity_rendering_types;
 #include "StarEntity.hpp"

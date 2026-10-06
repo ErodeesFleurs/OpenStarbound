@@ -1,5 +1,14 @@
 #include "StarAssetPath.hpp"
-#include "StarParallax.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarDirectives.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
+import star.plant_database;
+import star.parallax;
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
