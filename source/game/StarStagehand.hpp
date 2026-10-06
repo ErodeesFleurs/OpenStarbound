@@ -3,13 +3,14 @@
 #include "StarEntity.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarScriptedEntity.hpp"
-#include "StarBehaviorState.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRoot.hpp"
+
 
 namespace Star {
 
 STAR_CLASS(Stagehand);
+STAR_CLASS(BehaviorState);
 
 class Stagehand : public virtual ScriptedEntity {
 public:

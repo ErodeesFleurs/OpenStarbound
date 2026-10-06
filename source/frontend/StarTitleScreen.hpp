@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarSky.hpp"
 #include "StarRegisteredPaneManager.hpp"
 #include "StarInterfaceCursor.hpp"
 #include "StarUniverseClient.hpp"
@@ -22,6 +21,7 @@ STAR_CLASS(Mixer);
 STAR_CLASS(EnvironmentPainter);
 STAR_CLASS(CelestialMasterDatabase);
 STAR_CLASS(ButtonWidget);
+STAR_CLASS(Sky);
 
 STAR_CLASS(TitleScreen);
 

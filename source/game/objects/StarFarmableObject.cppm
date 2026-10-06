@@ -1,7 +1,10 @@
 module;
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarObject.hpp"
-#include "StarGameTimers.hpp"
+
+import star.game_timers;
 
 namespace Star {
 

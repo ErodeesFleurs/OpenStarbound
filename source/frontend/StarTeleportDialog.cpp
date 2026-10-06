@@ -3,7 +3,6 @@
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarPlayer.hpp"
-#include "StarQuestManager.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarGuiReader.hpp"
@@ -18,6 +17,8 @@ import star.celestial_database;
 
 import star.client_context;
 import star.team_client;
+
+import star.quest_manager;
 
 namespace Star {
 

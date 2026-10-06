@@ -1,9 +1,15 @@
+#include "StarJson.hpp"
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
-#include "StarPlatformerAStar.hpp"
+#include "StarBiMap.hpp"
+#include "StarAStar.hpp"
 #include "StarWorld.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarPlatformerAStarTypes.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarJsonExtra.hpp"
+
+import star.platformer_astar;
 
 namespace Star {
 

@@ -3,7 +3,6 @@
 #include "StarTime.hpp"
 #include "StarRenderer.hpp"
 #include "StarDrawable.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarInputEvent.hpp"
 #include "StarTextPainter.hpp"
 #include "StarMixer.hpp"

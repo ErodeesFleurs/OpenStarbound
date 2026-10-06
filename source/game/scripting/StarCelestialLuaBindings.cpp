@@ -13,6 +13,7 @@ module;
 module star.celestial_lua_bindings;
 import star.biome_database;
 import star.celestial_database;
+import star.sky;
 
 
 namespace Star {

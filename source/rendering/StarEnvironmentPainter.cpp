@@ -6,6 +6,8 @@
 #include "StarLogging.hpp"
 #include "StarMathCommon.hpp"
 
+import star.world_camera;
+
 namespace Star {
 
 float const EnvironmentPainter::SunriseTime = 0.072f;

@@ -37,6 +37,8 @@ import star.client_context;
 import star.particle_manager;
 import star.entity_factory;
 
+import star.sky;
+
 namespace Star {
 
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";

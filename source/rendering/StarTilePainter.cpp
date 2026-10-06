@@ -10,6 +10,7 @@
 
 import star.liquids_database;
 import star.material_database;
+import star.world_camera;
 
 
 namespace Star {

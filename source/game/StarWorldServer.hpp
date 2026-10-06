@@ -1,26 +1,32 @@
 #pragma once
+#include "StarCollisionBlock.hpp"
+#include "StarMultiArray.hpp"
+#include <functional>
 
 #include "StarWorld.hpp"
-#include "StarCollisionGenerator.hpp"
-#include "StarSpawner.hpp"
 #include "StarNetPackets.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarCellularLiquid.hpp"
-#include "StarWeather.hpp"
 import star.world_structure;
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarWarping.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarWeightedPool.hpp"
 import star.world_client_state;
 import star.interpolation_tracker;
+import star.spawn_type_database;
+import star.spawner;
+
+import star.collision_generator;
 
 namespace Star {
 
 STAR_CLASS(Player);
 STAR_CLASS(WorldTemplate);
 STAR_CLASS(Sky);
+STAR_CLASS(ServerWeather);
 STAR_STRUCT(SkyParameters);
 STAR_CLASS(DamageManager);
 STAR_CLASS(WireProcessor);

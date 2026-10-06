@@ -1,13 +1,17 @@
 #pragma once
+#include "StarCollisionBlock.hpp"
+#include "StarMultiArray.hpp"
+#include <functional>
 
 #include "StarGameTypes.hpp"
 #include "StarXXHash.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarTileDamage.hpp"
 #include "StarTileSectorArray.hpp"
-#include "StarCollisionGenerator.hpp"
 #include "StarWorldLayout.hpp"
 #include "StarVersion.hpp"
+
+import star.collision_generator;
 
 namespace Star {
 

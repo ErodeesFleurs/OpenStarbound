@@ -8,8 +8,9 @@
 #include "StarImageStretchWidget.hpp"
 #include "StarProgressWidget.hpp"
 #include "StarVerticalLayout.hpp"
-#include "StarQuests.hpp"
 #include "StarLogging.hpp"
+
+import star.quests;
 
 namespace Star {
 

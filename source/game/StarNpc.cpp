@@ -1,11 +1,12 @@
+#include "StarThread.hpp"
+#include "StarJson.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarNpc.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
-#include "StarSongbook.hpp"
-#include "StarDamageManager.hpp"
 #include "StarLogging.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
@@ -34,6 +35,9 @@ import star.dance_database;
 import star.emote_processor;
 import star.item_database;
 
+
+
+import star.songbook;
 
 namespace Star {
 

@@ -6,7 +6,6 @@
 #include "StarLexicalCast.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
-#include "StarDamageManager.hpp"
 #include "StarGameTypes.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParametricFunction.hpp"
@@ -25,6 +24,7 @@ import star.config_lua_bindings;
 import star.particle_database;
 import star.object_database;
 import star.material_database;
+
 
 
 namespace Star {

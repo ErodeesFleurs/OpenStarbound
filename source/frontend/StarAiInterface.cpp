@@ -8,8 +8,6 @@
 #include "StarAssets.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarPlayer.hpp"
-#include "StarQuests.hpp"
-#include "StarQuestManager.hpp"
 #include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarCanvasWidget.hpp"
@@ -32,6 +30,7 @@ import star.item_database;
 
 import star.player_companions;
 import star.client_context;
+
 
 namespace Star {
 

@@ -1,10 +1,13 @@
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
 #include "StarJson.hpp"
 #include "StarWiring.hpp"
 import star.wire_processor;
 #include "StarWorldStorage.hpp"
-#include "StarEntityMap.hpp"
 #include "StarWireEntity.hpp"
 #include "StarLogging.hpp"
+
+import star.entity_map;
 
 namespace Star {
 

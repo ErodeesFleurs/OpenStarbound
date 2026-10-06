@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -7,6 +7,8 @@
 namespace Star {
 
 struct PhysicsCategoryFilter {
+  friend DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& region);
+  friend DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& region);
   enum Type { Whitelist, Blacklist };
 
   static PhysicsCategoryFilter whitelist(StringSet categories);
@@ -28,6 +30,8 @@ DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr);
 PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json);
 
 struct DirectionalForceRegion {
+  friend DataStream& operator>>(DataStream& ds, DirectionalForceRegion& region);
+  friend DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& region);
   static DirectionalForceRegion fromJson(Json const& json);
 
   RectF boundBox() const;
@@ -47,6 +51,8 @@ DataStream& operator>>(DataStream& ds, DirectionalForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& rfr);
 
 struct RadialForceRegion {
+  friend DataStream& operator>>(DataStream& ds, RadialForceRegion& region);
+  friend DataStream& operator<<(DataStream& ds, RadialForceRegion const& region);
   static RadialForceRegion fromJson(Json const& json);
 
   RectF boundBox() const;
@@ -67,6 +73,8 @@ DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, RadialForceRegion const& rfr);
 
 struct GradientForceRegion {
+  friend DataStream& operator>>(DataStream& ds, GradientForceRegion& region);
+  friend DataStream& operator<<(DataStream& ds, GradientForceRegion const& region);
   static GradientForceRegion fromJson(Json const& json);
 
   RectF boundBox() const;
@@ -89,4 +97,16 @@ typedef Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> 
 
 PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
 
+}
+
+export module star.force_regions;
+
+export namespace Star {
+  using ::Star::PhysicsCategoryFilter;
+  using ::Star::DirectionalForceRegion;
+  using ::Star::RadialForceRegion;
+  using ::Star::GradientForceRegion;
+  using ::Star::PhysicsForceRegion;
+  using ::Star::jsonToPhysicsCategoryFilter;
+  using ::Star::jsonToPhysicsForceRegion;
 }

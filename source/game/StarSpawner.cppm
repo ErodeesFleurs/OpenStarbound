@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarPeriodic.hpp"
 #include "StarIdMap.hpp"
@@ -115,4 +115,30 @@ private:
   HashMap<Vec2I, SpawnCellDebugInfo> m_debugSpawnInfo;
 };
 
+}
+
+export module star.spawner;
+
+export namespace Star {
+using ::Star::SpawnerFacade;
+using ::Star::SpawnerFacadePtr;
+using ::Star::SpawnerFacadeConstPtr;
+using ::Star::SpawnerFacadeWeakPtr;
+using ::Star::SpawnerFacadeConstWeakPtr;
+using ::Star::SpawnerFacadeUPtr;
+using ::Star::SpawnerFacadeConstUPtr;
+using ::Star::Spawner;
+using ::Star::SpawnerPtr;
+using ::Star::SpawnerConstPtr;
+using ::Star::SpawnerWeakPtr;
+using ::Star::SpawnerConstWeakPtr;
+using ::Star::SpawnerUPtr;
+using ::Star::SpawnerConstUPtr;
+using ::Star::Entity;
+using ::Star::EntityPtr;
+using ::Star::EntityConstPtr;
+using ::Star::EntityWeakPtr;
+using ::Star::EntityConstWeakPtr;
+using ::Star::EntityUPtr;
+using ::Star::EntityConstUPtr;
 }

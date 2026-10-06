@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarWorldGeometry.hpp"
 #include "StarGameTypes.hpp"
@@ -131,4 +131,10 @@ inline void WorldCamera::update(float dt) {
   }
 }
 
+}
+
+export module star.world_camera;
+
+export namespace Star {
+  using ::Star::WorldCamera;
 }

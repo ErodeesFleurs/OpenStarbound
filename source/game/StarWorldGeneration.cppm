@@ -1,11 +1,18 @@
 module;
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarMap.hpp"
+#include "StarRandom.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldTiles.hpp"
 
 #include "StarDungeonGenerator.hpp"
-#include "StarFallingBlocksAgent.hpp"
-#include "StarSpawner.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarCellularLiquid.hpp"
 #include "StarBiomePlacement.hpp"
+#include "StarWeightedPool.hpp"
+
+import star.falling_blocks_agent;
 
 namespace Star {
 STAR_CLASS(WorldServer);
@@ -15,6 +22,8 @@ STAR_CLASS(LiquidsDatabase);
 }
 
 import star.micro_dungeon;
+import star.spawn_type_database;
+import star.spawner;
 
 namespace Star {
 

@@ -1,19 +1,21 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarMaybe.hpp"
 #include "StarHostAddress.hpp"
-#include "StarGameTimers.hpp"
 #include "StarCelestialParameters.hpp"
 #include "StarChatTypes.hpp"
 #include "StarWarping.hpp"
 #include "StarAiTypes.hpp"
-#include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
 #include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarUniverse.hpp"
 
 // TODO: make this more thread safe
+
+import star.game_timers;
 
 namespace Star {
 

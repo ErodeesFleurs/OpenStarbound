@@ -22,6 +22,8 @@ import star.item_database;
 import star.object_database;
 
 
+import star.effect_emitter;
+
 namespace Star {
 
 ToolUser::ToolUser()

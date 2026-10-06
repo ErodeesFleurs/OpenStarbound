@@ -1,10 +1,16 @@
-#include "StarDamageManager.hpp"
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
+#include "StarDamage.hpp"
+#include "StarDamageTypes.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarIterator.hpp"
-#include "StarEntityMap.hpp"
 #include "StarLogging.hpp"
 #include "StarColor.hpp"
 #include "StarWorld.hpp"
+
+import star.damage_manager;
+
+import star.entity_map;
 
 namespace Star {
 

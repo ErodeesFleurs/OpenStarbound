@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
@@ -146,4 +146,38 @@ private:
   NetElementFloat m_currentWindNetState;
 };
 
+}
+
+export module star.weather;
+
+export namespace Star {
+using ::Star::Clock;
+using ::Star::ClockPtr;
+using ::Star::ClockConstPtr;
+using ::Star::ClockWeakPtr;
+using ::Star::ClockConstWeakPtr;
+using ::Star::ClockUPtr;
+using ::Star::ClockConstUPtr;
+using ::Star::Projectile;
+using ::Star::ProjectilePtr;
+using ::Star::ProjectileConstPtr;
+using ::Star::ProjectileWeakPtr;
+using ::Star::ProjectileConstWeakPtr;
+using ::Star::ProjectileUPtr;
+using ::Star::ProjectileConstUPtr;
+using ::Star::ServerWeather;
+using ::Star::ServerWeatherPtr;
+using ::Star::ServerWeatherConstPtr;
+using ::Star::ServerWeatherWeakPtr;
+using ::Star::ServerWeatherConstWeakPtr;
+using ::Star::ServerWeatherUPtr;
+using ::Star::ServerWeatherConstUPtr;
+using ::Star::ClientWeather;
+using ::Star::ClientWeatherPtr;
+using ::Star::ClientWeatherConstPtr;
+using ::Star::ClientWeatherWeakPtr;
+using ::Star::ClientWeatherConstWeakPtr;
+using ::Star::ClientWeatherUPtr;
+using ::Star::ClientWeatherConstUPtr;
+using ::Star::WeatherEffectsActiveQuery;
 }

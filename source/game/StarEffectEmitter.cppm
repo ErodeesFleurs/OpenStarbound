@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
@@ -38,4 +38,30 @@ private:
   bool m_renders;
 };
 
+}
+
+export module star.effect_emitter;
+
+export namespace Star {
+using ::Star::RenderCallback;
+using ::Star::RenderCallbackPtr;
+using ::Star::RenderCallbackConstPtr;
+using ::Star::RenderCallbackWeakPtr;
+using ::Star::RenderCallbackConstWeakPtr;
+using ::Star::RenderCallbackUPtr;
+using ::Star::RenderCallbackConstUPtr;
+using ::Star::EffectEmitter;
+using ::Star::EffectEmitterPtr;
+using ::Star::EffectEmitterConstPtr;
+using ::Star::EffectEmitterWeakPtr;
+using ::Star::EffectEmitterConstWeakPtr;
+using ::Star::EffectEmitterUPtr;
+using ::Star::EffectEmitterConstUPtr;
+using ::Star::EffectSource;
+using ::Star::EffectSourcePtr;
+using ::Star::EffectSourceConstPtr;
+using ::Star::EffectSourceWeakPtr;
+using ::Star::EffectSourceConstWeakPtr;
+using ::Star::EffectSourceUPtr;
+using ::Star::EffectSourceConstUPtr;
 }

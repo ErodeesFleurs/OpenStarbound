@@ -14,7 +14,6 @@ import star.player_log;
 #include "StarWorldClient.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarEncode.hpp"
-#include "StarQuestManager.hpp"
 import star.player_universe_map;
 #include "StarWorldTemplate.hpp"
 #include "StarProjectile.hpp"
@@ -28,6 +27,8 @@ import star.player_storage;
 import star.client_context;
 import star.statistics;
 import star.team_client;
+
+import star.sky;
 
 namespace Star {
 

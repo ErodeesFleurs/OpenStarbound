@@ -1,10 +1,13 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
-#include "StarGameTimers.hpp"
 #include "StarPane.hpp"
 #include "StarAiTypes.hpp"
 
 import star.radio_message_database;
+
+import star.game_timers;
 
 namespace Star {
 

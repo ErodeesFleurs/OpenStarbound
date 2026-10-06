@@ -1,7 +1,10 @@
-#include "StarEntityMap.hpp"
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
 #include "StarTileEntity.hpp"
 #include "StarInteractiveEntity.hpp"
 #include "StarProjectile.hpp"
+
+import star.entity_map;
 
 namespace Star {
 

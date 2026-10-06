@@ -1,3 +1,5 @@
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarWorldStorage.hpp"
@@ -7,7 +9,6 @@
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarEntityMap.hpp"
 #include "StarAssets.hpp"
 
 import star.liquids_database;
@@ -15,6 +16,8 @@ import star.versioning_database;
 import star.compression;
 import star.material_database;
 import star.entity_factory;
+
+import star.entity_map;
 
 namespace Star {
 

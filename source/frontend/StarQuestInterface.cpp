@@ -1,7 +1,15 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
+#include "StarSet.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarDrawable.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarThread.hpp"
+#include "StarQuestDescriptor.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarWarping.hpp"
 #include "StarQuestInterface.hpp"
-#include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
@@ -25,6 +33,9 @@ import star.item_database;
 
 
 import star.item_bag;
+
+import star.quest_manager;
+import star.quests;
 
 namespace Star {
 

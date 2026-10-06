@@ -1,10 +1,14 @@
-#include "StarWeather.hpp"
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarAssets.hpp"
 #include "StarProjectile.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWeatherTypes.hpp"
+#include "StarWorldGeometry.hpp"
+
+import star.weather;
 
 import star.projectile_database;
 import star.biome_database;

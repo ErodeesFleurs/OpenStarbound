@@ -1,13 +1,16 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarNetElementSystem.hpp"
 #include "StarMovementController.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarGameTimers.hpp"
 #include "StarMobileEntity.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarDrawable.hpp"
 #include "StarLuaComponents.hpp"
+
+import star.game_timers;
 
 namespace Star {
 

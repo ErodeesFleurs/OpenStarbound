@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarCollisionBlock.hpp"
 #include "StarMultiArray.hpp"
@@ -44,4 +44,16 @@ private:
   mutable MultiArray<CollisionKind, 2> m_collisionBuffer;
 };
 
+}
+
+export module star.collision_generator;
+
+export namespace Star {
+  using ::Star::CollisionGenerator;
+  using ::Star::CollisionGeneratorPtr;
+  using ::Star::CollisionGeneratorConstPtr;
+  using ::Star::CollisionGeneratorWeakPtr;
+  using ::Star::CollisionGeneratorConstWeakPtr;
+  using ::Star::CollisionGeneratorUPtr;
+  using ::Star::CollisionGeneratorConstUPtr;
 }

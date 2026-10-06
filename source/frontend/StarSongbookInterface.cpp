@@ -7,6 +7,8 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 
+import star.songbook;
+
 namespace Star {
 
 String const SongPathPrefix = "/songs/";

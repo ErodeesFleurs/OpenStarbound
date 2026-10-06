@@ -8,13 +8,13 @@ module;
 #include "StarPlayer.hpp"
 import star.player_tech;
 import star.player_log;
-#include "StarQuestManager.hpp"
 #include "StarWarping.hpp"
 import star.player_universe_map;
 #include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 import star.player_codexes;
 #include "StarCodex.hpp"
+#include "StarQuestDescriptor.hpp"
 
 module star.player_lua_bindings;
 import star.networked_animator_lua_bindings;
@@ -27,6 +27,9 @@ import star.player_inventory;
 import star.statistics;
 import star.item_bag;
 import star.team_client;
+
+import star.quest_manager;
+import star.quests;
 
 namespace Star {
 

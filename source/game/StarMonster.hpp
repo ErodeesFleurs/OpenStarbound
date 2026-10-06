@@ -6,7 +6,6 @@
 #include "StarEntityRendering.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarEffectEmitter.hpp"
 #include "StarDamageBarEntity.hpp"
 #include "StarNametagEntity.hpp"
 #include "StarPortraitEntity.hpp"
@@ -14,18 +13,19 @@
 #include "StarScriptedEntity.hpp"
 #include "StarChattyEntity.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarBehaviorState.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
 
 import star.monster_database;
+import star.effect_emitter;
 
 namespace Star {
 
 STAR_CLASS(Monster);
 STAR_CLASS(StatusController);
+STAR_CLASS(BehaviorState);
 
 class Monster
   : public virtual DamageBarEntity,

@@ -3,11 +3,13 @@ module;
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarBehaviorState.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
 
 module star.behavior_lua_bindings;
+
+import star.behavior_database;
+import star.behavior_state;
 
 namespace Star {
 

@@ -1,6 +1,10 @@
-#include "StarForceRegions.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+
+import star.force_regions;
 
 namespace Star {
 

@@ -1,6 +1,15 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
-#include "StarQuestManager.hpp"
+#include "StarSet.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarDrawable.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarThread.hpp"
+#include "StarQuestDescriptor.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarWarping.hpp"
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
@@ -8,6 +17,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
 #include "StarUniverseClient.hpp"
+
+import star.quests;
+import star.quest_manager;
 
 import star.quest_template_database;
 import star.versioning_database;

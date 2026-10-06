@@ -1,13 +1,17 @@
 #pragma once
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
 
 #include "StarTileEntity.hpp"
 #include "StarInteractionTypes.hpp"
 #include "StarCollisionBlock.hpp"
-#include "StarForceRegions.hpp"
 #include "StarWorldGeometry.hpp"
 #include "StarTileModification.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarRpcPromise.hpp"
+
+import star.force_regions;
 
 namespace Star {
 

@@ -1,3 +1,4 @@
+#include "StarJson.hpp"
 // Parse JSON iterator templates before game headers import modules (GCC 16).
 #include "StarJsonExtra.hpp"
 #include "StarCollisionBlock.hpp"
@@ -5,10 +6,11 @@
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarPlayer.hpp"
+#include "StarThread.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarGameTypes.hpp"
 #include "StarEncode.hpp"
 #include "StarRoot.hpp"
-#include "StarSongbook.hpp"
-#include "StarDamageManager.hpp"
 #include "StarTools.hpp"
 #include "StarItemDrop.hpp"
 #include "StarArmors.hpp"
@@ -22,7 +24,6 @@ import star.player_universe_map;
 import star.player_codexes;
 import star.player_tech;
 import star.player_log;
-#include "StarQuestManager.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarUniverseClient.hpp"
 
@@ -51,6 +52,12 @@ import star.player_companions;
 import star.player_deployment;
 import star.statistics;
 import star.player_factory;
+
+import star.quest_manager;
+import star.quests;
+import star.effect_emitter;
+
+import star.songbook;
 
 namespace Star {
 

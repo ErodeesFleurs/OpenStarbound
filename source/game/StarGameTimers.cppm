@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -6,6 +6,8 @@
 namespace Star {
 
 struct GameTimer {
+  friend DataStream& operator>>(DataStream& ds, GameTimer& gt);
+  friend DataStream& operator<<(DataStream& ds, GameTimer const& gt);
   GameTimer();
   explicit GameTimer(float time);
 
@@ -71,4 +73,12 @@ private:
   double m_elapsedTime;
 };
 
+}
+
+export module star.game_timers;
+
+export namespace Star {
+  using ::Star::GameTimer;
+  using ::Star::SlidingWindow;
+  using ::Star::EpochTimer;
 }

@@ -1,3 +1,11 @@
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarMap.hpp"
+#include "StarRandom.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldTiles.hpp"
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
@@ -5,8 +13,6 @@
 #include <utility>
 
 #include "StarDungeonGenerator.hpp"
-#include "StarFallingBlocksAgent.hpp"
-#include "StarSpawner.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarCellularLiquid.hpp"
 #include "StarBiomePlacement.hpp"
@@ -14,7 +20,6 @@
 #include "StarWorldServer.hpp"
 #include "StarNpc.hpp"
 #include "StarBiome.hpp"
-#include "StarSky.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarBiomePlacement.hpp"
 #include "StarWireEntity.hpp"
@@ -25,12 +30,17 @@
 #include "StarObject.hpp"
 #include "StarContainerObject.hpp"
 #include "StarMonster.hpp"
-#include "StarEntityMap.hpp"
 #include "StarPlant.hpp"
 #include "StarStagehand.hpp"
 #include "StarVehicle.hpp"
 
 import star.material_database;
+
+import star.spawner;
+import star.sky;
+
+import star.falling_blocks_agent;
+import star.entity_map;
 
 namespace Star {
 namespace {

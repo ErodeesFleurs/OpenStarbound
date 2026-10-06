@@ -4,7 +4,6 @@
 #include "StarNetElementSystem.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarHumanoid.hpp"
-#include "StarEffectEmitter.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarDamageBarEntity.hpp"
 #include "StarNametagEntity.hpp"
@@ -23,6 +22,7 @@
 #include "StarLuaAnimationComponent.hpp"
 
 import star.npc_database;
+import star.effect_emitter;
 
 namespace Star {
 

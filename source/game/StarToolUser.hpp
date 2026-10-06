@@ -6,7 +6,6 @@
 #include "StarStatusTypes.hpp"
 #include "StarLightSource.hpp"
 #include "StarDamage.hpp"
-#include "StarEffectEmitter.hpp"
 #include "StarEntityRenderingTypes.hpp"
 #include "StarPhysicsEntity.hpp"
 
@@ -15,6 +14,7 @@ namespace Star {
 STAR_CLASS(ToolUserEntity);
 STAR_CLASS(Item);
 STAR_CLASS(World);
+STAR_CLASS(EffectEmitter);
 
 STAR_CLASS(ToolUser);
 

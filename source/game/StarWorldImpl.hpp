@@ -1,11 +1,11 @@
 #pragma once
+#include "StarSpatialHash2D.hpp"
+#include "StarEntity.hpp"
 
 #include "StarIterator.hpp"
-#include "StarEntityMap.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarBlocksAlongLine.hpp"
 #include "StarBiome.hpp"
-#include "StarSky.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarRoot.hpp"
@@ -15,6 +15,9 @@
 
 import star.liquids_database;
 import star.material_database;
+import star.sky;
+
+import star.entity_map;
 
 namespace Star {
 

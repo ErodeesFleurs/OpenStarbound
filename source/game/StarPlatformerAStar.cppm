@@ -1,4 +1,5 @@
-#pragma once
+module;
+#include "StarJson.hpp"
 
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
@@ -74,4 +75,16 @@ namespace PlatformerAStar {
     Maybe<AStar::Search<Edge, Node>> m_astar;
   };
 }
+}
+
+export module star.platformer_astar;
+
+export namespace Star::PlatformerAStar {
+  using ::Star::PlatformerAStar::PathFinder;
+  using ::Star::PlatformerAStar::PathFinderPtr;
+  using ::Star::PlatformerAStar::PathFinderConstPtr;
+  using ::Star::PlatformerAStar::PathFinderWeakPtr;
+  using ::Star::PlatformerAStar::PathFinderConstWeakPtr;
+  using ::Star::PlatformerAStar::PathFinderUPtr;
+  using ::Star::PlatformerAStar::PathFinderConstUPtr;
 }

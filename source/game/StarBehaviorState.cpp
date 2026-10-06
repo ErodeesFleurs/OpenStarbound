@@ -1,6 +1,11 @@
-#include "StarBehaviorState.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarRandom.hpp"
 #include "StarLuaGameConverters.hpp"
+
+import star.behavior_database;
+import star.behavior_state;
 
 namespace Star {
 

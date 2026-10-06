@@ -1,8 +1,15 @@
-#pragma once
+module;
 
-#include "StarQuests.hpp"
+#include "StarSet.hpp"
+#include "StarQuestDescriptor.hpp"
 
 namespace Star {
+
+STAR_CLASS(Quest);
+STAR_CLASS(Player);
+STAR_CLASS(World);
+STAR_CLASS(UniverseClient);
+STAR_CLASS(Entity);
 
 STAR_CLASS(QuestManager);
 
@@ -80,4 +87,52 @@ private:
   Maybe<String> m_onWorldQuestId;
 };
 
+}
+
+export module star.quest_manager;
+
+export namespace Star {
+using ::Star::Quest;
+using ::Star::QuestPtr;
+using ::Star::QuestConstPtr;
+using ::Star::QuestWeakPtr;
+using ::Star::QuestConstWeakPtr;
+using ::Star::QuestUPtr;
+using ::Star::QuestConstUPtr;
+using ::Star::Player;
+using ::Star::PlayerPtr;
+using ::Star::PlayerConstPtr;
+using ::Star::PlayerWeakPtr;
+using ::Star::PlayerConstWeakPtr;
+using ::Star::PlayerUPtr;
+using ::Star::PlayerConstUPtr;
+using ::Star::World;
+using ::Star::WorldPtr;
+using ::Star::WorldConstPtr;
+using ::Star::WorldWeakPtr;
+using ::Star::WorldConstWeakPtr;
+using ::Star::WorldUPtr;
+using ::Star::WorldConstUPtr;
+using ::Star::UniverseClient;
+using ::Star::UniverseClientPtr;
+using ::Star::UniverseClientConstPtr;
+using ::Star::UniverseClientWeakPtr;
+using ::Star::UniverseClientConstWeakPtr;
+using ::Star::UniverseClientUPtr;
+using ::Star::UniverseClientConstUPtr;
+using ::Star::Entity;
+using ::Star::EntityPtr;
+using ::Star::EntityConstPtr;
+using ::Star::EntityWeakPtr;
+using ::Star::EntityConstWeakPtr;
+using ::Star::EntityUPtr;
+using ::Star::EntityConstUPtr;
+using ::Star::QuestManager;
+using ::Star::QuestManagerPtr;
+using ::Star::QuestManagerConstPtr;
+using ::Star::QuestManagerWeakPtr;
+using ::Star::QuestManagerConstWeakPtr;
+using ::Star::QuestManagerUPtr;
+using ::Star::QuestManagerConstUPtr;
+using ::Star::QuestIndicator;
 }

@@ -1,6 +1,13 @@
-#include "StarFallingBlocksAgent.hpp"
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarMap.hpp"
+#include "StarRandom.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldTiles.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+
+import star.falling_blocks_agent;
 
 namespace Star {
 

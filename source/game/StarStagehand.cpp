@@ -7,6 +7,8 @@ import star.behavior_lua_bindings;
 import star.entity_lua_bindings;
 import star.config_lua_bindings;
 
+import star.behavior_state;
+
 namespace Star {
 
 Stagehand::Stagehand(Json const& config)

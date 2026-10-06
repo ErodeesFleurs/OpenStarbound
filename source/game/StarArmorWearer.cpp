@@ -16,6 +16,8 @@ import star.item_database;
 import star.object_database;
 
 
+import star.effect_emitter;
+
 namespace Star {
 
 ArmorWearer::ArmorWearer() : m_lastNude(true) {

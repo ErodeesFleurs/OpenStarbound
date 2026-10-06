@@ -1,5 +1,4 @@
 #include "StarCelestialTypes.hpp"
-#include "StarSky.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
@@ -8,6 +7,13 @@
 #include "StarTime.hpp"
 #include "StarRandomPoint.hpp"
 #include "StarMixer.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarCelestialParameters.hpp"
+#include "StarSkyParameters.hpp"
+#include "StarSkyRenderData.hpp"
+
+import star.sky;
 
 import star.compression;
 import star.celestial_database;

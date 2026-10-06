@@ -1,4 +1,9 @@
-#include "StarSpawner.hpp"
+#include "StarPeriodic.hpp"
+#include "StarIdMap.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarGameTypes.hpp"
+#include "StarCollisionBlock.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
@@ -8,6 +13,8 @@
 #include "StarWeightedPool.hpp"
 #include "StarLogging.hpp"
 
+import star.spawn_type_database;
+import star.spawner;
 import star.monster_database;
 
 namespace Star {

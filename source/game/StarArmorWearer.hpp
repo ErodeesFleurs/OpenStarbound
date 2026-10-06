@@ -2,7 +2,6 @@
 
 #include "StarHumanoid.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarEffectEmitter.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarLightSource.hpp"
@@ -18,6 +17,7 @@ STAR_CLASS(BackArmor);
 STAR_CLASS(ToolUserEntity);
 STAR_CLASS(Item);
 STAR_CLASS(World);
+STAR_CLASS(EffectEmitter);
 
 STAR_CLASS(ArmorWearer);
 

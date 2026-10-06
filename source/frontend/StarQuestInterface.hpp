@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarQuests.hpp"
 #include "StarPane.hpp"
 
 namespace Star {
@@ -11,6 +10,7 @@ STAR_CLASS(Cinematic);
 STAR_CLASS(UniverseClient);
 STAR_CLASS(PaneManager);
 STAR_CLASS(ItemBag);
+STAR_CLASS(Quest);
 
 class QuestLogInterface : public Pane {
 public:

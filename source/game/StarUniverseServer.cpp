@@ -9,7 +9,6 @@ import star.chat_processor;
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarSky.hpp"
 #include "StarTcp.hpp"
 
 import star.ai_database;
@@ -24,6 +23,8 @@ import star.celestial_database;
 
 import star.server_client_context;
 import star.team_manager;
+
+import star.sky;
 
 namespace Star {
 

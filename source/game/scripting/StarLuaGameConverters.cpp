@@ -1,7 +1,10 @@
 #include "StarLuaGameConverters.hpp"
-#include "StarBehaviorState.hpp"
 
 import star.collection_database;
+
+import star.behavior_database;
+import star.behavior_state;
+import star.platformer_astar;
 
 namespace Star {
 

@@ -4,10 +4,11 @@
 #include "StarWorldRenderData.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarRenderer.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarTileDrawer.hpp"
 
 namespace Star {
+
+class WorldCamera;
 
 STAR_CLASS(Assets);
 STAR_CLASS(MaterialDatabase);

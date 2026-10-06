@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarDamage.hpp"
 #include "StarDamageTypes.hpp"
@@ -10,6 +10,9 @@ STAR_CLASS(Entity);
 STAR_CLASS(DamageManager);
 
 struct RemoteHitRequest {
+  friend DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
+  friend DataStream& operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
+
   ConnectionId destinationConnection() const;
 
   EntityId causingEntityId;
@@ -21,6 +24,9 @@ DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
 DataStream& operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
 
 struct RemoteDamageRequest {
+  friend DataStream& operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
+  friend DataStream& operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
+
   ConnectionId destinationConnection() const;
 
   EntityId causingEntityId;
@@ -32,6 +38,9 @@ DataStream& operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest)
 DataStream& operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
 
 struct RemoteDamageNotification {
+  friend DataStream& operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
+  friend DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
+
   EntityId sourceEntityId;
   DamageNotification damageNotification;
 };
@@ -93,4 +102,33 @@ private:
   List<DamageNotification> m_pendingNotifications;
 };
 
+}
+
+export module star.damage_manager;
+
+export namespace Star {
+using ::Star::World;
+using ::Star::WorldPtr;
+using ::Star::WorldConstPtr;
+using ::Star::WorldWeakPtr;
+using ::Star::WorldConstWeakPtr;
+using ::Star::WorldUPtr;
+using ::Star::WorldConstUPtr;
+using ::Star::Entity;
+using ::Star::EntityPtr;
+using ::Star::EntityConstPtr;
+using ::Star::EntityWeakPtr;
+using ::Star::EntityConstWeakPtr;
+using ::Star::EntityUPtr;
+using ::Star::EntityConstUPtr;
+using ::Star::DamageManager;
+using ::Star::DamageManagerPtr;
+using ::Star::DamageManagerConstPtr;
+using ::Star::DamageManagerWeakPtr;
+using ::Star::DamageManagerConstWeakPtr;
+using ::Star::DamageManagerUPtr;
+using ::Star::DamageManagerConstUPtr;
+using ::Star::RemoteHitRequest;
+using ::Star::RemoteDamageRequest;
+using ::Star::RemoteDamageNotification;
 }

@@ -1,9 +1,13 @@
 module;
+#include "StarWorldGeometry.hpp"
+#include "StarGameTypes.hpp"
+#include "StarInterpolation.hpp"
 
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarRoot.hpp"
+
+import star.world_camera;
 
 module star.camera_lua_bindings;
 

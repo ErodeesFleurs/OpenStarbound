@@ -1,10 +1,13 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarPane.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarGameTimers.hpp"
 #include "StarContainerInteractor.hpp"
+
+import star.game_timers;
 
 namespace Star {
 

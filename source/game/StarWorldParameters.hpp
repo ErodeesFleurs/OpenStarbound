@@ -1,9 +1,13 @@
 #pragma once
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
 
 #include "StarGameTypes.hpp"
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
-#include "StarForceRegions.hpp"
+
+import star.force_regions;
 
 namespace Star {
 

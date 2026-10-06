@@ -4,11 +4,12 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
 namespace Star {
+
+STAR_CLASS(Quest);
 
 class ClientCommandProcessor {
 public:

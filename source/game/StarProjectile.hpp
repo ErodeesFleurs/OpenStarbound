@@ -6,10 +6,11 @@
 #include "StarScriptedEntity.hpp"
 #include "StarStatusEffectEntity.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarEffectEmitter.hpp"
 #include "StarMovementController.hpp"
 #include "StarParticle.hpp"
 #include "StarLuaComponents.hpp"
+
+import star.effect_emitter;
 
 namespace Star {
 

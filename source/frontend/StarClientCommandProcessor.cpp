@@ -1,4 +1,5 @@
 #include "StarItemRecipe.hpp"
+#include "StarJsonRpc.hpp"
 #include "StarClientCommandProcessor.hpp"
 #include "StarRoot.hpp"
 #include "StarItem.hpp"
@@ -10,12 +11,16 @@ import star.player_log;
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"
 #include "StarInput.hpp"
+#include "StarQuestDescriptor.hpp"
 
 
 import star.item_database;
 
 import star.player_inventory;
 import star.statistics;
+
+import star.quests;
+import star.quest_manager;
 
 namespace Star {
 

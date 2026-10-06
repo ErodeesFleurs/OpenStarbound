@@ -1,9 +1,12 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarPane.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTimers.hpp"
+
+import star.game_timers;
 
 namespace Star {
 

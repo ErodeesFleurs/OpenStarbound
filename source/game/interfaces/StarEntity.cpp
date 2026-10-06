@@ -1,6 +1,6 @@
 #include "StarEntity.hpp"
-#include "StarDamageManager.hpp"
 #include "StarNetCompatibility.hpp"
+
 
 namespace Star {
 

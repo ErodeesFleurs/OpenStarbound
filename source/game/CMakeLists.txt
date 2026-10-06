@@ -2,7 +2,6 @@ set (star_game_HEADERS
     StarActorMovementController.hpp
     StarAiTypes.hpp
     StarArmorWearer.hpp
-    StarBehaviorState.hpp
     StarBiome.hpp
     StarBiomePlacement.hpp
     StarCelestialCoordinate.hpp
@@ -13,21 +12,14 @@ set (star_game_HEADERS
     StarChatTypes.hpp
     StarCodex.hpp
     StarCollisionBlock.hpp
-    StarCollisionGenerator.hpp
     StarCommandProcessor.hpp
     StarDamage.hpp
-    StarDamageManager.hpp
     StarDamageTypes.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
-    StarEffectEmitter.hpp
-    StarEntityMap.hpp
     StarEntityRendering.hpp
     StarEntityRenderingTypes.hpp
     StarEntitySplash.hpp
-    StarFallingBlocksAgent.hpp
-    StarForceRegions.hpp
-    StarGameTimers.hpp
     StarGameTypes.hpp
     StarHumanoid.hpp
     StarInput.hpp
@@ -52,22 +44,16 @@ set (star_game_HEADERS
     StarParticle.hpp
     StarPlant.hpp
     StarPlantDrop.hpp
-    StarPlatformerAStar.hpp
     StarPlatformerAStarTypes.hpp
     StarPlayer.hpp
     StarPlayerTypes.hpp
     StarProjectile.hpp
     StarQuestDescriptor.hpp
-    StarQuestManager.hpp
-    StarQuests.hpp
     StarRoot.hpp
     StarRootLoader.hpp
-    StarSky.hpp
     StarSkyParameters.hpp
     StarSkyRenderData.hpp
     StarSkyTypes.hpp
-    StarSongbook.hpp
-    StarSpawner.hpp
     StarStagehand.hpp
     StarStatusController.hpp
     StarStatusTypes.hpp
@@ -86,10 +72,8 @@ set (star_game_HEADERS
     StarUniverseServer.hpp
     StarVehicle.hpp
     StarWarping.hpp
-    StarWeather.hpp
     StarWeatherTypes.hpp
     StarWiring.hpp
-    StarWorldCamera.hpp
     StarWorldClient.hpp
     StarWorldClientThread.hpp
     StarWorldImpl.hpp
@@ -156,7 +140,6 @@ set (star_game_SOURCES
     StarActorMovementController.cpp
     StarAiTypes.cpp
     StarArmorWearer.cpp
-    StarBehaviorState.cpp
     StarBiome.cpp
     StarBiomePlacement.cpp
     StarCelestialCoordinate.cpp
@@ -167,21 +150,14 @@ set (star_game_SOURCES
     StarChatTypes.cpp
     StarCodex.cpp
     StarCollisionBlock.cpp
-    StarCollisionGenerator.cpp
     StarCommandProcessor.cpp
     StarDamage.cpp
-    StarDamageManager.cpp
     StarDamageTypes.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
-    StarEffectEmitter.cpp
-    StarEntityMap.cpp
     StarEntityRendering.cpp
     StarEntityRenderingTypes.cpp
     StarEntitySplash.cpp
-    StarFallingBlocksAgent.cpp
-    StarForceRegions.cpp
-    StarGameTimers.cpp
     StarGameTypes.cpp
     StarHumanoid.cpp
     StarInput.cpp
@@ -205,22 +181,16 @@ set (star_game_SOURCES
     StarParticle.cpp
     StarPlant.cpp
     StarPlantDrop.cpp
-    StarPlatformerAStar.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
     StarPlayerTypes.cpp
     StarProjectile.cpp
     StarQuestDescriptor.cpp
-    StarQuestManager.cpp
-    StarQuests.cpp
     StarRoot.cpp
     StarRootLoader.cpp
-    StarSky.cpp
     StarSkyParameters.cpp
     StarSkyRenderData.cpp
     StarSkyTypes.cpp
-    StarSongbook.cpp
-    StarSpawner.cpp
     StarStagehand.cpp
     StarStatusController.cpp
     StarStatusTypes.cpp
@@ -238,10 +208,8 @@ set (star_game_SOURCES
     StarUniverseServer.cpp
     StarVehicle.cpp
     StarWarping.cpp
-    StarWeather.cpp
     StarWeatherTypes.cpp
     StarWiring.cpp
-    StarWorldCamera.cpp
     StarWorldClient.cpp
     StarWorldClientThread.cpp
     StarWorldLayout.cpp
@@ -398,6 +366,22 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarInterpolationTracker.cppm
     StarParticleManager.cppm
     StarWireProcessor.cppm
+    StarEffectEmitter.cppm
+    StarDamageManager.cppm
+    StarBehaviorState.cppm
+    StarSpawner.cppm
+    StarSky.cppm
+    StarWeather.cppm
+    StarQuests.cppm
+    StarQuestManager.cppm
+    StarGameTimers.cppm
+    StarForceRegions.cppm
+    StarCollisionGenerator.cppm
+    StarFallingBlocksAgent.cppm
+    StarEntityMap.cppm
+    StarPlatformerAStar.cppm
+    StarWorldCamera.cppm
+    StarSongbook.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -442,7 +426,25 @@ add_library (star_game_modules STATIC
     StarInterpolationTracker.cpp
     StarParticleManager.cpp
     StarWireProcessor.cpp
+    StarEffectEmitter.cpp
+    StarDamageManager.cpp
+    StarBehaviorState.cpp
+    StarSpawner.cpp
+    StarSky.cpp
+    StarWeather.cpp
+    StarQuests.cpp
+    StarQuestManager.cpp
+    StarGameTimers.cpp
+    StarForceRegions.cpp
+    StarCollisionGenerator.cpp
+    StarFallingBlocksAgent.cpp
+    StarEntityMap.cpp
+    StarPlatformerAStar.cpp
+    StarWorldCamera.cpp
+    StarSongbook.cpp
     scripting/StarCameraLuaBindings.cpp
+    scripting/StarNetworkedAnimatorLuaBindings.cpp
+    scripting/StarScriptedAnimatorLuaBindings.cpp
     scripting/StarEntityLuaBindings.cpp
     scripting/StarItemLuaBindings.cpp
     scripting/StarPlayerLuaBindings.cpp

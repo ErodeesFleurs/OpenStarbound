@@ -1,3 +1,9 @@
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarMap.hpp"
+#include "StarRandom.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldTiles.hpp"
 #include "StarItem.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarWorldServer.hpp"
@@ -17,7 +23,6 @@
 #include "StarProjectile.hpp"
 #include "StarPlayer.hpp"
 #include "StarLiquidTypes.hpp"
-#include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
 import star.universe_settings;
 #include "StarUniverseServer.hpp"
@@ -32,6 +37,11 @@ import star.biome_database;
 import star.wire_processor;
 import star.entity_factory;
 
+
+import star.sky;
+import star.weather;
+
+import star.falling_blocks_agent;
 
 namespace Star {
 

@@ -1,3 +1,5 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarAssetPath.hpp"
@@ -9,11 +11,12 @@
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarLua.hpp"
-#include "StarPlatformerAStar.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarAStar.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarPlatformerAStarTypes.hpp"
+import star.platformer_astar;
 #include "StarWorld.hpp"
 #include "StarBlocksAlongLine.hpp"
-#include "StarSky.hpp"
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
@@ -51,6 +54,9 @@ import star.image_metadata_database;
 
 import star.player_inventory;
 import star.item_bag;
+
+import star.sky;
+
 
 namespace Star {
 

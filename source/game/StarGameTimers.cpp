@@ -1,6 +1,9 @@
-#include "StarGameTimers.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+
+import star.game_timers;
 
 namespace Star {
 

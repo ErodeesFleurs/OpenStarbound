@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarEither.hpp"
 #include "StarNetElementSystem.hpp"
@@ -187,4 +187,30 @@ private:
   NetElementFloat m_flyingTimerNetState;
 };
 
+}
+
+export module star.sky;
+
+export namespace Star {
+using ::Star::Clock;
+using ::Star::ClockPtr;
+using ::Star::ClockConstPtr;
+using ::Star::ClockWeakPtr;
+using ::Star::ClockConstWeakPtr;
+using ::Star::ClockUPtr;
+using ::Star::ClockConstUPtr;
+using ::Star::AudioInstance;
+using ::Star::AudioInstancePtr;
+using ::Star::AudioInstanceConstPtr;
+using ::Star::AudioInstanceWeakPtr;
+using ::Star::AudioInstanceConstWeakPtr;
+using ::Star::AudioInstanceUPtr;
+using ::Star::AudioInstanceConstUPtr;
+using ::Star::Sky;
+using ::Star::SkyPtr;
+using ::Star::SkyConstPtr;
+using ::Star::SkyWeakPtr;
+using ::Star::SkyConstWeakPtr;
+using ::Star::SkyUPtr;
+using ::Star::SkyConstUPtr;
 }

@@ -19,11 +19,13 @@
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
 #include "StarEnvironmentPainter.hpp"
+#include "StarSkyParameters.hpp"
 
 
 import star.celestial_database;
 
 import star.player_storage;
+import star.sky;
 
 namespace Star {
 

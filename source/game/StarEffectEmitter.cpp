@@ -1,9 +1,11 @@
-#include "StarEffectEmitter.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarGameTypes.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarDataStreamExtra.hpp"
 
+import star.effect_emitter;
 import star.effect_source_database;
 import star.particle_database;
 

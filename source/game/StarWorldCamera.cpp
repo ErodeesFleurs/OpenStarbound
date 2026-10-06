@@ -1,4 +1,8 @@
-#include "StarWorldCamera.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarGameTypes.hpp"
+#include "StarInterpolation.hpp"
+
+import star.world_camera;
 
 namespace Star {
 

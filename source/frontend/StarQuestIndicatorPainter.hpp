@@ -1,7 +1,11 @@
 #pragma once
+#include "StarWorldGeometry.hpp"
+#include "StarGameTypes.hpp"
+#include "StarInterpolation.hpp"
 
-#include "StarWorldCamera.hpp"
 #include "StarWorldClient.hpp"
+
+import star.world_camera;
 
 namespace Star {
 

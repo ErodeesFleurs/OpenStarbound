@@ -12,7 +12,6 @@
 #include "StarCodexInterface.hpp"
 #include "StarSongbookInterface.hpp"
 #include "StarQuestInterface.hpp"
-#include "StarQuestManager.hpp"
 #include "StarPopupInterface.hpp"
 #include "StarConfirmationDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
@@ -66,6 +65,8 @@ import star.celestial_database;
 import star.player_inventory;
 import star.client_context;
 import star.player_storage;
+
+import star.quest_manager;
 
 namespace Star {
 

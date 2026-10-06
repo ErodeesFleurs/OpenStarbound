@@ -2,11 +2,12 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
-#include "StarQuestManager.hpp"
 #include "StarWorldClient.hpp"
 #include "StarUniverseClient.hpp"
 
 import star.animation;
+import star.quest_manager;
+
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client) {

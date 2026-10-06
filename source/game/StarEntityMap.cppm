@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
@@ -190,4 +190,32 @@ List<shared_ptr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
   return list;
 }
 
+}
+
+export module star.entity_map;
+
+export namespace Star {
+  using ::Star::EntityMapExceptionTag;
+  using ::Star::EntityMapException;
+  using ::Star::EntityMap;
+  using ::Star::EntityMapPtr;
+  using ::Star::EntityMapConstPtr;
+  using ::Star::EntityMapWeakPtr;
+  using ::Star::EntityMapConstWeakPtr;
+  using ::Star::EntityMapUPtr;
+  using ::Star::EntityMapConstUPtr;
+  using ::Star::TileEntity;
+  using ::Star::TileEntityPtr;
+  using ::Star::TileEntityConstPtr;
+  using ::Star::TileEntityWeakPtr;
+  using ::Star::TileEntityConstWeakPtr;
+  using ::Star::TileEntityUPtr;
+  using ::Star::TileEntityConstUPtr;
+  using ::Star::InteractiveEntity;
+  using ::Star::InteractiveEntityPtr;
+  using ::Star::InteractiveEntityConstPtr;
+  using ::Star::InteractiveEntityWeakPtr;
+  using ::Star::InteractiveEntityConstWeakPtr;
+  using ::Star::InteractiveEntityUPtr;
+  using ::Star::InteractiveEntityConstUPtr;
 }

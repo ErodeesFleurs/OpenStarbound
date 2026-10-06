@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
@@ -195,4 +195,40 @@ private:
 // its purpose is for previewing dialogs only.
 QuestPtr createPreviewQuest(
     String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
+}
+
+export module star.quests;
+
+export namespace Star {
+using ::Star::Quest;
+using ::Star::QuestPtr;
+using ::Star::QuestConstPtr;
+using ::Star::QuestWeakPtr;
+using ::Star::QuestConstWeakPtr;
+using ::Star::QuestUPtr;
+using ::Star::QuestConstUPtr;
+using ::Star::Player;
+using ::Star::PlayerPtr;
+using ::Star::PlayerConstPtr;
+using ::Star::PlayerWeakPtr;
+using ::Star::PlayerConstWeakPtr;
+using ::Star::PlayerUPtr;
+using ::Star::PlayerConstUPtr;
+using ::Star::UniverseClient;
+using ::Star::UniverseClientPtr;
+using ::Star::UniverseClientConstPtr;
+using ::Star::UniverseClientWeakPtr;
+using ::Star::UniverseClientConstWeakPtr;
+using ::Star::UniverseClientUPtr;
+using ::Star::UniverseClientConstUPtr;
+using ::Star::QuestTemplate;
+using ::Star::QuestTemplatePtr;
+using ::Star::QuestTemplateConstPtr;
+using ::Star::QuestTemplateWeakPtr;
+using ::Star::QuestTemplateConstWeakPtr;
+using ::Star::QuestTemplateUPtr;
+using ::Star::QuestTemplateConstUPtr;
+using ::Star::QuestState;
+using ::Star::QuestStateNames;
+using ::Star::createPreviewQuest;
 }

@@ -1,4 +1,7 @@
-#include "StarSongbook.hpp"
+#include "StarThread.hpp"
+#include "StarJson.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
@@ -7,6 +10,8 @@
 #include "StarLogging.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarTime.hpp"
+
+import star.songbook;
 
 namespace Star {
 

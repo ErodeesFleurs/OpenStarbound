@@ -2,7 +2,6 @@
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarDamageManager.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
 #include "StarWeightedPool.hpp"
@@ -25,6 +24,8 @@ import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 
 import star.monster_database;
+import star.behavior_state;
+
 namespace Star {
 
 Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {

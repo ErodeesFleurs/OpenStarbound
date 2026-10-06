@@ -4,8 +4,9 @@
 #include "StarVariant.hpp"
 #include "StarJson.hpp"
 #include "StarEntity.hpp"
-#include "StarForceRegions.hpp"
 #include "StarCollisionBlock.hpp"
+
+import star.force_regions;
 
 namespace Star {
 

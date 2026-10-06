@@ -1,4 +1,8 @@
-#include "StarCollisionGenerator.hpp"
+#include "StarCollisionBlock.hpp"
+#include "StarMultiArray.hpp"
+#include <functional>
+
+import star.collision_generator;
 
 namespace Star {
 

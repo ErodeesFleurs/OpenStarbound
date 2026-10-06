@@ -1,7 +1,11 @@
-#include "StarWeather.hpp"
+#include "StarWeatherTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarParallax.hpp"
 
 #include "gtest/gtest.h"
+
+import star.weather;
 
 using namespace Star;
 

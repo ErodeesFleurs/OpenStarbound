@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
@@ -113,4 +113,44 @@ private:
   NetElementString m_instrumentNetState;
 };
 
+}
+
+export module star.songbook;
+
+export namespace Star {
+  using ::Star::Audio;
+  using ::Star::AudioPtr;
+  using ::Star::AudioConstPtr;
+  using ::Star::AudioWeakPtr;
+  using ::Star::AudioConstWeakPtr;
+  using ::Star::AudioUPtr;
+  using ::Star::AudioConstUPtr;
+  using ::Star::AudioInstance;
+  using ::Star::AudioInstancePtr;
+  using ::Star::AudioInstanceConstPtr;
+  using ::Star::AudioInstanceWeakPtr;
+  using ::Star::AudioInstanceConstWeakPtr;
+  using ::Star::AudioInstanceUPtr;
+  using ::Star::AudioInstanceConstUPtr;
+  using ::Star::World;
+  using ::Star::WorldPtr;
+  using ::Star::WorldConstPtr;
+  using ::Star::WorldWeakPtr;
+  using ::Star::WorldConstWeakPtr;
+  using ::Star::WorldUPtr;
+  using ::Star::WorldConstUPtr;
+  using ::Star::Songbook;
+  using ::Star::SongbookPtr;
+  using ::Star::SongbookConstPtr;
+  using ::Star::SongbookWeakPtr;
+  using ::Star::SongbookConstWeakPtr;
+  using ::Star::SongbookUPtr;
+  using ::Star::SongbookConstUPtr;
+  using ::Star::RenderCallback;
+  using ::Star::RenderCallbackPtr;
+  using ::Star::RenderCallbackConstPtr;
+  using ::Star::RenderCallbackWeakPtr;
+  using ::Star::RenderCallbackConstWeakPtr;
+  using ::Star::RenderCallbackUPtr;
+  using ::Star::RenderCallbackConstUPtr;
 }

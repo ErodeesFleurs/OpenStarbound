@@ -4,7 +4,6 @@
 #include "StarWorldTiles.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarCelestialTypes.hpp"
-#include "StarDamageManager.hpp"
 #include "StarChatTypes.hpp"
 #include "StarUuid.hpp"
 #include "StarTileModification.hpp"
@@ -16,6 +15,8 @@
 #include "StarPlayerTypes.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarNetCompatibility.hpp"
+
+import star.damage_manager;
 
 namespace Star {
 

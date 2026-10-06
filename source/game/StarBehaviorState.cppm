@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -120,4 +120,52 @@ private:
   float m_lastDt;
 };
 
+}
+
+export module star.behavior_state;
+
+export namespace Star {
+using ::Star::Blackboard;
+using ::Star::BlackboardPtr;
+using ::Star::BlackboardConstPtr;
+using ::Star::BlackboardWeakPtr;
+using ::Star::BlackboardConstWeakPtr;
+using ::Star::BlackboardUPtr;
+using ::Star::BlackboardConstUPtr;
+using ::Star::BehaviorState;
+using ::Star::BehaviorStatePtr;
+using ::Star::BehaviorStateConstPtr;
+using ::Star::BehaviorStateWeakPtr;
+using ::Star::BehaviorStateConstWeakPtr;
+using ::Star::BehaviorStateUPtr;
+using ::Star::BehaviorStateConstUPtr;
+using ::Star::ActionState;
+using ::Star::ActionStatePtr;
+using ::Star::ActionStateConstPtr;
+using ::Star::ActionStateWeakPtr;
+using ::Star::ActionStateConstWeakPtr;
+using ::Star::ActionStateUPtr;
+using ::Star::ActionStateConstUPtr;
+using ::Star::DecoratorState;
+using ::Star::DecoratorStatePtr;
+using ::Star::DecoratorStateConstPtr;
+using ::Star::DecoratorStateWeakPtr;
+using ::Star::DecoratorStateConstWeakPtr;
+using ::Star::DecoratorStateUPtr;
+using ::Star::DecoratorStateConstUPtr;
+using ::Star::CompositeState;
+using ::Star::CompositeStatePtr;
+using ::Star::CompositeStateConstPtr;
+using ::Star::CompositeStateWeakPtr;
+using ::Star::CompositeStateConstWeakPtr;
+using ::Star::CompositeStateUPtr;
+using ::Star::CompositeStateConstUPtr;
+using ::Star::BehaviorExceptionTag;
+using ::Star::BehaviorException;
+using ::Star::BlackboardTypes;
+using ::Star::NodeState;
+using ::Star::NodeStatePtr;
+using ::Star::Coroutine;
+using ::Star::NodeStatus;
+using ::Star::ActionReturn;
 }

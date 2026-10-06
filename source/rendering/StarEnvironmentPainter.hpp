@@ -4,11 +4,12 @@
 #include "StarWorldRenderData.hpp"
 #include "StarAssetTextureGroup.hpp"
 #include "StarRenderer.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarPerlin.hpp"
 #include "StarRandomPoint.hpp"
 
 namespace Star {
+
+class WorldCamera;
 
 STAR_CLASS(EnvironmentPainter);
 

@@ -15,7 +15,6 @@
 #include "StarListWidget.hpp"
 #include "StarTabSet.hpp"
 #include "StarAssets.hpp"
-#include "StarQuestManager.hpp"
 
 import star.item_tooltip;
 import star.item_database;
@@ -23,6 +22,8 @@ import star.item_database;
 
 import star.player_inventory;
 import star.item_bag;
+
+import star.quest_manager;
 
 namespace Star {
 

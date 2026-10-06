@@ -4,7 +4,7 @@
 #include "StarLuaConverters.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarCollisionBlock.hpp"
-#include "StarPlatformerAStar.hpp"
+#include "StarPlatformerAStarTypes.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarDamage.hpp"
 #include "StarSystemWorld.hpp"

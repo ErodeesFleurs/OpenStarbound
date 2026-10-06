@@ -1,13 +1,16 @@
 #pragma once
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 
 #include "StarAiTypes.hpp"
-#include "StarGameTimers.hpp"
 #include "StarWarping.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
 import star.animation;
 import star.tech_database;
+
+import star.game_timers;
 
 namespace Star {
 
