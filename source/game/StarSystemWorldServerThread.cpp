@@ -1,4 +1,7 @@
-#include "StarSystemWorldServerThread.hpp"
+#include "StarSystemWorldServer.hpp"
+#include "StarThread.hpp"
+#include "StarNetPackets.hpp"
+import star.system_world_server_thread;
 #include "StarRoot.hpp"
 #include "StarNetPackets.hpp"
 

@@ -1,7 +1,9 @@
 module;
 
 #include "StarOrderedMap.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarBiMap.hpp"
 #include "StarJson.hpp"
 #include "StarWorldStorage.hpp"

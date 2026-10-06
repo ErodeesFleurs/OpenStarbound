@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarVariant.hpp"
@@ -81,4 +81,12 @@ private:
   List<Argument> m_arguments;
 };
 
+}
+
+export module star.option_parser;
+
+export namespace Star {
+  using ::Star::OptionParserExceptionTag;
+  using ::Star::OptionParserException;
+  using ::Star::OptionParser;
 }

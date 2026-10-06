@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarHostAddress.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
 #include "StarThread.hpp"
 
 namespace Star {
@@ -95,4 +97,30 @@ protected:
   HostAddressWithPort m_localAddress;
 };
 
+}
+
+export module star.socket;
+
+export namespace Star {
+  using ::Star::SocketClosedExceptionTag;
+  using ::Star::SocketClosedException;
+  using ::Star::SocketMode;
+  using ::Star::SocketPollQueryEntry;
+  using ::Star::SocketPollResultEntry;
+  using ::Star::SocketPollQuery;
+  using ::Star::SocketPollResult;
+  using ::Star::SocketImpl;
+  using ::Star::SocketImplPtr;
+  using ::Star::SocketImplConstPtr;
+  using ::Star::SocketImplWeakPtr;
+  using ::Star::SocketImplConstWeakPtr;
+  using ::Star::SocketImplUPtr;
+  using ::Star::SocketImplConstUPtr;
+  using ::Star::Socket;
+  using ::Star::SocketPtr;
+  using ::Star::SocketConstPtr;
+  using ::Star::SocketWeakPtr;
+  using ::Star::SocketConstWeakPtr;
+  using ::Star::SocketUPtr;
+  using ::Star::SocketConstUPtr;
 }

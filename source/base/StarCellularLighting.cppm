@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarEither.hpp"
 #include "StarRect.hpp"
@@ -6,7 +6,9 @@
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarInterpolation.hpp"
-#include "StarCellularLightArray.hpp"
+#include "StarList.hpp"
+#include "StarVector.hpp"
+import star.cellular_light_array;
 #include "StarThread.hpp"
 
 namespace Star {
@@ -196,4 +198,14 @@ inline void CellularLightingCalculator::setCellIndex(size_t cellIndex, Vec3F con
     m_lightArray.left().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
 }
 
+}
+
+export module star.cellular_lighting;
+
+export namespace Star {
+  using ::Star::LightmapExceptionTag;
+  using ::Star::LightmapException;
+  using ::Star::Lightmap;
+  using ::Star::CellularLightingCalculator;
+  using ::Star::CellularLightIntensityCalculator;
 }

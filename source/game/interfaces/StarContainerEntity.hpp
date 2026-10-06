@@ -2,7 +2,10 @@
 
 #include "StarGameTypes.hpp"
 #include "StarTileEntity.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarRpcPromise.hpp"
 
 namespace Star {

@@ -44,7 +44,15 @@ import star.drawable;
 #include "StarGuiTypes.hpp"
 #include "StarRenderer.hpp"
 #include "StarKeyBindings.hpp"
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 
 namespace Star {
 

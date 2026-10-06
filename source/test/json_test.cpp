@@ -1,6 +1,8 @@
 #include "StarJson.hpp"
 #include "StarFile.hpp"
-#include "StarJsonPath.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarJson.hpp"
+import star.json_path;
 
 #include "gtest/gtest.h"
 import star.json_patch;

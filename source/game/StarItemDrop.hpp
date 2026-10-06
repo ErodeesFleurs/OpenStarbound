@@ -9,7 +9,10 @@
 #include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
 import star.movement_controller;
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarMobileEntity.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarString.hpp"

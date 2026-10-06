@@ -4,7 +4,10 @@
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarWorldStorage.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"

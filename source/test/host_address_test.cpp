@@ -1,4 +1,6 @@
-#include "StarHostAddress.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
 
 #include "gtest/gtest.h"
 

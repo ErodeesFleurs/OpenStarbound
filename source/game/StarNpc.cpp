@@ -1,9 +1,16 @@
 #include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+import star.item_database;
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarNpc.hpp"
@@ -11,14 +18,40 @@ import star.item_recipe;
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarEncode.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarDirectives.hpp"
+import star.animation;
+import star.particle;
+
+import star.light_source;
+import star.entity_rendering;
 #include "StarTime.hpp"
 #include "StarArmors.hpp"
 #include "StarFireableItem.hpp"
@@ -35,7 +68,6 @@ import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.dance_database;
 import star.emote_processor;
-import star.item_database;
 
 
 

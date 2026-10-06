@@ -20,7 +20,10 @@ import star.tile_damage;
 #include "StarVersion.hpp"
 import star.collision_generator;
 import star.world_tiles;
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
@@ -49,7 +52,9 @@ import star.celestial_types;
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 import star.chat_types;
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarGameTypes.hpp"
@@ -63,7 +68,9 @@ import star.tile_modification;
 #include "StarJson.hpp"
 import star.interaction_types;
 #include "StarStrongTypedef.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;

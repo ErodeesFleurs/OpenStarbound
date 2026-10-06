@@ -2,7 +2,10 @@
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParametricFunction.hpp"

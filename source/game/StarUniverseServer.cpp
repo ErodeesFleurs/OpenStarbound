@@ -27,7 +27,11 @@ import star.celestial_types;
 #include "StarAssets.hpp"
 import star.chat_processor;
 #include "StarGameTypes.hpp"
-#include "StarShellParser.hpp"
+#include "StarString.hpp"
+#include "StarEncode.hpp"
+#include "StarBytes.hpp"
+#include "StarFormat.hpp"
+import star.shell_parser;
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarJson.hpp"
@@ -38,7 +42,13 @@ import star.configuration;
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarTcp.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
 
 import star.ai_database;
 import star.versioning_database;

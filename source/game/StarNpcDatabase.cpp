@@ -18,7 +18,10 @@ import star.status_types;
 #include "StarAssetPath.hpp"
 import star.animation;
 import star.particle;
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarDataStreamDevices.hpp"
 #include "StarEncode.hpp"
 #include "StarRandom.hpp"

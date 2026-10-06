@@ -8,7 +8,8 @@ module;
 import star.configuration;
 #include "StarException.hpp"
 #include "StarFormat.hpp"
-#include "StarWorkerPool.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
 #include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
 #include "StarRpcPromise.hpp"

@@ -1,4 +1,5 @@
-#include "StarRootBase.hpp"
+#include "StarAssets.hpp"
+import star.root_base;
 
 namespace Star {
   atomic<RootBase*> RootBase::s_singleton;

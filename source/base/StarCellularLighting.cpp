@@ -1,4 +1,14 @@
-#include "StarCellularLighting.hpp"
+#include "StarEither.hpp"
+#include "StarRect.hpp"
+#include "StarImage.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarInterpolation.hpp"
+#include "StarList.hpp"
+#include "StarVector.hpp"
+import star.cellular_light_array;
+#include "StarThread.hpp"
+import star.cellular_lighting;
 
 namespace Star {
 

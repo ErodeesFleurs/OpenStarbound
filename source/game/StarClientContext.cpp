@@ -11,7 +11,9 @@ import star.damage_types;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarStrongTypedef.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;

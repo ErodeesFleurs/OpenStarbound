@@ -8,7 +8,11 @@
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
 import star.configuration;
-#include "StarOptionParser.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarOrderedSet.hpp"
+import star.option_parser;
 #include "StarVersion.hpp"
 import star.version_option_parser;
 

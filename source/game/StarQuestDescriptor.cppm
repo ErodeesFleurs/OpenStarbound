@@ -4,7 +4,10 @@ module;
 #include "StarPoly.hpp"
 #include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;

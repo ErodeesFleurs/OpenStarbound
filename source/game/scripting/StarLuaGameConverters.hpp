@@ -15,7 +15,23 @@ import star.collision_block;
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 import star.platformer_astar_types;
-#include "StarActorMovementController.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarWorld.hpp"
+#include "StarPhysicsEntity.hpp"
+import star.movement_controller;
+#include "StarVector.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarAStar.hpp"
+import star.platformer_astar_types;
+#include "StarAnchorableEntity.hpp"
+
+import star.game_timers;
+import star.actor_movement_controller;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
@@ -36,7 +52,15 @@ import star.damage;
 #include "StarAssetPath.hpp"
 import star.drawable;
 #include "StarEntity.hpp"
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 
 namespace Star {
 

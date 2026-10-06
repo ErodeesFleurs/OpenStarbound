@@ -2,7 +2,10 @@ module;
 
 #include "StarGameTypes.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"

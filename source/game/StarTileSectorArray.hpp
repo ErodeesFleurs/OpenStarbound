@@ -3,7 +3,8 @@
 #include "StarRect.hpp"
 #include "StarSectorArray2D.hpp"
 
-#include "StarWorkerPool.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
 
 namespace Star {
 

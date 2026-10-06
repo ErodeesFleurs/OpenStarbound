@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
@@ -79,3 +79,29 @@ struct hash<ItemDescriptor> {
 }
 
 template <> struct fmt::formatter<Star::ItemDescriptor> : ostream_formatter {};
+
+export module star.item_descriptor;
+
+export namespace Star {
+  using ::Star::ItemDescriptor;
+  using ::Star::ItemDescriptorPtr;
+  using ::Star::ItemDescriptorConstPtr;
+  using ::Star::ItemDescriptorWeakPtr;
+  using ::Star::ItemDescriptorConstWeakPtr;
+  using ::Star::ItemDescriptorUPtr;
+  using ::Star::ItemDescriptorConstUPtr;
+  using ::Star::Item;
+  using ::Star::ItemPtr;
+  using ::Star::ItemConstPtr;
+  using ::Star::ItemWeakPtr;
+  using ::Star::ItemConstWeakPtr;
+  using ::Star::ItemUPtr;
+  using ::Star::ItemConstUPtr;
+  using ::Star::VersionedJson;
+  using ::Star::VersionedJsonPtr;
+  using ::Star::VersionedJsonConstPtr;
+  using ::Star::VersionedJsonWeakPtr;
+  using ::Star::VersionedJsonConstWeakPtr;
+  using ::Star::VersionedJsonUPtr;
+  using ::Star::VersionedJsonConstUPtr;
+}

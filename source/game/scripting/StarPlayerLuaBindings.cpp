@@ -6,7 +6,10 @@ module;
 #include "StarLuaRoot.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_database;
 import star.item_recipe;
@@ -17,7 +20,9 @@ import star.item_recipe;
 import star.player_tech;
 import star.player_log;
 #include "StarStrongTypedef.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
@@ -30,7 +35,10 @@ import star.player_codexes;
 #include "StarPoly.hpp"
 #include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 import star.quest_descriptor;

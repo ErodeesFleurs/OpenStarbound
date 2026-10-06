@@ -1,4 +1,5 @@
-#include "StarBlocksAlongLine.hpp"
+#include "StarVector.hpp"
+import star.blocks_along_line;
 #include "StarList.hpp"
 
 #include "gtest/gtest.h"

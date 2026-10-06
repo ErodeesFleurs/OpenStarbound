@@ -2,7 +2,10 @@ module;
 
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
@@ -18,14 +21,19 @@ import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;

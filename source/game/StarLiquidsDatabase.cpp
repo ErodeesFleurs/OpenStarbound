@@ -7,7 +7,10 @@ import star.collision_block;
 #include "StarGameTypes.hpp"
 #include "StarList.hpp"
 #include "StarCellularLiquid.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarLexicalCast.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"

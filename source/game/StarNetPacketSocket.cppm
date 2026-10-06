@@ -1,16 +1,26 @@
-#pragma once
+module;
 
-#include "StarTcp.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
 #include <atomic>
 #include <memory>
 
 #include "StarThread.hpp"
 #include "StarP2PNetworkingService.hpp"
-#include "StarNetPackets.hpp"
+#include "StarByteArray.hpp"
+#include "StarMap.hpp"
 #include "StarZSTDCompression.hpp"
 #include "StarNetCompatibility.hpp"
 
 namespace Star {
+
+STAR_STRUCT(Packet);
+enum class PacketType : uint8_t;
 
 STAR_CLASS(PacketSocket);
 STAR_CLASS(LocalPacketSocket);
@@ -190,4 +200,40 @@ private:
   Deque<ByteArray> m_inputMessages;
 };
 
+}
+
+export module star.net_packet_socket;
+
+export namespace Star {
+  using ::Star::PacketStats;
+  using ::Star::PacketStatCollector;
+  using ::Star::CompressedPacketSocket;
+  using ::Star::PacketSocket;
+  using ::Star::PacketSocketPtr;
+  using ::Star::PacketSocketConstPtr;
+  using ::Star::PacketSocketWeakPtr;
+  using ::Star::PacketSocketConstWeakPtr;
+  using ::Star::PacketSocketUPtr;
+  using ::Star::PacketSocketConstUPtr;
+  using ::Star::LocalPacketSocket;
+  using ::Star::LocalPacketSocketPtr;
+  using ::Star::LocalPacketSocketConstPtr;
+  using ::Star::LocalPacketSocketWeakPtr;
+  using ::Star::LocalPacketSocketConstWeakPtr;
+  using ::Star::LocalPacketSocketUPtr;
+  using ::Star::LocalPacketSocketConstUPtr;
+  using ::Star::TcpPacketSocket;
+  using ::Star::TcpPacketSocketPtr;
+  using ::Star::TcpPacketSocketConstPtr;
+  using ::Star::TcpPacketSocketWeakPtr;
+  using ::Star::TcpPacketSocketConstWeakPtr;
+  using ::Star::TcpPacketSocketUPtr;
+  using ::Star::TcpPacketSocketConstUPtr;
+  using ::Star::P2PPacketSocket;
+  using ::Star::P2PPacketSocketPtr;
+  using ::Star::P2PPacketSocketConstPtr;
+  using ::Star::P2PPacketSocketWeakPtr;
+  using ::Star::P2PPacketSocketConstWeakPtr;
+  using ::Star::P2PPacketSocketUPtr;
+  using ::Star::P2PPacketSocketConstUPtr;
 }

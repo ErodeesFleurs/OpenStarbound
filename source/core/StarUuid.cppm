@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
@@ -10,10 +10,14 @@ struct UuidExceptionTag {
 };
 using UuidException = StarError<UuidExceptionTag, StarException>;
 
-size_t const UuidSize = 16;
+inline constexpr size_t UuidSize = 16;
 
 class Uuid {
 public:
+  friend DataStream& operator>>(DataStream& ds, Uuid& uuid);
+  friend DataStream& operator<<(DataStream& ds, Uuid const& uuid);
+  friend struct hash<Uuid>;
+
   Uuid();
   explicit Uuid(ByteArray const& bytes);
   explicit Uuid(String const& hex);
@@ -41,4 +45,13 @@ struct hash<Uuid> {
 DataStream& operator>>(DataStream& ds, Uuid& uuid);
 DataStream& operator<<(DataStream& ds, Uuid const& uuid);
 
+}
+
+export module star.uuid;
+
+export namespace Star {
+  using ::Star::UuidExceptionTag;
+  using ::Star::UuidException;
+  using ::Star::UuidSize;
+  using ::Star::Uuid;
 }

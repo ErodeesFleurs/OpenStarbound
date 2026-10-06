@@ -14,7 +14,30 @@ import star.movement_controller;
 #include "StarAssetPath.hpp"
 #include "StarAssets.hpp"
 #include "StarImage.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarDirectives.hpp"
+import star.animation;
+import star.particle;
+
+import star.light_source;
+import star.entity_rendering;
 
 import star.particle_database;
 import star.object_database;

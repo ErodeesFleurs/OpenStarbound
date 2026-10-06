@@ -1,10 +1,12 @@
-#pragma once
+module;
 
-#include "StarSystemWorldServer.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarThread.hpp"
-#include "StarNetPackets.hpp"
+#include "StarNetCompatibility.hpp"
 
 namespace Star {
+
+STAR_STRUCT(Packet);
 
 STAR_CLASS(SystemWorldServerThread);
 
@@ -69,4 +71,17 @@ private:
 };
 
 
+}
+
+export module star.system_world_server_thread;
+
+export namespace Star {
+  using ::Star::ClientShipAction;
+  using ::Star::SystemWorldServerThread;
+  using ::Star::SystemWorldServerThreadPtr;
+  using ::Star::SystemWorldServerThreadConstPtr;
+  using ::Star::SystemWorldServerThreadWeakPtr;
+  using ::Star::SystemWorldServerThreadConstWeakPtr;
+  using ::Star::SystemWorldServerThreadUPtr;
+  using ::Star::SystemWorldServerThreadConstUPtr;
 }

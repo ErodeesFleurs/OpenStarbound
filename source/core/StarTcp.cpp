@@ -1,4 +1,10 @@
-#include "StarTcp.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 

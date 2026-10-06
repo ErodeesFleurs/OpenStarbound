@@ -1,4 +1,5 @@
-#pragma once
+module;
+#include "StarJsonExtra.hpp"
 
 #include "StarLexicalCast.hpp"
 #include "StarJson.hpp"
@@ -332,4 +333,49 @@ namespace JsonPath {
   }
 }
 
+}
+
+export module star.json_path;
+
+export namespace Star::JsonPath {
+  using ::Star::JsonPath::TypeHint;
+  using ::Star::JsonPath::PathParser;
+  using ::Star::JsonPath::ParsingExceptionTag;
+  using ::Star::JsonPath::ParsingException;
+  using ::Star::JsonPath::TraversalExceptionTag;
+  using ::Star::JsonPath::TraversalException;
+  using ::Star::JsonPath::parsePointer;
+  using ::Star::JsonPath::parseQueryPath;
+  using ::Star::JsonPath::pathGet;
+  using ::Star::JsonPath::pathFind;
+  using ::Star::JsonPath::JsonOp;
+  using ::Star::JsonPath::pathApply;
+  using ::Star::JsonPath::pathSet;
+  using ::Star::JsonPath::pathRemove;
+  using ::Star::JsonPath::pathAdd;
+  using ::Star::JsonPath::EmptyPathOp;
+  using ::Star::JsonPath::ObjectOp;
+  using ::Star::JsonPath::ArrayOp;
+  using ::Star::JsonPath::genericObjectArrayOp;
+  using ::Star::JsonPath::Path;
+  using ::Star::JsonPath::PathPtr;
+  using ::Star::JsonPath::PathConstPtr;
+  using ::Star::JsonPath::PathWeakPtr;
+  using ::Star::JsonPath::PathConstWeakPtr;
+  using ::Star::JsonPath::PathUPtr;
+  using ::Star::JsonPath::PathConstUPtr;
+  using ::Star::JsonPath::Pointer;
+  using ::Star::JsonPath::PointerPtr;
+  using ::Star::JsonPath::PointerConstPtr;
+  using ::Star::JsonPath::PointerWeakPtr;
+  using ::Star::JsonPath::PointerConstWeakPtr;
+  using ::Star::JsonPath::PointerUPtr;
+  using ::Star::JsonPath::PointerConstUPtr;
+  using ::Star::JsonPath::QueryPath;
+  using ::Star::JsonPath::QueryPathPtr;
+  using ::Star::JsonPath::QueryPathConstPtr;
+  using ::Star::JsonPath::QueryPathWeakPtr;
+  using ::Star::JsonPath::QueryPathConstWeakPtr;
+  using ::Star::JsonPath::QueryPathUPtr;
+  using ::Star::JsonPath::QueryPathConstUPtr;
 }

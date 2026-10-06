@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarEncode.hpp"
@@ -63,4 +63,12 @@ private:
   Char m_quotedType;
 };
 
+}
+
+export module star.shell_parser;
+
+export namespace Star {
+  using ::Star::ShellParsingExceptionTag;
+  using ::Star::ShellParsingException;
+  using ::Star::ShellParser;
 }

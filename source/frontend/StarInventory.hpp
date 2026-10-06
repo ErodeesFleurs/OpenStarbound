@@ -7,7 +7,10 @@
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 import star.inventory_types;
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarContainerInteractor.hpp"
 
 import star.game_timers;

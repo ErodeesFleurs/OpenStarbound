@@ -1,7 +1,9 @@
 module;
 
 #include "StarThread.hpp"
-#include "StarHostAddress.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"
 

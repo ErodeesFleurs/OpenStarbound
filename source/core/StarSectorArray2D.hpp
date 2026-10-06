@@ -3,7 +3,8 @@
 #include "StarMultiArray.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
-#include "StarWorkerPool.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
 
 #include "thread"
 

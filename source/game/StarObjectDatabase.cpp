@@ -4,7 +4,10 @@
 #include "StarTtlCache.hpp"
 #include "StarThread.hpp"
 #include "StarGameTypes.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"

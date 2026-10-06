@@ -6,7 +6,9 @@ module;
 import star.chat_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 
 namespace Star {
 

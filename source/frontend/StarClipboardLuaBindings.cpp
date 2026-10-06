@@ -7,7 +7,8 @@ module;
 #include "StarLuaConverters.hpp"
 #include "StarInput.hpp"
 #include "StarBuffer.hpp"
-#include "StarRootBase.hpp"
+#include "StarAssets.hpp"
+import star.root_base;
 
 module star.clipboard_lua_bindings;
 

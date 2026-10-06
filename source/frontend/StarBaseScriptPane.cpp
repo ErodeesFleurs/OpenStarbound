@@ -1,6 +1,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarBaseScriptPane.hpp"

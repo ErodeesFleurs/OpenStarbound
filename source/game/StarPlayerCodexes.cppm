@@ -1,6 +1,8 @@
 module;
 
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 
 namespace Star {

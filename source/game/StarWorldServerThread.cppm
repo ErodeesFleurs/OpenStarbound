@@ -1,10 +1,26 @@
-#pragma once
+module;
 
-#include "StarWorldServer.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarByteArray.hpp"
+#include "StarMap.hpp"
+#include "StarNetCompatibility.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.warping;
 #include "StarThread.hpp"
 #include "StarRpcPromise.hpp"
 
 namespace Star {
+
+STAR_CLASS(WorldServer);
+STAR_STRUCT(Packet);
+enum class WorldServerFidelity;
+typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
 
 STAR_CLASS(WorldServerThread);
 
@@ -107,4 +123,17 @@ private:
   mutable atomic<bool> m_shouldExpire;
 };
 
+}
+
+export module star.world_server_thread;
+
+export namespace Star {
+  using ::Star::WorldChunks;
+  using ::Star::WorldServerThread;
+  using ::Star::WorldServerThreadPtr;
+  using ::Star::WorldServerThreadConstPtr;
+  using ::Star::WorldServerThreadWeakPtr;
+  using ::Star::WorldServerThreadConstWeakPtr;
+  using ::Star::WorldServerThreadUPtr;
+  using ::Star::WorldServerThreadConstUPtr;
 }

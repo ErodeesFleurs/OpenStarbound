@@ -1,7 +1,9 @@
 #pragma once
 
 #include "StarPane.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 
 namespace Star {
 

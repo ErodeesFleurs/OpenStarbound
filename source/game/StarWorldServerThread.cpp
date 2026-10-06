@@ -1,4 +1,7 @@
-#include "StarWorldServerThread.hpp"
+#include "StarWorldServer.hpp"
+#include "StarThread.hpp"
+#include "StarRpcPromise.hpp"
+import star.world_server_thread;
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"

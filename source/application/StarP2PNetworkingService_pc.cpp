@@ -4,7 +4,9 @@
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
 #include "StarEncode.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 
 namespace Star {
 

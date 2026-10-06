@@ -1,10 +1,36 @@
 module;
 
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarItem.hpp"
 #include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarDirectives.hpp"
+import star.animation;
+import star.particle;
+
+import star.light_source;
+import star.entity_rendering;
 #include "StarPreviewTileTool.hpp"
 #include "StarRenderableItem.hpp"
 #include "StarPreviewableItem.hpp"
@@ -69,7 +95,17 @@ import star.particle;
 import star.weather_types;
 #include "StarEntity.hpp"
 #include "StarThread.hpp"
-#include "StarCellularLighting.hpp"
+#include "StarEither.hpp"
+#include "StarRect.hpp"
+#include "StarImage.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarInterpolation.hpp"
+#include "StarList.hpp"
+#include "StarVector.hpp"
+import star.cellular_light_array;
+#include "StarThread.hpp"
+import star.cellular_lighting;
 import star.world_render_data;
 #include "StarRect.hpp"
 #include "StarJson.hpp"

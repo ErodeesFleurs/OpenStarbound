@@ -23,7 +23,9 @@
 #include <poll.h>
 #endif
 
-#include "StarHostAddress.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
 
 #ifndef AI_ADDRCONFIG
 #define AI_ADDRCONFIG 0

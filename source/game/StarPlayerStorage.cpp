@@ -1,6 +1,8 @@
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarByteArray.hpp"

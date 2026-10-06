@@ -2,7 +2,10 @@ module;
 
 #include "StarThread.hpp"
 #include "StarTtlCache.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarItem.hpp"

@@ -3,7 +3,8 @@ module;
 #include "StarString.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarWorkerPool.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
 
 #include "StarLogging.hpp"
 #include "StarFormat.hpp"

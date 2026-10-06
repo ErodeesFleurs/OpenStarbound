@@ -1,6 +1,14 @@
-#pragma once
+module;
 
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
@@ -61,4 +69,16 @@ public:
   void addOverheadBars(List<OverheadBar> bars, Vec2F translate = Vec2F());
 };
 
+}
+
+export module star.entity_rendering;
+
+export namespace Star {
+  using ::Star::RenderCallback;
+  using ::Star::RenderCallbackPtr;
+  using ::Star::RenderCallbackConstPtr;
+  using ::Star::RenderCallbackWeakPtr;
+  using ::Star::RenderCallbackConstWeakPtr;
+  using ::Star::RenderCallbackUPtr;
+  using ::Star::RenderCallbackConstUPtr;
 }

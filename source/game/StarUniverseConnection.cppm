@@ -1,6 +1,20 @@
-#pragma once
+module;
 
-#include "StarNetPacketSocket.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
+#include <atomic>
+#include <memory>
+
+#include "StarP2PNetworkingService.hpp"
+#include "StarNetPackets.hpp"
+#include "StarZSTDCompression.hpp"
+#include "StarNetCompatibility.hpp"
+import star.net_packet_socket;
 
 namespace Star {
 
@@ -145,3 +159,24 @@ private:
 };
 
 }// namespace Star
+
+export module star.universe_connection;
+
+export namespace Star {
+  using ::Star::UniverseConnectionExceptionTag;
+  using ::Star::UniverseConnectionException;
+  using ::Star::UniverseConnection;
+  using ::Star::UniverseConnectionPtr;
+  using ::Star::UniverseConnectionConstPtr;
+  using ::Star::UniverseConnectionWeakPtr;
+  using ::Star::UniverseConnectionConstWeakPtr;
+  using ::Star::UniverseConnectionUPtr;
+  using ::Star::UniverseConnectionConstUPtr;
+  using ::Star::UniverseConnectionServer;
+  using ::Star::UniverseConnectionServerPtr;
+  using ::Star::UniverseConnectionServerConstPtr;
+  using ::Star::UniverseConnectionServerWeakPtr;
+  using ::Star::UniverseConnectionServerConstWeakPtr;
+  using ::Star::UniverseConnectionServerUPtr;
+  using ::Star::UniverseConnectionServerConstUPtr;
+}

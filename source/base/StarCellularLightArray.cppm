@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarList.hpp"
 #include "StarVector.hpp"
@@ -535,4 +535,14 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
   return min(obstacleAttenuation, maxAttenuation);
 }
 
+}
+
+export module star.cellular_light_array;
+
+export namespace Star {
+  using ::Star::ScalarLightTraits;
+  using ::Star::ColoredLightTraits;
+  using ::Star::CellularLightArray;
+  using ::Star::ColoredCellularLightArray;
+  using ::Star::ScalarCellularLightArray;
 }

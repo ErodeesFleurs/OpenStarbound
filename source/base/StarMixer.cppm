@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -169,4 +169,26 @@ private:
   atomic<float> m_speed;
 };
 
+}
+
+export module star.mixer;
+
+export namespace Star {
+  using ::Star::RampedValue;
+  using ::Star::MixerGroup;
+  using ::Star::MixerGroupNames;
+  using ::Star::AudioInstance;
+  using ::Star::AudioInstancePtr;
+  using ::Star::AudioInstanceConstPtr;
+  using ::Star::AudioInstanceWeakPtr;
+  using ::Star::AudioInstanceConstWeakPtr;
+  using ::Star::AudioInstanceUPtr;
+  using ::Star::AudioInstanceConstUPtr;
+  using ::Star::Mixer;
+  using ::Star::MixerPtr;
+  using ::Star::MixerConstPtr;
+  using ::Star::MixerWeakPtr;
+  using ::Star::MixerConstWeakPtr;
+  using ::Star::MixerUPtr;
+  using ::Star::MixerConstUPtr;
 }

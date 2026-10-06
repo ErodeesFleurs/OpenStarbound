@@ -1,20 +1,11 @@
 set (star_base_HEADERS
     StarAssets.hpp
-    StarBlocksAlongLine.hpp
-    StarCellularLightArray.hpp
-    StarCellularLighting.hpp
     StarCellularLiquid.hpp
-    StarMixer.hpp
-    StarRootBase.hpp
     scripting/StarImageLuaBindings.hpp
   )
 
 set (star_base_SOURCES
     StarAssets.cpp
-    StarCellularLightArray.cpp
-    StarCellularLighting.cpp
-    StarMixer.cpp
-    StarRootBase.cpp
     scripting/StarImageLuaBindings.cpp
   )
 
@@ -27,13 +18,22 @@ target_sources (star_base_modules PUBLIC FILE_SET CXX_MODULES FILES
     StarAnimatedPartSet.cppm
     StarAssetSource.cppm
     StarDirectoryAssetSource.cppm
-    StarVersionOptionParser.cppm)
+    StarVersionOptionParser.cppm
+    StarRootBase.cppm
+    StarMixer.cppm
+    StarCellularLightArray.cppm
+    StarCellularLighting.cppm
+    StarBlocksAlongLine.cppm)
 target_sources (star_base_modules PRIVATE
     StarConfiguration.cpp
     StarWorldGeometry.cpp
     StarAnimatedPartSet.cpp
     StarDirectoryAssetSource.cpp
-    StarVersionOptionParser.cpp)
+    StarVersionOptionParser.cpp
+    StarRootBase.cpp
+    StarMixer.cpp
+    StarCellularLightArray.cpp
+    StarCellularLighting.cpp)
 set_target_properties (star_base_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 target_include_directories (star_base_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

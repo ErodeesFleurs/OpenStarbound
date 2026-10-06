@@ -1,7 +1,11 @@
-#pragma once
+module;
 
 #include "StarIODevice.hpp"
-#include "StarSocket.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
 #include "StarThread.hpp"
 
 namespace Star {
@@ -69,4 +73,23 @@ private:
   TcpSocketPtr m_listenSocket;
 };
 
+}
+
+export module star.tcp;
+
+export namespace Star {
+  using ::Star::TcpSocket;
+  using ::Star::TcpSocketPtr;
+  using ::Star::TcpSocketConstPtr;
+  using ::Star::TcpSocketWeakPtr;
+  using ::Star::TcpSocketConstWeakPtr;
+  using ::Star::TcpSocketUPtr;
+  using ::Star::TcpSocketConstUPtr;
+  using ::Star::TcpServer;
+  using ::Star::TcpServerPtr;
+  using ::Star::TcpServerConstPtr;
+  using ::Star::TcpServerWeakPtr;
+  using ::Star::TcpServerConstWeakPtr;
+  using ::Star::TcpServerUPtr;
+  using ::Star::TcpServerConstUPtr;
 }

@@ -27,7 +27,6 @@ set (star_core_HEADERS
     StarFont.hpp
     StarFormat.hpp
     StarHash.hpp
-    StarHostAddress.hpp
     StarIODevice.hpp
     StarIdMap.hpp
     StarImage.hpp
@@ -40,7 +39,6 @@ set (star_core_HEADERS
     StarJsonBuilder.hpp
     StarJsonExtra.hpp
     StarJsonParser.hpp
-    StarJsonPath.hpp
     StarJsonRpc.hpp
     StarFormattedJson.hpp
     StarLexicalCast.hpp
@@ -74,7 +72,6 @@ set (star_core_HEADERS
     StarNetElementTop.hpp
     StarNetImpl.hpp
     StarObserverStream.hpp
-    StarOptionParser.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
     StarOutputProxy.hpp
@@ -91,8 +88,6 @@ set (star_core_HEADERS
     StarRpcPromise.hpp
     StarSectorArray2D.hpp
     StarSet.hpp
-    StarShellParser.hpp
-    StarSocket.hpp
     StarSpatialHash2D.hpp
     StarSpline.hpp
     StarStaticRandom.hpp
@@ -100,17 +95,14 @@ set (star_core_HEADERS
     StarString.hpp
     StarStringView.hpp
     StarStrongTypedef.hpp
-    StarTcp.hpp
     StarText.hpp
     StarThread.hpp
     StarTime.hpp
     StarTtlCache.hpp
     StarUnicode.hpp
-    StarUuid.hpp
     StarVector.hpp
     StarVersion.hpp
     StarWeightedPool.hpp
-    StarWorkerPool.hpp
     StarXXHash.hpp
     StarZSTDCompression.hpp
     scripting/StarUtilityLuaBindings.hpp
@@ -129,7 +121,6 @@ set (star_core_SOURCES
     StarEncode.cpp
     StarFile.cpp
     StarFont.cpp
-    StarHostAddress.cpp
     StarIODevice.cpp
     StarImage.cpp
     StarImageProcessing.cpp
@@ -137,7 +128,6 @@ set (star_core_SOURCES
     StarJson.cpp
     StarJsonBuilder.cpp
     StarJsonExtra.cpp
-    StarJsonPath.cpp
     StarJsonRpc.cpp
     StarFormattedJson.cpp
     StarLexicalCast.cpp
@@ -151,20 +141,14 @@ set (star_core_SOURCES
     StarNetElementBasicFields.cpp
     StarNetElementGroup.cpp
     StarNetElementSyncGroup.cpp
-    StarOptionParser.cpp
     StarPerlin.cpp
     StarRandom.cpp
-    StarShellParser.cpp
-    StarSocket.cpp
     StarString.cpp
     StarStringView.cpp
-    StarTcp.cpp
     StarText.cpp
     StarThread.cpp
     StarTime.cpp
     StarUnicode.cpp
-    StarUuid.cpp
-    StarWorkerPool.cpp
     StarZSTDCompression.cpp
     scripting/StarUtilityLuaBindings.cpp
   )
@@ -197,15 +181,23 @@ configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
-# Module sources have no PCH: GCC rejects a forced PCH before a module
-# declaration. These core interfaces contain their implementations directly.
+# Interfaces have no PCH: GCC rejects a forced PCH before a module
+# declaration. Thin global-type interfaces retain ordinary companions below;
+# naturally self-contained core interfaces remain single-file.
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
     FILES StarVlqEncoding.cppm StarCurve25519.cppm
           StarSha256.cppm StarImageScaling.cppm StarSecureRandom.cppm
           StarSignalHandler.cppm StarDynamicLib.cppm StarHttpClient.cppm StarUdp.cppm
           StarIODeviceCallbacks.cppm StarCompression.cppm StarJsonPatch.cppm
-          StarTickRateMonitor.cppm)
+          StarTickRateMonitor.cppm
+          StarUuid.cppm StarHostAddress.cppm StarSocket.cppm StarTcp.cppm
+          StarWorkerPool.cppm StarOptionParser.cppm StarShellParser.cppm
+          StarJsonPath.cppm)
+target_sources (star_modules PRIVATE
+    StarUuid.cpp StarHostAddress.cpp StarSocket.cpp StarTcp.cpp
+    StarWorkerPool.cpp StarOptionParser.cpp StarShellParser.cpp StarJsonPath.cpp)
+set_target_properties (star_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 target_include_directories (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 target_link_libraries (star_modules PRIVATE star_build_config star_module_dependencies)
 target_link_libraries (star_core PRIVATE star_modules star_build_config star_core_dependencies)

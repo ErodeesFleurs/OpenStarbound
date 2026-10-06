@@ -1,11 +1,10 @@
-#pragma once
+module;
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
 import star.movement_controller;
 #include "StarVector.hpp"
@@ -19,6 +18,8 @@ import star.game_timers;
 
 namespace Star {
 
+class World;
+
 struct ActorMovementControllerExceptionTag {
   static constexpr char const* name() { return "ActorMovementControllerException"; }
 };
@@ -28,6 +29,9 @@ STAR_CLASS(ActorMovementController);
 STAR_CLASS(PathController);
 
 struct ActorJumpProfile {
+  friend DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
+  friend DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+
   ActorJumpProfile();
   ActorJumpProfile(Json const& config);
 
@@ -58,6 +62,9 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 // MovementParameters ignored because they make no sense, and other fields
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
+  friend DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
+  friend DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+
   // Load sensible defaults from a config file.
   static ActorMovementParameters sensibleDefaults();
 
@@ -136,6 +143,9 @@ DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementPa
 // a 20% decrease.  Also includes some flags that disable functionality
 // combined with logical OR.
 struct ActorMovementModifiers {
+  friend DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
+  friend DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+
   explicit ActorMovementModifiers(Json const& config = Json());
 
   Json toJson() const;
@@ -372,4 +382,28 @@ private:
   Maybe<PlatformerAStar::Path> m_path;
 };
 
+}
+
+export module star.actor_movement_controller;
+
+export namespace Star {
+  using ::Star::ActorMovementControllerExceptionTag;
+  using ::Star::ActorMovementControllerException;
+  using ::Star::ActorJumpProfile;
+  using ::Star::ActorMovementParameters;
+  using ::Star::ActorMovementModifiers;
+  using ::Star::ActorMovementController;
+  using ::Star::ActorMovementControllerPtr;
+  using ::Star::ActorMovementControllerConstPtr;
+  using ::Star::ActorMovementControllerWeakPtr;
+  using ::Star::ActorMovementControllerConstWeakPtr;
+  using ::Star::ActorMovementControllerUPtr;
+  using ::Star::ActorMovementControllerConstUPtr;
+  using ::Star::PathController;
+  using ::Star::PathControllerPtr;
+  using ::Star::PathControllerConstPtr;
+  using ::Star::PathControllerWeakPtr;
+  using ::Star::PathControllerConstWeakPtr;
+  using ::Star::PathControllerUPtr;
+  using ::Star::PathControllerConstUPtr;
 }

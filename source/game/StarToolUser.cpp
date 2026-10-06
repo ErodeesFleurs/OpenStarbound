@@ -1,12 +1,18 @@
 // Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
 #include "StarObject.hpp"
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarHumanoid.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"

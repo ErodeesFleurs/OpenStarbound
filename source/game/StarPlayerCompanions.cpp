@@ -1,7 +1,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"

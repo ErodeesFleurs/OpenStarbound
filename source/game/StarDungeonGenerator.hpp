@@ -1,7 +1,10 @@
 #pragma once
 
 #include "StarImage.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarPoly.hpp"
 import star.world_geometry;
 #include "StarGameTypes.hpp"

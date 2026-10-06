@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarThread.hpp"
 
@@ -222,4 +222,20 @@ WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> pro
   return workerPoolPromiseImpl;
 }
 
+}
+
+export module star.worker_pool;
+
+export namespace Star {
+  using ::Star::WorkerPoolExceptionTag;
+  using ::Star::WorkerPoolException;
+  using ::Star::WorkerPoolHandle;
+  using ::Star::WorkerPoolPromise;
+  using ::Star::WorkerPool;
+  using ::Star::WorkerPoolPtr;
+  using ::Star::WorkerPoolConstPtr;
+  using ::Star::WorkerPoolWeakPtr;
+  using ::Star::WorkerPoolConstWeakPtr;
+  using ::Star::WorkerPoolUPtr;
+  using ::Star::WorkerPoolConstUPtr;
 }

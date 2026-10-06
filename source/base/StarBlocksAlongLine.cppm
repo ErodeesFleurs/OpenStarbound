@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 
@@ -102,4 +102,10 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
   }
 }
 
+}
+
+export module star.blocks_along_line;
+
+export namespace Star {
+  using ::Star::forBlocksAlongLine;
 }

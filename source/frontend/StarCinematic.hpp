@@ -21,7 +21,15 @@ import star.anchor_types;
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 import star.text_painter;
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 
 namespace Star {
 

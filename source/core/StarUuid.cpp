@@ -1,4 +1,6 @@
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarRandom.hpp"
 #include "StarFormat.hpp"
 #include "StarEncode.hpp"

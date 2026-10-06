@@ -1,4 +1,12 @@
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 #include "StarIterator.hpp"
 #include "StarInterpolation.hpp"
 #include "StarTime.hpp"

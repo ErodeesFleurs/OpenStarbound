@@ -1,4 +1,7 @@
-#include "StarJsonPath.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarJson.hpp"
+import star.json_path;
 
 namespace Star {
 

@@ -2,7 +2,9 @@ module;
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarGameTypes.hpp"
 
 namespace Star {

@@ -1,4 +1,6 @@
-#include "StarCellularLightArray.hpp"
+#include "StarList.hpp"
+#include "StarVector.hpp"
+import star.cellular_light_array;
 #include "StarInterpolation.hpp"
 // just specializing these in a cpp file so I can iterate on them without recompiling like 40 files!!
 

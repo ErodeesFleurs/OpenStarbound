@@ -5,7 +5,10 @@ module;
 #include "StarGameTypes.hpp"
 #include "StarList.hpp"
 #include "StarCellularLiquid.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 
 namespace Star {
 

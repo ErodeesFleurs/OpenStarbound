@@ -1,6 +1,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarCraftingInterface.hpp"
@@ -26,7 +29,15 @@ import star.player_blueprints;
 import star.configuration;
 #include "StarAssets.hpp"
 import star.player_log;
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 
 import star.object_item;
 import star.item_tooltip;

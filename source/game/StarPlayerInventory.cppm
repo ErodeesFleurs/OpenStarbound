@@ -6,7 +6,10 @@ module;
 import star.inventory_types;
 #include "StarMultiArray.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 
 namespace Star {
 

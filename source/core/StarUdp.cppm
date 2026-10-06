@@ -1,6 +1,10 @@
 module;
 
-#include "StarSocket.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 

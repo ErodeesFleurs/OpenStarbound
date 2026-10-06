@@ -1,16 +1,12 @@
 set (star_game_HEADERS
-    StarActorMovementController.hpp
     StarDungeonGenerator.hpp
-    StarEntityRendering.hpp
     StarGameTypes.hpp
     StarHumanoid.hpp
     StarInput.hpp
     StarItem.hpp
-    StarItemDescriptor.hpp
     StarItemDrop.hpp
     StarMonster.hpp
     StarNetPackets.hpp
-    StarNetPacketSocket.hpp
     StarNetworkedAnimator.hpp
     StarNpc.hpp
     StarObject.hpp
@@ -24,10 +20,8 @@ set (star_game_HEADERS
     StarSystemWorld.hpp
     StarSystemWorldClient.hpp
     StarSystemWorldServer.hpp
-    StarSystemWorldServerThread.hpp
     StarTileSectorArray.hpp
     StarUniverseClient.hpp
-    StarUniverseConnection.hpp
     StarUniverseServer.hpp
     StarVehicle.hpp
     StarWorldClient.hpp
@@ -35,7 +29,6 @@ set (star_game_HEADERS
     StarWorldImpl.hpp
     StarWorldLayout.hpp
     StarWorldServer.hpp
-    StarWorldServerThread.hpp
     StarWorldStorage.hpp
     StarWorldTemplate.hpp
 
@@ -90,18 +83,14 @@ set (star_game_HEADERS
   )
 
 set (star_game_SOURCES
-    StarActorMovementController.cpp
     StarDungeonGenerator.cpp
-    StarEntityRendering.cpp
     StarGameTypes.cpp
     StarHumanoid.cpp
     StarInput.cpp
     StarItem.cpp
-    StarItemDescriptor.cpp
     StarItemDrop.cpp
     StarMonster.cpp
     StarNetPackets.cpp
-    StarNetPacketSocket.cpp
     StarNetworkedAnimator.cpp
     StarNpc.cpp
     StarObject.cpp
@@ -115,16 +104,13 @@ set (star_game_SOURCES
     StarSystemWorld.cpp
     StarSystemWorldClient.cpp
     StarSystemWorldServer.cpp
-    StarSystemWorldServerThread.cpp
     StarUniverseClient.cpp
-    StarUniverseConnection.cpp
     StarUniverseServer.cpp
     StarVehicle.cpp
     StarWorldClient.cpp
     StarWorldClientThread.cpp
     StarWorldLayout.cpp
     StarWorldServer.cpp
-    StarWorldServerThread.cpp
     StarWorldStorage.cpp
     StarWorldTemplate.cpp
 
@@ -337,6 +323,13 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarCelestialGraphics.cppm
     StarWorldTiles.cppm
     StarMovementController.cppm
+    StarActorMovementController.cppm
+    StarItemDescriptor.cppm
+    StarEntityRendering.cppm
+    StarNetPacketSocket.cppm
+    StarUniverseConnection.cppm
+    StarWorldServerThread.cppm
+    StarSystemWorldServerThread.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -499,6 +492,13 @@ add_library (star_game_modules STATIC
     StarCelestialGraphics.cpp
     StarWorldTiles.cpp
     StarMovementController.cpp
+    StarActorMovementController.cpp
+    StarItemDescriptor.cpp
+    StarEntityRendering.cpp
+    StarNetPacketSocket.cpp
+    StarUniverseConnection.cpp
+    StarWorldServerThread.cpp
+    StarSystemWorldServerThread.cpp
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

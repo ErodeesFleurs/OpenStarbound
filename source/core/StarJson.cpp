@@ -1,6 +1,8 @@
 #include "StarJson.hpp"
 #include "StarJsonBuilder.hpp"
-#include "StarJsonPath.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarJson.hpp"
+import star.json_path;
 #include "StarFormat.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarIterator.hpp"

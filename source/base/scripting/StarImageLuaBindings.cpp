@@ -2,7 +2,8 @@
 #include "StarImageLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
-#include "StarRootBase.hpp"
+#include "StarAssets.hpp"
+import star.root_base;
 
 namespace Star {
 

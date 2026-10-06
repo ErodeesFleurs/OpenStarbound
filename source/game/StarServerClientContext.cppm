@@ -2,7 +2,9 @@ module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJsonRpc.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarVector.hpp"
@@ -11,12 +13,16 @@ module;
 #include "StarGameTypes.hpp"
 import star.damage_types;
 #include "StarGameTypes.hpp"
-#include "StarHostAddress.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarStrongTypedef.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;

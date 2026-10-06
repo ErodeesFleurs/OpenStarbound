@@ -1,4 +1,8 @@
-#include "StarShellParser.hpp"
+#include "StarString.hpp"
+#include "StarEncode.hpp"
+#include "StarBytes.hpp"
+#include "StarFormat.hpp"
+import star.shell_parser;
 
 #include "gtest/gtest.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarRootBase.hpp"
+#include "StarAssets.hpp"
+import star.root_base;
 #include "StarJson.hpp"
 #include "StarLogging.hpp"
 #include "StarListener.hpp"

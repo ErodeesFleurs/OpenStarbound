@@ -23,7 +23,15 @@ import star.drawable;
 import star.drawable;
 #include "StarGameTypes.hpp"
 import star.entity_rendering_types;
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"

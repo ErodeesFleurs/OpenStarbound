@@ -1,5 +1,26 @@
-#include "StarUniverseConnection.hpp"
-#include "StarTcp.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
+#include <atomic>
+#include <memory>
+
+#include "StarP2PNetworkingService.hpp"
+#include "StarNetPackets.hpp"
+#include "StarZSTDCompression.hpp"
+#include "StarNetCompatibility.hpp"
+import star.net_packet_socket;
+import star.universe_connection;
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
 
 #include "gtest/gtest.h"
 

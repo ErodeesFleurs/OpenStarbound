@@ -5,7 +5,15 @@
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
 import star.configuration;
-#include "StarMixer.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
 #include "StarAssets.hpp"
 
 

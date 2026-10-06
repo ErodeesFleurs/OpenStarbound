@@ -13,7 +13,13 @@ import star.player_log;
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
-#include "StarTcp.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+import star.host_address;
+#include "StarThread.hpp"
+import star.socket;
+import star.tcp;
 #include "StarWorldClient.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarEncode.hpp"

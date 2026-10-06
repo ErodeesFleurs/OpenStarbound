@@ -23,7 +23,10 @@ import star.tile_damage;
 import star.collision_generator;
 import star.world_tiles;
 #include "StarItem.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
 #include "StarWorldServer.hpp"
@@ -43,7 +46,10 @@ import star.biome;
 #include "StarWireEntity.hpp"
 #include "StarWorldImpl.hpp"
 #include "StarDungeonGenerator.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarItemDrop.hpp"
 #include "StarObject.hpp"
 #include "StarContainerEntity.hpp"

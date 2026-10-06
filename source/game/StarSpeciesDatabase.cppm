@@ -1,7 +1,10 @@
 module;
 
 #include "StarThread.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+import star.item_descriptor;
 #include "StarHumanoid.hpp"
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"

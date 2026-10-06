@@ -1,6 +1,8 @@
 #include "StarUtilityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarUuid.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
 #include "StarRandom.hpp"
 #include "StarPerlin.hpp"
 #include "StarXXHash.hpp"

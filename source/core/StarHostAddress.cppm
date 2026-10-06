@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarEither.hpp"
@@ -19,6 +19,9 @@ enum class NetworkMode {
 
 class HostAddress {
 public:
+  friend std::ostream& operator<<(std::ostream& os, HostAddress const& address);
+  friend struct hash<HostAddress>;
+
   static HostAddress localhost(NetworkMode mode = NetworkMode::IPv4);
 
   // Returns either error or valid HostAddress
@@ -56,6 +59,9 @@ struct hash<HostAddress> {
 
 class HostAddressWithPort {
 public:
+  friend std::ostream& operator<<(std::ostream& os, HostAddressWithPort const& address);
+  friend struct hash<HostAddressWithPort>;
+
   // Returns either error or valid HostAddressWithPort
   static Either<String, HostAddressWithPort> lookup(String const& address, uint16_t port);
   // Format may have [] brackets around address or not, to distinguish address
@@ -90,3 +96,19 @@ struct hash<HostAddressWithPort> {
 
 template <> struct fmt::formatter<Star::HostAddress> : ostream_formatter {};
 template <> struct fmt::formatter<Star::HostAddressWithPort> : ostream_formatter {};
+
+export module star.host_address;
+
+export namespace Star {
+  using ::Star::NetworkExceptionTag;
+  using ::Star::NetworkException;
+  using ::Star::NetworkMode;
+  using ::Star::HostAddressWithPort;
+  using ::Star::HostAddress;
+  using ::Star::HostAddressPtr;
+  using ::Star::HostAddressConstPtr;
+  using ::Star::HostAddressWeakPtr;
+  using ::Star::HostAddressConstWeakPtr;
+  using ::Star::HostAddressUPtr;
+  using ::Star::HostAddressConstUPtr;
+}

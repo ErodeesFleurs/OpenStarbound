@@ -1,6 +1,10 @@
 module;
 
-#include "StarOptionParser.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarOrderedSet.hpp"
+import star.option_parser;
 #include "StarVersion.hpp"
 
 namespace Star {
