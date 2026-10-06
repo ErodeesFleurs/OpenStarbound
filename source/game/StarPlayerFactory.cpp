@@ -1,5 +1,6 @@
 #include "StarJsonExtra.hpp"
-#include "StarEntitySplash.hpp"
+#include "StarJson.hpp"
+#include "StarParticle.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
@@ -8,6 +9,8 @@
 #include "StarThread.hpp"
 import star.rebuilder;
 import star.player_factory;
+
+import star.entity_splash;
 
 namespace Star {
 

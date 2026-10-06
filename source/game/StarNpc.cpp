@@ -1,8 +1,11 @@
+#include "StarJsonExtra.hpp"
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarNpc.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarWorld.hpp"
@@ -20,7 +23,6 @@
 #include "StarArmors.hpp"
 #include "StarFireableItem.hpp"
 #include "StarStatusController.hpp"
-#include "StarJsonExtra.hpp"
 import star.treasure;
 
 import star.species_database;
@@ -38,6 +40,10 @@ import star.item_database;
 
 
 import star.songbook;
+
+import star.armor_wearer;
+import star.tool_user;
+import star.entity_splash;
 
 namespace Star {
 

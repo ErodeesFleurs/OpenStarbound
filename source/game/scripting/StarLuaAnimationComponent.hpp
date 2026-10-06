@@ -2,9 +2,15 @@
 
 #include "StarLuaComponents.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarLightSource.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarDrawable.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarMixer.hpp"
 #include "StarParticle.hpp"
 #include "StarRoot.hpp"
@@ -12,6 +18,8 @@
 #include "StarLuaConverters.hpp"
 
 import star.particle_database;
+
+import star.light_source;
 
 namespace Star {
 

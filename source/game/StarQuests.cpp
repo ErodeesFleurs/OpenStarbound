@@ -1,16 +1,24 @@
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarLuaActorMovementComponent.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarDrawable.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarThread.hpp"
 #include "StarQuestDescriptor.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarWarping.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -20,12 +28,12 @@
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarObject.hpp"
+import star.quests;
+import star.quest_manager;
 #include "StarPlayer.hpp"
 #include "StarUuid.hpp"
 #include "StarUniverseClient.hpp"
 
-import star.quests;
-import star.quest_manager;
 import star.player_tech;
 
 import star.player_lua_bindings;
@@ -35,7 +43,6 @@ import star.celestial_lua_bindings;
 import star.status_controller_lua_bindings;
 import star.quest_template_database;
 import star.versioning_database;
-import star.item_database;
 import star.object_database;
 
 

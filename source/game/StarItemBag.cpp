@@ -1,9 +1,11 @@
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarMathCommon.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 
 
 import star.item_database;

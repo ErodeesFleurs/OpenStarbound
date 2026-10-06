@@ -1,18 +1,36 @@
+#include "StarJsonExtra.hpp"
+// Parse JSON iterator templates before Particle imports animation (GCC 16).
 #include "StarPeriodicFunction.hpp"
 #include "StarTtlCache.hpp"
 #include "StarThread.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarDrawable.hpp"
-// Parse JSON iterator templates before Particle imports animation (GCC 16).
-#include "StarJsonExtra.hpp"
 #include "StarParticle.hpp"
 #include "StarSet.hpp"
-#include "StarTileDamage.hpp"
-#include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarEntityRenderingTypes.hpp"
-#include "StarLightSource.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarObject.hpp"
 #include "StarIterator.hpp"
 #include "StarWorld.hpp"
@@ -22,7 +40,10 @@
 #include "StarContainerObject.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarJson.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarAssetPath.hpp"
 
 import star.object_database;
@@ -33,6 +54,8 @@ import star.farmable_object;
 import star.material_database;
 import star.image_metadata_database;
 import star.rebuilder;
+
+import star.light_source;
 
 namespace Star {
 

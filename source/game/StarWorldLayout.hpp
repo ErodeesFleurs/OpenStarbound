@@ -1,7 +1,10 @@
 #pragma once
 
 #include "StarPerlin.hpp"
-#include "StarWeatherTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
+import star.weather_types;
 #include "StarGameTypes.hpp"
 #include "StarCelestialParameters.hpp"
 

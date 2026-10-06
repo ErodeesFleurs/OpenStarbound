@@ -4,7 +4,6 @@
 #include "StarNetElementSystem.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarHumanoid.hpp"
-#include "StarEntitySplash.hpp"
 #include "StarDamageBarEntity.hpp"
 #include "StarNametagEntity.hpp"
 #include "StarPortraitEntity.hpp"
@@ -16,8 +15,6 @@
 #include "StarToolUserEntity.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
-#include "StarArmorWearer.hpp"
-#include "StarToolUser.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
 
@@ -25,6 +22,9 @@ import star.npc_database;
 import star.effect_emitter;
 
 namespace Star {
+
+STAR_CLASS(ArmorWearer);
+STAR_CLASS(ToolUser);
 
 STAR_CLASS(Songbook);
 STAR_CLASS(Item);

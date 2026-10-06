@@ -1,7 +1,11 @@
-#include "StarAssetPath.hpp"
-#include "StarCelestialTypes.hpp"
-#include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarAssetPath.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
+#include "StarMainInterface.hpp"
 #include "StarLogging.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarContainerInterface.hpp"
@@ -48,7 +52,10 @@ import star.player_log;
 import star.player_universe_map;
 #include "StarWorldTemplate.hpp"
 #include "StarRadioMessagePopup.hpp"
-#include "StarAiTypes.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 #include "StarQuestTracker.hpp"
 #include "StarContainerInteractor.hpp"
 #include "StarChatBubbleManager.hpp"

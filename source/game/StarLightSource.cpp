@@ -1,4 +1,8 @@
-#include "StarLightSource.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+
+import star.light_source;
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

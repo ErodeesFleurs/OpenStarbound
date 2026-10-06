@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarTtlCache.hpp"
 #include "StarWorldRenderData.hpp"
@@ -10,6 +10,7 @@ namespace Star {
 STAR_CLASS(Assets);
 STAR_CLASS(MaterialDatabase);
 STAR_CLASS(TileDrawer);
+class TilePainter;
 
 class TileDrawer {
 public:
@@ -71,4 +72,31 @@ void TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI cons
   }
 }
 
+}
+
+export module star.tile_drawer;
+
+export namespace Star {
+  using ::Star::Assets;
+  using ::Star::AssetsPtr;
+  using ::Star::AssetsConstPtr;
+  using ::Star::AssetsWeakPtr;
+  using ::Star::AssetsConstWeakPtr;
+  using ::Star::AssetsUPtr;
+  using ::Star::AssetsConstUPtr;
+  using ::Star::MaterialDatabase;
+  using ::Star::MaterialDatabasePtr;
+  using ::Star::MaterialDatabaseConstPtr;
+  using ::Star::MaterialDatabaseWeakPtr;
+  using ::Star::MaterialDatabaseConstWeakPtr;
+  using ::Star::MaterialDatabaseUPtr;
+  using ::Star::MaterialDatabaseConstUPtr;
+  using ::Star::TilePainter;
+  using ::Star::TileDrawer;
+  using ::Star::TileDrawerPtr;
+  using ::Star::TileDrawerConstPtr;
+  using ::Star::TileDrawerWeakPtr;
+  using ::Star::TileDrawerConstWeakPtr;
+  using ::Star::TileDrawerUPtr;
+  using ::Star::TileDrawerConstUPtr;
 }

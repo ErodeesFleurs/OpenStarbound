@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -38,6 +38,8 @@ extern EnumMap<TeamType> const TeamTypeNames;
 typedef uint16_t TeamNumber;
 
 struct EntityDamageTeam {
+  friend DataStream& operator>>(DataStream& ds, EntityDamageTeam& value);
+  friend DataStream& operator<<(DataStream& ds, EntityDamageTeam const& value);
   EntityDamageTeam();
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
   explicit EntityDamageTeam(Json const& json);
@@ -55,4 +57,24 @@ DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team);
 DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);
 
 TeamNumber soloPvpTeam(ConnectionId clientId);
+}
+
+export module star.damage_types;
+
+export namespace Star {
+  using ::Star::DamageType;
+  using ::Star::NoDamage;
+  using ::Star::Damage;
+  using ::Star::IgnoresDef;
+  using ::Star::Knockback;
+  using ::Star::Environment;
+  using ::Star::Status;
+  using ::Star::DamageTypeNames;
+  using ::Star::HitType;
+  using ::Star::HitTypeNames;
+  using ::Star::TeamType;
+  using ::Star::TeamTypeNames;
+  using ::Star::TeamNumber;
+  using ::Star::EntityDamageTeam;
+  using ::Star::soloPvpTeam;
 }

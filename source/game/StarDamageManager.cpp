@@ -1,7 +1,11 @@
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
 #include "StarDamage.hpp"
-#include "StarDamageTypes.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
 #include "StarDataStreamExtra.hpp"
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"

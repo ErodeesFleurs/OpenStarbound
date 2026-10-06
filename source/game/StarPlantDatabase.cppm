@@ -1,7 +1,11 @@
 module;
 
 #include "StarJson.hpp"
-#include "StarTileDamage.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 
 namespace Star {
 

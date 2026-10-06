@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
@@ -11,6 +11,7 @@ struct RecipeExceptionTag {
 using RecipeException = StarError<RecipeExceptionTag, StarException>;
 
 struct ItemRecipe {
+  friend std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
   Json toJson() const;
 
   bool isNull() const;
@@ -38,3 +39,11 @@ std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
 template <> struct fmt::formatter<Star::ItemRecipe> : ostream_formatter {};
+
+export module star.item_recipe;
+
+export namespace Star {
+  using ::Star::RecipeExceptionTag;
+  using ::Star::RecipeException;
+  using ::Star::ItemRecipe;
+}

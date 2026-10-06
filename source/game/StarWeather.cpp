@@ -5,7 +5,10 @@
 #include "StarAssets.hpp"
 #include "StarProjectile.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWeatherTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
+import star.weather_types;
 #include "StarWorldGeometry.hpp"
 
 import star.weather;

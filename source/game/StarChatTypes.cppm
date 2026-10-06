@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
@@ -15,6 +15,8 @@ enum class ChatSendMode : uint8_t {
 extern EnumMap<ChatSendMode> const ChatSendModeNames;
 
 struct MessageContext {
+  friend DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
+  friend DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
   enum Mode : uint8_t {
     Local,
     Party,
@@ -41,6 +43,8 @@ DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
 DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
 
 struct ChatReceivedMessage {
+  friend DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
+  friend DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
   ChatReceivedMessage();
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text);
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait);
@@ -63,3 +67,13 @@ DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
 DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
 
 };
+
+export module star.chat_types;
+
+export namespace Star {
+  using ::Star::ChatSendMode;
+  using ::Star::ChatSendModeNames;
+  using ::Star::MessageContext;
+  using ::Star::MessageContextModeNames;
+  using ::Star::ChatReceivedMessage;
+}

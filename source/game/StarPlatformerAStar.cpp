@@ -6,7 +6,8 @@
 #include "StarWorld.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarPlatformerAStarTypes.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 #include "StarJsonExtra.hpp"
 
 import star.platformer_astar;

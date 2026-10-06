@@ -1,12 +1,20 @@
 #pragma once
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarMultiArray.hpp"
 #include <functional>
 
 #include "StarGameTypes.hpp"
 #include "StarXXHash.hpp"
-#include "StarLiquidTypes.hpp"
-#include "StarTileDamage.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 #include "StarTileSectorArray.hpp"
 #include "StarWorldLayout.hpp"
 #include "StarVersion.hpp"

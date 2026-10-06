@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
@@ -17,6 +17,8 @@ using StatusException = StarError<StatusExceptionTag, StarException>;
 // they do not interact with each other, thus stacking a 0.0 and a 2.0 leaves
 // the stat unmodified
 struct StatBaseMultiplier {
+  friend DataStream& operator>>(DataStream& ds, StatBaseMultiplier& value);
+  friend DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& value);
   String statName;
   float baseMultiplier;
 
@@ -27,6 +29,8 @@ DataStream& operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier);
 DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier);
 
 struct StatValueModifier {
+  friend DataStream& operator>>(DataStream& ds, StatValueModifier& value);
+  friend DataStream& operator<<(DataStream& ds, StatValueModifier const& value);
   String statName;
   float value;
 
@@ -41,6 +45,8 @@ DataStream& operator<<(DataStream& ds, StatValueModifier const& valueModifier);
 // multiplier of 0.0 will ALWAYS reduce the stat to 0 regardless of other
 // effects
 struct StatEffectiveMultiplier {
+  friend DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& value);
+  friend DataStream& operator<<(DataStream& ds, StatEffectiveMultiplier const& value);
   String statName;
   float effectiveMultiplier;
 
@@ -75,6 +81,8 @@ Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
 // Ephemeral effects are always unique effects and either use the default
 // duration in their config or optionally the default
 struct EphemeralStatusEffect {
+  friend DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& value);
+  friend DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& value);
   UniqueStatusEffect uniqueEffect;
   Maybe<float> duration;
 
@@ -89,4 +97,27 @@ DataStream& operator<<(DataStream& ds, EphemeralStatusEffect const& ephemeralSta
 EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config);
 Json jsonFromEphemeralStatusEffect(EphemeralStatusEffect const& effect);
 
+}
+
+export module star.status_types;
+
+export namespace Star {
+  using ::Star::StatusExceptionTag;
+  using ::Star::StatusException;
+  using ::Star::StatBaseMultiplier;
+  using ::Star::StatValueModifier;
+  using ::Star::StatEffectiveMultiplier;
+  using ::Star::StatModifier;
+  using ::Star::jsonToStatModifier;
+  using ::Star::jsonFromStatModifier;
+  using ::Star::StatModifierGroupId;
+  using ::Star::StatModifierGroupMap;
+  using ::Star::UniqueStatusEffect;
+  using ::Star::ActiveUniqueStatusEffectSummary;
+  using ::Star::PersistentStatusEffect;
+  using ::Star::jsonToPersistentStatusEffect;
+  using ::Star::jsonFromPersistentStatusEffect;
+  using ::Star::EphemeralStatusEffect;
+  using ::Star::jsonToEphemeralStatusEffect;
+  using ::Star::jsonFromEphemeralStatusEffect;
 }

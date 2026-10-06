@@ -1,6 +1,8 @@
 #pragma once
 
-#include "StarInteractionTypes.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.interaction_types;
 #include "StarEntity.hpp"
 #include "StarQuestDescriptor.hpp"
 

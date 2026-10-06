@@ -1,10 +1,19 @@
 #pragma once
 
 #include "StarCelestialParameters.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarUuid.hpp"
 #include "StarWarping.hpp"
-#include "StarSkyParameters.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
 #include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSystem.hpp"
 

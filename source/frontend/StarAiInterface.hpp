@@ -2,7 +2,10 @@
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
-#include "StarAiTypes.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 #include "StarWarping.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarPane.hpp"

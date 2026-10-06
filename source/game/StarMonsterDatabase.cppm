@@ -3,9 +3,17 @@ module;
 #include "StarActorMovementController.hpp"
 #include "StarTtlCache.hpp"
 #include "StarThread.hpp"
-#include "StarDamageTypes.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
 #include "StarImageProcessing.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 
 namespace Star {
 

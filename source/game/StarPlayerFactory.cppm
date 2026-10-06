@@ -2,7 +2,10 @@ module;
 
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
-#include "StarEntitySplash.hpp"
+#include "StarJson.hpp"
+#include "StarParticle.hpp"
+
+import star.entity_splash;
 
 namespace Star {
 

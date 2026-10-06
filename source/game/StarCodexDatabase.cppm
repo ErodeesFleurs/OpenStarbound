@@ -1,9 +1,9 @@
 module;
 
 #include "StarJson.hpp"
-#include "StarCodex.hpp"
 
 namespace Star {
+STAR_CLASS(Codex);
 
 struct CodexDatabaseExceptionTag {
   static constexpr char const* name() { return "CodexDatabaseException"; }

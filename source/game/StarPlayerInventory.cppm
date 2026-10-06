@@ -1,6 +1,9 @@
 module;
 
-#include "StarInventoryTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
 #include "StarMultiArray.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"

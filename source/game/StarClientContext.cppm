@@ -3,11 +3,20 @@ module;
 #include "StarNetElementSystem.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarGameTypes.hpp"
-#include "StarDamageTypes.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarWarping.hpp"
 #include "StarWorldStorage.hpp"
-#include "StarPlayerTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarEither.hpp"
+import star.player_types;
 
 namespace Star {
 

@@ -2,7 +2,9 @@ module;
 
 #include "StarJson.hpp"
 #include "StarWarping.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarSystemWorld.hpp"
 
 namespace Star {

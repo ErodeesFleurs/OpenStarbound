@@ -1,4 +1,9 @@
-#include "StarCelestialTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -11,7 +16,6 @@
 #include "StarParametricFunction.hpp"
 #include "StarMultiTable.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 import star.stored_functions;
 
 import star.versioning_database;

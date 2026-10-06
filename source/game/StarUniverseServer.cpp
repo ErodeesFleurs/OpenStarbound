@@ -1,12 +1,19 @@
-#include "StarCelestialTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarUniverseServer.hpp"
 #include "StarAssets.hpp"
 import star.chat_processor;
-#include "StarCommandProcessor.hpp"
+#include "StarGameTypes.hpp"
+#include "StarShellParser.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarConfiguration.hpp"
 #include "StarEncode.hpp"
 #include "StarFile.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarTcp.hpp"
@@ -25,6 +32,8 @@ import star.server_client_context;
 import star.team_manager;
 
 import star.sky;
+
+import star.command_processor;
 
 namespace Star {
 

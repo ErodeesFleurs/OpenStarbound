@@ -2,8 +2,11 @@
 
 #include "StarCasting.hpp"
 #include "StarDamage.hpp"
-#include "StarLightSource.hpp"
+#include "StarVector.hpp"
 #include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+
+import star.light_source;
 
 namespace Star {
 

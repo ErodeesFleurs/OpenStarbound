@@ -2,8 +2,14 @@
 
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInventoryTypes.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarPlatformerAStarTypes.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarDamage.hpp"

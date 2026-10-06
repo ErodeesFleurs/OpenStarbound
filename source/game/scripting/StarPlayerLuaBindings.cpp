@@ -1,25 +1,31 @@
 module;
 
-#include "StarItemRecipe.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarRoot.hpp"
-#include "StarItem.hpp"
 #include "StarPlayer.hpp"
 import star.player_tech;
 import star.player_log;
 #include "StarWarping.hpp"
 import star.player_universe_map;
-#include "StarJsonExtra.hpp"
 #include "StarUniverseClient.hpp"
 import star.player_codexes;
-#include "StarCodex.hpp"
 #include "StarQuestDescriptor.hpp"
 
 module star.player_lua_bindings;
+import star.codex;
 import star.networked_animator_lua_bindings;
 import star.tech_database;
-import star.item_database;
 
 
 import star.client_context;

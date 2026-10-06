@@ -1,5 +1,7 @@
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarImage.hpp"

@@ -1,10 +1,12 @@
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarAugmentItem.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarJsonExtra.hpp"
 
 import star.config_lua_bindings;
 import star.item_database;

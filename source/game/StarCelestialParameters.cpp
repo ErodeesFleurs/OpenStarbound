@@ -5,7 +5,10 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarWeatherTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
+import star.weather_types;
 
 namespace Star {
 

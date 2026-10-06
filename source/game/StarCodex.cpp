@@ -1,6 +1,7 @@
-#include "StarCodex.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAssetPath.hpp"
+import star.codex;
 
 namespace Star {
 

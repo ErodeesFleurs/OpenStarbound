@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarChatAction.hpp"
+import star.chat_action;
 #include "StarEntity.hpp"
 
 namespace Star {

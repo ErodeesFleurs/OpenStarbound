@@ -1,12 +1,29 @@
+#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 // Parse JSON iterator templates before game headers import modules (GCC 16).
-#include "StarJsonExtra.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarPlayer.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+import star.player_deployment;
 #include "StarThread.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarQuestDescriptor.hpp"
+#include "StarWarping.hpp"
+import star.quests;
+import star.quest_manager;
+#include "StarPlayer.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarEncode.hpp"
@@ -15,8 +32,13 @@
 #include "StarItemDrop.hpp"
 #include "StarArmors.hpp"
 #include "StarAssets.hpp"
-#include "StarTechController.hpp"
-#include "StarEntitySplash.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarDirectives.hpp"
+
+import star.tech_database;
+#include "StarJson.hpp"
+#include "StarParticle.hpp"
 #include "StarWorld.hpp"
 #include "StarStatusController.hpp"
 import star.player_blueprints;
@@ -49,15 +71,17 @@ import star.player_inventory;
 import star.client_context;
 import star.item_bag;
 import star.player_companions;
-import star.player_deployment;
 import star.statistics;
 import star.player_factory;
 
-import star.quest_manager;
-import star.quests;
 import star.effect_emitter;
 
 import star.songbook;
+
+import star.armor_wearer;
+import star.tool_user;
+import star.tech_controller;
+import star.entity_splash;
 
 namespace Star {
 

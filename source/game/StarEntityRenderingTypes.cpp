@@ -1,5 +1,9 @@
-#include "StarEntityRenderingTypes.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarLexicalCast.hpp"
 
 namespace Star {

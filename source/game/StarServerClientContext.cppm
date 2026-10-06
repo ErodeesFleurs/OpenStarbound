@@ -5,12 +5,21 @@ module;
 #include "StarUuid.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarRpcPromise.hpp"
-#include "StarDamageTypes.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
 #include "StarGameTypes.hpp"
 #include "StarHostAddress.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarWarping.hpp"
-#include "StarPlayerTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarEither.hpp"
+import star.player_types;
 #include "StarWorldStorage.hpp"
 #include "StarSystemWorld.hpp"
 

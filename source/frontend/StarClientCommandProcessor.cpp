@@ -1,8 +1,21 @@
-#include "StarItemRecipe.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarJsonRpc.hpp"
+#include "StarQuestDescriptor.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarWarping.hpp"
+import star.quests;
+import star.quest_manager;
 #include "StarClientCommandProcessor.hpp"
 #include "StarRoot.hpp"
-#include "StarItem.hpp"
 #include "StarAssets.hpp"
 #include "StarPlayer.hpp"
 import star.player_tech;
@@ -11,16 +24,12 @@ import star.player_log;
 #include "StarAiInterface.hpp"
 #include "StarQuestInterface.hpp"
 #include "StarInput.hpp"
-#include "StarQuestDescriptor.hpp"
 
 
-import star.item_database;
 
 import star.player_inventory;
 import star.statistics;
 
-import star.quests;
-import star.quest_manager;
 
 namespace Star {
 

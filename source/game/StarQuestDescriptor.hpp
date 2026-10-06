@@ -5,7 +5,9 @@
 #include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 
 namespace Star {
 

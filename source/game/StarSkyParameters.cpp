@@ -1,8 +1,19 @@
-#include "StarCelestialTypes.hpp"
-#include "StarSkyParameters.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
 #include "StarCelestialGraphics.hpp"
 #include "StarCasting.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 
 

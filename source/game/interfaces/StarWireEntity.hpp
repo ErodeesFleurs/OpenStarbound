@@ -1,6 +1,9 @@
 #pragma once
 
-#include "StarWiring.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarDataStream.hpp"
+import star.wiring;
 #include "StarTileEntity.hpp"
 
 namespace Star {

@@ -3,7 +3,9 @@
 // Parse foundations before importing global bookmark value types on GCC.
 #include "StarJson.hpp"
 #include "StarWarping.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarSystemWorld.hpp"
 #include "StarPane.hpp"
 import star.player_universe_map;

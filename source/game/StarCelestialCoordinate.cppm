@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -96,3 +96,17 @@ private:
 }
 
 template <> struct fmt::formatter<Star::CelestialCoordinate> : ostream_formatter {};
+
+export module star.celestial_coordinate;
+
+export namespace Star {
+  using ::Star::CelestialExceptionTag;
+  using ::Star::CelestialException;
+  using ::Star::CelestialCoordinate;
+  using ::Star::CelestialCoordinatePtr;
+  using ::Star::CelestialCoordinateConstPtr;
+  using ::Star::CelestialCoordinateWeakPtr;
+  using ::Star::CelestialCoordinateConstWeakPtr;
+  using ::Star::CelestialCoordinateUPtr;
+  using ::Star::CelestialCoordinateConstUPtr;
+}

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 
@@ -35,4 +35,16 @@ private:
   String m_filename;
 };
 
+}
+
+export module star.codex;
+
+export namespace Star {
+  using ::Star::Codex;
+  using ::Star::CodexPtr;
+  using ::Star::CodexConstPtr;
+  using ::Star::CodexWeakPtr;
+  using ::Star::CodexConstWeakPtr;
+  using ::Star::CodexUPtr;
+  using ::Star::CodexConstUPtr;
 }

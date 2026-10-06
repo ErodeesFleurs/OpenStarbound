@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -29,8 +29,19 @@ struct LightSource {
   float beamAmbience;
 
   void translate(Vec2F const& pos);
+
+  friend DataStream& operator<<(DataStream& ds, LightSource const& lightSource);
+  friend DataStream& operator>>(DataStream& ds, LightSource& lightSource);
 };
 
 DataStream& operator<<(DataStream& ds, LightSource const& lightSource);
 DataStream& operator>>(DataStream& ds, LightSource& lightSource);
+}
+
+export module star.light_source;
+
+export namespace Star {
+  using ::Star::LightType;
+  using ::Star::LightTypeNames;
+  using ::Star::LightSource;
 }

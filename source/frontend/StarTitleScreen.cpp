@@ -1,9 +1,13 @@
-#include "StarCelestialTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarTitleScreen.hpp"
 #include "StarEncode.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarGuiContext.hpp"
 #include "StarPaneManager.hpp"
@@ -19,7 +23,14 @@
 #include "StarModsMenu.hpp"
 #include "StarAssets.hpp"
 #include "StarEnvironmentPainter.hpp"
-#include "StarSkyParameters.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
 
 
 import star.celestial_database;

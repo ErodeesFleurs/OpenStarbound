@@ -1,12 +1,21 @@
+#include "StarJsonExtra.hpp"
 #include "StarHumanoid.hpp"
-#include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarEntitySplash.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarJson.hpp"
+#include "StarParticle.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarEncode.hpp"
 #include "StarRandom.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarJson.hpp"
@@ -24,6 +33,9 @@ import star.rebuilder;
 import star.npc_database;
 import star.item_database;
 import star.species_database;
+
+import star.armor_wearer;
+import star.entity_splash;
 
 namespace Star {
 

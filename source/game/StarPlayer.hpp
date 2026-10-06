@@ -12,14 +12,21 @@
 #include "StarNametagEntity.hpp"
 #include "StarPortraitEntity.hpp"
 #include "StarInspectableEntity.hpp"
-#include "StarInventoryTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
 #include "StarActorMovementController.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarAiTypes.hpp"
-#include "StarArmorWearer.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 #include "StarEntityRendering.hpp"
-#include "StarToolUser.hpp"
-#include "StarPlayerTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarEither.hpp"
+import star.player_types;
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
@@ -27,6 +34,11 @@
 import star.radio_message_database;
 
 namespace Star {
+
+STAR_CLASS(ArmorItem);
+STAR_CLASS(ArmorWearer);
+STAR_CLASS(ToolUser);
+STAR_CLASS(EffectEmitter);
 
 STAR_STRUCT(PlayerConfig);
 STAR_CLASS(Songbook);

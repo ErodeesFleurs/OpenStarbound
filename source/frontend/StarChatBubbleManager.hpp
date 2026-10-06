@@ -3,7 +3,7 @@
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarChatAction.hpp"
+import star.chat_action;
 #include "StarTextPainter.hpp"
 #include "StarChatBubbleSeparation.hpp"
 

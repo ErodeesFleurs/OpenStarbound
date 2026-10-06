@@ -1,8 +1,15 @@
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarWidgetLuaBindings.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
 #include "StarGuiReader.hpp"
 #include "StarCanvasWidget.hpp"
@@ -20,7 +27,6 @@
 #include "StarScrollArea.hpp"
 
 
-import star.item_database;
 import star.item_bag;
 
 namespace Star {

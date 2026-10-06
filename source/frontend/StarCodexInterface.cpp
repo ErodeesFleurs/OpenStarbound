@@ -1,5 +1,5 @@
 #include "StarCodexInterface.hpp"
-#include "StarCodex.hpp"
+import star.codex;
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"

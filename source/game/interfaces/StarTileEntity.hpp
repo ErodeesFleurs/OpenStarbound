@@ -1,9 +1,16 @@
 #pragma once
 
 #include "StarEntity.hpp"
-#include "StarTileDamage.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 #include "StarInteractiveEntity.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 
 namespace Star {
 

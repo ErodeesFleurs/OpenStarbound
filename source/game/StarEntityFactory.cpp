@@ -3,7 +3,10 @@
 #include "StarMonster.hpp"
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
-#include "StarPlantDrop.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarMovementController.hpp"
+#include "StarMobileEntity.hpp"
+#include "StarAssetPath.hpp"
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
 #include "StarNpc.hpp"
@@ -20,6 +23,8 @@ import star.player_factory;
 import star.entity_factory;
 import star.monster_database;
 import star.npc_database;
+
+import star.plant_drop;
 
 namespace Star {
 

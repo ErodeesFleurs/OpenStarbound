@@ -1,4 +1,7 @@
-#include "StarEntitySplash.hpp"
+#include "StarJson.hpp"
+#include "StarParticle.hpp"
+
+import star.entity_splash;
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"

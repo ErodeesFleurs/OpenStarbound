@@ -1,4 +1,7 @@
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarObject.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"

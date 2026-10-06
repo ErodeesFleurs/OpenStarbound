@@ -1,11 +1,19 @@
 #pragma once
 
 #include "StarMixer.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarParticle.hpp"
 #include "StarDrawable.hpp"
-#include "StarLightSource.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
+
+import star.light_source;
 
 namespace Star {
 

@@ -5,12 +5,32 @@ module;
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarParticle.hpp"
-#include "StarTileDamage.hpp"
-#include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarEntityRenderingTypes.hpp"
-#include "StarLightSource.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarTileEntity.hpp"
+
+import star.light_source;
 
 namespace Star {
 

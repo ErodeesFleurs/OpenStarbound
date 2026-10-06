@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarCodex.hpp"
+import star.codex;
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"

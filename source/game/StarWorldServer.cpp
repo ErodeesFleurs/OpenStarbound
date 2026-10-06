@@ -5,7 +5,9 @@
 #include "StarGameTypes.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarWorldServer.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
@@ -22,7 +24,8 @@
 #include "StarPhysicsEntity.hpp"
 #include "StarProjectile.hpp"
 #include "StarPlayer.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 #include "StarWarpTargetEntity.hpp"
 import star.universe_settings;
 #include "StarUniverseServer.hpp"

@@ -2,8 +2,14 @@
 
 #include "StarEntity.hpp"
 #include "StarParticle.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarInteractionTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.interaction_types;
 #include "StarActorEntity.hpp"
 
 namespace Star {

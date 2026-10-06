@@ -6,10 +6,15 @@
 #include "StarWorldTiles.hpp"
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include <utility>
 
 #include "StarDungeonGenerator.hpp"

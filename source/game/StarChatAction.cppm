@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarGameTypes.hpp"
@@ -34,4 +34,12 @@ struct PortraitChatAction {
 
 typedef MVariant<SayChatAction, PortraitChatAction> ChatAction;
 
+}
+
+export module star.chat_action;
+
+export namespace Star {
+  using ::Star::SayChatAction;
+  using ::Star::PortraitChatAction;
+  using ::Star::ChatAction;
 }

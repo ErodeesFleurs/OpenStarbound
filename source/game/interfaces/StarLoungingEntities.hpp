@@ -2,8 +2,16 @@
 
 #include "StarDrawable.hpp"
 #include "StarAnchorableEntity.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 
 namespace Star {
 

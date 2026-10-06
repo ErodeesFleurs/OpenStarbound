@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarShellParser.hpp"
@@ -79,4 +79,23 @@ private:
   LuaBaseComponent m_scriptComponent;
 };
 
+}
+
+export module star.command_processor;
+
+export namespace Star {
+  using ::Star::UniverseServer;
+  using ::Star::UniverseServerPtr;
+  using ::Star::UniverseServerConstPtr;
+  using ::Star::UniverseServerWeakPtr;
+  using ::Star::UniverseServerConstWeakPtr;
+  using ::Star::UniverseServerUPtr;
+  using ::Star::UniverseServerConstUPtr;
+  using ::Star::CommandProcessor;
+  using ::Star::CommandProcessorPtr;
+  using ::Star::CommandProcessorConstPtr;
+  using ::Star::CommandProcessorWeakPtr;
+  using ::Star::CommandProcessorConstWeakPtr;
+  using ::Star::CommandProcessorUPtr;
+  using ::Star::CommandProcessorConstUPtr;
 }

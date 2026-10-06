@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarMovementController.hpp"
@@ -81,4 +81,23 @@ private:
   bool m_spawnedDropEffects;
 };
 
+}
+
+export module star.plant_drop;
+
+export namespace Star {
+  using ::Star::RenderCallback;
+  using ::Star::RenderCallbackPtr;
+  using ::Star::RenderCallbackConstPtr;
+  using ::Star::RenderCallbackWeakPtr;
+  using ::Star::RenderCallbackConstWeakPtr;
+  using ::Star::RenderCallbackUPtr;
+  using ::Star::RenderCallbackConstUPtr;
+  using ::Star::PlantDrop;
+  using ::Star::PlantDropPtr;
+  using ::Star::PlantDropConstPtr;
+  using ::Star::PlantDropWeakPtr;
+  using ::Star::PlantDropConstWeakPtr;
+  using ::Star::PlantDropUPtr;
+  using ::Star::PlantDropConstUPtr;
 }

@@ -1,8 +1,13 @@
-#pragma once
+module;
 
-#include "StarSkyTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
 #include "StarEither.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 
 namespace Star {
 
@@ -22,6 +27,8 @@ STAR_STRUCT(VisitableWorldParameters);
 // derived from the visitableworldparameters without reconstructing all sky
 // parameters, e.g. for terraforming
 struct SkyParameters {
+  friend DataStream& operator>>(DataStream& ds, SkyParameters& value);
+  friend DataStream& operator<<(DataStream& ds, SkyParameters const& value);
   SkyParameters();
   SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
@@ -50,4 +57,37 @@ struct SkyParameters {
 
 DataStream& operator>>(DataStream& ds, SkyParameters& sky);
 DataStream& operator<<(DataStream& ds, SkyParameters const& sky);
+}
+
+export module star.sky_parameters;
+
+export namespace Star {
+  using ::Star::SkyParameters;
+  using ::Star::CelestialParameters;
+  using ::Star::CelestialParametersPtr;
+  using ::Star::CelestialParametersConstPtr;
+  using ::Star::CelestialParametersWeakPtr;
+  using ::Star::CelestialParametersConstWeakPtr;
+  using ::Star::CelestialParametersUPtr;
+  using ::Star::CelestialParametersConstUPtr;
+  using ::Star::CelestialDatabase;
+  using ::Star::CelestialDatabasePtr;
+  using ::Star::CelestialDatabaseConstPtr;
+  using ::Star::CelestialDatabaseWeakPtr;
+  using ::Star::CelestialDatabaseConstWeakPtr;
+  using ::Star::CelestialDatabaseUPtr;
+  using ::Star::CelestialDatabaseConstUPtr;
+  using ::Star::SkyParametersPtr;
+  using ::Star::SkyParametersConstPtr;
+  using ::Star::SkyParametersWeakPtr;
+  using ::Star::SkyParametersConstWeakPtr;
+  using ::Star::SkyParametersUPtr;
+  using ::Star::SkyParametersConstUPtr;
+  using ::Star::VisitableWorldParameters;
+  using ::Star::VisitableWorldParametersPtr;
+  using ::Star::VisitableWorldParametersConstPtr;
+  using ::Star::VisitableWorldParametersWeakPtr;
+  using ::Star::VisitableWorldParametersConstWeakPtr;
+  using ::Star::VisitableWorldParametersUPtr;
+  using ::Star::VisitableWorldParametersConstUPtr;
 }

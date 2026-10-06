@@ -4,8 +4,14 @@
 #include "StarJson.hpp"
 
 #include "StarGameTypes.hpp"
-#include "StarSkyTypes.hpp"
-#include "StarWeatherTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
+import star.weather_types;
 
 import star.force_regions;
 

@@ -1,36 +1,19 @@
 set (star_game_HEADERS
     StarActorMovementController.hpp
-    StarAiTypes.hpp
-    StarArmorWearer.hpp
     StarBiome.hpp
     StarBiomePlacement.hpp
-    StarCelestialCoordinate.hpp
     StarCelestialGraphics.hpp
     StarCelestialParameters.hpp
-    StarCelestialTypes.hpp
-    StarChatAction.hpp
-    StarChatTypes.hpp
-    StarCodex.hpp
-    StarCollisionBlock.hpp
-    StarCommandProcessor.hpp
     StarDamage.hpp
-    StarDamageTypes.hpp
     StarDrawable.hpp
     StarDungeonGenerator.hpp
     StarEntityRendering.hpp
-    StarEntityRenderingTypes.hpp
-    StarEntitySplash.hpp
     StarGameTypes.hpp
     StarHumanoid.hpp
     StarInput.hpp
-    StarInteractionTypes.hpp
-    StarInventoryTypes.hpp
     StarItem.hpp
     StarItemDescriptor.hpp
     StarItemDrop.hpp
-    StarItemRecipe.hpp
-    StarLightSource.hpp
-    StarLiquidTypes.hpp
     StarMaterialRenderProfile.hpp
     StarMaterialTypes.hpp
     StarMonster.hpp
@@ -43,37 +26,24 @@ set (star_game_HEADERS
     StarParallax.hpp
     StarParticle.hpp
     StarPlant.hpp
-    StarPlantDrop.hpp
     StarPlatformerAStarTypes.hpp
     StarPlayer.hpp
-    StarPlayerTypes.hpp
     StarProjectile.hpp
     StarQuestDescriptor.hpp
     StarRoot.hpp
     StarRootLoader.hpp
-    StarSkyParameters.hpp
-    StarSkyRenderData.hpp
-    StarSkyTypes.hpp
     StarStagehand.hpp
     StarStatusController.hpp
-    StarStatusTypes.hpp
     StarSystemWorld.hpp
     StarSystemWorldClient.hpp
     StarSystemWorldServer.hpp
     StarSystemWorldServerThread.hpp
-    StarTechController.hpp
-    StarTileDamage.hpp
-    StarTileDrawer.hpp
-    StarTileModification.hpp
     StarTileSectorArray.hpp
-    StarToolUser.hpp
     StarUniverseClient.hpp
     StarUniverseConnection.hpp
     StarUniverseServer.hpp
     StarVehicle.hpp
     StarWarping.hpp
-    StarWeatherTypes.hpp
-    StarWiring.hpp
     StarWorldClient.hpp
     StarWorldClientThread.hpp
     StarWorldImpl.hpp
@@ -138,37 +108,20 @@ set (star_game_HEADERS
 
 set (star_game_SOURCES
     StarActorMovementController.cpp
-    StarAiTypes.cpp
-    StarArmorWearer.cpp
     StarBiome.cpp
     StarBiomePlacement.cpp
-    StarCelestialCoordinate.cpp
     StarCelestialGraphics.cpp
     StarCelestialParameters.cpp
-    StarCelestialTypes.cpp
-    StarChatAction.cpp
-    StarChatTypes.cpp
-    StarCodex.cpp
-    StarCollisionBlock.cpp
-    StarCommandProcessor.cpp
     StarDamage.cpp
-    StarDamageTypes.cpp
     StarDrawable.cpp
     StarDungeonGenerator.cpp
     StarEntityRendering.cpp
-    StarEntityRenderingTypes.cpp
-    StarEntitySplash.cpp
     StarGameTypes.cpp
     StarHumanoid.cpp
     StarInput.cpp
-    StarInteractionTypes.cpp
-    StarInventoryTypes.cpp
     StarItem.cpp
     StarItemDescriptor.cpp
     StarItemDrop.cpp
-    StarItemRecipe.cpp
-    StarLightSource.cpp
-    StarLiquidTypes.cpp
     StarMaterialRenderProfile.cpp
     StarMonster.cpp
     StarMovementController.cpp
@@ -180,36 +133,23 @@ set (star_game_SOURCES
     StarParallax.cpp
     StarParticle.cpp
     StarPlant.cpp
-    StarPlantDrop.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
-    StarPlayerTypes.cpp
     StarProjectile.cpp
     StarQuestDescriptor.cpp
     StarRoot.cpp
     StarRootLoader.cpp
-    StarSkyParameters.cpp
-    StarSkyRenderData.cpp
-    StarSkyTypes.cpp
     StarStagehand.cpp
     StarStatusController.cpp
-    StarStatusTypes.cpp
     StarSystemWorld.cpp
     StarSystemWorldClient.cpp
     StarSystemWorldServer.cpp
     StarSystemWorldServerThread.cpp
-    StarTechController.cpp
-    StarTileDamage.cpp
-    StarTileDrawer.cpp
-    StarTileModification.cpp
-    StarToolUser.cpp
     StarUniverseClient.cpp
     StarUniverseConnection.cpp
     StarUniverseServer.cpp
     StarVehicle.cpp
     StarWarping.cpp
-    StarWeatherTypes.cpp
-    StarWiring.cpp
     StarWorldClient.cpp
     StarWorldClientThread.cpp
     StarWorldLayout.cpp
@@ -382,6 +322,36 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarPlatformerAStar.cppm
     StarWorldCamera.cppm
     StarSongbook.cppm
+    StarArmorWearer.cppm
+    StarToolUser.cppm
+    StarTechController.cppm
+    StarCommandProcessor.cppm
+    StarPlantDrop.cppm
+    StarEntitySplash.cppm
+    StarTileDrawer.cppm
+    StarLightSource.cppm
+    StarCodex.cppm
+    StarChatAction.cppm
+    StarLiquidTypes.cppm
+    StarCollisionBlock.cppm
+    StarTileModification.cppm
+    StarTileDamage.cppm
+    StarInteractionTypes.cppm
+    StarChatTypes.cppm
+    StarWeatherTypes.cppm
+    StarInventoryTypes.cppm
+    StarAiTypes.cppm
+    StarPlayerTypes.cppm
+    StarSkyTypes.cppm
+    StarStatusTypes.cppm
+    StarDamageTypes.cppm
+    StarWiring.cppm
+    StarCelestialCoordinate.cppm
+    StarCelestialTypes.cppm
+    StarItemRecipe.cppm
+    StarEntityRenderingTypes.cppm
+    StarSkyRenderData.cppm
+    StarSkyParameters.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -442,6 +412,24 @@ add_library (star_game_modules STATIC
     StarPlatformerAStar.cpp
     StarWorldCamera.cpp
     StarSongbook.cpp
+    StarArmorWearer.cpp
+    StarToolUser.cpp
+    StarTechController.cpp
+    StarCommandProcessor.cpp
+    StarPlantDrop.cpp
+    StarEntitySplash.cpp
+    StarTileDrawer.cpp
+    StarLightSource.cpp
+    StarCodex.cpp
+    StarChatAction.cpp
+    StarLiquidTypes.cpp
+    StarCollisionBlock.cpp
+    StarTileModification.cpp
+    StarTileDamage.cpp
+    StarInteractionTypes.cpp
+    StarChatTypes.cpp
+    StarWeatherTypes.cpp
+    StarInventoryTypes.cpp
     scripting/StarCameraLuaBindings.cpp
     scripting/StarNetworkedAnimatorLuaBindings.cpp
     scripting/StarScriptedAnimatorLuaBindings.cpp
@@ -499,6 +487,18 @@ add_library (star_game_modules STATIC
     StarCelestialDatabase.cpp
     StarImageMetadataDatabase.cpp
     StarBiomeDatabase.cpp
+    StarAiTypes.cpp
+    StarPlayerTypes.cpp
+    StarSkyTypes.cpp
+    StarStatusTypes.cpp
+    StarDamageTypes.cpp
+    StarWiring.cpp
+    StarCelestialCoordinate.cpp
+    StarCelestialTypes.cpp
+    StarItemRecipe.cpp
+    StarEntityRenderingTypes.cpp
+    StarSkyRenderData.cpp
+    StarSkyParameters.cpp
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

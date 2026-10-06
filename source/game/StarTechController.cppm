@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarNetElementSystem.hpp"
 #include "StarNetworkedAnimator.hpp"
@@ -168,4 +168,23 @@ private:
   NetElementBool m_toolUsageSuppressed;
 };
 
+}
+
+export module star.tech_controller;
+
+export namespace Star {
+  using ::Star::TechController;
+  using ::Star::TechControllerPtr;
+  using ::Star::TechControllerConstPtr;
+  using ::Star::TechControllerWeakPtr;
+  using ::Star::TechControllerConstWeakPtr;
+  using ::Star::TechControllerUPtr;
+  using ::Star::TechControllerConstUPtr;
+  using ::Star::StatusController;
+  using ::Star::StatusControllerPtr;
+  using ::Star::StatusControllerConstPtr;
+  using ::Star::StatusControllerWeakPtr;
+  using ::Star::StatusControllerConstWeakPtr;
+  using ::Star::StatusControllerUPtr;
+  using ::Star::StatusControllerConstUPtr;
 }

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarOrderedSet.hpp"
 #include "StarItemDescriptor.hpp"
@@ -42,4 +42,15 @@ struct AiMission {
   StringMap<AiSpeciesMissionText> speciesText;
 };
 
+}
+
+export module star.ai_types;
+
+export namespace Star {
+  using ::Star::AiExceptionTag;
+  using ::Star::AiException;
+  using ::Star::AiSpeech;
+  using ::Star::AiState;
+  using ::Star::AiSpeciesMissionText;
+  using ::Star::AiMission;
 }

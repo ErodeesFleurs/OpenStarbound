@@ -5,7 +5,9 @@
 #include "StarIdMap.hpp"
 #include "StarWorkerPool.hpp"
 #include "StarGameTypes.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarHostAddress.hpp"
 #include "StarUuid.hpp"
 #include "StarWorldStorage.hpp"

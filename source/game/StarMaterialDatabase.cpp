@@ -1,7 +1,14 @@
 #include "StarColor.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarMaterialRenderProfile.hpp"
-#include "StarTileDamage.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 #include "StarItemDescriptor.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"

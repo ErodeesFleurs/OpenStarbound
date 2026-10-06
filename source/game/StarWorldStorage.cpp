@@ -1,6 +1,9 @@
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarWorldStorage.hpp"
 #include "StarFile.hpp"

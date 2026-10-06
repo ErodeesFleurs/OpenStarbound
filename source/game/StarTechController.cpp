@@ -1,4 +1,12 @@
-#include "StarTechController.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarDirectives.hpp"
+
+import star.tech_database;
+
+import star.tech_controller;
 #include "StarStatusController.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"

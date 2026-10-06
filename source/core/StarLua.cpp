@@ -3,6 +3,11 @@
 #include "StarTime.hpp"
 #include "imgui_lua_bindings.hpp"
 
+auto fmt::formatter<Star::LuaValue>::format(Star::LuaValue const& value, fmt::format_context& context) const
+    -> fmt::format_context::iterator {
+  return fmt::ostream_formatter::format(value, context);
+}
+
 namespace Star {
 
 std::ostream& operator<<(std::ostream& os, LuaValue const& value) {

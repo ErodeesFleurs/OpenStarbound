@@ -1,6 +1,14 @@
-#include "StarInventoryTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
 #include "StarFormat.hpp"
 #include "StarJsonExtra.hpp"
+import star.inventory_types;
+
+auto fmt::formatter<Star::InventorySlot>::format(Star::InventorySlot const& value, fmt::format_context& context) const
+    -> fmt::format_context::iterator {
+  return fmt::ostream_formatter::format(value, context);
+}
 
 namespace Star {
 

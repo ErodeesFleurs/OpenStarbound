@@ -1,6 +1,21 @@
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarArmorWearer.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarHumanoid.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+#include "StarDamage.hpp"
+
+import star.armor_wearer;
 #include "StarRoot.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
@@ -17,6 +32,8 @@ import star.object_database;
 
 
 import star.effect_emitter;
+
+import star.light_source;
 
 namespace Star {
 

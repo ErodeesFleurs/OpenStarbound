@@ -1,5 +1,13 @@
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarWorldClient.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -7,7 +15,8 @@
 #include "StarLogging.hpp"
 #include "StarBiome.hpp"
 #include "StarMaterialRenderProfile.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 #include "StarWorldImpl.hpp"
 #include "StarPlayer.hpp"
 import star.player_log;
@@ -29,7 +38,6 @@ import star.celestial_lua_bindings;
 import star.damage_database;
 import star.effect_source_database;
 import star.particle_database;
-import star.item_database;
 import star.object_database;
 
 

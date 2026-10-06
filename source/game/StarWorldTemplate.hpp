@@ -4,8 +4,19 @@
 #include "StarLruCache.hpp"
 #include "StarWorldLayout.hpp"
 #include "StarBiomePlacement.hpp"
-#include "StarCelestialTypes.hpp"
-#include "StarSkyParameters.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
 
 namespace Star {
 

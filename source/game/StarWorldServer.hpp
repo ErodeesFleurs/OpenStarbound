@@ -1,5 +1,8 @@
 #pragma once
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarMultiArray.hpp"
 #include <functional>
 

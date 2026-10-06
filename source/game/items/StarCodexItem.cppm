@@ -7,10 +7,10 @@ module;
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarCodex.hpp"
 
 export module star.codex_item;
 import star.player_codexes;
+import star.codex;
 
 export namespace Star {
 

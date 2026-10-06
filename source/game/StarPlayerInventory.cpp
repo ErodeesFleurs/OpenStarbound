@@ -1,6 +1,12 @@
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarInventoryTypes.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
 #include "StarMultiArray.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
@@ -8,7 +14,6 @@
 #include "StarArmors.hpp"
 #include "StarPointableItem.hpp"
 #include "StarAssets.hpp"
-#include "StarJsonExtra.hpp"
 
 // Import before Player's global forward declaration so GCC 16 emits the vtable.
 import star.player_inventory;

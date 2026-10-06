@@ -1,4 +1,7 @@
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarTilePainter.hpp"
 #include "StarLexicalCast.hpp"
@@ -6,12 +9,17 @@
 #include "StarXXHash.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
-#include "StarTileDrawer.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldRenderData.hpp"
+#include "StarMaterialRenderProfile.hpp"
+#include "StarDrawable.hpp"
 
 import star.liquids_database;
 import star.material_database;
 import star.world_camera;
 
+
+import star.tile_drawer;
 
 namespace Star {
 

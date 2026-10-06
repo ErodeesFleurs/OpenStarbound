@@ -1,8 +1,14 @@
 module;
 
 #include "StarGameTypes.hpp"
-#include "StarWeatherTypes.hpp"
-#include "StarSkyTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
+import star.weather_types;
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
 
 namespace Star {
 

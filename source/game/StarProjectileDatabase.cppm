@@ -2,9 +2,17 @@ module;
 
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarEntity.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
 
 namespace Star {
 

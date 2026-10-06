@@ -1,11 +1,20 @@
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarAssetPath.hpp"
 #include "StarRoot.hpp"
 #include "StarIterator.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarEncode.hpp"
 #include "StarConfiguration.hpp"
@@ -15,7 +24,10 @@
 #include "StarNpc.hpp"
 #include "StarObject.hpp"
 #include "StarPlant.hpp"
-#include "StarPlantDrop.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarMovementController.hpp"
+#include "StarMobileEntity.hpp"
+#include "StarAssetPath.hpp"
 #include "StarPlayer.hpp"
 #include "StarItemDrop.hpp"
 #include "StarJson.hpp"
@@ -68,6 +80,8 @@ import star.image_metadata_database;
 import star.object_database;
 import star.plant_database;
 
+
+import star.plant_drop;
 
 namespace Star {
 

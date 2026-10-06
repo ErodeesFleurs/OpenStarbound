@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
@@ -37,6 +37,8 @@ enum class WarpPhase : int8_t {
 extern EnumMap<WarpPhase> const WarpPhaseNames;
 
 struct SkyColoring {
+  friend DataStream& operator>>(DataStream& ds, SkyColoring& value);
+  friend DataStream& operator<<(DataStream& ds, SkyColoring const& value);
   SkyColoring();
   explicit SkyColoring(Json const& variant);
 
@@ -86,4 +88,21 @@ struct SkyWorldHorizon {
   List<pair<String, String>> layers;
 };
 
+}
+
+export module star.sky_types;
+
+export namespace Star {
+  using ::Star::SkyExceptionTag;
+  using ::Star::SkyException;
+  using ::Star::SkyType;
+  using ::Star::SkyTypeNames;
+  using ::Star::FlyingType;
+  using ::Star::FlyingTypeNames;
+  using ::Star::WarpPhase;
+  using ::Star::WarpPhaseNames;
+  using ::Star::SkyColoring;
+  using ::Star::SkyOrbiterType;
+  using ::Star::SkyOrbiter;
+  using ::Star::SkyWorldHorizon;
 }

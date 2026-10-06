@@ -1,8 +1,12 @@
+#include "StarJsonExtra.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarProjectile.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 

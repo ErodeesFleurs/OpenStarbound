@@ -1,4 +1,5 @@
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 
 namespace Star {
 

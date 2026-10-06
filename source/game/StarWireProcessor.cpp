@@ -1,7 +1,10 @@
 #include "StarSpatialHash2D.hpp"
 #include "StarEntity.hpp"
 #include "StarJson.hpp"
-#include "StarWiring.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarDataStream.hpp"
+import star.wiring;
 import star.wire_processor;
 #include "StarWorldStorage.hpp"
 #include "StarWireEntity.hpp"

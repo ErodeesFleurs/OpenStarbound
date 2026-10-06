@@ -1,8 +1,10 @@
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarPane.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarLuaConverters.hpp"

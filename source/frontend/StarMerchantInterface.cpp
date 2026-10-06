@@ -1,7 +1,14 @@
-#include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarMerchantInterface.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
+#include "StarMerchantInterface.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRoot.hpp"
@@ -17,7 +24,6 @@
 #include "StarAssets.hpp"
 
 import star.item_tooltip;
-import star.item_database;
 
 
 import star.player_inventory;

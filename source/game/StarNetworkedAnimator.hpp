@@ -5,8 +5,12 @@
 #include "StarNetElementSystem.hpp"
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
-#include "StarLightSource.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarMixer.hpp"
+
+import star.light_source;
 
 namespace Star {
 

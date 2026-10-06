@@ -1,5 +1,11 @@
 #include "StarAssetPath.hpp"
-#include "StarPlantDrop.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarMovementController.hpp"
+#include "StarMobileEntity.hpp"
+#include "StarPlant.hpp"
+#include "StarAssetPath.hpp"
+
+import star.plant_drop;
 #include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarRoot.hpp"

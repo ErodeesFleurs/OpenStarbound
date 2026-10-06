@@ -1,5 +1,9 @@
-#include "StarCelestialTypes.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

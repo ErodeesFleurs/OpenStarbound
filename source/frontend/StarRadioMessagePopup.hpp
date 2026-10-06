@@ -3,7 +3,10 @@
 #include "StarJson.hpp"
 
 #include "StarPane.hpp"
-#include "StarAiTypes.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 
 import star.radio_message_database;
 

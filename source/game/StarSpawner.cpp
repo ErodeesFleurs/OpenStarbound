@@ -3,7 +3,10 @@
 #include "StarTtlCache.hpp"
 #include "StarWorldGeometry.hpp"
 #include "StarGameTypes.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"

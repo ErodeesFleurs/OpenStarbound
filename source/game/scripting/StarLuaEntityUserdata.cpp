@@ -1,23 +1,28 @@
-#include "StarItemRecipe.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarLuaGameConverters.hpp"
 #include "StarStatusController.hpp"
-#include "StarActorMovementController.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
+#include "StarContainerObject.hpp"
+import star.farmable_object;
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
 #include "StarVehicle.hpp"
-#include "StarContainerObject.hpp"
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
-#include "StarItem.hpp"
 #include "StarRoot.hpp"
 
-import star.farmable_object;
-import star.item_database;
 
 
 import star.player_inventory;

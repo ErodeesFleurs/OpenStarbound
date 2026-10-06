@@ -4,7 +4,11 @@
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarDirectives.hpp"
-#include "StarTileDamage.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 
 import star.plant_database;
 

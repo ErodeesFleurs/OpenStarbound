@@ -1,8 +1,14 @@
-#include "StarCelestialTypes.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarDataStreamDevices.hpp"
 #include "StarFile.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldServer.hpp"
 import star.world_structure;

@@ -1,6 +1,14 @@
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
-#include "StarTileDrawer.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldRenderData.hpp"
+#include "StarMaterialRenderProfile.hpp"
+#include "StarDrawable.hpp"
+
+import star.tile_drawer;
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"

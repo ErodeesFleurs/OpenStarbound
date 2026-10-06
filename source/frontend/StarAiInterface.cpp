@@ -1,9 +1,19 @@
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
 #include "StarDrawable.hpp"
+#include "StarUuid.hpp"
+#include "StarLuaComponents.hpp"
+import star.player_companions;
 #include "StarAiInterface.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarAssets.hpp"
 #include "StarContainerEntity.hpp"
@@ -25,10 +35,8 @@
 #include "StarWorldClient.hpp"
 
 import star.ai_database;
-import star.item_database;
 
 
-import star.player_companions;
 import star.client_context;
 
 

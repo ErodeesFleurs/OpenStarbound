@@ -3,8 +3,23 @@ module;
 #include "StarEither.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarCelestialParameters.hpp"
-#include "StarSkyParameters.hpp"
-#include "StarSkyRenderData.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
+import star.sky_render_data;
 
 namespace Star {
 

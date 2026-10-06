@@ -11,7 +11,14 @@
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarTileModification.hpp"
+#include "StarDataStream.hpp"
+#include "StarVariant.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
+import star.tile_modification;
 
 import star.liquids_database;
 import star.material_database;

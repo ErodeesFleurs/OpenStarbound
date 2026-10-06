@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
@@ -7,6 +7,8 @@
 namespace Star {
 
 struct WeatherType {
+  friend DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
+  friend DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
   struct ParticleConfig {
     Particle particle;
     float density;
@@ -46,4 +48,11 @@ typedef WeightedPool<String> WeatherPool;
 
 DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
 DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
+}
+
+export module star.weather_types;
+
+export namespace Star {
+  using ::Star::WeatherType;
+  using ::Star::WeatherPool;
 }

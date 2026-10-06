@@ -1,4 +1,8 @@
-#include "StarCollisionBlock.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarCasting.hpp"
@@ -6,7 +10,6 @@
 #include "StarLogging.hpp"
 #include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 import star.liquids_database;
 import star.dungeon_image_part;

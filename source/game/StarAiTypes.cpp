@@ -1,5 +1,8 @@
-#include "StarAiTypes.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 
 namespace Star {
 

@@ -1,13 +1,18 @@
-#pragma once
+module;
 
-#include "StarHumanoid.hpp"
+#include "StarGameTypes.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarLightSource.hpp"
-#include "StarDamage.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+
 
 namespace Star {
+
+class Humanoid;
 
 STAR_CLASS(ArmorItem);
 STAR_CLASS(HeadArmor);
@@ -92,4 +97,79 @@ private:
   bool m_lastNude;
 };
 
+}
+
+export module star.armor_wearer;
+
+export namespace Star {
+  using ::Star::ArmorItem;
+  using ::Star::ArmorItemPtr;
+  using ::Star::ArmorItemConstPtr;
+  using ::Star::ArmorItemWeakPtr;
+  using ::Star::ArmorItemConstWeakPtr;
+  using ::Star::ArmorItemUPtr;
+  using ::Star::ArmorItemConstUPtr;
+  using ::Star::HeadArmor;
+  using ::Star::HeadArmorPtr;
+  using ::Star::HeadArmorConstPtr;
+  using ::Star::HeadArmorWeakPtr;
+  using ::Star::HeadArmorConstWeakPtr;
+  using ::Star::HeadArmorUPtr;
+  using ::Star::HeadArmorConstUPtr;
+  using ::Star::ChestArmor;
+  using ::Star::ChestArmorPtr;
+  using ::Star::ChestArmorConstPtr;
+  using ::Star::ChestArmorWeakPtr;
+  using ::Star::ChestArmorConstWeakPtr;
+  using ::Star::ChestArmorUPtr;
+  using ::Star::ChestArmorConstUPtr;
+  using ::Star::LegsArmor;
+  using ::Star::LegsArmorPtr;
+  using ::Star::LegsArmorConstPtr;
+  using ::Star::LegsArmorWeakPtr;
+  using ::Star::LegsArmorConstWeakPtr;
+  using ::Star::LegsArmorUPtr;
+  using ::Star::LegsArmorConstUPtr;
+  using ::Star::BackArmor;
+  using ::Star::BackArmorPtr;
+  using ::Star::BackArmorConstPtr;
+  using ::Star::BackArmorWeakPtr;
+  using ::Star::BackArmorConstWeakPtr;
+  using ::Star::BackArmorUPtr;
+  using ::Star::BackArmorConstUPtr;
+  using ::Star::ToolUserEntity;
+  using ::Star::ToolUserEntityPtr;
+  using ::Star::ToolUserEntityConstPtr;
+  using ::Star::ToolUserEntityWeakPtr;
+  using ::Star::ToolUserEntityConstWeakPtr;
+  using ::Star::ToolUserEntityUPtr;
+  using ::Star::ToolUserEntityConstUPtr;
+  using ::Star::Item;
+  using ::Star::ItemPtr;
+  using ::Star::ItemConstPtr;
+  using ::Star::ItemWeakPtr;
+  using ::Star::ItemConstWeakPtr;
+  using ::Star::ItemUPtr;
+  using ::Star::ItemConstUPtr;
+  using ::Star::World;
+  using ::Star::WorldPtr;
+  using ::Star::WorldConstPtr;
+  using ::Star::WorldWeakPtr;
+  using ::Star::WorldConstWeakPtr;
+  using ::Star::WorldUPtr;
+  using ::Star::WorldConstUPtr;
+  using ::Star::EffectEmitter;
+  using ::Star::EffectEmitterPtr;
+  using ::Star::EffectEmitterConstPtr;
+  using ::Star::EffectEmitterWeakPtr;
+  using ::Star::EffectEmitterConstWeakPtr;
+  using ::Star::EffectEmitterUPtr;
+  using ::Star::EffectEmitterConstUPtr;
+  using ::Star::ArmorWearer;
+  using ::Star::ArmorWearerPtr;
+  using ::Star::ArmorWearerConstPtr;
+  using ::Star::ArmorWearerWeakPtr;
+  using ::Star::ArmorWearerConstWeakPtr;
+  using ::Star::ArmorWearerUPtr;
+  using ::Star::ArmorWearerConstUPtr;
 }

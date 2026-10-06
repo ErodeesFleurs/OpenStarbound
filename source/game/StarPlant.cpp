@@ -3,7 +3,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
 #include "StarRoot.hpp"
-#include "StarPlantDrop.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarMovementController.hpp"
+#include "StarMobileEntity.hpp"
+#include "StarAssetPath.hpp"
 #include "StarAssets.hpp"
 #include "StarImage.hpp"
 #include "StarEntityRendering.hpp"
@@ -13,6 +16,8 @@ import star.object_database;
 import star.image_metadata_database;
 import star.plant_database;
 
+
+import star.plant_drop;
 
 namespace Star {
 

@@ -1,9 +1,11 @@
+#include "StarJsonExtra.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarQuestDescriptor.hpp"
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarMonster.hpp"
 #include "StarObject.hpp"
 

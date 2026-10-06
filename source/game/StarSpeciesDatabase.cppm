@@ -3,7 +3,11 @@ module;
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
 #include "StarLuaRoot.hpp"
 
 namespace Star {

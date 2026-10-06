@@ -1,6 +1,9 @@
 #pragma once
 
-#include "StarInventoryTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
 #include "StarMainInterfaceTypes.hpp"
 
 namespace Star {

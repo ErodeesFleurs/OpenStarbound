@@ -1,4 +1,7 @@
-#include "StarChatTypes.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.chat_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarUuid.hpp"

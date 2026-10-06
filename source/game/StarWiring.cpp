@@ -1,4 +1,7 @@
-#include "StarWiring.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarDataStream.hpp"
+import star.wiring;
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

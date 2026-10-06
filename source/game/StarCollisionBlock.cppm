@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -131,4 +131,21 @@ inline CollisionBlock CollisionBlock::nullBlock(Vec2I const& space) {
   return block;
 }
 
+}
+
+export module star.collision_block;
+
+export namespace Star {
+  using ::Star::CollisionKind;
+  using ::Star::TileCollisionOverride;
+  using ::Star::collisionKindFromOverride;
+  using ::Star::CollisionSet;
+  using ::Star::DefaultCollisionSet;
+  using ::Star::BlockCollisionSet;
+  using ::Star::TileCollisionOverrideNames;
+  using ::Star::CollisionKindNames;
+  using ::Star::isColliding;
+  using ::Star::isSolidColliding;
+  using ::Star::maxCollision;
+  using ::Star::CollisionBlock;
 }

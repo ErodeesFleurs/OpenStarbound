@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
@@ -19,6 +19,8 @@ WireDirection otherWireDirection(WireDirection direction);
 // Identifier for a specific WireNode in a WireEntity, node indexes for input
 // and output nodes are separate.
 struct WireNode {
+  friend DataStream& operator>>(DataStream& ds, WireNode& value);
+  friend DataStream& operator<<(DataStream& ds, WireNode const& value);
   WireDirection direction;
   size_t nodeIndex;
 };
@@ -29,6 +31,8 @@ DataStream& operator<<(DataStream& ds, WireNode const& wireNode);
 // Connection from a given WireNode to another WireNode, the direction must be
 // implied based on the context.
 struct WireConnection {
+  friend DataStream& operator>>(DataStream& ds, WireConnection& value);
+  friend DataStream& operator<<(DataStream& ds, WireConnection const& value);
   Vec2I entityLocation;
   size_t nodeIndex;
 
@@ -65,4 +69,27 @@ public:
   virtual bool connecting() = 0;
 };
 
+}
+
+export module star.wiring;
+
+export namespace Star {
+  using ::Star::WireCoordinator;
+  using ::Star::WireConnector;
+  using ::Star::WireDirection;
+  using ::Star::otherWireDirection;
+  using ::Star::WireNode;
+  using ::Star::WireConnection;
+  using ::Star::WireCoordinatorPtr;
+  using ::Star::WireCoordinatorConstPtr;
+  using ::Star::WireCoordinatorWeakPtr;
+  using ::Star::WireCoordinatorConstWeakPtr;
+  using ::Star::WireCoordinatorUPtr;
+  using ::Star::WireCoordinatorConstUPtr;
+  using ::Star::WireConnectorPtr;
+  using ::Star::WireConnectorConstPtr;
+  using ::Star::WireConnectorWeakPtr;
+  using ::Star::WireConnectorConstWeakPtr;
+  using ::Star::WireConnectorUPtr;
+  using ::Star::WireConnectorConstUPtr;
 }

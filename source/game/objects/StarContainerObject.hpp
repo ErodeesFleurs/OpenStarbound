@@ -3,7 +3,9 @@
 #include "StarObject.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarContainerEntity.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 
 namespace Star {
 

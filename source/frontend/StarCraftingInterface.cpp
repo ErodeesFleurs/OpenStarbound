@@ -1,7 +1,9 @@
-#include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarCraftingInterface.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarCraftingInterface.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRoot.hpp"

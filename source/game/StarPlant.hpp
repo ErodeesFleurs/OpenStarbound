@@ -3,7 +3,11 @@
 #include "StarSet.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarTileEntity.hpp"
-#include "StarTileDamage.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarBiMap.hpp"
+import star.tile_damage;
 #include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
 

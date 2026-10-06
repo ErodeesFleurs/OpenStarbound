@@ -1,7 +1,9 @@
 #pragma once
 
 #include "StarInventory.hpp"
-#include "StarInteractionTypes.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.interaction_types;
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
 #include "StarInterfaceCursor.hpp"

@@ -2,7 +2,9 @@
 
 #include "StarWorldPainter.hpp"
 #include "StarWorldClient.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarPane.hpp"
 
 namespace Star {

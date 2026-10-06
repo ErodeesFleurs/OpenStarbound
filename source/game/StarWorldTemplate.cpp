@@ -4,7 +4,8 @@
 #include "StarIterator.hpp"
 #include "StarBiome.hpp"
 #include "StarRoot.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 #include "StarAssets.hpp"
 #include "StarLogging.hpp"
 #include "StarDungeonGenerator.hpp"

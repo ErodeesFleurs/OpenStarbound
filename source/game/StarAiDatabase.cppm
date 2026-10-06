@@ -1,6 +1,9 @@
 module;
 
-#include "StarAiTypes.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 
 import star.animation;
 

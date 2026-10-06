@@ -5,7 +5,8 @@
 #include "StarVector.hpp"
 #include "StarJson.hpp"
 #include "StarRpcPromise.hpp"
-#include "StarLiquidTypes.hpp"
+#include "StarMathCommon.hpp"
+import star.liquid_types;
 #include "StarMaterialTypes.hpp"
 
 namespace Star {

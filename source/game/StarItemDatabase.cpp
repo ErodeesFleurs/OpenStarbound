@@ -1,9 +1,11 @@
+#include "StarJsonExtra.hpp"
 #include "StarThread.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarItem.hpp"
 #include "StarTtlCache.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarCasting.hpp"
@@ -36,6 +38,7 @@ import star.config_lua_bindings;
 import star.root_lua_bindings;
 import star.item_lua_bindings;
 import star.codex_database;
+import star.codex;
 import star.object_database;
 
 namespace Star {

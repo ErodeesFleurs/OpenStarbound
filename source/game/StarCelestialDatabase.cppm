@@ -5,7 +5,11 @@ module;
 #include "StarWeightedPool.hpp"
 #include "StarThread.hpp"
 #include "StarBTreeDatabase.hpp"
-#include "StarCelestialTypes.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarPerlin.hpp"
 
 namespace Star {

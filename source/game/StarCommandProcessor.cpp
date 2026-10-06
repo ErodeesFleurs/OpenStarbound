@@ -1,8 +1,18 @@
-#include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarCommandProcessor.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarGameTypes.hpp"
+#include "StarShellParser.hpp"
+#include "StarLuaComponents.hpp"
+
+import star.command_processor;
+#include "StarLexicalCast.hpp"
 #include "StarNpc.hpp"
 #include "StarWorldServer.hpp"
 #include "StarUniverseServer.hpp"

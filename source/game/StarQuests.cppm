@@ -4,7 +4,9 @@ module;
 #include "StarJsonRpc.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarDrawable.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarThread.hpp"
 #include "StarQuestDescriptor.hpp"
 #include "StarLuaComponents.hpp"

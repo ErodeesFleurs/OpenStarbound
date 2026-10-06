@@ -1,5 +1,8 @@
-#include "StarSkyTypes.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

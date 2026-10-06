@@ -8,7 +8,10 @@ module;
 #include "StarPreviewTileTool.hpp"
 #include "StarRenderableItem.hpp"
 #include "StarPreviewableItem.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
@@ -17,11 +20,15 @@ module;
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarInput.hpp"
-#include "StarTileDrawer.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldRenderData.hpp"
+#include "StarMaterialRenderProfile.hpp"
+#include "StarDrawable.hpp"
 #include "StarPlayer.hpp"
 
 export module star.material_item;
 import star.material_database;
+import star.tile_drawer;
 
 
 export namespace Star {
@@ -86,6 +93,7 @@ private:
 };
 
 }
+
 
 namespace Star {
 

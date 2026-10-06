@@ -2,7 +2,11 @@ module;
 
 #include "StarEither.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
 
 import star.stat_set;
 

@@ -1,9 +1,20 @@
 module;
 
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
+#include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
 #include "StarAssetPath.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarJson.hpp"
 #include "StarRect.hpp"
@@ -18,7 +29,6 @@ module;
 #include "StarRandom.hpp"
 #include "StarNpc.hpp"
 #include "StarMonster.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDungeonGenerator.hpp"
 #include "StarImageLuaBindings.hpp"
 
@@ -39,7 +49,6 @@ import star.tenant_database;
 import star.versioning_database;
 import star.npc_database;
 import star.image_metadata_database;
-import star.item_database;
 import star.biome_database;
 import star.material_database;
 import star.plant_database;

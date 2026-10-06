@@ -2,7 +2,9 @@
 
 #include "StarStrongTypedef.hpp"
 #include "StarUuid.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarGameTypes.hpp"
 
 namespace Star {

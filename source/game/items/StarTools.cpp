@@ -1,10 +1,16 @@
-#include "StarCollisionBlock.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarItemDescriptor.hpp"
 #include "StarTools.hpp"
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
-#include "StarWiring.hpp"
+#include "StarGameTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarDataStream.hpp"
+import star.wiring;
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
 

@@ -5,9 +5,15 @@
 #include "StarMaybe.hpp"
 #include "StarHostAddress.hpp"
 #include "StarCelestialParameters.hpp"
-#include "StarChatTypes.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.chat_types;
 #include "StarWarping.hpp"
-#include "StarAiTypes.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarQuestDescriptor.hpp"
+import star.ai_types;
 #include "StarUniverseConnection.hpp"
 #include "StarWorldClientThread.hpp"
 #include "StarLuaComponents.hpp"

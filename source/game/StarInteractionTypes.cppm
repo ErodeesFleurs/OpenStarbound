@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
@@ -11,6 +11,8 @@ struct InteractActionExceptionTag {
 using InteractActionException = StarError<InteractActionExceptionTag, StarException>;
 
 struct InteractRequest {
+  friend DataStream& operator>>(DataStream& ds, InteractRequest& ir);
+  friend DataStream& operator<<(DataStream& ds, InteractRequest const& ir);
   EntityId sourceId;
   Vec2F sourcePosition;
   EntityId targetId;
@@ -37,6 +39,8 @@ enum class InteractActionType {
 extern EnumMap<InteractActionType> const InteractActionTypeNames;
 
 struct InteractAction {
+  friend DataStream& operator>>(DataStream& ds, InteractAction& ir);
+  friend DataStream& operator<<(DataStream& ds, InteractAction const& ir);
   InteractAction();
   InteractAction(InteractActionType type, EntityId entityId, Json data);
   InteractAction(String const& typeName, EntityId entityId, Json data);
@@ -51,4 +55,15 @@ struct InteractAction {
 DataStream& operator>>(DataStream& ds, InteractAction& ir);
 DataStream& operator<<(DataStream& ds, InteractAction const& ir);
 
+}
+
+export module star.interaction_types;
+
+export namespace Star {
+  using ::Star::InteractActionExceptionTag;
+  using ::Star::InteractActionException;
+  using ::Star::InteractRequest;
+  using ::Star::InteractActionType;
+  using ::Star::InteractActionTypeNames;
+  using ::Star::InteractAction;
 }

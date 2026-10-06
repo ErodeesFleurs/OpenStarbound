@@ -1,4 +1,8 @@
-#include "StarDamageTypes.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
 
 namespace Star {
 

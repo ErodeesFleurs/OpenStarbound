@@ -1,15 +1,30 @@
-#pragma once
+module;
 
-#include "StarHumanoid.hpp"
+#include "StarGameTypes.hpp"
+#include "StarDrawable.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarLightSource.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
 #include "StarDamage.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 #include "StarPhysicsEntity.hpp"
 
+import star.light_source;
+
 namespace Star {
+
+class Humanoid;
 
 STAR_CLASS(ToolUserEntity);
 STAR_CLASS(Item);
@@ -146,4 +161,44 @@ private:
   ItemPtr m_cachedObjectItem;
 };
 
+}
+
+export module star.tool_user;
+
+export namespace Star {
+  using ::Star::ToolUserEntity;
+  using ::Star::ToolUserEntityPtr;
+  using ::Star::ToolUserEntityConstPtr;
+  using ::Star::ToolUserEntityWeakPtr;
+  using ::Star::ToolUserEntityConstWeakPtr;
+  using ::Star::ToolUserEntityUPtr;
+  using ::Star::ToolUserEntityConstUPtr;
+  using ::Star::Item;
+  using ::Star::ItemPtr;
+  using ::Star::ItemConstPtr;
+  using ::Star::ItemWeakPtr;
+  using ::Star::ItemConstWeakPtr;
+  using ::Star::ItemUPtr;
+  using ::Star::ItemConstUPtr;
+  using ::Star::World;
+  using ::Star::WorldPtr;
+  using ::Star::WorldConstPtr;
+  using ::Star::WorldWeakPtr;
+  using ::Star::WorldConstWeakPtr;
+  using ::Star::WorldUPtr;
+  using ::Star::WorldConstUPtr;
+  using ::Star::EffectEmitter;
+  using ::Star::EffectEmitterPtr;
+  using ::Star::EffectEmitterConstPtr;
+  using ::Star::EffectEmitterWeakPtr;
+  using ::Star::EffectEmitterConstWeakPtr;
+  using ::Star::EffectEmitterUPtr;
+  using ::Star::EffectEmitterConstUPtr;
+  using ::Star::ToolUser;
+  using ::Star::ToolUserPtr;
+  using ::Star::ToolUserConstPtr;
+  using ::Star::ToolUserWeakPtr;
+  using ::Star::ToolUserConstWeakPtr;
+  using ::Star::ToolUserUPtr;
+  using ::Star::ToolUserConstUPtr;
 }

@@ -6,8 +6,11 @@
 #include "StarWorldRenderData.hpp"
 #include "StarCellularLighting.hpp"
 import star.world_structure;
-#include "StarChatAction.hpp"
-#include "StarWiring.hpp"
+import star.chat_action;
+#include "StarGameTypes.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarDataStream.hpp"
+import star.wiring;
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
 #include "StarLuaRoot.hpp"

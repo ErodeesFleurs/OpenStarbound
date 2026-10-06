@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
@@ -37,6 +37,8 @@ struct PlayerModeConfig {
 };
 
 struct ShipUpgrades {
+  friend DataStream& operator>>(DataStream& ds, ShipUpgrades& value);
+  friend DataStream& operator<<(DataStream& ds, ShipUpgrades const& value);
   explicit ShipUpgrades(Json config = {});
   Json toJson() const;
 
@@ -55,4 +57,16 @@ struct ShipUpgrades {
 DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades);
 DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades);
 
+}
+
+export module star.player_types;
+
+export namespace Star {
+  using ::Star::PlayerMode;
+  using ::Star::PlayerModeNames;
+  using ::Star::PlayerBusyState;
+  using ::Star::PlayerBusyStateNames;
+  using ::Star::PlayerWarpRequest;
+  using ::Star::PlayerModeConfig;
+  using ::Star::ShipUpgrades;
 }

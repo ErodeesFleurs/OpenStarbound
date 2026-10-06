@@ -1,5 +1,13 @@
-#include "StarSkyRenderData.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
+import star.sky_render_data;
 #include "StarDataStreamExtra.hpp"
 #include "StarRandomPoint.hpp"
 #include "StarDrawable.hpp"

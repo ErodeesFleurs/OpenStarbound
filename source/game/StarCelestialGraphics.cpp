@@ -1,6 +1,10 @@
-#include "StarCelestialTypes.hpp"
-#include "StarCelestialGraphics.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
+#include "StarCelestialGraphics.hpp"
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarFormat.hpp"

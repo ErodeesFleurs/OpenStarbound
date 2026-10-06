@@ -1,5 +1,7 @@
-#include "StarInteractionTypes.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
+import star.interaction_types;
 
 namespace Star {
 

@@ -5,7 +5,11 @@ module;
 #include "StarJsonRpc.hpp"
 #include "StarWarping.hpp"
 #include "StarThread.hpp"
-#include "StarDamageTypes.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+import star.damage_types;
 #include "StarVersion.hpp"
 
 namespace Star {

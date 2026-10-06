@@ -3,13 +3,21 @@
 #include "StarObserverStream.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarNetElementExt.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
 #include "StarEither.hpp"
 #include "StarDamage.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarEntityRenderingTypes.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
 import star.stat_collection;
 
 import star.status_effect_database;

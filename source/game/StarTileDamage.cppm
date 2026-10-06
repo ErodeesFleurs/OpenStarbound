@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
@@ -39,6 +39,8 @@ extern EnumMap<TileDamageType> const TileDamageTypeNames;
 bool tileDamageIsPenetrating(TileDamageType damageType);
 
 struct TileDamage {
+  friend DataStream& operator>>(DataStream& ds, TileDamage& tileDamage);
+  friend DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage);
   TileDamage();
   TileDamage(TileDamageType type, float amount, unsigned harvestLevel = 1);
 
@@ -153,4 +155,37 @@ inline TileDamageType TileDamageStatus::damageType() const {
   return m_damageType;
 }
 
+}
+
+export module star.tile_damage;
+
+export namespace Star {
+  using ::Star::TileDamageParameters;
+  using ::Star::TileDamageStatus;
+  using ::Star::EntityTileDamageStatus;
+  using ::Star::TileDamageExceptionTag;
+  using ::Star::TileDamageException;
+  using ::Star::tileAreaBrush;
+  using ::Star::TileDamageType;
+  using ::Star::TileDamageTypeNames;
+  using ::Star::tileDamageIsPenetrating;
+  using ::Star::TileDamage;
+  using ::Star::TileDamageParametersPtr;
+  using ::Star::TileDamageParametersConstPtr;
+  using ::Star::TileDamageParametersWeakPtr;
+  using ::Star::TileDamageParametersConstWeakPtr;
+  using ::Star::TileDamageParametersUPtr;
+  using ::Star::TileDamageParametersConstUPtr;
+  using ::Star::TileDamageStatusPtr;
+  using ::Star::TileDamageStatusConstPtr;
+  using ::Star::TileDamageStatusWeakPtr;
+  using ::Star::TileDamageStatusConstWeakPtr;
+  using ::Star::TileDamageStatusUPtr;
+  using ::Star::TileDamageStatusConstUPtr;
+  using ::Star::EntityTileDamageStatusPtr;
+  using ::Star::EntityTileDamageStatusConstPtr;
+  using ::Star::EntityTileDamageStatusWeakPtr;
+  using ::Star::EntityTileDamageStatusConstWeakPtr;
+  using ::Star::EntityTileDamageStatusUPtr;
+  using ::Star::EntityTileDamageStatusConstUPtr;
 }

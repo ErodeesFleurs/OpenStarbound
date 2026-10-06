@@ -1,10 +1,19 @@
-#pragma once
+module;
 
-#include "StarSkyParameters.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+import star.sky_types;
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+import star.sky_parameters;
 
 namespace Star {
 
 struct SkyRenderData {
+  friend DataStream& operator>>(DataStream& ds, SkyRenderData& value);
+  friend DataStream& operator<<(DataStream& ds, SkyRenderData const& value);
   Json settings;
   SkyParameters skyParameters;
 
@@ -43,4 +52,10 @@ struct SkyRenderData {
 
 DataStream& operator>>(DataStream& ds, SkyRenderData& skyRenderData);
 DataStream& operator<<(DataStream& ds, SkyRenderData const& skyRenderData);
+}
+
+export module star.sky_render_data;
+
+export namespace Star {
+  using ::Star::SkyRenderData;
 }

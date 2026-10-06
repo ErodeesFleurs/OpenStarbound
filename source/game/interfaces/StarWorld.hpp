@@ -4,10 +4,22 @@
 #include "StarJson.hpp"
 
 #include "StarTileEntity.hpp"
-#include "StarInteractionTypes.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.interaction_types;
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
 #include "StarWorldGeometry.hpp"
-#include "StarTileModification.hpp"
+#include "StarDataStream.hpp"
+#include "StarVariant.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+import star.collision_block;
+import star.tile_modification;
 #include "StarLuaRoot.hpp"
 #include "StarRpcPromise.hpp"
 

@@ -1,10 +1,12 @@
 module;
 
 #include "StarThread.hpp"
-#include "StarItemRecipe.hpp"
+#include "StarTtlCache.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
-#include "StarTtlCache.hpp"
 
 namespace Star {
 

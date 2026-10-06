@@ -1,10 +1,14 @@
-#include "StarCelestialTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarSystemWorldServer.hpp"
 #include "StarRoot.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarNetPackets.hpp"
 #include "StarMathCommon.hpp"
-#include "StarJsonExtra.hpp"
 
 
 import star.celestial_database;

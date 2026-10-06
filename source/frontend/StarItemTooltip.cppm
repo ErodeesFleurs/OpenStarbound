@@ -1,7 +1,11 @@
 module;
 
 #include "StarString.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
 #include "StarGuiReader.hpp"
 #include "StarPane.hpp"
 #include "StarListWidget.hpp"

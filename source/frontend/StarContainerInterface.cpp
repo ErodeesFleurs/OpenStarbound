@@ -1,7 +1,14 @@
-#include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarContainerInterface.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarItem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_database;
+import star.item_recipe;
+#include "StarContainerInterface.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarWorldClient.hpp"
 #include "StarRoot.hpp"
@@ -20,7 +27,6 @@ import star.player_lua_bindings;
 import star.item_tooltip;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
-import star.item_database;
 
 
 import star.player_inventory;

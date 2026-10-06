@@ -4,7 +4,9 @@
 #include "StarWorldRenderData.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarRenderer.hpp"
-#include "StarTileDrawer.hpp"
+#include "StarDrawable.hpp"
+
+import star.tile_drawer;
 
 namespace Star {
 

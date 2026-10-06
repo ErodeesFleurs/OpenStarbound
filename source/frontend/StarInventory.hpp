@@ -3,7 +3,10 @@
 #include "StarJson.hpp"
 
 #include "StarPane.hpp"
-#include "StarInventoryTypes.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
 #include "StarItemDescriptor.hpp"
 #include "StarContainerInteractor.hpp"
 

@@ -1,6 +1,8 @@
 #pragma once
 
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarWorldParameters.hpp"
 
 namespace Star {

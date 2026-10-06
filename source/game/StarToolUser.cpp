@@ -1,8 +1,29 @@
 // Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
 #include "StarObject.hpp"
 #include "StarItem.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarToolUser.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarGameTypes.hpp"
+import star.item_recipe;
+#include "StarHumanoid.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+import star.status_types;
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+#include "StarDamage.hpp"
+#include "StarJson.hpp"
+#include "StarColor.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+import star.entity_rendering_types;
+#include "StarPhysicsEntity.hpp"
+
+import star.tool_user;
 #include "StarRoot.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
@@ -23,6 +44,8 @@ import star.object_database;
 
 
 import star.effect_emitter;
+
+import star.light_source;
 
 namespace Star {
 

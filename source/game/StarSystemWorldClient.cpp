@@ -1,4 +1,8 @@
-#include "StarCelestialTypes.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarEither.hpp"
+#include "StarCelestialParameters.hpp"
+import star.celestial_types;
 #include "StarSystemWorldClient.hpp"
 #include "StarRoot.hpp"
 import star.player_universe_map;

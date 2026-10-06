@@ -1,8 +1,11 @@
-#include "StarWeatherTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarParticle.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+import star.weather_types;
 
 
 import star.biome_database;

@@ -15,7 +15,9 @@
 #include "StarMerchantInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAugmentItem.hpp"
-#include "StarInteractionTypes.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.interaction_types;
 
 import star.simple_tooltip;
 import star.object_item;

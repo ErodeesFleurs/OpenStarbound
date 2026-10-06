@@ -1,11 +1,11 @@
-#pragma once
+module;
 
 #include "StarMathCommon.hpp"
 
 namespace Star {
 
 typedef uint8_t LiquidId;
-LiquidId const EmptyLiquidId = 0;
+inline constexpr LiquidId EmptyLiquidId = 0;
 
 struct LiquidLevel {
   LiquidLevel();
@@ -53,4 +53,14 @@ inline LiquidLevel LiquidNetUpdate::liquidLevel() const {
   return LiquidLevel{liquid, byteToFloat(level)};
 }
 
+}
+
+export module star.liquid_types;
+
+export namespace Star {
+  using ::Star::LiquidId;
+  using ::Star::EmptyLiquidId;
+  using ::Star::LiquidLevel;
+  using ::Star::LiquidNetUpdate;
+  using ::Star::LiquidStore;
 }

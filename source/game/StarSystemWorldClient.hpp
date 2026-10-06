@@ -1,7 +1,9 @@
 #pragma once
 
 #include "StarCelestialParameters.hpp"
-#include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.celestial_coordinate;
 #include "StarSystemWorld.hpp"
 #include "StarNetPackets.hpp"
 
