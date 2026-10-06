@@ -1,10 +1,55 @@
-#include "StarNameplatePainter.hpp"
+#include "StarPoly.hpp"
+import star.world_geometry;
+#include "StarGameTypes.hpp"
+#include "StarInterpolation.hpp"
+
+#include "StarWorldClient.hpp"
+
+#include "StarRect.hpp"
+#include "StarList.hpp"
+
+
+import star.chat_bubble_separation;
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+import star.font_texture_group;
+#include "StarBiMap.hpp"
+import star.anchor_types;
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+import star.text_painter;
+
+import star.world_camera;
+
+
+import star.nameplate_painter;
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarNametagEntity.hpp"
 #include "StarPlayer.hpp"
-#include "StarGuiContext.hpp"
+#include "StarApplicationController.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarInputEvent.hpp"
+#include "StarThread.hpp"
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarMap.hpp"
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
 
 namespace Star {
 

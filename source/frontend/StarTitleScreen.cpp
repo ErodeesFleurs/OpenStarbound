@@ -7,7 +7,6 @@
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
@@ -25,30 +24,77 @@ import star.celestial_parameters;
 import star.celestial_types;
 #include "StarTitleScreen.hpp"
 #include "StarEncode.hpp"
-#include "StarGuiReader.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.widget_parsing;
+import star.gui_reader;
 #include "StarPlayer.hpp"
-#include "StarGuiContext.hpp"
-#include "StarPaneManager.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarListWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarCharSelection.hpp"
-#include "StarCharCreation.hpp"
-#include "StarTextBoxWidget.hpp"
-#include "StarCanvasWidget.hpp"
-#include "StarWidgetLuaBindings.hpp"
-#include "StarOptionsMenu.hpp"
-#include "StarModsMenu.hpp"
+import star.pane;
+import star.game_timers;
+import star.pane_manager;
+import star.button_group;
+import star.button_widget;
+import star.list_widget;
+import star.label_widget;
+
+#include "StarArray.hpp"
+import star.uuid;
+
+
+import star.char_selection;
+
+#include "StarImageProcessing.hpp"
+#include "StarHumanoid.hpp"
+
+
+import star.char_creation;
+import star.text_box_widget;
+import star.canvas_widget;
+#include "StarLua.hpp"
+import star.widget_lua_bindings;
+
+#include "StarVersion.hpp"
+import star.configuration;
+
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+#include "StarUniverseClient.hpp"
+
+
+import star.options_menu;
+
+
+
+import star.mods_menu;
 #include "StarAssets.hpp"
 #include "StarEnvironmentPainter.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarJson.hpp"
-import star.sky_types;
-#include "StarEither.hpp"
-#include "StarVector.hpp"
-import star.celestial_coordinate;
 import star.sky_parameters;
 
 

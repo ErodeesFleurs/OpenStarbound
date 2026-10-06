@@ -1,22 +1,79 @@
-#include "StarInventory.hpp"
-#include "StarGuiReader.hpp"
-#include "StarRoot.hpp"
-#include "StarUniverseClient.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarPortraitWidget.hpp"
-#include "StarPaneManager.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarWorldClient.hpp"
-#include "StarAssets.hpp"
-#include "StarItem.hpp"
-#include "StarMainInterface.hpp"
-#include "StarMerchantInterface.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarAugmentItem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarBiMap.hpp"
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
+import star.item_descriptor;
+
+#include "StarContainerEntity.hpp"
+
+
+import star.container_interactor;
+
+import star.game_timers;
+
+
+import star.inventory;
+import star.widget_parsing;
+import star.gui_reader;
+#include "StarUniverseClient.hpp"
+#include "StarItem.hpp"
+import star.progress_widget;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.button_group;
+import star.button_widget;
+#include "StarPlayer.hpp"
+import star.portrait_widget;
+#include "StarOrderedMap.hpp"
+import star.pane_manager;
+import star.label_widget;
+import star.image_widget;
+#include "StarWorldClient.hpp"
+#include "StarAssets.hpp"
+#include "StarMainInterface.hpp"
+
+
+
+import star.merchant_interface;
+#include "StarJsonExtra.hpp"
+#include "StarAugmentItem.hpp"
 import star.interaction_types;
 
 import star.simple_tooltip;

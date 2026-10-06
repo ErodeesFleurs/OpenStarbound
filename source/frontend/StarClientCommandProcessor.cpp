@@ -12,26 +12,14 @@ import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
 #include "StarJsonRpc.hpp"
-#include "StarJson.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.item_descriptor;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
-#include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
 import star.uuid;
-#include "StarJson.hpp"
-#include "StarVector.hpp"
-import star.celestial_coordinate;
-#include "StarGameTypes.hpp"
 import star.warping;
 import star.quests;
 import star.quest_manager;
@@ -42,15 +30,62 @@ import star.quest_manager;
 import star.player_tech;
 import star.player_log;
 #include "StarWorldClient.hpp"
-#include "StarAiInterface.hpp"
-#include "StarQuestInterface.hpp"
+
+#include "StarOrderedSet.hpp"
+import star.ai_types;
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+
+#include "StarOrderedMap.hpp"
+import star.game_timers;
+import star.pane_manager;
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+import star.animation;
+import star.tech_database;
+
+
+
+import star.ai_interface;
+
+
+
+import star.quest_interface;
 #include "StarInput.hpp"
 
 
 
 import star.player_inventory;
 import star.statistics;
-
 
 namespace Star {
 

@@ -4,10 +4,14 @@
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarAssetPath.hpp"
 import star.drawable;
 #include "StarRoot.hpp"
-#include "StarInterfaceCursor.hpp"
+
+
+import star.animation;
+
+
+import star.interface_cursor;
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 

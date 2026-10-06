@@ -27,23 +27,57 @@ import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_database;
 import star.item_recipe;
-#include "StarWidgetLuaBindings.hpp"
+#include "StarLua.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.widget_parsing;
+import star.gui_reader;
+import star.widget_lua_bindings;
 #include "StarRoot.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarGuiReader.hpp"
-#include "StarCanvasWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarListWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarButtonGroup.hpp"
-#include "StarTextBoxWidget.hpp"
-#include "StarProgressWidget.hpp"
-#include "StarSliderBar.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarItemSlotWidget.hpp"
-#include "StarFlowLayout.hpp"
-#include "StarImageStretchWidget.hpp"
-#include "StarScrollArea.hpp"
+import star.canvas_widget;
+import star.label_widget;
+import star.list_widget;
+import star.button_group;
+import star.button_widget;
+import star.text_box_widget;
+import star.progress_widget;
+import star.image_widget;
+import star.slider_bar;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.layout;
+import star.flow_layout;
+import star.image_stretch_widget;
+import star.scroll_area;
 
 
 import star.item_bag;
@@ -133,7 +167,9 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   return methods;
 }
 
-LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
+namespace LuaBindings {
+
+LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
   if (!reader)
     reader = make_shared<GuiReader>();
 
@@ -524,6 +560,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   });
 
   return callbacks;
+}
+
 }
 
 }

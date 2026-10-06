@@ -1,4 +1,9 @@
-#include "StarContainerInteractor.hpp"
+
+#include "StarContainerEntity.hpp"
+
+
+import star.container_interactor;
+
 namespace Star {
 
 void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {

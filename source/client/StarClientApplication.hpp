@@ -5,11 +5,40 @@
 #include "StarWorldPainter.hpp"
 #include "StarGameTypes.hpp"
 #include "StarMainInterface.hpp"
-#include "StarMainMixer.hpp"
+
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
+
+
+import star.main_mixer;
 #include "StarTitleScreen.hpp"
-#include "StarErrorScreen.hpp"
+
+#include "StarString.hpp"
+#include "StarInputEvent.hpp"
+
+#include "StarJson.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+
+import star.animation;
+
+
+import star.interface_cursor;
+
+
+import star.error_screen;
 #include "StarCinematic.hpp"
-#include "StarKeyBindings.hpp"
+import star.key_bindings;
 #include "StarMainApplication.hpp"
 
 namespace Star {

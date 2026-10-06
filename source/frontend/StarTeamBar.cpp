@@ -1,18 +1,69 @@
-#include "StarTeamBar.hpp"
+
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarBiMap.hpp"
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarGameTypes.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+#include "StarArray.hpp"
+import star.uuid;
+
+#include "StarOrderedMap.hpp"
+import star.game_timers;
+import star.pane_manager;
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+import star.progress_widget;
+import star.label_widget;
+
+
+import star.team_bar;
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarGuiReader.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarProgressWidget.hpp"
-#include "StarTextBoxWidget.hpp"
-#include "StarLabelWidget.hpp"
+import star.widget_parsing;
+import star.gui_reader;
+import star.button_group;
+import star.button_widget;
+import star.image_widget;
+import star.text_box_widget;
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
-#include "StarPortraitWidget.hpp"
+import star.portrait_widget;
 #include "StarMathCommon.hpp"
 
 import star.client_context;

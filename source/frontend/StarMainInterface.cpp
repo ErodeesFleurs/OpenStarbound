@@ -8,7 +8,6 @@
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
@@ -16,7 +15,6 @@ import star.sky_types;
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
 import star.animation;
 import star.particle;
 import star.weather_types;
@@ -27,78 +25,232 @@ import star.celestial_types;
 #include "StarMainInterface.hpp"
 #include "StarLogging.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarContainerInterface.hpp"
-#include "StarCraftingInterface.hpp"
-#include "StarMerchantInterface.hpp"
+
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+#include "StarLuaComponents.hpp"
+
+#include "StarContainerEntity.hpp"
+
+
+import star.container_interactor;
+import star.widget_parsing;
+import star.gui_reader;
+
+
+import star.container_interface;
+
+#include "StarWorldPainter.hpp"
+#include "StarWorldClient.hpp"
+import star.item_descriptor;
+import star.item_recipe;
+
+
+import star.crafting_interface;
+
+
+
+import star.merchant_interface;
 #include "StarUniverseClient.hpp"
-#include "StarCodexInterface.hpp"
-#include "StarSongbookInterface.hpp"
-#include "StarQuestInterface.hpp"
-#include "StarPopupInterface.hpp"
-#include "StarConfirmationDialog.hpp"
-#include "StarJoinRequestDialog.hpp"
-#include "StarGuiReader.hpp"
-#include "StarPaneManager.hpp"
+
+// Keep Uuid's textual definition ahead of the global codex interface on GCC.
+#include "StarArray.hpp"
+import star.uuid;
+import star.player_codexes;
+
+
+import star.codex_interface;
+
+
+
+import star.songbook_interface;
+
+
+
+import star.quest_interface;
+
+
+
+import star.popup_interface;
+
+#include "StarRpcPromise.hpp"
+
+
+import star.confirmation_dialog;
+
+
+
+import star.join_request_dialog;
+import star.game_timers;
+import star.pane_manager;
 #include "StarClientCommandProcessor.hpp"
-#include "StarChat.hpp"
-#include "StarOptionsMenu.hpp"
-#include "StarActionBar.hpp"
-#include "StarWireInterface.hpp"
-#include "StarTeamBar.hpp"
-#include "StarStatusPane.hpp"
-#include "StarCanvasWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarItemSlotWidget.hpp"
-#include "StarButtonWidget.hpp"
+
+
+
+
+import star.base_script_pane;
+import star.chat_types;
+
+
+import star.chat;
+
+#include "StarVersion.hpp"
+import star.configuration;
+
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+
+
+import star.options_menu;
+
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
+
+
+
+
+
+import star.action_bar;
+
+import star.world_geometry;
+import star.wiring;
+
+
+import star.wire_interface;
+
+
+
+
+import star.progress_widget;
+import star.label_widget;
+
+
+import star.team_bar;
+
+
+
+
+
+
+import star.status_pane;
+import star.canvas_widget;
+import star.item_slot_widget;
+import star.button_group;
+import star.button_widget;
 #include "StarPlayer.hpp"
 import star.player_log;
 #include "StarMonster.hpp"
 #include "StarItemDrop.hpp"
 #include "StarAssets.hpp"
 #include "StarItem.hpp"
-#include "StarAiInterface.hpp"
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
-#include "StarJson.hpp"
-#include "StarAssetPath.hpp"
-import star.drawable;
-#include "StarFireableItem.hpp"
-#include "StarToolUserEntity.hpp"
-#include "StarTeleportDialog.hpp"
-#include "StarCinematic.hpp"
-#include "StarNameplatePainter.hpp"
-#include "StarQuestIndicatorPainter.hpp"
-#include "StarScriptPane.hpp"
-#include "StarContainerEntity.hpp"
-#include "StarWarpTargetEntity.hpp"
-import star.player_universe_map;
-#include "StarWorldTemplate.hpp"
-#include "StarRadioMessagePopup.hpp"
+
 #include "StarOrderedSet.hpp"
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.item_descriptor;
-#include "StarJson.hpp"
-#include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
-#include "StarStrongTypedef.hpp"
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.item_descriptor;
-#include "StarVector.hpp"
-import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.ai_types;
-#include "StarQuestTracker.hpp"
-#include "StarContainerInteractor.hpp"
-#include "StarChatBubbleManager.hpp"
+import star.warping;
+
+
+
+import star.tech_database;
+
+
+
+import star.ai_interface;
+#include "StarFireableItem.hpp"
+#include "StarToolUserEntity.hpp"
+
+
+// Parse foundations before importing global bookmark value types on GCC.
+#include "StarSystemWorld.hpp"
+import star.player_universe_map;
+
+
+import star.bookmark_interface;
+
+
+import star.teleport_dialog;
+#include "StarCinematic.hpp"
+#include "StarInterpolation.hpp"
+
+
+
+
+import star.chat_bubble_separation;
+
+import star.world_camera;
+
+
+import star.nameplate_painter;
+
+
+
+
+import star.quest_indicator_painter;
+
+
+
+
+
+
+import star.script_pane;
+#include "StarWarpTargetEntity.hpp"
+#include "StarWorldTemplate.hpp"
+
+
+import star.radio_message_database;
+
+
+
+import star.radio_message_popup;
+
+
+
+import star.quest_tracker;
+
+
+
+
+import star.chat_action;
+
+
+
+
+
+
+import star.chat_bubble_manager;
 #include "StarNpc.hpp"
-#include "StarCharSelection.hpp"
+
+
+
+import star.char_selection;
 
 import star.inspection_tool;
 import star.active_item;

@@ -1,8 +1,20 @@
-#include "StarMainMixer.hpp"
+
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+import star.mixer;
+#include "StarGameTypes.hpp"
+
+
+import star.main_mixer;
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarJson.hpp"
-#include "StarThread.hpp"
 #include "StarVersion.hpp"
 import star.configuration;
 #include "StarUniverseClient.hpp"

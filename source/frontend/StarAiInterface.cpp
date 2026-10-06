@@ -20,44 +20,84 @@ import star.platformer_astar_types;
 import star.game_timers;
 import star.actor_movement_controller;
 #include "StarItem.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 import star.item_descriptor;
-#include "StarGameTypes.hpp"
 import star.item_database;
 import star.item_recipe;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 import star.drawable;
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
 import star.uuid;
 #include "StarLuaComponents.hpp"
 import star.player_companions;
-#include "StarAiInterface.hpp"
+
+#include "StarOrderedSet.hpp"
+#include "StarStrongTypedef.hpp"
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.ai_types;
+import star.warping;
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+
+#include "StarOrderedMap.hpp"
+import star.pane_manager;
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+import star.animation;
+import star.tech_database;
+
+
+
+import star.ai_interface;
 #include "StarLexicalCast.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarAssets.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarPlayer.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
-#include "StarCanvasWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarImageStretchWidget.hpp"
-#include "StarGuiReader.hpp"
-#include "StarListWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarTabSet.hpp"
-#include "StarItemSlotWidget.hpp"
-#include "StarStackWidget.hpp"
+import star.canvas_widget;
+import star.label_widget;
+import star.image_widget;
+import star.image_stretch_widget;
+import star.widget_parsing;
+import star.gui_reader;
+import star.list_widget;
+import star.button_group;
+import star.button_widget;
+import star.tab_set;
+import star.progress_widget;
+import star.item_slot_widget;
+#include "StarEither.hpp"
+import star.stack_widget;
 #include "StarCinematic.hpp"
 #include "StarWorldClient.hpp"
 
@@ -65,7 +105,6 @@ import star.ai_database;
 
 
 import star.client_context;
-
 
 namespace Star {
 

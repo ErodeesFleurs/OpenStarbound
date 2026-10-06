@@ -20,25 +20,66 @@ import star.platformer_astar_types;
 import star.game_timers;
 import star.actor_movement_controller;
 #include "StarItem.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 import star.item_descriptor;
-#include "StarGameTypes.hpp"
 import star.item_database;
 import star.item_recipe;
-#include "StarContainerInterface.hpp"
-#include "StarContainerEntity.hpp"
-#include "StarWorldClient.hpp"
+
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
 #include "StarRoot.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarPaneManager.hpp"
-#include "StarFuelWidget.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+#include "StarLuaComponents.hpp"
+
+#include "StarContainerEntity.hpp"
+
+
+import star.container_interactor;
+import star.widget_parsing;
+import star.gui_reader;
+
+
+import star.container_interface;
+#include "StarWorldClient.hpp"
+import star.progress_widget;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.label_widget;
+import star.image_widget;
+#include "StarOrderedMap.hpp"
+import star.pane_manager;
+import star.fuel_widget;
 #include "StarPlayer.hpp"
 #include "StarObject.hpp"
-#include "StarWidgetLuaBindings.hpp"
+#include "StarLua.hpp"
+import star.widget_lua_bindings;
 #include "StarAugmentItem.hpp"
 #include "StarInput.hpp"
 

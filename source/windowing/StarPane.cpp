@@ -3,16 +3,50 @@
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-import star.item_descriptor;
 #include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.pane;
+import star.item_descriptor;
 import star.item_recipe;
-#include "StarPane.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarWidgetLuaBindings.hpp"
+#include "StarLua.hpp"
+import star.widget_parsing;
+import star.gui_reader;
+import star.widget_lua_bindings;
 #include "StarLuaConverters.hpp"
-#include "StarImageWidget.hpp"
-#include "StarGuiReader.hpp"
+import star.image_widget;
 
 
 import star.item_database;
@@ -50,11 +84,6 @@ Pane::Pane() {
   m_subTitleColor = jsonToColor(assets->json("/interface.config:paneSubTitleColor"));
 }
 
-void Pane::displayed() {
-  m_dismissed = false;
-  m_hasDisplayed = true;
-  show();
-}
 
 void Pane::dismissed() {
   if (m_clickDown)

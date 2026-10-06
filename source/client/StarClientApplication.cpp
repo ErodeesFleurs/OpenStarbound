@@ -7,14 +7,12 @@ import star.configuration;
 #include "StarFile.hpp"
 #include "StarEncode.hpp"
 #include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarString.hpp"
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.option_parser;
-#include "StarVersion.hpp"
 import star.version_option_parser;
 #include "StarPlayer.hpp"
 import star.player_log;
@@ -26,7 +24,46 @@ import star.player_log;
 #include "StarVoice.hpp"
 #include "StarInterpolation.hpp"
 
-#include "StarMainInterfaceTypes.hpp"
+
+#include "StarPoly.hpp"
+#include "StarBiMap.hpp"
+#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarDataStream.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+import star.game_timers;
+import star.pane_manager;
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
 
 #include "imgui.h"
 #include "imgui_freetype.h"

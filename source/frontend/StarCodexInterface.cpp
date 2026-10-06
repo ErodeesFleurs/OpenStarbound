@@ -1,14 +1,59 @@
-#include "StarCodexInterface.hpp"
-import star.codex;
-#include "StarGuiReader.hpp"
+
+// Keep Uuid's textual definition ahead of the global codex interface on GCC.
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarBiMap.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarGameTypes.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+import star.player_codexes;
+
+
+import star.codex_interface;
+import star.codex;
+import star.widget_parsing;
+import star.gui_reader;
 #include "StarPlayer.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarListWidget.hpp"
-#include "StarStackWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarButtonGroup.hpp"
+import star.label_widget;
+import star.list_widget;
+#include "StarEither.hpp"
+import star.stack_widget;
+import star.image_widget;
+import star.button_group;
+import star.button_widget;
 #include "StarAssets.hpp"
 
 namespace Star {

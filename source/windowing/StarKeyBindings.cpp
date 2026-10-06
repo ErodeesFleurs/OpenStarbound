@@ -1,4 +1,7 @@
-#include "StarKeyBindings.hpp"
+#include "StarInputEvent.hpp"
+#include "StarSet.hpp"
+#include "StarJson.hpp"
+import star.key_bindings;
 #include "StarRoot.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"

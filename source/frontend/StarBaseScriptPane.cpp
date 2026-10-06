@@ -6,21 +6,61 @@
 import star.item_descriptor;
 #include "StarGameTypes.hpp"
 import star.item_recipe;
-#include "StarBaseScriptPane.hpp"
+
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+#include "StarLuaComponents.hpp"
+import star.widget_parsing;
+import star.gui_reader;
+
+
+import star.base_script_pane;
 #include "StarAssets.hpp"
-#include "StarGuiReader.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarWidgetLuaBindings.hpp"
-#include "StarCanvasWidget.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarImageWidget.hpp"
+#include "StarLua.hpp"
+import star.widget_lua_bindings;
+import star.canvas_widget;
+import star.progress_widget;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.image_widget;
 
 import star.simple_tooltip;
 import star.item_tooltip;
 import star.config_lua_bindings;
 import star.item_database;
-
 
 namespace Star {
 

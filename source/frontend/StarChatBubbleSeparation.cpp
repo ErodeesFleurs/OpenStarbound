@@ -1,4 +1,9 @@
-#include "StarChatBubbleSeparation.hpp"
+
+#include "StarRect.hpp"
+#include "StarList.hpp"
+
+
+import star.chat_bubble_separation;
 //#include "StarLogging.hpp"
 
 namespace Star {

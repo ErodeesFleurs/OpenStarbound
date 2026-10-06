@@ -1,10 +1,59 @@
-#include "StarBookmarkInterface.hpp"
-#include "StarGuiReader.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarTextBoxWidget.hpp"
-#include "StarLabelWidget.hpp"
+
+// Parse foundations before importing global bookmark value types on GCC.
+#include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+import star.uuid;
+#include "StarVector.hpp"
+import star.celestial_coordinate;
+#include "StarGameTypes.hpp"
+import star.warping;
+#include "StarSystemWorld.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
+#include "StarBiMap.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+import star.player_universe_map;
+
+
+import star.bookmark_interface;
+import star.widget_parsing;
+import star.gui_reader;
+import star.button_group;
+import star.button_widget;
+import star.image_widget;
+import star.text_box_widget;
+import star.label_widget;
 #include "StarAssets.hpp"
 
 namespace Star {

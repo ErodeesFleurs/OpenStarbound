@@ -1,18 +1,73 @@
 #include "StarAssetPath.hpp"
-#include "StarActionBar.hpp"
-#include "StarJsonExtra.hpp"
+
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarStrongTypedef.hpp"
+import star.inventory_types;
+
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+#include "StarCasting.hpp"
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarColor.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
 #include "StarRoot.hpp"
-#include "StarGuiReader.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarOrderedMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+import star.game_timers;
+import star.pane_manager;
+import star.registered_pane_manager;
+
+
+import star.main_interface_types;
+
+
+import star.action_bar;
+#include "StarJsonExtra.hpp"
+import star.widget_parsing;
+import star.gui_reader;
 #include "StarUniverseClient.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarItemSlotWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarImageWidget.hpp"
-#include "StarPaneManager.hpp"
+#include "StarItem.hpp"
+import star.progress_widget;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.button_group;
+import star.button_widget;
+import star.image_widget;
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
-#include "StarItem.hpp"
-#include "StarMerchantInterface.hpp"
+
+#include "StarWorldClient.hpp"
+
+
+import star.merchant_interface;
 
 import star.item_tooltip;
 import star.image_metadata_database;

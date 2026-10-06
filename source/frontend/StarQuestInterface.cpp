@@ -14,62 +14,76 @@ import star.item_recipe;
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 import star.drawable;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarThread.hpp"
-#include "StarJson.hpp"
-#include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarJson.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.item_descriptor;
-#include "StarVector.hpp"
-import star.celestial_coordinate;
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
-#include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
 import star.uuid;
-#include "StarJson.hpp"
-#include "StarVector.hpp"
-import star.celestial_coordinate;
-#include "StarGameTypes.hpp"
 import star.warping;
 import star.quests;
 import star.quest_manager;
-#include "StarQuestInterface.hpp"
-#include "StarCinematic.hpp"
-#include "StarGuiReader.hpp"
+
+#include "StarInputEvent.hpp"
+#include "StarApplicationController.hpp"
+#include "StarFont.hpp"
+#include "StarRenderer.hpp"
+#include "StarDirectives.hpp"
 #include "StarRoot.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarMaybe.hpp"
+#include "StarListener.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.asset_texture_group;
+import star.drawable_painter;
+import star.gui_types;
+import star.key_bindings;
+import star.mixer;
+import star.gui_context;
+import star.widget;
+import star.pane;
+
+
+import star.quest_interface;
+#include "StarCinematic.hpp"
+import star.widget_parsing;
+import star.gui_reader;
 #include "StarUniverseClient.hpp"
-#include "StarPaneManager.hpp"
-#include "StarListWidget.hpp"
-#include "StarItemGridWidget.hpp"
-#include "StarButtonWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarLabelWidget.hpp"
-#include "StarImageWidget.hpp"
+#include "StarOrderedMap.hpp"
+import star.game_timers;
+import star.pane_manager;
+import star.list_widget;
+import star.progress_widget;
+import star.animation;
+import star.item_slot_widget;
+import star.item_grid_widget;
+import star.button_group;
+import star.button_widget;
+import star.label_widget;
+import star.image_widget;
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarPlayer.hpp"
-#include "StarVerticalLayout.hpp"
+import star.layout;
+import star.vertical_layout;
 
 import star.item_tooltip;
 import star.quest_template_database;
 
 
 import star.item_bag;
-
 
 namespace Star {
 
