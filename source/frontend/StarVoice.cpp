@@ -1,12 +1,24 @@
-#include "StarVoice.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarException.hpp"
+#include "StarGameTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarThread.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarFormat.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarApplicationController.hpp"
 #include "StarTime.hpp"
-#include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarAudio.hpp"
+#include <queue>
+struct OpusDecoder;
+typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
+struct OpusEncoder;
+typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
+import star.voice;
+#include "StarApplicationController.hpp"
+#include "StarRoot.hpp"
 #include "opus/opus.h"
 
 #include "SDL3/SDL.h"

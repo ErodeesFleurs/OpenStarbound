@@ -1,11 +1,15 @@
 #pragma once
-
-#include "StarItem.hpp"
-#include "StarBeamItem.hpp"
-#include "StarSwingableItem.hpp"
-#include "StarDurabilityItem.hpp"
-#include "StarPointableItem.hpp"
-#include "StarFireableItem.hpp"
+#include "StarJson.hpp"
+#include "StarIdMap.hpp"
+#include "StarSpline.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVariant.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarRect.hpp"
+#include "StarAStar.hpp"
+#include "StarConfig.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -14,23 +18,61 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
-import star.entity_rendering_types;
 #include "StarDirectives.hpp"
+
+#include "StarItem.hpp"
+import star.non_rotated_drawables_item;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.entity;
+import star.interaction_types;
+import star.tile_damage;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
+import star.physics_entity;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.anchorable_entity;
+import star.game_timers;
+import star.actor_movement_controller;
+import star.mobile_entity;
+import star.actor_entity;
+import star.tool_user_entity;
+import star.tool_user_item;
+import star.beam_item;
+import star.status_effect_item;
+#include "StarLuaComponents.hpp"
+import star.fireable_item;
+import star.swingable_item;
+import star.durability_item;
+import star.pointable_item;
+import star.mixer;
+import star.drawable;
+import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarPreviewTileTool.hpp"
+STAR_STRUCT(PreviewTile);
+STAR_CLASS(PreviewTileTool);
+import star.preview_tile_tool;
 
 namespace Star {
 

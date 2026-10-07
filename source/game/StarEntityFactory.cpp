@@ -1,17 +1,46 @@
+#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPlayer.hpp"
-#include "StarMonster.hpp"
-#include "StarObject.hpp"
-#include "StarPlant.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWorld.hpp"
-#include "StarPhysicsEntity.hpp"
-import star.movement_controller;
-#include "StarMobileEntity.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
+#include "StarList.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarAssetPath.hpp"
+#include "StarPlant.hpp"
+import star.plant_drop;
+#include "StarPlayer.hpp"
+#include "StarMonster.hpp"
+#include "StarObject.hpp"
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
+import star.physics_entity;
+import star.movement_controller;
+import star.mobile_entity;
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
 #include "StarNpc.hpp"
@@ -29,7 +58,6 @@ import star.entity_factory;
 import star.monster_database;
 import star.npc_database;
 
-import star.plant_drop;
 
 namespace Star {
 

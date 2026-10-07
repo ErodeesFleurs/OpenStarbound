@@ -1,15 +1,34 @@
 #pragma once
-
+#include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarTileEntity.hpp"
+#include "StarCasting.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarList.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
-import star.tile_damage;
-#include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
+
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_damage;
+import star.inspectable_entity;
 
 namespace Star {
 

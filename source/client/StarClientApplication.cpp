@@ -1,40 +1,25 @@
-#include "StarClientApplication.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-import star.configuration;
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarEncode.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
 #include "StarString.hpp"
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
-import star.option_parser;
-import star.version_option_parser;
-#include "StarPlayer.hpp"
-import star.player_log;
-#include "StarAssets.hpp"
-#include "StarWorldTemplate.hpp"
-#include "StarWorldClient.hpp"
-#include "StarRootLoader.hpp"
-#include "StarInput.hpp"
-#include "StarVoice.hpp"
+#include "StarException.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarInterpolation.hpp"
-
-
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
@@ -46,6 +31,28 @@ import star.player_log;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarClientApplication.hpp"
+import star.configuration;
+#include "StarRoot.hpp"
+import star.option_parser;
+import star.version_option_parser;
+#include "StarPlayer.hpp"
+import star.player_log;
+#include "StarAssets.hpp"
+#include "StarWorldTemplate.hpp"
+#include "StarWorldClient.hpp"
+#include "StarRootLoader.hpp"
+#include "StarInput.hpp"
+#include <queue>
+struct OpusDecoder;
+typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
+struct OpusEncoder;
+typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
+import star.voice;
+
+
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

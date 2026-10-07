@@ -1,10 +1,22 @@
 module;
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarVoice.hpp"
+#include "StarBiMap.hpp"
+#include "StarException.hpp"
+#include "StarGameTypes.hpp"
+#include "StarMaybe.hpp"
+#include "StarThread.hpp"
+#include "StarDataStreamDevices.hpp"
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarApplicationController.hpp"
+#include <queue>
+struct OpusDecoder;
+typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
+struct OpusEncoder;
+typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
+import star.voice;
 
 module star.voice_lua_bindings;
 

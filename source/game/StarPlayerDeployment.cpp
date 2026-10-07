@@ -1,3 +1,4 @@
+#include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarAudio.hpp"
@@ -8,17 +9,22 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
-import star.entity_rendering_types;
 #include "StarDirectives.hpp"
+#include "StarVariant.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarRpcPromise.hpp"
+import star.mixer;
+import star.drawable;
+import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 
@@ -26,7 +32,23 @@ import star.light_source;
 import star.entity_rendering;
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
-#include "StarWorld.hpp"
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
 
 import star.player_deployment;
 #include "StarPlayer.hpp"

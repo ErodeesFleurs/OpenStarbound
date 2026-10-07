@@ -1,5 +1,5 @@
 module;
-
+#include "StarIdMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -7,17 +7,13 @@ module;
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarNetElementSystem.hpp"
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-import star.item_descriptor;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
-import star.status_types;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -25,13 +21,9 @@ import star.status_types;
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
 #include "StarGameTypes.hpp"
-import star.damage_types;
 #include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarStrongTypedef.hpp"
 #include "StarIdMap.hpp"
-import star.status_types;
-import star.damage;
 #include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
@@ -40,10 +32,24 @@ import star.damage;
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
+#include "StarVariant.hpp"
+#include "StarCasting.hpp"
+#include "StarList.hpp"
+
+import star.drawable;
+import star.item_descriptor;
+import star.status_types;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.drawable;
 import star.entity_rendering_types;
-#include "StarPhysicsEntity.hpp"
+import star.entity;
+import star.collision_block;
+import star.force_regions;
+import star.physics_entity;
 
 import star.light_source;
 

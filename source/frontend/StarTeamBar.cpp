@@ -1,14 +1,11 @@
-
+#include "StarIdMap.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
@@ -24,6 +21,17 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarArray.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMathCommon.hpp"
+
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+#include "StarRoot.hpp"
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -36,10 +44,8 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
-#include "StarArray.hpp"
 import star.uuid;
 
-#include "StarOrderedMap.hpp"
 import star.game_timers;
 import star.pane_manager;
 import star.registered_pane_manager;
@@ -51,8 +57,28 @@ import star.label_widget;
 
 
 import star.team_bar;
-#include "StarMainInterface.hpp"
-#include "StarJsonExtra.hpp"
+import star.inventory_types;
+import star.item_descriptor;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.container_entity;
+import star.container_interactor;
+import star.inventory;
+import star.animation;
+import star.interface_cursor;
+import star.warping;
+import star.main_interface;
 #include "StarUniverseClient.hpp"
 import star.widget_parsing;
 import star.gui_reader;
@@ -64,7 +90,6 @@ import star.text_box_widget;
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 import star.portrait_widget;
-#include "StarMathCommon.hpp"
 
 import star.client_context;
 import star.team_client;

@@ -1,18 +1,14 @@
 module;
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
@@ -27,6 +23,21 @@ module;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarArray.hpp"
+#include "StarEncode.hpp"
+#include "StarBytes.hpp"
+#include "StarFormat.hpp"
+#include "StarTime.hpp"
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+#include "StarRoot.hpp"
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -41,9 +52,34 @@ import star.widget;
 import star.widget_parsing;
 import star.gui_reader;
 import star.widget_lua_bindings;
-#include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarMainInterface.hpp"
+import star.inventory_types;
+import star.item_descriptor;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.container_entity;
+import star.container_interactor;
+import star.game_timers;
+import star.inventory;
+import star.animation;
+import star.interface_cursor;
+import star.pane_manager;
+import star.registered_pane_manager;
+import star.main_interface_types;
+import star.uuid;
+import star.warping;
+import star.main_interface;
 
 
 import star.pane;
@@ -56,7 +92,10 @@ import star.chat_types;
 
 import star.chat;
 #include "StarUniverseClient.hpp"
-#include "StarClientCommandProcessor.hpp"
+import star.shell_parser;
+#include "StarLuaRoot.hpp"
+import star.cinematic;
+import star.client_command_processor;
 
 module star.interface_lua_bindings;
 import star.client_context;

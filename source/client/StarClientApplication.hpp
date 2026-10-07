@@ -1,11 +1,29 @@
 #pragma once
-
-#include "StarUniverseServer.hpp"
-#include "StarUniverseClient.hpp"
-#include "StarWorldPainter.hpp"
+#include "StarIdMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarImage.hpp"
+#include "StarMultiArray.hpp"
+#include "StarXXHash.hpp"
+#include "StarMathCommon.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVersion.hpp"
+#include "StarEither.hpp"
+#include "StarDirectives.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarRect.hpp"
+#include "StarTtlCache.hpp"
+#include "StarListener.hpp"
+#include "StarPerlin.hpp"
+#include "StarRandomPoint.hpp"
+#include "StarFont.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
 #include "StarGameTypes.hpp"
-#include "StarMainInterface.hpp"
-
+#include "StarRpcPromise.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarArray.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -14,20 +32,89 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
-
-
-import star.main_mixer;
-#include "StarTitleScreen.hpp"
-
 #include "StarString.hpp"
 #include "StarInputEvent.hpp"
-
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarAssetPath.hpp"
+#include "StarTime.hpp"
+
+#include "StarUniverseServer.hpp"
+#include "StarUniverseClient.hpp"
+import star.world_geometry;
+import star.collision_block;
+#include <functional>
+import star.liquid_types;
+import star.tile_damage;
+#include "StarTileSectorArray.hpp"
+#include "StarWorldLayout.hpp"
+import star.collision_generator;
+import star.world_tiles;
+import star.entity_rendering_types;
+import star.sky_types;
+import star.celestial_coordinate;
+import star.sky_parameters;
+import star.sky_render_data;
+import star.plant_database;
+import star.parallax;
+import star.particle;
+import star.weather_types;
+import star.damage_types;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.cellular_light_array;
+import star.cellular_lighting;
+import star.world_render_data;
+import star.material_render_profile;
+#include "StarRenderer.hpp"
+import star.tile_drawer;
+import star.tile_painter;
+import star.asset_texture_group;
+import star.environment_painter;
+import star.font_texture_group;
+import star.anchor_types;
+#include "StarRoot.hpp"
+import star.text_painter;
+import star.drawable_painter;
+import star.world_camera;
+import star.world_painter;
+#include "StarApplicationController.hpp"
+import star.gui_types;
+import star.gui_context;
+import star.widget;
+import star.pane;
+import star.inventory_types;
+import star.item_descriptor;
+import star.interaction_types;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.tile_entity;
+import star.container_entity;
+import star.container_interactor;
+import star.game_timers;
+import star.inventory;
+import star.pane_manager;
+import star.registered_pane_manager;
+import star.main_interface_types;
+import star.uuid;
+import star.warping;
+import star.main_interface;
+
+import star.mixer;
+
+
+import star.main_mixer;
+import star.widget_parsing;
+import star.gui_reader;
+import star.list_widget;
+import star.ambient;
+import star.title_screen;
+
+
 import star.drawable;
 
 import star.animation;
@@ -37,7 +124,7 @@ import star.interface_cursor;
 
 
 import star.error_screen;
-#include "StarCinematic.hpp"
+import star.cinematic;
 import star.key_bindings;
 #include "StarMainApplication.hpp"
 

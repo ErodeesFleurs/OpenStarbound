@@ -1,11 +1,30 @@
 module;
-
-#include "StarObject.hpp"
-#include "StarPhysicsEntity.hpp"
+#include "StarIdMap.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarJson.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
+#include "StarList.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRoot.hpp"
 #include "StarLuaConverters.hpp"
+
+#include "StarObject.hpp"
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.collision_block;
+import star.force_regions;
+import star.physics_entity;
+#include "StarRoot.hpp"
 
 module star.physics_object;
 import star.object_database;

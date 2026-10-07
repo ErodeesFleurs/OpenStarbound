@@ -1,57 +1,39 @@
 #pragma once
-
-#include "StarPhysicsEntity.hpp"
-#include "StarLuaConverters.hpp"
+#include "StarIdMap.hpp"
+#include "StarVariant.hpp"
+#include "StarCasting.hpp"
 #include "StarJson.hpp"
+#include "StarLuaConverters.hpp"
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
-import star.inventory_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-import star.collision_block;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-import star.platformer_astar_types;
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
-
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWorld.hpp"
-#include "StarPhysicsEntity.hpp"
-import star.movement_controller;
+#include "StarRpcPromise.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-import star.platformer_astar_types;
-#include "StarAnchorableEntity.hpp"
-
-import star.game_timers;
-import star.actor_movement_controller;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
 #include "StarGameTypes.hpp"
-import star.damage_types;
 #include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
-import star.status_types;
-import star.damage;
-#include "StarSystemWorld.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
-#include "StarEntity.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -60,6 +42,37 @@ import star.drawable;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
+
+import star.light_source;
+import star.entity;
+import star.force_regions;
+import star.physics_entity;
+import star.inventory_types;
+import star.collision_block;
+import star.platformer_astar_types;
+
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.world;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.anchorable_entity;
+
+import star.game_timers;
+import star.actor_movement_controller;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+#include "StarSystemWorld.hpp"
+import star.drawable;
 import star.mixer;
 
 namespace Star {

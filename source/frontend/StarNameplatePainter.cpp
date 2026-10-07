@@ -1,36 +1,18 @@
+#include "StarIdMap.hpp"
 #include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
-
-#include "StarWorldClient.hpp"
-
 #include "StarRect.hpp"
 #include "StarList.hpp"
-
-
-import star.chat_bubble_separation;
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
-import star.font_texture_group;
 #include "StarBiMap.hpp"
-import star.anchor_types;
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
-import star.text_painter;
-
-import star.world_camera;
-
-
-import star.nameplate_painter;
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPlayer.hpp"
-#include "StarApplicationController.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
@@ -43,6 +25,32 @@ import star.nameplate_painter;
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
 #include "StarMap.hpp"
+import star.world_geometry;
+
+#include "StarWorldClient.hpp"
+
+
+
+import star.chat_bubble_separation;
+#include "StarRenderer.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+#include "StarRoot.hpp"
+import star.text_painter;
+
+import star.world_camera;
+
+
+import star.nameplate_painter;
+#include "StarAssets.hpp"
+import star.damage_types;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.nametag_entity;
+#include "StarPlayer.hpp"
+#include "StarApplicationController.hpp"
 import star.drawable;
 import star.asset_texture_group;
 import star.drawable_painter;

@@ -32,42 +32,6 @@ set (star_game_HEADERS
     StarWorldStorage.hpp
     StarWorldTemplate.hpp
 
-    interfaces/StarActorEntity.hpp
-    interfaces/StarAnchorableEntity.hpp
-    interfaces/StarActivatableItem.hpp
-    interfaces/StarAggressiveEntity.hpp
-    interfaces/StarBeamItem.hpp
-    interfaces/StarChattyEntity.hpp
-    interfaces/StarContainerEntity.hpp
-    interfaces/StarDamageBarEntity.hpp
-    interfaces/StarDurabilityItem.hpp
-    interfaces/StarEffectSourceItem.hpp
-    interfaces/StarEmoteEntity.hpp
-    interfaces/StarEntity.hpp
-    interfaces/StarFireableItem.hpp
-    interfaces/StarInteractiveEntity.hpp
-    interfaces/StarLoungingEntities.hpp
-    interfaces/StarMobileEntity.hpp
-    interfaces/StarNametagEntity.hpp
-    interfaces/StarNonRotatedDrawablesItem.hpp
-    interfaces/StarPhysicsEntity.hpp
-    interfaces/StarPreviewTileTool.hpp
-    interfaces/StarPointableItem.hpp
-    interfaces/StarPortraitEntity.hpp
-    interfaces/StarPreviewableItem.hpp
-    interfaces/StarRenderableItem.hpp
-    interfaces/StarScriptedEntity.hpp
-    interfaces/StarStatusEffectEntity.hpp
-    interfaces/StarStatusEffectItem.hpp
-    interfaces/StarSwingableItem.hpp
-    interfaces/StarTileEntity.hpp
-    interfaces/StarToolUserEntity.hpp
-    interfaces/StarToolUserItem.hpp
-    interfaces/StarWarpTargetEntity.hpp
-    interfaces/StarWireEntity.hpp
-    interfaces/StarWorld.hpp
-    interfaces/StarUniverse.hpp
-
     items/StarArmors.hpp
     items/StarAugmentItem.hpp
     items/StarTools.hpp
@@ -113,21 +77,6 @@ set (star_game_SOURCES
     StarWorldServer.cpp
     StarWorldStorage.cpp
     StarWorldTemplate.cpp
-
-    interfaces/StarAnchorableEntity.cpp
-    interfaces/StarBeamItem.cpp
-    interfaces/StarContainerEntity.cpp
-    interfaces/StarDamageBarEntity.cpp
-    interfaces/StarEntity.cpp
-    interfaces/StarFireableItem.cpp
-    interfaces/StarInteractiveEntity.cpp
-    interfaces/StarLoungingEntities.cpp
-    interfaces/StarPhysicsEntity.cpp
-    interfaces/StarPointableItem.cpp
-    interfaces/StarSwingableItem.cpp
-    interfaces/StarTileEntity.cpp
-    interfaces/StarToolUserItem.cpp
-    interfaces/StarWorld.cpp
 
     items/StarArmors.cpp
     items/StarAugmentItem.cpp
@@ -330,6 +279,42 @@ target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarUniverseConnection.cppm
     StarWorldServerThread.cppm
     StarSystemWorldServerThread.cppm
+    interfaces/StarWarpTargetEntity.cppm
+    interfaces/StarUniverse.cppm
+    interfaces/StarRenderableItem.cppm
+    interfaces/StarInteractiveEntity.cppm
+    interfaces/StarContainerEntity.cppm
+    interfaces/StarActorEntity.cppm
+    interfaces/StarWorld.cppm
+    interfaces/StarWireEntity.cppm
+    interfaces/StarMobileEntity.cppm
+    interfaces/StarEntity.cppm
+    interfaces/StarToolUserEntity.cppm
+    interfaces/StarPreviewableItem.cppm
+    interfaces/StarPortraitEntity.cppm
+    interfaces/StarPointableItem.cppm
+    interfaces/StarNonRotatedDrawablesItem.cppm
+    interfaces/StarLoungingEntities.cppm
+    interfaces/StarStatusEffectItem.cppm
+    interfaces/StarTileEntity.cppm
+    interfaces/StarPhysicsEntity.cppm
+    interfaces/StarChattyEntity.cppm
+    interfaces/StarToolUserItem.cppm
+    interfaces/StarScriptedEntity.cppm
+    interfaces/StarStatusEffectEntity.cppm
+    interfaces/StarSwingableItem.cppm
+    interfaces/StarFireableItem.cppm
+    interfaces/StarInspectableEntity.cppm
+    interfaces/StarNametagEntity.cppm
+    interfaces/StarPreviewTileTool.cppm
+    interfaces/StarAggressiveEntity.cppm
+    interfaces/StarAnchorableEntity.cppm
+    interfaces/StarBeamItem.cppm
+    interfaces/StarDamageBarEntity.cppm
+    interfaces/StarDurabilityItem.cppm
+    interfaces/StarEffectSourceItem.cppm
+    interfaces/StarEmoteEntity.cppm
+    interfaces/StarActivatableItem.cppm
   )
 target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -499,6 +484,20 @@ add_library (star_game_modules STATIC
     StarUniverseConnection.cpp
     StarWorldServerThread.cpp
     StarSystemWorldServerThread.cpp
+    interfaces/StarAnchorableEntity.cpp
+    interfaces/StarBeamItem.cpp
+    interfaces/StarContainerEntity.cpp
+    interfaces/StarDamageBarEntity.cpp
+    interfaces/StarEntity.cpp
+    interfaces/StarFireableItem.cpp
+    interfaces/StarInteractiveEntity.cpp
+    interfaces/StarLoungingEntities.cpp
+    interfaces/StarPhysicsEntity.cpp
+    interfaces/StarPointableItem.cpp
+    interfaces/StarSwingableItem.cpp
+    interfaces/StarTileEntity.cpp
+    interfaces/StarToolUserItem.cpp
+    interfaces/StarWorld.cpp
   )
 target_include_directories (star_game_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}

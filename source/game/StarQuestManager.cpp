@@ -2,6 +2,8 @@
 #include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 #include "StarItem.hpp"
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
@@ -39,7 +41,6 @@ import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"

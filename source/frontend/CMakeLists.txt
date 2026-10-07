@@ -1,19 +1,3 @@
-set (star_frontend_HEADERS
-    StarCinematic.hpp
-    StarClientCommandProcessor.hpp
-    StarMainInterface.hpp
-    StarTitleScreen.hpp
-    StarVoice.hpp
-  )
-
-set (star_frontend_SOURCES
-    StarCinematic.cpp
-    StarClientCommandProcessor.cpp
-    StarMainInterface.cpp
-    StarTitleScreen.cpp
-    StarVoice.cpp
-  )
-
 add_library (star_frontend_module_interfaces OBJECT)
 target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarSimpleTooltip.cppm
@@ -62,6 +46,11 @@ target_sources (star_frontend_module_interfaces PUBLIC FILE_SET CXX_MODULES FILE
     StarStatusPane.cppm
     StarTeamBar.cppm
     StarWireInterface.cppm
+    StarCinematic.cppm
+    StarClientCommandProcessor.cppm
+    StarMainInterface.cppm
+    StarTitleScreen.cppm
+    StarVoice.cppm
   )
 target_include_directories (star_frontend_module_interfaces PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -121,6 +110,11 @@ add_library (star_frontend_modules STATIC
     StarStatusPane.cpp
     StarTeamBar.cpp
     StarWireInterface.cpp
+    StarCinematic.cpp
+    StarClientCommandProcessor.cpp
+    StarMainInterface.cpp
+    StarTitleScreen.cpp
+    StarVoice.cpp
   )
 target_include_directories (star_frontend_modules PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -136,25 +130,6 @@ target_include_directories (star_frontend_modules PRIVATE
 target_link_libraries (star_frontend_modules PUBLIC star_frontend_module_interfaces star_game_modules star_rendering_modules star_windowing_modules PRIVATE star_build_config star_voice_dependencies)
 set_target_properties (star_frontend_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-add_library (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-target_include_directories (star_frontend PRIVATE
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_WINDOWING_INCLUDES}
-    ${STAR_FRONTEND_INCLUDES}
-  )
-target_link_libraries (star_frontend PRIVATE star_frontend_modules star_build_config star_voice_dependencies)
-set_target_properties (star_frontend PROPERTIES CXX_SCAN_FOR_MODULES ON)
-
-if(STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers (star_frontend REUSE_FROM star_core)
-endif()
-
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_frontend_module_interfaces star_frontend_modules star_frontend PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
+  set_target_properties (star_frontend_module_interfaces star_frontend_modules PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
 endif()

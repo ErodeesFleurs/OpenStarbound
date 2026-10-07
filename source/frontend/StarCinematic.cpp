@@ -1,12 +1,7 @@
-#include "StarCinematic.hpp"
+#include "StarTime.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarWorldClient.hpp"
-#include "StarAssets.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
@@ -26,6 +21,13 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarLua.hpp"
+#include "StarRoot.hpp"
+#include "StarWorldClient.hpp"
+#include "StarAssets.hpp"
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.cinematic;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

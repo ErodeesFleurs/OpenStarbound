@@ -1,5 +1,41 @@
-#include "StarLoungingEntities.hpp"
-#include "StarWorld.hpp"
+#include "StarIdMap.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
+#include "StarVariant.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarList.hpp"
+#include "StarRpcPromise.hpp"
+import star.drawable;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.anchorable_entity;
+import star.entity_rendering_types;
+import star.lounging_entities;
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
 
 namespace Star {
 

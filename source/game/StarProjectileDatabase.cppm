@@ -1,5 +1,5 @@
 module;
-
+#include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarJson.hpp"
@@ -10,14 +10,21 @@ module;
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
-import star.entity_rendering_types;
-#include "StarEntity.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarBiMap.hpp"
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
+
+import star.drawable;
+import star.entity_rendering_types;
+import star.damage_types;
+import star.world_geometry;
+import star.damage;
+import star.light_source;
+import star.entity;
 import star.status_types;
 
 namespace Star {

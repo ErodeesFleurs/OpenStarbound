@@ -1,5 +1,19 @@
-#include "StarEntity.hpp"
+#include "StarIdMap.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
 #include "StarNetCompatibility.hpp"
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
 
 
 namespace Star {

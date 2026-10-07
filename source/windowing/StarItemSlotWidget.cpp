@@ -5,16 +5,12 @@
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarMaybe.hpp"
@@ -25,6 +21,13 @@ import star.drawable;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarConfig.hpp"
+#include "StarGameTypes.hpp"
+import star.drawable;
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+#include "StarRoot.hpp"
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -39,12 +42,10 @@ import star.progress_widget;
 import star.animation;
 import star.item_slot_widget;
 #include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
 import star.widget_parsing;
 #include "StarItem.hpp"
-#include "StarDurabilityItem.hpp"
+import star.durability_item;
 #include "StarAssets.hpp"
-#include "StarGameTypes.hpp"
 
 
 import star.image_metadata_database;

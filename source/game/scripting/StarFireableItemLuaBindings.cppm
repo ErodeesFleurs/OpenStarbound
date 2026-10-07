@@ -1,11 +1,60 @@
 module;
-
+#include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarCasting.hpp"
-#include "StarFireableItem.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
+#include "StarColor.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVariant.hpp"
+#include "StarList.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarRect.hpp"
+#include "StarAStar.hpp"
+
+#include "StarLuaGameConverters.hpp"
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.animation;
+import star.particle;
+import star.interaction_types;
+import star.tile_damage;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
+import star.physics_entity;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.anchorable_entity;
+import star.game_timers;
+import star.actor_movement_controller;
+import star.mobile_entity;
+import star.actor_entity;
+import star.tool_user_entity;
+import star.tool_user_item;
+import star.status_effect_item;
+#include "StarLuaComponents.hpp"
+import star.fireable_item;
 
 export module star.fireable_item_lua_bindings;
 

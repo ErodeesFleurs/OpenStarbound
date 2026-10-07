@@ -1,51 +1,28 @@
+#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
-#include "StarLuaRoot.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
-
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarWorld.hpp"
-#include "StarPhysicsEntity.hpp"
-import star.movement_controller;
+#include "StarVariant.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-import star.platformer_astar_types;
-#include "StarAnchorableEntity.hpp"
-
-import star.game_timers;
-import star.actor_movement_controller;
-#include "StarItem.hpp"
 #include "StarDataStream.hpp"
-import star.item_descriptor;
-import star.item_database;
-import star.item_recipe;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarArray.hpp"
-import star.uuid;
-#include "StarLuaComponents.hpp"
-import star.player_companions;
-
 #include "StarOrderedSet.hpp"
 #include "StarStrongTypedef.hpp"
-import star.celestial_coordinate;
-import star.quest_descriptor;
-import star.ai_types;
-import star.warping;
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarListener.hpp"
@@ -54,6 +31,50 @@ import star.warping;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarEither.hpp"
+#include "StarTime.hpp"
+#include "StarLuaRoot.hpp"
+
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_modification;
+import star.force_regions;
+import star.world;
+import star.physics_entity;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.anchorable_entity;
+
+import star.game_timers;
+import star.actor_movement_controller;
+#include "StarItem.hpp"
+import star.item_descriptor;
+import star.item_database;
+import star.item_recipe;
+import star.drawable;
+import star.uuid;
+#include "StarLuaComponents.hpp"
+import star.player_companions;
+
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.ai_types;
+import star.warping;
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+#include "StarRoot.hpp"
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -66,7 +87,6 @@ import star.gui_context;
 import star.widget;
 import star.pane;
 
-#include "StarOrderedMap.hpp"
 import star.pane_manager;
 import star.registered_pane_manager;
 
@@ -78,10 +98,8 @@ import star.tech_database;
 
 
 import star.ai_interface;
-#include "StarLexicalCast.hpp"
-#include "StarJsonRpc.hpp"
 #include "StarAssets.hpp"
-#include "StarContainerEntity.hpp"
+import star.container_entity;
 #include "StarPlayer.hpp"
 #include "StarUniverseClient.hpp"
 import star.canvas_widget;
@@ -96,9 +114,8 @@ import star.button_widget;
 import star.tab_set;
 import star.progress_widget;
 import star.item_slot_widget;
-#include "StarEither.hpp"
 import star.stack_widget;
-#include "StarCinematic.hpp"
+import star.cinematic;
 #include "StarWorldClient.hpp"
 
 import star.ai_database;

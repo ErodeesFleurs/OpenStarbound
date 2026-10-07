@@ -1,4 +1,12 @@
-#include "StarPointableItem.hpp"
+#include "StarGameTypes.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarJson.hpp"
+#include "StarAssetPath.hpp"
+import star.drawable;
+import star.pointable_item;
 
 namespace Star {
 

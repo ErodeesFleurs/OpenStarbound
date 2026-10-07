@@ -1,18 +1,33 @@
 module;
+#include "StarIdMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
-
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarPhysicsEntity.hpp"
-import star.movement_controller;
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarCasting.hpp"
+#include "StarDataStream.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarList.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
+
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.collision_block;
+import star.force_regions;
+import star.physics_entity;
+import star.movement_controller;
 import star.platformer_astar_types;
-#include "StarAnchorableEntity.hpp"
+import star.anchorable_entity;
 
 import star.game_timers;
 

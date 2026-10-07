@@ -1,4 +1,4 @@
-
+#include "StarIdMap.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -7,22 +7,94 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
 #include "StarGameTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarVersion.hpp"
+#include "StarPoly.hpp"
+#include "StarInterpolation.hpp"
+#include "StarImage.hpp"
+#include "StarMultiArray.hpp"
+#include "StarXXHash.hpp"
+#include "StarMathCommon.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarColor.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarAssetPath.hpp"
+#include "StarEither.hpp"
+#include "StarDirectives.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarRect.hpp"
+#include "StarTtlCache.hpp"
+#include "StarListener.hpp"
+#include "StarPerlin.hpp"
+#include "StarRandomPoint.hpp"
+#include "StarFont.hpp"
+#include "StarStringView.hpp"
+#include "StarText.hpp"
+#include "StarException.hpp"
+#include "StarDataStreamDevices.hpp"
+
+import star.mixer;
 
 
 import star.main_mixer;
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarJson.hpp"
-#include "StarVersion.hpp"
 import star.configuration;
 #include "StarUniverseClient.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
-#include "StarWorldPainter.hpp"
-#include "StarVoice.hpp"
+import star.world_geometry;
+import star.collision_block;
+#include <functional>
+import star.liquid_types;
+import star.tile_damage;
+#include "StarTileSectorArray.hpp"
+#include "StarWorldLayout.hpp"
+import star.collision_generator;
+import star.world_tiles;
+import star.drawable;
+import star.entity_rendering_types;
+import star.sky_types;
+import star.celestial_coordinate;
+import star.sky_parameters;
+import star.sky_render_data;
+import star.plant_database;
+import star.parallax;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.damage_types;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.cellular_light_array;
+import star.cellular_lighting;
+import star.world_render_data;
+import star.material_render_profile;
+#include "StarRenderer.hpp"
+import star.tile_drawer;
+import star.tile_painter;
+import star.asset_texture_group;
+import star.environment_painter;
+import star.font_texture_group;
+import star.anchor_types;
+import star.text_painter;
+import star.drawable_painter;
+import star.world_camera;
+import star.world_painter;
+#include "StarApplicationController.hpp"
+#include <queue>
+struct OpusDecoder;
+typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
+struct OpusEncoder;
+typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
+import star.voice;
 
 namespace Star {
 

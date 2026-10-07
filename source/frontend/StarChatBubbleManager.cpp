@@ -1,24 +1,40 @@
+#include "StarIdMap.hpp"
 #include "StarAssetPath.hpp"
 #include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
-
-import star.chat_action;
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
-import star.font_texture_group;
 #include "StarBiMap.hpp"
-import star.anchor_types;
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
-import star.text_painter;
-
 #include "StarRect.hpp"
 #include "StarList.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarThread.hpp"
+#include "StarVersion.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+#include "StarListener.hpp"
+#include "StarDataStream.hpp"
+#include "StarInputEvent.hpp"
+#include "StarVector.hpp"
+#include "StarSet.hpp"
+#include "StarAudio.hpp"
+#include "StarMap.hpp"
+import star.world_geometry;
+
+import star.chat_action;
+#include "StarRenderer.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+#include "StarRoot.hpp"
+import star.text_painter;
+
 
 
 import star.chat_bubble_separation;
@@ -27,25 +43,17 @@ import star.world_camera;
 
 
 import star.chat_bubble_manager;
-#include "StarJson.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarThread.hpp"
-#include "StarVersion.hpp"
 import star.configuration;
 #include "StarWorldClient.hpp"
-#include "StarChattyEntity.hpp"
+import star.damage_types;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.chatty_entity;
 #include "StarAssets.hpp"
-#include "StarMaybe.hpp"
-#include "StarString.hpp"
-#include "StarListener.hpp"
 import star.asset_texture_group;
 #include "StarApplicationController.hpp"
-#include "StarDataStream.hpp"
-#include "StarInputEvent.hpp"
-#include "StarVector.hpp"
-#include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarMap.hpp"
 import star.drawable;
 import star.drawable_painter;
 import star.gui_types;
