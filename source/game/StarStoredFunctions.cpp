@@ -1,7 +1,22 @@
+#include "StarJson.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarMultiTable.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.stored_functions;
 

@@ -1,9 +1,10 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarAssetPath.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
@@ -21,13 +22,24 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarConfig.hpp"
 #include "StarGameTypes.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
+#include "StarStrongTypedef.hpp"
+
 import star.drawable;
 #include "StarApplicationController.hpp"
 #include "StarRenderer.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -41,11 +53,12 @@ import star.widget;
 import star.progress_widget;
 import star.animation;
 import star.item_slot_widget;
-#include "StarRoot.hpp"
 import star.widget_parsing;
-#include "StarItem.hpp"
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.item;
 import star.durability_item;
-#include "StarAssets.hpp"
 
 
 import star.image_metadata_database;

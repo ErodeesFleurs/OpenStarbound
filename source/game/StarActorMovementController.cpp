@@ -1,5 +1,7 @@
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarIdMap.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarPoly.hpp"
@@ -14,7 +16,6 @@
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
@@ -22,7 +23,25 @@
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarSet.hpp"
+#include "StarColor.hpp"
+#include "StarLua.hpp"
+#include "StarAudio.hpp"
+#include "StarMap.hpp"
+#include "StarString.hpp"
+#include "StarDirectives.hpp"
+#include "StarMatrix3.hpp"
+
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -50,9 +69,29 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarObject.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 
 import star.platformer_astar;
 

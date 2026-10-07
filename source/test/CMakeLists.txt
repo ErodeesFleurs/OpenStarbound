@@ -87,7 +87,7 @@ set (star_game_tests_SOURCES
       weather_test.cpp
     )
 add_executable (game_tests
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
 target_include_directories (game_tests PRIVATE
     ${STAR_EXTERN_INCLUDES}

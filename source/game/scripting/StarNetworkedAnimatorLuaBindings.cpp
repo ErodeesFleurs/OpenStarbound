@@ -1,10 +1,35 @@
 module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLua.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarVector.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarMaybe.hpp"
+
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarJson.hpp"
-#include "StarLua.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarJsonExtra.hpp"
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
 #include "StarLuaGameConverters.hpp"
 
 module star.networked_animator_lua_bindings;

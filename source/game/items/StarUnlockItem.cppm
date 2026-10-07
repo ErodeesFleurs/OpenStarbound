@@ -1,8 +1,8 @@
 module;
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -19,8 +19,25 @@ module;
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarString.hpp"
+#include "StarSet.hpp"
+#include "StarArray.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarMap.hpp"
+#include "StarEither.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElement.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -58,9 +75,33 @@ import star.swingable_item;
 import star.drawable;
 import star.previewable_item;
 
-#include "StarPlayer.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+import star.uuid;
+import star.animated_part_set;
+import star.mixer;
+import star.networked_animator;
+import star.humanoid;
+import star.lounging_entities;
+import star.chat_action;
+import star.chatty_entity;
+import star.emote_entity;
+import star.portrait_entity;
+import star.damage_bar_entity;
+import star.nametag_entity;
+import star.inspectable_entity;
+import star.inventory_types;
+import star.ai_types;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.player_types;
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.radio_message_database;
+import star.player;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 export module star.unlock_item;
 

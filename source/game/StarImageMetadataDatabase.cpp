@@ -1,3 +1,4 @@
+#include "StarJson.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarAssetPath.hpp"
@@ -8,8 +9,18 @@
 #include "StarLogging.hpp"
 #include "StarEncode.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBiMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.image_metadata_database;
 

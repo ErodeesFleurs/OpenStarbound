@@ -1,9 +1,10 @@
-#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarIdMap.hpp"
 #include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -13,7 +14,6 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
@@ -33,6 +33,12 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
+
 #include "StarLuaRoot.hpp"
 
 import star.damage_types;
@@ -58,13 +64,17 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-#include "StarItem.hpp"
+import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
 #include "StarApplicationController.hpp"
 #include "StarRenderer.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -79,7 +89,6 @@ import star.widget;
 import star.widget_parsing;
 import star.gui_reader;
 import star.widget_lua_bindings;
-#include "StarRoot.hpp"
 #include "StarLuaGameConverters.hpp"
 import star.canvas_widget;
 import star.label_widget;

@@ -1,13 +1,15 @@
 module;
-
-// Parse foundations before importing global bookmark value types on GCC.
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
 #include "StarGameTypes.hpp"
-#include "StarSystemWorld.hpp"
+#include "StarVariant.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
 #include "StarColor.hpp"
@@ -25,6 +27,18 @@ module;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+
+
+// Parse foundations before importing global bookmark value types on GCC.
+import star.sky_types;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.sky_parameters;
+import star.system_world;
 
 
 import star.uuid;

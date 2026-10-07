@@ -1,12 +1,19 @@
-#include "StarAssets.hpp"
-#include "StarIODevice.hpp"
 #include "StarJson.hpp"
-import star.asset_source;
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarIODevice.hpp"
 #include "StarString.hpp"
-import star.directory_asset_source;
 #include "StarFile.hpp"
-
 #include <filesystem>
+
+import star.assets;
+import star.asset_source;
+import star.directory_asset_source;
+
 
 #include "gtest/gtest.h"
 

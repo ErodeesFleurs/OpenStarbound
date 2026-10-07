@@ -1,7 +1,14 @@
+#include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -10,23 +17,28 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
-import star.entity_rendering_types;
 #include "StarDirectives.hpp"
+#include "StarDataStreamExtra.hpp"
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.mixer;
+import star.drawable;
+import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarDataStreamExtra.hpp"
 
 import star.effect_emitter;
 import star.effect_source_database;

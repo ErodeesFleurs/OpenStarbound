@@ -1,8 +1,8 @@
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -12,6 +12,17 @@
 #include "StarVariant.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+#include "StarLuaRoot.hpp"
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -27,10 +38,13 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.liquids_database;
 

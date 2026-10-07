@@ -1,5 +1,6 @@
 module;
 #include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -24,9 +25,15 @@ module;
 #include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
-#include "StarJson.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -70,8 +77,11 @@ import star.entity_rendering;
 STAR_STRUCT(PreviewTile);
 STAR_CLASS(PreviewTileTool);
 import star.preview_tile_tool;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 export module star.liquid_item;
 import star.liquids_database;

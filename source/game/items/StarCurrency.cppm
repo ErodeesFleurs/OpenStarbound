@@ -1,9 +1,25 @@
 module;
-
-#include "StarItem.hpp"
-
-#include "StarRandom.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarBiMap.hpp"
+#include "StarGameTypes.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarVector.hpp"
+#include "StarRandom.hpp"
+
+
+import star.drawable;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.item;
+
 
 export module star.currency_item;
 

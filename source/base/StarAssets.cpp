@@ -1,13 +1,15 @@
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
+#include "StarJson.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarRefPtr.hpp"
 #include "StarAssetPath.hpp"
 #include "StarFile.hpp"
 #include "StarTime.hpp"
 #include "StarIODevice.hpp"
-#include "StarJson.hpp"
-import star.asset_source;
 #include "StarString.hpp"
-import star.directory_asset_source;
 #include "StarJsonBuilder.hpp"
 #include "StarIterator.hpp"
 #include "StarImageProcessing.hpp"
@@ -19,7 +21,11 @@ import star.directory_asset_source;
 #include "StarLexicalCast.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarLua.hpp"
-#include "StarImageLuaBindings.hpp"
+
+import star.assets;
+import star.asset_source;
+import star.directory_asset_source;
+import star.image_lua_bindings;
 #include "StarUtilityLuaBindings.hpp"
 
 import star.sha256;

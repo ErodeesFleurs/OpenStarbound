@@ -1,18 +1,30 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-import star.configuration;
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 #include "StarThread.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarRpcPromise.hpp"
+
+
+import star.configuration;
 import star.worker_pool;
 #include "StarLuaGameConverters.hpp"
-#include "StarRoot.hpp"
-#include "StarRpcPromise.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.root;
 
 module star.lua_http_bindings;
 

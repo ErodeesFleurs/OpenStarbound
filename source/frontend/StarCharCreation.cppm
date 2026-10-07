@@ -1,5 +1,5 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
@@ -11,7 +11,6 @@ module;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarMaybe.hpp"
 #include "StarListener.hpp"
@@ -22,7 +21,19 @@ module;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarHumanoid.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetElement.hpp"
+
+
+import star.animation;
+import star.particle;
+import star.animated_part_set;
+import star.light_source;
+import star.networked_animator;
+import star.humanoid;
 
 
 import star.font_texture_group;

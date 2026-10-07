@@ -1,15 +1,37 @@
 module;
-
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarZSTDCompression.hpp"
 #include "StarEncode.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarGameTypes.hpp"
-#include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRect.hpp"
-#include "StarDungeonGenerator.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarImage.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarLruCache.hpp"
+
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.item_descriptor;
+import star.world_geometry;
+import star.dungeon_generator;
 
 module star.dungeon_tmx_part;
 import star.tileset_database;

@@ -1,9 +1,11 @@
 module;
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarCasting.hpp"
@@ -21,7 +23,6 @@ module;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -29,11 +30,17 @@ module;
 #include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
 
 import star.collision_block;
 import star.item_descriptor;
-#include "StarItem.hpp"
+import star.item;
 import star.pointable_item;
 import star.damage_types;
 import star.world_geometry;
@@ -69,8 +76,11 @@ import star.particle;
 import star.light_source;
 import star.entity_rendering;
 import star.inspectable_entity;
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 export module star.inspection_tool;
 import star.liquids_database;

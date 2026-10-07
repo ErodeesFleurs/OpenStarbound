@@ -19,7 +19,7 @@ target_include_directories (star_server_modules PRIVATE
 target_link_libraries (star_server_modules PUBLIC star_modules PRIVATE star_game_module_interfaces star_build_config)
 
 add_executable (starbound_server
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   main.cpp ${star_server_RESOURCES})
 target_include_directories (starbound_server PRIVATE
     ${STAR_EXTERN_INCLUDES}

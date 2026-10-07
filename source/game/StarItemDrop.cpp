@@ -1,9 +1,11 @@
-#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarIdMap.hpp"
 #include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -13,7 +15,6 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
@@ -26,7 +27,6 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -35,9 +35,26 @@
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarLua.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarArray.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarEither.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElement.hpp"
+
 // Parse JSON iterator templates before game headers import modules (GCC 16).
 #include "StarLuaRoot.hpp"
 
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -60,13 +77,18 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-#include "StarItem.hpp"
+import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
-#include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+import star.mobile_entity;
+import star.scripted_entity;
+import star.item_drop;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.mixer;
 import star.drawable;
 import star.entity_rendering_types;
@@ -75,7 +97,25 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarPlayer.hpp"
+import star.uuid;
+import star.animated_part_set;
+import star.networked_animator;
+import star.humanoid;
+import star.actor_entity;
+import star.tool_user_entity;
+import star.lounging_entities;
+import star.chat_action;
+import star.chatty_entity;
+import star.emote_entity;
+import star.portrait_entity;
+import star.damage_bar_entity;
+import star.nametag_entity;
+import star.inspectable_entity;
+import star.inventory_types;
+import star.ai_types;
+import star.player_types;
+import star.radio_message_database;
+import star.player;
 
 import star.material_item;
 import star.config_lua_bindings;

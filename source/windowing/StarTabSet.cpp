@@ -1,20 +1,23 @@
+#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarListener.hpp"
 #include "StarThread.hpp"
@@ -23,6 +26,16 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarEither.hpp"
+#include "StarLexicalCast.hpp"
+
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -37,14 +50,11 @@ import star.widget;
 import star.button_group;
 import star.tab_set;
 import star.button_widget;
-#include "StarEither.hpp"
 import star.stack_widget;
 import star.layout;
 import star.flow_layout;
 import star.widget_parsing;
 import star.gui_reader;
-#include "StarRoot.hpp"
-#include "StarLexicalCast.hpp"
 
 
 import star.image_metadata_database;

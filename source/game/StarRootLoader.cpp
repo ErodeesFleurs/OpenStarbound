@@ -1,6 +1,28 @@
-#include "StarRootLoader.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarVersion.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarLexicalCast.hpp"
+
+import star.option_parser;
+import star.version_option_parser;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.root_loader;
 
 namespace Star {
 

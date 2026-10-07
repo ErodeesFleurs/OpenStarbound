@@ -1,19 +1,39 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-import star.uuid;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
-import star.celestial_coordinate;
 #include "StarGameTypes.hpp"
-import star.warping;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
-import star.celestial_coordinate;
-#include "StarSystemWorld.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarLexicalCast.hpp"
+
+import star.uuid;
+import star.celestial_coordinate;
+import star.warping;
+import star.celestial_coordinate;
+import star.sky_types;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.sky_parameters;
+import star.system_world;
 
 import star.player_universe_map;
 

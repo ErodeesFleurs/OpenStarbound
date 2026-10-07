@@ -1,9 +1,10 @@
 module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCasting.hpp"
@@ -11,7 +12,21 @@ module;
 #include "StarBiMap.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarSet.hpp"
+#include "StarColor.hpp"
+#include "StarLua.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarMap.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+#include "StarAssetPath.hpp"
+#include "StarDirectives.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+
 
 import star.uuid;
 import star.celestial_coordinate;
@@ -30,7 +45,24 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.warp_target_entity;
-#include "StarObject.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 
 export module star.teleporter_object;
 

@@ -1,8 +1,9 @@
 module;
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
 #include "StarIdMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarDirectives.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -12,7 +13,6 @@ module;
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarGameTypes.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
 #include "StarVersion.hpp"
 #include "StarString.hpp"
@@ -28,15 +28,22 @@ module;
 #include "StarListener.hpp"
 #include "StarPerlin.hpp"
 #include "StarRandomPoint.hpp"
+#include <functional>
+#include "StarSectorArray2D.hpp"
+#include "StarVariant.hpp"
+
 
 import star.tile_damage;
 import star.plant_database;
 import star.parallax;
 import star.collision_block;
-#include <functional>
 import star.liquid_types;
-#include "StarTileSectorArray.hpp"
-#include "StarWorldLayout.hpp"
+import star.worker_pool;
+import star.tile_sector_array;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
 import star.collision_generator;
 import star.world_tiles;
 import star.drawable;

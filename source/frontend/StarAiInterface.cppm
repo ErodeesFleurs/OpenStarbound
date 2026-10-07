@@ -32,6 +32,22 @@ module;
 
 
 
+namespace Star {
+STAR_CLASS(UniverseClient);
+STAR_CLASS(AiDatabase);
+STAR_CLASS(Cinematic);
+STAR_CLASS(LabelWidget);
+STAR_CLASS(ImageWidget);
+STAR_CLASS(ImageStretchWidget);
+STAR_CLASS(CanvasWidget);
+STAR_CLASS(ListWidget);
+STAR_CLASS(ButtonWidget);
+STAR_CLASS(QuestManager);
+STAR_CLASS(StackWidget);
+STAR_CLASS(TabSetWidget);
+STAR_CLASS(Companion);
+}
+
 import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;
@@ -59,19 +75,6 @@ import star.tech_database;
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(AiDatabase);
-STAR_CLASS(Cinematic);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(ImageStretchWidget);
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(QuestManager);
-STAR_CLASS(StackWidget);
-STAR_CLASS(TabSetWidget);
-STAR_CLASS(Companion);
 
 STAR_CLASS(AiInterface);
 

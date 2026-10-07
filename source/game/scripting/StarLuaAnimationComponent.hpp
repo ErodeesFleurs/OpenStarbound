@@ -1,7 +1,9 @@
 #pragma once
-
-#include "StarLuaComponents.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -9,20 +11,14 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarGameTypes.hpp"
-import star.entity_rendering_types;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -31,17 +27,32 @@ import star.entity_rendering_types;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarLuaConverters.hpp"
+
+
+#include "StarLuaComponents.hpp"
+import star.drawable;
+import star.drawable;
+import star.entity_rendering_types;
+import star.mixer;
 import star.animation;
 import star.particle;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarLuaConverters.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.particle_database;
 

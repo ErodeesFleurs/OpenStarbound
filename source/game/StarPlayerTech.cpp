@@ -1,9 +1,22 @@
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.tech_database;
 import star.player_tech;

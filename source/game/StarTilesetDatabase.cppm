@@ -1,10 +1,20 @@
 module;
-
-#include "StarDungeonGenerator.hpp"
 #include "StarJson.hpp"
+#include "StarImage.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarRandom.hpp"
+#include "StarThread.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarLruCache.hpp"
 #include "StarSet.hpp"
+
+
+import star.item_descriptor;
+import star.world_geometry;
+import star.dungeon_generator;
 
 namespace Star {
 

@@ -1,8 +1,8 @@
-module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -10,11 +10,57 @@ module;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarSet.hpp"
+#include "StarColor.hpp"
+#include "StarLua.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarMap.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+#include "StarAssetPath.hpp"
+#include "StarDirectives.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 
-#include "StarObject.hpp"
+
+#include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.tile_entity;
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -24,9 +70,13 @@ import star.entity;
 import star.collision_block;
 import star.force_regions;
 import star.physics_entity;
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
-module star.physics_object;
+import star.physics_object;
 import star.object_database;
 
 

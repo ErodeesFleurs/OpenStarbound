@@ -1,11 +1,24 @@
 #include "StarJson.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarFile.hpp"
-#include "StarStatisticsService.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarFile.hpp"
 #include "StarLogging.hpp"
+
+#include "StarLuaComponents.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+#include "StarStatisticsService.hpp"
 
 import star.statistics_database;
 import star.versioning_database;

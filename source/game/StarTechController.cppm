@@ -1,10 +1,34 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarNetworkedAnimator.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarString.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarBiMap.hpp"
+#include "StarVector.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarMaybe.hpp"
+#include "StarDirectives.hpp"
+
+
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
-#include "StarDirectives.hpp"
 
 import star.tech_database;
 

@@ -1,0 +1,436 @@
+#pragma once
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
+#include "StarIdMap.hpp"
+#include "StarConfig.hpp"
+#include "StarLockFile.hpp"
+#include "StarThread.hpp"
+#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+#include "StarString.hpp"
+#include "StarEither.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarIODevice.hpp"
+#include "StarZSTDCompression.hpp"
+#include "StarNetCompatibility.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarCasting.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+#include "StarMultiArray.hpp"
+#include "StarMathCommon.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVersion.hpp"
+#include "StarPerlin.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarStrongTypedef.hpp"
+#include <functional>
+#include "StarRect.hpp"
+#include "StarSectorArray2D.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarVariant.hpp"
+#include "StarSet.hpp"
+#include "StarImage.hpp"
+#include "StarInterpolation.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarMap.hpp"
+#include "StarRandom.hpp"
+#include "StarBlockAllocator.hpp"
+#include "StarLruCache.hpp"
+#include <atomic>
+#include <memory>
+
+import star.universe;
+import star.worker_pool;
+import star.celestial_coordinate;
+import star.host_address;
+import star.uuid;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.collision_block;
+import star.liquid_types;
+import star.tile_damage;
+import star.tile_sector_array;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.sky_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
+import star.collision_generator;
+import star.world_tiles;
+import star.interaction_types;
+import star.item_descriptor;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.tile_entity;
+import star.inspectable_entity;
+import star.plant;
+import star.plant_database;
+import star.biome_placement;
+#include "StarLuaRoot.hpp"
+import star.versioning_database;
+import star.world_storage;
+import star.tile_modification;
+import star.world;
+import star.celestial_types;
+import star.chat_types;
+import star.warping;
+import star.wiring;
+import star.player_types;
+import star.sky_parameters;
+import star.system_world;
+import star.damage_manager;
+import star.net_packets;
+import star.cellular_light_array;
+import star.cellular_lighting;
+import star.cellular_liquid;
+import star.world_structure;
+#include "StarLuaComponents.hpp"
+import star.drawable;
+import star.entity_rendering_types;
+import star.sky_render_data;
+import star.parallax;
+import star.world_render_data;
+import star.world_client_state;
+import star.interpolation_tracker;
+import star.spawn_type_database;
+import star.spawner;
+import star.world_server;
+import star.world_server_thread;
+import star.world_template;
+import star.system_world_server;
+import star.system_world_server_thread;
+import star.socket;
+import star.tcp;
+#include "StarP2PNetworkingService.hpp"
+import star.net_packet_socket;
+import star.universe_connection;
+import star.universe_settings;
+
+namespace Star {
+
+STAR_CLASS(Clock);
+STAR_CLASS(File);
+STAR_CLASS(Player);
+STAR_CLASS(ChatProcessor);
+STAR_CLASS(CommandProcessor);
+STAR_CLASS(TeamManager);
+STAR_CLASS(UniverseServer);
+STAR_CLASS(WorldTemplate);
+STAR_CLASS(CelestialMasterDatabase);
+STAR_CLASS(WorldServer);
+STAR_CLASS(UniverseSettings);
+STAR_CLASS(ServerClientContext);
+
+struct UniverseServerExceptionTag {
+  static constexpr char const* name() { return "UniverseServerException"; }
+};
+using UniverseServerException = StarError<UniverseServerExceptionTag, StarException>;
+
+// Manages all running worlds, listens for new client connections and marshalls
+// between all the different worlds and all the different client connections
+// and routes packets between them.
+class UniverseServer : public Universe, public Thread {
+public:
+  UniverseServer(String const& storageDir, bool const& isLocal = false);
+  ~UniverseServer() override;
+
+  // If enabled, will listen on the configured server port for incoming
+  // connections.
+  void setListeningTcp(bool listenTcp);
+
+  // Connects an arbitrary UniverseConnection to this server
+  void addClient(UniverseConnection remoteConnection);
+  // Constructs an in-process connection to a UniverseServer for a
+  // UniverseClient, and returns the other side of the connection.
+  UniverseConnection addLocalClient();
+
+  // Signals the UniverseServer to stop and then joins the thread.
+  void stop();
+
+  void setPause(bool pause);
+  void setTimescale(float timescale);
+  void setTickRate(float tickRate);
+
+  List<WorldId> activeWorlds() const;
+  bool isWorldActive(WorldId const& worldId) const;
+
+  List<ConnectionId> clientIds() const;
+  List<pair<ConnectionId, int64_t>> clientIdsAndCreationTime() const;
+  size_t numberOfClients() const;
+  uint32_t maxClients() const;
+  bool isConnectedClient(ConnectionId clientId) const;
+
+  String clientDescriptor(ConnectionId clientId) const;
+  unsigned clientConnectionVersion(ConnectionId clientId) const;
+
+  String clientNick(ConnectionId clientId) const;
+  Maybe<ConnectionId> findNick(String const& nick) const;
+
+  String clientAccount(ConnectionId clientId) const;
+
+  Maybe<Uuid> uuidForClient(ConnectionId clientId) const;
+  Maybe<ConnectionId> clientForUuid(Uuid const& uuid) const;
+
+  void adminBroadcast(String const& text);
+  void adminWhisper(ConnectionId clientId, String const& text);
+  ServerCommandResult adminCommand(String text);
+
+  bool isAdmin(ConnectionId clientId) const;
+  bool canBecomeAdmin(ConnectionId clientId) const;
+  void setAdmin(ConnectionId clientId, bool admin);
+
+  bool serverDebug(ConnectionId clientId) const;
+  void setServerDebug(ConnectionId clientId, bool serverDebug);
+
+  bool isLocal(ConnectionId clientId) const;
+
+  bool isPvp(ConnectionId clientId) const;
+  void setPvp(ConnectionId clientId, bool pvp);
+
+  RpcPromise<Json> sendWorldMessage(WorldId const& worldId, String const& message, JsonArray const& args = {});
+
+  void clientWarpPlayer(ConnectionId clientId, WarpAction action, bool deploy = false);
+  void clientFlyShip(ConnectionId clientId, Vec3I const& system, SystemLocation const& location, Json const& settings = {});
+  WorldId clientWorld(ConnectionId clientId) const;
+  CelestialCoordinate clientShipCoordinate(ConnectionId clientId) const;
+
+  ClockPtr universeClock() const;
+  UniverseSettingsPtr universeSettings() const;
+
+  CelestialDatabasePtr celestialDatabase() override;
+
+  // If the client exists and is in a valid connection state, executes the
+  // given function on the client world and player object in a thread safe way.
+  // Returns true if function was called, false if client was not found or in
+  // an invalid connection state.
+  bool executeForClient(ConnectionId clientId, function<void(WorldServer*, PlayerPtr)> action);
+  void disconnectClient(ConnectionId clientId, String const& reason);
+  void banUser(ConnectionId clientId, String const& reason, pair<bool, bool> banType, Maybe<int> timeout);
+  bool unbanIp(String const& addressString);
+  bool unbanUuid(String const& uuidString);
+
+  bool updatePlanetType(CelestialCoordinate const& coordinate, String const& newType, String const& weatherBiome);
+
+  bool setWeather(CelestialCoordinate const& coordinate, String const& weatherName, bool force = false);
+
+  StringList weatherList(CelestialCoordinate const& coordinate);
+  
+  void createCustomWorld(CustomWorldId const& customWorld, WorldTemplatePtr worldTemplate);
+
+  bool sendPacket(ConnectionId clientId, PacketPtr packet);
+  
+  void passMessage(Universe::Message&& message) override;
+  
+  RpcPromise<Json> sendUniverseMessage(ConnectionId const& connectionId, String const& message, JsonArray const& args = {}) override;
+  
+  Maybe<ChainableJsonMessageResponse> receiveMessage(String const& message, bool const& local, JsonArray const& args) override;
+
+protected:
+  virtual void run() override;
+
+private:
+  struct TimeoutBan {
+    int64_t banExpiry;
+    String reason;
+    Maybe<HostAddress> ip;
+    Maybe<Uuid> uuid;
+  };
+  
+  struct WorldServerPromise {
+    Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcPromise<WorldChunks>> currentPromise;
+    Maybe<function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
+    
+    double startTime;
+    
+    WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
+    WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise);
+    
+    bool done() const;
+    bool poll();
+    
+    WorldServerThreadPtr get();
+  };
+
+  enum class TcpState : uint8_t { No, Yes, Fuck };
+
+  void processUniverseFlags();
+  void sendPendingChat();
+  void updateTeams();
+  void updateShips();
+  void sendClockUpdates();
+  void sendClientContextUpdate(ServerClientContextPtr clientContext);
+  void sendClientContextUpdates();
+  void kickErroredPlayers();
+  void reapConnections();
+  void processPlanetTypeChanges();
+  void warpPlayers();
+  void flyShips();
+  void arriveShips();
+  void respondToCelestialRequests();
+  void processChat();
+  void clearBrokenWorlds();
+  void handleWorldMessages();
+  void handleUniverseMessages();
+  void shutdownInactiveWorlds();
+  void doTriggeredStorage();
+
+  void saveSettings();
+  void loadSettings();
+
+  void startLuaScripts();
+  void updateLua();
+  void stopLua();
+
+  // Either returns the default configured starter world, or a new randomized
+  // starter world, or if a randomized world is not yet available, starts a job
+  // to find a randomized starter world and returns nothing until it is ready.
+  Maybe<CelestialCoordinate> nextStarterWorld();
+
+  void loadTempWorldIndex();
+  void saveTempWorldIndex();
+  String tempWorldFile(InstanceWorldId const& worldId) const;
+
+  Maybe<String> isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const;
+  void doTempBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType, int timeout);
+  void doPermBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType);
+  void removeTimedBan();
+
+  void addCelestialRequests(ConnectionId clientId, List<CelestialRequest> requests);
+
+  void worldUpdated(WorldServerThread* worldServer);
+  void systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
+  void packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<PacketPtr> packets);
+
+  void acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress);
+
+  // Main lock and clients read lock must be held when calling
+  WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
+  bool canWarpToShip(ConnectionId clientId, Uuid const& targetShipUuid) const;
+
+  void doDisconnection(ConnectionId clientId, String const& reason);
+
+  // Clients read lock must be held when calling
+  Maybe<ConnectionId> getClientForUuid(Uuid const& uuid) const;
+
+  // Get the world only if it is already loaded, Main lock must be held when
+  // calling.
+  WorldServerThreadPtr getWorld(WorldId const& worldId);
+
+  // If the world is not created, block and load it, otherwise just return the
+  // loaded world.  Main lock and Clients read lock must be held when calling.
+  WorldServerThreadPtr createWorld(WorldId const& worldId);
+
+  // Trigger off-thread world creation, returns a value when the creation is
+  // finished, either successfully or with an error.  Main lock and Clients
+  // read lock must be held when calling.
+  Maybe<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
+
+  // Main lock and clients read lock must be held when calling world promise
+  // generators
+  Maybe<WorldServerPromise> makeWorldPromise(WorldId const& worldId);
+  Maybe<WorldServerPromise> shipWorldPromise(ClientShipWorldId const& uuid);
+  Maybe<WorldServerPromise> celestialWorldPromise(CelestialWorldId const& coordinate);
+  Maybe<WorldServerPromise> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  Maybe<WorldServerPromise> customWorldPromise(CustomWorldId const& customWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  Maybe<WorldServerPromise> clientCustomWorldPromise(ClientCustomWorldId const& clientCustomWorld, Maybe<WorldTemplatePtr> worldTemplate = {});
+  
+  void notifyWorldCreated(WorldId const& worldId);
+
+  // If the system world is not created, initialize it, otherwise return the
+  // already initialized one
+  SystemWorldServerThreadPtr createSystemWorld(Vec3I const& location);
+
+  bool instanceWorldStoredOrActive(InstanceWorldId const& worldId) const;
+
+  // Signal that a world either failed to load, or died due to an exception,
+  // kicks clients if that world is a ship world.  Main lock and clients read
+  // lock must be held when calling.
+  void worldDiedWithError(WorldId world);
+
+  // Get SkyParameters if the coordinate is a valid world, and empty
+  // SkyParameters otherwise.
+  SkyParameters celestialSkyParameters(CelestialCoordinate const& coordinate) const;
+
+  mutable RecursiveMutex m_mainLock;
+  
+  bool m_isLocal;
+
+  String m_storageDirectory;
+  ByteArray m_assetsDigest;
+  Maybe<LockFile> m_storageDirectoryLock;
+  StringMap<StringList> m_speciesShips;
+  CelestialMasterDatabasePtr m_celestialDatabase;
+  ClockPtr m_universeClock;
+  UniverseSettingsPtr m_universeSettings;
+  WorkerPool m_workerPool;
+
+  int64_t m_storageTriggerDeadline;
+  int64_t m_clearBrokenWorldsDeadline;
+  int64_t m_lastClockUpdateSent;
+  atomic<bool> m_stop;
+  atomic<TcpState> m_tcpState;
+
+  mutable ReadersWriterMutex m_clientsLock;
+  unsigned m_maxPlayers;
+  IdMap<ConnectionId, ServerClientContextPtr> m_clients;
+
+  shared_ptr<atomic<bool>> m_pause;
+  bool m_secureWarps;
+  Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
+  Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
+  Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
+  UniverseConnectionServerPtr m_connectionServer;
+
+  RecursiveMutex m_connectionAcceptThreadsMutex;
+  List<ThreadFunction<void>> m_connectionAcceptThreads;
+  LinkedList<pair<UniverseConnection, int64_t>> m_deadConnections;
+
+  ChatProcessorPtr m_chatProcessor;
+  CommandProcessorPtr m_commandProcessor;
+  TeamManagerPtr m_teamManager;
+
+  HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
+  HashMap<ConnectionId, HashMap<ClientSubWorldId, WorldId>> m_pendingSubWorlds;
+  HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
+  HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
+  HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;
+  HashMap<ConnectionId, String> m_pendingDisconnections;
+  HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;
+  List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
+  HashMap<ConnectionId, List<tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
+  Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
+  Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
+
+  List<TimeoutBan> m_tempBans;
+
+  LuaRootPtr m_luaRoot;
+
+  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
+  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  StringMap<ScriptComponentPtr> m_scriptContexts;
+
+  mutable RecursiveMutex m_messageLock;
+  List<Universe::Message> m_universeMessages;
+  
+  HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
+  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_universeMessagePromises;
+};
+
+}
+

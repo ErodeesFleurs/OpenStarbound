@@ -1,11 +1,32 @@
+#include "StarJson.hpp"
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarImage.hpp"
-#include "StarRootLoader.hpp"
-#include "StarJson.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarVersion.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
 #include "StarRandom.hpp"
 #include "StarColor.hpp"
 #include "StarMultiArray.hpp"
+
+import star.option_parser;
+import star.version_option_parser;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.root_loader;
 
 import star.terrain_database;
 

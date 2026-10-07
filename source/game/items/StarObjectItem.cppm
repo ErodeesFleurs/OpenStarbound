@@ -1,9 +1,10 @@
 module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -21,9 +22,25 @@ module;
 #include "StarSpline.hpp"
 #include "StarString.hpp"
 #include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarSet.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarLua.hpp"
+#include "StarAudio.hpp"
+#include "StarMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -41,7 +58,6 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -55,13 +71,28 @@ import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
 import star.status_effect_item;
-#include "StarLuaComponents.hpp"
 import star.fireable_item;
 import star.drawable;
 import star.non_rotated_drawables_item;
 import star.beam_item;
-#include "StarRoot.hpp"
-#include "StarObject.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.mixer;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 
 export module star.object_item;
 import star.object_database;

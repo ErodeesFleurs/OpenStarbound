@@ -1,10 +1,51 @@
 module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLua.hpp"
+#include "StarObserverStream.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetElementExt.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarDataStream.hpp"
+#include "StarIdMap.hpp"
+#include "StarEither.hpp"
+#include "StarVector.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarString.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarBiMap.hpp"
+#include "StarDirectives.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarMaybe.hpp"
+
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarJson.hpp"
-#include "StarLua.hpp"
-#include "StarStatusController.hpp"
-#include "StarJsonExtra.hpp"
+import star.status_types;
+import star.damage_types;
+import star.world_geometry;
+import star.damage;
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.stat_collection;
+import star.status_effect_database;
+import star.status_controller;
 #include "StarLuaGameConverters.hpp"
 
 module star.status_controller_lua_bindings;

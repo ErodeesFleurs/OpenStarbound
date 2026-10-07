@@ -1,11 +1,34 @@
 module;
-
-#include "StarDungeonGenerator.hpp"
+#include "StarJson.hpp"
+#include "StarImage.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarThread.hpp"
+#include "StarLruCache.hpp"
 #include "StarRect.hpp"
 #include "StarString.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLogging.hpp"
+
+
+import star.item_descriptor;
+import star.world_geometry;
+import star.dungeon_generator;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 module star.micro_dungeon;
 

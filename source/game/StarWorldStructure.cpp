@@ -1,20 +1,31 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-import star.collision_block;
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-import star.item_descriptor;
 #include "StarAssetPath.hpp"
-#include "StarJson.hpp"
 #include "StarRect.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarImage.hpp"
-#include "StarAssets.hpp"
+
+import star.collision_block;
+import star.item_descriptor;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 
 import star.world_structure;

@@ -1,13 +1,73 @@
 module;
-
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-import star.uuid;
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
-#include "StarWorldStorage.hpp"
+#include "StarIdMap.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarCasting.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarMultiArray.hpp"
+#include "StarGameTypes.hpp"
+#include "StarMathCommon.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVersion.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarPerlin.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarStrongTypedef.hpp"
+#include <functional>
+#include "StarRect.hpp"
+#include "StarSectorArray2D.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarVariant.hpp"
+#include "StarSet.hpp"
 #include "StarThread.hpp"
+
+
+import star.uuid;
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.collision_block;
+import star.liquid_types;
+import star.tile_damage;
+import star.worker_pool;
+import star.tile_sector_array;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.celestial_coordinate;
+import star.sky_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
+import star.collision_generator;
+import star.world_tiles;
+import star.interaction_types;
+import star.item_descriptor;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.tile_entity;
+import star.inspectable_entity;
+import star.plant;
+import star.plant_database;
+import star.biome_placement;
+#include "StarLuaRoot.hpp"
+import star.versioning_database;
+import star.world_storage;
 
 namespace Star {
 

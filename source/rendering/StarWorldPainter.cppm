@@ -1,4 +1,6 @@
 module;
+#include "StarXXHash.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarGameTypes.hpp"
@@ -7,9 +9,7 @@ module;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVersion.hpp"
@@ -29,14 +29,27 @@ module;
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarListener.hpp"
+#include <functional>
+#include "StarSectorArray2D.hpp"
+#include "StarPerlin.hpp"
+#include "StarVariant.hpp"
 
+
+namespace Star {
+STAR_CLASS(Assets);
+STAR_CLASS(EnvironmentPainter);
+STAR_CLASS(TilePainter);
+}
 import star.world_geometry;
 import star.collision_block;
-#include <functional>
 import star.liquid_types;
 import star.tile_damage;
-#include "StarTileSectorArray.hpp"
-#include "StarWorldLayout.hpp"
+import star.worker_pool;
+import star.tile_sector_array;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
 import star.collision_generator;
 import star.world_tiles;
 import star.drawable;
@@ -70,11 +83,6 @@ import star.drawable_painter;
 
 import star.world_camera;
 
-namespace Star {
-STAR_CLASS(Assets);
-STAR_CLASS(EnvironmentPainter);
-STAR_CLASS(TilePainter);
-}
 
 namespace Star {
 

@@ -1,10 +1,11 @@
-#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
+#include "StarIdMap.hpp"
 #include "StarAssetPath.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -33,7 +34,6 @@
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
 #include "StarMultiArray.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
 #include "StarTtlCache.hpp"
 #include "StarPerlin.hpp"
@@ -48,12 +48,65 @@
 #include "StarStrongTypedef.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarInterpolation.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarZSTDCompression.hpp"
+#include "StarNetCompatibility.hpp"
+#include "StarConfig.hpp"
+#include <atomic>
+#include <memory>
+#include "StarSectorArray2D.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include <functional>
+#include "StarAStar.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElement.hpp"
+#include "StarLua.hpp"
+#include "StarLruCache.hpp"
+
 #include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
 #include "StarApplicationController.hpp"
 #include "StarRenderer.hpp"
-#include "StarRoot.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarUniverseClient.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.root;
+import star.host_address;
+import star.socket;
+import star.tcp;
+#include "StarP2PNetworkingService.hpp"
+import star.worker_pool;
+import star.tile_sector_array;
+import star.world_layout;
+import star.tile_modification;
+import star.inspectable_entity;
+import star.plant;
+import star.biome_placement;
+import star.versioning_database;
+import star.world_storage;
+import star.player_types;
+import star.system_world;
+import star.damage_manager;
+import star.net_packets;
+import star.net_packet_socket;
+import star.universe_connection;
+import star.world_structure;
+import star.entity_rendering;
+import star.world;
+import star.world_client_state;
+import star.interpolation_tracker;
+import star.ambient;
+import star.weather;
+import star.world_client;
+import star.world_client_thread;
+import star.universe;
+// TODO: make this more thread safe
+import star.universe_client;
 import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
@@ -100,10 +153,7 @@ import star.gui_reader;
 
 import star.container_interface;
 
-#include <functional>
 import star.liquid_types;
-#include "StarTileSectorArray.hpp"
-#include "StarWorldLayout.hpp"
 import star.collision_generator;
 import star.world_tiles;
 import star.entity_rendering_types;
@@ -120,7 +170,6 @@ import star.tile_painter;
 import star.environment_painter;
 import star.world_camera;
 import star.world_painter;
-#include "StarWorldClient.hpp"
 import star.item_descriptor;
 import star.item_recipe;
 
@@ -215,12 +264,31 @@ import star.canvas_widget;
 import star.item_slot_widget;
 import star.button_group;
 import star.button_widget;
-#include "StarPlayer.hpp"
+import star.animated_part_set;
+import star.networked_animator;
+import star.humanoid;
+import star.physics_entity;
+import star.anchorable_entity;
+import star.mobile_entity;
+import star.actor_entity;
+import star.lounging_entities;
+import star.chatty_entity;
+import star.emote_entity;
+import star.portrait_entity;
+import star.damage_bar_entity;
+import star.nametag_entity;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.actor_movement_controller;
+import star.player;
 import star.player_log;
-#include "StarMonster.hpp"
-#include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
-#include "StarItem.hpp"
+import star.aggressive_entity;
+import star.scripted_entity;
+import star.monster_database;
+import star.effect_emitter;
+import star.monster;
+import star.item_drop;
+import star.item;
 
 import star.quest_descriptor;
 import star.ai_types;
@@ -238,7 +306,6 @@ import star.tool_user_entity;
 
 
 // Parse foundations before importing global bookmark value types on GCC.
-#include "StarSystemWorld.hpp"
 import star.player_universe_map;
 
 
@@ -270,7 +337,7 @@ import star.quest_indicator_painter;
 
 import star.script_pane;
 import star.warp_target_entity;
-#include "StarWorldTemplate.hpp"
+import star.world_template;
 
 
 import star.radio_message_database;
@@ -294,7 +361,8 @@ import star.chat_action;
 
 
 import star.chat_bubble_manager;
-#include "StarNpc.hpp"
+import star.npc_database;
+import star.npc;
 
 
 

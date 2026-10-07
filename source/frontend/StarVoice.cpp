@@ -1,4 +1,5 @@
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
 #include "StarGameTypes.hpp"
@@ -6,19 +7,30 @@
 #include "StarThread.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFormat.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarAudio.hpp"
 #include <queue>
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
 typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 #include "StarApplicationController.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 #include "opus/opus.h"
 
 #include "SDL3/SDL.h"

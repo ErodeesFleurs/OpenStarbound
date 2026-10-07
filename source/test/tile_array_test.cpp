@@ -1,4 +1,9 @@
-#include "StarTileSectorArray.hpp"
+#include "StarRect.hpp"
+#include "StarSectorArray2D.hpp"
+#include "StarThread.hpp"
+
+import star.worker_pool;
+import star.tile_sector_array;
 
 #include "gtest/gtest.h"
 

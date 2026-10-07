@@ -1,10 +1,10 @@
 module;
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -19,8 +19,18 @@ module;
 #include "StarRpcPromise.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
+#include "StarSet.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarLua.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.drawable;
 import star.damage_types;
 import star.world_geometry;
@@ -58,9 +68,15 @@ import star.fireable_item;
 import star.swingable_item;
 import star.previewable_item;
 
-#include "StarProjectile.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+import star.scripted_entity;
+import star.status_effect_entity;
+import star.effect_emitter;
+import star.projectile;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 export module star.thrown_item;
 import star.projectile_database;

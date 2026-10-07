@@ -1,5 +1,6 @@
 module;
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -16,7 +17,6 @@ module;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -24,8 +24,12 @@ module;
 #include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.pointable_item;
 import star.damage_types;
 import star.world_geometry;
@@ -62,7 +66,8 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarAssets.hpp"
+import star.asset_source;
+import star.assets;
 
 export module star.flashlight;
 

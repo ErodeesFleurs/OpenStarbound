@@ -1,13 +1,36 @@
-#include "StarItem.hpp"
 #include "StarJson.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-import star.item_descriptor;
 #include "StarGameTypes.hpp"
-import star.item_recipe;
-#include "StarRoot.hpp"
-
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include <list>
+
+import star.drawable;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.item;
+import star.item_descriptor;
+import star.item_recipe;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+
 
 #include "gtest/gtest.h"
 

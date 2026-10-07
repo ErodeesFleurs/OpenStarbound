@@ -3,9 +3,23 @@
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
 import star.status_types;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.status_effect_database;
 

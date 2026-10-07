@@ -1,17 +1,32 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
-import star.damage_types;
 #include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarStrongTypedef.hpp"
 #include "StarIdMap.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.damage_types;
+import star.world_geometry;
 import star.status_types;
 import star.damage;
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 namespace Star {
 

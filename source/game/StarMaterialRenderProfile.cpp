@@ -1,18 +1,29 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarAssetPath.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-import star.tile_damage;
 #include "StarDirectives.hpp"
-import star.material_render_profile;
 #include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.tile_damage;
+import star.material_render_profile;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 
 import star.image_metadata_database;

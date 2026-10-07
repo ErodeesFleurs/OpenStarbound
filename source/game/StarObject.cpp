@@ -1,9 +1,11 @@
+#include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -14,7 +16,6 @@
 #include "StarGameTypes.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarParametricFunction.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarAudio.hpp"
@@ -33,7 +34,6 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -41,8 +41,30 @@
 #include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarLua.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
 import star.collision_block;
-#include "StarObject.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.networked_animator;
+import star.object;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -58,8 +80,16 @@ import star.tile_modification;
 #include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
-#include "StarRoot.hpp"
-#include "StarItemDrop.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.physics_entity;
+import star.movement_controller;
+import star.mobile_entity;
+import star.game_timers;
+import star.item_drop;
 import star.item_descriptor;
 import star.mixer;
 import star.mixer;
@@ -70,7 +100,6 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarAssets.hpp"
 #include "StarLuaGameConverters.hpp"
 import star.treasure;
 

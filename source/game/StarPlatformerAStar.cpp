@@ -25,6 +25,7 @@
 #include "StarAStar.hpp"
 #include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLuaRoot.hpp"
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -40,7 +41,6 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
 

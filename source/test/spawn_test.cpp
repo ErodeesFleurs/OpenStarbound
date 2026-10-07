@@ -1,20 +1,27 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
-import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-import star.sky_types;
 #include "StarMaybe.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.celestial_coordinate;
+import star.sky_types;
 import star.animation;
 import star.particle;
 import star.weather_types;
@@ -22,8 +29,11 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 #include "StarTestUniverse.hpp"
 #include "gtest/gtest.h"

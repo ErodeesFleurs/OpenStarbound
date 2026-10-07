@@ -1,15 +1,24 @@
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarSpatialHash2D.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarVariant.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarLua.hpp"
+#include "StarMaybe.hpp"
+#include "StarColor.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -24,7 +33,20 @@ import star.quest_descriptor;
 import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
-#include "StarProjectile.hpp"
+import star.tile_modification;
+#include "StarLuaRoot.hpp"
+import star.force_regions;
+import star.world;
+import star.physics_entity;
+import star.mobile_entity;
+import star.scripted_entity;
+import star.status_effect_entity;
+import star.movement_controller;
+import star.animation;
+import star.particle;
+#include "StarLuaComponents.hpp"
+import star.effect_emitter;
+import star.projectile;
 
 import star.entity_map;
 

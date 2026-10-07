@@ -1,15 +1,30 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
-import star.font_texture_group;
 #include "StarBiMap.hpp"
-import star.anchor_types;
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
+
+
+#include "StarRenderer.hpp"
+import star.font_texture_group;
+import star.anchor_types;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 namespace Star {
 

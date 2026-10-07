@@ -1,8 +1,9 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -17,7 +18,9 @@
 #include "StarRpcPromise.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
+
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -51,7 +54,8 @@ import star.tool_user_item;
 import star.status_effect_item;
 #include "StarLuaComponents.hpp"
 import star.fireable_item;
-#include "StarItem.hpp"
+import star.drawable;
+import star.item;
 
 import star.config_lua_bindings;
 import star.fireable_item_lua_bindings;

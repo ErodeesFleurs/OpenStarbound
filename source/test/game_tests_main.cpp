@@ -1,6 +1,27 @@
+#include "StarJson.hpp"
 #include "StarLogging.hpp"
 #include "StarFile.hpp"
-#include "StarRootLoader.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarVersion.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+
+import star.option_parser;
+import star.version_option_parser;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.root_loader;
 
 #include "gtest/gtest.h"
 

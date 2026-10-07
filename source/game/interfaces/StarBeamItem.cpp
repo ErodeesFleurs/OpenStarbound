@@ -1,3 +1,5 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarSpline.hpp"
 #include "StarGameTypes.hpp"
@@ -5,7 +7,6 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -19,9 +20,17 @@
 #include "StarRpcPromise.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarRandom.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarSet.hpp"
+
 import star.drawable;
 import star.non_rotated_drawables_item;
 import star.damage_types;
@@ -55,9 +64,12 @@ import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
 import star.beam_item;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarItem.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.item;
 
 namespace Star {
 

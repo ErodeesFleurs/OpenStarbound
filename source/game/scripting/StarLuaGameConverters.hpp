@@ -1,8 +1,11 @@
 #pragma once
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarJson.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
@@ -14,7 +17,6 @@
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRpcPromise.hpp"
@@ -24,7 +26,6 @@
 #include "StarAStar.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -32,7 +33,6 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -42,6 +42,12 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarArray.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementFloatFields.hpp"
+
 
 import star.light_source;
 import star.entity;
@@ -71,7 +77,16 @@ import star.damage_types;
 import star.world_geometry;
 import star.status_types;
 import star.damage;
-#include "StarSystemWorld.hpp"
+import star.sky_types;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.uuid;
+import star.warping;
+import star.sky_parameters;
+import star.system_world;
 import star.drawable;
 import star.mixer;
 

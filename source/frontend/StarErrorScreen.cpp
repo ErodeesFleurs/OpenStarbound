@@ -1,29 +1,21 @@
-
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarString.hpp"
 #include "StarInputEvent.hpp"
-
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
-
-import star.animation;
-
-
-import star.interface_cursor;
-
-
-import star.error_screen;
 #include "StarCasting.hpp"
-#include "StarApplicationController.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarMaybe.hpp"
@@ -34,6 +26,26 @@ import star.error_screen;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarOrderedMap.hpp"
+
+
+
+import star.drawable;
+
+import star.animation;
+
+
+import star.interface_cursor;
+
+
+import star.error_screen;
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -46,13 +58,10 @@ import star.gui_context;
 import star.widget;
 import star.widget_parsing;
 import star.gui_reader;
-#include "StarJsonExtra.hpp"
-#include "StarOrderedMap.hpp"
 import star.pane;
 import star.game_timers;
 import star.pane_manager;
 import star.label_widget;
-#include "StarAssets.hpp"
 
 namespace Star {
 

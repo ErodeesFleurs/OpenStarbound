@@ -1,9 +1,12 @@
-#include "StarIdMap.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarIdMap.hpp"
 #include "StarTtlCache.hpp"
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -13,12 +16,10 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
@@ -33,7 +34,6 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -49,6 +49,16 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarLua.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
 #include "StarLuaRoot.hpp"
 
 import star.damage_types;
@@ -73,15 +83,32 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-#include "StarItem.hpp"
+import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
-#include "StarContainerObject.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.networked_animator;
+import star.object;
+import star.container_entity;
+import star.container_object;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.item_descriptor;
-#include "StarItemDrop.hpp"
+import star.mobile_entity;
+import star.item_drop;
 import star.mixer;
 import star.drawable;
 import star.entity_rendering_types;
@@ -91,7 +118,7 @@ import star.particle;
 import star.light_source;
 import star.entity_rendering;
 import star.mixer;
-#include "StarAugmentItem.hpp"
+import star.augment_item;
 import star.treasure;
 
 

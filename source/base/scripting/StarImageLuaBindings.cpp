@@ -1,8 +1,19 @@
 #include "StarJsonExtra.hpp"
-#include "StarImageLuaBindings.hpp"
+#include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+
+import star.image_lua_bindings;
+import star.asset_source;
+import star.assets;
 import star.root_base;
 
 namespace Star {

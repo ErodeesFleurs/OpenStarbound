@@ -1,4 +1,14 @@
-#include "StarAssets.hpp"
+#include "StarJson.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+
+import star.asset_source;
+import star.assets;
 import star.root_base;
 
 namespace Star {

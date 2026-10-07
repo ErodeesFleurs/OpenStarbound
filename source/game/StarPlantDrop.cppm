@@ -1,7 +1,7 @@
 module;
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
@@ -15,6 +15,8 @@ module;
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarAssetPath.hpp"
+#include "StarSet.hpp"
+
 
 import star.damage_types;
 import star.world_geometry;
@@ -26,7 +28,15 @@ import star.tile_damage;
 import star.physics_entity;
 import star.movement_controller;
 import star.mobile_entity;
-#include "StarPlant.hpp"
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.inspectable_entity;
+import star.plant;
 
 namespace Star {
 

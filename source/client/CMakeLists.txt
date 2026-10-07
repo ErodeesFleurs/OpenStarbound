@@ -15,7 +15,7 @@ if (STAR_SYSTEM_WINDOWS)
 endif ()
 
 add_executable (starbound WIN32
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
+  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
   $<TARGET_OBJECTS:star_application>
   ${star_client_HEADERS} ${star_client_SOURCES} ${star_client_RESOURCES})
 target_include_directories (starbound PRIVATE

@@ -1,8 +1,37 @@
 module;
-
-#include "StarSystemWorld.hpp"
+#include "StarJson.hpp"
+#include "StarVector.hpp"
+#include "StarPoly.hpp"
+#include "StarVariant.hpp"
+#include "StarGameTypes.hpp"
+#include "StarColor.hpp"
+#include "StarBiMap.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarArray.hpp"
+#include "StarDataStream.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
 #include "StarNetCompatibility.hpp"
+
+
+import star.celestial_coordinate;
+import star.sky_types;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.uuid;
+import star.warping;
+import star.sky_parameters;
+import star.system_world;
 
 namespace Star {
 

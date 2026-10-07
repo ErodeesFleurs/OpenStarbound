@@ -1,6 +1,7 @@
 module;
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarIdMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
@@ -20,9 +21,17 @@ module;
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarConfig.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarSet.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 
-#include "StarItem.hpp"
+
+import star.item;
 import star.status_types;
 import star.status_effect_item;
 import star.effect_source_item;
@@ -58,8 +67,11 @@ import star.tool_user_item;
 import star.activatable_item;
 import star.drawable;
 import star.pointable_item;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 export module star.instrument_item;
 

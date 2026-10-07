@@ -1,22 +1,29 @@
 #include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
-import star.animation;
-import star.particle;
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
-import star.drawable;
 #include "StarBiMap.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"
+
+import star.animation;
+import star.particle;
+import star.asset_source;
+import star.assets;
+import star.drawable;
 import star.animation;
 
 namespace Star {

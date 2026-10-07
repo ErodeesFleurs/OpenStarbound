@@ -1,24 +1,26 @@
-
-// Parse foundations before importing global bookmark value types on GCC.
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-import star.uuid;
 #include "StarVector.hpp"
-import star.celestial_coordinate;
 #include "StarGameTypes.hpp"
-import star.warping;
-#include "StarSystemWorld.hpp"
+#include "StarVariant.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarEither.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
@@ -31,6 +33,28 @@ import star.warping;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+
+
+// Parse foundations before importing global bookmark value types on GCC.
+import star.uuid;
+import star.celestial_coordinate;
+import star.warping;
+import star.sky_types;
+import star.animation;
+import star.particle;
+import star.weather_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.sky_parameters;
+import star.system_world;
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -54,7 +78,6 @@ import star.button_widget;
 import star.image_widget;
 import star.text_box_widget;
 import star.label_widget;
-#include "StarAssets.hpp"
 
 namespace Star {
 

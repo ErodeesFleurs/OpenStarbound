@@ -1,8 +1,8 @@
 module;
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
-#include "StarLua.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarIdMap.hpp"
+#include "StarLua.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -20,9 +20,13 @@ module;
 #include "StarRpcPromise.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
+
 
 #include "StarLuaGameConverters.hpp"
-#include "StarItem.hpp"
+import star.drawable;
+import star.item;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

@@ -1,10 +1,37 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarPerlin.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarBiMap.hpp"
-#include "StarPlant.hpp"
+#include "StarIdMap.hpp"
+#include "StarSet.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarCasting.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarVector.hpp"
+#include "StarAssetPath.hpp"
 #include "StarStrongTypedef.hpp"
+
+
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.tile_damage;
+import star.inspectable_entity;
+import star.plant;
 
 import star.plant_database;
 

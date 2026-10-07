@@ -1,20 +1,32 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarAssetPath.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarDirectives.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarRandom.hpp"
+#include "StarDataStreamExtra.hpp"
+
 import star.tile_damage;
 import star.plant_database;
 import star.parallax;
-#include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarRandom.hpp"
-#include "StarAssets.hpp"
-#include "StarDataStreamExtra.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 
 import star.image_metadata_database;

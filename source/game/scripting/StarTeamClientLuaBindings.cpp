@@ -4,8 +4,8 @@ module;
 #include "StarJson.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-import star.uuid;
 #include "StarLua.hpp"
+import star.uuid;
 
 module star.team_client_lua_bindings;
 import star.team_client;

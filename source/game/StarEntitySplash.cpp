@@ -1,6 +1,7 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDirectives.hpp"
@@ -15,7 +16,16 @@
 #include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+#include "StarLuaRoot.hpp"
 import star.animation;
 import star.particle;
 
@@ -35,10 +45,13 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.liquids_database;
 

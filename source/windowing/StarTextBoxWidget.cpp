@@ -1,19 +1,23 @@
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarMaybe.hpp"
 #include "StarListener.hpp"
@@ -23,6 +27,16 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include <limits>
+#include <utility>
+
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -36,11 +50,6 @@ import star.gui_context;
 import star.widget;
 import star.text_box_widget;
 
-#include <limits>
-#include <utility>
-#include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 

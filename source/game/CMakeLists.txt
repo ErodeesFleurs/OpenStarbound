@@ -1,42 +1,7 @@
 set (star_game_HEADERS
-    StarDungeonGenerator.hpp
     StarGameTypes.hpp
-    StarHumanoid.hpp
-    StarInput.hpp
-    StarItem.hpp
-    StarItemDrop.hpp
-    StarMonster.hpp
-    StarNetPackets.hpp
-    StarNetworkedAnimator.hpp
-    StarNpc.hpp
-    StarObject.hpp
-    StarPlant.hpp
-    StarPlayer.hpp
-    StarProjectile.hpp
-    StarRoot.hpp
-    StarRootLoader.hpp
-    StarStagehand.hpp
-    StarStatusController.hpp
-    StarSystemWorld.hpp
-    StarSystemWorldClient.hpp
-    StarSystemWorldServer.hpp
-    StarTileSectorArray.hpp
-    StarUniverseClient.hpp
-    StarUniverseServer.hpp
-    StarVehicle.hpp
-    StarWorldClient.hpp
-    StarWorldClientThread.hpp
-    StarWorldImpl.hpp
-    StarWorldLayout.hpp
-    StarWorldServer.hpp
-    StarWorldStorage.hpp
-    StarWorldTemplate.hpp
 
-    items/StarArmors.hpp
-    items/StarAugmentItem.hpp
-    items/StarTools.hpp
 
-    objects/StarContainerObject.hpp
 
     scripting/StarLuaActorMovementComponent.hpp
     scripting/StarLuaAnimationComponent.hpp
@@ -47,42 +12,9 @@ set (star_game_HEADERS
   )
 
 set (star_game_SOURCES
-    StarDungeonGenerator.cpp
     StarGameTypes.cpp
-    StarHumanoid.cpp
-    StarInput.cpp
-    StarItem.cpp
-    StarItemDrop.cpp
-    StarMonster.cpp
-    StarNetPackets.cpp
-    StarNetworkedAnimator.cpp
-    StarNpc.cpp
-    StarObject.cpp
-    StarPlant.cpp
-    StarPlayer.cpp
-    StarProjectile.cpp
-    StarRoot.cpp
-    StarRootLoader.cpp
-    StarStagehand.cpp
-    StarStatusController.cpp
-    StarSystemWorld.cpp
-    StarSystemWorldClient.cpp
-    StarSystemWorldServer.cpp
-    StarUniverseClient.cpp
-    StarUniverseServer.cpp
-    StarVehicle.cpp
-    StarWorldClient.cpp
-    StarWorldClientThread.cpp
-    StarWorldLayout.cpp
-    StarWorldServer.cpp
-    StarWorldStorage.cpp
-    StarWorldTemplate.cpp
 
-    items/StarArmors.cpp
-    items/StarAugmentItem.cpp
-    items/StarTools.cpp
 
-    objects/StarContainerObject.cpp
 
     scripting/StarLuaComponents.cpp
     scripting/StarLuaEntityUserdata.cpp
@@ -93,6 +25,41 @@ set (star_game_SOURCES
 
 add_library (star_game_module_interfaces OBJECT)
 target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
+    StarItem.cppm
+    StarItemDrop.cppm
+    StarMonster.cppm
+    StarNpc.cppm
+    StarObject.cppm
+    StarPlant.cppm
+    StarPlayer.cppm
+    StarProjectile.cppm
+    StarStagehand.cppm
+    StarVehicle.cppm
+    StarHumanoid.cppm
+    StarNetworkedAnimator.cppm
+    StarStatusController.cppm
+    StarInput.cppm
+    StarNetPackets.cppm
+    items/StarArmors.cppm
+    items/StarAugmentItem.cppm
+    items/StarTools.cppm
+    objects/StarContainerObject.cppm
+    StarWorldServer.cppm
+    StarWorldClient.cppm
+    StarWorldImpl.cppm
+    StarWorldStorage.cppm
+    StarWorldTemplate.cppm
+    StarWorldLayout.cppm
+    StarUniverseServer.cppm
+    StarUniverseClient.cppm
+    StarSystemWorld.cppm
+    StarSystemWorldClient.cppm
+    StarSystemWorldServer.cppm
+    StarWorldClientThread.cppm
+    StarTileSectorArray.cppm
+    StarDungeonGenerator.cppm
+    StarRoot.cppm
+    StarRootLoader.cppm
     scripting/StarEntityLuaBindings.cppm
     scripting/StarMovementControllerLuaBindings.cppm
     scripting/StarWorldLuaBindings.cppm
@@ -325,8 +292,52 @@ target_include_directories (star_game_module_interfaces PRIVATE
   )
 target_link_libraries (star_game_module_interfaces PUBLIC star_base_modules PRIVATE star_modules star_build_config)
 
+# Share native declarations with ordinary key-function providers.
+target_sources (star_game_module_interfaces PRIVATE
+    StarItem.inc
+    StarMonster.inc
+    StarNpc.inc
+    items/StarArmors.inc
+    StarUniverseClient.inc
+    StarUniverseServer.inc
+    StarSystemWorldServer.inc
+  )
+
 # Keep implementation template instantiations out of interface BMIs.
 add_library (star_game_modules STATIC
+    objects/StarContainerObject.cpp
+    items/StarTools.cpp
+    items/StarAugmentItem.cpp
+    items/StarArmors.cpp
+    StarWorldTemplate.cpp
+    StarWorldStorage.cpp
+    StarWorldServer.cpp
+    StarWorldLayout.cpp
+    StarWorldClientThread.cpp
+    StarWorldClient.cpp
+    StarVehicle.cpp
+    StarUniverseServer.cpp
+    StarUniverseClient.cpp
+    StarSystemWorldServer.cpp
+    StarSystemWorldClient.cpp
+    StarSystemWorld.cpp
+    StarStatusController.cpp
+    StarStagehand.cpp
+    StarRootLoader.cpp
+    StarRoot.cpp
+    StarProjectile.cpp
+    StarPlayer.cpp
+    StarPlant.cpp
+    StarObject.cpp
+    StarNpc.cpp
+    StarNetworkedAnimator.cpp
+    StarNetPackets.cpp
+    StarMonster.cpp
+    StarItemDrop.cpp
+    StarItem.cpp
+    StarInput.cpp
+    StarHumanoid.cpp
+    StarDungeonGenerator.cpp
     StarStoredFunctions.cpp
     StarTreasure.cpp
     StarNameGenerator.cpp
@@ -414,6 +425,7 @@ add_library (star_game_modules STATIC
     objects/StarFarmableObject.cpp
     objects/StarLoungeableObject.cpp
     objects/StarPhysicsObject.cpp
+    items/StarActiveItem.cpp
     scripting/StarRootLuaBindings.cpp
     scripting/StarBehaviorLuaBindings.cpp
     StarDungeonTMXPart.cpp
@@ -518,7 +530,7 @@ target_include_directories (star_game PRIVATE
     ${STAR_GAME_INCLUDES}
   )
 
-# See the note in base/CMakeLists.txt: star_game imports a module too.
+# star_game imports core, base and game modules; scanning tracks its imports.
 target_link_libraries (star_game PRIVATE star_base_modules star_game_modules star_build_config)
 set_target_properties (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 

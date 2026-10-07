@@ -1,18 +1,21 @@
 #include "StarJsonExtra.hpp"
-#include "StarItem.hpp"
 #include "StarJson.hpp"
+#include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
@@ -25,6 +28,19 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarLua.hpp"
+#include "StarLuaConverters.hpp"
+
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.item;
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.pane;
 import star.item_descriptor;
 import star.item_recipe;
@@ -39,13 +55,9 @@ import star.key_bindings;
 import star.mixer;
 import star.gui_context;
 import star.widget;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarLua.hpp"
 import star.widget_parsing;
 import star.gui_reader;
 import star.widget_lua_bindings;
-#include "StarLuaConverters.hpp"
 import star.image_widget;
 
 

@@ -1,7 +1,20 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarRect.hpp"
-#include "StarDungeonGenerator.hpp"
+#include "StarImage.hpp"
+#include "StarDataStream.hpp"
+#include "StarBiMap.hpp"
+#include "StarPoly.hpp"
+#include "StarGameTypes.hpp"
+#include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarThread.hpp"
+#include "StarLruCache.hpp"
+
+
+import star.item_descriptor;
+import star.world_geometry;
+import star.dungeon_generator;
 
 export module star.dungeon_tmx_part;
 import star.tileset_database;

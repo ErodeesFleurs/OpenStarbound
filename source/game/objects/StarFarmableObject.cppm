@@ -1,8 +1,63 @@
 module;
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarIdMap.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarSet.hpp"
+#include "StarColor.hpp"
+#include "StarLua.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarMaybe.hpp"
+#include "StarBiMap.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarAssetPath.hpp"
+#include "StarDirectives.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
 
-#include "StarObject.hpp"
+
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.entity;
+import star.tile_damage;
+import star.interaction_types;
+import star.item_descriptor;
+import star.celestial_coordinate;
+import star.quest_descriptor;
+import star.interactive_entity;
+import star.collision_block;
+import star.tile_entity;
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
+import star.damage_types;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 
 import star.game_timers;
 

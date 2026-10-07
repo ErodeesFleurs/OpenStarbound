@@ -1,6 +1,7 @@
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
+#include "StarIdMap.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -9,7 +10,6 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -22,6 +22,17 @@
 #include "StarStrongTypedef.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarArray.hpp"
+#include "StarRect.hpp"
+#include "StarAStar.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarEither.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElement.hpp"
+
+#include "StarLuaComponents.hpp"
 import star.mixer;
 import star.drawable;
 import star.entity_rendering_types;
@@ -30,7 +41,6 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-#include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 import star.damage_types;
 import star.world_geometry;
@@ -51,7 +61,33 @@ import star.force_regions;
 import star.world;
 
 import star.player_deployment;
-#include "StarPlayer.hpp"
+import star.uuid;
+import star.animated_part_set;
+import star.networked_animator;
+import star.humanoid;
+import star.physics_entity;
+import star.anchorable_entity;
+import star.mobile_entity;
+import star.actor_entity;
+import star.tool_user_entity;
+import star.lounging_entities;
+import star.chat_action;
+import star.chatty_entity;
+import star.emote_entity;
+import star.portrait_entity;
+import star.damage_bar_entity;
+import star.nametag_entity;
+import star.inspectable_entity;
+import star.inventory_types;
+import star.movement_controller;
+import star.platformer_astar_types;
+import star.game_timers;
+import star.actor_movement_controller;
+import star.ai_types;
+import star.player_types;
+#include "StarLuaActorMovementComponent.hpp"
+import star.radio_message_database;
+import star.player;
 
 import star.player_lua_bindings;
 import star.entity_lua_bindings;

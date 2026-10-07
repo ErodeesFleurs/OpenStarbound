@@ -1,31 +1,46 @@
 module;
-
-#include "StarPoly.hpp"
-import star.world_geometry;
 #include "StarJson.hpp"
+#include "StarXXHash.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
-import star.animation;
-import star.particle;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-import star.collision_block;
 #include "StarMultiArray.hpp"
 #include <functional>
 #include "StarGameTypes.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
-import star.liquid_types;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-import star.tile_damage;
-#include "StarTileSectorArray.hpp"
-#include "StarWorldLayout.hpp"
+#include "StarRect.hpp"
+#include "StarSectorArray2D.hpp"
+#include "StarThread.hpp"
+#include "StarPerlin.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarVariant.hpp"
 #include "StarVersion.hpp"
+
+
+import star.world_geometry;
+import star.animation;
+import star.particle;
+import star.collision_block;
+import star.liquid_types;
+import star.tile_damage;
+import star.worker_pool;
+import star.tile_sector_array;
+import star.weather_types;
+import star.celestial_coordinate;
+import star.sky_types;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
 import star.collision_generator;
 import star.world_tiles;
 

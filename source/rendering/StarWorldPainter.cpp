@@ -1,10 +1,13 @@
+#include "StarXXHash.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -26,20 +29,28 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-#include "StarJsonExtra.hpp"
+#include <functional>
+#include "StarSectorArray2D.hpp"
+#include "StarVariant.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+
 import star.world_geometry;
 import star.collision_block;
-#include <functional>
 import star.liquid_types;
 import star.tile_damage;
-#include "StarTileSectorArray.hpp"
-#include "StarWorldLayout.hpp"
+import star.worker_pool;
+import star.tile_sector_array;
+import star.force_regions;
+import star.world_parameters;
+import star.celestial_parameters;
+import star.world_layout;
 import star.collision_generator;
 import star.world_tiles;
 import star.entity_rendering_types;
@@ -72,9 +83,11 @@ import star.drawable_painter;
 import star.world_camera;
 import star.world_painter;
 import star.drawable;
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.root;
 import star.configuration;
-#include "StarAssets.hpp"
 import star.animation;
 
 namespace Star {

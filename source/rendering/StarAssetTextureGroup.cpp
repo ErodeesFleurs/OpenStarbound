@@ -1,15 +1,27 @@
+#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarListener.hpp"
-#include "StarRenderer.hpp"
 #include "StarAssetPath.hpp"
-import star.asset_texture_group;
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarVersion.hpp"
+
+#include "StarRenderer.hpp"
+import star.asset_texture_group;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 
 import star.image_metadata_database;

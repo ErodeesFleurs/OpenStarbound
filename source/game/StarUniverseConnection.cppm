@@ -1,19 +1,50 @@
 module;
-
+#include "StarXXHash.hpp"
+#include "StarJson.hpp"
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
-import star.host_address;
 #include "StarThread.hpp"
-import star.socket;
-import star.tcp;
 #include <atomic>
 #include <memory>
-
-#include "StarP2PNetworkingService.hpp"
-#include "StarNetPackets.hpp"
+#include "StarIdMap.hpp"
+#include "StarDataStream.hpp"
+#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarBiMap.hpp"
+#include "StarMultiArray.hpp"
+#include "StarGameTypes.hpp"
+#include "StarMathCommon.hpp"
+#include "StarVector.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVersion.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarVariant.hpp"
+#include "StarColor.hpp"
+#include "StarMaybe.hpp"
+#include "StarWeightedPool.hpp"
+#include "StarDirectives.hpp"
+#include "StarAssetPath.hpp"
+#include "StarArray.hpp"
+#include "StarCasting.hpp"
+#include "StarStrongTypedef.hpp"
+#include <functional>
+#include "StarSectorArray2D.hpp"
+#include "StarPerlin.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarSet.hpp"
+#include "StarNetElementFloatFields.hpp"
 #include "StarZSTDCompression.hpp"
 #include "StarNetCompatibility.hpp"
+
+
+namespace Star {
+STAR_STRUCT(Packet);
+}
+
 import star.net_packet_socket;
 
 namespace Star {

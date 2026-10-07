@@ -1,15 +1,40 @@
 module;
-
-#include "StarThread.hpp"
 #include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarThread.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-import star.item_descriptor;
-#include "StarHumanoid.hpp"
-#include "StarJson.hpp"
+#include "StarGameTypes.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarColor.hpp"
+#include "StarAssetPath.hpp"
+#include "StarDirectives.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarVector.hpp"
+#include "StarAudio.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElement.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
+
+
+import star.item_descriptor;
+import star.drawable;
+import star.animation;
+import star.particle;
+import star.animated_part_set;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
+import star.humanoid;
 import star.status_types;
 #include "StarLuaRoot.hpp"
 

@@ -1,13 +1,25 @@
 module;
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarApplicationController.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInput.hpp"
+#include "StarInputEvent.hpp"
+#include "StarListener.hpp"
+#include "StarHash.hpp"
 #include "StarBuffer.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+#include "StarApplicationController.hpp"
+import star.input;
+import star.asset_source;
+import star.assets;
 import star.root_base;
 
 module star.clipboard_lua_bindings;

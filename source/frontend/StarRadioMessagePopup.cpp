@@ -1,16 +1,18 @@
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
-
+#include "StarJsonExtra.hpp"
+#include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
-#include "StarApplicationController.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
 #include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
-#include "StarRoot.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarVersion.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 #include "StarString.hpp"
@@ -24,6 +26,20 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarLogging.hpp"
+#include "StarInterpolation.hpp"
+#include "StarLexicalCast.hpp"
+
+
+#include "StarApplicationController.hpp"
+#include "StarRenderer.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -36,9 +52,7 @@ import star.mixer;
 import star.gui_context;
 import star.widget;
 import star.pane;
-#include "StarOrderedSet.hpp"
 import star.item_descriptor;
-#include "StarStrongTypedef.hpp"
 import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.ai_types;
@@ -53,11 +67,6 @@ import star.widget_parsing;
 import star.gui_reader;
 import star.label_widget;
 import star.image_widget;
-#include "StarAssets.hpp"
-#include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarInterpolation.hpp"
-#include "StarLexicalCast.hpp"
 
 namespace Star {
 

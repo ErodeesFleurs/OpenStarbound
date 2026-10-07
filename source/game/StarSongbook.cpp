@@ -1,6 +1,7 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarThread.hpp"
-#include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLexicalCast.hpp"
@@ -18,7 +19,6 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
@@ -27,8 +27,18 @@
 #include "StarGameTypes.hpp"
 #include "StarDirectives.hpp"
 #include "StarTime.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

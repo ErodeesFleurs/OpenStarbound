@@ -1,4 +1,5 @@
 #include "StarJsonExtra.hpp"
+#include "StarJson.hpp"
 #include "StarTime.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -8,11 +9,23 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
+
+import star.mixer;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 
 import star.ambient;
 

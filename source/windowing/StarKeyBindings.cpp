@@ -1,16 +1,27 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarInputEvent.hpp"
 #include "StarSet.hpp"
-#include "StarJson.hpp"
-import star.key_bindings;
-#include "StarRoot.hpp"
-#include "StarJson.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarBiMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarListener.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-import star.configuration;
 #include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
-
 #include <bitset>
+
+import star.key_bindings;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.root;
+import star.configuration;
+
 
 namespace Star {
 

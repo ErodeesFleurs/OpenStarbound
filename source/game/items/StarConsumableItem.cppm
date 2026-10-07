@@ -1,10 +1,11 @@
 module;
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
@@ -18,10 +19,27 @@ module;
 #include "StarRpcPromise.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+#include "StarObserverStream.hpp"
+#include "StarNetElementExt.hpp"
+#include "StarEither.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarMatrix3.hpp"
+#include "StarAudio.hpp"
+#include "StarMap.hpp"
 
-#include "StarItem.hpp"
+
+import star.drawable;
+import star.item;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;
@@ -57,8 +75,19 @@ import star.status_effect_item;
 import star.fireable_item;
 import star.swingable_item;
 
-#include "StarRoot.hpp"
-#include "StarStatusController.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+#include "StarLuaActorMovementComponent.hpp"
+import star.animated_part_set;
+import star.mixer;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.stat_collection;
+import star.status_effect_database;
+import star.status_controller;
 
 export module star.consumable_item;
 

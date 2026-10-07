@@ -1,7 +1,39 @@
-#include "StarStagehand.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarIdMap.hpp"
+#include "StarCasting.hpp"
+#include "StarVector.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPoly.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarBiMap.hpp"
+#include "StarLua.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarIODevice.hpp"
+#include "StarAssetPath.hpp"
+#include "StarRefPtr.hpp"
+#include "StarLogging.hpp"
+#include "StarListener.hpp"
+#include "StarVersion.hpp"
+
+import star.damage_types;
+import star.world_geometry;
+import star.status_types;
+import star.damage;
+import star.light_source;
+import star.entity;
+#include "StarLuaComponents.hpp"
+import star.scripted_entity;
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
+import star.stagehand;
 
 import star.stagehand_database;
 

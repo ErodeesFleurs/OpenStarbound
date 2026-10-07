@@ -1,10 +1,14 @@
 module;
-
-// Match client include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInput.hpp"
+#include "StarInputEvent.hpp"
+#include "StarListener.hpp"
+#include "StarHash.hpp"
+
+
+// Match client include order for SIMD intrinsics used by xxhash and fast_float.
+import star.input;
 
 module star.input_lua_bindings;
 

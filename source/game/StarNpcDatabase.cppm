@@ -1,27 +1,46 @@
 module;
-
-#include "StarHumanoid.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarString.hpp"
+#include "StarPoly.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarMatrix3.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarAudio.hpp"
+#include "StarThread.hpp"
+#include "StarList.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarMaybe.hpp"
+#include "StarNetElement.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
-import star.damage_types;
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
-import star.status_types;
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDirectives.hpp"
 #include "StarAssetPath.hpp"
-import star.animation;
-import star.particle;
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
+
+
+import star.drawable;
+import star.animated_part_set;
+import star.mixer;
+import star.light_source;
+import star.networked_animator;
+import star.humanoid;
+import star.damage_types;
+import star.status_types;
+import star.animation;
+import star.particle;
 import star.item_descriptor;
 
 import star.entity_splash;

@@ -1,7 +1,9 @@
 module;
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarString.hpp"
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
@@ -23,7 +25,6 @@ module;
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarJson.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarMultiTable.hpp"
 #include "StarNetElementSystem.hpp"
@@ -32,12 +33,27 @@ module;
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarIODevice.hpp"
+#include "StarRefPtr.hpp"
+#include "StarVersion.hpp"
+#include "StarPeriodic.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarLua.hpp"
+#include "StarMatrix3.hpp"
 
+
+#include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
 import star.status_types;
 #include "StarApplicationController.hpp"
 #include "StarRenderer.hpp"
-#include "StarRoot.hpp"
+import star.asset_source;
+import star.assets;
+import star.root_base;
+import star.configuration;
+import star.root;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -54,13 +70,15 @@ import star.gui_reader;
 import star.pane;
 import star.list_widget;
 import star.label_widget;
-#include "StarRoot.hpp"
 import star.image_widget;
 import star.progress_widget;
 import star.animation;
 import star.item_slot_widget;
 import star.previewable_item;
-#include "StarArmors.hpp"
+import star.item;
+import star.effect_source_item;
+import star.swingable_item;
+import star.armors;
 import star.damage_types;
 import star.world_geometry;
 import star.damage;
@@ -76,7 +94,6 @@ import star.interactive_entity;
 import star.collision_block;
 import star.tile_entity;
 import star.tile_modification;
-#include "StarLuaRoot.hpp"
 import star.force_regions;
 import star.world;
 import star.physics_entity;
@@ -90,10 +107,19 @@ import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
 import star.status_effect_item;
-#include "StarLuaComponents.hpp"
 import star.fireable_item;
-#include "StarObject.hpp"
-#include "StarAssets.hpp"
+import star.status_effect_entity;
+import star.scripted_entity;
+import star.chat_action;
+import star.chatty_entity;
+import star.wiring;
+import star.wire_entity;
+import star.inspectable_entity;
+import star.animated_part_set;
+import star.networked_animator;
+import star.entity_rendering_types;
+import star.entity_rendering;
+import star.object;
 
 export module star.item_tooltip;
 import star.stored_functions;

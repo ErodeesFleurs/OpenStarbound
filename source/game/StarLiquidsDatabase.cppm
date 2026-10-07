@@ -1,13 +1,21 @@
 module;
-
+#include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarEither.hpp"
 #include "StarGameTypes.hpp"
 #include "StarList.hpp"
-#include "StarCellularLiquid.hpp"
-#include "StarJson.hpp"
+#include "StarVariant.hpp"
+#include "StarRect.hpp"
+#include "StarMultiArray.hpp"
+#include "StarMap.hpp"
+#include "StarOrderedSet.hpp"
+#include "StarRandom.hpp"
+#include "StarBlockAllocator.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
+
+
+import star.cellular_liquid;
 import star.item_descriptor;
 
 namespace Star {
