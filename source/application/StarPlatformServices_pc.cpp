@@ -1,11 +1,63 @@
 #include "StarLogging.hpp"
-#include "StarPlatformServices_pc.hpp"
-#include "StarP2PNetworkingService_pc.hpp"
+#include "StarThread.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "StarStatisticsService_pc_steam.hpp"
-#include "StarUserGeneratedContentService_pc_steam.hpp"
-#include "StarDesktopService_pc_steam.hpp"
+#include "steam/steam_api.h"
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import star.platform_services_pc;
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#endif
+#include "StarAlgorithm.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarRpcPromise.hpp"
+import star.p2p_networking_service_pc;
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "StarThread.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import star.platform_services_pc;
+import star.statistics_service_pc_steam;
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#endif
+import star.user_generated_content_service_pc_steam;
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#endif
+import star.desktop_service_pc_steam;
 #endif
 
 namespace Star {

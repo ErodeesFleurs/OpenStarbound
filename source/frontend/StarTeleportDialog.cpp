@@ -10,21 +10,30 @@
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
 #include "StarFont.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarString.hpp"
+import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarListener.hpp"
+import star.listener;
 #include "StarThread.hpp"
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
@@ -42,16 +51,29 @@
 #include "StarRpcPromise.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+import star.perlin;
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarDataStreamDevices.hpp"
+import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 #include "StarAStar.hpp"
-#include "StarPeriodicFunction.hpp"
+import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
 
@@ -66,8 +88,13 @@ import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
 
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
+import star.renderer;
 import star.asset_source;
 import star.assets;
 import star.root_base;

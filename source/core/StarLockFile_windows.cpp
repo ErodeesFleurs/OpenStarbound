@@ -1,5 +1,8 @@
-#include "StarLockFile.hpp"
-#include "StarTime.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+import star.lock_file;
+#include "StarThread.hpp"
+import star.time;
 #include "StarThread.hpp"
 
 #include "StarString_windows.hpp"

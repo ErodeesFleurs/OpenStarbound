@@ -14,7 +14,13 @@ import star.tcp;
 #include "StarP2PNetworkingService.hpp"
 #include "StarByteArray.hpp"
 #include "StarMap.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 
 namespace Star {

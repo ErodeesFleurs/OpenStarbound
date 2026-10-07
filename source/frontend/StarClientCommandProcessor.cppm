@@ -1,19 +1,27 @@
 module;
 #include "StarString.hpp"
-#include "StarEncode.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarBytes.hpp"
 #include "StarFormat.hpp"
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarInputEvent.hpp"
-#include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarVector.hpp"
+import star.text;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -23,7 +31,7 @@ module;
 #include "StarMaybe.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCasting.hpp"
-#include "StarListener.hpp"
+import star.listener;
 #include "StarOrderedMap.hpp"
 
 import star.shell_parser;

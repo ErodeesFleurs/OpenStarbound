@@ -4,7 +4,7 @@ module;
 #include "StarByteArray.hpp"
 #include <bit>
 #include "StarFormat.hpp"
-#include "StarEncode.hpp"
+import star.encode;
 
 export module star.sha256;
 

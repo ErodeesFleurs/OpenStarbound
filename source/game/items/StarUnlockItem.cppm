@@ -13,8 +13,13 @@ module;
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
@@ -26,15 +31,18 @@ module;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarEither.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 
 import star.item;

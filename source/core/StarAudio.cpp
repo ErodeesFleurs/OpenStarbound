@@ -5,12 +5,15 @@
 #include "vorbis/vorbisfile.h"
 
 #include "StarAudio.hpp"
-#include "StarBuffer.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+import star.buffer;
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarEncode.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 
 import star.sha256;
 import star.io_device_callbacks;

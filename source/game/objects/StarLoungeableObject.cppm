@@ -6,14 +6,24 @@ module;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarMathCommon.hpp"
+#include "StarRandom.hpp"
+import star.periodic;
+#include "StarInterpolation.hpp"
+import star.periodic_function;
 #include "StarNetElementSystem.hpp"
 #include "StarSet.hpp"
 #include "StarLua.hpp"
@@ -22,7 +32,6 @@ module;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarDirectives.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 

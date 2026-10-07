@@ -6,7 +6,12 @@ module;
 #include "StarJsonExtra.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarClientApplication.hpp"
-#include "StarRenderer.hpp"
+#include "StarVariant.hpp"
+#include "StarImage.hpp"
+#include "StarPoly.hpp"
+#include "StarBiMap.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
 
 module star.rendering_lua_bindings;
 

@@ -4,15 +4,22 @@ module;
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 import star.option_parser;
 import star.version_option_parser;

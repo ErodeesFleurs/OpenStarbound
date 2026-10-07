@@ -3,7 +3,8 @@
 import star.asset_source;
 #include "StarString.hpp"
 import star.directory_asset_source;
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarString.hpp"
@@ -11,7 +12,8 @@ import star.directory_asset_source;
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.option_parser;
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 import star.version_option_parser;
 import star.packed_asset_source;
 

@@ -12,26 +12,37 @@ module;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarEither.hpp"
 #include "StarMaybe.hpp"
-#include "StarDirectives.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarThread.hpp"
 #include "StarRect.hpp"
 #include "StarFont.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
-#include "StarListener.hpp"
+import star.text;
+import star.listener;
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+import star.perlin;
 #include "StarVariant.hpp"
 
 
@@ -74,7 +85,8 @@ import star.entity;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
-#include "StarRenderer.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

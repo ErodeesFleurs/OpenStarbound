@@ -2,7 +2,9 @@ module;
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 
 namespace Star {
 

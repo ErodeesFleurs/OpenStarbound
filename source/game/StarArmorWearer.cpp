@@ -3,7 +3,13 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarJson.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarIdMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -23,7 +29,9 @@
 #include "StarStrongTypedef.hpp"
 #include "StarIdMap.hpp"
 #include "StarCasting.hpp"
-#include "StarImageProcessing.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
 #include "StarConfig.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
@@ -32,9 +40,12 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
-#include "StarDirectives.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
+#include "StarInterpolation.hpp"
+import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarAudio.hpp"
@@ -46,13 +57,16 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
-#include "StarPeriodic.hpp"
+import star.listener;
+import star.version;
+#include "StarMathCommon.hpp"
+import star.periodic;
 #include "StarLua.hpp"
 #include "StarSpline.hpp"
 
 #include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
 import star.drawable;
 import star.item;
 import star.item_descriptor;
@@ -90,11 +104,9 @@ import star.mobile_entity;
 import star.actor_entity;
 import star.tool_user_entity;
 import star.tool_user_item;
-#include "StarLuaComponents.hpp"
 import star.fireable_item;
 import star.swingable_item;
 import star.armors;
-#include "StarLuaAnimationComponent.hpp"
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;
@@ -104,7 +116,6 @@ import star.wire_entity;
 import star.inspectable_entity;
 import star.entity_rendering_types;
 import star.entity_rendering;
-import star.object;
 import star.non_rotated_drawables_item;
 import star.beam_item;
 import star.durability_item;
@@ -126,8 +137,6 @@ import star.tile_modification;
 import star.force_regions;
 import star.world;
 
-import star.object_item;
-import star.object_database;
 
 
 import star.effect_emitter;

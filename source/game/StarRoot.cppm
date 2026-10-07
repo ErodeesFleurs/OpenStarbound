@@ -5,11 +5,18 @@ module;
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.asset_source;
 import star.assets;

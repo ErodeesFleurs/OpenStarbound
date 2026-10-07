@@ -2,7 +2,9 @@
 
 #include <vector>
 
-#include "StarUnicode.hpp"
+#include "StarByteArray.hpp"
+#include "StarMaybe.hpp"
+#include "StarUnicode.inc"
 
 namespace Star {
 

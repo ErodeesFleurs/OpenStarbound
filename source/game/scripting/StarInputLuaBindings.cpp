@@ -3,7 +3,8 @@ module;
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarInputEvent.hpp"
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 #include "StarHash.hpp"
 
 

@@ -17,15 +17,17 @@
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarInterpolation.hpp"
+import star.perlin;
+import star.weighted_pool;
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarCasting.hpp"
@@ -37,37 +39,53 @@
 #include "StarArray.hpp"
 #include <functional>
 #include "StarRect.hpp"
-#include "StarSectorArray2D.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarThread.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarString.hpp"
 #include "StarEither.hpp"
 #include "StarImage.hpp"
 #include "StarInterpolation.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarNetCompatibility.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarDataStreamDevices.hpp"
+import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarBlockAllocator.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarSpatialHash2D.hpp"
-#include "StarLruCache.hpp"
+import star.listener;
+import star.spatial_hash_2d;
 #include "StarLua.hpp"
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
+import star.periodic;
+import star.periodic_function;
 #include "StarAudio.hpp"
 #include "StarMatrix3.hpp"
 #include "StarAStar.hpp"
 #include "StarNetElement.hpp"
 #include "StarConfig.hpp"
-#include "StarLockFile.hpp"
-#include "StarZSTDCompression.hpp"
+import star.lock_file;
+#include "StarByteArray.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include <atomic>
 #include <memory>
 

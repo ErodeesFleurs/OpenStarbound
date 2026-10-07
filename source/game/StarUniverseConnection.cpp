@@ -16,27 +16,47 @@
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarVariant.hpp"
 #include "StarColor.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarArray.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarInterpolation.hpp"
+import star.perlin;
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarDataStreamDevices.hpp"
+import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarSet.hpp"
 #include "StarNetElementFloatFields.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"

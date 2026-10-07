@@ -1,5 +1,12 @@
 #include "StarRect.hpp"
-#include "StarSectorArray2D.hpp"
+#include "StarMultiArray.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarThread.hpp"
 
 import star.worker_pool;

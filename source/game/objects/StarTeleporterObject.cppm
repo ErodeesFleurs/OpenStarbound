@@ -12,8 +12,11 @@ module;
 #include "StarBiMap.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarMathCommon.hpp"
+#include "StarRandom.hpp"
+import star.periodic;
+#include "StarInterpolation.hpp"
+import star.periodic_function;
 #include "StarSet.hpp"
 #include "StarColor.hpp"
 #include "StarLua.hpp"
@@ -22,8 +25,12 @@ module;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarAssetPath.hpp"
-#include "StarDirectives.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 

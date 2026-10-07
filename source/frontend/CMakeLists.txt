@@ -63,7 +63,7 @@ target_include_directories (star_frontend_module_interfaces PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_link_libraries (star_frontend_module_interfaces PUBLIC star_game_module_interfaces star_rendering_module_interfaces star_windowing_module_interfaces PRIVATE star_build_config)
+target_link_libraries (star_frontend_module_interfaces PUBLIC star_game_module_interfaces star_application_module_interfaces star_rendering_module_interfaces star_windowing_module_interfaces PRIVATE star_build_config)
 
 add_library (star_frontend_modules STATIC
     StarInterfaceLuaBindings.cpp
@@ -127,7 +127,7 @@ target_include_directories (star_frontend_modules PRIVATE
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_FRONTEND_INCLUDES}
   )
-target_link_libraries (star_frontend_modules PUBLIC star_frontend_module_interfaces star_game_modules star_rendering_modules star_windowing_modules PRIVATE star_build_config star_voice_dependencies)
+target_link_libraries (star_frontend_modules PUBLIC star_frontend_module_interfaces star_game_modules star_rendering_modules star_windowing_modules star_application_modules PRIVATE star_build_config star_voice_dependencies)
 set_target_properties (star_frontend_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)

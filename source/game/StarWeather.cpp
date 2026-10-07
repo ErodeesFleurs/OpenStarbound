@@ -7,9 +7,10 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
-#include "StarTime.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
+import star.time;
 #include "StarIdMap.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -22,11 +23,15 @@
 #include "StarLua.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarPoly.hpp"
 
 import star.asset_source;

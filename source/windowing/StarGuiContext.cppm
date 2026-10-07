@@ -2,7 +2,16 @@ module;
 
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarInputEvent.hpp"
 #include "StarVector.hpp"
 #include "StarSet.hpp"

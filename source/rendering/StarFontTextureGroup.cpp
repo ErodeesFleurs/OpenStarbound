@@ -1,10 +1,22 @@
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarRenderer.hpp"
-#include "StarDirectives.hpp"
+#include "StarVariant.hpp"
+#include "StarImage.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 import star.font_texture_group;
-#include "StarTime.hpp"
-#include "StarImageProcessing.hpp"
+import star.time;
 #include "StarLogging.hpp"
 
 namespace Star {

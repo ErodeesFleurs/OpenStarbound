@@ -10,8 +10,14 @@ module;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -26,14 +32,17 @@ module;
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarAudio.hpp"
 #include "StarMap.hpp"
 #include "StarEither.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
 

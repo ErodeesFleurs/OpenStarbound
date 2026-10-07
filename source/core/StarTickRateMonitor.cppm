@@ -1,6 +1,7 @@
 module;
 
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 
 export module star.tick_rate_monitor;
 

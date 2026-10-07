@@ -1,7 +1,10 @@
 module;
 #include "StarJson.hpp"
 
-#include "StarPerlin.hpp"
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
 #include "StarRandom.hpp"
 
 export module star.terrain_ridge_blocks;

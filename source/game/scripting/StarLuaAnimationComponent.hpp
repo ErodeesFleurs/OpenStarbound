@@ -11,13 +11,19 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -29,15 +35,14 @@
 #include "StarBiMap.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarLuaConverters.hpp"
 
 

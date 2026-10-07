@@ -2,8 +2,20 @@ module;
 
 #include "StarRect.hpp"
 #include "StarThread.hpp"
-#include "StarAssetPath.hpp"
-#include "StarTtlCache.hpp"
+#include "StarList.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 
 namespace Star {
 

@@ -16,8 +16,13 @@ module;
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 
 import star.damage_types;
 import star.world_geometry;

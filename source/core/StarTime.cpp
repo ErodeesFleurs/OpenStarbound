@@ -1,30 +1,32 @@
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarMathCommon.hpp"
 #include "StarLexicalCast.hpp"
 
 namespace Star {
+namespace Time {
 
-double Time::timeSinceEpoch() {
+double timeSinceEpoch() {
   return ticksToSeconds(epochTicks(), epochTickFrequency());
 }
 
-int64_t Time::millisecondsSinceEpoch() {
+int64_t millisecondsSinceEpoch() {
   return ticksToMilliseconds(epochTicks(), epochTickFrequency());
 }
 
-double Time::monotonicTime() {
+double monotonicTime() {
   return ticksToSeconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-int64_t Time::monotonicMilliseconds() {
+int64_t monotonicMilliseconds() {
   return ticksToMilliseconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-int64_t Time::monotonicMicroseconds() {
+int64_t monotonicMicroseconds() {
   return ticksToMicroseconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-String Time::printDuration(double time) {
+String printDuration(double time) {
   String hours;
   String minutes;
   String seconds;
@@ -49,34 +51,36 @@ String Time::printDuration(double time) {
   return String::joinWith(", ", hours, minutes, seconds, milliseconds);
 }
 
-String Time::printCurrentDateAndTime(String format) {
+String printCurrentDateAndTime(String format) {
   return printDateAndTime(epochTicks(), format);
 }
 
-double Time::ticksToSeconds(int64_t ticks, int64_t tickFrequency) {
+double ticksToSeconds(int64_t ticks, int64_t tickFrequency) {
   return ticks / (double)tickFrequency;
 }
 
-int64_t Time::ticksToMilliseconds(int64_t ticks, int64_t tickFrequency) {
+int64_t ticksToMilliseconds(int64_t ticks, int64_t tickFrequency) {
   int64_t ticksPerMs = (tickFrequency + 500) / 1000;
   return (ticks + ticksPerMs / 2) / ticksPerMs;
 }
 
-int64_t Time::ticksToMicroseconds(int64_t ticks, int64_t tickFrequency) {
+int64_t ticksToMicroseconds(int64_t ticks, int64_t tickFrequency) {
   int64_t ticksPerUs = (tickFrequency + 500000) / 1000000;
   return (ticks + ticksPerUs / 2) / ticksPerUs;
 }
 
-int64_t Time::secondsToTicks(double seconds, int64_t tickFrequency) {
+int64_t secondsToTicks(double seconds, int64_t tickFrequency) {
   return round(seconds * tickFrequency);
 }
 
-int64_t Time::millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency) {
+int64_t millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency) {
   return milliseconds * ((tickFrequency + 500) / 1000);
 }
 
-int64_t Time::microsecondsToTicks(int64_t microseconds, int64_t tickFrequency) {
+int64_t microsecondsToTicks(int64_t microseconds, int64_t tickFrequency) {
   return microseconds * ((tickFrequency + 500000) / 1000000);
+}
+
 }
 
 Clock::Clock(bool start) {

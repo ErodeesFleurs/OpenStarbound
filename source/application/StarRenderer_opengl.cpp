@@ -1,4 +1,16 @@
-#include "StarRenderer_opengl.hpp"
+#include "StarRect.hpp"
+#include "StarImage.hpp"
+#include "StarCasting.hpp"
+import star.texture_atlas;
+#include "StarVariant.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
+
+#include "GL/glew.h"
+import star.renderer_opengl;
 #include "StarJsonExtra.hpp"
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"

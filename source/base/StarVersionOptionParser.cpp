@@ -3,7 +3,8 @@
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.option_parser;
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 import star.version_option_parser;
 #include "StarFile.hpp"
 

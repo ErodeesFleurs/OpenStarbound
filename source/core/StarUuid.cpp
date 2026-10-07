@@ -3,7 +3,9 @@
 import star.uuid;
 #include "StarRandom.hpp"
 #include "StarFormat.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 
 namespace Star {
 

@@ -1,6 +1,6 @@
 #include "StarRandom.hpp"
 #include "StarThread.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarMathCommon.hpp"
 
 namespace Star {

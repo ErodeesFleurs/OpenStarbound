@@ -4,7 +4,15 @@
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -16,13 +24,14 @@
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 import star.drawable;
 import star.celestial_coordinate;

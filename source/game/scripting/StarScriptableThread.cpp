@@ -17,10 +17,16 @@
 #include "StarAStar.hpp"
 #include "StarString.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarLua.hpp"
-#include "StarDirectives.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarAudio.hpp"
@@ -30,8 +36,9 @@
 #include "StarNetElement.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarLogging.hpp"
 
 // Match module include order for SIMD intrinsics used by xxhash and fast_float.

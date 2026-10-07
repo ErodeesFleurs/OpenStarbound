@@ -1,4 +1,5 @@
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarLexicalCast.hpp"
 #include "StarMathCommon.hpp"
 
@@ -7,8 +8,9 @@
 #include <windows.h>
 
 namespace Star {
+namespace Time {
 
-String Time::printDateAndTime(int64_t epochTicks, String format) {
+String printDateAndTime(int64_t epochTicks, String format) {
   // playing fast and loose with the standard here...
   time_t requestedTime = epochTicks / epochTickFrequency();
   struct tm* ptm;
@@ -25,7 +27,7 @@ String Time::printDateAndTime(int64_t epochTicks, String format) {
     });
 }
 
-int64_t Time::epochTicks() {
+int64_t epochTicks() {
   FILETIME ft_now;
   GetSystemTimeAsFileTime(&ft_now);
   LONGLONG now = (LONGLONG)ft_now.dwLowDateTime + ((LONGLONG)(ft_now.dwHighDateTime) << 32LL);
@@ -33,8 +35,10 @@ int64_t Time::epochTicks() {
   return now;
 }
 
-int64_t Time::epochTickFrequency() {
+int64_t epochTickFrequency() {
   return 10000000LL;
+}
+
 }
 
 struct MonotonicClock {
@@ -57,12 +61,16 @@ struct MonotonicClock {
 
 static MonotonicClock g_monotonicClock;
 
-int64_t Time::monotonicTicks() {
+namespace Time {
+
+int64_t monotonicTicks() {
   return g_monotonicClock.ticks();
 }
 
-int64_t Time::monotonicTickFrequency() {
+int64_t monotonicTickFrequency() {
   return g_monotonicClock.frequency();
+}
+
 }
 
 

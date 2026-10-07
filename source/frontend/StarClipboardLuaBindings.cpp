@@ -3,20 +3,34 @@ module;
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarInputEvent.hpp"
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 #include "StarHash.hpp"
-#include "StarBuffer.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+import star.buffer;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarApplicationController.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+#include "StarImage.hpp"
+import star.application_controller;
 import star.input;
 import star.asset_source;
 import star.assets;

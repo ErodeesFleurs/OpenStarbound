@@ -7,20 +7,36 @@
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarEither.hpp"
-#include "StarDirectives.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarRect.hpp"
-#include "StarTtlCache.hpp"
-#include "StarListener.hpp"
-#include "StarPerlin.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+import star.ttl_cache;
+import star.listener;
+#include "StarBiMap.hpp"
+import star.perlin;
 #include "StarRandomPoint.hpp"
 #include "StarFont.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarVector.hpp"
+import star.text;
 #include "StarGameTypes.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarOrderedMap.hpp"
@@ -38,21 +54,30 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
-#include "StarTime.hpp"
+import star.asset_path;
 #include "StarConfig.hpp"
-#include "StarLockFile.hpp"
+import star.lock_file;
 #include "StarIODevice.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarBTree.hpp"
+import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarSectorArray2D.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarVariant.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarRandom.hpp"
 #include "StarBlockAllocator.hpp"
-#include "StarLruCache.hpp"
 #include <atomic>
 #include <memory>
 #include <functional>
@@ -134,7 +159,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
 import star.material_render_profile;
-#include "StarRenderer.hpp"
+import star.renderer;
 import star.tile_drawer;
 import star.tile_painter;
 import star.asset_texture_group;
@@ -150,7 +175,11 @@ import star.text_painter;
 import star.drawable_painter;
 import star.world_camera;
 import star.world_painter;
-#include "StarApplicationController.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
 import star.gui_types;
 import star.gui_context;
 import star.widget;
@@ -194,7 +223,7 @@ import star.interface_cursor;
 import star.error_screen;
 import star.cinematic;
 import star.key_bindings;
-#include "StarMainApplication.hpp"
+import star.main_application;
 
 namespace Star {
 

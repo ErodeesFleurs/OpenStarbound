@@ -5,10 +5,20 @@ module;
 #include "StarInterpolation.hpp"
 
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarVector.hpp"
+import star.text;
 
 #include "StarRect.hpp"
 #include "StarList.hpp"

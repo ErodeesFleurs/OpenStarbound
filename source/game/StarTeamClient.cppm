@@ -8,7 +8,14 @@ import star.uuid;
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 import star.drawable;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
@@ -20,7 +27,8 @@ import star.celestial_coordinate;
 #include "StarGameTypes.hpp"
 import star.warping;
 #include "StarJsonRpc.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 namespace Star {
 

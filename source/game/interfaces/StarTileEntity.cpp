@@ -16,11 +16,16 @@
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 #include "StarLuaRoot.hpp"
 import star.damage_types;

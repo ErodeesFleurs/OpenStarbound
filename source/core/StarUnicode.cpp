@@ -1,5 +1,6 @@
-#include "StarUnicode.hpp"
-#include "StarEncode.hpp"
+#include "StarUnicode.inc"
+#include "StarString.hpp"
+import star.encode;
 
 namespace Star {
 

@@ -33,7 +33,12 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -42,8 +47,8 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarArray.hpp"
 #include "StarEither.hpp"
 #include "StarNetElementFloatFields.hpp"

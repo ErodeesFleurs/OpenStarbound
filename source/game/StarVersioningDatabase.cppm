@@ -3,7 +3,8 @@ module;
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarLuaRoot.hpp"
 
 namespace Star {

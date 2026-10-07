@@ -1,7 +1,9 @@
 module;
 
-#include "StarParametricFunction.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarInterpolation.hpp"
+import star.parametric_function;
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"

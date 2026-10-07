@@ -1,4 +1,5 @@
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarMathCommon.hpp"
 
 #include <sys/time.h>
@@ -10,8 +11,9 @@
 #endif
 
 namespace Star {
+namespace Time {
 
-String Time::printDateAndTime(int64_t epochTicks, String format) {
+String printDateAndTime(int64_t epochTicks, String format) {
   // playing fast and loose with the standard here...
   time_t requestedTime = epochTicks / epochTickFrequency();
   struct tm ptm;
@@ -28,14 +30,16 @@ String Time::printDateAndTime(int64_t epochTicks, String format) {
     });
 }
 
-int64_t Time::epochTicks() {
+int64_t epochTicks() {
   timeval tv;
   gettimeofday(&tv, NULL);
   return (int64_t)tv.tv_sec * 1'000'000 + tv.tv_usec;
 }
 
-int64_t Time::epochTickFrequency() {
+int64_t epochTickFrequency() {
   return 1'000'000;
+}
+
 }
 
 #ifdef STAR_SYSTEM_MACOS
@@ -85,12 +89,16 @@ struct MonotonicClock {
 
 static MonotonicClock g_monotonicClock;
 
-int64_t Time::monotonicTicks() {
+namespace Time {
+
+int64_t monotonicTicks() {
   return g_monotonicClock.ticks();
 }
 
-int64_t Time::monotonicTickFrequency() {
+int64_t monotonicTickFrequency() {
   return g_monotonicClock.frequency();
+}
+
 }
 
 }

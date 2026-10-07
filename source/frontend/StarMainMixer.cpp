@@ -11,7 +11,8 @@
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarPoly.hpp"
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
@@ -21,20 +22,29 @@
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarEither.hpp"
-#include "StarDirectives.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarRect.hpp"
-#include "StarTtlCache.hpp"
-#include "StarListener.hpp"
-#include "StarPerlin.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+import star.ttl_cache;
+import star.listener;
+import star.perlin;
 #include "StarRandomPoint.hpp"
 #include "StarFont.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+import star.text;
 #include "StarException.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarOrderedMap.hpp"
@@ -44,17 +54,27 @@
 #include "StarVariant.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 #include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
-#include "StarSectorArray2D.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarBTree.hpp"
+import star.btree_database;
 #include "StarRpcPromise.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarAStar.hpp"
-#include "StarPeriodicFunction.hpp"
+import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
 #include <functional>
@@ -167,7 +187,7 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
 import star.material_render_profile;
-#include "StarRenderer.hpp"
+import star.renderer;
 import star.tile_drawer;
 import star.tile_painter;
 import star.asset_texture_group;
@@ -178,7 +198,12 @@ import star.text_painter;
 import star.drawable_painter;
 import star.world_camera;
 import star.world_painter;
-#include "StarApplicationController.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;

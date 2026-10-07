@@ -1,9 +1,14 @@
 module;
 #include "StarJson.hpp"
 
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 #include "StarVector.hpp"
-#include "StarPerlin.hpp"
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarInterpolation.hpp"

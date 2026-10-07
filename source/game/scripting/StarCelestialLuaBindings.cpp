@@ -12,7 +12,14 @@ module;
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
 #include "StarThread.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 #include "StarConfig.hpp"
 #include <atomic>
@@ -22,14 +29,25 @@ module;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarCasting.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.btree_database;
 #include "StarRpcPromise.hpp"
 #include "StarSet.hpp"
 #include "StarNetElementFloatFields.hpp"
@@ -44,12 +62,15 @@ module;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.weighted_pool;
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.

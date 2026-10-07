@@ -18,13 +18,20 @@ module;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
@@ -32,20 +39,16 @@ module;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarThread.hpp"
@@ -58,8 +61,12 @@ module;
 #include "StarVector.hpp"
 #include "StarThread.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+import star.perlin;
 #include "StarVariant.hpp"
 
 

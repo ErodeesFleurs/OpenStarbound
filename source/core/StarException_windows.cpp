@@ -3,7 +3,8 @@
 #include "StarLogging.hpp"
 #include "StarCasting.hpp"
 #include "StarString_windows.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 #include <DbgHelp.h>
 

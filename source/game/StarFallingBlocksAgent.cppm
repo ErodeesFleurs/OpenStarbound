@@ -16,16 +16,26 @@ module;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRect.hpp"
-#include "StarSectorArray2D.hpp"
 #include "StarThread.hpp"
-#include "StarPerlin.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarThread.hpp"
+#include "StarInterpolation.hpp"
+import star.perlin;
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
+import star.weighted_pool;
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 
 import star.collision_block;

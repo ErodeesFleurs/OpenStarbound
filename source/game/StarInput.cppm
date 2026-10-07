@@ -1,7 +1,8 @@
 module;
 #include "StarJson.hpp"
 #include "StarInputEvent.hpp"
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 #include "StarHash.hpp"
 
 

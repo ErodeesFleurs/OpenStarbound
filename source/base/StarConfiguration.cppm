@@ -2,7 +2,8 @@ module;
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 namespace Star {
 

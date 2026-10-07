@@ -1,5 +1,6 @@
 #pragma once
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarHash.hpp"
 
 namespace Star {

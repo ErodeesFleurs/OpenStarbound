@@ -3,7 +3,11 @@ module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarSpatialHash2D.hpp"
+#include "StarRect.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarBlockAllocator.hpp"
+import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarIterator.hpp"
 #include "StarPoly.hpp"
@@ -14,9 +18,12 @@ module;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarConfig.hpp"
+import star.version;
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
+import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarEither.hpp"
 #include "StarRect.hpp"
@@ -27,17 +34,23 @@ module;
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarMaybe.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarSet.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarLruCache.hpp"
+import star.lru_cache;
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 import star.damage_types;
 import star.world_geometry;

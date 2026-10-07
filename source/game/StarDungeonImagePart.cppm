@@ -8,15 +8,23 @@ module;
 #include "StarRandom.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarCasting.hpp"
 #include "StarImage.hpp"
 

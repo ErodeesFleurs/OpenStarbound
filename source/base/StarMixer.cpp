@@ -9,7 +9,7 @@
 import star.mixer;
 #include "StarIterator.hpp"
 #include "StarInterpolation.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarLogging.hpp"
 
 namespace Star {

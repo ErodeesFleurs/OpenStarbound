@@ -9,16 +9,24 @@ module;
 #include "StarInputEvent.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarString.hpp"
+import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
+import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarListener.hpp"
+import star.listener;
 #include "StarThread.hpp"
 #include "StarGameTypes.hpp"
 #include "StarSet.hpp"
@@ -30,20 +38,29 @@ module;
 #include "StarRpcPromise.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
-#include "StarEncode.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarBytes.hpp"
 #include "StarFormat.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarEither.hpp"
 #include "StarVariant.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarOrderedSet.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 #include "StarConfig.hpp"
 #include <atomic>
@@ -51,17 +68,29 @@ module;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarInterpolation.hpp"
+import star.perlin;
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.btree_database;
 #include "StarNetElementFloatFields.hpp"
 #include "StarImage.hpp"
 #include "StarInterpolation.hpp"
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
+import star.renderer;
 import star.asset_source;
 import star.assets;
 import star.root_base;

@@ -1,4 +1,7 @@
-#include "StarMultiTable.hpp"
+#include "StarMultiArray.hpp"
+#include "StarInterpolation.hpp"
+import star.multi_array_interpolator;
+import star.multi_table;
 
 #include "gtest/gtest.h"
 

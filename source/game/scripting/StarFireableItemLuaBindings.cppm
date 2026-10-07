@@ -11,8 +11,14 @@ module;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"

@@ -1,7 +1,10 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
+import star.weighted_pool;
 #include "StarBiMap.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
@@ -12,7 +15,13 @@
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarVector.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
@@ -20,8 +29,9 @@
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.damage_types;
 import star.world_geometry;

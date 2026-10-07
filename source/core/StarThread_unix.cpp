@@ -1,5 +1,5 @@
 ﻿#include "StarThread.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarLogging.hpp"
 
 #include <limits.h>

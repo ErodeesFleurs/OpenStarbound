@@ -1,16 +1,23 @@
 module;
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarInputEvent.hpp"
-#include "StarDirectives.hpp"
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarVector.hpp"
+import star.text;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"

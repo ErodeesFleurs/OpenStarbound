@@ -7,7 +7,9 @@ module;
 
 // GCC has no header units, so the headers this module needs arrive through the
 // global module fragment.
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarByteArray.hpp"
 #include "StarArray.hpp"
 

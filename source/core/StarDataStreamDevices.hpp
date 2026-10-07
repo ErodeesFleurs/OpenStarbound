@@ -1,6 +1,8 @@
 #pragma once
 
-#include "StarBuffer.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+import star.buffer;
 #include "StarDataStream.hpp"
 
 namespace Star {

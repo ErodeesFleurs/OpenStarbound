@@ -7,8 +7,10 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+#include "StarThread.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -21,9 +23,12 @@
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
-#include "StarDirectives.hpp"
 #include "StarDataStreamExtra.hpp"
 
 import star.asset_source;

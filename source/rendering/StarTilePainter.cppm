@@ -2,7 +2,13 @@ module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarImage.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -12,23 +18,32 @@ module;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarEither.hpp"
 #include "StarMaybe.hpp"
-#include "StarDirectives.hpp"
-#include "StarWeightedPool.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarThread.hpp"
 #include "StarRect.hpp"
 #include "StarInterpolation.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+import star.perlin;
 #include "StarVariant.hpp"
 
 
@@ -67,7 +82,8 @@ import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
 import star.material_render_profile;
-#include "StarRenderer.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
 
 import star.tile_drawer;
 

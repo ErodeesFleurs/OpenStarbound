@@ -2,9 +2,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarFile.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarLogging.hpp"
 #include "StarString.hpp"
 #include "StarVariant.hpp"
@@ -21,13 +24,19 @@
 #include "StarInputEvent.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarDirectives.hpp"
-#include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+#include "StarStringView.hpp"
+import star.text;
+#include "StarDataStream.hpp"
+import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarListener.hpp"
+import star.listener;
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
 #include "StarList.hpp"
@@ -42,19 +51,25 @@
 #include "StarStrongTypedef.hpp"
 #include "StarAStar.hpp"
 #include "StarEither.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarRandom.hpp"
+import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
-#include "StarLruCache.hpp"
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.perlin;
+import star.weighted_pool;
 #include "StarImage.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarBTree.hpp"
+import star.btree_database;
 #include "StarNetElementFloatFields.hpp"
 #include "StarHash.hpp"
 #include <queue>
@@ -162,8 +177,13 @@ typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 
 
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
+import star.renderer;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;
@@ -1595,4 +1615,24 @@ void ClientApplication::updateCamera(float dt) {
 
 }
 
-STAR_MAIN_APPLICATION(Star::ClientApplication);
+#if defined STAR_SYSTEM_WINDOWS
+#include <windows.h>
+
+int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+  int nArgs;
+  LPWSTR* argsList = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+  Star::StringList args;
+  for (int i = 0; i < nArgs; ++i) args.append(Star::String(argsList[i]));
+  if (IsDebuggerPresent() && AllocConsole()) {
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+  }
+  unsigned long exceptionStackSize = 131072;
+  SetThreadStackGuarantee(&exceptionStackSize);
+  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), args);
+}
+#else
+int main(int argc, char** argv) {
+  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
+}
+#endif

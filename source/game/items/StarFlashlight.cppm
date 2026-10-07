@@ -21,9 +21,12 @@ module;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
-#include "StarDirectives.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"

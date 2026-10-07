@@ -2,7 +2,9 @@
 #include "StarXXHash.hpp"
 #include "StarIdMap.hpp"
 #include "StarConfig.hpp"
-#include "StarLockFile.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
+import star.lock_file;
 #include "StarThread.hpp"
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
@@ -12,9 +14,21 @@
 #include "StarDataStream.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarIODevice.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarSet.hpp"
+#include "StarBTree.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
@@ -23,17 +37,25 @@
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
+import star.version;
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
+import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include <functional>
 #include "StarRect.hpp"
-#include "StarSectorArray2D.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarSet.hpp"
 #include "StarImage.hpp"
@@ -43,12 +65,11 @@
 #include "StarMap.hpp"
 #include "StarRandom.hpp"
 #include "StarBlockAllocator.hpp"
-#include "StarLruCache.hpp"
 #include <atomic>
 #include <memory>
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 #include "StarLuaRoot.hpp"
 import star.universe;

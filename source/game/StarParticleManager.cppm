@@ -5,8 +5,15 @@ module;
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -17,13 +24,20 @@ module;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRect.hpp"
-#include "StarSectorArray2D.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarThread.hpp"
-#include "StarPerlin.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
+import star.weighted_pool;
 #include "StarVariant.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 
 import star.world_geometry;

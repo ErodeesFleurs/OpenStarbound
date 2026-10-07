@@ -1,6 +1,10 @@
 module;
 #include "StarIdMap.hpp"
-#include "StarSpatialHash2D.hpp"
+#include "StarRect.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarBlockAllocator.hpp"
+import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"

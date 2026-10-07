@@ -1,12 +1,46 @@
-#include "StarMainApplication.hpp"
-#include "StarLogging.hpp"
-#include "StarRenderer_opengl.hpp"
-#include "StarTtlCache.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
 #include "StarImage.hpp"
-#include "StarImageProcessing.hpp"
+#include "StarRect.hpp"
+import star.application_controller;
+#include "StarVariant.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
+import star.main_application;
+#include "StarLogging.hpp"
+#include "StarCasting.hpp"
+import star.texture_atlas;
+
+#include "GL/glew.h"
+import star.renderer_opengl;
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
+#include "StarImage.hpp"
+#include "StarList.hpp"
+import star.image_processing;
 
 #include "SDL3/SDL.h"
-#include "StarPlatformServices_pc.hpp"
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import star.platform_services_pc;
 
 #ifdef STAR_SYSTEM_WINDOWS
 #include <dwmapi.h>

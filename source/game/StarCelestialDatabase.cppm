@@ -1,10 +1,19 @@
 module;
 
 #include "StarRect.hpp"
-#include "StarTtlCache.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 #include "StarThread.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
+import star.weighted_pool;
+#include "StarThread.hpp"
+#include "StarSet.hpp"
+#include "StarBTree.hpp"
+#include "StarDataStreamDevices.hpp"
+import star.btree_database;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
@@ -19,9 +28,13 @@ import star.celestial_coordinate;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 import star.animation;
 import star.particle;
 import star.weather_types;
@@ -29,7 +42,8 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
-#include "StarPerlin.hpp"
+#include "StarInterpolation.hpp"
+import star.perlin;
 
 namespace Star {
 

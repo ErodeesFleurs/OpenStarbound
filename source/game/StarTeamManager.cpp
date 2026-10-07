@@ -6,7 +6,14 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarJsonRpc.hpp"
@@ -19,15 +26,16 @@
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarRandom.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarText.hpp"
+import star.listener;
+import star.text;
 #include "StarLogging.hpp"
 
 import star.drawable;

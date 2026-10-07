@@ -1,4 +1,5 @@
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 
 namespace Star {
 

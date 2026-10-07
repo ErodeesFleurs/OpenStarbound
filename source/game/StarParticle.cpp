@@ -3,8 +3,15 @@
 #include "StarJsonExtra.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
@@ -14,7 +21,6 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"

@@ -5,7 +5,14 @@ module;
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 
 import star.drawable;
 

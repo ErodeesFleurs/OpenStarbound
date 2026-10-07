@@ -6,9 +6,17 @@
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarDataStreamExtra.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarOrderedMap.hpp"
@@ -17,8 +25,9 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.sky_types;
 import star.animation;

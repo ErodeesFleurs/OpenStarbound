@@ -1,4 +1,10 @@
-#include "StarRenderer.hpp"
+#include "StarVariant.hpp"
+#include "StarImage.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
 
 namespace Star {
 

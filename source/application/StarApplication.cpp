@@ -1,5 +1,7 @@
-#include "StarApplication.hpp"
-#include "StarTime.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarThread.hpp"
+import star.time;
 #include "StarLogging.hpp"
 
 namespace Star {

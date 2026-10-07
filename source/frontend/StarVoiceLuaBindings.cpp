@@ -10,7 +10,15 @@ module;
 #include "StarDataStreamDevices.hpp"
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarApplicationController.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+#include "StarImage.hpp"
+#include "StarRect.hpp"
+import star.application_controller;
 #include <queue>
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;

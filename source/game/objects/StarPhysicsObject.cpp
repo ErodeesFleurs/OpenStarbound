@@ -12,8 +12,10 @@
 #include "StarList.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarMathCommon.hpp"
+#include "StarRandom.hpp"
+import star.periodic;
+import star.periodic_function;
 #include "StarNetElementSystem.hpp"
 #include "StarSet.hpp"
 #include "StarColor.hpp"
@@ -23,16 +25,21 @@
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarAssetPath.hpp"
-#include "StarDirectives.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 
 #include "StarLuaRoot.hpp"

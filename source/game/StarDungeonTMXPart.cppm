@@ -9,7 +9,9 @@ module;
 #include "StarRandom.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 
 
 import star.item_descriptor;

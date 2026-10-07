@@ -8,7 +8,9 @@ module;
 #include "StarRandom.hpp"
 #include "StarThread.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 #include "StarSet.hpp"
 
 

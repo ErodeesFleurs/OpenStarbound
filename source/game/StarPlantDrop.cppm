@@ -14,7 +14,13 @@ module;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarSet.hpp"
 
 

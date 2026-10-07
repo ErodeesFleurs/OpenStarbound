@@ -4,10 +4,19 @@
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarSet.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
+#include "StarRandom.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
+
+class Directives;
+template <typename Item>
+struct WeightedPool;
 
 // Extra methods to parse a variety of types out of pure JSON.  Throws
 // JsonException if json is not of correct type or size.
@@ -382,3 +391,6 @@ Polygon<Float> fixInsideOutPoly(Polygon<Float> p) {
 }
 
 }
+import star.weighted_pool;
+import star.image_processing;
+import star.directives;

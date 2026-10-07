@@ -1,17 +1,24 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarInputEvent.hpp"
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 #include "StarHash.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 import star.input;
 import star.asset_source;

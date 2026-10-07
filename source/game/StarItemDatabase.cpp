@@ -4,14 +4,25 @@
 #include "StarThread.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
 #include "StarGameTypes.hpp"
@@ -20,8 +31,9 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarIdMap.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
@@ -34,7 +46,6 @@
 #include "StarConfig.hpp"
 #include "StarAudio.hpp"
 #include "StarMap.hpp"
-#include "StarDirectives.hpp"
 
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"

@@ -1,4 +1,15 @@
-#include "StarText.hpp"
+#include "StarString.hpp"
+#include "StarStringView.hpp"
+#include "StarVector.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.text;
 #include "StarJsonExtra.hpp"
 #include <re2/re2.h>
 

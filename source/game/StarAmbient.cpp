@@ -1,6 +1,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -12,11 +13,17 @@
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
 

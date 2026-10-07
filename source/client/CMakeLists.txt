@@ -16,8 +16,10 @@ endif ()
 
 add_executable (starbound WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_game>
-  $<TARGET_OBJECTS:star_application>
   ${star_client_HEADERS} ${star_client_SOURCES} ${star_client_RESOURCES})
+if (STAR_ENABLE_DISCORD_INTEGRATION)
+  target_sources (starbound PRIVATE $<TARGET_OBJECTS:star_application>)
+endif ()
 target_include_directories (starbound PRIVATE
     ${STAR_EXTERN_INCLUDES}
     ${STAR_CORE_INCLUDES}
@@ -52,7 +54,7 @@ endif()
 
 target_link_libraries (starbound PRIVATE
   star_client_module_interfaces
-  star_base_modules star_frontend_modules star_build_config star_client_dependencies
+  star_base_modules star_frontend_modules star_application_modules star_build_config star_client_dependencies
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
   $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
 set_target_properties (starbound PROPERTIES CXX_SCAN_FOR_MODULES ON)

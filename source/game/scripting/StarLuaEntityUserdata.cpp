@@ -2,7 +2,13 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
 #include "StarMaybe.hpp"
@@ -22,19 +28,24 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
-#include "StarObserverStream.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
+import star.observer_stream;
 #include "StarNetElementExt.hpp"
 #include "StarEither.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarInterpolation.hpp"
+import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarDirectives.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarMap.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarPeriodic.hpp"
+import star.weighted_pool;
+#include "StarMathCommon.hpp"
+import star.periodic;
 #include "StarLua.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
@@ -42,8 +53,9 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 #include "StarLuaRoot.hpp"
 

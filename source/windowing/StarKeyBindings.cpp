@@ -7,11 +7,19 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
-#include "StarRefPtr.hpp"
-#include "StarListener.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
+import star.directives;
+import star.asset_path;
+#include "StarRefPtr.hpp"
+import star.listener;
+#include "StarThread.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarLogging.hpp"
 #include <bitset>
 

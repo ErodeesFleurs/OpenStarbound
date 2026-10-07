@@ -7,7 +7,7 @@
 #include "StarThread.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFormat.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarAudio.hpp"
@@ -15,17 +15,31 @@
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
 typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
-#include "StarApplicationController.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+#include "StarImage.hpp"
+import star.application_controller;
 import star.asset_source;
 import star.assets;
 import star.root_base;

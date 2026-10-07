@@ -3,7 +3,9 @@
 #include "StarVector.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLogging.hpp"
-#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
 
 namespace Star {
 

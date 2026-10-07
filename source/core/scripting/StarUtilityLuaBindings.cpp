@@ -4,13 +4,25 @@
 #include "StarDataStream.hpp"
 import star.uuid;
 #include "StarRandom.hpp"
-#include "StarPerlin.hpp"
+#include "StarJson.hpp"
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+import star.perlin;
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarText.hpp"
-#include "StarTime.hpp"
+#include "StarString.hpp"
+#include "StarStringView.hpp"
+#include "StarVector.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.text;
+import star.time;
 
 namespace Star {
 

@@ -1,8 +1,15 @@
 module;
 
-#include "StarPeriodic.hpp"
+#include "StarMathCommon.hpp"
+#include "StarRandom.hpp"
+import star.periodic;
 #include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+import star.ttl_cache;
 #include "StarPoly.hpp"
 import star.world_geometry;
 #include "StarGameTypes.hpp"
@@ -10,7 +17,7 @@ import star.world_geometry;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include "StarWeightedPool.hpp"
+import star.weighted_pool;
 
 import star.spawn_type_database;
 

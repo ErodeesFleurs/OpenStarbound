@@ -1,9 +1,30 @@
-#include "StarP2PNetworkingService_pc.hpp"
+#include "StarThread.hpp"
+#include "StarInputEvent.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#endif
+
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import star.platform_services_pc;
+#include "StarAlgorithm.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarRpcPromise.hpp"
+import star.p2p_networking_service_pc;
 #include "StarLexicalCast.hpp"
 #include "StarEither.hpp"
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;

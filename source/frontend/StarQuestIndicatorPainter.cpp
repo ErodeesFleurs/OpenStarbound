@@ -8,9 +8,11 @@
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarEither.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarRect.hpp"
@@ -20,9 +22,20 @@
 #include "StarArray.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
+#include "StarThread.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+#include "StarBiMap.hpp"
+import star.perlin;
+#include "StarBTree.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarDataStreamDevices.hpp"
+import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarIODevice.hpp"
@@ -30,15 +43,21 @@
 #include "StarLogging.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+#include "StarString.hpp"
+import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarListener.hpp"
+import star.listener;
 #include "StarInputEvent.hpp"
 #include "StarThread.hpp"
 #include "StarVector.hpp"
@@ -46,7 +65,13 @@
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarZSTDCompression.hpp"
+#include "StarByteArray.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
@@ -123,8 +148,13 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+import star.application_controller;
+import star.renderer;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

@@ -1,4 +1,5 @@
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "StarThread.hpp"
 
 #include "gtest/gtest.h"

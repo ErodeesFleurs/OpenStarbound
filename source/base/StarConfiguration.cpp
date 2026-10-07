@@ -1,6 +1,7 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 import star.configuration;
 #include "StarFile.hpp"
 #include "StarLogging.hpp"

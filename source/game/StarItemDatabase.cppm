@@ -1,7 +1,12 @@
 module;
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
@@ -9,7 +14,13 @@ module;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"

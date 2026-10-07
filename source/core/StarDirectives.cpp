@@ -1,6 +1,13 @@
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarImage.hpp"
-#include "StarImageProcessing.hpp"
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 

@@ -1,6 +1,10 @@
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarSpatialHash2D.hpp"
+#include "StarRect.hpp"
+#include "StarMap.hpp"
+#include "StarSet.hpp"
+#include "StarBlockAllocator.hpp"
+import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -16,8 +20,12 @@
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 
 import star.damage_types;
 import star.world_geometry;

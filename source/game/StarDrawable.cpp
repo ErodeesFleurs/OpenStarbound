@@ -1,11 +1,18 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
 #include "StarColor.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
@@ -16,8 +23,9 @@
 #include "StarRefPtr.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.drawable;
 import star.asset_source;

@@ -3,9 +3,22 @@ module;
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
-#include "StarListener.hpp"
-#include "StarRenderer.hpp"
-#include "StarAssetPath.hpp"
+#include "StarThread.hpp"
+import star.listener;
+#include "StarVariant.hpp"
+#include "StarImage.hpp"
+#include "StarPoly.hpp"
+#include "StarJson.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 
 namespace Star {
 

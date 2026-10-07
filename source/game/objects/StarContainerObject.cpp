@@ -4,7 +4,13 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
 #include "StarMaybe.hpp"
@@ -23,8 +29,9 @@
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarGameTypes.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarParametricFunction.hpp"
+import star.weighted_pool;
+#include "StarInterpolation.hpp"
+import star.parametric_function;
 #include "StarLogging.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -38,9 +45,12 @@
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
-#include "StarDirectives.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -49,17 +59,21 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarMathCommon.hpp"
+import star.periodic;
+import star.periodic_function;
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 #include "StarLuaRoot.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaAnimationComponent.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -87,8 +101,6 @@ import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
 import star.status_effect_entity;
 import star.scripted_entity;
 import star.chat_action;

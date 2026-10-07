@@ -2,7 +2,7 @@
 
 #include "StarThread.hpp"
 #include "StarLua.hpp"
-#include "StarListener.hpp"
+import star.listener;
 
 namespace Star {
 

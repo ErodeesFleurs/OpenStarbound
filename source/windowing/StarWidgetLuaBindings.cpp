@@ -2,7 +2,13 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarGameTypes.hpp"
 #include "StarMaybe.hpp"
@@ -21,13 +27,18 @@
 #include "StarInputEvent.hpp"
 #include "StarColor.hpp"
 #include "StarFont.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
 #include "StarStringView.hpp"
-#include "StarText.hpp"
+import star.directives;
+#include "StarStringView.hpp"
+#include "StarString.hpp"
+import star.text;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
-#include "StarListener.hpp"
+import star.asset_path;
+import star.listener;
 #include "StarThread.hpp"
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
@@ -37,7 +48,8 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 
 #include "StarLuaRoot.hpp"
 
@@ -68,8 +80,14 @@ import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
+import star.application;
+#include "StarStatisticsService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+#include "StarDesktopService.hpp"
+#include "StarImage.hpp"
+import star.application_controller;
+import star.renderer;
 import star.asset_source;
 import star.assets;
 import star.root_base;

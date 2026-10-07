@@ -6,7 +6,13 @@
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarAssetPath.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarRect.hpp"
 #include "StarGameTypes.hpp"
 #include "StarOrderedMap.hpp"
@@ -14,8 +20,9 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarDataStreamExtra.hpp"
 #include "StarImage.hpp"
 

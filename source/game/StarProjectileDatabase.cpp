@@ -8,7 +8,13 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
@@ -22,13 +28,13 @@
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.drawable;
 import star.entity_rendering_types;

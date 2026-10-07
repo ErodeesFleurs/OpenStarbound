@@ -1,6 +1,8 @@
 #include "StarColor.hpp"
 #include "StarMap.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarFormat.hpp"
 #include "StarInterpolation.hpp"
 

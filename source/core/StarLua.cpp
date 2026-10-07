@@ -1,6 +1,7 @@
 #include "StarLua.hpp"
 #include "StarArray.hpp"
-#include "StarTime.hpp"
+#include "StarThread.hpp"
+import star.time;
 #include "imgui_lua_bindings.hpp"
 
 auto fmt::formatter<Star::LuaValue>::format(Star::LuaValue const& value, fmt::format_context& context) const

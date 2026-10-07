@@ -7,7 +7,13 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+#include "StarThread.hpp"
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -20,7 +26,13 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarStringView.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarVector.hpp"
 #include "StarThread.hpp"
 #include "StarPoly.hpp"
@@ -40,9 +52,9 @@
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
-#include "StarTime.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarRandom.hpp"
 #include "StarIdMap.hpp"
 #include "StarNetElementSystem.hpp"
@@ -53,18 +65,26 @@
 #include "StarLua.hpp"
 #include "StarAudio.hpp"
 #include "StarMap.hpp"
-#include "StarDirectives.hpp"
 #include "StarAStar.hpp"
-#include "StarPeriodicFunction.hpp"
+#include "StarInterpolation.hpp"
+import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarNetElement.hpp"
-#include "StarPeriodic.hpp"
+#include "StarMathCommon.hpp"
+import star.periodic;
 #include "StarOrderedSet.hpp"
 #include "StarEither.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarZSTDCompression.hpp"
+import star.weighted_pool;
+#include "StarByteArray.hpp"
+#include "StarDataStreamDevices.hpp"
+
+typedef struct ZSTD_CCtx_s ZSTD_CCtx;
+typedef struct ZSTD_DCtx_s ZSTD_DCtx;
+typedef ZSTD_DCtx ZSTD_DStream;
+typedef ZSTD_CCtx ZSTD_CStream;
+import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
 #include "StarConfig.hpp"
 #include <atomic>
@@ -72,9 +92,13 @@
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
-#include "StarPerlin.hpp"
-#include "StarBTreeDatabase.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
+import star.perlin;
+#include "StarBTree.hpp"
+import star.btree_database;
 #include "StarNetElementFloatFields.hpp"
 #include "StarImage.hpp"
 #include "StarInterpolation.hpp"

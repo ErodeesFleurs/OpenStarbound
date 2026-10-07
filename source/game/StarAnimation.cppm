@@ -2,7 +2,14 @@ module;
 
 #include "StarColor.hpp"
 #include "StarJson.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarBiMap.hpp"
 
 namespace Star {

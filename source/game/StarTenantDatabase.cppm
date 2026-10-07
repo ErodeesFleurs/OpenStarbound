@@ -3,7 +3,12 @@ module;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarThread.hpp"
-#include "StarTtlCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarBlockAllocator.hpp"
+import star.lru_cache;
+import star.time;
+#include "StarRandom.hpp"
+import star.ttl_cache;
 
 namespace Star {
 

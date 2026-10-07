@@ -1,8 +1,11 @@
 #pragma once
 #include "StarIdMap.hpp"
-#include "StarPeriodic.hpp"
+#include "StarMathCommon.hpp"
+#include "StarRandom.hpp"
+import star.periodic;
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
+#include "StarThread.hpp"
+import star.listener;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarJson.hpp"

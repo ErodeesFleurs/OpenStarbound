@@ -4,7 +4,14 @@
 #include "StarIdMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarColor.hpp"
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
@@ -13,26 +20,32 @@
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarGameTypes.hpp"
-#include "StarVersion.hpp"
+#include "StarConfig.hpp"
+import star.version;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarAssetPath.hpp"
+import star.asset_path;
 #include "StarEither.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarRandom.hpp"
+import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarThread.hpp"
 #include "StarRect.hpp"
 #include "StarInterpolation.hpp"
-#include "StarListener.hpp"
-#include "StarPerlin.hpp"
+import star.listener;
+import star.perlin;
 #include "StarRandomPoint.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarLogging.hpp"
 #include "StarMathCommon.hpp"
 #include <functional>
-#include "StarSectorArray2D.hpp"
+#include "StarSet.hpp"
+import star.worker_pool;
+
+#include "thread"
+import star.sector_array_2d;
 #include "StarVariant.hpp"
 
 import star.tile_damage;
@@ -66,7 +79,8 @@ import star.entity;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
-#include "StarRenderer.hpp"
+#include "StarRefPtr.hpp"
+import star.renderer;
 import star.asset_texture_group;
 import star.environment_painter;
 

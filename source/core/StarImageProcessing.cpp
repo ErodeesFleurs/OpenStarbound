@@ -1,11 +1,16 @@
-#include "StarImageProcessing.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+#include "StarJson.hpp"
+import star.image_processing;
 #include "StarMatrix3.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarColor.hpp"
 #include "StarImage.hpp"
 #include "StarStringView.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarLogging.hpp"
 
 import star.image_scaling;

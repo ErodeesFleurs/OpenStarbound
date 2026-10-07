@@ -1,6 +1,9 @@
 #include "StarJson.hpp"
-#include "StarParametricFunction.hpp"
-#include "StarMultiTable.hpp"
+#include "StarInterpolation.hpp"
+import star.parametric_function;
+#include "StarMultiArray.hpp"
+import star.multi_array_interpolator;
+import star.multi_table;
 
 #include "gtest/gtest.h"
 import star.stored_functions;

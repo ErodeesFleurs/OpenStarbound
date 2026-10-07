@@ -5,7 +5,7 @@
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarTime.hpp"
+import star.time;
 #include "StarFile.hpp"
 
 namespace Star {

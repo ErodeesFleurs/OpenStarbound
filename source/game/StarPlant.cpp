@@ -2,7 +2,15 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -10,7 +18,6 @@
 #include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarAssetPath.hpp"
 #include "StarImage.hpp"
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
@@ -24,16 +31,15 @@
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarAssetPath.hpp"
 #include "StarGameTypes.hpp"
-#include "StarDirectives.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 
 import star.inspectable_entity;
 import star.plant;

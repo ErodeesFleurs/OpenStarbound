@@ -12,7 +12,12 @@
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarDirectives.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
@@ -23,10 +28,11 @@
 #include "StarOrderedMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarAssetPath.hpp"
+import star.asset_path;
 #include "StarRefPtr.hpp"
-#include "StarListener.hpp"
-#include "StarVersion.hpp"
+import star.listener;
+#include "StarConfig.hpp"
+import star.version;
 #include "StarLogging.hpp"
 
 import star.collision_block;

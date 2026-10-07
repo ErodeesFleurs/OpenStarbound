@@ -1,5 +1,7 @@
 #include "StarFile.hpp"
-#include "StarBuffer.hpp"
+#include "StarIODevice.hpp"
+#include "StarString.hpp"
+import star.buffer;
 #include "vorbis/vorbisfile.h"
 #include "StarString.hpp"
 #include "StarFormat.hpp"

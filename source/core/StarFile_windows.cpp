@@ -1,7 +1,9 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 #include "StarRandom.hpp"
-#include "StarEncode.hpp"
+#include "StarString.hpp"
+#include "StarByteArray.hpp"
+import star.encode;
 #include "StarMathCommon.hpp"
 #include "StarThread.hpp"
 

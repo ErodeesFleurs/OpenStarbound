@@ -1,12 +1,22 @@
 module;
 #include "StarJson.hpp"
-#include "StarPerlin.hpp"
+#include "StarBiMap.hpp"
+#include "StarInterpolation.hpp"
+#include "StarRandom.hpp"
+import star.perlin;
 #include "StarMaybe.hpp"
-#include "StarWeightedPool.hpp"
+import star.weighted_pool;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
-#include "StarDirectives.hpp"
-#include "StarAssetPath.hpp"
+#include "StarList.hpp"
+#include "StarRect.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
+import star.asset_path;
 #include "StarGameTypes.hpp"
 #include "StarVector.hpp"
 #include "StarPoly.hpp"

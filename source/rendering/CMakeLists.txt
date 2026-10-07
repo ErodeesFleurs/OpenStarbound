@@ -18,7 +18,7 @@ target_include_directories (star_rendering_module_interfaces PRIVATE
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
   )
-target_link_libraries (star_rendering_module_interfaces PUBLIC star_game_module_interfaces PRIVATE star_build_config)
+target_link_libraries (star_rendering_module_interfaces PUBLIC star_game_module_interfaces star_application_module_interfaces PRIVATE star_build_config)
 
 add_library (star_rendering_modules STATIC
     StarAnchorTypes.cpp
@@ -39,7 +39,7 @@ target_include_directories (star_rendering_modules PRIVATE
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
   )
-target_link_libraries (star_rendering_modules PUBLIC star_rendering_module_interfaces star_game_modules PRIVATE star_build_config)
+target_link_libraries (star_rendering_modules PUBLIC star_rendering_module_interfaces star_game_modules star_application_modules PRIVATE star_build_config)
 set_target_properties (star_rendering_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
 if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)

@@ -9,7 +9,13 @@ module;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 import star.tile_damage;
-#include "StarDirectives.hpp"
+#include "StarList.hpp"
+import star.image_processing;
+#include "StarHash.hpp"
+#include "StarDataStream.hpp"
+#include "StarStringView.hpp"
+#include "StarThread.hpp"
+import star.directives;
 import star.material_render_profile;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
