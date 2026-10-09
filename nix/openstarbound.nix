@@ -8,20 +8,16 @@
   pkg-config,
   autoPatchelfHook,
   zlib-ng,
-  libcpr,
+  dependencies,
   libpng,
   freetype,
   libogg,
   libvorbis,
   zstd,
   libopus,
-  re2,
-  cpptrace,
-  lld,
   sdl3,
   glew,
   libGL,
-  qt5,
   # This repository's source tree; the CMake layout expects the repository root
   # (source/CMakeLists.txt is configured through `cmakeDir`).
   src,
@@ -46,6 +42,13 @@
 }:
 
 let
+  inherit (dependencies)
+    libcpr
+    re2
+    cpptrace
+    qt5
+    sdkRuntime
+    ;
   # Version lived in source/core/StarVersion.cpp.in.  It must match the
   # "version" field in assets/opensb/_metadata or Root refuses to load assets.
   version = "0.1.15.1";
@@ -57,7 +60,12 @@ let
   patchedSdl3 = sdl3.overrideAttrs (old: {
     patches = (old.patches or [ ]) ++ [ ./patches/sdl3-alsa-cleanup.patch ];
   });
-  imgui = callPackage ./imgui.nix { sdl3 = patchedSdl3; inherit guiSupport; };
+  imgui = dependencies.instrument (
+    callPackage ./imgui.nix {
+      inherit stdenv guiSupport;
+      sdl3 = patchedSdl3;
+    }
+  );
 
   # Optional prebuilt Steam/Discord SDKs, vendored under lib/linux in the
   # repository.  They are unfree redistribution-wise and x86_64 only, hence the
@@ -70,7 +78,9 @@ let
     dontBuild = true;
     strictDeps = true;
     nativeBuildInputs = [ autoPatchelfHook ];
-    buildInputs = [ stdenv.cc.cc.lib ];
+    # Only Discord's vendor ELF needs the system libgcc_s runtime. The SDKs
+    # expose C APIs; this is not a compiler or a C++ build dependency.
+    buildInputs = lib.optional discordSupport sdkRuntime;
     installPhase = ''
       runHook preInstall
       mkdir -p "$out/lib"
@@ -97,24 +107,60 @@ let
   # assets, so they are launched through nix/launcher.sh instead of being
   # exposed directly.
   wrapped = [ "starbound_server" ] ++ lib.optional guiSupport "starbound";
-  plain =
-    [
-      "asset_packer"
-      "asset_unpacker"
-      "btree_repacker"
-      "dump_versioned_json"
-      "make_versioned_json"
-    ]
-    ++ lib.optionals withTests [ "core_tests" "game_tests" ];
-  qtTools = lib.optional qtSupport "json_tool" ++ lib.optional (qtSupport && steamSupport) "mod_uploader";
+  plain = [
+    "asset_packer"
+    "asset_unpacker"
+    "btree_repacker"
+    "dump_versioned_json"
+    "make_versioned_json"
+  ]
+  ++ lib.optionals withTests [
+    "core_tests"
+    "game_tests"
+  ];
+  qtTools =
+    lib.optional qtSupport "json_tool" ++ lib.optional (qtSupport && steamSupport) "mod_uploader";
   distBinaries = plain ++ wrapped ++ qtTools;
+  # C ABI dependencies may remain shared. Give copied build-tree executables
+  # a complete store RPATH, including indirect C-library dependencies, rather
+  # than relying on a development shell's LD_LIBRARY_PATH.
+  # Static C++ archives forward C-library dependencies through their dev
+  # outputs. Select the real runtime output explicitly before making RPATHs.
+  runtimeLibraries = map (package: package.lib or package.out) (
+    lib.closePropagation (
+      [
+        stdenv.cc.libc
+        zlib-ng
+        libcpr
+        libpng
+        freetype
+        libogg
+        libvorbis
+        zstd
+        re2
+        cpptrace
+      ]
+      ++ lib.optionals guiSupport [
+        patchedSdl3
+        glew
+        libGL
+        libopus
+      ]
+      ++ lib.optional (steamSupport || discordSupport) sdks
+      ++ lib.optional discordSupport sdkRuntime
+      ++ lib.optional qtSupport qt5.qtbase
+    )
+  );
 in
-assert lib.assertMsg (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.is64bit)
-  "This flake only supports x86_64/aarch64 Linux.";
-assert lib.assertMsg (stdenv.buildPlatform == stdenv.hostPlatform)
-  "OpenStarbound's build system does not support cross compilation here.";
-assert lib.assertMsg (!(steamSupport || discordSupport) || stdenv.hostPlatform.isx86_64)
-  "The vendored Linux Steam/Discord SDK binaries are x86_64 only.";
+assert lib.assertMsg (
+  stdenv.hostPlatform.isLinux && stdenv.hostPlatform.is64bit
+) "This flake only supports x86_64/aarch64 Linux.";
+assert lib.assertMsg (
+  stdenv.buildPlatform == stdenv.hostPlatform
+) "OpenStarbound's build system does not support cross compilation here.";
+assert lib.assertMsg (
+  !(steamSupport || discordSupport) || stdenv.hostPlatform.isx86_64
+) "The vendored Linux Steam/Discord SDK binaries are x86_64 only.";
 
 stdenv.mkDerivation {
   pname = if sanitizers then "openstarbound-sanitized" else "openstarbound";
@@ -125,12 +171,13 @@ stdenv.mkDerivation {
   patches = [ ./patches/imgui-lua-literal-text.patch ];
 
   strictDeps = true;
-  # lld is only there for hand builds (see the devShells in flake.nix):
-  # `-fuse-ld=lld` links the ~750MB test binaries in seconds instead of minutes.
-  # The package itself keeps the default linker: linked with lld, the installed
-  # binaries no longer found their dependencies through CMake's build RPATH
-  # (libz-ng.so.2 went missing in the test phase), which GNU ld provides.
-  nativeBuildInputs = [ cmake ninja pkg-config lld ] ++ lib.optional qtSupport qt5.wrapQtAppsHook;
+  # The compiler wrapper supplies its bundled lld; no separate LLVM release.
+  nativeBuildInputs = [
+    cmake
+    ninja
+    pkg-config
+  ]
+  ++ lib.optional qtSupport qt5.qttools;
   buildInputs = [
     zlib-ng
     libcpr
@@ -155,8 +202,9 @@ stdenv.mkDerivation {
 
   # Append rather than replace the caller's compiler/linker flags. These are
   # compiler-driver options: NIX_LDFLAGS would pass them directly to ld.
+  env.XCLANG_ROOT = stdenv.cc.bundledRuntime;
   preConfigure = lib.optionalString sanitizers ''
-    sanitizerFlags="-fsanitize=address,undefined,enum,signed-integer-overflow"
+    sanitizerFlags="-fsanitize=address,undefined"
     export CFLAGS="''${CFLAGS-} $sanitizerFlags"
     export CXXFLAGS="''${CXXFLAGS-} $sanitizerFlags"
     export LDFLAGS="''${LDFLAGS-} $sanitizerFlags"
@@ -172,13 +220,21 @@ stdenv.mkDerivation {
     # Include maintenance utilities (map_grep and tileset tools) in package builds.
     (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
     (lib.cmakeBool "BUILD_TESTING" withTests)
+    (lib.cmakeBool "STAR_PRECOMPILED_HEADERS" true)
+    (lib.cmakeFeature "CMAKE_C_COMPILER" "${stdenv.cc}/bin/clang")
+    (lib.cmakeFeature "CMAKE_CXX_COMPILER" "${stdenv.cc}/bin/clang++")
     (lib.cmakeBool "STAR_ENABLE_STEAM_INTEGRATION" steamSupport)
     (lib.cmakeBool "STAR_ENABLE_DISCORD_INTEGRATION" discordSupport)
     (lib.cmakeBool "STAR_BUILD_QT_TOOLS" qtSupport)
     # These binaries are copied from the build tree instead of CMake-installed.
     (lib.cmakeBool "CMAKE_SKIP_BUILD_RPATH" false)
+    (lib.cmakeBool "CMAKE_BUILD_WITH_INSTALL_RPATH" true)
+    (lib.cmakeBool "CMAKE_INSTALL_RPATH_USE_LINK_PATH" true)
+    (lib.cmakeFeature "CMAKE_INSTALL_RPATH" (lib.makeLibraryPath runtimeLibraries))
     # Line tables retain file:line diagnostics without enormous test binaries.
-    (lib.cmakeFeature "STAR_DEBUG_SYMBOL_LEVEL" (if sanitizers || asserts then "minimal" else "default"))
+    (lib.cmakeFeature "STAR_DEBUG_SYMBOL_LEVEL" (
+      if sanitizers || asserts then "minimal" else "default"
+    ))
   ]
   ++ lib.optionals steamSupport [
     (lib.cmakeFeature "STEAM_API_INCLUDE_DIR" "${sdks}/include")
@@ -243,12 +299,11 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  postFixup = lib.concatMapStrings (binary: ''
-    wrapQtApp "$out/bin/${binary}"
-  '') qtTools;
+  # Qt libraries and plugins are static, so no dynamic Qt plugin wrapper is
+  # needed (nor may the ordinary shared Qt/Wayland scope enter the closure).
 
   passthru = {
-    inherit imgui;
+    inherit imgui dependencies runtimeLibraries;
     inherit
       guiSupport
       steamSupport
@@ -262,7 +317,10 @@ stdenv.mkDerivation {
   meta = {
     description = "Starbound client and server, the OpenStarbound fork";
     homepage = "https://github.com/OpenStarbound/OpenStarbound";
-    platforms = [ "x86_64-linux" "aarch64-linux" ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+    ];
     mainProgram = if guiSupport then "starbound" else "starbound_server";
     # Upstream carries no top-level license grant; do not invent one.
   };

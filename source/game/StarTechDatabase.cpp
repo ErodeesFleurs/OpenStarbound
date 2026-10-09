@@ -29,7 +29,7 @@ import star.tech_database;
 
 namespace Star {
 
-EnumMap<TechType> const TechTypeNames{
+extern EnumMap<TechType> const TechTypeNames{
   {TechType::Head, "Head"},
   {TechType::Body, "Body"},
   {TechType::Legs, "Legs"}

@@ -104,7 +104,8 @@ Json jsonFromPersonality(Personality const& personality);
 struct HumanoidIdentity {
   friend DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);
   friend DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity);
-  explicit HumanoidIdentity(Json config = Json());
+  explicit HumanoidIdentity();
+  explicit HumanoidIdentity(Json config);
 
   Json toJson() const;
 
@@ -162,7 +163,8 @@ public:
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
-    explicit HumanoidTiming(Json config = Json());
+    explicit HumanoidTiming();
+    explicit HumanoidTiming(Json config);
 
     static bool cyclicState(State state);
     static bool cyclicEmoteState(HumanoidEmote state);
@@ -522,7 +524,8 @@ private:
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : public NetElementSyncGroup {
 public:
-  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json());
+  NetHumanoid();
+  NetHumanoid(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json());
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;

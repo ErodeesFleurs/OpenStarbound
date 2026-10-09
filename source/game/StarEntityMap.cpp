@@ -407,7 +407,7 @@ bool EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const {
 }
 
 bool EntityMap::spaceIsOccupied(RectF const& rect, bool includesEphemeral) const {
-  for (auto const& entity : entityQuery(rect)) {
+  for (auto const& entity : entityQuery(rect, {})) {
     if (!includesEphemeral && entity->ephemeral())
       continue;
 

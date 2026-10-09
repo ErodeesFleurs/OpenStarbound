@@ -86,6 +86,8 @@ Json Bookmark<T>::toJson() const {
   return result;
 }
 
+PlayerUniverseMap::PlayerUniverseMap() : PlayerUniverseMap(Json{}) {}
+
 PlayerUniverseMap::PlayerUniverseMap(Json const& json) {
   if (auto maps = json.optObject()) {
     for (auto p : *maps)

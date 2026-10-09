@@ -41,7 +41,8 @@ struct SpawnParameters {
   static EnumMap<Time> const TimeNames;
 
   // Null config constructs SpawnParameters filled with All
-  SpawnParameters(Json const& config = {});
+  SpawnParameters();
+  SpawnParameters(Json const& config);
   SpawnParameters(Set<Area> areas, Region region, Time time);
 
   bool compatible(SpawnParameters const& parameters) const;

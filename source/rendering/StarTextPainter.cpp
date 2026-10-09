@@ -394,7 +394,7 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
       } else if (command.beginsWith("font=")) {
         setFont(m_renderSettings.font = command.substr(5));
       } else if (command.beginsWith("directives=")) {
-        setProcessingDirectives(command.substr(11));
+        setProcessingDirectives(command.substr(11), false);
       } else if (command.beginsWith("backdirectives=")) {
         setProcessingDirectives(command.substr(15), true);
       } else {
@@ -435,7 +435,7 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
 
   RectF bounds = RectF::withSize(pos, Vec2F());
   for (auto& i : lines) {
-    bounds.combine(doRenderLine(i, { pos, position.hAnchor, position.vAnchor }, reallyRender, charLimit));
+    bounds.combine(doRenderLine(i, { pos, position.hAnchor, position.vAnchor, {}, {} }, reallyRender, charLimit));
     pos[1] -= m_renderSettings.fontSize * m_renderSettings.lineSpacing;
 
     if (charLimit && *charLimit == 0)
@@ -456,11 +456,11 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
 
   if (pos.hAnchor == HorizontalAnchor::RightAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
-    pos.pos[0] -= stringWidth(trimmedString);
+    pos.pos[0] -= stringWidth(trimmedString, 0);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   } else if (pos.hAnchor == HorizontalAnchor::HMidAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
-    pos.pos[0] -= floor((float)stringWidth(trimmedString) / 2);
+    pos.pos[0] -= floor((float)stringWidth(trimmedString, 0) / 2);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 

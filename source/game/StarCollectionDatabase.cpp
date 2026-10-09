@@ -48,7 +48,7 @@ import star.item_database;
 
 namespace Star {
 
-EnumMap<CollectionType> const CollectionTypeNames {
+extern EnumMap<CollectionType> const CollectionTypeNames {
   {CollectionType::Generic, "generic"},
   {CollectionType::Item, "item"},
   {CollectionType::Monster, "monster"}

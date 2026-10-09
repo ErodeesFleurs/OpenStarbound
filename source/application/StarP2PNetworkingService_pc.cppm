@@ -9,7 +9,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -73,9 +73,9 @@ private:
 
   unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
-  STEAM_CALLBACK(PcP2PNetworkingService, steamOnConnectionFailure, P2PSessionConnectFail_t, m_callbackConnectionFailure);
-  STEAM_CALLBACK(PcP2PNetworkingService, steamOnJoinRequested, GameRichPresenceJoinRequested_t, m_callbackJoinRequested);
-  STEAM_CALLBACK(PcP2PNetworkingService, steamOnSessionRequest, P2PSessionRequest_t, m_callbackSessionRequest);
+  void steamOnConnectionFailure(P2PSessionConnectFail_t* callback);
+  void steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback);
+  void steamOnSessionRequest(P2PSessionRequest_t* callback);
 
   void steamCloseSocket(SteamP2PSocket* socket);
   void steamReceiveAll();
@@ -119,6 +119,11 @@ private:
   void setJoinLocation(JoinLocation joinLocation);
 
   PcPlatformServicesStatePtr m_state;
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+  SteamCallback<PcP2PNetworkingService, P2PSessionConnectFail_t> m_callbackConnectionFailure;
+  SteamCallback<PcP2PNetworkingService, GameRichPresenceJoinRequested_t> m_callbackJoinRequested;
+  SteamCallback<PcP2PNetworkingService, P2PSessionRequest_t> m_callbackSessionRequest;
+#endif
 
   Mutex m_mutex;
   JoinLocation m_joinLocation;

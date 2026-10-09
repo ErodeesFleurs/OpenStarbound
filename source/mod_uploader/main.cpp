@@ -15,6 +15,9 @@ int main(int argc, char** argv) {
     QMessageBox::critical(nullptr, "Error", "Could not initialize Steam API");
     return 1;
   }
+  struct SteamShutdown {
+    ~SteamShutdown() { SteamAPI_Shutdown(); }
+  } steamShutdown;
 
   ModUploader modUploader;
   modUploader.show();

@@ -19,7 +19,11 @@ stdenv.mkDerivation {
   propagatedBuildInputs = [ freetype ]
     ++ lib.optional guiSupport sdl3
     ++ lib.optional (guiSupport && stdenv.hostPlatform.isLinux) libGL;
-  cmakeFlags = [ (lib.cmakeBool "IMGUI_BUILD_GUI_BACKENDS" guiSupport) ];
+  # Its C++ API shares the program's private bundled libc++ runtime.
+  cmakeFlags = [
+    (lib.cmakeBool "BUILD_SHARED_LIBS" false)
+    (lib.cmakeBool "IMGUI_BUILD_GUI_BACKENDS" guiSupport)
+  ];
 
   postPatch = ''
     cp ${./imgui/CMakeLists.txt} CMakeLists.txt

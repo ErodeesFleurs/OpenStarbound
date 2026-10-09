@@ -338,7 +338,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr cele
   if (coordinate.isSatelliteBody())
     return drawWorld(params.take(), celestialDatabase->parameters(coordinate.parent()));
   else
-    return drawWorld(params.take());
+    return drawWorld(params.take(), {});
 }
 
 List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {

@@ -200,7 +200,7 @@ void SliderBarWidget::update(float dt) {
   if (m_jogDragActive) {
     auto clampedPos = clamp<float>(m_jogDragPos[0], gridLow, gridHigh);
     float clampedPercent = (clampedPos - gridLow) / (gridHigh - gridLow);
-    setVal(clampedPercent * (m_high - m_low));
+    setVal(clampedPercent * (m_high - m_low), true);
   }
 
   if (m_updateJog) {
@@ -240,11 +240,11 @@ bool SliderBarWidget::sendEvent(InputEvent const& event) {
 }
 
 void SliderBarWidget::leftCallback() {
-  setVal(std::max(m_low, m_val - m_delta));
+  setVal(std::max(m_low, m_val - m_delta), true);
 }
 
 void SliderBarWidget::rightCallback() {
-  setVal(std::min(m_high, m_val + m_delta));
+  setVal(std::min(m_high, m_val + m_delta), true);
 }
 
 }

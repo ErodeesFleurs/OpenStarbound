@@ -44,7 +44,8 @@ namespace Time {
 // monotonically increasing and thread safe.
 class Clock {
 public:
-  explicit Clock(bool start = true);
+  explicit Clock();
+  explicit Clock(bool start);
 
   Clock(Clock const& clock);
 

@@ -455,6 +455,8 @@ Maybe<ChainableJsonMessageResponse> TechController::receiveMessage(String const&
   return {};
 }
 
+TechController::TechAnimator::TechAnimator() : TechAnimator(Maybe<String>{}) {}
+
 TechController::TechAnimator::TechAnimator(Maybe<String> ac) {
   animationConfig = std::move(ac);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();

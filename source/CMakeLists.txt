@@ -20,63 +20,38 @@ if(NOT DEFINED CMAKE_CONFIGURATION_TYPES)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compiler commands")
+if(NOT DEFINED CMAKE_C_COMPILER AND NOT DEFINED ENV{CC})
+  find_program(STAR_XCLANG_C_COMPILER NAMES clang REQUIRED)
+  set(CMAKE_C_COMPILER "${STAR_XCLANG_C_COMPILER}" CACHE FILEPATH "xclang C compiler")
+endif()
+if(NOT DEFINED CMAKE_CXX_COMPILER AND NOT DEFINED ENV{CXX})
+  find_program(STAR_XCLANG_CXX_COMPILER NAMES clang++ REQUIRED)
+  set(CMAKE_CXX_COMPILER "${STAR_XCLANG_CXX_COMPILER}" CACHE FILEPATH "xclang C++ compiler")
+endif()
+if(NOT DEFINED CMAKE_BUILD_RPATH AND DEFINED ENV{OPENSTARBOUND_BUILD_RPATH})
+  set(CMAKE_BUILD_RPATH "$ENV{OPENSTARBOUND_BUILD_RPATH}" CACHE STRING "Dependency runtime search paths")
+endif()
 project(starbound)
 
-# GCC module interfaces produce .gcm files; sccache cache hits restore only
-# object files, not BMIs. Other explicitly selected launchers are preserved.
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_LAUNCHER MATCHES "(^|[/;])sccache([.;]|$)")
-  message(WARNING "Disabling the C++ sccache launcher: GCC module BMIs are not cached")
-  set(CMAKE_CXX_COMPILER_LAUNCHER "")
-endif()
-
-if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER OR
-    (NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-  find_program(SCCACHE_PATH sccache)
-  if(SCCACHE_PATH)
-    set(STAR_DEFAULT_COMPILER_LAUNCHER "${SCCACHE_PATH}")
-  else()
-    find_program(CCACHE_PATH ccache)
-    if(CCACHE_PATH)
-      set(STAR_DEFAULT_COMPILER_LAUNCHER "${CCACHE_PATH}")
-    endif()
-  endif()
-  if(STAR_DEFAULT_COMPILER_LAUNCHER)
-    if(NOT DEFINED CMAKE_C_COMPILER_LAUNCHER)
-      set(CMAKE_C_COMPILER_LAUNCHER "${STAR_DEFAULT_COMPILER_LAUNCHER}")
-    endif()
-    if(NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER AND NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-      set(CMAKE_CXX_COMPILER_LAUNCHER "${STAR_DEFAULT_COMPILER_LAUNCHER}")
-    endif()
-  endif()
-endif()
-
-if(CMAKE_CXX_COMPILER_LAUNCHER MATCHES "(^|[/;])ccache([.;]|$)")
-  set(STAR_CCACHE TRUE)
-else()
-  set(STAR_CCACHE FALSE)
-endif()
-
-# The default follows the ccache decision (a compiler cache and a precompiled
-# header solve the same problem), but an explicit -DSTAR_PRECOMPILED_HEADERS=...
-# wins, which is how the cost of the precompiled header is measured.
-if(NOT DEFINED STAR_PRECOMPILED_HEADERS)
-  if(STAR_CCACHE)
-    set(STAR_PRECOMPILED_HEADERS FALSE)
-  else()
-    set(STAR_PRECOMPILED_HEADERS TRUE)
-  endif()
-endif()
+# All module importers share standard headers to avoid conflicting libc++
+# ASTs and Clang's source-location exhaustion in large importers.
+option(STAR_PRECOMPILED_HEADERS "Use shared precompiled standard headers" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cmake")
 
-# One place for the language standard.  The per-platform flag blocks below used
-# to pass -std=c++20 for GNU/Clang while MSVC, Xcode and the vcpkg presets were
-# left on C++17, so the same tree was being built as two different languages.
-# CMAKE_CXX_EXTENSIONS OFF keeps -std=c++20 rather than -std=gnu++20, which is
-# what the explicit flags asked for.
+# Every platform uses xclang's C++20 frontend and bundled libc++.
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("#include <version>
+#ifndef _LIBCPP_VERSION
+#error OpenStarbound requires xclang's bundled libc++
+#endif
+int main() { return 0; }" STAR_USES_LIBCXX)
+if(NOT STAR_USES_LIBCXX)
+  message(FATAL_ERROR "OpenStarbound requires xclang's bundled libc++; use nix develop or the xclang presets.")
+endif()
 # Only the targets that import modules opt into scanning; module file sets are
 # scanned regardless. Avoid scanning every unrelated C++20 translation unit.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
@@ -129,34 +104,27 @@ if(NOT DEFINED STAR_SYSTEM_FAMILY)
   endif()
 endif()
 
-# C/C++ compiler ID, like clang, gnu, or msvc
-if(NOT DEFINED STAR_COMPILER)
-  if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
-    message(FATAL_ERROR "C and C++ compiler id do not match, unsupported build configuration")
+foreach(language C CXX)
+  if(NOT CMAKE_${language}_COMPILER_ID STREQUAL "Clang")
+    message(FATAL_ERROR "OpenStarbound requires xclang for both C and C++.")
   endif()
-
-  if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
-    set(STAR_COMPILER "clang")
-  elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    set(STAR_COMPILER "gnu")
-  elseif(MSVC)
-    set(STAR_COMPILER "msvc")
-  else()
-    string(TOLOWER "${CMAKE_C_COMPILER_ID}" STAR_COMPILER)
+  execute_process(COMMAND "${CMAKE_${language}_COMPILER}" --version
+    OUTPUT_VARIABLE compiler_version RESULT_VARIABLE compiler_version_result)
+  if(NOT compiler_version_result EQUAL 0 OR NOT compiler_version MATCHES "clice-io/xclang")
+    message(FATAL_ERROR "The ${language} compiler is not xclang; install the pinned toolchain or use nix develop.")
   endif()
+endforeach()
+get_filename_component(compiler_directory "${CMAKE_CXX_COMPILER}" DIRECTORY)
+find_program(STAR_XCLANG_COMMAND NAMES xclang
+  HINTS "$ENV{XCLANG_ROOT}/bin" "${compiler_directory}" NO_DEFAULT_PATH REQUIRED)
+execute_process(COMMAND "${STAR_XCLANG_COMMAND}" --version
+  OUTPUT_VARIABLE xclang_version RESULT_VARIABLE xclang_version_result)
+if(NOT xclang_version_result EQUAL 0 OR NOT xclang_version MATCHES "^xclang 23\\.1\\.2\\.9[\r\n]")
+  message(FATAL_ERROR "OpenStarbound requires the pinned xclang release 23.1.2.9.")
 endif()
+set(STAR_COMPILER "clang")
 
 # Enable OPTIONs based on the discovered system / environment...
-
-if(STAR_COMPILER STREQUAL "gnu")
-  option(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX "Statically link libgcc and libstdc++" OFF)
-  option(STAR_ENABLE_GCC_PROFILING "Enable gcc/g++ profiling via the -pg flag" OFF)
-  option(STAR_ENABLE_GLIBCXX_DEBUG "Enable _GLIBCXX_DEBUG for g++" OFF)
-endif()
-
-if(STAR_COMPILER STREQUAL "msvc")
-  option(STAR_ENABLE_STATIC_MSVC_RUNTIME "Statically link with the CRT" OFF)
-endif()
 
 option(STAR_BUILD_GUI "Build GUI utilities and Client" ON)
 
@@ -196,17 +164,6 @@ message(STATUS "System: ${STAR_SYSTEM}")
 message(STATUS "System family: ${STAR_SYSTEM_FAMILY}")
 message(STATUS "C/C++ compiler: ${STAR_COMPILER}")
 
-if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
-  message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")
-endif()
-
-if(DEFINED STAR_ENABLE_STATIC_MSVC_RUNTIME)
-  message(STATUS "Statically linking to CRT: ${STAR_ENABLE_STATIC_MSVC_RUNTIME}")
-endif()
-
-if(DEFINED STAR_ENABLE_GLIBCXX_DEBUG)
-  message(STATUS "Enabling _GLIBCXX_DEBUG: ${STAR_ENABLE_GLIBCXX_DEBUG}")
-endif()
 
 message(STATUS "Building GUI: ${STAR_BUILD_GUI}")
 
@@ -262,13 +219,7 @@ elseif(STAR_SYSTEM_FAMILY STREQUAL "unix")
   set_flag(STAR_SYSTEM_FAMILY_UNIX)
 endif()
 
-if(STAR_COMPILER STREQUAL "gnu")
-  set_flag(STAR_COMPILER_GNU)
-elseif(STAR_COMPILER STREQUAL "clang")
-  set_flag(STAR_COMPILER_CLANG)
-elseif(STAR_COMPILER STREQUAL "msvc")
-  set_flag(STAR_COMPILER_MSVC)
-endif()
+set_flag(STAR_COMPILER_CLANG)
 
 if(STAR_LUA_APICHECK)
   target_compile_definitions(star_build_config INTERFACE LUA_USE_APICHECK)
@@ -302,8 +253,8 @@ endif()
 
 # Compiler/configuration defaults belong only to in-tree compiled targets.
 include(StarBuildOptions)
-if((STAR_COMPILER_GNU OR STAR_COMPILER_CLANG) AND NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
-  set(CMAKE_SKIP_BUILD_RPATH TRUE)
+if(NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
 endif()
 
 # External usage requirements belong to their implementation layer, not to
@@ -507,11 +458,48 @@ if(STAR_BUILD_GUI)
 
   # Qt GUI tools
   if(STAR_BUILD_QT_TOOLS)
+    find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+    get_target_property(qt_core_type Qt5::Core TYPE)
+    if(NOT qt_core_type STREQUAL "STATIC_LIBRARY")
+      message(FATAL_ERROR "Qt tools require static Qt built with xclang's bundled libc++.")
+    endif()
+    if(STAR_SYSTEM_WINDOWS)
+      set(STAR_QT_PLATFORM_PLUGIN Qt5::QWindowsIntegrationPlugin)
+    elseif(STAR_SYSTEM_MACOS)
+      set(STAR_QT_PLATFORM_PLUGIN Qt5::QCocoaIntegrationPlugin)
+    else()
+      set(STAR_QT_PLATFORM_PLUGIN Qt5::QXcbIntegrationPlugin)
+    endif()
+    function(star_import_qt_plugins target)
+      qt5_import_plugins(${target} INCLUDE ${STAR_QT_PLATFORM_PLUGIN})
+    endfunction()
     add_subdirectory(json_tool)
 
     if(STAR_ENABLE_STEAM_INTEGRATION)
       add_subdirectory(mod_uploader)
     endif()
   endif()
+endif()
+
+# Every importer reuses one standard-header AST. Independent libc++ PCHs
+# conflict when their declarations meet through modules; sharing locations
+# also avoids exhausting Clang's 31-bit source-location space.
+if(STAR_PRECOMPILED_HEADERS)
+  target_precompile_headers(star_modules PRIVATE "${PROJECT_SOURCE_DIR}/core/StarPch.hpp")
+  foreach(pch_target
+      star_core star_base_modules star_game_module_interfaces star_game_modules
+      star_game star_server_modules starbound_server
+      star_application_module_interfaces star_application_modules star_application
+      star_rendering_module_interfaces star_rendering_modules
+      star_windowing_module_interfaces star_windowing_modules
+      star_frontend_module_interfaces star_frontend_modules
+      star_client_module_interfaces starbound
+      asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json
+      update_tilesets fix_embedded_tilesets map_grep core_tests game_tests
+      json_tool mod_uploader)
+    if(TARGET ${pch_target})
+      target_precompile_headers(${pch_target} REUSE_FROM star_modules)
+    endif()
+  endforeach()
 endif()
 

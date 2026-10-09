@@ -7,7 +7,7 @@ import star.light_source;
 
 namespace Star {
 
-EnumMap<LightType> const LightTypeNames{
+extern EnumMap<LightType> const LightTypeNames{
   {LightType::Spread, "Spread"},
   {LightType::Point, "Point"},
   {LightType::PointAsSpread, "PointAsSpread"}

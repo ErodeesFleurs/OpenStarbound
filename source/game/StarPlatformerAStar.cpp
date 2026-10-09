@@ -557,7 +557,7 @@ namespace PlatformerAStar {
   }
 
   Vec2I PathFinder::groundNodePosition(Vec2F pos) const {
-    RectI bounds = RectI::integral(boundBox(pos));
+    RectI bounds = RectI::integral(boundBox(pos, BoundBoxKind::Full));
 
     return Vec2I(floor(pos[0]), bounds.yMin() - 1);
   }

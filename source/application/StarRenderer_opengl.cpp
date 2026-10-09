@@ -335,7 +335,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
     Logger::info("Creating framebuffer {}", pair.first);
     auto buf = make_ref<GlFrameBuffer>(config);
     if (config.getBool("double",false)) {
-      buf->makeAlt();
+      buf->makeAlt(Vec2U(256, 256));
     }
     m_frameBuffers[pair.first] = buf;
 

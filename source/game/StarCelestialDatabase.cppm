@@ -108,7 +108,8 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
-  CelestialMasterDatabase(Maybe<String> databaseFile = {});
+  CelestialMasterDatabase();
+  CelestialMasterDatabase(Maybe<String> databaseFile);
 
   CelestialBaseInformation baseInformation() const;
   CelestialResponse respondToRequest(CelestialRequest const& requests);

@@ -65,6 +65,8 @@ import star.image_widget;
 
 namespace Star {
 
+ImageWidget::ImageWidget() : ImageWidget(String{}) {}
+
 ImageWidget::ImageWidget(String const& image) {
   m_centered = false;
   m_trim = false;

@@ -567,7 +567,7 @@ void StatusController::tickMaster(float dt) {
     auto liquidsDatabase = Root::singleton().liquidsDatabase();
     if (auto liquidSettings = liquidsDatabase->liquidSettings(m_movementController->liquidId())) {
       for (auto const& effect : liquidSettings->statusEffects)
-        addEphemeralEffect(jsonToEphemeralStatusEffect(effect));
+        addEphemeralEffect(jsonToEphemeralStatusEffect(effect), {});
     }
   }
 
@@ -591,7 +591,7 @@ void StatusController::tickMaster(float dt) {
       setPersistentEffects("environment", m_parentEntity->world()->environmentStatusEffects(m_parentEntity->position()).transformed(jsonToPersistentStatusEffect));
 
     if (!statusImmune && m_appliesWeatherStatusEffects)
-      addEphemeralEffects(m_parentEntity->world()->weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect));
+      addEphemeralEffects(m_parentEntity->world()->weatherStatusEffects(m_parentEntity->position()).transformed(jsonToEphemeralStatusEffect), {});
   }
 
   m_primaryScript.update(m_primaryScript.updateDt(dt));
@@ -674,6 +674,8 @@ Maybe<ChainableJsonMessageResponse> StatusController::receiveMessage(String cons
     result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
   return result;
 }
+
+StatusController::EffectAnimator::EffectAnimator() : EffectAnimator(Maybe<String>{}) {}
 
 StatusController::EffectAnimator::EffectAnimator(Maybe<String> config) {
   animationConfig = std::move(config);

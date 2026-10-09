@@ -37,6 +37,8 @@ import star.animation;
 
 namespace Star {
 
+Animation::Animation() : Animation({}, {}) {}
+
 Animation::Animation(Json config, String const& directory) {
   m_directory = directory;
   if (m_directory.empty()) {

@@ -86,7 +86,3 @@ target_include_directories (star_extern PRIVATE
     lua
   )
 target_link_libraries (star_extern PRIVATE star_build_config star_extern_dependencies)
-
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_extern PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

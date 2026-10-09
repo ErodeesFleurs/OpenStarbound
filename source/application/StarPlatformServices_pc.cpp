@@ -8,7 +8,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -36,7 +36,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -68,7 +68,7 @@ uint64_t const DiscordClientId = 467102538278109224;
 
 PcPlatformServicesState::PcPlatformServicesState()
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  : callbackGameOverlayActivated(this, &PcPlatformServicesState::onGameOverlayActivated) {
+  : callbackGameOverlayActivated(steamDispatch, this, &PcPlatformServicesState::onGameOverlayActivated) {
 #else
   {
 #endif
@@ -123,6 +123,7 @@ PcPlatformServicesState::PcPlatformServicesState()
     SteamErrMsg errMsg;
     if (SteamAPI_InitEx(&errMsg) == k_ESteamAPIInitResult_OK) {
       steamAvailable = true;
+      steamDispatch.initialize();
       Logger::info("Initialized Steam platform services");
     } else {
       Logger::info("Failed to initialize Steam platform services: {}", errMsg);
@@ -191,6 +192,10 @@ PcPlatformServicesState::~PcPlatformServicesState() {
     discordEventShutdown = true;
     discordEventThread.finish();
   }
+#endif
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+  if (steamAvailable)
+    SteamAPI_Shutdown();
 #endif
 }
 
@@ -270,7 +275,8 @@ bool PcPlatformServices::overlayActive() const {
 
 void PcPlatformServices::update() {
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  SteamAPI_RunCallbacks();
+  if (m_state->steamAvailable)
+    m_state->steamDispatch.runCallbacks();
 #endif
 }
 

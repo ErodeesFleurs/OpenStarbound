@@ -37,7 +37,8 @@ class BubbleSeparator {
 public:
   using Bubble = BubbleState<T>;
 
-  BubbleSeparator(float tweenFactor = 0.5f, float movementThreshold = 2.0f);
+  BubbleSeparator();
+  BubbleSeparator(float tweenFactor, float movementThreshold = 2.0f);
 
   float tweenFactor() const;
   void setTweenFactor(float tweenFactor);
@@ -79,6 +80,9 @@ bool compareOverlapRight(RectF const& newBox, RectF const& fixedBox);
 // by
 // the X positions of their left and right edges respectively.
 RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sortedRightEdges, List<RectF>& outLeftEdges, List<RectF>& outRightEdges, RectF box);
+
+template <typename T>
+BubbleSeparator<T>::BubbleSeparator() : BubbleSeparator(0.5f, 2.0f) {}
 
 template <typename T>
 BubbleSeparator<T>::BubbleSeparator(float tweenFactor, float movementThreshold)

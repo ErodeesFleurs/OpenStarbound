@@ -27,7 +27,7 @@ import star.radio_message_database;
 
 namespace Star {
 
-EnumMap<RadioMessageType> const RadioMessageTypeNames{
+extern EnumMap<RadioMessageType> const RadioMessageTypeNames{
     {RadioMessageType::Generic, "generic"},
     {RadioMessageType::Mission, "mission"},
     {RadioMessageType::Quest, "quest"},

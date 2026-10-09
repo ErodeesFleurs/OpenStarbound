@@ -65,6 +65,9 @@ import star.label_widget;
 
 namespace Star {
 
+LabelWidget::LabelWidget()
+  : LabelWidget(String(), Color::White, HorizontalAnchor::LeftAnchor, VerticalAnchor::BottomAnchor, {}, {}) {}
+
 LabelWidget::LabelWidget(String text,
     Color const& color,
     HorizontalAnchor const& hAnchor,

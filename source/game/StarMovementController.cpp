@@ -62,6 +62,8 @@ MovementParameters MovementParameters::sensibleDefaults() {
   return MovementParameters(Root::singleton().assets()->json("/default_movement.config").toObject());
 }
 
+MovementParameters::MovementParameters() : MovementParameters(Json()) {}
+
 MovementParameters::MovementParameters(Json const& config) {
   if (config.isNull())
     return;
@@ -216,6 +218,8 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
 
   return ds;
 }
+
+MovementController::MovementController() : MovementController(MovementParameters()) {}
 
 MovementController::MovementController(MovementParameters const& parameters) {
   m_resting = false;
@@ -502,11 +506,11 @@ void MovementController::approachVelocityAlongAngle(float angle, float targetVel
 }
 
 void MovementController::approachXVelocity(float targetXVelocity, float maxControlForce) {
-  approachVelocityAlongAngle(0.0f, targetXVelocity, maxControlForce);
+  approachVelocityAlongAngle(0.0f, targetXVelocity, maxControlForce, false);
 }
 
 void MovementController::approachYVelocity(float targetYVelocity, float maxControlForce) {
-  approachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce);
+  approachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce, false);
 }
 
 void MovementController::init(World* world) {

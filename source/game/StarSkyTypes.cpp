@@ -7,7 +7,7 @@ import star.sky_types;
 
 namespace Star {
 
-EnumMap<SkyType> const SkyTypeNames{
+extern EnumMap<SkyType> const SkyTypeNames{
     {SkyType::Barren, "barren"},
     {SkyType::Atmospheric, "atmospheric"},
     {SkyType::Atmosphereless, "atmosphereless"},
@@ -15,13 +15,13 @@ EnumMap<SkyType> const SkyTypeNames{
     {SkyType::Warp, "warp"},
     {SkyType::Space, "space"}};
 
-EnumMap<FlyingType> const FlyingTypeNames{
+extern EnumMap<FlyingType> const FlyingTypeNames{
     {FlyingType::None, "none"},
     {FlyingType::Disembarking, "disembarking"},
     {FlyingType::Warp, "warp"},
     {FlyingType::Arriving, "arriving"}};
 
-EnumMap<WarpPhase> const WarpPhaseNames{
+extern EnumMap<WarpPhase> const WarpPhaseNames{
     {WarpPhase::SlowingDown, "slowingdown"},
     {WarpPhase::Maintain, "maintain"},
     {WarpPhase::SpeedingUp, "speedingup"}};

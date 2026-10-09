@@ -30,10 +30,6 @@ target_include_directories (starbound_server PRIVATE
   )
 set_target_properties (starbound_server PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers (starbound_server REUSE_FROM star_core)
-endif()
-
 if(STAR_SYSTEM_MACOS)
   target_link_options (starbound_server PRIVATE "LINKER:-rpath,@executable_path")
 elseif (UNIX)
@@ -42,7 +38,3 @@ endif()
 
 target_link_libraries (starbound_server PRIVATE star_base_modules star_server_modules star_game_modules star_build_config
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
-
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_server_modules starbound_server PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

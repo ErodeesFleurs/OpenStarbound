@@ -36,11 +36,6 @@ target_sources (star_client_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
     StarRenderingLuaBindings.cppm
   )
 target_link_libraries (star_client_module_interfaces PRIVATE star_build_config)
-set_source_files_properties (StarRenderingLuaBindings.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
-
-if (STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers (starbound REUSE_FROM star_core)
-endif()
 
 if(STAR_SYSTEM_MACOS)
   target_link_options (starbound PRIVATE "LINKER:-rpath,@executable_path")
@@ -59,6 +54,3 @@ target_link_libraries (starbound PRIVATE
   $<LINK_ONLY:star_application_dependencies> $<LINK_ONLY:star_voice_dependencies>)
 set_target_properties (starbound PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_client_module_interfaces starbound PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

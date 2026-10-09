@@ -269,7 +269,8 @@ struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
 };
 
 struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
-  ProtocolResponsePacket(bool allowed = false, Json info = {});
+  ProtocolResponsePacket();
+  ProtocolResponsePacket(bool allowed, Json info = {});
 
   void read(DataStream& ds) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -864,7 +865,8 @@ struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
 // where they are master, any entities whose master is from that connection can
 // be assumed to have produced a blank delta.
 struct EntityUpdateSetPacket : PacketBase<PacketType::EntityUpdateSet> {
-  EntityUpdateSetPacket(ConnectionId forConnection = ServerConnectionId);
+  EntityUpdateSetPacket();
+  EntityUpdateSetPacket(ConnectionId forConnection);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;

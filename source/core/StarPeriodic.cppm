@@ -10,7 +10,10 @@ namespace Star {
 // every other call, and so forth.
 class Periodic {
 public:
-  Periodic(unsigned everyXSteps = 1)
+  Periodic()
+    : Periodic(1) {}
+
+  Periodic(unsigned everyXSteps)
     : m_counter(0), m_everyXSteps(everyXSteps) {}
 
   unsigned stepCount() const {
@@ -58,7 +61,10 @@ private:
 // time) with optional randomness.
 class RatePeriodic {
 public:
-  RatePeriodic(double period = 1, double noise = 0)
+  RatePeriodic()
+    : RatePeriodic(1, 0) {}
+
+  RatePeriodic(double period, double noise = 0)
     : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)), m_elapsed(0.0) {}
 
   double period() const {

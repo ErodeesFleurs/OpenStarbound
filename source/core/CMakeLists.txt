@@ -140,8 +140,8 @@ configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
 target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
-# Interfaces have no PCH: GCC rejects a forced PCH before a module
-# declaration. Thin global-type interfaces retain ordinary companions below;
+# All importers share their standard-header PCH in the parent directory.
+# Thin global-type interfaces retain ordinary companions below;
 # naturally self-contained core interfaces remain single-file.
 add_library (star_modules STATIC)
 target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
@@ -208,10 +208,6 @@ target_link_libraries (star_core PRIVATE star_modules star_build_config star_cor
 # scan too; CMake only turns those on for targets that declare module sources.
 set_target_properties (star_core PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers (star_core PUBLIC StarPch.hpp)
-endif()
-
 if(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
   set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_OPTIONS "-fno-fast-math;-fassociative-math;-freciprocal-math")
 endif()
@@ -222,6 +218,3 @@ if(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
           )
 endif()
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_core star_modules PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

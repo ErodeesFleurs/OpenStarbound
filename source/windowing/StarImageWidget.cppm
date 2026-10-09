@@ -60,7 +60,8 @@ namespace Star {
 STAR_CLASS(ImageWidget);
 class ImageWidget : public Widget {
 public:
-  ImageWidget(String const& image = {});
+  ImageWidget();
+  ImageWidget(String const& image);
 
   bool interactive() const override;
   void setImage(String const& image);

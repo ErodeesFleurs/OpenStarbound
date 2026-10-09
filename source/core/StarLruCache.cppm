@@ -13,7 +13,8 @@ public:
 
   typedef function<Value(Key const&)> ProducerFunction;
 
-  LruCacheBase(size_t maxSize = 256);
+  LruCacheBase();
+  LruCacheBase(size_t maxSize);
 
   // Max size cannot be zero, it will be clamped to at least 1 in order to hold
   // the most recent element returned by get.
@@ -57,6 +58,10 @@ using LruCache = LruCacheBase<OrderedMap<Key, Value, Compare, Allocator>>;
 
 template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<pair<Key const, Value>, 1024>>
 using HashLruCache = LruCacheBase<OrderedHashMap<Key, Value, Hash, Equals, Allocator>>;
+
+template <typename OrderedMapType>
+LruCacheBase<OrderedMapType>::LruCacheBase()
+  : LruCacheBase(256) {}
 
 template <typename OrderedMapType>
 LruCacheBase<OrderedMapType>::LruCacheBase(size_t maxSize) {

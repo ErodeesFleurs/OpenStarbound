@@ -79,13 +79,13 @@ void SlidingWindow::reset(float initialValue) {
 }
 
 void SlidingWindow::update(function<float()> sampleFunction) {
-  if (sampleTimer.wrapTick()) {
+  if (sampleTimer.wrapTick(GlobalTimestep)) {
     processUpdate(sampleFunction());
   }
 }
 
 void SlidingWindow::update(float newValue) {
-  if (sampleTimer.wrapTick()) {
+  if (sampleTimer.wrapTick(GlobalTimestep)) {
     processUpdate(newValue);
   }
 }

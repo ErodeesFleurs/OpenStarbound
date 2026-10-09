@@ -43,15 +43,6 @@ touch server_distribution/mods/mods_go_here
 
 mkdir server_distribution/linux
 
-# makes the server function on older Linux versions (this is so stupid)
-nm --dynamic --undefined-only --with-symbol-versions dist/starbound_server | grep GLIBC_2.29
-patchelf dist/starbound_server \
-  --clear-symbol-version exp \
-  --clear-symbol-version exp2 \
-  --clear-symbol-version log \
-  --clear-symbol-version log2 \
-  --clear-symbol-version pow
-
 cp \
   dist/starbound_server \
   dist/btree_repacker \

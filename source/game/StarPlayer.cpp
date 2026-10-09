@@ -445,7 +445,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config, Uuid()) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -465,7 +465,7 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
 }
 
 
-Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config) {
+Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config, Uuid()) {
   diskLoad(diskStore);
 }
 
@@ -1364,7 +1364,7 @@ void Player::update(float dt, uint64_t) {
   m_songbook->update(*entityMode(), world());
 
   m_effectEmitter->setSourcePosition("normal", position());
-  m_effectEmitter->setSourcePosition("mouth", mouthOffset() + position());
+  m_effectEmitter->setSourcePosition("mouth", mouthOffset(true) + position());
   m_effectEmitter->setSourcePosition("feet", feetOffset() + position());
   m_effectEmitter->setSourcePosition("headArmor", headArmorOffset() + position());
   m_effectEmitter->setSourcePosition("chestArmor", chestArmorOffset() + position());
@@ -1551,7 +1551,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
 }
 
 void Player::giveItem(ItemPtr const& item) {
-  if (auto spill = pickupItems(item))
+  if (auto spill = pickupItems(item, false))
     world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position()));
 }
 
@@ -2746,7 +2746,7 @@ void Player::requestEmote(String const& emote) {
   auto state = HumanoidEmoteNames.getLeft(emote);
   if (state != HumanoidEmote::Idle
       && (m_emoteState == state || m_emoteState == HumanoidEmote::Idle || m_emoteState == HumanoidEmote::Blink))
-    addEmote(state);
+    addEmote(state, {});
 }
 
 ActorMovementController* Player::movementController() {

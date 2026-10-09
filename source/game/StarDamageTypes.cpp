@@ -6,21 +6,21 @@ import star.damage_types;
 
 namespace Star {
 
-EnumMap<DamageType> const DamageTypeNames{{DamageType::NoDamage, "NoDamage"},
+extern EnumMap<DamageType> const DamageTypeNames{{DamageType::NoDamage, "NoDamage"},
     {DamageType::Damage, "Damage"},
     {DamageType::IgnoresDef, "IgnoresDef"},
     {DamageType::Knockback, "Knockback"},
     {DamageType::Environment, "Environment"},
 		{DamageType::Status, "Status"}};
 
-EnumMap<HitType> const HitTypeNames{
+extern EnumMap<HitType> const HitTypeNames{
     {HitType::Hit, "Hit"},
     {HitType::StrongHit, "StrongHit"},
     {HitType::WeakHit, "WeakHit"},
     {HitType::ShieldHit, "ShieldHit"},
     {HitType::Kill, "Kill"}};
 
-EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
+extern EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
     {TeamType::Friendly, "friendly"},
     {TeamType::Enemy, "enemy"},
     {TeamType::PVP, "pvp"},

@@ -8,7 +8,7 @@
 #include <QPushButton>
 #include <QCheckBox>
 
-#include "steam/steam_api.h"
+#include "../application/StarSteamDispatch.hpp"
 
 #include "StarIODevice.hpp"
 #include "StarJson.hpp"
@@ -34,6 +34,7 @@ private slots:
   void uploadToSteam();
 
 private:
+  void closeEvent(QCloseEvent* event) override;
   void onSteamCreateItem(CreateItemResult_t* result, bool ioFailure);
   void onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure);
 
@@ -52,6 +53,9 @@ private:
   Maybe<String> m_modDirectory;
   Maybe<DirectoryAssetSource> m_assetSource;
   QImage m_modPreview;
+
+  SteamDispatch m_steamDispatch;
+  bool m_closing = false;
 
   Maybe<pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
   Maybe<pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;

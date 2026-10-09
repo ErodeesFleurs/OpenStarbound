@@ -126,10 +126,6 @@ Color Color::temperature(float temp) {
   return c;
 }
 
-#ifdef STAR_COMPILER_GNU
-#pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
-#endif
 
 Color Color::rgb(Vec3B const& c) {
   return rgb(c[0], c[1], c[2]);
@@ -396,9 +392,6 @@ float Color::saturation() const {
 float Color::value() const {
   return max(max(m_data[0], m_data[1]), m_data[2]);
 }
-#ifdef STAR_COMPILER_GNU
-#pragma GCC pop_options
-#endif
 
 void Color::setHue(float h) {
   auto hsva = toHsva();

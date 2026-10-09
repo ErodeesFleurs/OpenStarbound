@@ -204,3 +204,6 @@ int Star::edit(int argc, char* argv[], JsonPath::PathPtr const& path, Options co
   e.show();
   return app.exec();
 }
+
+// Keep generated project-header imports in this module-scanned translation unit.
+#include "moc_editor_gui.cpp"

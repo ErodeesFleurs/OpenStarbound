@@ -119,7 +119,8 @@ public:
 
 private:
   struct TechAnimator : public NetElement {
-    TechAnimator(Maybe<String> animationConfig = {});
+    TechAnimator();
+    TechAnimator(Maybe<String> animationConfig);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 

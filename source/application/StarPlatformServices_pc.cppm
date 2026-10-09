@@ -9,7 +9,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -26,7 +26,9 @@ struct PcPlatformServicesState {
   ~PcPlatformServicesState();
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  STEAM_CALLBACK(PcPlatformServicesState, onGameOverlayActivated, GameOverlayActivated_t, callbackGameOverlayActivated);
+  void onGameOverlayActivated(GameOverlayActivated_t* callback);
+  SteamDispatch steamDispatch;
+  SteamCallback<PcPlatformServicesState, GameOverlayActivated_t> callbackGameOverlayActivated;
 
   bool steamAvailable = false;
 #endif

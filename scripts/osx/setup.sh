@@ -1,29 +1,18 @@
 #!/bin/sh
+set -eu
+cd "$(dirname "$0")/../.."
 
-cd "`dirname \"$0\"`/../.."
-
+if [ -z "${XCLANG_ROOT:-}" ]; then
+  cmake "-DXCLANG_INSTALL_DIR=$PWD/build/xclang-sdk" -P scripts/ci/install-xclang.cmake
+  XCLANG_ROOT="$PWD/build/xclang-sdk/xclang"
+fi
+export XCLANG_ROOT
+export PATH="$XCLANG_ROOT/bin:$PATH"
+case "$(uname -m)" in
+  arm64|aarch64) preset=macos-arm-release ;;
+  x86_64) preset=macos-release ;;
+  *) echo "Unsupported macOS architecture" >&2; exit 1 ;;
+esac
 mkdir -p dist
 cp scripts/osx/sbinit.config dist/
-
-mkdir -p build
-cd build
-
-QT5_INSTALL_PATH=/usr/local/opt/qt5
-if [ -d $QT5_INSTALL_PATH ]; then
-  export PATH=$QT5_INSTALL_PATH/bin:$PATH
-  export LDFLAGS=-L$QT5_INSTALL_PATH/lib
-  export CPPFLAGS=-I$QT5_INSTALL_PATH/include
-  export CMAKE_PREFIX_PATH=$QT5_INSTALL_PATH
-  BUILD_QT_TOOLS=ON
-else
-  BUILD_QT_TOOLS=OFF
-fi
-
-CC=clang CXX=clang++ cmake \
-  -DCMAKE_EXPORT_COMPILE_COMMANDS=true \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DSTAR_BUILD_QT_TOOLS=$BUILD_QT_TOOLS \
-  -DSTAR_USE_JEMALLOC=ON \
-  -DCMAKE_INCLUDE_PATH=../lib/osx/include \
-  -DCMAKE_LIBRARY_PATH=../lib/osx/ \
-  ../source
+cmake -S source --preset "$preset"

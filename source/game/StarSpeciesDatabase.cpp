@@ -279,7 +279,8 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
     randSource.randu32(),
     randSource.randu32(),
     randSource.randu32(),
-    randSource.randu32()
+    randSource.randu32(),
+    {}
   );
 }
 

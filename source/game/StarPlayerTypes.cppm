@@ -27,7 +27,8 @@ struct PlayerWarpRequest {
 };
 
 struct PlayerModeConfig {
-  explicit PlayerModeConfig(Json config = {});
+  explicit PlayerModeConfig();
+  explicit PlayerModeConfig(Json config);
 
   bool hunger;
   bool allowBeamUpUnderground;
@@ -39,7 +40,8 @@ struct PlayerModeConfig {
 struct ShipUpgrades {
   friend DataStream& operator>>(DataStream& ds, ShipUpgrades& value);
   friend DataStream& operator<<(DataStream& ds, ShipUpgrades const& value);
-  explicit ShipUpgrades(Json config = {});
+  explicit ShipUpgrades();
+  explicit ShipUpgrades(Json config);
   Json toJson() const;
 
   ShipUpgrades& apply(Json const& upgrades);

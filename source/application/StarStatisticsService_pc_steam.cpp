@@ -7,7 +7,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -19,11 +19,12 @@ import star.statistics_service_pc_steam;
 
 namespace Star {
 
-SteamStatisticsService::SteamStatisticsService(PcPlatformServicesStatePtr)
-: m_callbackUserStatsReceived(this, &SteamStatisticsService::onUserStatsReceived),
-  m_callbackUserStatsStored(this, &SteamStatisticsService::onUserStatsStored),
-  m_callbackAchievementStored(this, &SteamStatisticsService::onAchievementStored) {
-  m_appId = SteamUtils()->GetAppID();
+SteamStatisticsService::SteamStatisticsService(PcPlatformServicesStatePtr state)
+: m_state(std::move(state)),
+  m_callbackUserStatsReceived(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsReceived),
+  m_callbackUserStatsStored(m_state->steamDispatch, this, &SteamStatisticsService::onUserStatsStored),
+  m_callbackAchievementStored(m_state->steamDispatch, this, &SteamStatisticsService::onAchievementStored) {
+  m_appId = SteamAPI_ISteamUtils_GetAppID(SteamAPI_SteamUtils());
   refresh();
 }
 
@@ -37,10 +38,10 @@ Maybe<String> SteamStatisticsService::error() const {
 
 bool SteamStatisticsService::setStat(String const& name, String const& type, Json const& value) {
   if (type == "int")
-    return SteamUserStats()->SetStat(name.utf8Ptr(), (int32_t)value.toInt());
+    return SteamAPI_ISteamUserStats_SetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), (int32_t)value.toInt());
 
   if (type == "float")
-    return SteamUserStats()->SetStat(name.utf8Ptr(), value.toFloat());
+    return SteamAPI_ISteamUserStats_SetStatFloat(SteamAPI_SteamUserStats(), name.utf8Ptr(), value.toFloat());
 
   return false;
 }
@@ -48,13 +49,13 @@ bool SteamStatisticsService::setStat(String const& name, String const& type, Jso
 Json SteamStatisticsService::getStat(String const& name, String const& type, Json def) const {
   if (type == "int") {
     int32_t intValue = 0;
-    if (SteamUserStats()->GetStat(name.utf8Ptr(), &intValue))
+    if (SteamAPI_ISteamUserStats_GetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), &intValue))
       return Json(intValue);
   }
 
   if (type == "float") {
     float floatValue = 0.0f;
-    if (SteamUserStats()->GetStat(name.utf8Ptr(), &floatValue))
+    if (SteamAPI_ISteamUserStats_GetStatFloat(SteamAPI_SteamUserStats(), name.utf8Ptr(), &floatValue))
       return Json(floatValue);
   }
 
@@ -67,7 +68,7 @@ bool SteamStatisticsService::reportEvent(String const&, Json const&) {
 }
 
 bool SteamStatisticsService::unlockAchievement(String const& name) {
-  if (!SteamUserStats()->SetAchievement(name.utf8Ptr())) {
+  if (!SteamAPI_ISteamUserStats_SetAchievement(SteamAPI_SteamUserStats(), name.utf8Ptr())) {
     Logger::error("Cannot set Steam achievement {}", name);
     return false;
   }
@@ -76,11 +77,11 @@ bool SteamStatisticsService::unlockAchievement(String const& name) {
 
 StringSet SteamStatisticsService::achievementsUnlocked() const {
   StringSet achievements;
-  for (uint32_t i = 0; i < SteamUserStats()->GetNumAchievements(); ++i) {
-    String achievement = SteamUserStats()->GetAchievementName(i);
+  for (uint32_t i = 0; i < SteamAPI_ISteamUserStats_GetNumAchievements(SteamAPI_SteamUserStats()); ++i) {
+    String achievement = SteamAPI_ISteamUserStats_GetAchievementName(SteamAPI_SteamUserStats(), i);
 
     bool unlocked = false;
-    if (SteamUserStats()->GetAchievement(achievement.utf8Ptr(), &unlocked) && unlocked) {
+    if (SteamAPI_ISteamUserStats_GetAchievement(SteamAPI_SteamUserStats(), achievement.utf8Ptr(), &unlocked) && unlocked) {
       achievements.add(achievement);
     }
   }
@@ -88,20 +89,20 @@ StringSet SteamStatisticsService::achievementsUnlocked() const {
 }
 
 void SteamStatisticsService::refresh() {
-  if (!SteamUser()->BLoggedOn()) {
+  if (!SteamAPI_ISteamUser_BLoggedOn(SteamAPI_SteamUser())) {
     m_error = {"Not logged in"};
     return;
   }
 
-  SteamUserStats()->RequestCurrentStats();
+  SteamAPI_ISteamUserStats_RequestCurrentStats(SteamAPI_SteamUserStats());
 }
 
 void SteamStatisticsService::flush() {
-  SteamUserStats()->StoreStats();
+  SteamAPI_ISteamUserStats_StoreStats(SteamAPI_SteamUserStats());
 }
 
 bool SteamStatisticsService::reset() {
-  SteamUserStats()->ResetAllStats(true);
+  SteamAPI_ISteamUserStats_ResetAllStats(SteamAPI_SteamUserStats(), true);
   return true;
 }
 

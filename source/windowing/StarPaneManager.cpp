@@ -69,7 +69,7 @@ import star.pane_manager;
 
 namespace Star {
 
-EnumMap<PaneLayer> const PaneLayerNames{
+extern EnumMap<PaneLayer> const PaneLayerNames{
   {PaneLayer::Tooltip, "Tooltip"},
   {PaneLayer::ModalWindow, "ModalWindow"},
   {PaneLayer::Window, "Window"},
@@ -375,7 +375,7 @@ void PaneManager::update(float dt) {
         m_activeTooltip = std::move(tooltip);
         m_tooltipParentPane = std::move(newTooltipParentPane);
         m_tooltipInitialPosition = m_tooltipLastMousePos;
-        displayPane(PaneLayer::Tooltip, m_activeTooltip);
+        displayPane(PaneLayer::Tooltip, m_activeTooltip, {});
       }
     }
   }

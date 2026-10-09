@@ -534,10 +534,3 @@ target_include_directories (star_game PRIVATE
 target_link_libraries (star_game PRIVATE star_base_modules star_game_modules star_build_config)
 set_target_properties (star_game PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers (star_game REUSE_FROM star_core)
-endif()
-
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_game_module_interfaces star_game_modules star_game PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

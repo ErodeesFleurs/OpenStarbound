@@ -48,6 +48,10 @@ set (star_core_tests_SOURCES
 add_executable (core_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   ${star_core_tests_SOURCES})
+if (STAR_ENABLE_STEAM_INTEGRATION)
+  target_sources (core_tests PRIVATE steam_dispatch_test.cpp)
+  target_include_directories (core_tests SYSTEM PRIVATE ${STEAM_API_INCLUDE_DIR})
+endif ()
 # gtest-all.cc includes its implementation files relative to the test directory.
 target_include_directories (core_tests PRIVATE
     ${STAR_EXTERN_INCLUDES}
@@ -105,6 +109,3 @@ add_test (NAME game_tests WORKING_DIRECTORY $<TARGET_FILE_DIR:game_tests> COMMAN
 set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets")
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (core_tests game_tests PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

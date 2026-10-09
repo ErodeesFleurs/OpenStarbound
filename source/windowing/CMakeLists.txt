@@ -89,6 +89,3 @@ target_include_directories (star_windowing_modules PRIVATE
 target_link_libraries (star_windowing_modules PUBLIC star_windowing_module_interfaces star_game_modules star_rendering_modules PRIVATE star_build_config)
 set_target_properties (star_windowing_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_windowing_module_interfaces star_windowing_modules PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

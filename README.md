@@ -121,7 +121,7 @@ Note: Mods that use StarExtensions features often work with OpenStarbound, StarE
 ## Building
 Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
 
-CI caches compiler outputs with sccache and vcpkg binary packages per platform using GitHub Actions cache; changes to the dependency manifests or overlay ports invalidate the vcpkg cache.
+CI caches vcpkg binary packages per platform; changes to dependency manifests, overlay ports, the pinned xclang release, or triplets invalidate those packages. Build entries no longer select GCC, MSVC, system LLVM, or sccache as alternative compiler paths.
 The Linux ARM64 Clang ALSA and jemalloc vcpkg overlay ports move files staged under `usr/` or `usr/local/` into the package root before vcpkg validates pkg-config files and imports libraries.
 The Linux ARM64 Clang CI also bundles jemalloc's `libjemalloc.so.2` and copyright notice in the raw `dist/` artifact and both client/server archives. Release utilities use `$ORIGIN` to load the library from their executable directory, including when `asset_packer` runs during assembly.
 GitHub Actions [limits warning annotations to 10 per step](https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md#limitations), so five platform builds can still show about 50 after fixes expose later diagnostics. Source warnings repeat across platforms; vcpkg/SDL dependency probes and `run-cmake` log-collection messages also contribute to the count. Check individual build logs instead of treating the visible total as the complete warning list.
@@ -130,10 +130,52 @@ CMake requires version 3.28 or newer. In-tree compiled targets link `star_build_
 
 SDL3, OpenGL, GLEW and Opus discovery is GUI-only. Headless builds retain ImGui and FreeType because the shared Lua implementation exposes ImGui bindings. The Nix ImGui package separates `imgui::imgui` from optional `imgui::imgui_backends`, so non-GUI executables also avoid SDL/OpenGL linkage in a GUI-enabled build; upstream monolithic ImGui packages may still propagate those dependencies. Wayland belongs to SDL's backend dependencies, not a separate OpenStarbound dependency. GLEW uses CMake's standard imported targets without a Nix source rewrite.
 
-The default configurations remain `Debug`, `RelWithAsserts`, `RelWithDebInfo`, and `Release`; `RelWithAsserts` keeps optimization without defining `NDEBUG`. Caller `CMAKE_C_FLAGS`, `CMAKE_CXX_FLAGS`, and configuration-specific flags are no longer overwritten. Explicit optimization, debug-symbol, and fast-math flags suppress conflicting project defaults. Set `STAR_DEBUG_SYMBOL_LEVEL` to `default`, `minimal`, or `full`; `minimal` uses GCC `-g1` or Clang `-gline-tables-only` for smaller sanitizer/assert builds. Nix uses this option instead of patching CMake flag strings. Compiler launchers supplied by callers are preserved, except GNU+sccache, whose cached object files omit module BMIs.
+The default configurations remain `Debug`, `RelWithAsserts`, `RelWithDebInfo`, and `Release`; `RelWithAsserts` keeps optimization without defining `NDEBUG`. Caller `CMAKE_C_FLAGS`, `CMAKE_CXX_FLAGS`, and configuration-specific flags are not overwritten. Explicit optimization, debug-symbol, and fast-math flags suppress conflicting project defaults. Set `STAR_DEBUG_SYMBOL_LEVEL` to `default`, `minimal`, or `full`; `minimal` uses Clang's `-gline-tables-only` for smaller sanitizer/assert builds. Nix uses this option instead of patching CMake flag strings.
+
+**Unified xclang and bundled libc++**
+
+All native presets, CI jobs, Nix packages and development shells use [xclang](https://github.com/clice-io/xclang) **23.1.2.9** (Clang 23.1.2) and its bundled **libc++/libc++abi/libunwind**. Archive SHA-256 pins cover Linux, Windows and macOS on x86_64/ARM64. Windows uses the **MinGW ABI**, not MSVC's STL. xclang's compiler/linker are built upstream with PGO and ThinLTO; this does **not** enable application LTO or establish a build-speed improvement.
+
+The bundled C++ runtimes are static and hidden inside each executable/shared object. Never pass C++ objects, exceptions or RTTI between independently linked shared objects. Dependencies exposing C++ APIs—including CPR, RE2, ICU, cpptrace, Qt and Qt plugins—are built with the same compiler/runtime and linked statically. Opaque C-ABI system libraries and vendor SDKs may retain private runtimes; that is not a GNU compiler fallback. Steam dispatch uses the SDK's C manual-dispatch API rather than C++ callback registration across its DLL boundary.
+
+Native Linux's shared jemalloc is C-ABI-only (`--disable-cxx`): malloc interposition remains enabled, but C++ allocation operators and their exceptions stay in the executable's libc++. Its configure step explicitly selects libc++; it must not probe or link GNU libstdc++.
+
+Nix disables upstream target configs with `--no-default-config`, combines the bundled C++ headers/archives with Nix glibc, and rebuilds the C++ dependency closure. It does not use the native Linux archive's glibc 2.17 sysroot. The matching `clang-scan-deps` wrapper loads compilation's include, target and hardening flags, including PIC/PIE policy. The compiler's bundled lld bypasses the ordinary Nix linker wrapper, so package/development-shell RPATHs explicitly include runtime outputs of propagated C-library dependencies and glibc. `OPENSTARBOUND_BUILD_RPATH` supplies hand-build RPATHs without requiring `LD_LIBRARY_PATH`.
+
+```sh
+nix develop
+cmake -S source -B build/xclang-libcxx -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+  -DSTAR_PRECOMPILED_HEADERS=ON -DBUILD_TESTING=ON \
+  -DSTAR_BUILD_GUI=ON -DSTAR_BUILD_DEV_TOOLS=ON \
+  -DSTAR_BUILD_QT_TOOLS=OFF \
+  -DSTAR_ENABLE_STEAM_INTEGRATION=OFF \
+  -DSTAR_ENABLE_DISCORD_INTEGRATION=OFF
+cmake --build build/xclang-libcxx --parallel 16
+ctest --test-dir build/xclang-libcxx --output-on-failure -L NoAssets
+
+# All optional Qt tools and x86_64 Linux vendor SDK integrations:
+nix build .#full --cores 16 --max-jobs 1 --print-build-logs -o result-full
+```
+
+`nix develop .#full` supplies the full package's compiler/dependency closure. `default`, `server`, `full`, `asserts` and `sanitized` packages all use xclang/libc++; sanitized builds select its instrumented libc++ and instrument executable-side C++ dependencies too. Linux ARM64 supports SDK-free variants; the vendored Linux Steam/Discord SDKs remain x86_64-only.
+
+The Linux x86_64 libc++ build has compiled and linked every enabled client, server, Qt/tool and test target on the VPS at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed, without changing WorldSnapshot goldens. Direct ELF dependencies contain no GNU C++ runtime or shared C++ API libraries. The server accepted an isolated loopback TCP connection and exited gracefully; the client rendered its title screen under Xvfb/software OpenGL and exited gracefully. Static Qt edited and saved a real JSON file and displayed the expected offline Steam error; authenticated Workshop upload was not exercised. Windows x64 has a real MinGW/libc++ cross-link proof for the Steam dispatch consumer; native Windows/macOS full builds have not been exercised here.
+
+The complete Linux Nix package, including checks, installation and fixup, finished in 459.8 seconds at 16 jobs with a 16.7 GiB build-service memory peak and no swap use. This is a single verification run, not a controlled speed comparison. Use disk-backed temporary build storage when `/tmp` is a small tmpfs; on the VPS the build used `--option build-dir /root/.cache/osb-nix-builds`, after retained diagnostic builds filled its 16 GiB `/tmp`.
+
+Use fresh build directories when switching from GNU libstdc++ or the earlier xclang/GNU-ABI build: their objects/PCHs/BMIs are incompatible with this libc++ closure. In-tree builds still share `dist/`, so the most recently linked build owns those executables. Match concurrency to memory. The VPS keeps 16 compiler jobs and persistent 96 GiB swap, with swap permitted by the build cgroup; paging is an OOM safety reserve, not a speed optimization.
+
+With PCH enabled, **all project module importers—interfaces, ordinary companions, object libraries and executables—reuse the same `StarPch.hpp` AST from `star_modules`**. Independent libc++ PCHs can cause ambiguous standard-library declarations when imports meet; a shared AST also avoids Clang's 31-bit source-location exhaustion. Full BMIs did not resolve the declaration conflict. Qt moc output is included in its owning scanned `.cpp` files, since CMake's generated aggregate TU does not receive the required module mapping. `scripts/ide/configure-clangd.sh` intentionally disables PCH and exports explicit bundled-libc++/Nix include flags for its separate compilation database.
+
+Global-fragment module classes with all-defaulted constructors use real zero-parameter delegating constructors, preserving their original default values and explicitness. Clang 23 otherwise rejects implicit member initialization after importing such a constructor, even with full BMIs; changing BMI reduction is not a fix.
+
+Ordinary module companions pass defaults explicitly when calling methods after their out-of-line definitions, because Clang 23 can lose the imported default arguments there. Definitions of module-exported `const` objects retain explicit external linkage; otherwise Clang treats a new internal-linkage definition and the imported exported alias as ambiguous. World implementation templates directly import `star.world` before accessing its members rather than depending on an incomplete forward declaration. The command dispatch map uses a private static factory, preserving its registrations and initialization timing while avoiding Clang 23's nested-lambda crash in an imported static-member initializer.
+
 
 C++20 modules use `.cppm` interface units; modules with implementation-heavy dependencies have companion `.cpp` files, while naturally self-contained modules remain in one file. Game Lua bindings live in `source/game/scripting/`. Import their factories and other exported APIs (for example, the HTTP trust callback functions in `star.lua_http_bindings`) instead of including the removed binding headers: after normal includes in `.cpp` files, or after `export module` in another module interface. Register game interfaces in the `star_game_module_interfaces` CMake file set and companion implementations in `star_game_modules` in `source/game/CMakeLists.txt`; consumers still link the complete static library `star_game_modules`.
-Keep interfaces lean when callers include heavy game headers. Eighteen game binding modules, four frontend modules, client rendering, converted game databases and services, EmoteProcessor, world generation, TMX dungeon parts, and the split object modules separate interfaces from implementations without conditional implementation macros. Named implementation units use `module star.*;` after their global module fragment. CMake compiles companion `.cpp` files directly into the game/frontend static module libraries; separate interface OBJECT providers expose BMIs without introducing implementation dependency cycles. Client rendering's companion `.cpp` is a normal `starbound` source that skips the PCH. Enable `CXX_SCAN_FOR_MODULES` on implementation targets. This preserves the thin BMI boundary: GCC 16 rejects private module fragments and has rejected imported `MVariant` declarations and duplicate constrained JSON-vector iterator manglings when implementation-only instantiations are serialized into heavy interfaces.
+Keep interfaces lean when callers include heavy game headers. Eighteen game binding modules, four frontend modules, client rendering, converted game databases and services, EmoteProcessor, world generation, TMX dungeon parts, and the split object modules separate interfaces from implementations without conditional implementation macros. Named implementation units use `module star.*;` after their global module fragment. CMake compiles companion `.cpp` files directly into the game/frontend static module libraries; separate interface OBJECT providers expose BMIs without introducing implementation dependency cycles. Client rendering's companion `.cpp` is a normal `starbound` source and reuses the shared standard-header PCH. Enable `CXX_SCAN_FOR_MODULES` on implementation targets. This preserves the thin BMI boundary; historically, GCC 16 rejected private module fragments and imported `MVariant` declarations/duplicate constrained JSON-vector iterator manglings when implementation-only instantiations were serialized into heavy interfaces.
 `star.movement_controller_lua_bindings` follows the same interface/implementation split. `StarLuaActorMovementComponent.hpp` imports its factory for the actor callback template; targets including this header transitively must link `star_game_modules` and enable `CXX_SCAN_FOR_MODULES`, including `star_windowing`.
 `star.world_lua_bindings` exports its two factories with using-declarations from the global module fragment. Its companion `.cpp` remains an ordinary translation unit: entity headers transitively import this interface through `StarLuaComponents.hpp`, so a named implementation unit would import itself before its module declaration. Keeping those dependencies out of the interface also avoids a cycle through imported object modules. Server module compilation links the game interface provider; server executables link the complete `star_game_modules` library. `update_tilesets` and `fix_embedded_tilesets` enable module scanning for their transitive game-header imports.
 `star.dance_database` exports `DanceStep`, `Dance`, `DanceDatabase` and their pointer aliases through using-declarations from the global module fragment, preserving Humanoid's and Root's global forward declarations. Its companion `.cpp` remains an ordinary translation unit importing the interface; consumers import the module instead of including the removed `StarDanceDatabase.hpp`.
@@ -251,32 +293,45 @@ Use persistent CMake/Ninja build directories under the matching Nix development 
 <details>
 <summary><b>Windows</b></summary>
  
-* Install [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) *globally*.
-  * vcpkg recommends a short directory, such as `C:\src\vcpkg` or `C:\dev\vcpkg`.
-  * If you're using Visual Studio, don't forget to run `vcpkg integrate install`!
-* Set the **`VCPKG_ROOT`** environment value to your vcpkg dir, so that CMake can find it.
-* Install [Ninja](https://ninja-build.org/ "Ninja Build System"). Either add it to your [**`PATH`**](## "Environment Value"), or just use [Scoop](https://scoop.sh/) (`scoop install ninja`)
-* Use CMake 3.28 or newer (C++20 module dependency scanning is required); check that your IDE supplies a supported compiler and CMake.
-* Open the repo directory in your IDE - it should detect the CMake project.
-* Build.
-  * If you're using an IDE, it should detect the correct preset and allow you to build from within.
-  * Otherwise, build manually by running CMake in the **source/** directory: `cmake --preset=windows-release` then `cmake --build --preset=windows-release`
-* The built binaries will be in **dist/**. Copy the DLLs from **lib/windows/** and the **sbinit.config** above into **dist/** so the game can run.
+* Install CMake 3.28+, Ninja and [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) outside the repository, preferably at a short path such as `C:\src\vcpkg`. Set **`VCPKG_ROOT`** to that path.
+* Install MSYS2's UCRT64 `mingw-w64-ucrt-x86_64-make` package for Qt5's make-based build. Set **`MSYS2_ROOT`** and add its `ucrt64\bin` directory to `PATH`. MSYS2 supplies make only; do not select its GCC or a Visual Studio compiler.
+* From the repository root in PowerShell:
+
+  ```powershell
+  cmake "-DXCLANG_INSTALL_DIR=$PWD\.cache\xclang" -P scripts/ci/install-xclang.cmake
+  $env:XCLANG_ROOT = "$PWD\.cache\xclang\xclang"
+  cd source
+  cmake --preset windows-release
+  cmake --build --preset windows-release --parallel 16
+  ctest --preset windows-release
+  ```
+
+* The preset chainloads xclang's official CMake toolchain and the `x64-windows` vcpkg triplet. C++ dependencies and Qt plugins use static MinGW/libc++; no MSVC STL objects may enter this build.
+* Binaries appear in **dist/**. CI runs `scripts/ci/windows/post_build.bat`, then `cmake -P scripts/ci/windows/audit-runtime.cmake`, then `scripts/ci/windows/assemble.bat`. The audit checks required executables, SDK DLL architecture, runtime imports and server version output. Native Windows build/runtime validation requires a Windows runner.
 
 </details>
 <details>
 <summary><b>Linux (Ubuntu)</b></summary>
  
-* Use CMake 3.28 or newer, Ninja 1.11 or newer, and a compiler with C++20 module scanning support. Although CMake supports GCC 14+, this project needs GCC 16: GCC 14.4 fails compiling `StarActiveItem.cppm`, and GCC 15.3 hits a module compiler bug. Ubuntu 22.04's default GCC 11 cannot scan modules. Linux GCC CI uses Ubuntu 24.04 with GCC 16 from the [Ubuntu Toolchain test PPA](https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test), setting `CC=/usr/bin/gcc-16` and `CXX=/usr/bin/g++-16` before vcpkg and CMake configuration. The CI Clang jobs install LLVM 22.
-* The pinned vcpkg registry still packages jemalloc 5.3.1, which calls a libstdc++ helper removed in GCC 16. The project's `ports/jemalloc` overlay builds upstream jemalloc 5.4.0 instead; keep the overlay when configuring through `source/vcpkg-configuration.json`.
-* Linux Clang CI uses LLVM 22 with libstdc++ 12. Keep `RadioMessage`'s explicit default constructor: without it, libstdc++ recursively checks the default constructibility of its `StringMap<RadioMessage>` members while compiling `StarPlayer.cpp`.
-* GCC C++20 module builds do not use a compiler cache: sccache 0.7.7 can restore an object file without its required `.gcm` module interface, causing later imports to fail.
+* Use CMake 3.28+, Ninja 1.11+ and the pinned xclang installer below. Neither GCC nor Ubuntu's system LLVM supplies this project's C++ runtime.
+* Keep the project's vcpkg overlays/triplets: C++ dependencies must rebuild with bundled libc++, and the jemalloc overlay selects upstream 5.4.0 rather than the registry's older release.
 * Install dependencies:
-  * `sudo apt-get install pkg-config libxmu-dev libxi-dev libgl-dev libglu1-mesa-dev libsdl2-dev python3-jinja2 ninja-build libltdl-dev`
+  * Install the X11/OpenGL/audio/Wayland development prerequisites used by the Linux job in `.github/workflows/build.yml`, plus `pkgconf`, `autoconf`, `automake`, `libtool`, `libltdl-dev`, `python3-jinja2`, CMake and Ninja. SDL3 and C++ dependencies come from vcpkg, not `libsdl2-dev`.
 * Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
 * Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
   *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
-* Change to the repo's **source/** directory, then run `cmake --preset=linux-release` and `cmake --build --preset=linux-release` to build.
+* From the repository root, install the pinned compiler and then configure **before** building:
+
+  ```sh
+  cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake
+  export XCLANG_ROOT="$PWD/.cache/xclang/xclang"
+  cd source
+  cmake --preset linux-release
+  cmake --build --preset linux-release --parallel 16
+  ctest --preset linux-release
+  ```
+
+  Use `linux-arm-release` on ARM64; that preset disables the unavailable Linux ARM vendor SDKs. Native Linux uses xclang's bundled sysroot/runtime, unlike the Nix recipe above.
 * The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
   * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
     * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
@@ -286,35 +341,20 @@ Use persistent CMake/Ninja build directories under the matching Nix development 
 <details>
 <summary><b>Linux (Fedora)</b></summary>
 
-Starbound in general is built from the ground up, with its own engine written in C++ on top of some basic libraries.
+* Install CMake 3.28+, Ninja 1.11+, pkg-config and the Fedora equivalents of the Ubuntu job's C-ABI/window-system prerequisites. Fedora packages use `-devel` rather than `-dev`; SDL3 and C++ libraries are built through vcpkg.
+* Bootstrap vcpkg outside the repository and export **`VCPKG_ROOT`**. Keep the project's overlay ports and xclang triplets rather than using Fedora's GCC/LLVM C++ packages.
+* From the repository root:
 
-* CMake 3.28+, Ninja 1.11+, and GCC 16 or a compatible LLVM Clang are required for the C++20 modules. Where Ubuntu uses APT, Fedora uses DNF as package manager.
+  ```sh
+  cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake
+  export XCLANG_ROOT="$PWD/.cache/xclang/xclang"
+  cd source
+  cmake --preset linux-release
+  cmake --build --preset linux-release --parallel 16
+  ctest --preset linux-release
+  ```
 
-  1. `sudo dnf upgrade --refresh` to ensure your OS is up-to-date
-  2. `sudo dnf install cmake`
-  3. `cmake --version` to verify
-
-* You will need at least the same dependencies ("basic libraries") as for Ubuntu. Some packages have different names or contents between Linux builds. Namely, Fedora uses "-devel" instead of "-dev" for development packages.
-
-  1. `sudo dnf install` [pkg-config](## "will install pkgconf-pkg-config") libXmu-devel libXi-devel [libGL-devel](## "will install mesa-libGL-devel") mesa-libGLU-devel SDL2-devel python3-jinja2 ninja-build
-  2. If you find out that you need any other dependencies not listed here, try finding them via [Fedora Packages](https://packages.fedoraproject.org/) first. And, preferably, improve this instruction.
-
-* Next you will need VCPKG.
-
-VCPKG is another package manager/dependency resolver for C++. CMake will need it to pull the rest of dependencies automatically early in the building process. If you've worked with language-specific package managers before (for example, NPM or YUM for JavaScript), VSPKG is similar. For reference, the list of dependencies VCPKG will try to install later can be found in `source/vcpkg.json`.
-
-  1. There are many ways to get VCPKG. Here's one: `. <(curl https://aka.ms/vcpkg-init.sh -L)`. This instruction should install VCPKG in your Linux home (user profile) directory in `.vcpkg`. Note that this dir is usually hidden by default.
-  2. Next you need to set your **`VCPKG_ROOT`** environment variable to the correct path. Run `. ~/.vcpkg/vcpkg-init` to bootstrap VCPKG. You may want to check if the path is now known to the system by running `printenv VCPKG_ROOT` afterwards.
-  3. Step 2 (init command) should be run in **every** new Terminal (Konsole) window **before** you begin building (environment variables set in this way do not persist between terminal sessions)
-
-* Change to the repo's **source/** directory
-* *Optional.* First step for CMake is now to run VCPKG and install the remaining dependencies as per `source/vcpkg.json`. You can run this step manually via `vcpkg install` on its own to check if it works, or *skip to the next step*.
-
-If this step throws errors, Fedora probably still lacks some packages not listed explicitly before. Read error messages to identify these packages, find them via [Fedora Packages](https://packages.fedoraproject.org/) and install with DNF. What you need most of the time is the package itself as well as its -devel and -static subpackages.
-* *Optional.* Next, we can ask CMake to assemble instructions for linux build without actually running them. The instructions generated will be stored under **build/linux-release**. To do that, run `cmake --preset=linux-release` or *skip to the next step*.
-* Run `cmake --build --preset=linux-release` to build. It includes previous two steps, so if any of them throw errors, you will have problems. If that's the case, run and debug them separately as described earlier, as CMake itself can just throw `Error: could not load cache` without specifying the exact problem. In case of major changes (example: you've reinstalled VCPKG to a different location and need to regenerate path to it for CMake) purge CMake cache by deleting **source/CMakeCache.txt**.
-
-Building will take some time, be patient ;)
+Configuration is a required separate step: `cmake --build --preset` does not run the initial configure. When migrating an existing GNU-ABI checkout, use a clean compiler-specific build directory rather than keeping its cache or BMIs.
 
 <details>
 <summary><b>Specific problem: If your VCPKG can't build meson for libsystemd</b></summary>
@@ -374,8 +414,8 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
 * Install cmake using `brew install cmake`
 * Install ninja using `brew install ninja`
 * Install pkg config using `brew install pkg-config`
-* Install an upstream LLVM Clang (16 or newer) and use its matching `clang-scan-deps`; Apple's bundled Clang is not supported by CMake's module scanner. For example, `brew install llvm@22`, then set `CC="$(brew --prefix llvm@22)/bin/clang"` and `CXX="$(brew --prefix llvm@22)/bin/clang++"` before configuring either macOS preset. Homebrew provides a prebuilt `llvm@22` bottle for macOS 15 ARM (used by CI, targeting macOS 14); on macOS 14 ARM and macOS Intel, installing this version may instead build LLVM from source for hours.
-* The Intel macOS CI job downloads the [official prebuilt LLVM 20.1.7 X64 release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-20.1.7) and verifies its SHA-256 instead of building `llvm@22` from source. Both CI jobs use the `clang-scan-deps` shipped with their selected Clang. When using upstream LLVM Clang on macOS, also set `export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"` before running vcpkg or CMake so Clang can find system headers in the macOS SDK.
+* Install Xcode Command Line Tools and a macOS SDK supporting the deployment target (macOS 14). Do not select Apple's Clang or a Homebrew LLVM compiler for this build.
+* From the repository root, run `cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake`, then `export XCLANG_ROOT="$PWD/.cache/xclang/xclang"` and `export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"`. The installer chooses the pinned Intel/ARM archive and the presets chainload its official toolchain.
 * Next, install vcpkg by following the commands below.
  * Run `cd ~`. This is just so that everything is local to here. 
  * Run ` git clone https://github.com/microsoft/vcpkg.git `
@@ -391,7 +431,6 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
     * After that command has finished, run ` cmake --build --preset macos-arm-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
     * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
     * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
-    * Navigate back to OpenStarbound-main/lib/osx, and open up the folder arm64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
     * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
     * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
     * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
@@ -403,7 +442,6 @@ LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
      * After that command has finished, run ` cmake --build --preset macos-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
      * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
      * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
-     * Navigate back to OpenStarbound-main/lib/osx, and open up the folder x64. Here, rename libdiscord_game_sdk.dylib to discord_game_sdk.dylib. The name must be that, or else the game won't be able to load. 
      * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
      * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
      * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 

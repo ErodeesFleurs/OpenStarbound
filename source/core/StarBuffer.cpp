@@ -281,7 +281,7 @@ void ExternalBuffer::reset(char const* externalData, size_t len) {
 IODevicePtr Buffer::clone() {
   auto cloned = make_shared<Buffer>(*this);
   // Reset position to 0 while preserving mode and data
-  cloned->seek(0);
+  cloned->seek(0, IOSeek::Absolute);
   return cloned;
 }
 

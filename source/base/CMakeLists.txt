@@ -37,7 +37,3 @@ target_include_directories (star_base_modules PRIVATE
   )
 target_link_libraries (star_base_modules PUBLIC star_modules PRIVATE star_build_config)
 
-
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (star_base_modules PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

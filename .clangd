@@ -4,8 +4,6 @@
 # for Nix system headers (with LC_ALL=C, LANGUAGE=C); see .zed/settings.json.
 CompileFlags:
   CompilationDatabase: build/clangd
-  # GCC's module mapper and BMI flags are not understood by Clang.
-  Remove: [-fmodules-ts, -fmodule-mapper=*, -fmodule-only, -fdeps-*]
 
 ---
 If:

@@ -50,7 +50,7 @@ size_t const DefinitionsCacheSize = 20;
 
 namespace Dungeon {
 
-  EnumMap<Dungeon::Direction> const DungeonDirectionNames{
+  extern EnumMap<Dungeon::Direction> const DungeonDirectionNames{
       {Dungeon::Direction::Left, "left"},
       {Dungeon::Direction::Right, "right"},
       {Dungeon::Direction::Up, "up"},
@@ -1521,7 +1521,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
       if (part->markDungeonId())
         writer->setMarkDungeonId(m_dungeonId);
       else
-        writer->setMarkDungeonId();
+        writer->setMarkDungeonId({});
 
       part->place(placePos, preserveTiles, writer);
       writer->finishPart();

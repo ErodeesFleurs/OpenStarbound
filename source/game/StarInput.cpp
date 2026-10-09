@@ -452,7 +452,7 @@ void Input::reset(bool clear) {
 }
 
 void Input::update() {
-  reset();
+  reset(false);
 }
 
 bool Input::handleInput(InputEvent const& input, bool gameProcessed) {

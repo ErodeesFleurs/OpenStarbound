@@ -3,13 +3,13 @@ import star.anchor_types;
 
 namespace Star {
 
-EnumMap<HorizontalAnchor> const HorizontalAnchorNames{
+extern EnumMap<HorizontalAnchor> const HorizontalAnchorNames{
     {HorizontalAnchor::LeftAnchor, "left"},
     {HorizontalAnchor::HMidAnchor, "mid"},
     {HorizontalAnchor::RightAnchor, "right"},
 };
 
-EnumMap<VerticalAnchor> const VerticalAnchorNames{
+extern EnumMap<VerticalAnchor> const VerticalAnchorNames{
     {VerticalAnchor::BottomAnchor, "bottom"}, {VerticalAnchor::VMidAnchor, "mid"}, {VerticalAnchor::TopAnchor, "top"},
 };
 }

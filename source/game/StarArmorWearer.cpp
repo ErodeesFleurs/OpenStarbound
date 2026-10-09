@@ -359,14 +359,14 @@ bool ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item, bool visible) {
     return false;
 }
 
-void ArmorWearer::setHeadItem(HeadArmorPtr headItem) { setItem(0, headItem); }
-void ArmorWearer::setChestItem(ChestArmorPtr chestItem) { setItem(1, chestItem); }
-void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) { setItem(2, legsItem); }
-void ArmorWearer::setBackItem(BackArmorPtr backItem) { setItem(3, backItem); }
-void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) { setItem(4, headCosmeticItem); }
-void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) { setItem(5, chestCosmeticItem); }
-void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) { setItem(6, legsCosmeticItem); }
-void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) { setItem(7, backCosmeticItem); }
+void ArmorWearer::setHeadItem(HeadArmorPtr headItem) { setItem(0, headItem, true); }
+void ArmorWearer::setChestItem(ChestArmorPtr chestItem) { setItem(1, chestItem, true); }
+void ArmorWearer::setLegsItem(LegsArmorPtr legsItem) { setItem(2, legsItem, true); }
+void ArmorWearer::setBackItem(BackArmorPtr backItem) { setItem(3, backItem, true); }
+void ArmorWearer::setHeadCosmeticItem(HeadArmorPtr headCosmeticItem) { setItem(4, headCosmeticItem, true); }
+void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) { setItem(5, chestCosmeticItem, true); }
+void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) { setItem(6, legsCosmeticItem, true); }
+void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) { setItem(7, backCosmeticItem, true); }
 
 ArmorItemPtr ArmorWearer::item(uint8_t slot) const {
   if (slot < m_armors.size())
@@ -438,7 +438,7 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
 }
 
 bool ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
-  return setItem(slot + 8, cosmeticItem);
+  return setItem(slot + 8, cosmeticItem, true);
 }
 
 ArmorItemPtr ArmorWearer::cosmeticItem(uint8_t slot) const {

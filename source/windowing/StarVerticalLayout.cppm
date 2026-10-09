@@ -62,7 +62,8 @@ STAR_CLASS(VerticalLayout);
 
 class VerticalLayout : public Layout {
 public:
-  VerticalLayout(VerticalAnchor verticalAnchor = VerticalAnchor::TopAnchor, int verticalSpacing = 0);
+  VerticalLayout();
+  VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacing = 0);
 
   void update(float dt) override;
   Vec2I size() const override;

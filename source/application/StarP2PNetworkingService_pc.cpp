@@ -7,7 +7,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -38,14 +38,13 @@ discord::NetworkChannelId const DiscordMainNetworkChannel = 0;
 #endif
 
 PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
+  : m_state(std::move(state))
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  : m_callbackConnectionFailure(this, &PcP2PNetworkingService::steamOnConnectionFailure),
-    m_callbackJoinRequested(this, &PcP2PNetworkingService::steamOnJoinRequested),
-    m_callbackSessionRequest(this, &PcP2PNetworkingService::steamOnSessionRequest),
-    m_state(std::move(state)) {
-#else
-  : m_state(std::move(state)) {
+  , m_callbackConnectionFailure(m_state->steamDispatch, this, &PcP2PNetworkingService::steamOnConnectionFailure),
+    m_callbackJoinRequested(m_state->steamDispatch, this, &PcP2PNetworkingService::steamOnJoinRequested),
+    m_callbackSessionRequest(m_state->steamDispatch, this, &PcP2PNetworkingService::steamOnSessionRequest)
 #endif
+{
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (m_state->discordAvailable) {
@@ -302,7 +301,8 @@ bool PcP2PNetworkingService::SteamP2PSocket::sendMessage(ByteArray const& messag
   if (!connected)
     return false;
 
-  if (!SteamNetworking()->SendP2PPacket(steamId, message.ptr(), message.size(), k_EP2PSendReliable))
+  if (!SteamAPI_ISteamNetworking_SendP2PPacket(SteamAPI_SteamNetworking(), steamId.ConvertToUint64(),
+      message.ptr(), message.size(), k_EP2PSendReliable, 0))
     throw ApplicationException("SteamNetworking::SendP2PPacket unexpectedly returned false");
   return true;
 }
@@ -361,8 +361,10 @@ void PcP2PNetworkingService::steamOnSessionRequest(P2PSessionRequest_t* callback
   MutexLocker serviceLocker(m_mutex);
   // Not sure whether this HasFriend call is actually necessary, or whether
   // non-friends can even initiate P2P sessions.
-  if (m_acceptingP2PConnections && SteamFriends()->HasFriend(callback->m_steamIDRemote, k_EFriendFlagImmediate)) {
-    if (SteamNetworking()->AcceptP2PSessionWithUser(callback->m_steamIDRemote)) {
+  if (m_acceptingP2PConnections && SteamAPI_ISteamFriends_HasFriend(SteamAPI_SteamFriends(),
+      callback->m_steamIDRemote.ConvertToUint64(), k_EFriendFlagImmediate)) {
+    if (SteamAPI_ISteamNetworking_AcceptP2PSessionWithUser(SteamAPI_SteamNetworking(),
+        callback->m_steamIDRemote.ConvertToUint64())) {
       Logger::info("Accepted Steam P2P connection with user {}", callback->m_steamIDRemote.ConvertToUint64());
       m_pendingIncomingConnections.append(createSteamP2PSocket(callback->m_steamIDRemote));
     } else {
@@ -379,15 +381,16 @@ void PcP2PNetworkingService::steamCloseSocket(SteamP2PSocket* socket) {
     m_steamOpenSockets.remove(socket->steamId.ConvertToUint64());
     socket->connected = false;
   }
-  SteamNetworking()->CloseP2PSessionWithUser(socket->steamId);
+  SteamAPI_ISteamNetworking_CloseP2PSessionWithUser(SteamAPI_SteamNetworking(), socket->steamId.ConvertToUint64());
 }
 
 void PcP2PNetworkingService::steamReceiveAll() {
   uint32_t messageSize;
   CSteamID messageRemoteUser;
-  while (SteamNetworking()->IsP2PPacketAvailable(&messageSize)) {
+  while (SteamAPI_ISteamNetworking_IsP2PPacketAvailable(SteamAPI_SteamNetworking(), &messageSize, 0)) {
     ByteArray data(messageSize, 0);
-    SteamNetworking()->ReadP2PPacket(data.ptr(), messageSize, &messageSize, &messageRemoteUser);
+    SteamAPI_ISteamNetworking_ReadP2PPacket(SteamAPI_SteamNetworking(), data.ptr(), messageSize,
+        &messageSize, &messageRemoteUser, 0);
     if (auto openSocket = m_steamOpenSockets.value(messageRemoteUser.ConvertToUint64())) {
       MutexLocker socketLocker(openSocket->mutex);
       openSocket->incoming.append(std::move(data));
@@ -577,17 +580,19 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
   if (m_state->steamAvailable) {
     if (m_joinLocation.is<JoinUnavailable>()) {
       Logger::info("Clearing Steam rich presence connection");
-      SteamFriends()->SetRichPresence("connect", "");
+      SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect", "");
 
     } else if (m_joinLocation.is<JoinLocal>()) {
-      auto steamId = SteamUser()->GetSteamID().ConvertToUint64();
+      auto steamId = SteamAPI_ISteamUser_GetSteamID(SteamAPI_SteamUser());
       Logger::info("Setting Steam rich presence connection as steamid_{}", steamId);
-      SteamFriends()->SetRichPresence("connect", strf("+platform:connect:steamid_{}", steamId).c_str());
+      SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect",
+          strf("+platform:connect:steamid_{}", steamId).c_str());
 
     } else if (m_joinLocation.is<JoinRemote>()) {
       auto address = (HostAddressWithPort)location.get<JoinRemote>();
       Logger::info("Setting Steam rich presence connection as address_{}", address);
-      SteamFriends()->SetRichPresence("connect", strf("+platform:connect:address_{}", address).c_str());
+      SteamAPI_ISteamFriends_SetRichPresence(SteamAPI_SteamFriends(), "connect",
+          strf("+platform:connect:address_{}", address).c_str());
     }
   }
 #endif

@@ -38,7 +38,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-EnumMap<MaterialJoinType> const MaterialJoinTypeNames = {
+extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames = {
     {MaterialJoinType::All, "All"}, {MaterialJoinType::Any, "Any"},
 };
 

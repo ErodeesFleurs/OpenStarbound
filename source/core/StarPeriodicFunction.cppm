@@ -13,8 +13,9 @@ namespace Star {
 template <typename Float>
 class PeriodicFunction {
 public:
+  PeriodicFunction();
   PeriodicFunction(
-      Float period = 1, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
+      Float period, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
 
   void update(Float delta);
 
@@ -34,6 +35,10 @@ private:
   Float m_target;
   bool m_targetMode;
 };
+
+template <typename Float>
+PeriodicFunction<Float>::PeriodicFunction()
+  : PeriodicFunction(1, 0, 1, 0, 0) {}
 
 template <typename Float>
 PeriodicFunction<Float>::PeriodicFunction(

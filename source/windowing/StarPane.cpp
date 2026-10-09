@@ -80,7 +80,7 @@ import star.item_database;
 
 namespace Star {
 
-EnumMap<PaneAnchor> const PaneAnchorNames{
+extern EnumMap<PaneAnchor> const PaneAnchorNames{
     {PaneAnchor::None, "none"},
     {PaneAnchor::BottomLeft, "bottomLeft"},
     {PaneAnchor::BottomRight, "bottomRight"},

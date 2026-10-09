@@ -465,7 +465,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     for (auto input : config.getArray("input")) {
       auto id = ItemDescriptor(input);
       if (itemType(id.name()) == ItemType::CurrencyItem) {
-        auto currencyItem = as<CurrencyItem>(itemShared(id));
+        auto currencyItem = as<CurrencyItem>(itemShared(id, {}, {}));
         res.currencyInputs[currencyItem->currencyType()] += currencyItem->totalValue();
       } else {
         res.inputs.push_back(id);
@@ -475,7 +475,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     res.output = ItemDescriptor(config.get("output"));
     res.duration = config.getFloat("duration", Root::singleton().assets()->json("/items/defaultParameters.config:defaultCraftDuration").toFloat());
     res.groups = StringSet::from(jsonToStringList(config.get("groups", JsonArray())));
-    if (auto item = ItemDatabase::itemShared(res.output)) {
+    if (auto item = ItemDatabase::itemShared(res.output, {}, {})) {
       res.outputRarity = item->rarity();
       res.guiFilterString = guiFilterString(item);
     }
@@ -518,7 +518,7 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
     if (luaResult) {
       if (!get<0>(*luaResult).isNull()) {
         augment->take(get<1>(*luaResult).value(1));
-        return ItemDatabase::item(ItemDescriptor(get<0>(*luaResult)));
+        return ItemDatabase::item(ItemDescriptor(get<0>(*luaResult)), {}, {}, false);
       }
     }
   }
@@ -546,7 +546,7 @@ bool ItemDatabase::ageItem(ItemPtr& item, double aging) const {
   locker.unlock();
 
   if (aged && *aged != original) {
-    item = ItemDatabase::item(*aged);
+    item = ItemDatabase::item(*aged, {}, {}, false);
     return true;
   }
 
@@ -669,7 +669,7 @@ ItemRecipe ItemDatabase::makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor 
   res.output = std::move(output);
   res.duration = duration;
   res.groups = std::move(groups);
-  if (auto item = ItemDatabase::itemShared(res.output)) {
+  if (auto item = ItemDatabase::itemShared(res.output, {}, {})) {
     res.outputRarity = item->rarity();
     res.guiFilterString = guiFilterString(item);
   }
@@ -806,7 +806,7 @@ void ItemDatabase::addBlueprints() {
 
   for (auto const& recipe : m_recipes) {
     auto baseDesc = recipe.output;
-    auto baseItem = itemShared(baseDesc);
+    auto baseItem = itemShared(baseDesc, {}, {});
 
     String blueprintName = strf("{}-recipe", baseItem->name());
     if (m_items.contains(blueprintName))

@@ -9,7 +9,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -30,7 +30,10 @@ public:
   UserGeneratedContentService::UGCState triggerContentDownload() override;
 
 private:
-  STEAM_CALLBACK(SteamUserGeneratedContentService, onDownloadResult, DownloadItemResult_t, m_callbackDownloadResult);
+  void onDownloadResult(DownloadItemResult_t* result);
+
+  PcPlatformServicesStatePtr m_state;
+  SteamCallback<SteamUserGeneratedContentService, DownloadItemResult_t> m_callbackDownloadResult;
 
   HashMap<PublishedFileId_t, bool> m_currentDownloadState;
 

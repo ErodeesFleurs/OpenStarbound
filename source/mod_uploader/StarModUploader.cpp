@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 #include <QProgressDialog>
 #include <QMessageBox>
+#include <QCloseEvent>
 
 #include "StarModUploader.hpp"
 #include "StarFile.hpp"
@@ -16,6 +17,10 @@ namespace Star {
 
 ModUploader::ModUploader()
   : QMainWindow() {
+  m_steamDispatch.initialize();
+  connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, [this] {
+    m_closing = true;
+  });
 
   auto selectDirectoryButton = new QPushButton("Select Mod Directory");
   m_directoryLabel = new QLabel();
@@ -255,8 +260,14 @@ void ModUploader::resetModId() {
   m_assetSource->setMetadata(metadata);
 }
 
+void ModUploader::closeEvent(QCloseEvent* event) {
+  QMainWindow::closeEvent(event);
+  if (event->isAccepted())
+    m_closing = true;
+}
+
 void ModUploader::uploadToSteam() {
-  if (!m_modDirectory)
+  if (!m_modDirectory || m_closing)
     return;
 
   QProgressDialog progress("Uploading to Steam...", "", 0, 0, this);
@@ -276,16 +287,20 @@ void ModUploader::uploadToSteam() {
   JsonObject metadata = m_assetSource->metadata();
   String modIdString = metadata.value("steamContentId", "").toString();
   if (modIdString.empty()) {
-    CCallResult<ModUploader, CreateItemResult_t> callResultCreate;
-    callResultCreate.Set(SteamUGC()->CreateItem(SteamUtils()->GetAppID(), k_EWorkshopFileTypeCommunity),
+    SteamCallResult<ModUploader, CreateItemResult_t> callResultCreate(m_steamDispatch,
+        SteamAPI_ISteamUGC_CreateItem(SteamAPI_SteamUGC(),
+            SteamAPI_ISteamUtils_GetAppID(SteamAPI_SteamUtils()), k_EWorkshopFileTypeCommunity),
         this, &ModUploader::onSteamCreateItem);
 
     progress.setLabelText("Creating new Steam UGC Item");
-    while (!m_steamItemCreateResult) {
+    while (!m_steamItemCreateResult && !m_closing) {
       QApplication::processEvents();
-      SteamAPI_RunCallbacks();
+      if (!m_closing)
+        m_steamDispatch.runCallbacks();
       Thread::sleep(20);
     }
+    if (m_closing)
+      return;
 
     if (m_steamItemCreateResult->second) {
       QMessageBox::critical(this, "Error", "There was an IO error creating a new Steam UGC item");
@@ -307,7 +322,7 @@ void ModUploader::uploadToSteam() {
       return;
     }
 
-    modIdString = toString(m_steamItemCreateResult->first.m_nPublishedFileId);
+    modIdString = toString(static_cast<PublishedFileId_t>(m_steamItemCreateResult->first.m_nPublishedFileId));
     String modUrl = strf("https://steamcommunity.com/sharedfiles/filedetails/?id={}", modIdString);
 
     metadata.set("steamContentId", modIdString);
@@ -327,15 +342,20 @@ void ModUploader::uploadToSteam() {
 
   String packedPath = File::relativeTo(steamUploadDir, "contents.pak");
   PackedAssetSource::build(*m_assetSource, packedPath, {}, progressCallback);
+  if (m_closing) {
+    File::removeDirectoryRecursive(steamUploadDir);
+    return;
+  }
 
   PublishedFileId_t modId = lexicalCast<PublishedFileId_t>(modIdString);
 
-  UGCUpdateHandle_t updateHandle = SteamUGC()->StartItemUpdate(SteamUtils()->GetAppID(), modId);
-  SteamUGC()->SetItemTitle(updateHandle, toSString(m_titleEditor->text()).utf8Ptr());
-  SteamUGC()->SetItemDescription(updateHandle, toSString(m_descriptionEditor->toPlainText()).utf8Ptr());
+  UGCUpdateHandle_t updateHandle = SteamAPI_ISteamUGC_StartItemUpdate(SteamAPI_SteamUGC(),
+      SteamAPI_ISteamUtils_GetAppID(SteamAPI_SteamUtils()), modId);
+  SteamAPI_ISteamUGC_SetItemTitle(SteamAPI_SteamUGC(), updateHandle, toSString(m_titleEditor->text()).utf8Ptr());
+  SteamAPI_ISteamUGC_SetItemDescription(SteamAPI_SteamUGC(), updateHandle, toSString(m_descriptionEditor->toPlainText()).utf8Ptr());
   if (!m_modPreview.isNull())
-    SteamUGC()->SetItemPreview(updateHandle, File::relativeTo(*m_modDirectory, "_previewimage").utf8Ptr());
-  SteamUGC()->SetItemContent(updateHandle, steamUploadDir.utf8Ptr());
+    SteamAPI_ISteamUGC_SetItemPreview(SteamAPI_SteamUGC(), updateHandle, File::relativeTo(*m_modDirectory, "_previewimage").utf8Ptr());
+  SteamAPI_ISteamUGC_SetItemContent(SteamAPI_SteamUGC(), updateHandle, steamUploadDir.utf8Ptr());
 
   // construct tags
   auto tagList = StringList();
@@ -343,31 +363,34 @@ void ModUploader::uploadToSteam() {
     if (entry.second->isChecked())
       tagList.append(entry.first);
   }
-  const char** tagStrings = new const char*[tagList.size()];
+  List<char const*> tagStrings(tagList.size(), nullptr);
   for (int i = 0; i < tagList.size(); ++i) {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
 
-  SteamParamStringArray_t itemTags = {tagStrings, (int32_t)tagList.size()};
-  SteamUGC()->SetItemTags(updateHandle, &itemTags);
+  SteamParamStringArray_t itemTags = {tagStrings.ptr(), (int32_t)tagList.size()};
+  SteamAPI_ISteamUGC_SetItemTags(SteamAPI_SteamUGC(), updateHandle, &itemTags, false);
 
-  CCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit;
-  callResultSubmit.Set(SteamUGC()->SubmitItemUpdate(updateHandle, nullptr),
+  SteamCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit(m_steamDispatch,
+      SteamAPI_ISteamUGC_SubmitItemUpdate(SteamAPI_SteamUGC(), updateHandle, nullptr),
       this, &ModUploader::onSteamSubmitItem);
 
   progress.setLabelText("Updating Steam UGC Item");
-  while (!m_steamItemSubmitResult) {
+  while (!m_steamItemSubmitResult && !m_closing) {
     uint64 bytesProcessed;
     uint64 bytesTotal;
-    SteamUGC()->GetItemUpdateProgress(updateHandle, &bytesProcessed, &bytesTotal);
+    SteamAPI_ISteamUGC_GetItemUpdateProgress(SteamAPI_SteamUGC(), updateHandle, &bytesProcessed, &bytesTotal);
     progress.setMaximum(bytesTotal);
     progress.setValue(bytesProcessed);
     QApplication::processEvents();
-    SteamAPI_RunCallbacks();
+    if (!m_closing)
+      m_steamDispatch.runCallbacks();
     Thread::sleep(20);
   }
 
   File::removeDirectoryRecursive(steamUploadDir);
+  if (m_closing)
+    return;
 
   if (m_steamItemSubmitResult->second) {
     QMessageBox::critical(this, "Error", "There was an IO error submitting changes to the Steam UGC item");
@@ -394,3 +417,6 @@ void ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFai
 }
 
 }
+
+// Keep generated project-header imports in this module-scanned translation unit.
+#include "moc_StarModUploader.cpp"

@@ -76,7 +76,7 @@ import star.image_metadata_database;
 
 namespace Star {
 
-EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
+extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames{
   {MainInterfacePanes::EscapeDialog, "EscapeDialog"},
   {MainInterfacePanes::Inventory, "Inventory"},
   {MainInterfacePanes::Codex, "Codex"},

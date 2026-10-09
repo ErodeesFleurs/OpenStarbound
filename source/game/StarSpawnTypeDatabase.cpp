@@ -30,6 +30,8 @@ namespace Star {
 
 SpawnParameters::SpawnParameters(Set<Area> areas, Region region, Time time) : areas(areas), region(region), time(time) {}
 
+SpawnParameters::SpawnParameters() : SpawnParameters(Json{}) {}
+
 SpawnParameters::SpawnParameters(Json const& config) {
   if (config.isNull()) {
     areas = {Area::Surface, Area::Ceiling, Area::Air, Area::Liquid, Area::Solid};

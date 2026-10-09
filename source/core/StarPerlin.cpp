@@ -6,7 +6,7 @@ import star.perlin;
 
 namespace Star {
 
-EnumMap<PerlinType> const PerlinTypeNames{
+extern EnumMap<PerlinType> const PerlinTypeNames{
   {PerlinType::Uninitialized, "uninitialized"},
   {PerlinType::Perlin, "perlin"},
   {PerlinType::Billow, "billow"},

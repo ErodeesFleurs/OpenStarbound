@@ -60,7 +60,8 @@ namespace Star {
 STAR_CLASS(LabelWidget);
 class LabelWidget : public Widget {
 public:
-  LabelWidget(String text = String(),
+  LabelWidget();
+  LabelWidget(String text,
       Color const& color = Color::White,
       HorizontalAnchor const& hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor const& vAnchor = VerticalAnchor::BottomAnchor,

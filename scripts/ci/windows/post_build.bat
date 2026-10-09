@@ -4,6 +4,6 @@ for %%f in (lib\windows\*.dll) do (
     xcopy "%%f" "dist\" /Y
 )
 
-for %%f in (dist\*.pdb) do (
-    echo %%f | find "starbound" > nul || del %%f
+for %%f in (build\windows-release\vcpkg_installed\x64-windows\bin\*.dll) do (
+    xcopy "%%f" "dist\" /Y
 )

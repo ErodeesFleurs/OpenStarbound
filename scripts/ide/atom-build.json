@@ -1,5 +1,5 @@
 {
-  "cmd": "make -Cbuild",
+  "cmd": "cmake --build build/clangd",
   "name": "starbound",
   "args": [],
   "sh": true,
@@ -7,10 +7,10 @@
   "errorMatch": "^(?<file>[^\\.]+.hs):(?<line>\\d+):(?<col>\\d+)",
   "targets": {
     "build": {
-      "cmd": "make -Cbuild build"
+      "cmd": "cmake --build build/clangd"
     },
     "clean": {
-      "cmd": "make -Cbuild clean"
+      "cmd": "cmake --build build/clangd --target clean"
     }
   }
 }

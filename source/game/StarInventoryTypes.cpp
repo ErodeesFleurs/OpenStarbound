@@ -12,7 +12,7 @@ auto fmt::formatter<Star::InventorySlot>::format(Star::InventorySlot const& valu
 
 namespace Star {
 
-EnumMap<EquipmentSlot> const EquipmentSlotNames{
+extern EnumMap<EquipmentSlot> const EquipmentSlotNames{
   {EquipmentSlot::Head, "head"},
   {EquipmentSlot::Chest, "chest"},
   {EquipmentSlot::Legs, "legs"},
@@ -83,7 +83,7 @@ std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot) {
   return ostream;
 }
 
-EnumMap<EssentialItem> const EssentialItemNames{
+extern EnumMap<EssentialItem> const EssentialItemNames{
   {EssentialItem::BeamAxe, "beamaxe"},
   {EssentialItem::WireTool, "wiretool"},
   {EssentialItem::PaintTool, "painttool"},

@@ -26,6 +26,9 @@ public:
   SteamDesktopService(PcPlatformServicesStatePtr state);
 
   void openUrl(String const& url) override;
+
+private:
+  PcPlatformServicesStatePtr m_state;
 };
 
 }

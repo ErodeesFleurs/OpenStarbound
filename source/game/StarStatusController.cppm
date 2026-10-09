@@ -173,7 +173,8 @@ private:
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
 
   struct EffectAnimator : public NetElement {
-    EffectAnimator(Maybe<String> animationConfig = {});
+    EffectAnimator();
+    EffectAnimator(Maybe<String> animationConfig);
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 

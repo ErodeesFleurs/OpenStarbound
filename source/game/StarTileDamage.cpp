@@ -56,7 +56,7 @@ List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool squareMod
   return result;
 }
 
-EnumMap<TileDamageType> const TileDamageTypeNames{
+extern EnumMap<TileDamageType> const TileDamageTypeNames{
   {TileDamageType::Protected, "protected"},
   {TileDamageType::Plantish, "plantish"},
   {TileDamageType::Blockish, "blockish"},

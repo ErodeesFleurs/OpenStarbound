@@ -22,7 +22,7 @@ GuiDirection otherDirection(GuiDirection direction) {
   }
 }
 
-EnumMap<GuiDirection> const GuiDirectionNames{
+extern EnumMap<GuiDirection> const GuiDirectionNames{
     {GuiDirection::Horizontal, "horizontal"}, {GuiDirection::Vertical, "vertical"},
 };
 

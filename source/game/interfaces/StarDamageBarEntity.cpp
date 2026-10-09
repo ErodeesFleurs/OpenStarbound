@@ -29,7 +29,7 @@ import star.damage_bar_entity;
 
 namespace Star {
 
-EnumMap<DamageBarType> const DamageBarTypeNames{
+extern EnumMap<DamageBarType> const DamageBarTypeNames{
   {DamageBarType::Default, "Default"},
   {DamageBarType::None, "None"},
   {DamageBarType::Special, "Special"}

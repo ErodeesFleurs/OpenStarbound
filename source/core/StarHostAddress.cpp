@@ -28,6 +28,8 @@ Either<String, HostAddress> HostAddress::lookup(String const& address) {
   }
 }
 
+HostAddress::HostAddress() : HostAddress(NetworkMode::IPv4, nullptr) {}
+
 HostAddress::HostAddress(NetworkMode mode, uint8_t* address) {
   set(mode, address);
 }

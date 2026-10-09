@@ -116,6 +116,8 @@ import star.compression;
 
 namespace Star {
 
+PacketStatCollector::PacketStatCollector() : PacketStatCollector(1.0f) {}
+
 PacketStatCollector::PacketStatCollector(float calculationWindow)
   : m_calculationWindow(calculationWindow), m_stats(), m_totalBytes(0), m_lastMixTime(0) {}
 
@@ -317,11 +319,11 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       if (!compressedPackets.empty() && (mustCompress || compressedPackets.size() < packetBuffer.size())) {
         outBuffer.writeVlqI(-(int)(compressedPackets.size()));
         outBuffer.writeData(compressedPackets.ptr(), compressedPackets.size());
-        m_outgoingStats.mix(currentType, compressedPackets.size());
+        m_outgoingStats.mix(currentType, compressedPackets.size(), true);
       } else {
         outBuffer.writeVlqI((int)(packetBuffer.size()));
         outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
-        m_outgoingStats.mix(currentType, packetBuffer.size());
+        m_outgoingStats.mix(currentType, packetBuffer.size(), true);
       }
       m_outputBuffer.append(outBuffer.takeData());
     }
@@ -530,11 +532,11 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
       if (!compressedPackets.empty() && (mustCompress || compressedPackets.size() < packetBuffer.size())) {
         outBuffer.write<bool>(true);
         outBuffer.writeData(compressedPackets.ptr(), compressedPackets.size());
-        m_outgoingStats.mix(currentType, compressedPackets.size());
+        m_outgoingStats.mix(currentType, compressedPackets.size(), true);
       } else {
         outBuffer.write<bool>(false);
         outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
-        m_outgoingStats.mix(currentType, packetBuffer.size());
+        m_outgoingStats.mix(currentType, packetBuffer.size(), true);
       }
       m_outputMessages.append(outBuffer.takeData());
     }

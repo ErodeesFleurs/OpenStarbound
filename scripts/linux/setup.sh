@@ -1,27 +1,22 @@
 #!/bin/sh
+set -eu
+cd "$(dirname "$0")/../.."
 
-cd "`dirname \"$0\"`/../.."
-
+if [ -z "${XCLANG_ROOT:-}" ]; then
+  cmake "-DXCLANG_INSTALL_DIR=$PWD/build/xclang-sdk" -P scripts/ci/install-xclang.cmake
+  XCLANG_ROOT="$PWD/build/xclang-sdk/xclang"
+fi
+export XCLANG_ROOT
+export PATH="$XCLANG_ROOT/bin:$PATH"
+case "$(uname -m)" in
+  aarch64|arm64) preset=linux-arm-release; triplet=arm64-linux ;;
+  x86_64) preset=linux-release; triplet=x64-linux ;;
+  *) echo "Unsupported Linux architecture" >&2; exit 1 ;;
+esac
 mkdir -p dist
 cp scripts/linux/sbinit.config dist/
-
-mkdir -p build
-cd build
-
-if [ -d /usr/lib/ccache ]; then
-  export PATH=/usr/lib/ccache/:$PATH
-fi
-
-LINUX_LIB_DIR=../lib/linux
-
-cmake \
-  -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DSTAR_USE_JEMALLOC=ON \
-  -DCMAKE_INCLUDE_PATH=$LINUX_LIB_DIR/include \
-  -DCMAKE_LIBRARY_PATH=$LINUX_LIB_DIR/ \
-  ../source
-
-if [ $# -ne 0 ]; then 
-  make -j$*
+cmake -S source --preset "$preset"
+if [ "$#" -ne 0 ]; then
+  cmake --build "build/$preset" --parallel "$1"
+  scripts/ci/linux/prepare-jemalloc-runtime.sh "build/$preset/vcpkg_installed/$triplet"
 fi

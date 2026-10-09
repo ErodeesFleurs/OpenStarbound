@@ -158,7 +158,7 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec
     return {};
 
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = createRandomizedDrop(itemDatabase->item(descriptor), position);
+  auto itemDrop = createRandomizedDrop(itemDatabase->item(descriptor), position, false);
   itemDrop->setEternal(eternal);
 
   return itemDrop;
@@ -186,7 +186,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
     return {};
 
   auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction);
+  auto itemDrop = throwDrop(itemDatabase->item(itemDescriptor), position, velocity, direction, false);
   itemDrop->setEternal(eternal);
 
   return itemDrop;

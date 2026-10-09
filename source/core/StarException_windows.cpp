@@ -60,15 +60,6 @@ inline StackCapture captureStack() {
 
 #ifdef STAR_ARCHITECTURE_I386
 
-#ifdef STAR_COMPILER_MSVC
-  __asm {
-    mov [context.Ebp], ebp;
-    mov [context.Esp], esp;
-    call next;
-  next:
-    pop [context.Eip];
-  }
-#else
   DWORD eip_val = 0;
   DWORD esp_val = 0;
   DWORD ebp_val = 0;
@@ -80,7 +71,6 @@ inline StackCapture captureStack() {
   context.Eip = eip_val;
   context.Esp = esp_val;
   context.Ebp = ebp_val;
-#endif
 
   image = IMAGE_FILE_MACHINE_I386;
 

@@ -55,7 +55,7 @@ import star.team_manager;
 namespace Star {
   
 // update this in the rare case that backwards compat code has to be set up in TeamClient
-VersionNumber const TeamManagerVersion = 0;
+extern VersionNumber const TeamManagerVersion = 0;
 
 TeamManager::TeamManager() {
   m_pvpTeamCounter = 1;

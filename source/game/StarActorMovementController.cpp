@@ -180,6 +180,8 @@ ActorMovementParameters ActorMovementParameters::sensibleDefaults() {
   return ActorMovementParameters(Root::singleton().assets()->json("/default_actor_movement.config").toObject());
 }
 
+ActorMovementParameters::ActorMovementParameters() : ActorMovementParameters(Json()) {}
+
 ActorMovementParameters::ActorMovementParameters(Json const& config) {
   if (config.isNull())
     return;
@@ -434,6 +436,8 @@ DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementPa
   return ds;
 }
 
+ActorMovementModifiers::ActorMovementModifiers() : ActorMovementModifiers(Json()) {}
+
 ActorMovementModifiers::ActorMovementModifiers(Json const& config) {
   groundMovementModifier = 1.0f;
   liquidMovementModifier = 1.0f;
@@ -515,6 +519,8 @@ DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementMod
 
   return ds;
 }
+
+ActorMovementController::ActorMovementController() : ActorMovementController(ActorMovementParameters()) {}
 
 ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters) {
   m_controlRotationRate = 0.0f;
@@ -694,11 +700,11 @@ void ActorMovementController::controlApproachVelocityAlongAngle(
 }
 
 void ActorMovementController::controlApproachXVelocity(float targetXVelocity, float maxControlForce) {
-  controlApproachVelocityAlongAngle(0, targetXVelocity, maxControlForce);
+  controlApproachVelocityAlongAngle(0, targetXVelocity, maxControlForce, false);
 }
 
 void ActorMovementController::controlApproachYVelocity(float targetYVelocity, float maxControlForce) {
-  controlApproachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce);
+  controlApproachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce, false);
 }
 
 void ActorMovementController::controlParameters(ActorMovementParameters const& parameters) {

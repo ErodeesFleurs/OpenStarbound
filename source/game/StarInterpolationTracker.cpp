@@ -29,6 +29,8 @@ namespace Star {
 
 constexpr double VanillaStepsPerSecond = 60.0;
 
+InterpolationTracker::InterpolationTracker() : InterpolationTracker(Json()) {}
+
 InterpolationTracker::InterpolationTracker(Json config) {
   if (config.isNull()) {
     config = JsonObject();

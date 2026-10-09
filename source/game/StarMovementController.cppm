@@ -45,7 +45,8 @@ struct MovementParameters {
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
-  MovementParameters(Json const& config = Json());
+  MovementParameters();
+  MovementParameters(Json const& config);
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
@@ -100,7 +101,8 @@ class MovementController : public NetElementGroup {
 public:
   // Constructs a MovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit MovementController(MovementParameters const& parameters = MovementParameters());
+  explicit MovementController();
+  explicit MovementController(MovementParameters const& parameters);
 
   MovementParameters const& parameters() const;
 

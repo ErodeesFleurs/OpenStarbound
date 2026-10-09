@@ -129,14 +129,14 @@ Json CelestialParameters::getParameter(String const& name, Json def) const {
 }
 
 Json CelestialParameters::randomizeParameterList(String const& name, int32_t mix) const {
-  auto parameter = getParameter(name);
+  auto parameter = getParameter(name, Json());
   if (parameter.isNull())
     return Json();
   return staticRandomFrom(parameter.toArray(), mix, m_seed, name);
 }
 
 Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mix) const {
-  auto parameter = getParameter(name);
+  auto parameter = getParameter(name, Json());
   if (parameter.isNull()) {
     return Json();
   } else {

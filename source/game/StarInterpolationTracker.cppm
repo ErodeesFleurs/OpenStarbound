@@ -6,7 +6,8 @@ namespace Star {
 
 class InterpolationTracker {
 public:
-  InterpolationTracker(Json config = Json());
+  InterpolationTracker();
+  InterpolationTracker(Json config);
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.

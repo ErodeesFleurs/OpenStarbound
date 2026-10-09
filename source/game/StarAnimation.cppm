@@ -20,7 +20,8 @@ STAR_CLASS(Animation);
 class Animation {
 public:
   // config can be either a path to a config or a literal config.
-  Animation(Json config = {}, String const& directory = {});
+  Animation();
+  Animation(Json config, String const& directory = {});
 
   void setAngle(float angle);
 

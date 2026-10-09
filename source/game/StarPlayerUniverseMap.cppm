@@ -84,7 +84,8 @@ public:
     JsonObject parameters;
   };
 
-  PlayerUniverseMap(Json const& json = {});
+  PlayerUniverseMap();
+  PlayerUniverseMap(Json const& json);
 
   Json toJson() const;
 

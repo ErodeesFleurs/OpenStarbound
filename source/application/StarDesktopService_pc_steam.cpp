@@ -8,6 +8,7 @@ import star.application;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 #include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -18,10 +19,12 @@ import star.desktop_service_pc_steam;
 
 namespace Star {
 
-SteamDesktopService::SteamDesktopService(PcPlatformServicesStatePtr) {}
+SteamDesktopService::SteamDesktopService(PcPlatformServicesStatePtr state)
+  : m_state(std::move(state)) {}
 
 void SteamDesktopService::openUrl(String const& url) {
-  SteamFriends()->ActivateGameOverlayToWebPage(url.utf8Ptr());
+  SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage(SteamAPI_SteamFriends(), url.utf8Ptr(),
+      k_EActivateGameOverlayToWebPageMode_Default);
 }
 
 }

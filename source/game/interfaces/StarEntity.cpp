@@ -18,13 +18,13 @@ import star.entity;
 
 namespace Star {
 
-EnumMap<ClientEntityMode> const ClientEntityModeNames{
+extern EnumMap<ClientEntityMode> const ClientEntityModeNames{
   {ClientEntityMode::ClientSlaveOnly, "ClientSlaveOnly"},
   {ClientEntityMode::ClientMasterAllowed, "ClientMasterAllowed"},
   {ClientEntityMode::ClientPresenceMaster, "ClientPresenceMaster"}
 };
 
-EnumMap<EntityType> const EntityTypeNames{
+extern EnumMap<EntityType> const EntityTypeNames{
   {EntityType::Plant, "plant"},
   {EntityType::Object, "object"},
   {EntityType::Vehicle, "vehicle"},

@@ -7,6 +7,8 @@ import star.host_address;
 using namespace Star;
 
 TEST(HostAddress, All) {
+  EXPECT_EQ(HostAddress(), HostAddress("*"));
+  EXPECT_EQ(HostAddress(NetworkMode::IPv6), HostAddress("::"));
   EXPECT_TRUE(HostAddress::localhost(NetworkMode::IPv4).isLocalHost());
   EXPECT_TRUE(HostAddress::localhost(NetworkMode::IPv6).isLocalHost());
   EXPECT_TRUE(HostAddress("*").isZero());
@@ -18,6 +20,8 @@ TEST(HostAddress, All) {
 }
 
 TEST(HostAddressWithPort, All) {
+  EXPECT_EQ(HostAddressWithPort().address(), HostAddress("*"));
+  EXPECT_EQ(HostAddressWithPort().port(), 0);
   EXPECT_EQ(HostAddressWithPort("*:80").port(), 80);
   EXPECT_EQ(HostAddressWithPort(":::80").port(), 80);
   EXPECT_EQ(HostAddressWithPort("[::]:80").port(), 80);

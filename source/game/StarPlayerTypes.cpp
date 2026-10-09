@@ -6,17 +6,19 @@ import star.player_types;
 
 namespace Star {
 
-EnumMap<PlayerMode> const PlayerModeNames{
+extern EnumMap<PlayerMode> const PlayerModeNames{
   {PlayerMode::Casual, "casual"},
   {PlayerMode::Survival, "survival"},
   {PlayerMode::Hardcore, "hardcore"}
 };
 
-EnumMap<PlayerBusyState> const PlayerBusyStateNames{
+extern EnumMap<PlayerBusyState> const PlayerBusyStateNames{
   {PlayerBusyState::None, "none"},
   {PlayerBusyState::Chatting, "chatting"},
   {PlayerBusyState::Menu, "menu"}
 };
+
+PlayerModeConfig::PlayerModeConfig() : PlayerModeConfig(Json{}) {}
 
 PlayerModeConfig::PlayerModeConfig(Json config) {
   if (config.isNull())
@@ -32,6 +34,8 @@ PlayerModeConfig::PlayerModeConfig(Json config) {
     deathDropItemTypes.setLeft(deathDropItemTypesConfig.toString());
   permadeath = config.getBool("permadeath", false);
 }
+
+ShipUpgrades::ShipUpgrades() : ShipUpgrades(Json{}) {}
 
 ShipUpgrades::ShipUpgrades(Json config) {
   if (config.isNull())

@@ -1207,7 +1207,7 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   return universe->findNick(player);
 }
 
-const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = []() {
+CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::makeCommandMap() {
   CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> map;
 	
   auto add = [&map](const char* cmd, String (CommandProcessor::*func)(ConnectionId, const String&)) {
@@ -1260,7 +1260,9 @@ const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, Connectio
   add("setenvironmentbiome", &CommandProcessor::setEnvironmentBiome);
 
   return map;
-}();
+}
+
+const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = makeCommandMap();
 
 ServerCommandResult CommandProcessor::handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
   auto it = s_commandMap.find(command);

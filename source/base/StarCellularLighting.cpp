@@ -51,6 +51,9 @@ Lightmap::operator ImageView() {
   return view;
 }
 
+CellularLightingCalculator::CellularLightingCalculator()
+    : CellularLightingCalculator(false) {}
+
 CellularLightingCalculator::CellularLightingCalculator(bool monochrome)
     : m_monochrome(monochrome)
 {

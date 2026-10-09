@@ -46,12 +46,12 @@ import star.world;
 
 namespace Star {
 
-EnumMap<LoungeOrientation> const LoungeOrientationNames{{LoungeOrientation::None, "none"},
+extern EnumMap<LoungeOrientation> const LoungeOrientationNames{{LoungeOrientation::None, "none"},
     {LoungeOrientation::Sit, "sit"},
     {LoungeOrientation::Lay, "lay"},
     {LoungeOrientation::Stand, "stand"}};
 
-EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Left"},
+extern EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Left"},
     {LoungeControl::Right, "Right"},
     {LoungeControl::Down, "Down"},
     {LoungeControl::Up, "Up"},

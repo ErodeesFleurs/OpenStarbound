@@ -58,12 +58,12 @@ constexpr uint16_t VOICE_VERSION = 1;
 
 namespace Star {
 
-EnumMap<VoiceInputMode> const VoiceInputModeNames{
+extern EnumMap<VoiceInputMode> const VoiceInputModeNames{
   {VoiceInputMode::VoiceActivity, "VoiceActivity"},
   {VoiceInputMode::PushToTalk, "PushToTalk"}
 };
 
-EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
+extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
   {VoiceChannelMode::Mono, "Mono"},
   {VoiceChannelMode::Stereo, "Stereo"}
 };

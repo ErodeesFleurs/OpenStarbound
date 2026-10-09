@@ -553,7 +553,7 @@ ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibil
 }
 
 bool ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const {
-  return getConfig(objectName)->findValidOrientation(world, position) != NPos;
+  return getConfig(objectName)->findValidOrientation(world, position, Maybe<Direction>()) != NPos;
 }
 
 ObjectPtr ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,

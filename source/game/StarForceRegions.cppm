@@ -14,7 +14,8 @@ struct PhysicsCategoryFilter {
   static PhysicsCategoryFilter whitelist(StringSet categories);
   static PhysicsCategoryFilter blacklist(StringSet categories);
 
-  PhysicsCategoryFilter(Type type = Blacklist, StringSet categories = {});
+  PhysicsCategoryFilter();
+  PhysicsCategoryFilter(Type type, StringSet categories = {});
 
   bool check(StringSet const& categories) const;
 

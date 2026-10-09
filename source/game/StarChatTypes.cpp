@@ -5,7 +5,7 @@ import star.chat_types;
 
 namespace Star {
 
-EnumMap<ChatSendMode> const ChatSendModeNames{
+extern EnumMap<ChatSendMode> const ChatSendModeNames{
     {ChatSendMode::Broadcast, "Broadcast"},
     {ChatSendMode::Local, "Local"},
     {ChatSendMode::Party, "Party"}
@@ -17,7 +17,7 @@ MessageContext::MessageContext(Mode mode) : mode(mode) {}
 
 MessageContext::MessageContext(Mode mode, String const& channelName) : mode(mode), channelName(channelName) {}
 
-EnumMap<MessageContext::Mode> const MessageContextModeNames{
+extern EnumMap<MessageContext::Mode> const MessageContextModeNames{
     {MessageContext::Mode::Local, "Local"},
     {MessageContext::Mode::Party, "Party"},
     {MessageContext::Mode::Broadcast, "Broadcast"},

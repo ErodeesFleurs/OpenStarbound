@@ -1332,7 +1332,7 @@ InteractAction Object::interact(InteractRequest const& request) {
     else
       return InteractAction(result->getString(0), entityId(), result->get(1));
   } else if (!configValue("interactAction", Json()).isNull()) {
-    return InteractAction(configValue("interactAction").toString(), entityId(), configValue("interactData", Json()));
+    return InteractAction(configValue("interactAction", Json()).toString(), entityId(), configValue("interactData", Json()));
   }
 
   return {};

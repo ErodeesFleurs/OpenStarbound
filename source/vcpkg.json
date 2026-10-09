@@ -16,5 +16,11 @@
     "re2",
     { "name": "imgui", "features": ["sdl3-binding", "opengl3-binding", "freetype"] },
     { "name": "cpr", "version>=": "1.10.5", "features": ["ssl"] }
-  ]
+  ],
+  "features": {
+    "qt-tools": {
+      "description": "Static Qt5 widgets for json_tool and mod_uploader",
+      "dependencies": ["qt5-base"]
+    }
+  }
 }

@@ -12,7 +12,8 @@ namespace Star {
 template <typename T>
 class ObserverStream {
 public:
-  ObserverStream(uint64_t historyLimit = 0);
+  ObserverStream();
+  ObserverStream(uint64_t historyLimit);
 
   // If a history limit is set, then any entries with step values older than
   // the given limit will be discarded automatically.  A historyLimit of 0
@@ -42,6 +43,10 @@ private:
   uint64_t m_nextStep;
   Deque<pair<uint64_t, T>> m_values;
 };
+
+template <typename T>
+ObserverStream<T>::ObserverStream()
+  : ObserverStream(0) {}
 
 template <typename T>
 ObserverStream<T>::ObserverStream(uint64_t historyLimit)

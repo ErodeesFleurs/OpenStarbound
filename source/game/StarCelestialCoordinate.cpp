@@ -103,14 +103,14 @@ Vec3I CelestialCoordinate::location() const {
 CelestialCoordinate CelestialCoordinate::system() const {
   if (isNull())
     throw CelestialException("CelestialCoordinate::system() called on null coordinate");
-  return CelestialCoordinate(m_location);
+  return CelestialCoordinate(m_location, 0, 0);
 }
 
 CelestialCoordinate CelestialCoordinate::planet() const {
   if (isPlanetaryBody())
     return *this;
   if (isSatelliteBody())
-    return CelestialCoordinate(m_location, m_planetaryOrbitNumber);
+    return CelestialCoordinate(m_location, m_planetaryOrbitNumber, 0);
   throw CelestialException("CelestialCoordinate::planet() called on null or system coordinate type");
 }
 
@@ -126,15 +126,15 @@ int CelestialCoordinate::orbitNumber() const {
 
 CelestialCoordinate CelestialCoordinate::parent() const {
   if (isSatelliteBody())
-    return CelestialCoordinate(m_location, m_planetaryOrbitNumber);
+    return CelestialCoordinate(m_location, m_planetaryOrbitNumber, 0);
   if (isPlanetaryBody())
-    return CelestialCoordinate(m_location);
+    return CelestialCoordinate(m_location, 0, 0);
   throw CelestialException("CelestialCoordinate::parent() called on null or system coordinate");
 }
 
 CelestialCoordinate CelestialCoordinate::child(int orbitNumber) const {
   if (isSystem())
-    return CelestialCoordinate(m_location, orbitNumber);
+    return CelestialCoordinate(m_location, orbitNumber, 0);
   if (isPlanetaryBody())
     return CelestialCoordinate(m_location, m_planetaryOrbitNumber, orbitNumber);
   throw CelestialException("CelestialCoordinate::child called on null or satellite coordinate");

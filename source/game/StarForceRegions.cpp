@@ -16,6 +16,8 @@ PhysicsCategoryFilter PhysicsCategoryFilter::blacklist(StringSet categories) {
   return PhysicsCategoryFilter(Blacklist, std::move(categories));
 }
 
+PhysicsCategoryFilter::PhysicsCategoryFilter() : PhysicsCategoryFilter(Blacklist, {}) {}
+
 PhysicsCategoryFilter::PhysicsCategoryFilter(Type type, StringSet categories)
   : type(type), categories(std::move(categories)) {}
 

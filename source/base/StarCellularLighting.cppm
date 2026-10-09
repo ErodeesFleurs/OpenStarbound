@@ -120,7 +120,8 @@ inline size_t Lightmap::len() const {
 // individually.
 class CellularLightingCalculator {
 public:
-  explicit CellularLightingCalculator(bool monochrome = false);
+  explicit CellularLightingCalculator();
+  explicit CellularLightingCalculator(bool monochrome);
 
   typedef ColoredCellularLightArray::Cell Cell;
 

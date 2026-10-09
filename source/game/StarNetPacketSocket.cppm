@@ -43,7 +43,8 @@ struct PacketStats {
 // Collects PacketStats over a given window of time.
 class PacketStatCollector {
 public:
-  PacketStatCollector(float calculationWindow = 1.0f);
+  PacketStatCollector();
+  PacketStatCollector(float calculationWindow);
 
   void mix(size_t size);
   void mix(PacketType type, size_t size, bool addToTotal = true);

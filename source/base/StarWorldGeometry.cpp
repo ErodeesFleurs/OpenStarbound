@@ -272,7 +272,7 @@ float WorldGeometry::polyOverlapArea(PolyF const& poly1, PolyF const& poly2) con
 }
 
 bool WorldGeometry::lineIntersectsRect(Line2F const& line, RectF const& rect) const {
-  for (auto l : splitLine(line)) {
+  for (auto l : splitLine(line, false)) {
     for (auto box : splitRect(rect)) {
       if (box.intersects(l)) {
         return true;
@@ -283,7 +283,7 @@ bool WorldGeometry::lineIntersectsRect(Line2F const& line, RectF const& rect) co
 }
 
 bool WorldGeometry::lineIntersectsPoly(Line2F const& line, PolyF const& poly) const {
-  for (auto a : splitLine(line)) {
+  for (auto a : splitLine(line, false)) {
     for (auto b : splitPoly(poly)) {
       if (b.intersects(a)) {
         return true;
@@ -316,7 +316,7 @@ bool WorldGeometry::rectIntersectsCircle(RectF const& rect, Vec2F const& center,
 }
 
 bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const {
-  for (auto const& sline : splitLine(line)) {
+  for (auto const& sline : splitLine(line, false)) {
     if (sline.distanceTo(nearestTo(sline.center(), center)) <= radius)
       return true;
   }

@@ -9,7 +9,7 @@ import star.application;
 #include "StarDesktopService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
+#include "StarSteamDispatch.hpp"
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -41,12 +41,17 @@ public:
   bool reset() override;
 
 private:
-  STEAM_CALLBACK(SteamStatisticsService, onUserStatsReceived, UserStatsReceived_t, m_callbackUserStatsReceived);
-  STEAM_CALLBACK(SteamStatisticsService, onUserStatsStored, UserStatsStored_t, m_callbackUserStatsStored);
-  STEAM_CALLBACK(SteamStatisticsService, onAchievementStored, UserAchievementStored_t, m_callbackAchievementStored);
+  void onUserStatsReceived(UserStatsReceived_t* callback);
+  void onUserStatsStored(UserStatsStored_t* callback);
+  void onAchievementStored(UserAchievementStored_t* callback);
+
+  PcPlatformServicesStatePtr m_state;
+  SteamCallback<SteamStatisticsService, UserStatsReceived_t> m_callbackUserStatsReceived;
+  SteamCallback<SteamStatisticsService, UserStatsStored_t> m_callbackUserStatsStored;
+  SteamCallback<SteamStatisticsService, UserAchievementStored_t> m_callbackAchievementStored;
 
   uint64_t m_appId;
-  bool m_initialized;
+  bool m_initialized = false;
   Maybe<String> m_error;
 };
 

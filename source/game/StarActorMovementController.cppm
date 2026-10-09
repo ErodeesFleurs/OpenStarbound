@@ -85,7 +85,8 @@ struct ActorMovementParameters {
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
-  explicit ActorMovementParameters(Json const& config = Json());
+  explicit ActorMovementParameters();
+  explicit ActorMovementParameters(Json const& config);
 
   Json toJson() const;
 
@@ -161,7 +162,8 @@ struct ActorMovementModifiers {
   friend DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
   friend DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
 
-  explicit ActorMovementModifiers(Json const& config = Json());
+  explicit ActorMovementModifiers();
+  explicit ActorMovementModifiers(Json const& config);
 
   Json toJson() const;
 
@@ -188,7 +190,8 @@ class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit ActorMovementController(ActorMovementParameters const& parameters = ActorMovementParameters());
+  explicit ActorMovementController();
+  explicit ActorMovementController(ActorMovementParameters const& parameters);
 
   // Currently active parameters.
   ActorMovementParameters const& baseParameters() const;

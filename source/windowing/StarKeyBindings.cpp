@@ -33,7 +33,7 @@ import star.configuration;
 
 namespace Star {
 
-HashMap<Key, KeyMod> const KeyChordMods{
+extern HashMap<Key, KeyMod> const KeyChordMods{
   {Key::LShift, KeyMod::LShift},
   {Key::RShift, KeyMod::RShift},
   {Key::LCtrl, KeyMod::LCtrl},
@@ -45,7 +45,7 @@ HashMap<Key, KeyMod> const KeyChordMods{
   {Key::AltGr, KeyMod::AltGr}
 };
 
-EnumMap<InterfaceAction> const InterfaceActionNames{
+extern EnumMap<InterfaceAction> const InterfaceActionNames{
     {InterfaceAction::None, "None"},
     {InterfaceAction::PlayerUp, "PlayerUp"},
     {InterfaceAction::PlayerDown, "PlayerDown"},

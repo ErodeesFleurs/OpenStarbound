@@ -12,6 +12,13 @@ if(VCPKG_TARGET_IS_WINDOWS)
     set(opts "ac_cv_search_log=none required" "--without-private-namespace")
 endif()
 
+list(APPEND opts "--with-cxx-stdlib=libcxx")
+if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
+    # C++ new/delete may throw across the DSO's private libc++ boundary.
+    # Keep malloc interposition, but leave C++ operators in the executable.
+    list(APPEND opts "--disable-cxx")
+endif()
+
 vcpkg_make_configure(
     AUTORECONF
     SOURCE_PATH "${SOURCE_PATH}"

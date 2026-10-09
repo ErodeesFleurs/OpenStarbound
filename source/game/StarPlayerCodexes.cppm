@@ -15,7 +15,8 @@ class PlayerCodexes {
 public:
   typedef pair<CodexConstPtr, bool> CodexEntry;
 
-  PlayerCodexes(Json const& json = {});
+  PlayerCodexes();
+  PlayerCodexes(Json const& json);
 
   Json toJson() const;
 

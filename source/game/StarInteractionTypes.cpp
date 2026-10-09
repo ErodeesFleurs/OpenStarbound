@@ -21,7 +21,7 @@ DataStream& operator<<(DataStream& ds, InteractRequest const& ir) {
   return ds;
 }
 
-EnumMap<InteractActionType> const InteractActionTypeNames{{InteractActionType::None, "None"},
+extern EnumMap<InteractActionType> const InteractActionTypeNames{{InteractActionType::None, "None"},
     {InteractActionType::OpenContainer, "OpenContainer"},
     {InteractActionType::SitDown, "SitDown"},
     {InteractActionType::OpenCraftingInterface, "OpenCraftingInterface"},

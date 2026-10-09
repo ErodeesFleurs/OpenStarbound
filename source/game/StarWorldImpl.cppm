@@ -101,6 +101,7 @@ import star.liquids_database;
 import star.material_database;
 import star.sky;
 import star.entity_map;
+import star.world;
 
 namespace Star {
 

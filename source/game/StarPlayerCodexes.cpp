@@ -32,6 +32,8 @@ import star.player_codexes;
 
 namespace Star {
 
+PlayerCodexes::PlayerCodexes() : PlayerCodexes(Json{}) {}
+
 PlayerCodexes::PlayerCodexes(Json const& variant) {
   if (variant) {
     auto assets = Root::singleton().assets();

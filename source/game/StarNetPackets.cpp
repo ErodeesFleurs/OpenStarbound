@@ -99,9 +99,9 @@ import star.net_packets;
 
 namespace Star {
 
-VersionNumber const StarProtocolVersion = 747;
+extern VersionNumber const StarProtocolVersion = 747;
 
-EnumMap<PacketType> const PacketTypeNames{
+extern EnumMap<PacketType> const PacketTypeNames{
   {PacketType::ProtocolRequest, "ProtocolRequest"},
   {PacketType::ProtocolResponse, "ProtocolResponse"},
   {PacketType::ServerDisconnect, "ServerDisconnect"},
@@ -186,7 +186,7 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::UniverseMessageResponse, "UniverseMessageResponse"}
 };
 
-EnumMap<NetCompressionMode> const NetCompressionModeNames {
+extern EnumMap<NetCompressionMode> const NetCompressionModeNames {
   {NetCompressionMode::None, "None"},
   {NetCompressionMode::Zstd, "Zstd"}
 };
@@ -314,6 +314,8 @@ void ProtocolRequestPacket::read(DataStream& ds) {
 void ProtocolRequestPacket::write(DataStream& ds) const {
   ds.write(requestProtocolVersion);
 }
+
+ProtocolResponsePacket::ProtocolResponsePacket() : ProtocolResponsePacket(false, {}) {}
 
 ProtocolResponsePacket::ProtocolResponsePacket(bool allowed, Json info)
   : allowed(allowed), info(info) {}
@@ -1119,6 +1121,8 @@ void EntityCreatePacket::write(DataStream& ds) const {
   ds.write(firstNetState);
   ds.viwrite(entityId);
 }
+
+EntityUpdateSetPacket::EntityUpdateSetPacket() : EntityUpdateSetPacket(ServerConnectionId) {}
 
 EntityUpdateSetPacket::EntityUpdateSetPacket(ConnectionId forConnection) : forConnection(forConnection) {}
 

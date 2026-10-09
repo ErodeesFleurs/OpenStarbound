@@ -448,7 +448,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
       }
     });
 
-  m_overflowMessage = make_shared<GuiMessage>("", 0);
+  m_overflowMessage = make_shared<GuiMessage>("", 0, 0);
 
   m_plainCraftingWindow = make_shared<CraftingPane>(m_client->worldClient(), m_client->mainPlayer(), JsonObject{{"filter", JsonArray{"plain"}}}, m_client->mainPlayer()->entityId());
   m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, m_plainCraftingWindow);
@@ -1297,7 +1297,7 @@ void MainInterface::queueItemPickupText(ItemPtr const& item) {
     message->cooldown = m_config->messageTime;
     m_itemDropMessages[descriptor.singular()] = {newCount, message};
   } else {
-    auto message = make_shared<GuiMessage>(strf("{} - {}", item->friendlyName(), item->count()), m_config->messageTime);
+    auto message = make_shared<GuiMessage>(strf("{} - {}", item->friendlyName(), item->count()), m_config->messageTime, 0);
     m_messages.append(message);
     m_itemDropMessages[descriptor.singular()] = {item->count(), message};
   }
@@ -1996,7 +1996,7 @@ bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
 
   if (overButton(m_config->mainBarBeamButtonPoly, mousePos)) {
     if (m_client->canBeamDown())
-      warpToOrbitedWorld();
+      warpToOrbitedWorld(false);
     return true;
   }
 

@@ -19,3 +19,5 @@ void SPlainTextEdit::wasChanged() {
 }
 
 }
+
+#include "moc_StarSPlainTextEdit.cpp"

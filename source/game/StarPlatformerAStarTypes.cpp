@@ -7,7 +7,7 @@ import star.platformer_astar_types;
 namespace Star {
 namespace PlatformerAStar {
 
-EnumMap<Action> const ActionNames{
+extern EnumMap<Action> const ActionNames{
   {Action::Walk, "Walk"},
   {Action::Jump, "Jump"},
   {Action::Arc, "Arc"},

@@ -67,6 +67,7 @@ private:
   String setEnvironmentBiome(ConnectionId connectionId, String const& argumentString);
 
   static const CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> s_commandMap;
+  static CaseInsensitiveStringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> makeCommandMap();
 
   mutable Mutex m_mutex;
 

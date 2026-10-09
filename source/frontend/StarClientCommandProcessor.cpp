@@ -318,7 +318,7 @@ StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool
     } else if (auto macroCommand = m_macroCommands.maybe(command)) {
       for (auto const& c : *macroCommand) {
         if (c.beginsWith("/"))
-          result.appendAll(handleCommand(c));
+          result.appendAll(handleCommand(c, false));
         else
           result.append(c);
       }

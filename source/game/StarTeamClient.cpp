@@ -172,7 +172,7 @@ import star.team_client;
 namespace Star {
   
 // update this in the rare case that backwards compat code has to be set up in TeamManager
-VersionNumber const TeamClientVersion = 1;
+extern VersionNumber const TeamClientVersion = 1;
   
 TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   m_mainPlayer = mainPlayer;

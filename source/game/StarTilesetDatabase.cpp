@@ -43,7 +43,7 @@ namespace Star {
 namespace Tiled {
   using namespace Dungeon;
 
-  EnumMap<TileLayer> const LayerNames{{TileLayer::Foreground, "front"}, {TileLayer::Background, "back"}};
+  extern EnumMap<TileLayer> const LayerNames{{TileLayer::Foreground, "front"}, {TileLayer::Background, "back"}};
 
   Properties::Properties() : m_properties(JsonObject{}) {}
 
@@ -336,8 +336,8 @@ namespace Tiled {
       size_t index = lexicalCast<size_t>(entry.first);
       Properties properties = Properties(entry.second).inherit(tilesetProperties);
 
-      m_tilesBack[index] = make_shared<Tile>(properties, TileLayer::Background);
-      m_tilesFront[index] = make_shared<Tile>(properties, TileLayer::Foreground);
+      m_tilesBack[index] = make_shared<Tile>(properties, TileLayer::Background, false);
+      m_tilesFront[index] = make_shared<Tile>(properties, TileLayer::Foreground, false);
     }
   }
 

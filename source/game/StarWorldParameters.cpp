@@ -47,18 +47,18 @@ import star.biome_database;
 
 namespace Star {
 
-EnumMap<WorldParametersType> const WorldParametersTypeNames{
+extern EnumMap<WorldParametersType> const WorldParametersTypeNames{
     {WorldParametersType::TerrestrialWorldParameters, "TerrestrialWorldParameters"},
     {WorldParametersType::AsteroidsWorldParameters, "AsteroidsWorldParameters"},
     {WorldParametersType::FloatingDungeonWorldParameters, "FloatingDungeonWorldParameters"}};
 
-EnumMap<BeamUpRule> const BeamUpRuleNames{
+extern EnumMap<BeamUpRule> const BeamUpRuleNames{
   {BeamUpRule::Nowhere, "Nowhere"},
   {BeamUpRule::Surface, "Surface"},
   {BeamUpRule::Anywhere, "Anywhere"},
   {BeamUpRule::AnywhereWithWarning, "AnywhereWithWarning"}};
 
-EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames{
+extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames{
   {WorldEdgeForceRegionType::None, "None"},
   {WorldEdgeForceRegionType::Top, "Top"},
   {WorldEdgeForceRegionType::Bottom, "Bottom"},

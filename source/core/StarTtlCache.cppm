@@ -17,7 +17,8 @@ public:
 
   typedef function<Value(Key const&)> ProducerFunction;
 
-  TtlCacheBase(int64_t timeToLive = 10000, int timeSmear = 1000, size_t maxSize = NPos, bool ttlUpdateEnabled = true);
+  TtlCacheBase();
+  TtlCacheBase(int64_t timeToLive, int timeSmear = 1000, size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 
   int64_t timeToLive() const;
   void setTimeToLive(int64_t timeToLive);
@@ -78,6 +79,10 @@ using TtlCache = TtlCacheBase<LruCache<Key, pair<int64_t, Value>, Compare, Alloc
 
 template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<pair<Key const, pair<int64_t, Value>>, 1024>>
 using HashTtlCache = TtlCacheBase<HashLruCache<Key, pair<int64_t, Value>, Hash, Equals, Allocator>>;
+
+template <typename LruCacheType>
+TtlCacheBase<LruCacheType>::TtlCacheBase()
+  : TtlCacheBase(10000, 1000, NPos, true) {}
 
 template <typename LruCacheType>
 TtlCacheBase<LruCacheType>::TtlCacheBase(int64_t timeToLive, int timeSmear, size_t maxSize, bool ttlUpdateEnabled) {

@@ -102,7 +102,7 @@ Json variantFromBiomeItem(BiomeItem const& biomeItem) {
   }
 }
 
-EnumMap<BiomePlacementMode> const BiomePlacementModeNames{
+extern EnumMap<BiomePlacementMode> const BiomePlacementModeNames{
   {BiomePlacementMode::Floor, "floor"},
   {BiomePlacementMode::Ceiling, "ceiling"},
   {BiomePlacementMode::Background, "background"},

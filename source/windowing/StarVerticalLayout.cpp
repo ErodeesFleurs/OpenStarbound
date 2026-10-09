@@ -66,6 +66,8 @@ import star.vertical_layout;
 
 namespace Star {
 
+VerticalLayout::VerticalLayout() : VerticalLayout(VerticalAnchor::TopAnchor, 0) {}
+
 VerticalLayout::VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacing) {
   setVerticalAnchor(verticalAnchor);
   setVerticalSpacing(verticalSpacing);

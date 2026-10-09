@@ -67,10 +67,6 @@ target_link_libraries (make_versioned_json PRIVATE star_base_modules star_game_m
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (dump_versioned_json make_versioned_json PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json
-      PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()
 
 # Maintenance utilities that are not part of a release.  Built when
 # STAR_BUILD_DEV_TOOLS is on, so that they do not rot unnoticed.
@@ -118,9 +114,5 @@ target_link_libraries (map_grep PRIVATE star_base_modules star_game_modules star
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>)
 set_target_properties (map_grep PROPERTIES CXX_SCAN_FOR_MODULES ON)
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (update_tilesets fix_embedded_tilesets map_grep
-      PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()
 
 endif()

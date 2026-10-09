@@ -1832,7 +1832,7 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
     return TileDamageResult::None;
 
   // Filter out any tiles that are not currently occupied or are protected
-  auto occupied = pos.filtered([this, layer](Vec2I pos) { return tileIsOccupied(pos, layer, true); });
+  auto occupied = pos.filtered([this, layer](Vec2I pos) { return tileIsOccupied(pos, layer, true, false); });
   auto toDamage = occupied.filtered([this](Vec2I pos) { return !isTileProtected(pos); });
   auto toDing = occupied.filtered([this](Vec2I pos) { return isTileProtected(pos); });
 
@@ -2359,7 +2359,7 @@ void WorldClient::clearWorld() {
 
   m_scriptContexts.clear();
 
-  waitForLighting();
+  waitForLighting(nullptr);
 
   m_currentStep = 0;
   m_currentTime = 0;
@@ -2423,7 +2423,7 @@ void WorldClient::clearWorld() {
 
 void WorldClient::tryGiveMainPlayerItem(ItemPtr item, bool silent) {
   if (auto spill = m_mainPlayer->pickupItems(item, silent))
-    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()));
+    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()), NullEntityId);
 }
 
 void WorldClient::notifyEntityCreate(EntityPtr const& entity) {

@@ -27,8 +27,10 @@ public:
   // Returns either error or valid HostAddress
   static Either<String, HostAddress> lookup(String const& address);
 
-  // If address is nullptr, constructs the zero address.
-  HostAddress(NetworkMode mode = NetworkMode::IPv4, uint8_t* address = nullptr);
+  // The default address is the IPv4 zero address.
+  HostAddress();
+  // If address is nullptr, constructs the zero address for the given mode.
+  HostAddress(NetworkMode mode, uint8_t* address = nullptr);
   // Throws if address is not valid
   explicit HostAddress(String const& address);
 

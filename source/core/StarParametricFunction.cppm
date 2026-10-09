@@ -70,8 +70,9 @@ class ParametricFunction : public ParametricTable<IndexType, ValueType> {
 public:
   typedef ParametricTable<IndexType, ValueType> Base;
 
+  ParametricFunction();
   ParametricFunction(
-      InterpolationMode interpolationMode = InterpolationMode::Linear, BoundMode boundMode = BoundMode::Clamp);
+      InterpolationMode interpolationMode, BoundMode boundMode = BoundMode::Clamp);
 
   template <typename OtherIndexType, typename OtherValueType>
   explicit ParametricFunction(ParametricFunction<OtherIndexType, OtherValueType> const& parametricFunction);
@@ -211,6 +212,10 @@ template <typename IndexType, typename ValueType>
 auto ParametricTable<IndexType, ValueType>::values() const -> ValueList const & {
   return m_values;
 }
+
+template <typename IndexType, typename ValueType>
+ParametricFunction<IndexType, ValueType>::ParametricFunction()
+  : ParametricFunction(InterpolationMode::Linear, BoundMode::Clamp) {}
 
 template <typename IndexType, typename ValueType>
 ParametricFunction<IndexType, ValueType>::ParametricFunction(InterpolationMode interpolationMode, BoundMode boundMode)

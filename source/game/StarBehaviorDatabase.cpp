@@ -29,7 +29,7 @@ import star.behavior_database;
 
 namespace Star {
 
-EnumMap<NodeParameterType> const NodeParameterTypeNames {
+extern EnumMap<NodeParameterType> const NodeParameterTypeNames {
   {NodeParameterType::Json, "json"},
   {NodeParameterType::Entity, "entity"},
   {NodeParameterType::Position, "position"},
@@ -82,14 +82,14 @@ NodeOutput jsonToNodeOutput(Json const& json) {
   };
 }
 
-EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames {
+extern EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames {
   {BehaviorNodeType::Action, "Action"},
   {BehaviorNodeType::Decorator, "Decorator"},
   {BehaviorNodeType::Composite, "Composite"},
   {BehaviorNodeType::Module, "Module"}
 };
 
-EnumMap<CompositeType> const CompositeTypeNames {
+extern EnumMap<CompositeType> const CompositeTypeNames {
   {CompositeType::Sequence, "Sequence"},
   {CompositeType::Selector, "Selector"},
   {CompositeType::Parallel, "Parallel"},
@@ -249,7 +249,7 @@ Json BehaviorDatabase::behaviorConfig(String const& name) const {
 }
 
 void BehaviorDatabase::loadTree(String const& name) {
-  m_behaviors.set(name, buildTree(m_configs.get(name)));
+  m_behaviors.set(name, buildTree(m_configs.get(name), {}));
 }
 
 CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {

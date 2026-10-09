@@ -16,14 +16,16 @@
         f:
         nixpkgs.lib.genAttrs systems (
           system:
-          f (import nixpkgs {
-            inherit system;
-            # The Steam and Discord game SDKs vendored in lib/linux are unfree;
-            # without this, `packages.full`, `devShells.full` and therefore
-            # `nix flake check` cannot be evaluated at all.  Nothing else is
-            # allowed to be unfree.
-            config.allowUnfreePredicate = pkg: (pkg.pname or pkg.name or "") == "openstarbound-sdks";
-          })
+          f (
+            import nixpkgs {
+              inherit system;
+              # The Steam and Discord game SDKs vendored in lib/linux are unfree;
+              # without this, `packages.full`, `devShells.full` and therefore
+              # `nix flake check` cannot be evaluated at all.  Nothing else is
+              # allowed to be unfree.
+              config.allowUnfreePredicate = pkg: (pkg.pname or pkg.name or "") == "openstarbound-sdks";
+            }
+          )
         );
 
       # Ends up in the version string the binaries report and log.
@@ -32,13 +34,14 @@
       packagesFor =
         pkgs:
         let
+          dependencies = import ./nix/dependencies.nix { inherit pkgs; };
+          sanitizedDependencies = import ./nix/dependencies.nix {
+            inherit pkgs;
+            sanitizers = true;
+          };
           openstarbound = pkgs.callPackage ./nix/openstarbound.nix {
-            # GCC 16 for the C++20 module in star_core: GCC 15.3 dies on it with
-            # an internal compiler error (in tree_node, at cp/module.cc:10037)
-            # while 14.2 and 16.2 compile the same file.  Darwin keeps its own
-            # stdenv; the module needs a header fallback there until Apple Clang
-            # supports C++20 modules.
-            stdenv = if pkgs.stdenv.isLinux then pkgs.gcc16Stdenv else pkgs.stdenv;
+            inherit dependencies;
+            stdenv = dependencies.stdenv;
             # The build inputs are source/, assets/, scripts/, cmake/ and lib/.
             # Keep the flake's own files out of the source tree so that editing
             # them does not force a rebuild of the ten minute C++ build, and
@@ -59,16 +62,19 @@
                   "flake.lock"
                   "nix"
                 ]
-                && !(type == "directory" && builtins.elem name [
-                  "build"
-                  "build_linux"
-                  "dist"
-                  "dev"
-                  "out"
-                  "output"
-                  "Output"
-                  ".cache"
-                ])
+                && !(
+                  type == "directory"
+                  && builtins.elem name [
+                    "build"
+                    "build_linux"
+                    "dist"
+                    "dev"
+                    "out"
+                    "output"
+                    "Output"
+                    ".cache"
+                  ]
+                )
                 && !(type == "symlink" && builtins.match "result.*" name != null);
             };
             inherit sourceIdentifier;
@@ -79,8 +85,8 @@
           default = openstarbound;
           # Headless server: no SDL3/OpenGL/GLEW, no client.
           server = openstarbound.override { guiSupport = false; };
-          # Everything the vendored SDKs can enable.  The Steam and Discord
-          # SDKs are unfree, so this needs NIXPKGS_ALLOW_UNFREE=1 --impure.
+          # All optional tools and C-API vendor SDK integrations. The import
+          # permits only the vendored SDK's unfree package.
           full = openstarbound.override {
             steamSupport = true;
             discordSupport = true;
@@ -92,7 +98,11 @@
           # world generation is much slower under ASan).
           # Note: `nix build .#sanitized` overwrites ./result -- pass
           # `-o result-sanitized` to keep the default package linked there.
-          sanitized = openstarbound.override { sanitizers = true; };
+          sanitized = openstarbound.override {
+            sanitizers = true;
+            dependencies = sanitizedDependencies;
+            stdenv = sanitizedDependencies.stdenv;
+          };
           # RelWithAsserts build: no -DNDEBUG, so the project's own invariants
           # (starAssert) and DebugEnabled paths are live while the tests run.
           asserts = openstarbound.override { asserts = true; };
@@ -136,71 +146,30 @@
         };
       });
 
-      # `nix develop` is for iterating on the C++ tree with cmake/ninja against
-      # the repository's own CMakeLists.txt.  LD_LIBRARY_PATH is needed because
-      # upstream disables CMake's build RPATH, so binaries built by hand cannot
-      # locate their dependencies otherwise: the dependencies (and their runtime
-      # closures, which lld linked binaries reference directly) are resolved by
-      # the shell hook from the library outputs.  The shell deliberately does not
-      # depend on the package, so that editing the sources does not rebuild it.
-      #
-      # Hand builds should additionally pass
-      #   -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
-      # because linking the test binaries with the default linker takes minutes,
-      # while lld takes seconds. For sanitizer trees also select
-      #   -DSTAR_DEBUG_SYMBOL_LEVEL=minimal
-      # and append sanitizer options to CFLAGS/CXXFLAGS/LDFLAGS. Caller compiler
-      # flags are preserved; CMAKE_SKIP_BUILD_RPATH=FALSE avoids requiring the
-      # shell's runtime library path for the resulting binaries.
+      # Both shells use the same compiler and static C++ dependency closure as
+      # their packages. CMake's build RPATH keeps hand-built binaries runnable
+      # outside the shell; no GNU compiler or shared C++ runtime alternative.
       devShells = forAllSystems (
         pkgs:
         let
-          # Library outputs to take the runtime library path from.  The package's
-          # buildInputs carry the dev outputs of most of these (headers only), so
-          # they are named here and mapped through getLib.
-          shellLibraryPackages = with pkgs; [
-            zlib-ng
-            zlib
-            libcpr
-            libpng
-            freetype
-            libogg
-            libvorbis
-            zstd
-            libopus
-            re2
-            cpptrace
-            sdl3
-            glew
-            libGL
-          ];
+          packages = packagesFor pkgs;
           shellFor =
             package:
             (pkgs.mkShell.override {
-              stdenv = if pkgs.stdenv.isLinux then pkgs.gcc16Stdenv else pkgs.stdenv;
-            }) {
-              inputsFrom = [ package ];
-              shellHook = ''
-                shell_library_path=""
-                for lib in ${nixpkgs.lib.concatStringsSep " " (map (d: "${pkgs.lib.getLib d}") shellLibraryPackages)}; do
-                  for path in $(nix-store -qR "$lib"); do
-                    [ -d "$path/lib" ] && shell_library_path="$shell_library_path:$path/lib"
-                  done
-                done
-                export LD_LIBRARY_PATH="''${shell_library_path#:}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-              '';
-              # Upstream's ImGui Lua bindings hand Lua-supplied strings to ImGui
-              # as printf format strings, which NixOS' `format` hardening turns
-              # into -Werror=format-security.  The packaged build applies
-              # nix/patches/imgui-lua-literal-text.patch instead; this shell
-              # builds the tree as-is, like upstream CI (which does not enable
-              # that warning in the first place).
-              hardeningDisable = [ "format" ];
-            };
+              stdenv = package.dependencies.stdenv;
+            })
+              {
+                inputsFrom = [ package ];
+                XCLANG_ROOT = package.dependencies.cc.bundledRuntime;
+                OPENSTARBOUND_BUILD_RPATH = nixpkgs.lib.makeLibraryPath package.runtimeLibraries;
+                # The package patches literal ImGui Lua format strings; the shell
+                # builds the working tree without applying packaging patches.
+                hardeningDisable = [ "format" ];
+              };
         in
         {
-          default = shellFor (packagesFor pkgs).default;
-          full = shellFor (packagesFor pkgs).full;
+          default = shellFor packages.default;
+          full = shellFor packages.full;
         }
       );
 

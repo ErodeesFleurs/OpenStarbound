@@ -109,6 +109,8 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
   return RectI(chunkIndex * m_baseInformation.chunkSize, (chunkIndex + Vec2I(1, 1)) * m_baseInformation.chunkSize);
 }
 
+CelestialMasterDatabase::CelestialMasterDatabase() : CelestialMasterDatabase(Maybe<String>{}) {}
+
 CelestialMasterDatabase::CelestialMasterDatabase(Maybe<String> databaseFile) {
   auto assets = Root::singleton().assets();
 

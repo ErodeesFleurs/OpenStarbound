@@ -163,6 +163,8 @@ Json jsonFromPersonality(Personality const& personality) {
   };
 }
 
+HumanoidIdentity::HumanoidIdentity() : HumanoidIdentity(Json()) {}
+
 HumanoidIdentity::HumanoidIdentity(Json config) {
   if (config.isNull())
     config = JsonObject();
@@ -273,6 +275,8 @@ DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity) {
 
   return ds;
 }
+
+Humanoid::HumanoidTiming::HumanoidTiming() : HumanoidTiming(Json()) {}
 
 Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
   if (config.type() != Json::Type::Object) {
@@ -2389,6 +2393,8 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
     return jsonMerge(m_baseConfig, m_mergeConfig);
   return m_baseConfig;
 }
+
+NetHumanoid::NetHumanoid() : NetHumanoid(HumanoidIdentity(), JsonObject(), Json()) {}
 
 NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config) {
   m_config = config;

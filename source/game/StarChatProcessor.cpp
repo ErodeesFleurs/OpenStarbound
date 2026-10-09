@@ -195,17 +195,17 @@ void ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId target
 
 void ChatProcessor::adminBroadcast(String const& text) {
   RecursiveMutexLocker locker(m_mutex);
-  broadcast(ServerConnectionId, text);
+  broadcast(ServerConnectionId, text, {});
 }
 
 void ChatProcessor::adminMessage(MessageContext::Mode context, String const& channelName, String const& text) {
   RecursiveMutexLocker locker(m_mutex);
-  ChatProcessor::message(ServerConnectionId, context, channelName, text);
+  ChatProcessor::message(ServerConnectionId, context, channelName, text, {});
 }
 
 void ChatProcessor::adminWhisper(ConnectionId targetClientId, String const& text) {
   RecursiveMutexLocker locker(m_mutex);
-  whisper(ServerConnectionId, targetClientId, text);
+  whisper(ServerConnectionId, targetClientId, text, {});
 }
 
 List<ChatReceivedMessage> ChatProcessor::pullPendingMessages(ConnectionId clientId) {
@@ -253,7 +253,7 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
   } else if (command == "w") {
     String target = commandLine.extract();
     if (m_nicks.contains(target))
-      whisper(message.fromConnection, m_nicks.get(target), commandLine.trim());
+      whisper(message.fromConnection, m_nicks.get(target), commandLine.trim(), {});
     else
       response = strf("No such nick {}", target);
   } else if (m_commandHandler) {

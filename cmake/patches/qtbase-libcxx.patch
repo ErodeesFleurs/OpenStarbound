@@ -1,0 +1,32 @@
+--- a/src/corelib/global/qglobal.cpp
++++ b/src/corelib/global/qglobal.cpp
+@@ -62,9 +62,9 @@
+ #include <stdarg.h>
+ #include <string.h>
++#include <exception>
+ 
+ #ifndef QT_NO_EXCEPTIONS
+ #  include <string>
+-#  include <exception>
+ #endif
+ 
+ #include <errno.h>
+--- a/src/plugins/platforms/xcb/qxcbconnection_basic.h
++++ b/src/plugins/platforms/xcb/qxcbconnection_basic.h
+@@ -51,5 +51,6 @@
+ #include <xcb/xcb.h>
+ 
++#include <cstdlib>
+ #include <memory>
+ 
+ QT_BEGIN_NAMESPACE
+--- a/src/plugins/platforms/xcb/qxcbatom.cpp
++++ b/src/plugins/platforms/xcb/qxcbatom.cpp
+@@ -40,6 +40,7 @@
+ 
+ #include <QtCore/qglobal.h>
+ 
++#include <stdlib.h>
+ #include <string.h>
+ 
+ #include <algorithm>

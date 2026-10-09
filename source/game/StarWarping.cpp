@@ -118,7 +118,7 @@ WorldId parseWorldId(String const& printedId) {
       return part;
     };
 
-    InstanceWorldId instanceWorldId{rest.at(0)};
+    InstanceWorldId instanceWorldId{rest.at(0), {}, {}};
     if (rest.size() > 1) {
       if (auto uuid = getOptPart(rest.at(1)))
         instanceWorldId.uuid = Uuid(*uuid);

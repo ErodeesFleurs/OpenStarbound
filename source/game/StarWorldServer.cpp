@@ -232,7 +232,7 @@ import star.falling_blocks_agent;
 
 namespace Star {
 
-EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
+extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
   {WorldServerFidelity::Minimum, "minimum"},
   {WorldServerFidelity::Low, "low"},
   {WorldServerFidelity::Medium, "medium"},
@@ -1382,7 +1382,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
       Vec2F dropPosition = centerOfTile(pos);
 
       for (auto drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition), NullEntityId);
       
       return true;
     }
@@ -1899,7 +1899,7 @@ void WorldServer::init(bool firstTime) {
 
   // Dungeon and spawned entity scripts may query wind or weather while the
   // initial world regions are being generated, so domains must exist first.
-  setupWeatherDomains();
+  setupWeatherDomains(false);
 
   setupForceRegions();
 
@@ -2568,8 +2568,8 @@ void WorldServer::updateDamagedBlocks(float dt) {
     Vec2F dropPosition = centerOfTile(pos);
     if (tile->foregroundDamage.dead()) {
       bool harvested = tile->foregroundDamage.harvested();
-      for (auto drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+      for (auto drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType()), true))
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition), NullEntityId);
 
     } else if (tile->foregroundDamage.damaged()) {
       if (isRealMaterial(tile->foreground)) {
@@ -2590,8 +2590,8 @@ void WorldServer::updateDamagedBlocks(float dt) {
 
     if (tile->backgroundDamage.dead()) {
       bool harvested = tile->backgroundDamage.harvested();
-      for (auto drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+      for (auto drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType()), true))
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition), NullEntityId);
 
     } else if (tile->backgroundDamage.damaged()) {
       if (isRealMaterial(tile->background)) {
@@ -2699,7 +2699,7 @@ void WorldServer::removeEntity(EntityId entityId, bool andDie) {
     return;
 
   if (auto tileEntity = as<TileEntity>(entity))
-    updateTileEntityTiles(tileEntity, true);
+    updateTileEntityTiles(tileEntity, true, true);
 
   if (andDie)
     entity->destroy(nullptr);
@@ -2943,7 +2943,7 @@ Vec2F WorldServer::findPlayerStart(Maybe<Vec2F> firstTry) {
 
         generateRegion(RectI::integral(spawnRect));
 
-        auto tileDungeonId = getServerTile(Vec2I::floor(pos)).dungeonId;
+        auto tileDungeonId = getServerTile(Vec2I::floor(pos), false).dungeonId;
 
         if (!allowedSpawnDungeonIds.contains(tileDungeonId))
           break;

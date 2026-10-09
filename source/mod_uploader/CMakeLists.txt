@@ -1,6 +1,3 @@
-find_package (Qt5Core)
-find_package (Qt5Widgets)
-
 set (star_mod_uploader_HEADERS
     StarStringConversion.hpp
     StarModUploader.hpp
@@ -26,8 +23,6 @@ target_include_directories (mod_uploader PRIVATE
 target_link_libraries (mod_uploader PRIVATE star_base_modules star_build_config star_steam_dependencies
   $<LINK_ONLY:star_core_dependencies> $<LINK_ONLY:star_extern_dependencies>
   Qt5::Core Qt5::Gui Qt5::Widgets)
+star_import_qt_plugins(mod_uploader)
 set_target_properties (mod_uploader PROPERTIES AUTOMOC ON CXX_SCAN_FOR_MODULES ON)
 
-if(DEFINED STAR_MSVC_RUNTIME_LIBRARY)
-  set_target_properties (mod_uploader PROPERTIES MSVC_RUNTIME_LIBRARY "${STAR_MSVC_RUNTIME_LIBRARY}")
-endif()

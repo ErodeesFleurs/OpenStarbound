@@ -243,7 +243,7 @@ import star.client_context;
 
 namespace Star {
 
-EnumMap<QuestState> const QuestStateNames {
+extern EnumMap<QuestState> const QuestStateNames {
   {QuestState::New, "New"},
   {QuestState::Offer, "Offer"},
   {QuestState::Active, "Active"},
