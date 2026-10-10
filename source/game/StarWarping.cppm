@@ -3,11 +3,12 @@ module;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-import star.uuid;
 #include "StarJson.hpp"
+import star.uuid;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+import star.game_types;
 
 namespace Star {
 

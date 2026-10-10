@@ -7,7 +7,8 @@
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarPoly.hpp"
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"

@@ -61,7 +61,7 @@ foreach (target star_application_module_interfaces star_application_modules)
   target_link_libraries (${target} PRIVATE star_build_config star_application_dependencies)
   set_target_properties (${target} PROPERTIES CXX_SCAN_FOR_MODULES ON)
 endforeach ()
-target_link_libraries (star_application_module_interfaces PUBLIC star_modules)
+target_link_libraries (star_application_module_interfaces PUBLIC star_modules star_platform_modules)
 target_link_libraries (star_application_modules PUBLIC star_application_module_interfaces)
 
 if (STAR_ENABLE_DISCORD_INTEGRATION)

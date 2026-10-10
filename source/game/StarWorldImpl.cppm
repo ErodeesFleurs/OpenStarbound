@@ -14,7 +14,8 @@ import star.spatial_hash_2d;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"

@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"

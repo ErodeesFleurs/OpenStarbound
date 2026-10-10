@@ -16,7 +16,7 @@ import star.ttl_cache;
 #include "StarNetElementSystem.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarDataStreamExtra.hpp"
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
@@ -24,7 +24,7 @@ import star.ttl_cache;
 #include "StarLogging.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
@@ -49,7 +49,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarLua.hpp"

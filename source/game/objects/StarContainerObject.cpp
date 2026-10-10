@@ -12,7 +12,7 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -24,11 +24,11 @@ import star.ttl_cache;
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLexicalCast.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
@@ -50,7 +50,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"

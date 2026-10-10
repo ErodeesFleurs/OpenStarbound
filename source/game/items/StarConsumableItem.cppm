@@ -2,7 +2,7 @@ module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"

@@ -26,7 +26,7 @@ import star.version;
 #include "StarVariant.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
 #include "StarAStar.hpp"
@@ -70,7 +70,7 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarStatisticsService.hpp"
+import star.statistics_service;
 import star.uuid;
 import star.item_descriptor;
 import star.drawable;

@@ -12,7 +12,7 @@ import star.listener;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarNetElementSystem.hpp"

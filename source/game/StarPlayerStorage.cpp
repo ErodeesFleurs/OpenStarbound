@@ -19,7 +19,7 @@ import star.btree_database;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"

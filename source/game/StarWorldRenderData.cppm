@@ -14,7 +14,7 @@ module;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -32,7 +32,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"

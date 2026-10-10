@@ -15,7 +15,8 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRpcPromise.hpp"
@@ -27,7 +28,8 @@ import star.ttl_cache;
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarList.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -42,7 +44,8 @@ import star.asset_path;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -55,7 +58,8 @@ import star.asset_path;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"

@@ -21,7 +21,7 @@ import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"

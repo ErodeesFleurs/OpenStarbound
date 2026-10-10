@@ -7,7 +7,7 @@
 #include "StarIdMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarNetElementSystem.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -18,7 +18,7 @@
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarIdMap.hpp"
@@ -35,7 +35,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarVariant.hpp"
 #include "StarList.hpp"
 #include "StarCasting.hpp"

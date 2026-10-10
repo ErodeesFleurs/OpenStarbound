@@ -8,7 +8,6 @@ module;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -16,11 +15,10 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 

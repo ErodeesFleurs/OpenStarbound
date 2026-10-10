@@ -9,7 +9,7 @@
 #include "StarVariant.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
@@ -140,7 +140,7 @@ import star.chat_types;
 import star.warping;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.liquid_types;
 import star.worker_pool;
 import star.tile_sector_array;

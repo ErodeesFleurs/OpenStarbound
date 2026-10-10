@@ -24,11 +24,11 @@ import star.ttl_cache;
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarThread.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -37,9 +37,9 @@ import star.ttl_cache;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarNetElementSystem.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 import star.encode;
@@ -207,7 +207,7 @@ import star.celestial_parameters;
 import star.chat_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.liquid_types;
 import star.worker_pool;
 import star.tile_sector_array;

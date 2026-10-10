@@ -1,7 +1,9 @@
 module;
 
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+#include "StarString.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 
 

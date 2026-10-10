@@ -1,10 +1,11 @@
 module;
 #include "StarThread.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarGameTypes.hpp"
-
+#include "StarVector.hpp"
 // Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
+import star.game_types;
+
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 

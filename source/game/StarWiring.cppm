@@ -1,6 +1,7 @@
 module;
 
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 import star.world_geometry;
 #include "StarDataStream.hpp"
@@ -81,6 +82,7 @@ export namespace Star {
   using ::Star::otherWireDirection;
   using ::Star::WireNode;
   using ::Star::WireConnection;
+  using ::Star::hash;
   using ::Star::WireCoordinatorPtr;
   using ::Star::WireCoordinatorConstPtr;
   using ::Star::WireCoordinatorWeakPtr;

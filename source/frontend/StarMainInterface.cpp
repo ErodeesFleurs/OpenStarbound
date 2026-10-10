@@ -17,7 +17,7 @@ import star.asset_path;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
@@ -93,10 +93,10 @@ import star.periodic_function;
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.renderer;
 import star.asset_source;
@@ -106,7 +106,7 @@ import star.root;
 import star.host_address;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;

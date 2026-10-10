@@ -1,6 +1,8 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
 
 namespace Star {
 
@@ -34,4 +36,16 @@ public:
   virtual bool reset() = 0;
 };
 
+}
+
+export module star.statistics_service;
+
+export namespace Star {
+  using ::Star::StatisticsService;
+  using ::Star::StatisticsServicePtr;
+  using ::Star::StatisticsServiceConstPtr;
+  using ::Star::StatisticsServiceWeakPtr;
+  using ::Star::StatisticsServiceConstWeakPtr;
+  using ::Star::StatisticsServiceUPtr;
+  using ::Star::StatisticsServiceConstUPtr;
 }

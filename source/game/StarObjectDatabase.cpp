@@ -19,7 +19,8 @@ import star.lru_cache;
 import star.time;
 import star.ttl_cache;
 #include "StarThread.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
@@ -41,7 +42,8 @@ import star.asset_path;
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarColor.hpp"
@@ -49,7 +51,8 @@ import star.asset_path;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"

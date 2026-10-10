@@ -20,7 +20,8 @@ import star.version;
 #include "StarImage.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarBlockAllocator.hpp"

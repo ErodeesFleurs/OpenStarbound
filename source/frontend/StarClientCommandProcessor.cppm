@@ -29,7 +29,8 @@ import star.text;
 #include "StarSet.hpp"
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
-#include "StarGameTypes.hpp"
+#include "StarRpcPromise.hpp"
+import star.game_types;
 #include "StarCasting.hpp"
 import star.listener;
 #include "StarOrderedMap.hpp"

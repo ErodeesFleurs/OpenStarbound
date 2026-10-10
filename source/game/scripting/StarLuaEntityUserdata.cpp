@@ -10,7 +10,7 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
@@ -24,7 +24,7 @@ import star.ttl_cache;
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarColor.hpp"

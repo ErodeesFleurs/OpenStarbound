@@ -4,11 +4,10 @@ module;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
-#include "StarJson.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
 import star.tile_damage;
 #include "StarList.hpp"
 import star.image_processing;

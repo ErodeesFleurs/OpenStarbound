@@ -2,7 +2,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarThread.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -34,10 +35,10 @@ typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
 #include "StarInputEvent.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 import star.application_controller;
 import star.asset_source;

@@ -30,7 +30,7 @@ import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
 #include "StarThread.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
 #include "StarList.hpp"
@@ -38,10 +38,10 @@ import star.listener;
 #include "StarEither.hpp"
 
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 import star.application_controller;
 #include "StarVariant.hpp"

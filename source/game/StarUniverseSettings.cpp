@@ -3,7 +3,7 @@
 #include "StarThread.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"

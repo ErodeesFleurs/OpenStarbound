@@ -12,7 +12,8 @@ import star.asset_path;
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarLexicalCast.hpp"

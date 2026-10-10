@@ -1,5 +1,6 @@
 #include "StarLogging.hpp"
-#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.game_types;
 #include "StarLexicalCast.hpp"
 #include "tileset_updater.hpp"
 

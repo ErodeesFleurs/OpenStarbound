@@ -12,7 +12,7 @@
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -67,7 +67,7 @@ import star.host_address;
 import star.socket;
 import star.tcp;
 
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;

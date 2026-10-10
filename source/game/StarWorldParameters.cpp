@@ -2,7 +2,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.liquid_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"

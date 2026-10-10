@@ -1,20 +1,17 @@
 module;
 
 #include "StarInputEvent.hpp"
+#include "StarJson.hpp"
 import star.application;
-#include "StarInputEvent.hpp"
-import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 #include "StarRect.hpp"
 import star.application_controller;
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;

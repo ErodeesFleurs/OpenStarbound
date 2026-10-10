@@ -19,7 +19,7 @@ import star.directives;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;

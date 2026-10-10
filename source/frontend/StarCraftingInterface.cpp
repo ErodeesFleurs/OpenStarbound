@@ -4,7 +4,7 @@
 #include "StarIdMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
 #include "StarMultiArray.hpp"
@@ -111,10 +111,10 @@ import star.ambient;
 import star.weather;
 import star.world_client;
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.renderer;
 import star.item_descriptor;

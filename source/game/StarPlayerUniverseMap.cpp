@@ -6,7 +6,7 @@
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"

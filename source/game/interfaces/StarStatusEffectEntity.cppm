@@ -4,7 +4,7 @@ module;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"

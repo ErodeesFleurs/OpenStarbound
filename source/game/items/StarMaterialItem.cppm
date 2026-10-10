@@ -36,7 +36,8 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -51,7 +52,8 @@ import star.ttl_cache;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
@@ -61,7 +63,8 @@ import star.version;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
 #include "StarVector.hpp"
@@ -80,7 +83,8 @@ import star.weighted_pool;
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarString.hpp"

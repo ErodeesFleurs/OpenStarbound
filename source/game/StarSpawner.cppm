@@ -12,7 +12,9 @@ import star.time;
 import star.ttl_cache;
 #include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.liquid_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"

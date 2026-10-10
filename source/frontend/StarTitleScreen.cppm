@@ -1,6 +1,6 @@
 module;
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"

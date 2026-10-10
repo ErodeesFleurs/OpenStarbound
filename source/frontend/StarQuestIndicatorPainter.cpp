@@ -1,7 +1,7 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarIdMap.hpp"
 #include "StarImage.hpp"
@@ -149,10 +149,10 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.renderer;
 import star.font_texture_group;
@@ -169,7 +169,7 @@ import star.host_address;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.world_client_thread;

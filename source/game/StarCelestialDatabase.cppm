@@ -3,6 +3,7 @@ module;
 #include "StarRect.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
+#include "StarJson.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -17,13 +18,11 @@ import star.btree_database;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 import star.sky_types;

@@ -1,15 +1,15 @@
 module;
 
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 #include "StarRect.hpp"
 import star.application_controller;

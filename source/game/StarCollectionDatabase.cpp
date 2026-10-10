@@ -17,8 +17,8 @@ import star.asset_path;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"

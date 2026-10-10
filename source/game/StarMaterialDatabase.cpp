@@ -9,7 +9,9 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 import star.image_processing;

@@ -13,7 +13,8 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
@@ -26,7 +27,8 @@ import star.ttl_cache;
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
@@ -37,7 +39,8 @@ import star.weighted_pool;
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 import star.image_processing;
@@ -209,7 +212,7 @@ import star.inspectable_entity;
 import star.host_address;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.world_client_thread;

@@ -6,7 +6,7 @@
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
@@ -89,10 +89,10 @@ import star.celestial_parameters;
 import star.celestial_types;
 
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.renderer;
 import star.asset_source;
@@ -176,7 +176,7 @@ import star.host_address;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.world_client_thread;

@@ -25,7 +25,7 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "StarStatisticsService.hpp"
+import star.statistics_service;
 
 import star.statistics_database;
 import star.versioning_database;

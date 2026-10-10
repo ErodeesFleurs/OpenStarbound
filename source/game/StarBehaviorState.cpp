@@ -1,5 +1,5 @@
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 #include "StarLua.hpp"
 #include "StarRandom.hpp"
 #include "StarLuaGameConverters.hpp"

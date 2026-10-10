@@ -1,4 +1,7 @@
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+#include "StarMathCommon.hpp"
+#include "StarException.hpp"
+import star.game_types;
 
 namespace Star {
 
@@ -6,33 +9,33 @@ float GlobalTimescale = 1.0f;
 float GlobalTimestep = 1.0f / 60.0f;
 float ServerGlobalTimestep = 1.0f / 60.0f;
 
-EnumMap<Direction> const DirectionNames{
+extern EnumMap<Direction> const DirectionNames{
   {Direction::Left, "left"},
   {Direction::Right, "right"},
 };
 
-EnumMap<Gender> const GenderNames{
+extern EnumMap<Gender> const GenderNames{
   {Gender::Male, "male"},
   {Gender::Female, "female"},
 };
 
-EnumMap<FireMode> const FireModeNames{
+extern EnumMap<FireMode> const FireModeNames{
   {FireMode::None, "none"},
   {FireMode::Primary, "primary"},
   {FireMode::Alt, "alt"}
 };
 
-EnumMap<ToolHand> const ToolHandNames{
+extern EnumMap<ToolHand> const ToolHandNames{
   {ToolHand::Primary, "primary"},
   {ToolHand::Alt, "alt"}
 };
 
-EnumMap<TileLayer> const TileLayerNames{
+extern EnumMap<TileLayer> const TileLayerNames{
   {TileLayer::Foreground, "foreground"},
   {TileLayer::Background, "background"}
 };
 
-EnumMap<MoveControlType> const MoveControlTypeNames{
+extern EnumMap<MoveControlType> const MoveControlTypeNames{
   {MoveControlType::Left, "left"},
   {MoveControlType::Right, "right"},
   {MoveControlType::Down, "down"},
@@ -40,7 +43,7 @@ EnumMap<MoveControlType> const MoveControlTypeNames{
   {MoveControlType::Jump, "jump"}
 };
 
-EnumMap<PortraitMode> const PortraitModeNames{
+extern EnumMap<PortraitMode> const PortraitModeNames{
   {PortraitMode::Head, "head"},
   {PortraitMode::Bust, "bust"},
   {PortraitMode::Full, "full"},
@@ -49,7 +52,7 @@ EnumMap<PortraitMode> const PortraitModeNames{
   {PortraitMode::FullNeutralNude, "fullneutralnude"}
 };
 
-EnumMap<Rarity> const RarityNames{
+extern EnumMap<Rarity> const RarityNames{
   {Rarity::Common, "common"},
   {Rarity::Uncommon, "uncommon"},
   {Rarity::Rare, "rare"},

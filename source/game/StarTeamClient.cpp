@@ -20,7 +20,7 @@ import star.asset_path;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"

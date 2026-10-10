@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
@@ -6,10 +6,8 @@
 #include "StarJson.hpp"
 #include "StarRpcPromise.hpp"
 #include "StarMathCommon.hpp"
-import star.liquid_types;
 #include <cstdint>
 #include <cmath>
-import star.material_types;
 
 namespace Star {
 
@@ -98,19 +96,19 @@ extern EnumMap<Rarity> const RarityNames;
 
 // Transformation from tile space to pixel space.  Number of pixels in 1.0
 // distance (one tile).
-unsigned const TilePixels = 8;
+inline constexpr unsigned TilePixels = 8;
 
 extern float GlobalTimescale;
 extern float GlobalTimestep;
 extern float ServerGlobalTimestep;
-float const SystemWorldTimestep = 1.0f / 20.0f;
+inline constexpr float SystemWorldTimestep = 1.0f / 20.0f;
 
-size_t const WorldSectorSize = 32;
+inline constexpr size_t WorldSectorSize = 32;
 
 typedef int32_t EntityId;
 inline constexpr EntityId NullEntityId = 0;
-EntityId const MinServerEntityId = 1;
-EntityId const MaxServerEntityId = highest<EntityId>();
+inline constexpr EntityId MinServerEntityId = 1;
+inline constexpr EntityId MaxServerEntityId = highest<EntityId>();
 
 // Whether this entity is controlled by it's world, or synced from a different
 // world.  Does not necessarily correspond to client / server world (player is
@@ -121,12 +119,12 @@ enum class EntityMode {
 };
 
 typedef uint16_t ConnectionId;
-ConnectionId const ServerConnectionId = 0;
+inline constexpr ConnectionId ServerConnectionId = 0;
 // Minimum and maximum valid client ids
-ConnectionId const MinClientConnectionId = 1;
-ConnectionId const MaxClientConnectionId = 16383;
-ConnectionId const MinClientSubWorldConnectionId = MaxClientConnectionId+1;
-ConnectionId const MaxClientSubWorldConnectionId = MaxClientConnectionId-MinClientConnectionId+MinClientSubWorldConnectionId;
+inline constexpr ConnectionId MinClientConnectionId = 1;
+inline constexpr ConnectionId MaxClientConnectionId = 16383;
+inline constexpr ConnectionId MinClientSubWorldConnectionId = MaxClientConnectionId+1;
+inline constexpr ConnectionId MaxClientSubWorldConnectionId = MaxClientConnectionId-MinClientConnectionId+MinClientSubWorldConnectionId;
 
 inline ConnectionId mainToSubWorldConnectionId(ConnectionId const& id) {
   return id-MinClientConnectionId+MinClientSubWorldConnectionId;
@@ -142,8 +140,8 @@ inline ConnectionId subWorldToMainConnectionId(ConnectionId const& id) {
 // this should allow the client to possibly split the subworlds to multiple threads in the future.
 typedef uint16_t ClientSubWorldId;
 inline constexpr ConnectionId MainClientWorldId = 0;
-ConnectionId const MinClientSubWorldId = 1;
-ConnectionId const MaxClientSubWorldId = highest<ClientSubWorldId>();
+inline constexpr ConnectionId MinClientSubWorldId = 1;
+inline constexpr ConnectionId MaxClientSubWorldId = highest<ClientSubWorldId>();
 
 template <typename Vec2T>
 inline Vec2F centerOfTile(Vec2T const& tile) {
@@ -152,20 +150,20 @@ inline Vec2F centerOfTile(Vec2T const& tile) {
 
 typedef uint16_t DungeonId;
 
-static const DungeonId NoDungeonId = 65535;
-static const DungeonId SpawnDungeonId = 65534;
-static const DungeonId BiomeMicroDungeonId = 65533;
+inline constexpr DungeonId NoDungeonId = 65535;
+inline constexpr DungeonId SpawnDungeonId = 65534;
+inline constexpr DungeonId BiomeMicroDungeonId = 65533;
 // meta dungeon signalling player built structures
-static const DungeonId ConstructionDungeonId = 65532;
+inline constexpr DungeonId ConstructionDungeonId = 65532;
 // indicates a block that has been destroyed
-static const DungeonId DestroyedBlockDungeonId = 65531;
+inline constexpr DungeonId DestroyedBlockDungeonId = 65531;
 
 // dungeonId for zero-g areas with and without tile protection
-static const DungeonId ZeroGDungeonId = 65525;
-static const DungeonId ProtectedZeroGDungeonId = 65524;
+inline constexpr DungeonId ZeroGDungeonId = 65525;
+inline constexpr DungeonId ProtectedZeroGDungeonId = 65524;
 
 // The first dungeon id that is reserved for special hard-coded dungeon values.
-DungeonId const FirstMetaDungeonId = 65520;
+inline constexpr DungeonId FirstMetaDungeonId = 65520;
 
 inline bool isRealDungeon(DungeonId dungeon) {
   return dungeon < FirstMetaDungeonId;
@@ -192,4 +190,71 @@ enum class TileDamageResult {
   Normal = 2,
 };
 
+}
+
+
+export module star.game_types;
+
+export namespace Star {
+  using ::Star::ServerCommandResult;
+  using ::Star::ChainableJsonMessageResponse;
+  using ::Star::Direction;
+  using ::Star::DirectionNames;
+  using ::Star::operator-;
+  using ::Star::numericalDirection;
+  using ::Star::directionOf;
+  using ::Star::Gender;
+  using ::Star::GenderNames;
+  using ::Star::FireMode;
+  using ::Star::FireModeNames;
+  using ::Star::ToolHand;
+  using ::Star::ToolHandNames;
+  using ::Star::TileLayer;
+  using ::Star::TileLayerNames;
+  using ::Star::MoveControlType;
+  using ::Star::MoveControlTypeNames;
+  using ::Star::PortraitMode;
+  using ::Star::PortraitModeNames;
+  using ::Star::Rarity;
+  using ::Star::RarityNames;
+  using ::Star::TilePixels;
+  using ::Star::GlobalTimescale;
+  using ::Star::GlobalTimestep;
+  using ::Star::ServerGlobalTimestep;
+  using ::Star::SystemWorldTimestep;
+  using ::Star::WorldSectorSize;
+  using ::Star::EntityId;
+  using ::Star::NullEntityId;
+  using ::Star::MinServerEntityId;
+  using ::Star::MaxServerEntityId;
+  using ::Star::EntityMode;
+  using ::Star::ConnectionId;
+  using ::Star::ServerConnectionId;
+  using ::Star::MinClientConnectionId;
+  using ::Star::MaxClientConnectionId;
+  using ::Star::MinClientSubWorldConnectionId;
+  using ::Star::MaxClientSubWorldConnectionId;
+  using ::Star::mainToSubWorldConnectionId;
+  using ::Star::maybeMainToSubWorldConnectionId;
+  using ::Star::subWorldToMainConnectionId;
+  using ::Star::ClientSubWorldId;
+  using ::Star::MainClientWorldId;
+  using ::Star::MinClientSubWorldId;
+  using ::Star::MaxClientSubWorldId;
+  using ::Star::centerOfTile;
+  using ::Star::DungeonId;
+  using ::Star::NoDungeonId;
+  using ::Star::SpawnDungeonId;
+  using ::Star::BiomeMicroDungeonId;
+  using ::Star::ConstructionDungeonId;
+  using ::Star::DestroyedBlockDungeonId;
+  using ::Star::ZeroGDungeonId;
+  using ::Star::ProtectedZeroGDungeonId;
+  using ::Star::FirstMetaDungeonId;
+  using ::Star::isRealDungeon;
+  using ::Star::connectionEntitySpace;
+  using ::Star::entityIdInSpace;
+  using ::Star::connectionForEntity;
+  using ::Star::getAngleSide;
+  using ::Star::TileDamageResult;
 }

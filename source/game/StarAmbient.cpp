@@ -25,7 +25,7 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarRandom.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 
 import star.mixer;
 import star.asset_source;

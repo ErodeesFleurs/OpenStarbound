@@ -9,7 +9,8 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
 #include "StarVariant.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"

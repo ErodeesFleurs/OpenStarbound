@@ -16,7 +16,7 @@ import star.time;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"

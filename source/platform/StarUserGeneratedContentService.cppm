@@ -1,4 +1,7 @@
-#pragma once
+module;
+
+#include "StarMaybe.hpp"
+#include "StarString.hpp"
 
 namespace Star {
 
@@ -26,4 +29,16 @@ public:
   virtual UserGeneratedContentService::UGCState triggerContentDownload() = 0;
 };
 
+}
+
+export module star.user_generated_content_service;
+
+export namespace Star {
+  using ::Star::UserGeneratedContentService;
+  using ::Star::UserGeneratedContentServicePtr;
+  using ::Star::UserGeneratedContentServiceConstPtr;
+  using ::Star::UserGeneratedContentServiceWeakPtr;
+  using ::Star::UserGeneratedContentServiceConstWeakPtr;
+  using ::Star::UserGeneratedContentServiceUPtr;
+  using ::Star::UserGeneratedContentServiceConstUPtr;
 }

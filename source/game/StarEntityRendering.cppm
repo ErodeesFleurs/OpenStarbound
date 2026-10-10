@@ -8,14 +8,13 @@ module;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-import star.mixer;
 #include "StarJson.hpp"
+import star.mixer;
 #include "StarColor.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -23,23 +22,17 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 import star.drawable;
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.entity_rendering_types;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
-#include "StarBiMap.hpp"
 import star.animation;
 import star.particle;
-#include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 import star.drawable;
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 
 import star.light_source;
 

@@ -10,7 +10,7 @@
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarPoly.hpp"
@@ -103,7 +103,7 @@ import star.quest_descriptor;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
@@ -200,9 +200,9 @@ import star.world_camera;
 import star.world_painter;
 #include "StarInputEvent.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;

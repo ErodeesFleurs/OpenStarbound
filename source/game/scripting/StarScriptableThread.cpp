@@ -6,7 +6,7 @@
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"

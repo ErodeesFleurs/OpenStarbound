@@ -6,7 +6,7 @@ module;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarCasting.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"

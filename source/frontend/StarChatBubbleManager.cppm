@@ -1,13 +1,13 @@
 module;
 
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 
 #include "StarColor.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -15,13 +15,10 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 #include "StarBiMap.hpp"
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 #include "StarVector.hpp"
 import star.text;
 
-#include "StarRect.hpp"
-#include "StarList.hpp"
 
 
 

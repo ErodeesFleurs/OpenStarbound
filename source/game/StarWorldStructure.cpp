@@ -14,7 +14,9 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarRect.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarOrderedMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

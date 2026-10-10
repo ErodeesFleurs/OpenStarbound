@@ -10,17 +10,13 @@ module;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 #include "StarRpcPromise.hpp"
-#include "StarGameTypes.hpp"
-#include "StarJson.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-#include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 
 import star.damage_types;

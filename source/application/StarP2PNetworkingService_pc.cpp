@@ -1,10 +1,12 @@
 #include "StarThread.hpp"
 #include "StarInputEvent.hpp"
+#include "StarRandom.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.host_address;
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 #include "StarSteamDispatch.hpp"
@@ -21,7 +23,6 @@ import star.p2p_networking_service_pc;
 #include "StarLexicalCast.hpp"
 #include "StarEither.hpp"
 #include "StarLogging.hpp"
-#include "StarRandom.hpp"
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 import star.encode;

@@ -10,7 +10,7 @@ import star.spatial_hash_2d;
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarDataStream.hpp"
 #include "StarNetElementSystem.hpp"

@@ -2,7 +2,8 @@ module;
 
 #include "StarRect.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 
 namespace Star {
 

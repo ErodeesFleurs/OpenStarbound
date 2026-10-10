@@ -12,8 +12,8 @@ module;
 #include "StarRpcPromise.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.game_types;
 #include "StarString.hpp"
 #include "StarEither.hpp"
 #include "StarVector.hpp"
@@ -21,7 +21,7 @@ module;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
 #include "StarIdMap.hpp"

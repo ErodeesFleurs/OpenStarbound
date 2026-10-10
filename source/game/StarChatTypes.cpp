@@ -1,6 +1,7 @@
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 import star.chat_types;
 
 namespace Star {

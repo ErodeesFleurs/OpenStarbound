@@ -11,7 +11,7 @@ import star.observer_stream;
 #include "StarIdMap.hpp"
 #include "StarEither.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"

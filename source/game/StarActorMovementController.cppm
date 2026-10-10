@@ -1,8 +1,7 @@
 module;
 #include "StarIdMap.hpp"
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"

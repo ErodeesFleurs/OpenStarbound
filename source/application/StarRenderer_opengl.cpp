@@ -1,10 +1,10 @@
 #include "StarRect.hpp"
 #include "StarImage.hpp"
 #include "StarCasting.hpp"
+#include "StarJson.hpp"
 import star.texture_atlas;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;
@@ -12,7 +12,6 @@ import star.renderer;
 #include "GL/glew.h"
 import star.renderer_opengl;
 #include "StarJsonExtra.hpp"
-#include "StarCasting.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {

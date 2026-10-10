@@ -14,7 +14,7 @@ import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarVariant.hpp"

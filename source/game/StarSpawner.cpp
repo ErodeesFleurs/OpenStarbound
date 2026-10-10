@@ -11,7 +11,7 @@ import star.lru_cache;
 import star.time;
 import star.ttl_cache;
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"

@@ -3,10 +3,11 @@ module;
 #include "StarThread.hpp"
 #include "StarInputEvent.hpp"
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+#include "StarString.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 #include "StarSteamDispatch.hpp"

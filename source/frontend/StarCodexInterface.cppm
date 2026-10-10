@@ -26,7 +26,7 @@ import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
 #include "StarThread.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
 #include "StarList.hpp"

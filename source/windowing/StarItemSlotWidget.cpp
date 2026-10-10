@@ -23,13 +23,13 @@ import star.text;
 #include "StarMaybe.hpp"
 import star.listener;
 #include "StarThread.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarAudio.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarConfig.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
@@ -40,10 +40,10 @@ import star.version;
 
 import star.drawable;
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 import star.application_controller;
 #include "StarVariant.hpp"

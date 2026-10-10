@@ -499,7 +499,7 @@ endif()
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_modules PRIVATE "${PROJECT_SOURCE_DIR}/core/StarPch.hpp")
   foreach(pch_target
-      star_core star_base_modules star_game_module_interfaces star_game_modules
+      star_core star_base_modules star_platform_modules star_game_module_interfaces star_game_modules
       star_game star_server_modules starbound_server
       star_application_module_interfaces star_application_modules star_application
       star_rendering_module_interfaces star_rendering_modules

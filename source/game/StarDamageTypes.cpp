@@ -1,7 +1,8 @@
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+import star.game_types;
 import star.damage_types;
 
 namespace Star {

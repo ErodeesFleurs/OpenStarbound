@@ -24,7 +24,7 @@ import star.asset_path;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"

@@ -9,7 +9,7 @@
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
@@ -68,7 +68,7 @@ import star.sector_array_2d;
 #include <atomic>
 #include <memory>
 #include "StarRefPtr.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarString.hpp"
 import star.encode;
 #include "StarBytes.hpp"
@@ -148,7 +148,7 @@ import star.world_server_thread;
 import star.world_template;
 import star.system_world_server;
 import star.system_world_server_thread;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.universe_settings;

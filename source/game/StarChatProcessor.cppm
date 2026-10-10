@@ -1,8 +1,9 @@
 module;
 
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+#include "StarRpcPromise.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 import star.chat_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"

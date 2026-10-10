@@ -16,7 +16,7 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
 #include "StarArray.hpp"
@@ -25,8 +25,8 @@ import star.ttl_cache;
 #include "StarRpcPromise.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.game_types;
 #include "StarString.hpp"
 #include "StarEither.hpp"
 #include "StarVector.hpp"
@@ -34,7 +34,7 @@ import star.ttl_cache;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
 #include "StarDataStreamExtra.hpp"

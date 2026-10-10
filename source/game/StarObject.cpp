@@ -13,7 +13,7 @@
 #include "StarRpcPromise.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
@@ -46,7 +46,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 import star.periodic;
 import star.periodic_function;

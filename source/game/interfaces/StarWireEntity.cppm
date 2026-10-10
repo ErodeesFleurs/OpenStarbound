@@ -1,11 +1,11 @@
 module;
 #include "StarIdMap.hpp"
-#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarDataStream.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarNetElementSystem.hpp"

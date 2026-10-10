@@ -1,6 +1,8 @@
 module;
 #include "StarConfig.hpp"
-#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+#include "StarRpcPromise.hpp"
+import star.game_types;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 

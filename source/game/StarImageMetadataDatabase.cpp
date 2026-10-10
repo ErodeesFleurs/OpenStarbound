@@ -20,7 +20,8 @@ import star.ttl_cache;
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 import star.encode;
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"

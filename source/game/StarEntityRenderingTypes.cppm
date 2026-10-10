@@ -16,7 +16,11 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 import star.drawable;
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 
 namespace Star {
 

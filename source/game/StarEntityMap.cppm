@@ -4,12 +4,12 @@ module;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarBlockAllocator.hpp"
+#include "StarJson.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"

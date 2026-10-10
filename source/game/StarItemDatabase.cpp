@@ -11,7 +11,7 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
@@ -25,7 +25,7 @@ import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"

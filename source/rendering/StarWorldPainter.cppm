@@ -3,7 +3,7 @@ module;
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
 #include "StarList.hpp"

@@ -12,7 +12,7 @@ import star.perlin;
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarInterpolation.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLogging.hpp"
 
 export module star.terrain_karst_cave;

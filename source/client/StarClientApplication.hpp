@@ -37,7 +37,7 @@ import star.perlin;
 #include "StarString.hpp"
 #include "StarVector.hpp"
 import star.text;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRpcPromise.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
@@ -122,7 +122,7 @@ import star.system_world_server;
 import star.system_world_server_thread;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.universe_settings;
@@ -176,9 +176,9 @@ import star.drawable_painter;
 import star.world_camera;
 import star.world_painter;
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.gui_types;
 import star.gui_context;

@@ -15,7 +15,8 @@ module;
 #include "StarInterpolation.hpp"
 #include "StarVector.hpp"
 #include "StarThread.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"

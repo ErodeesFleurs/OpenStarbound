@@ -19,7 +19,7 @@ import star.asset_path;
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 #include <functional>
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"

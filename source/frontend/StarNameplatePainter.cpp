@@ -3,7 +3,7 @@
 #include "StarXXHash.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarRect.hpp"
 #include "StarList.hpp"
@@ -173,10 +173,10 @@ import star.ai_types;
 import star.radio_message_database;
 import star.player;
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 import star.application_controller;
 import star.drawable;
 import star.asset_texture_group;

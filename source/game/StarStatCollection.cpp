@@ -6,7 +6,7 @@
 #include "StarIdMap.hpp"
 import star.status_types;
 #include "StarDataStreamExtra.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLogging.hpp"
 
 import star.stat_set;

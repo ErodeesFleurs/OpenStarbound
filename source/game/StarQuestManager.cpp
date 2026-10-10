@@ -17,7 +17,7 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarDataStream.hpp"
@@ -36,7 +36,7 @@ import star.asset_path;
 #include "StarVector.hpp"
 #include "StarThread.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -45,7 +45,7 @@ import star.asset_path;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
@@ -173,7 +173,7 @@ import star.celestial_parameters;
 import star.chat_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.liquid_types;
 import star.worker_pool;
 import star.tile_sector_array;

@@ -13,7 +13,7 @@
 #include "StarColor.hpp"
 #include "StarInterpolation.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"

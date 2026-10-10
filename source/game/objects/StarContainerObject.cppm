@@ -12,7 +12,7 @@ import star.weighted_pool;
 #include "StarRpcPromise.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMathCommon.hpp"
 import star.periodic;
 #include "StarInterpolation.hpp"

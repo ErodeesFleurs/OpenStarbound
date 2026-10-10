@@ -11,7 +11,7 @@ import star.tcp;
 #include <memory>
 
 #include "StarThread.hpp"
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 #include "StarByteArray.hpp"
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"

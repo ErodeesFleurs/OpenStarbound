@@ -11,7 +11,7 @@ import star.weighted_pool;
 #include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarVector.hpp"

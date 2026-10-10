@@ -15,7 +15,7 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
@@ -27,7 +27,7 @@ import star.ttl_cache;
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -54,7 +54,7 @@ import star.parametric_function;
 #include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.weighted_pool;
 #include "StarLogging.hpp"
 #include "StarIODevice.hpp"

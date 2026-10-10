@@ -9,7 +9,7 @@ import star.time;
 import star.ttl_cache;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"

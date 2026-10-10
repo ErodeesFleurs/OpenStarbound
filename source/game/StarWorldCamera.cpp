@@ -1,6 +1,7 @@
 #include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 
 import star.world_camera;

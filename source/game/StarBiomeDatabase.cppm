@@ -1,10 +1,11 @@
 module;
 
-#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarJson.hpp"
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
@@ -20,8 +21,6 @@ import star.animation;
 import star.particle;
 import star.weather_types;
 #include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarJson.hpp"
 import star.sky_types;
 
 namespace Star {

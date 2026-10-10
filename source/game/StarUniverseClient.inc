@@ -1,7 +1,7 @@
 #pragma once
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
@@ -85,7 +85,7 @@ import star.quest_descriptor;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;

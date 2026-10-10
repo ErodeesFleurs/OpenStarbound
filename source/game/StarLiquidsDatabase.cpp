@@ -5,7 +5,9 @@
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 #include "StarList.hpp"
 #include "StarVariant.hpp"
 #include "StarRect.hpp"

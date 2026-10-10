@@ -8,7 +8,7 @@ import star.lru_cache;
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 

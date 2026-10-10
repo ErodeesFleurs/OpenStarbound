@@ -8,7 +8,7 @@ import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
 import star.sky_types;

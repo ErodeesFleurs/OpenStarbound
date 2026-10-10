@@ -25,10 +25,10 @@ import star.asset_path;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
 import star.application;
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
-#include "StarDesktopService.hpp"
+import star.statistics_service;
+import star.p2p_networking_service;
+import star.user_generated_content_service;
+import star.desktop_service;
 #include "StarImage.hpp"
 import star.application_controller;
 import star.input;

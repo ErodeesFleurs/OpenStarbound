@@ -6,7 +6,7 @@
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"

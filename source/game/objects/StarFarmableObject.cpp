@@ -63,7 +63,8 @@ import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarBlockAllocator.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 import star.weighted_pool;
 import star.parametric_function;
 #include "StarLogging.hpp"

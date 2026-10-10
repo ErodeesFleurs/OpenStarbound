@@ -2,12 +2,12 @@ module;
 
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
+#include "StarJson.hpp"
 import star.uuid;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -21,10 +21,10 @@ import star.drawable;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
-#include "StarGameTypes.hpp"
+#include "StarRpcPromise.hpp"
+import star.game_types;
 import star.warping;
 #include "StarJsonRpc.hpp"
 #include "StarConfig.hpp"

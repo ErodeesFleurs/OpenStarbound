@@ -1,5 +1,4 @@
 set (star_game_HEADERS
-    StarGameTypes.hpp
 
 
 
@@ -12,7 +11,6 @@ set (star_game_HEADERS
   )
 
 set (star_game_SOURCES
-    StarGameTypes.cpp
 
 
 
@@ -25,6 +23,7 @@ set (star_game_SOURCES
 
 add_library (star_game_module_interfaces OBJECT)
 target_sources (star_game_module_interfaces PUBLIC FILE_SET CXX_MODULES FILES
+    StarGameTypes.cppm
     StarItem.cppm
     StarItemDrop.cppm
     StarMonster.cppm
@@ -290,7 +289,7 @@ target_include_directories (star_game_module_interfaces PRIVATE
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_GAME_INCLUDES}
   )
-target_link_libraries (star_game_module_interfaces PUBLIC star_base_modules PRIVATE star_modules star_build_config)
+target_link_libraries (star_game_module_interfaces PUBLIC star_base_modules star_platform_modules PRIVATE star_modules star_build_config)
 
 # Share native declarations with ordinary key-function providers.
 target_sources (star_game_module_interfaces PRIVATE
@@ -305,6 +304,7 @@ target_sources (star_game_module_interfaces PRIVATE
 
 # Keep implementation template instantiations out of interface BMIs.
 add_library (star_game_modules STATIC
+    StarGameTypes.cpp
     objects/StarContainerObject.cpp
     items/StarTools.cpp
     items/StarAugmentItem.cpp

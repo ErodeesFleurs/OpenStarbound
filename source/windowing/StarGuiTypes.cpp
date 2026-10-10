@@ -1,7 +1,7 @@
 #include "StarString.hpp"
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.gui_types;
 
 namespace Star {

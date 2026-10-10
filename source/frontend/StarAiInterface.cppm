@@ -1,7 +1,7 @@
 module;
 
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 
 #include "StarOrderedSet.hpp"
 #include "StarDataStream.hpp"
@@ -20,7 +20,6 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
 #include "StarString.hpp"

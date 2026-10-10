@@ -16,7 +16,8 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
 #include "StarMaybe.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarRpcPromise.hpp"
@@ -26,7 +27,8 @@
 #include "StarAStar.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarString.hpp"

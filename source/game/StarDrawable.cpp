@@ -21,7 +21,8 @@ import star.asset_path;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

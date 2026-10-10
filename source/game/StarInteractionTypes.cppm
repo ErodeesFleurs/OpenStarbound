@@ -1,7 +1,9 @@
 module;
 
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+#include "StarVector.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 
 namespace Star {
 

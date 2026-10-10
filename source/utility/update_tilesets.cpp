@@ -27,7 +27,8 @@ import star.periodic_function;
 #include "StarColor.hpp"
 #include "StarLua.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.material_types;
 #include "StarAudio.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"

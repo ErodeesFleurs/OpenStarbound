@@ -1,7 +1,7 @@
 module;
 
-#include "StarGameTypes.hpp"
 #include "StarJson.hpp"
+import star.game_types;
 #include "StarLua.hpp"
 
 import star.behavior_database;

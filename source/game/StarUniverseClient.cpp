@@ -1,7 +1,7 @@
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
@@ -95,7 +95,7 @@ import star.warping;
 import star.item_descriptor;
 import star.quest_descriptor;
 import star.ai_types;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;

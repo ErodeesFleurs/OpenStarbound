@@ -5,7 +5,8 @@ module;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 
 namespace Star {
 

@@ -15,7 +15,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarVariant.hpp"

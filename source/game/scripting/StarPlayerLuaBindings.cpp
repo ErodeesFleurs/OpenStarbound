@@ -27,7 +27,7 @@ import star.directives;
 import star.asset_path;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -57,7 +57,7 @@ import star.periodic_function;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.weighted_pool;
 #include "StarByteArray.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -85,7 +85,7 @@ import star.btree_database;
 #include "StarImage.hpp"
 #include "StarInterpolation.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -164,7 +164,7 @@ import star.celestial_parameters;
 import star.chat_types;
 import star.socket;
 import star.tcp;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.liquid_types;
 import star.worker_pool;
 import star.tile_sector_array;

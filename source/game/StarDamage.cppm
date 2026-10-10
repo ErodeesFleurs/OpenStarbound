@@ -3,11 +3,10 @@ module;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.damage_types;
 #include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"

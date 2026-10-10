@@ -3,11 +3,10 @@ module;
 #include "StarRect.hpp"
 #include "StarImage.hpp"
 #include "StarCasting.hpp"
+#include "StarJson.hpp"
 import star.texture_atlas;
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;

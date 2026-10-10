@@ -7,7 +7,7 @@ module;
 #include "StarEither.hpp"
 #include "StarThread.hpp"
 #include "StarMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarDataStreamDevices.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
@@ -152,7 +152,7 @@ import star.world_server_thread;
 import star.world_template;
 import star.system_world_server;
 import star.system_world_server_thread;
-#include "StarP2PNetworkingService.hpp"
+import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.universe_settings;

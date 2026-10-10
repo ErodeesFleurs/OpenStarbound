@@ -3,7 +3,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarImage.hpp"
 #include "StarList.hpp"

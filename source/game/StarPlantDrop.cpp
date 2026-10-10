@@ -30,7 +30,7 @@ import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRandom.hpp"
 #include "StarArray.hpp"
 #include "StarRect.hpp"

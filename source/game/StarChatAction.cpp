@@ -1,5 +1,6 @@
 #include "StarJson.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 import star.chat_action;
 
 namespace Star {

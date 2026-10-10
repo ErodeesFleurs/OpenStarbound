@@ -23,7 +23,7 @@ import star.asset_path;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLexicalCast.hpp"
 
 import star.drawable;

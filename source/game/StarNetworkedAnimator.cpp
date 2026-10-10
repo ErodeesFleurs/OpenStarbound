@@ -37,7 +37,7 @@ import star.version;
 #include "StarLexicalCast.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 
 import star.animated_part_set;
 import star.drawable;

@@ -3,7 +3,7 @@
 #include "StarIdMap.hpp"
 #include "StarThread.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarLexicalCast.hpp"
 #include "StarRandom.hpp"
 #include "StarVariant.hpp"
@@ -29,7 +29,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarGameTypes.hpp"
+import star.game_types;
 import star.time;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"

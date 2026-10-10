@@ -28,7 +28,8 @@ import star.asset_path;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRect.hpp"

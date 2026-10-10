@@ -2,7 +2,10 @@ module;
 
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"

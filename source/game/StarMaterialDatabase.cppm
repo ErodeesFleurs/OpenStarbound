@@ -5,7 +5,9 @@ module;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 #include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
 import star.tile_damage;
@@ -17,10 +19,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.material_render_profile;
-#include "StarJson.hpp"
-#include "StarVector.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
 import star.tile_damage;
 
 namespace Star {

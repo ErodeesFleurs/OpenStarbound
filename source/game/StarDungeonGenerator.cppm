@@ -4,7 +4,10 @@ module;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
+#include "StarVector.hpp"
+import star.game_types;
+import star.liquid_types;
+import star.material_types;
 #include "StarRandom.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"

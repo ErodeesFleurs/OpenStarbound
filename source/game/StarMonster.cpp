@@ -13,7 +13,7 @@
 #include "StarLogging.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarInterpolation.hpp"

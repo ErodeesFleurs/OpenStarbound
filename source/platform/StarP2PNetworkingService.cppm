@@ -1,11 +1,14 @@
-#pragma once
+module;
 
+#include "StarByteArray.hpp"
 #include "StarEither.hpp"
+#include "StarList.hpp"
+#include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
-import star.host_address;
 #include "StarStrongTypedef.hpp"
 #include "StarRpcPromise.hpp"
+
+import star.host_address;
 
 namespace Star {
 
@@ -62,3 +65,25 @@ public:
 };
 
 };
+
+export module star.p2p_networking_service;
+
+export namespace Star {
+  using ::Star::P2PSocket;
+  using ::Star::P2PSocketPtr;
+  using ::Star::P2PSocketConstPtr;
+  using ::Star::P2PSocketWeakPtr;
+  using ::Star::P2PSocketConstWeakPtr;
+  using ::Star::P2PSocketUPtr;
+  using ::Star::P2PSocketConstUPtr;
+  using ::Star::P2PNetworkingService;
+  using ::Star::P2PNetworkingServicePtr;
+  using ::Star::P2PNetworkingServiceConstPtr;
+  using ::Star::P2PNetworkingServiceWeakPtr;
+  using ::Star::P2PNetworkingServiceConstWeakPtr;
+  using ::Star::P2PNetworkingServiceUPtr;
+  using ::Star::P2PNetworkingServiceConstUPtr;
+  using ::Star::P2PJoinRequestReply;
+  using ::Star::P2PNetworkingPeerId;
+  using ::Star::P2PNetworkingPeerIdWrapper;
+}

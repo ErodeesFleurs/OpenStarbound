@@ -15,7 +15,7 @@ import star.periodic_function;
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
+import star.game_types;
 #include "StarAudio.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
