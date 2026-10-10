@@ -45,7 +45,7 @@ import star.platform_services_pc;
 #ifdef STAR_SYSTEM_WINDOWS
 #include <dwmapi.h>
 #include <objidl.h>
-#include <ShlObj_core.h>
+#include <shlobj.h>
 #endif
 
 #include "imgui.h"

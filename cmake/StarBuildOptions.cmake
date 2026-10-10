@@ -30,10 +30,11 @@ target_compile_definitions(star_build_config INTERFACE
   "$<$<CONFIG:Release,RelWithDebInfo>:NDEBUG>")
 
 target_compile_options(star_build_config INTERFACE
-  "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall;-Wextra;-Wuninitialized;-Wno-parentheses-equality;-Wno-deprecated-declarations;-Wno-nan-infinity-disabled>"
-  "$<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>")
-target_link_options(star_build_config INTERFACE
-  "$<$<LINK_LANGUAGE:CXX>:-stdlib=libc++>")
+  "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall;-Wextra;-Wuninitialized;-Wno-parentheses-equality;-Wno-deprecated-declarations;-Wno-nan-infinity-disabled>")
+if(NOT STAR_SYSTEM_WINDOWS)
+  target_compile_options(star_build_config INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>")
+  target_link_options(star_build_config INTERFACE "$<$<LINK_LANGUAGE:CXX>:-stdlib=libc++>")
+endif()
 if(STAR_SYSTEM_MACOS)
   target_link_options(star_build_config INTERFACE "LINKER:-export_dynamic")
 elseif(NOT STAR_SYSTEM_WINDOWS)
@@ -58,9 +59,16 @@ foreach(config Debug RelWithAsserts RelWithDebInfo)
   else()
     set(debug_option -g)
   endif()
+  if(STAR_SYSTEM_WINDOWS)
+    # DbgHelp consumes native CodeView/PDB symbols, not GNU DWARF records.
+    list(APPEND debug_option -gcodeview)
+  endif()
   star_default_compile_options(${config} debug ${debug_option})
 endforeach()
-if(NOT STAR_SYSTEM_WINDOWS)
+if(STAR_SYSTEM_WINDOWS)
+  target_link_options(star_build_config INTERFACE
+    "$<$<CONFIG:Debug,RelWithAsserts,RelWithDebInfo>:LINKER:--pdb=>")
+else()
   target_compile_options(star_build_config INTERFACE
     "$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<CONFIG:RelWithDebInfo>>:-gz=zlib>")
 endif()

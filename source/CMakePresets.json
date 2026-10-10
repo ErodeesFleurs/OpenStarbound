@@ -52,6 +52,24 @@
       }
     },
     {
+      "inherits": "windows-release",
+      "name": "windows-cross",
+      "displayName": "Windows x64 (cross-compile from Linux)",
+      "binaryDir": "${sourceParentDir}/build/windows-cross",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "environment": {
+        "CC": "$env{XCLANG_ROOT}/bin/clang",
+        "CXX": "$env{XCLANG_ROOT}/bin/clang++",
+        "PATH": "$env{XCLANG_ROOT}/bin:$penv{PATH}"
+      },
+      "cacheVariables": {
+        "VCPKG_HOST_TRIPLET": "x64-linux",
+        "CMAKE_FIND_ROOT_PATH": "${sourceParentDir}/lib/windows",
+        "VCPKG_APPLOCAL_DEPS": false,
+        "STAR_BUILD_DEV_TOOLS": true
+      }
+    },
+    {
       "inherits": "base",
       "name": "linux-release",
       "displayName": "Linux x64 (xclang 23.1.2.9, libc++)",
@@ -109,6 +127,7 @@
   ],
   "buildPresets": [
     { "name": "windows-release", "configurePreset": "windows-release" },
+    { "name": "windows-cross", "configurePreset": "windows-cross" },
     { "name": "linux-release", "configurePreset": "linux-release" },
     { "name": "linux-arm-release", "configurePreset": "linux-arm-release" },
     { "name": "macos-release", "configurePreset": "macos-release" },
@@ -122,6 +141,7 @@
       "filter": { "include": { "label": "NoAssets" } }
     },
     { "inherits": "base", "name": "windows-release", "configurePreset": "windows-release" },
+    { "inherits": "base", "name": "windows-cross", "configurePreset": "windows-cross" },
     { "inherits": "base", "name": "linux-release", "configurePreset": "linux-release" },
     { "inherits": "base", "name": "linux-arm-release", "configurePreset": "linux-arm-release" },
     { "inherits": "base", "name": "macos-release", "configurePreset": "macos-release" },

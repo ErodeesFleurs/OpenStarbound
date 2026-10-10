@@ -388,6 +388,18 @@ foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_SOURCE_DIR}/../dist)
 endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 
+if(STAR_SYSTEM_WINDOWS AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+  # vcpkg's Windows app-local helper requires a Windows PowerShell host.
+  file(GLOB STAR_WINDOWS_RUNTIME_DLLS
+    "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/*.dll"
+    "${PROJECT_SOURCE_DIR}/../lib/windows/*.dll")
+  file(MAKE_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+  foreach(runtime_dll IN LISTS STAR_WINDOWS_RUNTIME_DLLS)
+    get_filename_component(runtime_dll_name "${runtime_dll}" NAME)
+    file(COPY_FILE "${runtime_dll}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${runtime_dll_name}" ONLY_IF_DIFFERENT)
+  endforeach()
+endif()
+
 # External code included with starbound source, which core depends on
 set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)
 add_subdirectory(extern)

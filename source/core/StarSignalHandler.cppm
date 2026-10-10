@@ -8,7 +8,7 @@ module;
 #include "StarLogging.hpp"
 #define NOMINMAX
 #include <windows.h>
-#include <minidumpapiset.h>
+#include <dbghelp.h>
 #else
 #include <signal.h>
 #endif

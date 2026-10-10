@@ -70,7 +70,15 @@ in
   # libc++/libc++abi/libunwind. C++ dependencies must also be linked statically.
   extraBuildCommands = ''
     echo '--no-default-config -resource-dir=${toolchain}/lib/clang/23' >> "$out/nix-support/cc-cflags"
-    echo '${lib.optionalString sanitizers "-stdlib++-isystem ${toolchain}/${host.triple}/usr/lib/asan/include"} -stdlib++-isystem ${toolchain}/libc++/include/${host.triple}/c++/v1 -stdlib++-isystem ${toolchain}/libc++/include/c++/v1' >> "$out/nix-support/libcxx-cxxflags"
+    # cc-wrapper also supplies C++ defaults when clang is used as a C driver.
+    # Driver configuration keeps these includes C++-only, as in xclang's own
+    # target configs, without unused C++ command-line arguments in C probes.
+    cat > "$out/nix-support/libcxx-headers.cfg" <<'EOF'
+    ${lib.optionalString sanitizers "-stdlib++-isystem ${toolchain}/${host.triple}/usr/lib/asan/include"}
+    -stdlib++-isystem ${toolchain}/libc++/include/${host.triple}/c++/v1
+    -stdlib++-isystem ${toolchain}/libc++/include/c++/v1
+    EOF
+    echo "--config=$out/nix-support/libcxx-headers.cfg" >> "$out/nix-support/libcxx-cxxflags"
     echo '-stdlib=libc++ ${
       if sanitizers then
         "-nostdlib++ ${toolchain}/${host.triple}/usr/lib/asan/libc++.a"

@@ -161,7 +161,11 @@ nix build .#full --cores 16 --max-jobs 1 --print-build-logs -o result-full
 
 `nix develop .#full` supplies the full package's compiler/dependency closure. `default`, `server`, `full`, `asserts` and `sanitized` packages all use xclang/libc++; sanitized builds select its instrumented libc++ and instrument executable-side C++ dependencies too. Linux ARM64 supports SDK-free variants; the vendored Linux Steam/Discord SDKs remain x86_64-only.
 
-The Linux x86_64 libc++ build has compiled and linked every enabled client, server, Qt/tool and test target on the VPS at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed, without changing WorldSnapshot goldens. Direct ELF dependencies contain no GNU C++ runtime or shared C++ API libraries. The server accepted an isolated loopback TCP connection and exited gracefully; the client rendered its title screen under Xvfb/software OpenGL and exited gracefully. Static Qt edited and saved a real JSON file and displayed the expected offline Steam error; authenticated Workshop upload was not exercised. Windows x64 has a real MinGW/libc++ cross-link proof for the Steam dispatch consumer; native Windows/macOS full builds have not been exercised here.
+The Linux x86_64 libc++ build has compiled and linked every enabled client, server, Qt/tool and test target on the VPS at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed, without changing WorldSnapshot goldens. Direct ELF dependencies contain no GNU C++ runtime or shared C++ API libraries. The server accepted an isolated loopback TCP connection and exited gracefully; the client rendered its title screen under Xvfb/software OpenGL and exited gracefully. Static Qt edited and saved a real JSON file and displayed the expected offline Steam error; authenticated Workshop upload was not exercised.
+
+The Linux-to-Windows x86_64 build has also compiled and linked the full client/server, development utilities, static Qt tools and tests with the pinned MinGW/libc++ toolchain at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed under Wine 11, with unchanged WorldSnapshot hashes. All 14 executables and three DLLs are AMD64; their import closure contains no GNU/MSVC C++ runtime DLL. All 14 executable PDBs match their PE CodeView GUID/age. The Windows server accepted a loopback TCP connection and exited gracefully after a real Windows console control event. Static Qt edited/saved JSON under Wine 11; the client displayed OpenGL-rendered title/world output and exited gracefully under Debian Wine 10/Xvfb/Mesa, and the uploader displayed its expected offline Steam error. These are compatibility-layer runs, not native Windows, physical audio, or authenticated Steam/Discord verification.
+
+The final Windows verification rebuilt both native host and target Qt plus all 1903 project build steps in 18m51s, with 21 GiB peak build-service memory and no swap use. Other vcpkg packages were cached; this is not a controlled compiler-speed comparison. macOS cross-compilation remains unverified and requires an authorized Apple SDK and compliance with its licensing terms; xclang alone does not supply that SDK.
 
 The complete Linux Nix package, including checks, installation and fixup, finished in 459.8 seconds at 16 jobs with a 16.7 GiB build-service memory peak and no swap use. This is a single verification run, not a controlled speed comparison. Use disk-backed temporary build storage when `/tmp` is a small tmpfs; on the VPS the build used `--option build-dir /root/.cache/osb-nix-builds`, after retained diagnostic builds filled its 16 GiB `/tmp`.
 
@@ -308,6 +312,29 @@ Use persistent CMake/Ninja build directories under the matching Nix development 
 
 * The preset chainloads xclang's official CMake toolchain and the `x64-windows` vcpkg triplet. C++ dependencies and Qt plugins use static MinGW/libc++; no MSVC STL objects may enter this build.
 * Binaries appear in **dist/**. CI runs `scripts/ci/windows/post_build.bat`, then `cmake -P scripts/ci/windows/audit-runtime.cmake`, then `scripts/ci/windows/assemble.bat`. The audit checks required executables, SDK DLL architecture, runtime imports and server version output. Native Windows build/runtime validation requires a Windows runner.
+
+**Cross-compiling Windows x64 from Linux**
+
+* Use the same pinned xclang archive, a bootstrapped vcpkg outside the repository, and the project's overlays. Native host generators (`moc`, `rcc`, `uic`, `qmake`) and target libraries are separate builds; the host generators must also use xclang/libc++, not system GCC. CMake, Ninja, GNU make and the Linux C-ABI development prerequisites are still required.
+* On a Nix-equipped builder, enter the full native dependency environment first. `OSB_NATIVE_COMPILER_ROOT` selects its matching Nix xclang wrapper for Linux host packages; `XCLANG_ROOT` selects the unpacked multi-target SDK for Windows:
+
+  ```sh
+  nix develop .#full --cores 16 --max-jobs 1
+  export OSB_NATIVE_COMPILER_ROOT="$(dirname "$(dirname "$(command -v clang)")")"
+  cmake -DXCLANG_INSTALL_DIR="$PWD/build/compiler-sdk" -P scripts/ci/install-xclang.cmake
+  export XCLANG_ROOT="$PWD/build/compiler-sdk/xclang"
+  export VCPKG_ROOT=/absolute/path/to/vcpkg
+  export VCPKG_MAX_CONCURRENCY=16
+  export CMAKE_BUILD_PARALLEL_LEVEL=16
+  cd source
+  cmake --preset windows-cross
+  cmake --build --preset windows-cross --parallel 16
+  ```
+
+* `windows-cross` uses `x64-linux` host packages and `x64-windows` targets. It enables the full Qt/development-tool target set. It does not run Windows PowerShell's vcpkg app-local helper on Linux: configure stages target C-ABI runtime DLLs and the vendor SDK DLLs into `dist/`. Qt and the other C++ dependencies remain static.
+* Default Windows debug configurations use CodeView and LLD-generated `.pdb` sidecars. Keep each PDB paired with its executable; compressed DWARF remains a non-Windows policy. The large DWARF build triggered Wine 10's pre-main `dbghelp` parser failure; the CodeView build preserves symbol/source-line diagnostics.
+* Cross-build test presets require an executable emulator, for example configuring with `-DCMAKE_CROSSCOMPILING_EMULATOR=wine` before `ctest --preset windows-cross`. Use Wine 11 or a native Windows runner for the full core suite: Wine 10's `CreateSymbolicLinkW` reports success without creating the directory link, so the existing symlink regression correctly fails there. Complete Wine's first-run setup before unattended runs.
+* Real-asset tests and the client/server need your owned Starbound `packed.pak`. Boot `assetSources` accepts individual pak/mod paths; `assetDirectories` scans children of parent directories. Distribution archives contain only `opensb.pak`, not the commercial game assets. Cross-build output remains `dist/`; use separate checkouts when retaining native and cross outputs.
 
 </details>
 <details>

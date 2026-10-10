@@ -6,7 +6,7 @@
 #include "StarConfig.hpp"
 import star.version;
 
-#include <DbgHelp.h>
+#include <dbghelp.h>
 
 namespace Star {
 

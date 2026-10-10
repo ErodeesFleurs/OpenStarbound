@@ -1,8 +1,8 @@
 {
   "name": "qt5-base",
   "version": "5.15.18",
-  "port-version": 5,
-  "description": "Qt Base with the shared xclang libc++ header compatibility fix.",
+  "port-version": 6,
+  "description": "Static Qt Base with libc++ compatibility and separate host/target tools.",
   "homepage": "https://www.qt.io/",
   "license": null,
   "dependencies": [
