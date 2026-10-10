@@ -32,7 +32,6 @@ target_compile_definitions(star_build_config INTERFACE
 target_compile_options(star_build_config INTERFACE
   "$<$<COMPILE_LANGUAGE:C,CXX>:-Wall;-Wextra;-Wuninitialized;-Wno-parentheses-equality;-Wno-deprecated-declarations;-Wno-nan-infinity-disabled>")
 if(NOT STAR_SYSTEM_WINDOWS)
-  target_compile_options(star_build_config INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>")
   target_link_options(star_build_config INTERFACE "$<$<LINK_LANGUAGE:CXX>:-stdlib=libc++>")
 endif()
 if(STAR_SYSTEM_MACOS)

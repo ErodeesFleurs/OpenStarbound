@@ -1,484 +1,139 @@
 # OpenStarbound
 
-<details>
-<summary><b>What is this?</b></summary>
- 
-By a truly unbelievable coincidence, I was out for a walk when I saw a small package fall off a truck ahead of me. Inside, I found the 1.4.4 [**Starbound source code**](https://archive.org/details/starbound_source_code).
-**OpenStarbound** is derived from that source code. It fixes many bugs, adds many new features and improves performance. <sup>there is only so much you can do to polish a turd, just play Terraria or something</sup>
+OpenStarbound is a fork of the [Starbound 1.4.4 source code](https://archive.org/details/starbound_source_code), with bug fixes, new features and performance improvements. Contributions are welcome.
 
-**Q:** Doesn't 'Open{game}' imply an engine reversed from scratch? (see Open.. [TTD](https://github.com/OpenTTD/OpenTTD), [RCT2](https://github.com/OpenRCT2/OpenRCT2), [MW](https://gitlab.com/OpenMW/openmw))
-
-**A:** yeah too late to change it now though. whoops
-
-
-</details>
-
-You must own Starbound for the game assets. The code is worked on whenever I rarely feel like it. Contributions are welcome!
+**You must own Starbound.** Its commercial game assets are not included.
 
 ## Installation
-### Download the [latest stable release](https://github.com/OpenStarbound/OpenStarbound/releases/latest).
-The latest stable release is recommended, as the nightly build can have bugs.
 
-At the moment, you must copy the game assets (**packed.pak**) from your normal Starbound install to the OpenStarbound assets directory before playing. Optionally copy the `user` folder in the same directory as `packed.pak` to move the vanilla playable instrument songs over.
+1. Download the [latest stable release](https://github.com/OpenStarbound/OpenStarbound/releases/latest). Use the Windows installer or extract the client/server archive for your platform.
+2. Copy `assets/packed.pak` from your Starbound installation into OpenStarbound's `assets/` directory.
+3. Optionally copy `storage/` for saves/settings, `mods/` for local mods and `assets/user/` for instrument songs. Launch with Steam open to load subscribed Workshop mods.
 
-OpenStarbound is a separate installation/executable than Starbound. You can copy your `storage` folder from Starbound to transfer your save data and settings. Launching OpenStarbound with Steam open will load your subscribed Steam mods. If you have any locally installed non-Steam mods, you may want to copy the `mods` folder as well.
+[Nightly builds](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) may be less stable than releases. OpenStarbound is a separate installation from vanilla Starbound.
 
-An installer is available for Windows. otherwise, extract the client/server zip for your platform and copy the game assets (packed.pak) to the OpenStarbound assets folder.
+## Features and documentation
 
-</details>
-<details>
-<summary><b>Nightly Builds</b></summary>
- 
-These link directly to the latest build from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab, main branch.
- 
-**Windows**
-[Installer](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Installer.zip),
-[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Client.zip),
-[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Windows-Server.zip)
+- Multithreaded lighting with higher color range and additive point lights.
+- Asset-load Lua scripts and `.patch.lua` patches for JSON and images.
+- Positional Opus voice chat, including on vanilla servers.
+- Custom keybindings, character swapping, multiple fonts and an instrument volume slider.
+- Improved mod compatibility, inventory recovery and world-file storage.
+- Client-side tile placement prediction; custom tile collision requires an OpenStarbound server.
 
-### **notice: get Linux and macOS builds directly from the [Actions](https://github.com/OpenStarbound/OpenStarbound/actions?query=branch%3Amain) tab until the nightly.link service fixes things**
-
-**Linux**
-~~[Client](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Client.tar.lz),~~
-~~[Server](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-Linux-Clang-Server.tar.lz)~~
-
-**macOS**
-~~[Intel](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Intel-Client.tar.lz),~~
-~~[ARM](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main/OpenStarbound-macOS-Silicon-Client.tar.lz)~~
-
----
-
-[All Nightly Builds](https://nightly.link/OpenStarbound/OpenStarbound/workflows/build/main)
-</details>
-
-## Changes
-Note: Mods that use StarExtensions features often work with OpenStarbound, StarExtensions is deprecated.
-
-### Lighting
-**The lightmap generation has been moved off the main thread, and supports higher color range.**
-  * Point lights are now additive, which is more accurate - you'll notice that different lights mix together better!
-  * Object spread lights are auto-converted to a hybrid light which is 25% additive.
-
-### Assets
-* Assets can now run Lua scripts on load, and after all sources have been loaded.
-  * These scripts can modify, read, patch and create new assets!
-* Lua patch files now exist - **.patch.lua**
-  * These can patch JSON assets, as well as images!
-### Commands
-**View OpenStarbound commands with `/help`! You can also view them [here](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/help.config.patch)**
-  * Changes to vanilla commands:
-    * `/settileprotection`
-      * You can now specify as many dungeon IDs as you want: `/settileprotection 69 420 false`
-      * You can now specify a range: /settileprotection 0..65535 true
-    * `/admin`
-      * You can now admin other players: `/admin playerSpecifier` (requires OpenSB server)
-### Bug Fixes
-* Fixed C++20 shared-pointer builds on Windows and Ubuntu 22.04, and static vcpkg library link order with C++20 modules.
-* Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
-* Fix vanilla world file size bloating issue.
-* Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
-### Misc
-* Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/tree/main/doc/lua/openstarbound)
-* Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
-* Custom user input support with a keybindings menu (rewrite from StarExtensions)
-* Positional Voice Chat that works on completely vanilla servers, uses Opus for crisp, HD audio (rewrite from StarExtensions)
-  * Both menus are made available in the options menu in this fork rather than as a chat command.
-* Multiple font support (switch fonts inline with `^font=name;`, **.ttf** and **.woff2** assets are auto-detected)
-  * **.woff2** fonts are much smaller than **.ttf**, [here's a web conversion tool](https://kombu.kanejaku.org/)!
-* Experimental changes to the storage of directives in memory to reduce copying - can reduce their impact on frametimes when very long directives are present
-  * Works especially well when extremely long directives are used for "vanilla multiplayer-compatible" creations, like [generated clothing](https://silverfeelin.github.io/Starbound-NgOutfitGenerator/) or custom items/objects.
-* Perfectly Generic Items will retain the data for what item they were if a mod is uninstalled, and will attempt to restore themselves if re-installed.
-* Musical instruments have their own volume slider in the options menu.
-* Players can use items while lounging
-* Mods can change which scriptPane the Matter Manipulator/Collections sidebar button opens, in [interface.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/interface.config.patch).
-* Items can change their rarity border. [Documentation](https://github.com/OpenStarbound/OpenStarbound/blob/main/doc/json/openstarbound/items.md)
-
-* Client-side tile placement prediction (rewrite from StarExtensions)
-  * You can also resize the placement area of tiles on the fly.
-* Support for placing foreground tiles with a custom collision type (rewrite from StarExtensions, requires OpenSB server)
-  * Additionally, objects can be placed under non-solid foreground tiles.
-  * Admin characters have unlimited and unobstructed interaction/placement ranges
-
-* Some minor polish to UI
-* The Skybox's sun now matches the system type you're currently in.
-  * Previously generated planets will not have this feature and will display the default sun.
-  * Modded system types require a patch to display their custom sun.
-  * You can also access the skybox sun scale and its default ray colors. For more details see, [sky.config.patch](https://github.com/OpenStarbound/OpenStarbound/blob/main/assets/opensb/sky.config.patch).
-
-**Discord:** reverse the text in the image and you will have the invite code (this is to prevent spam bots)
-
-<details>
-<summary>Directives</summary>
-
- <img width="380" height="70" alt="image" src="https://github.com/user-attachments/assets/9db11a89-0c32-4034-8555-68b54e5918a8" />
-
-
-</details>
-
-</details>
-
+Use `/help` for commands. See the [command reference](assets/opensb/help.config.patch), [Lua API](doc/lua/openstarbound) and [JSON extensions](doc/json/openstarbound). Many mods targeting StarExtensions work with OpenStarbound; StarExtensions is deprecated.
 
 ## Building
-Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 
 
-CI caches vcpkg binary packages per platform; changes to dependency manifests, overlay ports, the pinned xclang release, or triplets invalidate those packages. Build entries no longer select GCC, MSVC, system LLVM, or sccache as alternative compiler paths.
-The Linux ARM64 Clang ALSA and jemalloc vcpkg overlay ports move files staged under `usr/` or `usr/local/` into the package root before vcpkg validates pkg-config files and imports libraries.
-The Linux ARM64 Clang CI also bundles jemalloc's `libjemalloc.so.2` and copyright notice in the raw `dist/` artifact and both client/server archives. Release utilities use `$ORIGIN` to load the library from their executable directory, including when `asset_packer` runs during assembly.
-GitHub Actions [limits warning annotations to 10 per step](https://github.com/actions/toolkit/blob/main/docs/problem-matchers.md#limitations), so five platform builds can still show about 50 after fixes expose later diagnostics. Source warnings repeat across platforms; vcpkg/SDL dependency probes and `run-cmake` log-collection messages also contribute to the count. Check individual build logs instead of treating the visible total as the complete warning list.
+Requires **CMake 3.28+**, **Ninja 1.11+**, and pinned [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled **libc++/libc++abi/libunwind**. Nix, presets and CI use this toolchain; Windows uses the MinGW ABI, not MSVC STL.
 
-CMake requires version 3.28 or newer. In-tree compiled targets link `star_build_config` only for project definitions and compiler/linker policy. External usage requirements are grouped by actual consumers: core, core modules, bundled extern code, application, voice, client, and optional Steam tools. Declare source include directories on each target rather than using directory-wide settings. Executables using `$<TARGET_OBJECTS:...>` explicitly link the object code's external groups with `$<LINK_ONLY:...>` and its module libraries; object expressions forward neither usage requirements nor static-library closure.
+C++ dependencies and Qt plugins use the same compiler/runtime and static linkage. Do not mix GNU/MSVC C++ objects or pass C++ objects, exceptions or RTTI across independently linked shared libraries. Opaque C-ABI system libraries and vendor SDKs are supported.
 
-SDL3, OpenGL, GLEW and Opus discovery is GUI-only. Headless builds retain ImGui and FreeType because the shared Lua implementation exposes ImGui bindings. The Nix ImGui package separates `imgui::imgui` from optional `imgui::imgui_backends`, so non-GUI executables also avoid SDL/OpenGL linkage in a GUI-enabled build; upstream monolithic ImGui packages may still propagate those dependencies. Wayland belongs to SDL's backend dependencies, not a separate OpenStarbound dependency. GLEW uses CMake's standard imported targets without a Nix source rewrite.
+### Nix on Linux
 
-The default configurations remain `Debug`, `RelWithAsserts`, `RelWithDebInfo`, and `Release`; `RelWithAsserts` keeps optimization without defining `NDEBUG`. Caller `CMAKE_C_FLAGS`, `CMAKE_CXX_FLAGS`, and configuration-specific flags are not overwritten. Explicit optimization, debug-symbol, and fast-math flags suppress conflicting project defaults. Set `STAR_DEBUG_SYMBOL_LEVEL` to `default`, `minimal`, or `full`; `minimal` uses Clang's `-gline-tables-only` for smaller sanitizer/assert builds. Nix uses this option instead of patching CMake flag strings.
-
-**Unified xclang and bundled libc++**
-
-All native presets, CI jobs, Nix packages and development shells use [xclang](https://github.com/clice-io/xclang) **23.1.2.9** (Clang 23.1.2) and its bundled **libc++/libc++abi/libunwind**. Archive SHA-256 pins cover Linux, Windows and macOS on x86_64/ARM64. Windows uses the **MinGW ABI**, not MSVC's STL. xclang's compiler/linker are built upstream with PGO and ThinLTO; this does **not** enable application LTO or establish a build-speed improvement.
-
-The bundled C++ runtimes are static and hidden inside each executable/shared object. Never pass C++ objects, exceptions or RTTI between independently linked shared objects. Dependencies exposing C++ APIs—including CPR, RE2, ICU, cpptrace, Qt and Qt plugins—are built with the same compiler/runtime and linked statically. Opaque C-ABI system libraries and vendor SDKs may retain private runtimes; that is not a GNU compiler fallback. Steam dispatch uses the SDK's C manual-dispatch API rather than C++ callback registration across its DLL boundary.
-
-Native Linux's shared jemalloc is C-ABI-only (`--disable-cxx`): malloc interposition remains enabled, but C++ allocation operators and their exceptions stay in the executable's libc++. Its configure step explicitly selects libc++; it must not probe or link GNU libstdc++.
-
-Nix disables upstream target configs with `--no-default-config`, combines the bundled C++ headers/archives with Nix glibc, and rebuilds the C++ dependency closure. It does not use the native Linux archive's glibc 2.17 sysroot. The matching `clang-scan-deps` wrapper loads compilation's include, target and hardening flags, including PIC/PIE policy. The compiler's bundled lld bypasses the ordinary Nix linker wrapper, so package/development-shell RPATHs explicitly include runtime outputs of propagated C-library dependencies and glibc. `OPENSTARBOUND_BUILD_RPATH` supplies hand-build RPATHs without requiring `LD_LIBRARY_PATH`.
+Supported systems: x86_64 and ARM64. From the repository root:
 
 ```sh
-nix develop
-cmake -S source -B build/xclang-libcxx -G Ninja \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
-  -DSTAR_PRECOMPILED_HEADERS=ON -DBUILD_TESTING=ON \
-  -DSTAR_BUILD_GUI=ON -DSTAR_BUILD_DEV_TOOLS=ON \
-  -DSTAR_BUILD_QT_TOOLS=OFF \
-  -DSTAR_ENABLE_STEAM_INTEGRATION=OFF \
-  -DSTAR_ENABLE_DISCORD_INTEGRATION=OFF
-cmake --build build/xclang-libcxx --parallel 16
-ctest --test-dir build/xclang-libcxx --output-on-failure -L NoAssets
-
-# All optional Qt tools and x86_64 Linux vendor SDK integrations:
-nix build .#full --cores 16 --max-jobs 1 --print-build-logs -o result-full
+nix build --cores 16 --max-jobs 1
+OPENSTARBOUND_ASSETS=/path/to/Starbound/assets ./result/bin/starbound
 ```
 
-`nix develop .#full` supplies the full package's compiler/dependency closure. `default`, `server`, `full`, `asserts` and `sanitized` packages all use xclang/libc++; sanitized builds select its instrumented libc++ and instrument executable-side C++ dependencies too. Linux ARM64 supports SDK-free variants; the vendored Linux Steam/Discord SDKs remain x86_64-only.
+Other packages: `.#server` (headless), `.#full` (Qt tools and Steam/Discord), `.#asserts` and `.#sanitized`. Linux ARM64 supports SDK-free variants only. For the full x86_64 package:
 
-The Linux x86_64 libc++ build has compiled and linked every enabled client, server, Qt/tool and test target on the VPS at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed, without changing WorldSnapshot goldens. Direct ELF dependencies contain no GNU C++ runtime or shared C++ API libraries. The server accepted an isolated loopback TCP connection and exited gracefully; the client rendered its title screen under Xvfb/software OpenGL and exited gracefully. Static Qt edited and saved a real JSON file and displayed the expected offline Steam error; authenticated Workshop upload was not exercised.
-
-The Linux-to-Windows x86_64 build has also compiled and linked the full client/server, development utilities, static Qt tools and tests with the pinned MinGW/libc++ toolchain at 16 jobs. All **202 core tests** and **27 real-asset game tests** passed under Wine 11, with unchanged WorldSnapshot hashes. All 14 executables and three DLLs are AMD64; their import closure contains no GNU/MSVC C++ runtime DLL. All 14 executable PDBs match their PE CodeView GUID/age. The Windows server accepted a loopback TCP connection and exited gracefully after a real Windows console control event. Static Qt edited/saved JSON under Wine 11; the client displayed OpenGL-rendered title/world output and exited gracefully under Debian Wine 10/Xvfb/Mesa, and the uploader displayed its expected offline Steam error. These are compatibility-layer runs, not native Windows, physical audio, or authenticated Steam/Discord verification.
-
-The final Windows verification rebuilt both native host and target Qt plus all 1903 project build steps in 18m51s, with 21 GiB peak build-service memory and no swap use. Other vcpkg packages were cached; this is not a controlled compiler-speed comparison. macOS cross-compilation remains unverified and requires an authorized Apple SDK and compliance with its licensing terms; xclang alone does not supply that SDK.
-
-The complete Linux Nix package, including checks, installation and fixup, finished in 459.8 seconds at 16 jobs with a 16.7 GiB build-service memory peak and no swap use. This is a single verification run, not a controlled speed comparison. Use disk-backed temporary build storage when `/tmp` is a small tmpfs; on the VPS the build used `--option build-dir /root/.cache/osb-nix-builds`, after retained diagnostic builds filled its 16 GiB `/tmp`.
-
-Use fresh build directories when switching from GNU libstdc++ or the earlier xclang/GNU-ABI build: their objects/PCHs/BMIs are incompatible with this libc++ closure. In-tree builds still share `dist/`, so the most recently linked build owns those executables. Match concurrency to memory. The VPS keeps 16 compiler jobs and persistent 96 GiB swap, with swap permitted by the build cgroup; paging is an OOM safety reserve, not a speed optimization.
-
-With PCH enabled, **all project module importers—interfaces, ordinary companions, object libraries and executables—reuse the same `StarPch.hpp` AST from `star_modules`**. Independent libc++ PCHs can cause ambiguous standard-library declarations when imports meet; a shared AST also avoids Clang's 31-bit source-location exhaustion. Full BMIs did not resolve the declaration conflict. Qt moc output is included in its owning scanned `.cpp` files, since CMake's generated aggregate TU does not receive the required module mapping. `scripts/ide/configure-clangd.sh` intentionally disables PCH and exports explicit bundled-libc++/Nix include flags for its separate compilation database.
-
-Global-fragment module classes with all-defaulted constructors use real zero-parameter delegating constructors, preserving their original default values and explicitness. Clang 23 otherwise rejects implicit member initialization after importing such a constructor, even with full BMIs; changing BMI reduction is not a fix.
-
-Ordinary module companions pass defaults explicitly when calling methods after their out-of-line definitions, because Clang 23 can lose the imported default arguments there. Definitions of module-exported `const` objects retain explicit external linkage; otherwise Clang treats a new internal-linkage definition and the imported exported alias as ambiguous. World implementation templates directly import `star.world` before accessing its members rather than depending on an incomplete forward declaration. The command dispatch map uses a private static factory, preserving its registrations and initialization timing while avoiding Clang 23's nested-lambda crash in an imported static-member initializer.
-
-
-C++20 modules use `.cppm` interface units; modules with implementation-heavy dependencies have companion `.cpp` files, while naturally self-contained modules remain in one file. Game Lua bindings live in `source/game/scripting/`. Import their factories and other exported APIs (for example, the HTTP trust callback functions in `star.lua_http_bindings`) instead of including the removed binding headers: after normal includes in `.cpp` files, or after `export module` in another module interface. Register game interfaces in the `star_game_module_interfaces` CMake file set and companion implementations in `star_game_modules` in `source/game/CMakeLists.txt`; consumers still link the complete static library `star_game_modules`.
-Keep interfaces lean when callers include heavy game headers. Eighteen game binding modules, four frontend modules, client rendering, converted game databases and services, EmoteProcessor, world generation, TMX dungeon parts, and the split object modules separate interfaces from implementations without conditional implementation macros. Named implementation units use `module star.*;` after their global module fragment. CMake compiles companion `.cpp` files directly into the game/frontend static module libraries; separate interface OBJECT providers expose BMIs without introducing implementation dependency cycles. Client rendering's companion `.cpp` is a normal `starbound` source and reuses the shared standard-header PCH. Enable `CXX_SCAN_FOR_MODULES` on implementation targets. This preserves the thin BMI boundary; historically, GCC 16 rejected private module fragments and imported `MVariant` declarations/duplicate constrained JSON-vector iterator manglings when implementation-only instantiations were serialized into heavy interfaces.
-`star.movement_controller_lua_bindings` follows the same interface/implementation split. `StarLuaActorMovementComponent.hpp` imports its factory for the actor callback template; targets including this header transitively must link `star_game_modules` and enable `CXX_SCAN_FOR_MODULES`, including `star_windowing`.
-`star.world_lua_bindings` exports its two factories with using-declarations from the global module fragment. Its companion `.cpp` remains an ordinary translation unit: entity headers transitively import this interface through `StarLuaComponents.hpp`, so a named implementation unit would import itself before its module declaration. Keeping those dependencies out of the interface also avoids a cycle through imported object modules. Server module compilation links the game interface provider; server executables link the complete `star_game_modules` library. `update_tilesets` and `fix_embedded_tilesets` enable module scanning for their transitive game-header imports.
-`star.dance_database` exports `DanceStep`, `Dance`, `DanceDatabase` and their pointer aliases through using-declarations from the global module fragment, preserving Humanoid's and Root's global forward declarations. Its companion `.cpp` remains an ordinary translation unit importing the interface; consumers import the module instead of including the removed `StarDanceDatabase.hpp`.
-`star.tech_database` follows the same global-type pattern, exporting `TechDatabase`, its pointer aliases, `TechConfig`, `TechType`, `TechTypeNames`, and the database exception types. Import it instead of the removed `StarTechDatabase.hpp`; Root's global forward declarations remain valid, and its companion `.cpp` remains an ordinary translation unit.
-`star.codex_database` and `star.collection_database` use the same global-type pattern with ordinary companion `.cpp` implementations. Import them instead of their removed database headers. The collection interface exports `Collection`, `Collectable`, `CollectionType`, and `CollectionTypeNames` alongside the database and exception types; it only needs the bidirectional-map header and a forward declaration of `Json`. Shared Lua converter headers forward-declare the collection types, while the converter implementation and actual database consumers import the module explicitly. Avoid putting database imports into widely included converter headers: this can spread dependencies and trigger GCC 16 imported-template linkage/mangling conflicts in otherwise unrelated modules.
-`star.stagehand_database` and `star.emote_processor` preserve their global class identities and pointer aliases with the same exported using-declarations and ordinary companion `.cpp` implementations. The stagehand module also exports its exception types and the `Stagehand` forward declaration and pointer aliases. Root, command processing, World Lua bindings, and world generation import the database at their actual call sites. The emote interface includes only `StarString.hpp` and an opaque `HumanoidEmote` declaration, keeping the full Humanoid dependency in its implementation and existing Player/Npc consumers. Import `star.humanoid` when the emote enumerator definitions are needed.
-`star.damage_database` and `star.effect_source_database` likewise preserve their global types and pointer aliases with thin interfaces and ordinary companion `.cpp` implementations. Import them at actual database call sites instead of including the removed headers. The damage interface exports `DamageKind`, `DamageEffect`, `ElementalType`, and `TargetMaterial`; its opaque `HitType` declaration keeps the full game-type dependency out of the BMI. Import `star.damage_types` when hit enumerators or their name map are needed. The effect-source interface exports its source/config/database types and the `particlesFromDefinition` and `soundsFromDefinition` helpers, but only forward-declares `Particle` and `AudioInstance`; import `star.particle` or include `StarMixer.hpp` when their definitions are needed. `star.effect_emitter` only forward-declares `EffectSource`; its implementation and WorldClient explicitly import the effect-source module.
-`star.particle_database`, `star.radio_message_database`, `star.status_effect_database`, `star.quest_template_database`, `star.spawn_type_database`, `star.tenant_database`, `star.statistics_database`, and `star.versioning_database` use global-fragment types, exported using-declarations, and ordinary companion `.cpp` implementations. Import these modules instead of their removed database headers; Root retains its global forward declarations. Import at actual call sites, including inline particle creation in `StarLuaAnimationComponent.hpp`. Declarations storing complete values also need the corresponding interfaces: Player/Popup for `RadioMessage`, StatusController for status-effect config, Spawner/Biome for spawn profiles, and WorldStorage for `VersionedJson`. Foundation types are not implicitly exported: import `star.status_types` for `UniqueStatusEffect` and `star.item_descriptor` in quest parsing.
-VersioningDatabase retains its by-value `LuaRoot` member. `StarLuaRoot.hpp` includes only its listener dependency rather than Root; callers using `Root` explicitly import `star.root`. WorldStorage parses the LuaRoot dependency before importing versioning, and Spawner includes WeightedPool before importing spawn types. The `make_versioned_json` and `dump_versioned_json` utilities import the versioning interface and enable CMake module scanning.
-`star.universe_server_lua_bindings` and `star.micro_dungeon` have thin interfaces with named companion implementation units. `star.loungeable_object`, `star.physics_object`, `star.world_generation`, and `star.farmable_object` use global-fragment classes and ordinary companion imports to avoid imported-template conflicts in WorldServer and Lua userdata consumers. World generation includes complete facade bases but only forward-declares its server, plant, and material/liquid database dependencies; its companion imports `star.material_database` before foundation-only collision helpers, then imports the heavy world-generation interface after those helpers to avoid a GCC 16 shared-pointer instantiation ICE. Dungeon rule constructors that traverse JSON arrays live in `StarDungeonGenerator.cpp`, not its shared declaration prelude. Object fields and behavior remain unchanged; the naturally small `star.teleporter_object` stays single-file.
-`star.liquids_database`, `star.terrain_database`, `star.tileset_database`, `star.behavior_database`, `star.ai_database`, `star.species_database`, `star.vehicle_database`, and `star.projectile_database` likewise preserve global type identities and pointer aliases through exported using-declarations, with ordinary companion implementations. Their old database headers are removed; Root's global forwards remain unchanged. Import at actual call sites and include complete Projectile/Vehicle definitions where returned entities are dereferenced, not in database interfaces. Terrain selector interfaces import the terrain database after their module declaration. The tileset module exports Tiled properties and conversion templates; consumers still explicitly include foundation headers for Json, TilePixels, and lexicalCast.
-`star.root_lua_bindings`, `star.behavior_lua_bindings`, and `star.dungeon_tmx_part` retain thin named interfaces with companion implementations. The shared Lua converter header only forward-declares BehaviorState, Blackboard, and NodeStatus; its implementation imports `star.behavior_state` and `star.behavior_database` directly. Avoid spreading these imports through the shared header, and preserve Json-before-Lua ordering in the behavior-state interface to avoid GCC 16 SIMD linkage conflicts. `star_rendering` links the game interface provider and enables module scanning for liquid-database imports; final executables retain the complete game archive dependency.
-The remaining `star.plant_database`, `star.npc_database`, `star.object_database`, `star.item_database`, `star.material_database`, `star.monster_database`, `star.celestial_database`, `star.image_metadata_database`, and `star.biome_database` follow the same thin global-type interface and ordinary companion pattern. The 32 game `*Database` file families use modules. Their old headers are removed, while Root's global forwards, original class layouts, pointer aliases, exceptions, templates, and inline material accessors remain intact. Import databases at actual consumers, and explicitly import complete module-owned returned types and include remaining header-owned entity types and unrelated foundation headers when needed.
-Keep complete-value imports in Npc/Monster declaration preludes for their variants and in biome placement/parallax for plant variants. Monster parses `StarTtlCache.hpp` before its database import; Parallax parses the original Json/Vector/NetElementSystem/BiMap foundations and imports `star.tile_damage` before its plant import to avoid GCC 16 imported-header redeclarations. Plant only needs variant forwards. Item imports `star.quest_descriptor`, not the heavy quest/Lua/world dependency chain. Celestial graphics, net packets, and world templates import `star.celestial_parameters` and the `star.celestial_types`/`star.celestial_coordinate` interfaces; UniverseServer forward-declares CelestialMasterDatabase. Import `star.collision_block`, `star.inventory_types` or `star.item_descriptor` and include AssetPath, Casting or DataStreamDevices explicitly where their APIs are used rather than relying on removed database headers.
-`star.stored_functions`, `star.treasure`, `star.name_generator`, `star.rebuilder`, `star.stat_set`, `star.stat_collection`, `star.animation`, and `star.ambient` preserve global type identities and original layouts with thin interfaces, exported using-declarations, and ordinary companion implementations. Import them instead of the removed service headers. StatCollection imports `star.stat_set` before its global definition because it stores StatSet by value. Shared headers storing Animation, AmbientManager, or StatCollection values import their complete types; pointer-only dependencies remain forward-declared. Import `star.drawable` when consuming `Animation::drawable()` results, and include ParametricFunction/MultiTable headers when using stored-function table foundations.
-Keep foundational definitions ahead of transitive service imports on GCC 16: ObjectDatabase, ItemDrop, and Player parse JsonExtra before animation imports; MovementControllerLuaBindings parses Json before Lua; ToolUser parses Object's foundations first. ErrorScreen parses InputEvent before InterfaceCursor, and the cursor implementation parses Root before its animation-containing header. `star.item_lua_bindings` now exports only its factory declaration with LuaCallbacks/Item forwards; its unchanged factory and callback bodies live in a named companion, avoiding implementation-template serialization and the observed MainInterface BMI-loading failure.
-`star.player_blueprints`, `star.player_codexes`, `star.player_log`, `star.player_tech`, `star.player_universe_map`, `star.universe_settings`, `star.world_structure`, and `star.chat_processor` use the same thin global-type interfaces and ordinary companion implementations. Their old headers are removed; Player and other pointer-only consumers retain their global forwards. Export all six existing `STAR_CLASS` pointer aliases, but preserve PlayerCodexes' original single `PlayerCodexesPtr` alias rather than inventing aliases. PlayerTech imports `star.tech_database` before its global definition for by-value TechType keys; consumers naming TechType or TechTypeNames import the database directly. PlayerUniverseMap keeps complete celestial/warp/orbit foundations, exports its bookmark types and conversion templates, and retains comparison template bodies in the interface. UniverseServer imports universe settings for its by-value flag-action variant; WorldClient and WorldServer import world structure for their by-value members.
-On GCC 16, CodexItem imports player codexes after its module declaration and foundation includes; CodexInterface parses Uuid before the codex import. BookmarkInterface parses Json, Warping, CelestialCoordinate, SystemWorld, and Pane before importing the universe map; TeleportDialog imports after that foundation-containing header. Keep unused state imports out of BlueprintItem, UnlockItem, AiInterface, and Inventory's header; Inventory imports player tech and the tech database in its actual implementation. The optimized ASan/UBSan standalone consumers exercised original pointer identities, real asset decoding, state transitions and serialization, chat/RPC routing, eight fresh-process malformed-asset rejections, and actual PlayerFactory disk roundtrips and player Lua callbacks; existing core and ten selected game regression cases also passed with unchanged planet and ship snapshot hashes.
-`star.item_bag`, `star.player_inventory`, `star.player_storage`, `star.statistics`, `star.player_companions`, `star.player_deployment`, `star.client_context`, and `star.server_client_context` also preserve global type identities and original layouts through thin interfaces and ordinary companions. Remove their old headers and import at actual consumers, including indirect bag dereferences in widget Lua bindings; pointer-only headers retain global forwards. Export the original six pointer aliases where they exist, but do not invent aliases for PlayerStorage's original plain class. WorldChunks retains the original `HashMap<ByteArray, Maybe<ByteArray>>` identity in WorldStorage and the thin WorldServerThread interface; net packets include the WorldStorage foundation rather than ClientContext. ItemDescriptor now uses a thin interface with its original hash/fmt/template bodies.
-At PlayerInventory's GCC 16 cutover, its companion had to import its own interface before Player introduced the global PlayerInventory forward declaration: the opposite order suppressed vtable/RTTI emission in the key-function implementation. SystemWorld explicitly includes Casting after losing an unused transitive context include. Optimized ASan/UBSan standalone consumers exercised inventory filters, equipment, swap/currency boundaries, full/delta net state, genuine player/storage/world-chunk persistence, statistics Lua events, companion/deployment lifecycle and messages, actual WorldClient drawable/particle/audio/light collectors, current/Legacy context frames, RPC promises, and complete Root shutdown. The real local-world consumer finalizes and saves/loads its Player before connecting so ship species follows the production disk boundary, uses the actual Input singleton/callbacks, and obtains lighting through `waitForLighting` like the client application. This is headless native runtime proof, not GUI, Steam-session, Windows, or macOS runtime verification.
-The final persistent GCC 16 optimized sanitizer build linked all targets, including `starbound`, `starbound_server`, `game_tests`, and utilities. Existing `core_tests` passed; ten selected game regression cases in eight suites passed, covering stored functions, stats, Root, server, spawning, items, species, and world snapshots. Planet and ship hashes remained `0x801745d507acfcaa` and `0x96a3df5c62832b0b`; fatal leak detection and UBSan produced no sanitizer report.
-`star.player_factory`, `star.entity_factory`, `star.team_client`, `star.team_manager`, `star.world_client_state`, `star.interpolation_tracker`, `star.particle_manager`, and `star.wire_processor` follow the thin global-type interface and ordinary companion pattern. Preserve PlayerConfig's complete Humanoid timing/config layout, factory exception tags, team version constants/nested Member, and all original pointer aliases; InterpolationTracker's original plain class has no aliases. Root, Player and pointer-only team/collector consumers retain their global forwards. WorldClient and WorldServer import complete client-state/interpolation types for their by-value members; localize factory/team/collector imports in actual implementations.
-PlayerFactory's companion explicitly imports `star.entity_splash` for native config construction; team Lua bindings parse Json, Array and DataStream, then import `star.uuid` before Lua for their UUID conversions. `star.wiring` preserves the original global WireCoordinator/WireConnection foundation identities. Preserve native interpolation/reset semantics, particle culling-before-motion and liquid/trail behavior, and wiring's beginning-of-process signal snapshots. Paging reciprocal wire networks can raise the seed TTL because traversal samples newly loaded sectors' randomized TTL before its visited check; already-loaded networks still share their highest TTL and count down without processor refresh.
-Production-flag optimized ASan/UBSan consumers passed genuine player/entity disk, file, versioned and current/Legacy network roundtrips; authenticated team JsonRpc invitations/status/portraits, security, capacity, leadership/removal/disconnect and expiration; client full/delta state, monitoring/reset and interpolation transitions; real tile-backed particle lifecycles and Object/WorldStorage/WorldServer wire paging, persistence, network states and connect/disconnect packets. Native packet setup sends WorldStartAcknowledge and a real client-window state before connecting wires. Player pickup fixtures attach actual Statistics; projectile fixtures come from the real database enumeration, not a presumed asset name. The full-target retained GCC 16 build and complete Root shutdown passed, with no sanitizer report in the final native run. No new GUI, physical-output, Steam-session, Windows or macOS runtime proof is claimed.
-The baseline-only regression boot excludes all standalone fixture sources. Existing `core_tests` and ten selected game cases in eight suites passed again after this cutover, with planet/ship hashes unchanged at `0x801745d507acfcaa` / `0x96a3df5c62832b0b` and no sanitizer report.
-`star.effect_emitter`, `star.damage_manager`, `star.behavior_state`, `star.spawner`, `star.sky`, `star.weather`, `star.quests`, and `star.quest_manager` use thin global-type interfaces and ordinary companions, replacing their old headers without changing native layouts or implementation behavior. Headers with by-value emitter/weather members import complete types; pointer-only ArmorWearer, ToolUser, Stagehand, quest-dialog and title-screen dependencies retain global forwards. Consumers naming SpawnProfile or behavior-database APIs import those databases directly. DamageManager's remote records expose their original stream operators through precise friend declarations for ADL, not namespace-wide operator exports; Sky/Weather export their existing Clock/AudioInstance/Projectile forwards and aliases.
-QuestManager only needs Set/QuestDescriptor foundations and opaque Quest/Player/World/UniverseClient/Entity declarations; do not import the complete Quest/Lua/world chain into its interface. Actual quest dereferences import `star.quests`. Quest retains its original by-value Lua component stack: on GCC 16, the quest dialog parses the original quest foundations before GUI/Player headers to avoid lazy BMI cluster-loading failures. Production-flag ASan/UBSan standalone consumers passed current/Legacy full/delta sky/weather/effect state, real Mixer audio shutdown, native WorldServer/Monster/Projectile damage and SpawnerWorld lifecycles, behavior coroutine/blackboard boundaries, and real PlayerStorage/UniverseServer/UniverseClient quest transitions, Lua/messages, rewards and disk/versioned persistence. Complete Root/Input shutdown passed without a sanitizer report; no graphical client session was exercised for this batch.
-The retained GCC 16 optimized sanitizer build linked all targets after this cutover. Baseline-only `core_tests` passed, and all 18 selected game cases in 10 suites passed, including weather/domain coverage. Planet/ship hashes remained `0x801745d507acfcaa` / `0x96a3df5c62832b0b`; fatal leak detection and UBSan emitted no report.
-`star.game_timers`, `star.force_regions`, `star.collision_generator`, `star.falling_blocks_agent`, `star.entity_map`, `star.platformer_astar`, `star.world_camera`, and `star.songbook` replace their eight headers with thin global-type interfaces and ordinary companions. Preserve native layouts, inline/template bodies, nested `Star::PlatformerAStar::PathFinder`, and all originally declared aliases. Timer and force-region records retain their original stream operators through precise friend declarations for ADL. By-value consumers import complete types, including WorldPainter's camera; pointer-only painters retain camera forwards, and the shared Lua converter header includes only the original platformer type foundation.
-Parse original Poly/Variant/Json, collision, spatial, timer and camera foundations before their imports where needed on GCC 16. Platformer consumers parse Json before AStar to preserve SIMD language linkage. World Lua bindings parse JsonExtra before module imports and complete PathFinder at its original pre-object-header boundary; Player retains its original JsonExtra/Item/Player parse sequence before additional Songbook foundations. `star.networked_animator_lua_bindings` and `star.scripted_animator_lua_bindings` now keep only declarations in their interfaces, with unchanged factories in named companions, avoiding the observed ActiveItem lazy BMI-loading failure without compiler, ABI, PCH or cache changes.
-Production-flag ASan/UBSan consumers passed native timer/window/epoch transitions and current/Legacy streams, force parsing/translation and typed rejection, collision polygons/platforms, actual WorldServer/FallingBlocksWorld settling, real asset-backed Stagehand EntityMap indexing and callback mutation, native PathFinder copying/limits and World Lua userdata, both animator Lua factories, and camera wrapping/clamping/zoom/pixel alignment. Actual PlayerStorage/Statistics/UniverseServer/UniverseClient plus Input exercised Songbook ABC decoding, current/Legacy full/removal frames, real WAV/Mixer playback, moving note positions, stop and keepalive expiry. Complete Root/Input shutdown passed; this is headless native proof, not GUI or physical audio output.
-The retained GCC 16 optimized sanitizer all-target build and baseline-only regressions passed again: `core_tests` and all 18 game cases in 10 suites, with unchanged planet/ship hashes `0x801745d507acfcaa` / `0x96a3df5c62832b0b` and no fatal leak/UBSan report. At that cutover the inventory was 156 interfaces, 110 companions and 372 own-source headers excluding extern: 29.5% module file-family coverage, not a line-of-code percentage.
-`star.armor_wearer`, `star.tool_user`, `star.tech_controller`, `star.command_processor`, `star.plant_drop`, `star.entity_splash`, `star.tile_drawer`, and `star.light_source` replace their headers with thin global-type interfaces and ordinary companions. Preserve native layouts, implementation bodies, original pointer aliases, and stream operators through precise ADL friend declarations. Player keeps opaque ArmorWearer/ToolUser/EffectEmitter forwards; complete value consumers import their actual interfaces. TileDrawer also exports the original global TilePainter friend identity, without inventing pointer aliases.
-On GCC 16, MaterialItem places its tile-drawer import directly after the named module declaration and existing imports. PlayerDeployment's companion imports its own interface before Player introduces its opaque forward. The canonical `fmt::formatter<Star::LuaValue>` keeps its declaration in `StarLua.hpp` and its unchanged ostream-formatting operation in `StarLua.cpp`, avoiding duplicate imported/textual ADL candidates without changing LuaValue formatting or adding another formatting API.
-Production-flag optimized ASan/UBSan consumers passed native LightSource current/Legacy codecs, liquid-backed splash thresholds and colors, PlantDrop bootstrap/full/delta state, actual PNG decoding and WorldServer item drops, and wrapped TileDrawer geometry. Real PlayerStorage/Statistics/UniverseServer/UniverseClient/Input exercised armor slots, status effects and humanoid rendering, current/Legacy equipment frames, actual flashlight hand transforms and local-only ToolUser suppression, tech Lua storage/override/network transitions, authenticated command parsing, original LuaValue formatting, and real world-message RPC rejection. Complete Root/Input shutdown passed; this is headless native proof, not GUI rendering or physical device output.
-The retained GCC 16 optimized sanitizer all-target build passed, as did `core_tests` and the baseline-only 18 game cases in 10 suites. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`, with no fatal leak/UBSan report. Explicit pak or asset-root paths use boot `assetSources`; `assetDirectories` scans their children and is not interchangeable. At that cutover the inventory was 164 interfaces, 118 companions and 364 own-source headers excluding extern: 31.1% module file-family coverage, not a line-of-code percentage.
-`star.codex` and `star.chat_action` replace their headers with thin global-type interfaces and ordinary companions. Codex exports its original six pointer aliases; chat actions retain their original Say/Portrait records and MVariant alias without invented pointer aliases. CodexDatabase only needs an opaque Codex forward, while its companion, ItemDatabase, PlayerCodexes, CodexInterface and player Lua bindings import the complete type at actual consumers. CodexItem imports it in its initial named-module import sequence. ChattyEntity, WorldClient and ChatBubbleManager import the complete chat variant for their native interfaces and storage.
-The retained GCC 16 optimized sanitizer all-target build and production-policy native consumer passed. Runtime proof covered required-field rejection, codex page boundaries and independent page copies, normalized JSON/path roundtrips, actual packed database icon resolution, generated codex items, player learn/read/unread persistence, chat payload/validity and variant copy/alternative transitions, and complete Root shutdown. Fatal leak detection and UBSan emitted no report; live NPC chat display and GUI output were not exercised. At that cutover the inventory was 166 interfaces, 120 companions and 362 own-source headers excluding extern: 31.4% module file-family coverage, not a line-of-code percentage.
-Baseline-only `core_tests` passed in 15.82 seconds, and all 18 selected game cases in 10 suites passed after this cutover, without fixture asset overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`; no fatal leak/UBSan report. The retained all-target build kept the existing compiler/PCH/sanitizer policy and six jobs under 20 GiB soft/24 GiB hard memory limits.
-`star.liquid_types`, `star.collision_block`, `star.tile_modification`, `star.tile_damage`, `star.interaction_types`, `star.chat_types`, `star.weather_types`, and `star.inventory_types` replace eight foundation headers with thin global-type interfaces and ordinary companions. Actual consumers retain their original textual foundations before importing complete types; GameTypes imports the liquid leaf, while tile modifications import collision types. Preserve native record/class layouts, inline bodies, maps, variants and the tile-damage classes' original pointer aliases. Stream records use exact ADL friend declarations, not namespace-wide operator exports.
-The formerly header-local `EmptyLiquidId`, `EquipmentSize` and `EssentialItemCount` keep their original types and values as exportable `inline constexpr` constants. InventorySlot retains its original Variant and strong-typedef identities: the SwapSlot wrapper uses its original macro expansion with one precise ostream friend, without changing layout or adding a wrapper type. Its canonical fmt formatter delegates the original ostream operation out of line in InventoryTypes. FarmableObject, ObjectDatabase, DungeonGenerator and NetPackets parse JsonExtra before their first BMI import, preventing observed duplicate Json stream candidates and constrained-iterator mangling conflicts without changing native bodies, compiler/ABI policy, PCH or caches.
-The retained optimized GCC 16 ASan/UBSan all-target build and five-TU native consumer passed. Runtime proof covered finite/source liquid transfer and network-update boundaries, collision sets/priority/geometry, current/Legacy tile modification and damage codecs, damage recovery/protection/harvest and entity full/reset-delta frames, interaction validity and typed rejection, chat JSON and its version-four-to-five data boundary, actual weather assets and nested particle/projectile codecs with local-only parallax, inventory/action-bar variants and canonical ostream/fmt alignment. Real WorldServer exercised liquid placement/replacement/removal, collision queries and empty-tile damage; complete Root shutdown passed with fatal leak detection and UBSan and no report. This is headless native proof, not GUI, physical-output or active weather-projectile spawning proof. At that cutover the inventory was 174 interfaces, 128 companions and 354 own-source headers excluding extern: 33.0% module file-family coverage, not a line-of-code percentage.
-Baseline-only `core_tests` passed in 16.32 seconds; all 18 selected game cases in 10 suites passed in 363.464 seconds without fixture overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`; fatal leak detection and UBSan emitted no report. Production targets retained six jobs, 20 GiB soft/24 GiB hard memory limits, existing optimization/sanitizer flags, PCH and incremental BMIs/objects; existing compiler warnings remain.
-`star.ai_types`, `star.player_types`, `star.sky_types`, `star.status_types`, `star.damage_types`, `star.wiring`, `star.celestial_coordinate`, `star.celestial_types`, `star.item_recipe`, `star.entity_rendering_types`, `star.sky_render_data`, and `star.sky_parameters` replace twelve more foundation headers with thin global-type interfaces and ordinary companions. All actual consumers import their complete native types; layouts, inline and implementation bodies, variants, maps, hashes, global forward identities and originally declared pointer aliases remain intact.
-Entity render-layer constants preserve their original types and values as exportable `inline constexpr` definitions. Records retain exact native DataStream operators through precise ADL friends; celestial-coordinate and item-recipe ostream/fmt operations remain canonical. ShipUpgrades' stream implementation stays in ClientContext, where it was originally defined. SkyParameters settings remain present only from stream version three; celestial chunk persistence and BaseInformation's range-enforcement flag remain local, nonserialized state.
-On GCC 16, the canonical ItemDatabase interface parses TtlCache before its first recipe import. Heavy consumers parse JsonExtra/TtlCache/Casting/LuaRoot and their original actor/Lua foundations before BMI imports, then complete ItemDatabase before recipe/Player chains. Complete quest, deployment, companion and object providers before the corresponding opaque forwards and heavy Player headers where required. The observed lazy-loading failures were fixed at those actual parse/import boundaries, without changing native implementations, compiler/ABI policy, PCH or incremental caches.
-The retained optimized sanitizer all-target build and five-TU native consumer passed. Runtime proof covered real AI assets and state normalization, player-mode parsing and ship merges, status precedence/variants/rejection, damage-team rules, celestial hierarchy and nested persistence, current/Legacy record codecs, wiring hashes, actual packed-asset recipes and canonical formatting, full sky JSON and version-two-to-three settings, real Sky orbiters/horizon geometry, and native entity-rendering records. Complete Root shutdown passed with fatal leak detection and UBSan and no report. At that cutover the inventory was 186 interfaces, 140 companions and 342 own-source headers excluding extern; 35.2% module file-family coverage, not a line-of-code percentage. This batch is headless native proof, not GUI, physical-output or Windows/macOS validation.
-Baseline-only `core_tests` passed in 15.90 seconds; all 18 selected game cases in 10 suites passed in 383.993 seconds, without standalone fixture overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`; fatal leak detection and UBSan emitted no report. The retained production build kept six jobs, 20 GiB soft/24 GiB hard memory limits, existing optimization/sanitizer flags, PCH and incremental BMIs/objects; existing compiler warnings remain.
-`star.damage`, `star.warping`, `star.quest_descriptor`, `star.platformer_astar_types`, `star.material_types`, `star.material_render_profile`, `star.biome_placement`, `star.parallax`, `star.particle`, `star.drawable`, `star.world_render_data`, and `star.celestial_parameters` replace twelve further foundation headers. Ten retain their original ordinary companion implementations; MaterialTypes and WorldRenderData remain naturally interface-only. All actual consumers use native module imports. Global type identities, layouts, original inline/implementation bodies, variants, hashes, pointer aliases and codecs remain intact; native-typed material constants become exportable `inline constexpr` definitions.
-Precise ADL friends retain record and strong-wrapper stream/ostream operations; the nested platformer interface exports only its own ostream overload set. Preserve the repeated EqualsSelf material-rule alternative and original nonserialized fields rather than normalizing them. On GCC 16, PlayerInventory, ItemDrop and QuestDescriptor parse JsonExtra/TtlCache/Casting/LuaRoot/ActorMovementController foundations and complete ItemDatabase before recipe and heavy Item/Player chains. Those observed BMI-loading failures were fixed at actual consumer boundaries, without implementation, ABI, PCH, flag or cache changes.
-The retained all-target build and five-TU native consumer passed. Actual Root and packed assets exercised wrapped damage geometry/repeat/quantization, world/warp identities and nested versioned quest payloads; material ID/hue/rule limits and real-image profiles; all six biome variants with seeded random/periodic persistence; Drawable transforms/templates/codecs, particle motion/destruction/local-only state and WorldRenderData clear; actual visitable celestial generation/storage, parallax JSON/binary distinctions and nested platformer node/limit/ostream/fmt records. Current/Legacy codecs and complete Root shutdown passed with fatal ASan leak detection and UBSan and no report. At that cutover the inventory was 198 interfaces, 150 companions and 330 own-source headers excluding extern; 37.5% module file-family coverage, not a line-of-code percentage. This is headless native proof, not GUI, physical-output or Windows/macOS validation.
-Baseline-only `core_tests` passed in 17.11 seconds; all 18 selected game cases in 10 suites passed in 426.729 seconds without fixture overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`, with no fatal leak/UBSan report. Production compilation retained six jobs, 20 GiB soft/24 GiB hard memory limits, existing optimization/sanitizer flags, PCH and incremental BMIs/objects. Only owned probes are removed after verification; source/build/environment, vendor preparation and finite primary logs remain. Existing compiler warnings remain.
-`star.world_parameters`, `star.biome`, `star.celestial_graphics`, `star.world_tiles`, and `star.movement_controller`; `star.configuration`, `star.world_geometry`, `star.animated_part_set`, `star.asset_source`, `star.directory_asset_source`, and `star.version_option_parser`; and `star.anchor_types`, `star.asset_texture_group`, `star.font_texture_group`, `star.drawable_painter`, and `star.text_painter` replace sixteen further file families. Fifteen keep their original ordinary companion implementations; AssetSource remains naturally interface-only. All 151 actual consumer files use native imports instead of the 183 former includes, and the sixteen old headers are removed. Global identities, layouts, existing pointer aliases, inline/implementation bodies, hashes and codecs remain intact.
-The complete `star_base_modules` STATIC provider registers its six new interfaces and five ordinary companions; game interfaces link it PUBLIC. Rendering now follows the no-PCH `star_rendering_module_interfaces` OBJECT plus complete `star_rendering_modules` STATIC arrangement, with five companions and public game closure. Frontend propagates the rendering interface/complete providers through their matching targets; windowing only needs the interface edge. Existing object-target PCH, explicit include directories, private build policy and MSVC runtime properties remain. `btree_repacker` now enables module scanning for its native parser import.
-MovementController's thin interface needs only the original global `World` forward, not the heavy World header; actual companions/consumers keep their foundation dependencies. Precise native DataStream friends preserve NetTile, RenderTile and MovementParameters ADL. Assets, ImageLuaBindings and LuaRoot parse JsonExtra before their transitive module/Lua chains to prevent observed GCC 16 constrained-iterator and SIMD linkage conflicts; no ABI, PCH, compiler-flag or cache relaxation was used.
-The retained all-target build and five-TU production-linked native consumer passed. Real Root/packed assets exercised configuration isolation/concurrency/protected versions, actual directory IO, wrapped geometry, animation transitions, all three generated world subtypes and current/Legacy persistence, nested biome values and seeded placement, processed celestial graphics, tile cache/persistence/codecs/template hashes and MovementController on a real WorldServer. Real SDL/OpenGL/Mesa llvmpipe and FreeType rendered the native red line, blue polygon, actual asset sprite and text; framebuffer pixels and the retrieved image were inspected. Native text measurement still ignores charLimit while rendering clips it; geometry interpolation stays unnormalized, and biome microdungeon membership is checked without changing native order-sensitive hash-table equality. Root/OpenGL shutdown and actual parser/production btree_repacker version/help process exits passed with fatal leak detection and UBSan and no report.
-At the sixteen-family cutover the inventory was 214 interfaces, 165 companions and 314 own-source headers excluding extern/gtest; 40.5% module file-family coverage, not a line-of-code percentage. Baseline-only core_tests passed in 15.99 seconds; all 18 selected game cases in 10 suites passed in 475.136 seconds without fixture overlays. Planet/ship hashes remained `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. Production compilation retained six jobs, actual 20 GiB soft/24 GiB hard limits, existing optimization/sanitizers, PCH and incremental caches. This proved the native rendered surface, not a new full client session or Windows/macOS runtime. Only owned probes were removed after proof; persistent source/build/environment, vendor preparation and finite primary logs remain.
-`star.uuid`, `star.host_address`, `star.socket`, `star.tcp`, `star.worker_pool`, `star.option_parser`, `star.shell_parser`, and `star.json_path`; `star.root_base`, `star.mixer`, `star.cellular_light_array`, `star.cellular_lighting`, and `star.blocks_along_line`; and `star.actor_movement_controller`, `star.item_descriptor`, `star.entity_rendering`, `star.net_packet_socket`, `star.universe_connection`, `star.world_server_thread`, and `star.system_world_server_thread` replace twenty further file families. Nineteen retain their original ordinary companions; BlocksAlongLine remains naturally interface-only. All 220 direct consumer files use native imports instead of 331 former includes, and all twenty old headers are removed. Global identities, layouts, existing aliases, exceptions, inline/templates, implementation bodies, hashes and codecs remain intact; UuidSize keeps its native type/value as `inline constexpr`.
-The existing complete core STATIC provider registers eight new interfaces/companions, base registers five interfaces/four companions, and game registers seven interfaces/companions in its matching interface/complete providers. `core_tests` links `star_base_modules` for its actual BlocksAlongLine import. Original object-target PCH, public provider closure, private policy/dependencies, include directories and MSVC properties remain. Precise native hash friends retain the global-fragment Uuid/HostAddress/HostAddressWithPort specializations; otherwise GCC 16 consumers see deleted primary std::hash constructors. JsonPath exports its original nested namespace symbols and keeps JsonExtra before LexicalCast/Json. Actor and packet/world-thread interfaces retain only necessary opaque dependency forwards and complete value foundations; actual companions/consumers keep heavy headers. Npc parses TtlCache/Casting/LuaRoot and imports ItemDatabase before recipes and heavy entity chains to resolve observed BMI-loading failures without ABI, PCH, flag or cache relaxation.
-The retained GCC 16 all-target build and five-TU production-linked consumer passed. Real Root/packed assets exercised UUID/hash/stream identities, native address formatting, TCP transport and packet codecs, worker results/errors/drain and genuine UniverseConnectionServer callbacks, option/shell parsing and JSON pointer/query operations, block traversal, actual OGG decoding/Mixer PCM, scalar/colored lighting, ItemDescriptor persistence and Actor/WorldServerThread on a real WorldServer. A genuine Input callback factory and PlayerFactory/PlayerStorage/UniverseClient/UniverseServer session reached the actual ship and initialized system; a real SystemWorldServerThread ran and persisted its native file. WorldClient's real render collector and WorldPainter drew the live ship, entities, tiles, backdrop and lighting through SDL/OpenGL/Mesa llvmpipe. The retrieved 800x600 framebuffer image was inspected; the frame contained 22 native drawables. Normal client/server/GL/Root teardown passed fatal ASan leak detection and UBSan without a report. This proves a native local ship/world-painter session, not the full ClientApplication UI or Windows/macOS runtime.
-At the twenty-family cutover the inventory was 234 interfaces, 184 companions and 294 own-source headers excluding extern/gtest; 44.3% module file-family coverage, not LOC. Baseline-only 198 core cases in 53 suites passed in 15.33 seconds process time; all 19 selected game cases in 11 suites passed in 523.929 seconds process time, without fixture overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. All compilation remains on the retained VPS with Ninja6, actual 20 GiB soft/24 GiB hard limits, existing optimized sanitizer flags, PCH and incremental BMIs/objects. Existing compiler and native dungeon-placement warnings remain. Only this batch's owned probes are removed after proof; persistent source/build/environment, vendor preparation and finite primary logs remain.
-`star.gui_types`, `star.key_bindings`, `star.gui_context`, `star.widget`, `star.pane`, `star.pane_manager`, and `star.registered_pane_manager`; `star.button_group`, `star.button_widget`, `star.text_box_widget`, `star.slider_bar`, `star.canvas_widget`, `star.image_widget`, `star.image_stretch_widget`, `star.label_widget`, `star.progress_widget`, and `star.fuel_widget`; `star.layout`, `star.flow_layout`, `star.vertical_layout`, `star.stack_widget`, `star.list_widget`, `star.scroll_area`, and `star.tab_set`; `star.portrait_widget`, `star.large_char_plate_widget`, `star.item_slot_widget`, and `star.item_grid_widget`; and `star.gui_reader`, `star.widget_parsing`, and `star.widget_lua_bindings` replace all thirty-one windowing file families. Thirty keep ordinary companions; RegisteredPaneManager remains template-only. All 98 direct consumer files use native imports instead of 299 former includes, and all thirty-one old headers are removed. Global identities, layouts, original pointer aliases, inline/template/implementation bodies and Lua converter/userdata specializations remain intact; ItemIndicateNewTime keeps its native float type and 1.5f value as inline constexpr.
-Windowing now has a no-PCH `star_windowing_module_interfaces` OBJECT provider with PUBLIC CXX_MODULES, plus the complete `star_windowing_modules` STATIC provider compiling thirty ordinary companions with module scanning and public game/rendering closure. Frontend propagates the matching windowing interface/complete providers; the client no longer consumes the retired windowing OBJECT target. Original object-target PCH, private build policy/dependencies, explicit include directories and MSVC runtime properties remain.
-GuiContext and Widget retain only their actual pointer/reference-only global forwards rather than loading unrelated application/renderer interfaces; Canvas keeps its real by-value Drawable/TextPositioning and explicit Variant foundation. HttpTrustDialog's original defaulted destructor is defined out of line in its existing named companion. A native GCC 16 minimal reproduction proved a distinct cross-BMI forward-declaration RTTI defect: changing import order or moving the owner's forward did not restore Pane/ButtonWidget vtables. Only their existing short key bodies, Pane::displayed and ButtonWidget::~ButtonWidget, move unchanged to the complete-definition global fragment; all other implementations remain in their ordinary companions. No new virtual hooks, ABI/layout changes, flag suppression, PCH changes or cache purge were used.
-The retained optimized sanitizer all-target build and five ordinary importing TUs linked against the full native client closure passed. A genuine SDL platform ApplicationController, Root, Input, Mixer and OpenGL renderer exercised every new family: key-chord codecs/precedence, hierarchy/focus/registered panes, Unicode editing and callbacks, slider clamps, Canvas event retention and real pointer coordinates, layouts/lists/scrollbars/tabs, actual Player portraits/character plates, real ItemDatabase/ItemBag grids/slots, parser rejection and native Lua Canvas userdata/state mutations. Pointer capture follows actual first-frame Widget rendering; item slots synchronize through the native grid update stage. The retrieved 800x600 framebuffer was inspected: real controls, two colored canvases, scrollbars, item counts and a native character portrait were visible. Normal SDL/GUI/Input/Root teardown and fatal ASan leak detection/UBSan passed with no report. Mesa llvmpipe and SDL's real dummy audio driver were used; this is native GUI-surface proof, not a full ClientApplication session, physical-audio or Windows/macOS verification.
-At the thirty-one-family windowing cutover the inventory was: 265 interfaces, 214 companions and 263 own-source headers excluding extern/gtest; 50.2% module file-family coverage, not LOC. Baseline-only 198 core cases in 53 suites and all 19 selected game cases in 11 suites passed without fixture overlays, with reported test times of 13.729 and 508.347 seconds. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. All compilation used the retained VPS, Ninja6 for production targets, actual 20 GiB soft/24 GiB hard limits and the original optimized sanitizer/PCH/BMI/object policy. Existing warnings remain; only this batch's owned verification files are removed after visual proof and documentation, retaining prepared source/build/environment, vendor preparation and finite primary logs.
-At the forty-family frontend cutover:
-
-`star.bindings_menu`, `star.bookmark_interface`, `star.confirmation_dialog`, `star.error_screen`, `star.graphics_menu`, `star.join_request_dialog`, `star.keybindings_menu`, `star.mods_menu`, `star.options_menu`, `star.popup_interface`, `star.radio_message_popup`, `star.shaders_menu`, `star.teleport_dialog`, `star.voice_settings_menu`, `star.char_creation`, `star.char_selection`, `star.codex_interface`, `star.quest_interface`, `star.songbook_interface`, `star.ai_interface`, `star.action_bar`, `star.base_script_pane`, `star.chat`, `star.chat_bubble_separation`, `star.chat_bubble_manager`, `star.container_interface`, `star.container_interactor`, `star.crafting_interface`, `star.inventory`, `star.interface_cursor`, `star.main_interface_types`, `star.main_mixer`, `star.merchant_interface`, `star.nameplate_painter`, `star.quest_indicator_painter`, `star.quest_tracker`, `star.script_pane`, `star.status_pane`, `star.team_bar`, `star.wire_interface` replace forty further frontend file families. All forty retain their original ordinary companions; 49 surviving consumer files use native imports instead of 87 former includes, and the forty old headers are removed. Original global identities, layouts, existing aliases, inline/template/implementation bodies and native GUI behavior remain unchanged.
-The existing no-PCH frontend interface OBJECT and complete STATIC providers register all forty interfaces and companions with matching public game/rendering/windowing closure. The complete provider retains private build policy and now carries the original voice dependency needed by the moved implementation sources. Cinematic, ClientCommandProcessor, MainInterface, TitleScreen and Voice remain in the original frontend OBJECT target with its original PCH, include paths, private policy/dependencies and MSVC properties. Pointer-only Root/application/renderer/world/client dependencies remain native opaque globals; by-value types retain their complete native providers. JoinRequestDialog preserves the original default-int P2PJoinRequestReply identity through an opaque enum declaration, and QuestIndicatorPainter explicitly imports its native Drawable return provider.
-The retained GCC 16 optimized sanitizer all-target build passed in 9m16.881s, using Ninja6 and actual 20 GiB soft/24 GiB hard limits; peak memory was 11.7 GiB. The rebuilt production starbound client, not a replacement GUI application, ran against only the original packed assets and opensb source assets. Real SDL/X11/OpenGL 4.6 Mesa llvmpipe input opened options, graphics, shaders, voice settings, mod bindings, game bindings, character selection and creation. A saved real player joined the actual local UniverseServer, reached the native ship, and displayed the actual HUD, inventory, crafting, quest journal and codex. Retrieved 1000x700 frames were inspected; actual client/server/Root/SDL shutdown completed normally with fatal ASan leak detection and UBSan and no report. Dummy SDL audio proves the native device path, not physical microphone capture or voice networking; the shader menu correctly reports no installed optional shaders. Native title Escape returns to the title rather than only the current submenu, so scenarios re-enter through actual visible controls.
-At the forty-family frontend cutover the inventory was: 305 interfaces, 254 companions and 223 own-source headers excluding extern/gtest; 57.8% module file-family coverage, not LOC. Original baseline-only 198 core cases in 53 suites passed in 15.233 seconds, and all 19 selected game cases in 11 suites passed in 409.823 seconds, without fixture overlays. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. All native compilation stayed on the retained VPS with the original optimized sanitizer flags, PCH and incremental BMIs/objects. Existing compiler and native dungeon-placement warnings remain. Only this batch's owned probes are removed after visual proof and documentation; prepared source/build/environment, vendor preparation and finite primary logs remain.
-
-All thirty-six `source/game/interfaces` families, including Entity, World, ActorEntity and ToolUserEntity; the remaining frontend Cinematic, ClientCommandProcessor, MainInterface, TitleScreen and Voice families; and rendering EnvironmentPainter, TilePainter and WorldPainter now use thin native `.cppm` interfaces. All forty-four original headers are removed and actual consumers use imports. Fourteen game interfaces and all eight frontend/rendering families retain their original ordinary companion implementations; the other twenty-two game interfaces remain naturally interface-only. Original global identities, layouts, method bodies, inline/template behavior and existing aliases remain.
-The existing complete game/frontend/rendering STATIC providers compile the twenty-two companions directly with module scanning and their matching no-PCH interface providers. The now-empty legacy frontend and rendering OBJECT targets and their client object references are removed; complete native archive closure, original private policy/dependencies, include paths and MSVC runtime properties remain. No compiler flag, ABI, PCH or cache relaxation was introduced.
-Complete native covariant bases and by-value Lua/script/render members remain explicit; pointer-only World/Root/entity dependencies stay opaque rather than importing unnecessary graphs. Canonical Json/xxhash precedes Lua/AStar/fast_float, and original Lua actor/animation, Item, Root, application/renderer and standard-library foundations precede heavy entity/GUI imports at their actual parse boundaries. Precise original MaterialSpace, moving-collision and anchor stream friends retain ADL. PreviewTileTool preserves its original global forward aliases rather than inventing Star namespace aliases; Voice retains the six-byte `Voice\0` broadcast prefix.
-The retained GCC 16 optimized sanitizer all-target build completed all 339 pending steps, including the real client/server, tests and utilities, in 39m15.637s with Ninja6, actual 20 GiB soft/24 GiB hard limits and 20 GiB peak memory. Two rebuilt production client sessions used only original packed and opensb assets with real SDL/X11/OpenGL 4.6 Mesa llvmpipe. Inspected 1000x700 frames show title/options/graphics/shaders/voice/bindings, character creation and saved-player reload, the actual ship and planetary background, player movement, native `/whoami`, HUD hide/restore and unobscured inventory/crafting/quest/codex panes. Both sessions completed normal client/server/Root/SDL shutdown with exit0 and fatal ASan leak/UBSan policy; no sanitizer reports. Physical microphone/network voice and Windows/macOS runtime were not exercised.
-At the forty-four-family cutover the inventory was: 349 interfaces, 276 companions and 179 own-source headers excluding extern/gtest; 66.1% module file-family coverage, not LOC. Original baseline-only 198 core cases in 53 suites passed in 15.736 seconds, and all original 19 game cases in 11 suites passed in 436.742 seconds without fixture overlays or a narrowed filter. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. Existing compiler/native dungeon-placement warnings remain. Only that batch's owned probes and upload archives were removed after visual proof and documentation; prepared source/build/recorded environment, incremental PCH/BMIs/objects and finite primary logs remain.
-
-Thirty-eight further native families now use thin interfaces: `star.item`, `star.item_drop`, `star.monster`, `star.npc`, `star.object`, `star.plant`, `star.player`, `star.projectile`, `star.stagehand`, `star.vehicle`, `star.humanoid`, `star.networked_animator`, `star.status_controller`, `star.input`, `star.net_packets`, `star.armors`, `star.augment_item`, `star.tools`, `star.container_object`, `star.world_server`, `star.world_client`, `star.world_impl`, `star.world_storage`, `star.world_template`, `star.world_layout`, `star.universe_server`, `star.universe_client`, `star.system_world`, `star.system_world_client`, `star.system_world_server`, `star.world_client_thread`, `star.tile_sector_array`, `star.dungeon_generator`, `star.root`, `star.root_loader`, `star.assets`, `star.cellular_liquid`, and `star.image_lua_bindings`. All thirty-eight former public headers are removed and actual public consumers use native imports. Thirty-five retain their original companion bodies; WorldImpl, TileSectorArray and CellularLiquid remain interface-only. Global identities, layouts, existing aliases, inline/template behavior and native algorithms remain unchanged.
-The existing complete base/game STATIC providers register these interfaces and companions with their matching no-PCH interface providers. The now-empty legacy `star_base` OBJECT target and its executable object references are removed. PhysicsObject and LoungeableObject also move from named-module classes to thin global-type interfaces with ordinary companions; ActiveItem's original implementation bodies move unchanged out of its full interface into `StarActiveItem.cpp`, registered in the complete game provider. Complete native archive closure, original private policy/dependencies, include paths, MSVC properties, PCH, compiler flags and incremental caches remain.
-GCC 16 did not emit the canonical native vtables/RTTI for Item, Monster, Npc, the five armor classes, UniverseClient, UniverseServer and SystemWorldServer when their key-function owners only imported the global declarations. A named implementation unit conflicted with those global definitions, and an ordinary TU with local opaque forwards and its own interface first still did not emit Item's vtable/RTTI. Seven private single-source `.inc` declaration preludes now supply the unchanged native definitions to each family's thin interface global fragment and ordinary companion; these companions do not import their own interfaces. The private fragments are registered as private game interface sources, not public compatibility headers. The retained-policy Item object proof emitted `Star::Item` vtable/typeinfo, and the full all-target link validated the complete native closure.
-Original Json/Lua actor/animation/component foundations precede heavy imports only at their actual ownership boundaries. WorldLuaBindings, ToolUser, ObjectDatabase and ItemDatabase no longer redundantly parse LuaAnimationComponent when the native imported providers already own it; ItemDatabase retains its actual LuaBaseComponent dependency before imports. UniverseConnection keeps its actual primitive, opaque Packet and complete NetPacketSocket dependencies rather than an unused world/Lua graph. Precise native stream friends retain CelestialOrbit ADL. A production-linked ordinary importing consumer exercised real Image Lua userdata size/pixel mutation/crop, unchanged asset-cache pixels, native orbit stream roundtrip and normal Root shutdown against only original packed/opensb assets.
-The retained GCC 16 optimized sanitizer all-target build passed in 31m26.075s with Ninja6, actual 20 GiB soft/24 GiB hard limits and 20 GiB peak memory, without swap or flag/cache relaxation. Two rebuilt production client sessions used only original packed/opensb assets with real SDL/X11/OpenGL 4.6 Mesa llvmpipe. Retrieved 1000x700 frames were inspected: title/graphics/shaders/voice/bindings, actual character creation and disk reload, native ship and planetary background, player movement, `/whoami`, HUD hide/restore, inventory, crafting, quest journal and codex. Native logs confirm saved system/ship loading in the second process and normal client/server/Root/SDL shutdown in both. All runtime probes used fatal ASan leak detection and UBSan, exited normally, and produced no sanitizer report. This is headless Linux client proof, not physical voice capture or Windows/macOS runtime verification.
-At the thirty-eight-family cutover the inventory was: 387 interfaces, 312 matching companions and 140 own-source headers excluding extern/gtest; 73.4% module file-family coverage, not LOC. Original baseline-only 198 core cases in 53 suites passed in 16.718 seconds, and all original 19 game cases in 11 suites passed in 599.422 seconds without fixture overlays or a narrowed filter. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. Existing compiler/native dungeon-placement warnings remain. Only this batch's owned probes, private diagnostics and upload archives are removed after proof and documentation; prepared source/build/recorded environment, incremental PCH/BMIs/objects and finite primary logs remain.
-
-Thirty-six further core/application families now use native thin interfaces. The twenty-five core families are AssetPath, BTreeDatabase, Buffer, Directives, Encode, ImageProcessing, LockFile, Perlin, Text, Time, Unicode, Version, ZSTDCompression, ObserverStream, Periodic, PeriodicFunction, Listener, TtlCache, LruCache, WeightedPool, ParametricFunction, MultiTable, MultiArrayInterpolator, SpatialHash2D and SectorArray2D. The eleven application families are Application, ApplicationController, MainApplication, Renderer, TextureAtlas, Renderer_opengl, StatisticsService_pc_steam, UserGeneratedContentService_pc_steam, DesktopService_pc_steam, P2PNetworkingService_pc and PlatformServices_pc. Original public headers are retired; all consumers use the new interfaces or existing canonical private foundations, not compatibility shims.
-Core interfaces and ordinary companions remain in the complete core module provider, preserving Unix/Windows source selection and generated version metadata. Application now has a no-PCH `star_application_module_interfaces` OBJECT provider with PUBLIC CXX_MODULES and a complete `star_application_modules` STATIC provider for its ordinary companions. Rendering/frontend/client propagate the matching provider closure; Steam/Discord source gating, private dependencies/policy, MSVC properties, native entry-point expansion, layouts, inline/template bodies and runtime implementations remain.
-The private single-source `StarUnicode.inc` declaration prelude is shared by the thin Unicode global fragment, ordinary companion and original String/JsonParser foundations; these foundations must be parsed before BMIs, and the companion does not self-import. JsonExtra loads WeightedPool/ImageProcessing/Directives only after its original nondependent JSON-array helper bodies. ImageProcessing retains complete String/native operation fields while leaving Json/StringView opaque. ContainerObject and ArmorWearer parse their original Lua component/animation foundations before heavy game imports; unused Object/Monster graphs are removed from QuestDescriptor and ArmorWearer. These boundaries fixed actual GCC 16 constrained-iterator and StringSet/Lua cluster failures without changing native bodies, compiler/ABI/PCH policy or clearing caches. Original header-local constants retain their native types/values as inline constexpr.
-The retained GCC 16 optimized sanitizer all-target gate passed. A twelve-job full foundational rebuild hit the existing 24 GiB hard limit and was OOM-killed; retained eight-job continuation peaked at 20.9 GiB without swap, and the final successful compile/link gate peaked at 16.5 GiB. Future retained builds default to eight jobs, above the original six, with the same 20 GiB soft/24 GiB hard limits. A production-policy ordinary importing executable exercised asset-path split/join/relative resolution and precise stream/hash ADL, binary hex/base64/Zstd, UTF-8/UTF-16, native time, LRU eviction, observer history, periodic cadence and parametric interpolation, exiting normally with fatal leak/UBSan checks.
-Two actual rebuilt client processes used only packed.pak and opensb assets with SDL/X11/OpenGL 4.6 Mesa llvmpipe. Inspected 1000x700 frames show graphics/voice settings, real character creation/save, native ship and planetary background, `/whoami`, inventory, crafting, quest journal and codex. The second process loaded the same ModuleNative36 player and saved system/ship from disk, with inspected ship/equipment/identity frames. Both completed normal client/server/Root/SDL shutdown with exit0; no sanitizer reports under fatal ASan leak/UBSan policy. This is Linux software-rendering/dummy-audio proof, not physical microphone/network voice, Steam/Discord, Windows or macOS validation.
-At the thirty-six-family cutover the inventory was: 423 interfaces, 332 matching companions and 105 own-source headers excluding extern/gtest; 80.1% module file-family coverage, not LOC. Original baseline-only 198 core cases in 53 suites passed in 14.717 seconds, and all original 19 game cases in 11 suites passed in 448.659 seconds without fixture overlays or a narrowed filter. Planet/ship hashes remain `0x801745d507acfcaa` / `0x96a3df5c62832b0b`. Retain prepared source/build/environment, incremental objects/PCH/BMIs and finite primary logs; remove only that batch's owned probes, diagnostic outputs and upload archives after proof and documentation.
-
-Five further native families now use thin interfaces: `star.game_types`, `star.p2p_networking_service`, `star.desktop_service`, `star.statistics_service` and `star.user_generated_content_service`. Their five original public headers are retired and all consumers use imports. GameTypes retains its ordinary implementation companion; the four abstract platform families remain interface-only. Original global type identities, layouts, inline/template bodies, constant types/values and destructor virtualness remain. GameTypes' eight namespace enum-map definitions retain explicit `extern`.
-The new complete `star_platform_modules` STATIC provider publishes the four platform interfaces and links the core module provider publicly. Game/application interface providers propagate the platform dependency, and the new provider reuses the common Clang PCH. Canonical Json/XXHash foundations precede imports at their concrete caller boundaries; PC P2P explicitly imports HostAddress. Wiring exports its original global hash template so the native WireConnection specialization remains visible to ordinary importing consumers. No third-party hash implementation, compiler flag, ABI or regression baseline is relaxed.
-The final Linux all-target xclang 23.1.2/libc++ package gate completed 1932 steps in 8m03.533s with 16 compiler jobs, 16.6 GiB peak memory and no swap use. The retained Windows x64 cross-build completed its final 571 pending steps in 6m44.908s with the same 16-job cap, 16.4 GiB peak memory and no swap use. Client/server, Qt tools, tests and utilities compile/link in both gates. Direct project ELF dependencies and AMD64 PE imports retain the bundled-runtime policy without GNU/MSVC C++ runtime dependencies.
-Private production-linked consumers passed on Linux and under Wine 11: all eight enum-map codecs, direction and dungeon boundaries, all 32766 client/sub-world entity spaces, all 16383 main/sub-world ID roundtrips, unchanged maybe-ID boundary behavior, angle/timestep globals, the native WireConnection hasher, real PC P2P address/peer parsing, consume-once pending joins, unsupported/malformed peer rejection and platform lifecycle. Linux ran all 202 core cases in 4.599s and all 27 real-asset game cases in 49.332s; Wine 11 ran the same unfiltered 202/27 cases in 28.906s/48.817s. No fixture overlays or golden changes: planet `0x801745d507acfcaa`, ship `0x96a3df5c62832b0b`.
-Inspected Linux Xvfb/software-OpenGL frames show the actual title scene, Qt editing/saving value 17 while preserving another JSON field, and the uploader's offline Steam error dialog. The client completed normal SDL/application shutdown after WM_DELETE_WINDOW; the isolated server accepted a real loopback TCP connection and exited0 after SIGINT. Steam/Discord were unavailable in the offline consumer; this does not prove authenticated transport, statistics writes, Workshop upload, URL opening, physical audio/GPU, native Windows or macOS runtime. Personal helpers and evidence stay outside the repository.
-Current inventory: 428 interfaces, 333 matching companions and 101 own-source headers excluding extern/gtest; 80.9% module file-family coverage (`428 / (428 + 101)`), not LOC.
-
-`star.signal_handler` includes its Windows minidump implementation directly; the core module dependency group links `dbghelp` on Windows, alongside the core exception implementation's existing dependency.
-Use persistent CMake/Ninja build directories under the matching xclang/libc++ environment for incremental compilation. Synchronize changed contents only and retain objects, the shared PCH and module BMIs; use separate directories for incompatible compiler/ABI/sanitizer profiles. Record the matching environment with `nix develop --profile`, then enter that recorded profile for subsequent builds; refresh it when the toolchain or dependencies change. Apply the existing Nix ImGui literal-text patch when preparing a source tree for the package-derived sanitizer environment. Run tests and actual runtime smoke against the resulting binaries; a new clean Nix package build is not required for every iteration. On the 31 GiB VPS with persistent 96 GiB swap, cap aggregate compiler concurrency at 16 and bound the actual build unit (current gates: 25 GiB soft/26 GiB hard memory and 96 GiB swap allowance), leaving memory for SSH and the OS; reduce concurrency under memory pressure. Swap is an OOM reserve, not a compilation-speed claim. Earlier six/eight-job and 24 GiB limits above describe historical GCC 16 sanitizer runs, not the current compiler configuration.
-
-
-<details>
-<summary>template sbinit.config for dist/ after build</summary>
-<br>
-
-```json
-{
-  "assetDirectories" : [
-    "../assets/",
-    "./mods/"
-  ],
-
-  "storageDirectory" : "./",
-  "logDirectory" : "./logs/"
-}
+```sh
+nix build .#full --cores 16 --max-jobs 1 -o result-full
 ```
 
-</details>
-<details>
-<summary><b>Windows</b></summary>
- 
-* Install CMake 3.28+, Ninja and [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-windows) outside the repository, preferably at a short path such as `C:\src\vcpkg`. Set **`VCPKG_ROOT`** to that path.
-* Install MSYS2's UCRT64 `mingw-w64-ucrt-x86_64-make` package for Qt5's make-based build. Set **`MSYS2_ROOT`** and add its `ucrt64\bin` directory to `PATH`. MSYS2 supplies make only; do not select its GCC or a Visual Studio compiler.
-* From the repository root in PowerShell:
+Use `nix develop` or `nix develop .#full` for the matching development environment. Launchers keep writable data under `$XDG_DATA_HOME/openstarbound` (default `~/.local/share/openstarbound`); override paths with `OPENSTARBOUND_RUNTIME_DIR`, `OPENSTARBOUND_MODS`, `OPENSTARBOUND_STORAGE` or `OPENSTARBOUND_LOGS`.
 
-  ```powershell
-  cmake "-DXCLANG_INSTALL_DIR=$PWD\.cache\xclang" -P scripts/ci/install-xclang.cmake
-  $env:XCLANG_ROOT = "$PWD\.cache\xclang\xclang"
-  cd source
-  cmake --preset windows-release
-  cmake --build --preset windows-release --parallel 16
-  ctest --preset windows-release
-  ```
+### Native CMake presets
 
-* The preset chainloads xclang's official CMake toolchain and the `x64-windows` vcpkg triplet. C++ dependencies and Qt plugins use static MinGW/libc++; no MSVC STL objects may enter this build.
-* Binaries appear in **dist/**. CI runs `scripts/ci/windows/post_build.bat`, then `cmake -P scripts/ci/windows/audit-runtime.cmake`, then `scripts/ci/windows/assemble.bat`. The audit checks required executables, SDK DLL architecture, runtime imports and server version output. Native Windows build/runtime validation requires a Windows runner.
+Bootstrap [vcpkg](https://github.com/microsoft/vcpkg#quick-start) **outside this repository** and set `VCPKG_ROOT` to its absolute path. Keep the project's overlay ports and triplets.
 
-**Cross-compiling Windows x64 from Linux**
+| Platform | Preset | Additional requirements |
+|---|---|---|
+| Linux x86_64 | `linux-release` | C-ABI/window-system development packages listed in [CI](.github/workflows/build.yml) |
+| Linux ARM64 | `linux-arm-release` | Same prerequisites; Steam/Discord SDKs disabled |
+| Windows x64 | `windows-release` | MSYS2 UCRT64 `make`; set `MSYS2_ROOT` and add `ucrt64/bin` to `PATH` |
+| macOS Intel | `macos-release` | Xcode Command Line Tools and a macOS 14-capable SDK |
+| macOS Apple Silicon | `macos-arm-release` | Same SDK requirements |
 
-* Use the same pinned xclang archive, a bootstrapped vcpkg outside the repository, and the project's overlays. Native host generators (`moc`, `rcc`, `uic`, `qmake`) and target libraries are separate builds; the host generators must also use xclang/libc++, not system GCC. CMake, Ninja, GNU make and the Linux C-ABI development prerequisites are still required.
-* On a Nix-equipped builder, enter the full native dependency environment first. `OSB_NATIVE_COMPILER_ROOT` selects its matching Nix xclang wrapper for Linux host packages; `XCLANG_ROOT` selects the unpacked multi-target SDK for Windows:
+Linux/macOS, from the repository root; choose your preset from the table:
 
-  ```sh
-  nix develop .#full --cores 16 --max-jobs 1
-  export OSB_NATIVE_COMPILER_ROOT="$(dirname "$(dirname "$(command -v clang)")")"
-  cmake -DXCLANG_INSTALL_DIR="$PWD/build/compiler-sdk" -P scripts/ci/install-xclang.cmake
-  export XCLANG_ROOT="$PWD/build/compiler-sdk/xclang"
-  export VCPKG_ROOT=/absolute/path/to/vcpkg
-  export VCPKG_MAX_CONCURRENCY=16
-  export CMAKE_BUILD_PARALLEL_LEVEL=16
-  cd source
-  cmake --preset windows-cross
-  cmake --build --preset windows-cross --parallel 16
-  ```
+```sh
+export VCPKG_ROOT=/absolute/path/to/vcpkg
+export VCPKG_MAX_CONCURRENCY=16
+cmake -DXCLANG_INSTALL_DIR="$PWD/build/compiler-sdk" -P scripts/ci/install-xclang.cmake
+export XCLANG_ROOT="$PWD/build/compiler-sdk/xclang"
+# macOS also requires: export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+cd source
+cmake --preset linux-release
+cmake --build --preset linux-release --parallel 16
+ctest --preset linux-release
+```
 
-* `windows-cross` uses `x64-linux` host packages and `x64-windows` targets. It enables the full Qt/development-tool target set. It does not run Windows PowerShell's vcpkg app-local helper on Linux: configure stages target C-ABI runtime DLLs and the vendor SDK DLLs into `dist/`. Qt and the other C++ dependencies remain static.
-* Default Windows debug configurations use CodeView and LLD-generated `.pdb` sidecars. Keep each PDB paired with its executable; compressed DWARF remains a non-Windows policy. The large DWARF build triggered Wine 10's pre-main `dbghelp` parser failure; the CodeView build preserves symbol/source-line diagnostics.
-* Cross-build test presets require an executable emulator, for example configuring with `-DCMAKE_CROSSCOMPILING_EMULATOR=wine` before `ctest --preset windows-cross`. Use Wine 11 or a native Windows runner for the full core suite: Wine 10's `CreateSymbolicLinkW` reports success without creating the directory link, so the existing symlink regression correctly fails there. Complete Wine's first-run setup before unattended runs.
-* Real-asset tests and the client/server need your owned Starbound `packed.pak`. Boot `assetSources` accepts individual pak/mod paths; `assetDirectories` scans children of parent directories. Distribution archives contain only `opensb.pak`, not the commercial game assets. Cross-build output remains `dist/`; use separate checkouts when retaining native and cross outputs.
+Windows PowerShell, after setting `VCPKG_ROOT` and `MSYS2_ROOT`:
 
-</details>
-<details>
-<summary><b>Linux (Ubuntu)</b></summary>
- 
-* Use CMake 3.28+, Ninja 1.11+ and the pinned xclang installer below. Neither GCC nor Ubuntu's system LLVM supplies this project's C++ runtime.
-* Keep the project's vcpkg overlays/triplets: C++ dependencies must rebuild with bundled libc++, and the jemalloc overlay selects upstream 5.4.0 rather than the registry's older release.
-* Install dependencies:
-  * Install the X11/OpenGL/audio/Wayland development prerequisites used by the Linux job in `.github/workflows/build.yml`, plus `pkgconf`, `autoconf`, `automake`, `libtool`, `libltdl-dev`, `python3-jinja2`, CMake and Ninja. SDL3 and C++ dependencies come from vcpkg, not `libsdl2-dev`.
-* Clone [vcpkg](https://github.com/microsoft/vcpkg?tab=readme-ov-file#quick-start-unix) (outside the repo!) and bootstrap it with the linked instructions.
-* Set the **`VCPKG_ROOT`** environment value to your new vcpkg directory, so that CMake can find it.
-  *  `export VCPKG_ROOT=/replace/with/full/path/to/your/vcpkg/directory/`
-* From the repository root, install the pinned compiler and then configure **before** building:
+```powershell
+$env:VCPKG_MAX_CONCURRENCY = "16"
+cmake "-DXCLANG_INSTALL_DIR=$PWD/build/compiler-sdk" -P scripts/ci/install-xclang.cmake
+$env:XCLANG_ROOT = "$PWD/build/compiler-sdk/xclang"
+cd source
+cmake --preset windows-release
+cmake --build --preset windows-release --parallel 16
+ctest --preset windows-release
+```
 
-  ```sh
-  cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake
-  export XCLANG_ROOT="$PWD/.cache/xclang/xclang"
-  cd source
-  cmake --preset linux-release
-  cmake --build --preset linux-release --parallel 16
-  ctest --preset linux-release
-  ```
+Presets write binaries to `dist/`. Supply your owned assets, the platform's `sbinit.config` and vendor runtime libraries before launching; see [Linux](scripts/ci/linux), [Windows](scripts/ci/windows) and [macOS](scripts/ci/macos) assembly scripts. Generated distributions never include commercial `packed.pak`.
 
-  Use `linux-arm-release` on ARM64; that preset disables the unavailable Linux ARM vendor SDKs. Native Linux uses xclang's bundled sysroot/runtime, unlike the Nix recipe above.
-* The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and the **sbinit.config** above into **dist/** so the game can run.
-  * From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`
-    * This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client/** & **server/**.
- 
-</details>
+### Cross-compiling Windows from Linux
 
-<details>
-<summary><b>Linux (Fedora)</b></summary>
+Requires Nix, bootstrapped vcpkg, CMake/Ninja/GNU make and the Linux host prerequisites above. From the repository root:
 
-* Install CMake 3.28+, Ninja 1.11+, pkg-config and the Fedora equivalents of the Ubuntu job's C-ABI/window-system prerequisites. Fedora packages use `-devel` rather than `-dev`; SDL3 and C++ libraries are built through vcpkg.
-* Bootstrap vcpkg outside the repository and export **`VCPKG_ROOT`**. Keep the project's overlay ports and xclang triplets rather than using Fedora's GCC/LLVM C++ packages.
-* From the repository root:
+```sh
+nix develop .#full --cores 16 --max-jobs 1
+export OSB_NATIVE_COMPILER_ROOT="$(dirname "$(dirname "$(command -v clang)")")"
+cmake -DXCLANG_INSTALL_DIR="$PWD/build/compiler-sdk" -P scripts/ci/install-xclang.cmake
+export XCLANG_ROOT="$PWD/build/compiler-sdk/xclang"
+export VCPKG_ROOT=/absolute/path/to/vcpkg
+export VCPKG_MAX_CONCURRENCY=16
+export CMAKE_BUILD_PARALLEL_LEVEL=16
+cd source
+cmake --preset windows-cross
+cmake --build --preset windows-cross --parallel 16
+```
 
-  ```sh
-  cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake
-  export XCLANG_ROOT="$PWD/.cache/xclang/xclang"
-  cd source
-  cmake --preset linux-release
-  cmake --build --preset linux-release --parallel 16
-  ctest --preset linux-release
-  ```
+Host Qt generators and Windows libraries are built separately with xclang/libc++. To run CTest, configure with `-DCMAKE_CROSSCOMPILING_EMULATOR=wine`; use Wine 11+ or a native Windows runner. Preserve executable/PDB pairs for debug diagnostics. macOS cross-compilation remains unverified and requires a separately obtained, authorized Apple SDK; xclang does not provide it.
 
-Configuration is a required separate step: `cmake --build --preset` does not run the initial configure. When migrating an existing GNU-ABI checkout, use a clean compiler-specific build directory rather than keeping its cache or BMIs.
+### Tests
+
+CTest presets run asset-free core tests. Real-asset game tests require your Starbound assets:
+
+```sh
+OPENSTARBOUND_ASSETS=/path/to/Starbound/assets nix run .#game-tests
+# Optional assertion/sanitizer gates:
+OPENSTARBOUND_ASSETS=/path/to/Starbound/assets nix run .#asserts-tests
+OPENSTARBOUND_ASSETS=/path/to/Starbound/assets nix run .#sanitized-tests
+```
+
+Reports default to `./game-tests-report`; override with `OPENSTARBOUND_TEST_OUT`. For direct binaries, `-bootconfig` selects a writable runtime configuration: `assetSources` names individual pak/mod paths, while `assetDirectories` scans directories containing those sources. Keep commercial assets out of commits and distribution archives.
+
+### Development notes
+
+- C++20 module interfaces use `.cppm`; implementations use matching `.cpp` companions where needed. Import converted families instead of restoring retired headers, register them in the owning CMake file set and link the complete module provider.
+- Project module importers share the `StarPch.hpp` AST from `star_modules`. Do not introduce independent libc++ PCHs. See [game target definitions](source/game/CMakeLists.txt) and the [clangd setup](scripts/ide/configure-clangd.sh).
+- Build configurations are `Debug`, `RelWithAsserts`, `RelWithDebInfo` and `Release`; `STAR_DEBUG_SYMBOL_LEVEL` accepts `default`, `minimal` or `full`. Caller compiler flags are preserved.
+- Retain compatible objects/PCHs/BMIs for incremental builds. Use fresh build directories after compiler, ABI or sanitizer changes, and separate checkouts when retaining native/cross outputs: in-tree builds share `dist/`. Adjust parallelism to available memory.
+
+## Community
+
+[Issues and contributions](https://github.com/OpenStarbound/OpenStarbound/issues) are welcome.
 
 <details>
-<summary><b>Specific problem: If your VCPKG can't build meson for libsystemd</b></summary>
-<br>
+<summary>Discord invite</summary>
 
-Diagnosed by 
+Reverse the text in this image to obtain the invite code (spam prevention):
 
->ERROR: Value "plain" (of type "string") for combo option "Optimization level" is not one of the choices. Possible choices are (as string): "0", "g", "1", "2", "3", "s".
+<img width="380" height="70" alt="Reversed Discord invite code" src="https://github.com/user-attachments/assets/9db11a89-0c32-4034-8555-68b54e5918a8" />
 
-error in meson building logs when building libsystemd.
-
-Fix for VCPKG is pretty fresh (May 2024) and can be found [here](https://github.com/microsoft/vcpkg/issues/37393).
-
-</details>
-
-* The built binaries will be in **dist/**. Copy the the .so libs from **lib/linux/** and **sbinit.config** (see beginning of this section) into **dist/** so the game can run. Sample sbinit.config can be found in **scripts/linux/**.
-* From the root dir of the repo, you can run the assembly script which is used by the GitHub Action: `scripts/ci/linux/assemble.sh`. This packs the game assets and copies the built binaries, premade sbinit configs & required libs into **client_distribution/** & **server_distribution/**.
-
-Next you need to copy original Starbound assets at **assets/packed.pak** of the Starbound copy that you own into **assets/** of either client or server dir (depending on what you're going to run).
-
-The game now can be run by executing **client_distribution/linux/run-client.sh** (or the corresponding server bash script) from terminal.
-
-<details>
-<summary><b>Fedora-specific problem with OSS (dsp: No such audio device)</b></summary>
-<br>
-
-Diagnosed by this error message when launching *client*:
-
->Couldn't initialize SDL Audio: dsp: No such audio device
-
-The reason is outlined on [StackEx](https://stackoverflow.com/questions/9248131/failed-to-open-audio-device-dev-dsp/9248166#9248166): 
-
-> Most new Linux distributions don't provide the OSS (open sound system) compatibility layer, because access to the OSS sound device /dev/dsp was exclusive to one program at time only.
-
-The same answer has the solution: use `padsp` to emulate dev/dsp.
-
-* `dnf install pulseaudio-utils` to install padsp util
-* execute `padsp bash run-client.sh` instead of running sh directly. To avoid doing it every time you can edit run-client.sh, replacing 
-
-`#!/bin/sh
-cd "`dirname \"$0\"`"
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" ./starbound "$@"`
-
-with 
-
-`#!/bin/sh
-cd "`dirname \"$0\"`"
-LD_LIBRARY_PATH="$LD_LIBRARY_PATH:./" padsp ./starbound "$@"`
-
-</details>
-
-</details>
-<details>
-<summary><b>macOS</b></summary>
- 
-* First, you will need to have brew installed. Check out how to install [Homebrew](https://brew.sh/)
-* Install cmake using `brew install cmake`
-* Install ninja using `brew install ninja`
-* Install pkg config using `brew install pkg-config`
-* Install Xcode Command Line Tools and a macOS SDK supporting the deployment target (macOS 14). Do not select Apple's Clang or a Homebrew LLVM compiler for this build.
-* From the repository root, run `cmake -DXCLANG_INSTALL_DIR="$PWD/.cache/xclang" -P scripts/ci/install-xclang.cmake`, then `export XCLANG_ROOT="$PWD/.cache/xclang/xclang"` and `export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"`. The installer chooses the pinned Intel/ARM archive and the presets chainload its official toolchain.
-* Next, install vcpkg by following the commands below.
- * Run `cd ~`. This is just so that everything is local to here. 
- * Run ` git clone https://github.com/microsoft/vcpkg.git `
- * Run `cd vcpkg && ./bootstrap-vcpkg.sh`
- * Lastly, run ``` export VCPKG_ROOT=~/vcpkg && export PATH=$VCPKG_ROOT:$PATH ```
- * This last command makes vcpkg added to the current terminal path. This lasts only while the terminal is active, and will have to be rerun for new terminal instances.
-* Download the source code [here](https://github.com/OpenStarbound/OpenStarbound/archive/refs/heads/main.zip). This is the current code in main. Unpack the code to your downloads folder. 
-* Unpack the zip, and open it up. Navigate to OpenStarbound-main/source using the terminal -> `cd ~/Downloads/OpenStarbound-main`. Then navigate to the source folder, using `cd source`.
-  <details>
-   <summary>If using an Arm Mac</summary>
-
-    * While in the source folder in your terminal, run ` cmake --preset macos-arm-release `. This will get dependencies.
-    * After that command has finished, run ` cmake --build --preset macos-arm-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
-    * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
-    * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
-    * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
-    * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
-    * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
-  </details>
-  <details>
-    <summary>If using an Intel Mac</summary>
-
-     * While in the source folder in your terminal, run ` cmake --preset macos-release `. This will get dependencies.
-     * After that command has finished, run ` cmake --build --preset macos-release `. Wait for this to finish, then go to Finder. Navigate to the OpenStarbound-main folder using Finder. 
-     * There will be a folder called <b>dist</b>. Inside dist will be your game files, but you still need to do a few more things to run it.
-     * First, in the OpenStarbound-main folder, there will be lib. Open lib, and open the osx folder. Inside is libsteam_api.dylib. Copy this file, and paste it into OpenStarbound-main/dist, so that it is in the same directory as the game files. 
-     * Grab the packed.pak file from your current Starbound install. It will be located in the assets folder. Copy that file into OpenStarbound-main/assets.
-     * Make a new file called sbinit.config (Make sure it is .config, not .somethingelse), and copy and paste in the sbinit.config text from above, located right underneath the title Building. Place sbinit.config inside OpenStarbound-main/dist. To make a new file, open the program called TextEdit on your mac, paste in the sbinit.config text from above, and click File (located at the very top of your screen), then click Save. It will prompt you, asking where to save it. Save As: sbinit.config, Where: Navigate to OpenStarbound-main/dist. Find the file you just saved, and rename it to get rid of the wrong extension, making sure the full name and extension looks like sbinit.config.
-     * You can now run the game by double clicking on the file called starbound in dist/. If it says unverified developer, open up the same folder where the game is in in the terminal. ` xattr -d com.apple.quarantine starbound `, which will get rid of the lock on the file. If that doesn't work, run ` sudo spctl --master-disable ` to allow all unverified apps. 
-
-  </details>
 </details>

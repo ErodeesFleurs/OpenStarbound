@@ -214,6 +214,28 @@ stdenv.mkDerivation {
   # RelWithAsserts keeps optimization but omits NDEBUG, so starAssert and
   # DebugEnabled remain live.
   cmakeBuildType = if asserts then "RelWithAsserts" else "RelWithDebInfo";
+  # Installation is handled below, not by CMake's GNUInstallDirs/export rules.
+  # Keep configure hooks and package isolation without passing unused install
+  # directory or obsolete export-registry options from the generic CMake hook.
+  configurePhase = ''
+    runHook preConfigure
+    mkdir -p build
+    cd build
+    flagsArray=()
+    concatTo flagsArray cmakeFlags cmakeFlagsArray
+    cmake "$cmakeDir" -GNinja \
+      -DCMAKE_BUILD_TYPE="$cmakeBuildType" \
+      -DCMAKE_INSTALL_PREFIX="$out" \
+      -DCMAKE_INSTALL_NAME_DIR="$out/lib" \
+      -DCMAKE_AR="$(command -v "$AR")" \
+      -DCMAKE_RANLIB="$(command -v "$RANLIB")" \
+      -DCMAKE_STRIP="$(command -v "$STRIP")" \
+      -DCMAKE_FIND_USE_PACKAGE_REGISTRY=OFF \
+      -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=OFF \
+      "''${flagsArray[@]}"
+    export CMAKE_BUILD_PARALLEL_LEVEL="$NIX_BUILD_CORES"
+    runHook postConfigure
+  '';
   cmakeFlags = [
     (lib.cmakeFeature "STAR_SOURCE_IDENTIFIER" sourceIdentifier)
     (lib.cmakeBool "STAR_BUILD_GUI" guiSupport)

@@ -364,7 +364,7 @@ void ModUploader::uploadToSteam() {
       tagList.append(entry.first);
   }
   List<char const*> tagStrings(tagList.size(), nullptr);
-  for (int i = 0; i < tagList.size(); ++i) {
+  for (size_t i = 0; i < tagList.size(); ++i) {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
 
