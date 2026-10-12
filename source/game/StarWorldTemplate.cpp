@@ -1,12 +1,11 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -16,15 +15,14 @@ import star.directives;
 import star.asset_path;
 import star.game_types;
 import star.material_types;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
+import star.poly;
 #include "StarVariant.hpp"
 import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
-#include "StarIterator.hpp"
+import star.interpolation;
 #include "StarBiMap.hpp"
 import star.random;
 import star.perlin;
@@ -35,7 +33,7 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarLogging.hpp"
 import star.image;
 
@@ -85,6 +83,8 @@ import star.ambient;
 
 
 import star.static_random;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {

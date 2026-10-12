@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -14,8 +13,8 @@ import star.game_types;
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
@@ -25,7 +24,6 @@ import star.audio;
 #include "StarSet.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -39,12 +37,9 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 // Parse JSON iterator templates before game headers import modules (GCC 16).
 #include "StarLuaRoot.hpp"
@@ -125,6 +120,8 @@ import star.movement_controller_lua_bindings;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.line;
+import star.math_common;
 namespace Star {
 
 ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal) {

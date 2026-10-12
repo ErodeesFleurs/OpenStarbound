@@ -2,13 +2,12 @@ module;
 #include "StarJson.hpp"
 #include "StarString.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
@@ -24,7 +23,6 @@ import star.directives;
 #include "StarStringView.hpp"
 import star.text;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;

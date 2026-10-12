@@ -2,10 +2,8 @@
 #include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -21,11 +19,8 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarStrongTypedef.hpp"
 import star.id_map;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarCasting.hpp"
@@ -36,10 +31,8 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -106,6 +99,7 @@ import star.player_universe_map;
 import star.celestial_database;
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 SystemWorldClient::SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)

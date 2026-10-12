@@ -4,6 +4,11 @@ import star.lexical_cast;
 
 #include "gtest/gtest.h"
 
+import star.vector;
+import star.rect;
+import star.poly;
+import star.math_common;
+import star.algorithm;
 using namespace Star;
 
 TEST(LuaTest, BasicGetSet) {

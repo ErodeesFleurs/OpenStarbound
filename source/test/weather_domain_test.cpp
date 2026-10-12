@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -11,8 +10,6 @@ import star.version;
 import star.color;
 #include "StarBiMap.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
@@ -25,9 +22,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.id_map;
 #include "StarSet.hpp"

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "StarRect.hpp"
-#include "StarVector.hpp"
+import star.rect;
+import star.vector;
 #include "StarLua.hpp"
 import star.color;
-#include "StarPoly.hpp"
-#include "StarLine.hpp"
+import star.poly;
+import star.line;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 
+import star.matrix3;
 namespace Star {
 
 template <typename T>

@@ -14,17 +14,16 @@ import star.encode;
 #include "StarOrderedSet.hpp"
 #include "StarException.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarInterpolation.hpp"
-#include "StarPoly.hpp"
+import star.interpolation;
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -40,21 +39,17 @@ import star.audio;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 import star.id_map;
-#include "StarArray.hpp"
 import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
 import star.a_star;
 import star.either;
 import star.random;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.perlin;
 import star.weighted_pool;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -225,6 +220,7 @@ import star.player_storage;
 import star.statistics;
 import star.client_context;
 
+import star.algorithm;
 namespace Star {
 
 Json const AdditionalAssetsSettings = Json::parseJson(R"JSON(

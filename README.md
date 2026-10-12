@@ -120,8 +120,8 @@ Reports default to `./game-tests-report`; override with `OPENSTARBOUND_TEST_OUT`
 
 ### Development notes
 
-- C++20 module interfaces use `.cppm`; implementations use matching `.cpp` companions where needed. Import converted families, including template-only algorithms, instead of restoring retired headers; register them in the owning CMake file set and link the complete module provider.
-- Import directly used APIs; private imports are not re-exports. Include locally used foundational and third-party headers (such as `StarDataStreamExtra.hpp` for codecs or `fmt/ostream.h` for formatter bases) before module imports.
+- C++20 module interfaces use `.cppm`; implementations use matching `.cpp` companions where needed. Import converted families, including template-only math, containers and algorithms, instead of restoring retired headers; register them in the owning CMake file set and link the complete module provider.
+- Import APIs used by declarations and template bodies directly, at file scope before namespaces; private imports are not re-exports. Parse caller-owned codecs, canonical hash/JSON headers and formatter bases (such as `StarDataStreamExtra.hpp` and `fmt/ostream.h`) before imports.
 - Project module importers share the `StarPch.hpp` AST from `star_modules`. Do not introduce independent libc++ PCHs. See [game target definitions](source/game/CMakeLists.txt) and the [clangd setup](scripts/ide/configure-clangd.sh).
 - Build configurations are `Debug`, `RelWithAsserts`, `RelWithDebInfo` and `Release`; `STAR_DEBUG_SYMBOL_LEVEL` accepts `default`, `minimal` or `full`. Caller compiler flags are preserved.
 - Retain compatible objects/PCHs/BMIs for incremental builds. Use fresh build directories after compiler, ABI or sanitizer changes, and separate checkouts when retaining native/cross outputs: in-tree builds share `dist/`. Adjust parallelism to available memory.

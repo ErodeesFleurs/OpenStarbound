@@ -1,10 +1,9 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 import star.net_compatibility;
@@ -17,6 +16,7 @@ import star.entity;
 
 
 import star.byte_array;
+import star.rect;
 namespace Star {
 
 extern EnumMap<ClientEntityMode> const ClientEntityModeNames{

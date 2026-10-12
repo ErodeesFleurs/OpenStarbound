@@ -1,8 +1,7 @@
 module;
-
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
 #include "StarJson.hpp"
+
+#include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
 

@@ -1,10 +1,8 @@
-#pragma once
+module;
 
 #include <bit>
-
 #include <type_traits>
 #include <limits>
-
 #include "StarMaybe.hpp"
 
 namespace Star {
@@ -16,10 +14,10 @@ using MathException = StarError<MathExceptionTag, StarException>;
 
 namespace Constants {
   inline constexpr double pi = 3.14159265358979323846;
-  double constexpr rad2deg = 57.2957795130823208768;
-  double constexpr deg2rad = 1 / rad2deg;
+  inline double constexpr rad2deg = 57.2957795130823208768;
+  inline double constexpr deg2rad = 1 / rad2deg;
   inline constexpr double sqrt2 = 1.41421356237309504880;
-  double constexpr log2e = 1.44269504088896340736;
+  inline double constexpr log2e = 1.44269504088896340736;
 }
 
 // Really common std namespace includes, and replacements for std libraries
@@ -304,4 +302,63 @@ Integer cycleIncrement(Integer val, Integer min, Integer max) {
     return val + 1;
 }
 
+}
+
+export module star.math_common;
+
+export namespace Star {
+  using ::Star::MathExceptionTag;
+  using ::Star::MathException;
+  using ::Star::abs;
+  using ::Star::fabs;
+  using ::Star::sqrt;
+  using ::Star::floor;
+  using ::Star::ceil;
+  using ::Star::round;
+  using ::Star::fmod;
+  using ::Star::sin;
+  using ::Star::cos;
+  using ::Star::tan;
+  using ::Star::pow;
+  using ::Star::atan2;
+  using ::Star::log;
+  using ::Star::log10;
+  using ::Star::copysign;
+  using ::Star::log2;
+  using ::Star::countSetBits;
+  using ::Star::nearEqual;
+  using ::Star::nearZero;
+  using ::Star::lowest;
+  using ::Star::highest;
+  using ::Star::square;
+  using ::Star::cube;
+  using ::Star::ipart;
+  using ::Star::fpart;
+  using ::Star::rfpart;
+  using ::Star::clampMagnitude;
+  using ::Star::clamp;
+  using ::Star::clampDynamic;
+  using ::Star::intPow;
+  using ::Star::sigmoid;
+  using ::Star::pmod;
+  using ::Star::pfmod;
+  using ::Star::wrapDiff;
+  using ::Star::wrapDiffF;
+  using ::Star::ppow;
+  using ::Star::constrainAngle;
+  using ::Star::angleDiff;
+  using ::Star::approach;
+  using ::Star::approachAngle;
+  using ::Star::floatToByte;
+  using ::Star::byteToFloat;
+  using ::Star::randn;
+  using ::Star::cycleIncrement;
+}
+
+export namespace Star::Constants {
+  using ::Star::Constants::pi;
+  using ::Star::Constants::rad2deg;
+  using ::Star::Constants::deg2rad;
+  using ::Star::Constants::sqrt2;
+  using ::Star::Constants::log2e;
 }

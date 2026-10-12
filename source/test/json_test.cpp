@@ -1,12 +1,12 @@
 #include "StarJson.hpp"
 #include "StarFile.hpp"
 import star.lexical_cast;
-#include "StarJson.hpp"
 import star.json_path;
 
 #include "gtest/gtest.h"
 import star.json_patch;
 
+import star.algorithm;
 using namespace Star;
 
 TEST(JsonTest, ImplicitSharing) {

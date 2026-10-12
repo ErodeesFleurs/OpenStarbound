@@ -1,9 +1,12 @@
 module;
-
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarJson.hpp"
+
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 
+import star.algorithm;
 namespace Star {
 
 enum class EquipmentSlot : uint8_t {

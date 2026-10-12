@@ -7,6 +7,7 @@ import star.random;
 import star.behavior_database;
 import star.behavior_state;
 
+import star.algorithm;
 namespace Star {
 
 // node parameter types supported by the blackboard

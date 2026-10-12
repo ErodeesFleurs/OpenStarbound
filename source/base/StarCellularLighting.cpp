@@ -1,15 +1,16 @@
 #include "StarJson.hpp"
 import star.either;
-#include "StarRect.hpp"
+import star.rect;
 import star.image;
 import star.color;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 #include "StarList.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.cellular_light_array;
 #include "StarThread.hpp"
 import star.cellular_lighting;
 
+import star.algorithm;
 namespace Star {
 
 Lightmap::Lightmap() : m_width(0), m_height(0) {}

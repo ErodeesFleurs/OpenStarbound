@@ -1,7 +1,7 @@
 module;
-
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+
+import star.vector;
 import star.color;
 #include "StarBiMap.hpp"
 

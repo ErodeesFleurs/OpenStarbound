@@ -1,8 +1,9 @@
 module;
 
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
+import star.block_allocator;
 
+import star.algorithm;
 namespace Star {
 
 template <typename OrderedMapType>

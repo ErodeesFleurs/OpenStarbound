@@ -1,12 +1,7 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -31,9 +26,7 @@ import star.lexical_cast;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
-#include "StarInterpolation.hpp"
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
 import star.listener;

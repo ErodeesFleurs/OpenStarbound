@@ -6,7 +6,6 @@
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

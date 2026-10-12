@@ -1,7 +1,9 @@
 module;
+#include "StarConfig.hpp"
 
-#include "StarVector.hpp"
+import star.vector;
 
+import star.math_common;
 namespace Star {
 
 // Iterate over integral cells based on Bresenham's line drawing algorithm.

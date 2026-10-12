@@ -5,7 +5,7 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 

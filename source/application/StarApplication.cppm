@@ -1,7 +1,7 @@
 module;
 
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.input_event;
 
 namespace Star {

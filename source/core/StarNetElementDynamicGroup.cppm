@@ -9,6 +9,8 @@ import star.id_map;
 
 import star.net_element;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 // A dynamic group of NetElements that manages creation and destruction of

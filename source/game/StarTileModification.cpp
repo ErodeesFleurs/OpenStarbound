@@ -1,7 +1,6 @@
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;

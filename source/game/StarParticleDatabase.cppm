@@ -1,10 +1,9 @@
 module;
-
 #include "StarJson.hpp"
+
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

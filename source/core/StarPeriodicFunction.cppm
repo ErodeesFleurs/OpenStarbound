@@ -1,6 +1,6 @@
 module;
+#include "StarConfig.hpp"
 
-#include "StarInterpolation.hpp"
 import star.random;
 
 namespace Star {

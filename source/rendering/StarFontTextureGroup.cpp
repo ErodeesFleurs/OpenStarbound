@@ -3,12 +3,10 @@ import star.color;
 import star.font;
 #include "StarVariant.hpp"
 import star.image;
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -19,6 +17,8 @@ import star.font_texture_group;
 import star.time;
 #include "StarLogging.hpp"
 
+import star.vector;
+import star.algorithm;
 namespace Star {
 
 FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)

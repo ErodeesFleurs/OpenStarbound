@@ -1,23 +1,19 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
+import star.multi_array;
 #include <functional>
 import star.game_types;
 import star.material_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"

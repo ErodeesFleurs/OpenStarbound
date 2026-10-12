@@ -1,21 +1,17 @@
 module;
 
-#include "StarMathCommon.hpp"
 import star.random;
 import star.periodic;
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.ttl_cache;
-#include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.liquid_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
@@ -23,6 +19,7 @@ import star.weighted_pool;
 
 import star.spawn_type_database;
 
+import star.rect;
 namespace Star {
 
 STAR_CLASS(SpawnerFacade);

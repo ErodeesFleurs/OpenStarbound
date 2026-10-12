@@ -1,6 +1,7 @@
 #include "StarThread.hpp"
 import star.listener;
 
+import star.algorithm;
 namespace Star {
 
 Listener::~Listener() {}

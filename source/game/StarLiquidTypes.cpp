@@ -1,4 +1,5 @@
-#include "StarMathCommon.hpp"
+#include "StarMaybe.hpp"
+import star.math_common;
 import star.liquid_types;
 
 namespace Star {

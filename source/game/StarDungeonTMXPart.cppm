@@ -1,18 +1,16 @@
 module;
 #include "StarJson.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarPoly.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.material_types;
 import star.random;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 
 

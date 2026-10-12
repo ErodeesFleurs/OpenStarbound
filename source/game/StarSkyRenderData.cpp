@@ -1,18 +1,15 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 import star.either;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
 #include "StarDataStreamExtra.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.static_random;
 import star.random_point;
 #include "StarString.hpp"
@@ -25,6 +22,8 @@ import star.directives;
 import star.asset_path;
 import star.drawable;
 
+import star.matrix3;
+import star.math_common;
 namespace Star {
 
 StringList const& SkyRenderData::starTypes() const {

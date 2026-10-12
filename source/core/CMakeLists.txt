@@ -1,9 +1,6 @@
 set (star_core_HEADERS
-    StarAlgorithm.hpp
-    StarArray.hpp
     StarBTree.hpp
     StarBiMap.hpp
-    StarBlockAllocator.hpp
     StarCasting.hpp
     StarConfig.hpp
     StarDataStream.hpp
@@ -16,34 +13,23 @@ set (star_core_HEADERS
     StarFormat.hpp
     StarHash.hpp
     StarIODevice.hpp
-    StarInterpolation.hpp
-    StarIterator.hpp
     StarJson.hpp
     StarJsonExtra.hpp
-    StarLine.hpp
     StarList.hpp
     StarLogging.hpp
     StarLua.hpp
     StarLuaConverters.hpp
     StarMap.hpp
-    StarMathCommon.hpp
-    StarMatrix3.hpp
     StarMaybe.hpp
-    StarMultiArray.hpp
     StarNetImpl.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
     StarPch.hpp
-    StarPoly.hpp
-    StarPythonic.hpp
-    StarRect.hpp
     StarSet.hpp
-    StarStaticVector.hpp
     StarString.hpp
     StarStringView.hpp
     StarStrongTypedef.hpp
     StarThread.hpp
-    StarVector.hpp
     StarXXHash.hpp
     scripting/StarUtilityLuaBindings.hpp
   )
@@ -137,6 +123,11 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarOutputProxy.cppm StarMemory.cppm StarNetCompatibility.cppm
           StarLexicalCast.cppm StarRandom.cppm StarByteArray.cppm
           StarBytes.cppm StarStaticRandom.cppm
+          StarArray.cppm StarStaticVector.cppm StarSmallVector.cppm
+          StarMultiArray.cppm StarMathCommon.cppm StarBlockAllocator.cppm
+          StarAlgorithm.cppm StarIterator.cppm StarPythonic.cppm
+          StarVector.cppm StarMatrix3.cppm StarLine.cppm
+          StarRect.cppm StarPoly.cppm StarInterpolation.cppm
           StarAudio.cppm
           StarColor.cppm
           StarFont.cppm

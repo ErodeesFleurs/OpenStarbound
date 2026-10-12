@@ -1,10 +1,10 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 import star.inventory_types;
-#include "StarMultiArray.hpp"
+import star.multi_array;
 #include "StarDataStream.hpp"
 import star.item_descriptor;
 

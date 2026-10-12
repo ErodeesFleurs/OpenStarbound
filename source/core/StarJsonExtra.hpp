@@ -1,17 +1,22 @@
 #pragma once
-
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
+
+import star.poly;
 import star.color;
 #include "StarSet.hpp"
 import star.random;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 
+import star.array;
+import star.vector;
+import star.matrix3;
+import star.line;
+import star.algorithm;
 namespace Star {
 
 class Directives;

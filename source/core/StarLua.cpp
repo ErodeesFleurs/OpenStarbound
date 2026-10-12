@@ -1,5 +1,7 @@
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarLua.hpp"
-#include "StarArray.hpp"
+import star.array;
 #include "StarThread.hpp"
 import star.time;
 #include "imgui_lua_bindings.hpp"
@@ -13,6 +15,8 @@ auto fmt::formatter<Star::LuaValue>::format(Star::LuaValue const& value, fmt::fo
   return fmt::ostream_formatter::format(value, context);
 }
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 std::ostream& operator<<(std::ostream& os, LuaValue const& value) {

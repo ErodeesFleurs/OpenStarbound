@@ -8,6 +8,7 @@ import star.net_element;
 
 import star.output_proxy;
 import star.net_compatibility;
+import star.algorithm;
 namespace Star {
 
 // NetElement map container that is more efficient than the naive serialization

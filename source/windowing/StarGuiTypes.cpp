@@ -1,5 +1,4 @@
 #include "StarString.hpp"
-#include "StarVector.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
 import star.gui_types;

@@ -1,5 +1,5 @@
 #include "StarBiMap.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarException.hpp"
 import star.game_types;
 

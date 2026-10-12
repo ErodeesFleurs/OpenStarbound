@@ -1,9 +1,9 @@
 module;
+#include "StarJson.hpp"
 import star.either;
 import star.byte_array;
-#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

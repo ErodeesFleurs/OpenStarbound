@@ -1,14 +1,12 @@
 module;
-import star.net_compatibility;
-import star.byte_array;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
+import star.net_compatibility;
+import star.byte_array;
 #include "StarThread.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.json_rpc;
 import star.rpc_promise;
-#include "StarVector.hpp"
 import star.game_types;
 #include "StarString.hpp"
 import star.either;
@@ -18,24 +16,18 @@ import star.id_map;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include <functional>
-#include "StarRect.hpp"
 import star.worker_pool;
 
 #include "thread"

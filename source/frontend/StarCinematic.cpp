@@ -1,3 +1,4 @@
+#include <limits>
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
@@ -6,7 +7,7 @@ import star.time;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -14,9 +15,8 @@ import star.image_processing;
 import star.directives;
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -34,17 +34,15 @@ import star.ref_ptr;
 import star.version;
 import star.id_map;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.either;
 import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarArray.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -53,14 +51,12 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 import star.asset_source;
 import star.assets;
@@ -170,6 +166,7 @@ import star.ai_types;
 import star.radio_message_database;
 import star.player;
 
+import star.algorithm;
 namespace Star {
 
 const float vWidth = 960.0f;

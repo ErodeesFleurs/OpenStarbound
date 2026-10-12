@@ -1,10 +1,7 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;

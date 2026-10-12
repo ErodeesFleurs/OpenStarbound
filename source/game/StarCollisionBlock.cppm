@@ -1,9 +1,12 @@
 module;
 
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 
+import star.vector;
+import star.rect;
+import star.algorithm;
 namespace Star {
 
 enum class CollisionKind : uint8_t {

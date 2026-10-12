@@ -1,9 +1,9 @@
 module;
+#include "StarJson.hpp"
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 #include "StarList.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -11,12 +11,12 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.random;
 import star.ttl_cache;
 
+import star.vector;
 namespace Star {
 
 STAR_CLASS(ImageMetadataDatabase);

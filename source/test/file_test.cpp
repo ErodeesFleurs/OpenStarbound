@@ -13,6 +13,7 @@ import star.buffer;
 import star.io_device_callbacks;
 
 import star.byte_array;
+import star.algorithm;
 using namespace Star;
 
 namespace {

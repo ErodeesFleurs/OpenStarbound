@@ -1,7 +1,7 @@
 module;
+#include "StarJson.hpp"
 import star.byte_array;
 
-#include "StarJson.hpp"
 #include <utility>
 
 #include "StarOrderedMap.hpp"
@@ -14,6 +14,7 @@ import star.directory_asset_source;
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
+import star.math_common;
 
 export module star.packed_asset_source;
 

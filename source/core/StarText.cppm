@@ -1,9 +1,8 @@
 module;
 
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

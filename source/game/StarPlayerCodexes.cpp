@@ -1,9 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -30,6 +28,7 @@ import star.root;
 import star.codex_database;
 import star.player_codexes;
 
+import star.algorithm;
 namespace Star {
 
 PlayerCodexes::PlayerCodexes() : PlayerCodexes(Json{}) {}

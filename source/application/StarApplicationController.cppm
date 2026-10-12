@@ -5,8 +5,9 @@ import star.byte_array;
 import star.input_event;
 import star.application;
 #include "StarMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 
+import star.vector;
 namespace Star {
 
 STAR_CLASS(ApplicationController);

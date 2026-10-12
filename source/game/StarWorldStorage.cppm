@@ -5,7 +5,6 @@ import star.id_map;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 #include "StarThread.hpp"
@@ -13,23 +12,19 @@ import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarConfig.hpp"
 import star.version;
 import star.rpc_promise;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include <functional>
-#include "StarRect.hpp"
+import star.rect;
 import star.worker_pool;
 
 #include "thread"

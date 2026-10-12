@@ -1,9 +1,7 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.material_types;
@@ -31,9 +29,7 @@ import star.version;
 import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.id_map;
 #include "StarSet.hpp"

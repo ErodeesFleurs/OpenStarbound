@@ -1,13 +1,13 @@
 module;
+#include "StarJson.hpp"
 import star.net_compatibility;
 import star.byte_array;
-#include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -17,7 +17,7 @@ import star.rpc_promise;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -57,6 +57,7 @@ import star.effect_emitter;
 import star.net_element_basic_fields;
 import star.net_element_system;
 
+import star.line;
 namespace Star {
 
 STAR_CLASS(World);

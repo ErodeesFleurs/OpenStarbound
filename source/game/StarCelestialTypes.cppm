@@ -1,14 +1,11 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"

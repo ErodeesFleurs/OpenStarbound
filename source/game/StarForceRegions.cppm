@@ -1,9 +1,12 @@
 module;
-
-#include "StarPoly.hpp"
-#include "StarVariant.hpp"
 #include "StarJson.hpp"
 
+import star.poly;
+#include "StarVariant.hpp"
+
+import star.vector;
+import star.line;
+import star.rect;
 namespace Star {
 
 struct PhysicsCategoryFilter {

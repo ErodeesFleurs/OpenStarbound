@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -11,12 +10,10 @@ import star.id_map;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -31,10 +28,8 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarVector.hpp"
 
 import star.damage_types;
 import star.world_geometry;

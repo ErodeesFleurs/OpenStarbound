@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarException.hpp"
 #include "StarFormat.hpp"
@@ -401,4 +401,12 @@ bool StaticVector<Element, MaxSize>::operator<(StaticVector const& other) const 
   return m_size < other.size();
 }
 
+}
+
+export module star.static_vector;
+
+export namespace Star {
+  using ::Star::StaticVectorSizeExceptionTag;
+  using ::Star::StaticVectorSizeException;
+  using ::Star::StaticVector;
 }

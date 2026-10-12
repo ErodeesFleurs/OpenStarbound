@@ -5,12 +5,11 @@ import star.id_map;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

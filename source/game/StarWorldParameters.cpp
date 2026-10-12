@@ -1,8 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.color;
@@ -11,7 +10,6 @@ import star.color;
 import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -22,7 +20,6 @@ import star.asset_path;
 #include "StarDataStreamExtra.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;

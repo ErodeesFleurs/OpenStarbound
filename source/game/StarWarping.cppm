@@ -1,11 +1,13 @@
 module;
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
+#include "StarJson.hpp"
 
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 import star.uuid;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
 #include "StarBiMap.hpp"
 import star.game_types;

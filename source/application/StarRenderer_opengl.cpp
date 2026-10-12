@@ -1,19 +1,22 @@
 #include "StarJson.hpp"
-#include "StarRect.hpp"
+#include "StarJsonExtra.hpp"
+import star.rect;
 import star.image;
 #include "StarCasting.hpp"
 import star.texture_atlas;
 #include "StarVariant.hpp"
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
 
 #include "GL/glew.h"
 import star.renderer_opengl;
-#include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 
+import star.vector;
+import star.matrix3;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 size_t const MultiTextureCount = 4;

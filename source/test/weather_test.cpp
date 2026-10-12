@@ -5,7 +5,6 @@ import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -16,9 +15,8 @@ import star.asset_path;
 import star.animation;
 import star.particle;
 import star.weather_types;
-#include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarVector.hpp"
+import star.vector;
 import star.tile_damage;
 import star.plant_database;
 import star.parallax;

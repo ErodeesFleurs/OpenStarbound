@@ -1,7 +1,9 @@
-#include "StarLine.hpp"
+import star.line;
 
 #include "gtest/gtest.h"
 
+import star.vector;
+import star.math_common;
 using namespace Star;
 
 TEST(LineTest, IntersectionEndpoint) {

@@ -3,7 +3,7 @@
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -12,7 +12,6 @@ import star.image_processing;
 import star.directives;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.asset_path;
@@ -23,12 +22,11 @@ import star.listener;
 import star.version;
 #include "StarStringView.hpp"
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.text;
 
 #include "StarVariant.hpp"
 import star.image;
-#include "StarPoly.hpp"
 import star.renderer;
 import star.font_texture_group;
 import star.anchor_types;
@@ -39,6 +37,8 @@ import star.configuration;
 import star.root;
 import star.text_painter;
 
+import star.math_common;
+import star.pythonic;
 namespace Star {
 
 TextPositioning::TextPositioning() {

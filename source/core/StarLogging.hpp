@@ -3,11 +3,14 @@
 #include "StarThread.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarBiMap.hpp"
 import star.time;
 #include "StarFile.hpp"
 
+import star.array;
+import star.vector;
+import star.line;
 namespace Star {
 
 enum class LogLevel {

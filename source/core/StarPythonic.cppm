@@ -1,6 +1,7 @@
-#pragma once
+module;
 
-#include "StarAlgorithm.hpp"
+#include "StarException.hpp"
+import star.algorithm;
 
 namespace Star {
 
@@ -70,7 +71,7 @@ struct SliceIndex {
   bool given;
 };
 
-SliceIndex const SliceNil = SliceIndex();
+inline SliceIndex const SliceNil = SliceIndex();
 
 // T must have operator[](int), size(), and
 // push_back(typeof T::operator[](int()))
@@ -606,4 +607,32 @@ ResultContainer enumerateConstruct(Iterable&& list) {
   return res;
 }
 
+}
+
+export module star.pythonic;
+
+export namespace Star {
+  using ::Star::any;
+  using ::Star::all;
+  using ::Star::SliceIndex;
+  using ::Star::SliceNil;
+  using ::Star::slice;
+  using ::Star::ZipWrapperIterator;
+  using ::Star::makeZipWrapperIterator;
+  using ::Star::ZipTupleIterator;
+  using ::Star::makeZipTupleIterator;
+  using ::Star::zipIteratorReturn;
+  using ::Star::zipIterator;
+  using ::Star::RangeExceptionTag;
+  using ::Star::RangeException;
+  using ::Star::RangeIterator;
+  using ::Star::range;
+  using ::Star::rangeInclusive;
+  using ::Star::EnumerateIterator;
+  using ::Star::enumerateIterator;
+  using ::Star::enumerateConstruct;
+}
+
+export namespace Star::RangeHelper {
+  using ::Star::RangeHelper::checkIfDiffLessThanZero;
 }

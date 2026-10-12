@@ -11,6 +11,7 @@
 #endif
 
 import star.output_proxy;
+import star.array;
 namespace Star {
 
 #ifdef STAR_USE_CPPTRACE

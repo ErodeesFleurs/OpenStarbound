@@ -1,7 +1,10 @@
-#include "StarRect.hpp"
+import star.rect;
 
 #include "gtest/gtest.h"
 
+import star.vector;
+import star.line;
+import star.math_common;
 using namespace Star;
 
 TEST(RectTest, TranslateToInclude) {

@@ -1,12 +1,10 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -23,7 +21,6 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
-#include "StarArray.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -61,6 +58,7 @@ import star.celestial_database;
 import star.net_compatibility;
 import star.byte_array;
 import star.static_random;
+import star.math_common;
 namespace Star {
 
 CelestialOrbit CelestialOrbit::fromJson(Json const& json) {

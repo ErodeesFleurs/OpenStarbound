@@ -1,8 +1,8 @@
 module;
-#include "StarThread.hpp"
-#include "StarVector.hpp"
-// Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
 #include "StarJson.hpp"
+#include "StarThread.hpp"
+import star.vector;
+// Match existing consumers' include order for SIMD intrinsics used by xxhash and fast_float.
 import star.game_types;
 
 #include "StarLua.hpp"

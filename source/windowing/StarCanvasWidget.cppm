@@ -1,13 +1,13 @@
 module;
-
-#include "StarVector.hpp"
-#include "StarCasting.hpp"
 #include "StarJson.hpp"
+
+import star.vector;
+#include "StarCasting.hpp"
 import star.input_event;
 #include "StarVariant.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -17,7 +17,7 @@ import star.directives;
 #include "StarString.hpp"
 import star.text;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarList.hpp"

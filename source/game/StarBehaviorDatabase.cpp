@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 import star.game_types;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

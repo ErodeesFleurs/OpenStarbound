@@ -3,13 +3,11 @@ module;
 import star.image;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarPoly.hpp"
 import star.game_types;
 import star.random;
 #include "StarThread.hpp"
 import star.lexical_cast;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarSet.hpp"
 

@@ -2,15 +2,13 @@ module;
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

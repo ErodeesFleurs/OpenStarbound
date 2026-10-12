@@ -3,7 +3,6 @@ module;
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -16,8 +15,8 @@ import star.material_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarList.hpp"
@@ -27,14 +26,11 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarPoly.hpp"
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarLua.hpp"
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
 #include "StarSet.hpp"
@@ -47,7 +43,6 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarMap.hpp"
 import star.image;

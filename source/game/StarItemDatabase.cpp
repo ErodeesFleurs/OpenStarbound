@@ -4,7 +4,6 @@
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.random;
@@ -13,17 +12,14 @@ import star.ttl_cache;
 import star.game_types;
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -125,6 +121,8 @@ import star.codex_database;
 import star.codex;
 import star.object_database;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 EnumMap<ItemType> ItemTypeNames{

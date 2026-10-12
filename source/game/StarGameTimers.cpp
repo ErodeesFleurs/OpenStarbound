@@ -1,10 +1,12 @@
+#include <limits>
 #include "StarJson.hpp"
-import star.game_types;
 #include "StarJsonExtra.hpp"
+import star.game_types;
 #include "StarDataStreamExtra.hpp"
 
 import star.game_timers;
 
+import star.math_common;
 namespace Star {
 
 GameTimer::GameTimer() : time(), timer() {}

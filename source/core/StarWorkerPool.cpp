@@ -1,7 +1,5 @@
 #include "StarThread.hpp"
 import star.worker_pool;
-#include "StarIterator.hpp"
-#include "StarMathCommon.hpp"
 
 namespace Star {
 

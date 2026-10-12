@@ -1,15 +1,15 @@
 module;
+#include "StarJson.hpp"
 import star.net_compatibility;
 import star.byte_array;
 
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 import star.random;
 import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -20,13 +20,13 @@ import star.asset_path;
 import star.animation;
 import star.particle;
 import star.weather_types;
-#include "StarPoly.hpp"
 import star.world_geometry;
 
 import star.net_element_basic_fields;
 import star.net_element_float_fields;
 import star.net_element_system;
 
+import star.vector;
 namespace Star {
 
 STAR_CLASS(Clock);

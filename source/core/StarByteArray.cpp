@@ -3,6 +3,7 @@ import star.byte_array;
 import star.memory;
 import star.encode;
 
+import star.algorithm;
 namespace Star {
 
 ByteArray ByteArray::fromCString(char const* str) {

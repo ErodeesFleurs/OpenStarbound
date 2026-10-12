@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -12,10 +11,8 @@ import star.asset_path;
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 import star.listener;
-#include "StarIterator.hpp"
 import star.time;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -25,7 +22,6 @@ import star.version;
 
 #include "StarVariant.hpp"
 import star.image;
-#include "StarPoly.hpp"
 import star.renderer;
 import star.asset_texture_group;
 import star.asset_source;
@@ -37,6 +33,7 @@ import star.root;
 
 import star.image_metadata_database;
 
+import star.algorithm;
 namespace Star {
 
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup)

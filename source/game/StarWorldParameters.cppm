@@ -1,10 +1,9 @@
 module;
-import star.byte_array;
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
+import star.byte_array;
 #include "StarVariant.hpp"
 
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.color;
@@ -14,7 +13,6 @@ import star.sky_types;
 import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

@@ -1,13 +1,12 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarMaybe.hpp"
 import star.random;
 import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -18,6 +17,7 @@ import star.asset_path;
 import star.animation;
 import star.particle;
 
+import star.vector;
 namespace Star {
 
 struct WeatherType {

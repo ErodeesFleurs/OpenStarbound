@@ -1,7 +1,13 @@
 module;
+#include "StarList.hpp"
+#include "StarMaybe.hpp"
 
-#include "StarPoly.hpp"
+import star.poly;
 
+import star.vector;
+import star.line;
+import star.rect;
+import star.math_common;
 namespace Star {
 
 STAR_CLASS(WorldGeometry);

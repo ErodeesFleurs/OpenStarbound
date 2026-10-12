@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -13,10 +12,8 @@ import star.ttl_cache;
 #include "StarBiMap.hpp"
 import star.game_types;
 import star.json_rpc;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
-#include "StarArray.hpp"
+import star.vector;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
@@ -27,7 +24,7 @@ import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -59,14 +56,11 @@ import star.net_compatibility;
 #include <atomic>
 #include <memory>
 import star.id_map;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include <functional>
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
 import star.btree_database;
@@ -74,7 +68,6 @@ import star.rpc_promise;
 import star.image;
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 #include "StarLuaRoot.hpp"
 #include "StarLuaActorMovementComponent.hpp"

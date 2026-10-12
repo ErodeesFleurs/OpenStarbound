@@ -1,15 +1,11 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.color;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarVector.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -40,6 +36,8 @@ import star.root;
 import star.material_database;
 import star.particle_database;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 MaterialDatabase::MaterialDatabase() {

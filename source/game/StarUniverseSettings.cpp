@@ -1,11 +1,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarThread.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"
@@ -29,6 +27,7 @@ import star.root;
 
 import star.universe_settings;
 
+import star.algorithm;
 namespace Star {
 
 UniverseFlagAction parseUniverseFlagAction(Json const& json) {

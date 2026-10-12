@@ -2,33 +2,30 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 #include "StarMap.hpp"
 import star.random;
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarDataStream.hpp"
 #include "StarLogging.hpp"
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarDataStreamExtra.hpp"
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarCasting.hpp"
 import star.rpc_promise;
 #include "StarVariant.hpp"
-#include "StarArray.hpp"
 #include <functional>
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 import star.worker_pool;
 
@@ -47,7 +44,6 @@ import star.image;
 #include "StarOrderedMap.hpp"
 import star.net_compatibility;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -60,7 +56,6 @@ import star.spatial_hash_2d;
 import star.periodic;
 import star.periodic_function;
 import star.audio;
-#include "StarMatrix3.hpp"
 import star.a_star;
 import star.lock_file;
 import star.byte_array;
@@ -211,6 +206,8 @@ import star.weather;
 
 import star.falling_blocks_agent;
 
+import star.line;
+import star.algorithm;
 namespace Star {
 
 extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames{

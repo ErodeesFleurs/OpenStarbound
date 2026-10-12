@@ -1,8 +1,9 @@
 module;
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarList.hpp"
 
+import star.vector;
 namespace Star {
 
 template <typename T>

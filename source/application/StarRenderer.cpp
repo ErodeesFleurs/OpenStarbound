@@ -1,11 +1,13 @@
 #include "StarJson.hpp"
 #include "StarVariant.hpp"
 import star.image;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
 
+import star.vector;
+import star.rect;
 namespace Star {
 
 extern EnumMap<TextureAddressing> const TextureAddressingNames{

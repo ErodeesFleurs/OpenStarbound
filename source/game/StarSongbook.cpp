@@ -13,14 +13,12 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -67,6 +65,9 @@ import star.entity_rendering;
 
 import star.songbook;
 
+import star.matrix3;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 Mutex Songbook::s_timeSourcesMutex;

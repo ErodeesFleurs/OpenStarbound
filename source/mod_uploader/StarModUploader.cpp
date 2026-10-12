@@ -1,3 +1,4 @@
+#include "StarJson.hpp"
 #include <QApplication>
 #include <QFileDialog>
 #include <QHBoxLayout>

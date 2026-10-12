@@ -4,20 +4,18 @@
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -27,7 +25,6 @@ import star.version;
 #include "StarString.hpp"
 import star.text;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -79,6 +76,7 @@ import star.image_widget;
 import star.item_database;
 
 import star.random;
+import star.algorithm;
 namespace Star {
 
 extern EnumMap<PaneAnchor> const PaneAnchorNames{

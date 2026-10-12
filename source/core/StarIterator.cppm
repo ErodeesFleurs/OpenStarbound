@@ -1,7 +1,6 @@
-#pragma once
+module;
 
 #include <algorithm>
-
 #include "StarException.hpp"
 
 namespace Star {
@@ -434,4 +433,19 @@ SMutableMapIterator<Container> makeSMutableMapIterator(Container& c) {
   return SMutableMapIterator<Container>(c);
 }
 
+}
+
+export module star.iterator;
+
+export namespace Star {
+  using ::Star::IteratorExceptionTag;
+  using ::Star::IteratorException;
+  using ::Star::SIterator;
+  using ::Star::makeSIterator;
+  using ::Star::SMutableIterator;
+  using ::Star::makeSMutableIterator;
+  using ::Star::SMapIterator;
+  using ::Star::makeSMapIterator;
+  using ::Star::SMutableMapIterator;
+  using ::Star::makeSMutableMapIterator;
 }

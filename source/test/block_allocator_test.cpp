@@ -1,4 +1,4 @@
-#include "StarBlockAllocator.hpp"
+import star.block_allocator;
 #include "StarMap.hpp"
 
 #include "gtest/gtest.h"

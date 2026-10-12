@@ -1,8 +1,8 @@
 module;
 #include "StarJson.hpp"
 
-#include "StarMathCommon.hpp"
-#include "StarInterpolation.hpp"
+import star.math_common;
+import star.interpolation;
 
 export module star.terrain_composition;
 import star.terrain_database;

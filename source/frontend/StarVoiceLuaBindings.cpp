@@ -17,7 +17,6 @@ import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
-#include "StarRect.hpp"
 import star.application_controller;
 #include <queue>
 struct OpusDecoder;

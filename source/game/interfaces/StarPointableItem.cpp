@@ -2,10 +2,8 @@
 import star.game_types;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

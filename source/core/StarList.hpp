@@ -1,16 +1,20 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
 
 #include <vector>
 #include <deque>
 #include <list>
 
 #include "StarException.hpp"
-#include "StarStaticVector.hpp"
-#include "StarSmallVector.hpp"
-#include "StarPythonic.hpp"
+import star.static_vector;
+import star.small_vector;
+import star.pythonic;
 #include "StarMaybe.hpp"
 #include "StarFormat.hpp"
 
+import star.algorithm;
 namespace Star {
 
 template <typename BaseList>

@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 import star.ref_ptr;
@@ -19,7 +19,7 @@ import star.time;
 #include "StarString.hpp"
 import star.json_parser;
 import star.json_builder;
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarLogging.hpp"
 import star.random;
 import star.font;
@@ -41,6 +41,7 @@ import star.packed_asset_source;
 import star.json_patch;
 
 import star.byte_array;
+import star.vector;
 namespace Star {
 
 // if a ptr is returned, can be optionally used to format an error

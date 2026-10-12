@@ -1,7 +1,6 @@
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 #include "StarThread.hpp"
@@ -13,6 +12,7 @@ import star.random;
 
 import star.byte_array;
 import star.bytes;
+import star.algorithm;
 using namespace Star;
 
 namespace {

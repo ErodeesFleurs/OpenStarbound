@@ -1,13 +1,10 @@
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -15,15 +12,12 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
 import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
@@ -39,14 +33,11 @@ import star.a_star;
 import star.audio;
 #include "StarMap.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -155,6 +146,7 @@ import star.world_client;
 import star.client_context;
 import star.team_client;
 
+import star.algorithm;
 namespace Star {
   
 // update this in the rare case that backwards compat code has to be set up in TeamManager

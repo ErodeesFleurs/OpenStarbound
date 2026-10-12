@@ -5,14 +5,11 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

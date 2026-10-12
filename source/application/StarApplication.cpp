@@ -1,4 +1,4 @@
-#include "StarVector.hpp"
+import star.vector;
 import star.input_event;
 import star.application;
 #include "StarThread.hpp"

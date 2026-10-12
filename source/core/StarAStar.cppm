@@ -4,8 +4,8 @@ module;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarMathCommon.hpp"
-#include "StarBlockAllocator.hpp"
+import star.math_common;
+import star.block_allocator;
 import star.lexical_cast;
 
 namespace Star {

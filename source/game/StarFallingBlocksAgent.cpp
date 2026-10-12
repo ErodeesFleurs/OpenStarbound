@@ -1,23 +1,19 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 #include "StarMap.hpp"
 import star.random;
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 #include <functional>
-#include "StarMathCommon.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
@@ -60,6 +56,7 @@ import star.root;
 
 import star.falling_blocks_agent;
 
+import star.algorithm;
 namespace Star {
 
 FallingBlocksAgent::FallingBlocksAgent(FallingBlocksFacadePtr worldFacade)

@@ -1,9 +1,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -16,10 +14,8 @@ import star.weighted_pool;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -32,7 +28,6 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.lexical_cast;
 #include "StarCasting.hpp"
@@ -44,7 +39,7 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarIterator.hpp"
+import star.iterator;
 
 import star.celestial_coordinate;
 import star.sky_types;
@@ -66,6 +61,10 @@ import star.versioning_database;
 import star.compression;
 
 import star.static_random;
+import star.line;
+import star.math_common;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 CelestialDatabase::~CelestialDatabase() {}

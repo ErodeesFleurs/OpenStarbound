@@ -3,10 +3,8 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -16,9 +14,8 @@ import star.asset_path;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;

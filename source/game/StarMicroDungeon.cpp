@@ -3,16 +3,14 @@ module;
 import star.image;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarPoly.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.random;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarRect.hpp"
+import star.rect;
 #include "StarString.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
@@ -26,7 +24,6 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarInterpolation.hpp"
 #include "StarLogging.hpp"
 
 
@@ -41,6 +38,7 @@ import star.root;
 
 module star.micro_dungeon;
 
+import star.algorithm;
 namespace Star {
 
 // Placed on server so it can keep a cacheing system which allows for a quick

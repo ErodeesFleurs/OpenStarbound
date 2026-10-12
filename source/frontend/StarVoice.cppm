@@ -1,10 +1,10 @@
 module;
-import star.byte_array;
 #include "StarJson.hpp"
-#include "StarArray.hpp"
+import star.byte_array;
+import star.array;
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarThread.hpp"

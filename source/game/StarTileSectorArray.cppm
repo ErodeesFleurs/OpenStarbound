@@ -1,8 +1,8 @@
 module;
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
+import star.rect;
+import star.multi_array;
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
@@ -12,6 +12,7 @@ import star.sector_array_2d;
 
 import star.worker_pool;
 
+import star.math_common;
 namespace Star {
 
 // Storage container for world tiles that understands the sector based

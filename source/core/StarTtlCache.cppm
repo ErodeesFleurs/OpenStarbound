@@ -1,12 +1,13 @@
 module;
 
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
+import star.block_allocator;
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.random;
 
+import star.algorithm;
 namespace Star {
 
 template <typename LruCacheType>

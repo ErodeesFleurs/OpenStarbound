@@ -2,9 +2,8 @@
 import star.id_map;
 import star.game_types;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 import star.interaction_types;
@@ -19,6 +18,7 @@ import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.interactive_entity;
 
+import star.rect;
 namespace Star {
 
 RectF InteractiveEntity::interactiveBoundBox() const {

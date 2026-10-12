@@ -1,6 +1,8 @@
 #pragma once
-
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarJson.hpp"
+
 #include <typeindex>
 #include <type_traits>
 #include <lua.hpp>
@@ -9,7 +11,6 @@ import star.lexical_cast;
 #include "StarString.hpp"
 import star.ref_ptr;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -18,6 +19,7 @@ import star.image_processing;
 import star.directives;
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 class LuaEngine;

@@ -1,12 +1,12 @@
 module;
-import star.id_map;
 #include "StarJson.hpp"
+import star.id_map;
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.liquid_types;
@@ -38,6 +38,7 @@ import star.movement_controller;
 
 module star.movement_controller_lua_bindings;
 
+import star.rect;
 namespace Star {
 
 LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* movementController) {

@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -12,11 +11,8 @@ import star.id_map;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarCasting.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarConfig.hpp"
 #include "StarVariant.hpp"
@@ -29,9 +25,7 @@ import star.color;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
@@ -40,7 +34,6 @@ import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 import star.version;
-#include "StarMathCommon.hpp"
 import star.periodic;
 #include "StarLua.hpp"
 import star.spline;
@@ -122,6 +115,7 @@ import star.effect_emitter;
 
 import star.light_source;
 
+import star.array;
 namespace Star {
 
 ArmorWearer::ArmorWearer() : m_lastNude(true) {

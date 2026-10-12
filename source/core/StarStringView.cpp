@@ -1,6 +1,9 @@
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarStringView.hpp"
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 // To string
 String::String(StringView s) : m_string(s.utf8()) {}

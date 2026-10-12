@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -13,21 +12,17 @@ import star.ttl_cache;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarArray.hpp"
 import star.json_rpc;
 import star.rpc_promise;
-#include "StarVector.hpp"
 #include "StarString.hpp"
 import star.either;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarPoly.hpp"
 #include "StarLua.hpp"
 #include "StarList.hpp"
 #include "StarSet.hpp"
 import star.color;
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -37,11 +32,8 @@ import star.asset_path;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include <functional>
@@ -136,6 +128,7 @@ import star.universe_settings;
 
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,

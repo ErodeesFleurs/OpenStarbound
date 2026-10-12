@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.chat_action;
 

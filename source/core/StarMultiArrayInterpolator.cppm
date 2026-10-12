@@ -1,8 +1,9 @@
 module;
 
-#include "StarMultiArray.hpp"
-#include "StarInterpolation.hpp"
+import star.multi_array;
+import star.interpolation;
 
+import star.array;
 namespace Star {
 
 template <typename MultiArrayT, typename PositionT>

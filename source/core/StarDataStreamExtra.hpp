@@ -2,14 +2,20 @@
 
 #include "StarVariant.hpp"
 #include "StarDataStream.hpp"
-#include "StarMultiArray.hpp"
+import star.multi_array;
 import star.color;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarMaybe.hpp"
 import star.either;
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 
+import star.array;
+import star.vector;
+import star.matrix3;
+import star.line;
+import star.rect;
+import star.algorithm;
 namespace Star {
 
 struct DataStreamWriteFunctor {

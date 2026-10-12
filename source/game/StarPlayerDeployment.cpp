@@ -6,14 +6,12 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -24,15 +22,12 @@ import star.game_types;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarArray.hpp"
 import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 
 #include "StarLuaComponents.hpp"
 import star.mixer;

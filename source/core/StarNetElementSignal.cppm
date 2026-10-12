@@ -5,6 +5,7 @@ import star.net_compatibility;
 
 import star.net_element;
 
+import star.algorithm;
 namespace Star {
 
 // NetElement that sends signals during delta writes that can be received by

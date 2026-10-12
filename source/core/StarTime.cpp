@@ -1,6 +1,6 @@
 #include "StarThread.hpp"
 import star.time;
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.lexical_cast;
 
 namespace Star {

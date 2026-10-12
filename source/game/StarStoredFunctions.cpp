@@ -1,11 +1,10 @@
 #include "StarJson.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.parametric_function;
-#include "StarMultiArray.hpp"
+import star.multi_array;
 import star.multi_array_interpolator;
 import star.multi_table;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

@@ -1,7 +1,6 @@
 #include "StarThread.hpp"
 import star.time;
 import star.lexical_cast;
-#include "StarMathCommon.hpp"
 
 #include <ctime>
 #define NOMINMAX

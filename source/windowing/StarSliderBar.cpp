@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -8,14 +7,13 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -26,7 +24,6 @@ import star.version;
 import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarMaybe.hpp"
 import star.listener;
 #include "StarThread.hpp"
@@ -71,6 +68,8 @@ import star.gui_reader;
 
 import star.image_metadata_database;
 
+import star.math_common;
+import star.pythonic;
 namespace Star {
 
 SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)

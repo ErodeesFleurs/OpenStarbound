@@ -1,11 +1,10 @@
-#include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
-#include "StarInterpolation.hpp"
 
 import star.world_camera;
 
+import star.math_common;
 namespace Star {
 
 void WorldCamera::setCenterWorldPosition(Vec2F position, bool force) {

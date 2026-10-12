@@ -3,10 +3,9 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -33,15 +32,12 @@ import star.listener;
 #include "StarSet.hpp"
 import star.audio;
 #include "StarMap.hpp"
-#include "StarArray.hpp"
 #include "StarLua.hpp"
 #include "StarConfig.hpp"
 import star.version;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.perlin;
 import star.random_point;
 #include "StarIODevice.hpp"
@@ -63,13 +59,11 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
 import star.rpc_promise;
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include <functional>
 
 #include "StarLuaRoot.hpp"

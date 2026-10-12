@@ -1,7 +1,9 @@
 module;
-
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+
+import star.vector;
 
 namespace Star {
 

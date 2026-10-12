@@ -2,25 +2,20 @@
 #include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 import star.id_map;
 import star.color;
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -42,7 +37,6 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
 

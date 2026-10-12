@@ -2,10 +2,9 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarDataStreamExtra.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -14,14 +13,12 @@ import star.game_types;
 import star.rpc_promise;
 import star.observer_stream;
 import star.either;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 #include "StarString.hpp"
 import star.color;
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -87,6 +84,7 @@ import star.net_element;
 import star.net_element_containers;
 
 import star.net_compatibility;
+import star.algorithm;
 namespace Star {
 
 StatusController::StatusController(Json const& config) : m_statCollection(config) {

@@ -1,7 +1,8 @@
 module;
+#include "StarHash.hpp"
 import star.byte_array;
 
-#include "StarArray.hpp"
+import star.array;
 #include "StarDataStream.hpp"
 
 namespace Star {

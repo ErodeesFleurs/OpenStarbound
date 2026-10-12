@@ -4,17 +4,13 @@ import star.id_map;
 import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarMathCommon.hpp"
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarSet.hpp"
 import star.color;
@@ -24,14 +20,12 @@ import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"

@@ -1,12 +1,12 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.id_map;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.liquid_types;
@@ -17,7 +17,7 @@ import star.rpc_promise;
 #include "StarDataStreamExtra.hpp"
 import star.random;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.image_processing;
@@ -57,6 +57,8 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 MovementParameters MovementParameters::sensibleDefaults() {

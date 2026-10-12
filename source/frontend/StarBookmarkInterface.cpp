@@ -1,8 +1,6 @@
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarVector.hpp"
 import star.game_types;
 #include "StarVariant.hpp"
 import star.random;
@@ -13,7 +11,6 @@ import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -28,7 +25,6 @@ import star.ref_ptr;
 import star.version;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;

@@ -8,7 +8,6 @@ import star.image;
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -24,7 +23,7 @@ import star.ref_ptr;
 import star.listener;
 import star.random;
 import star.color;
-#include "StarMultiArray.hpp"
+import star.multi_array;
 
 import star.option_parser;
 import star.version_option_parser;
@@ -37,6 +36,8 @@ import star.root_loader;
 
 import star.terrain_database;
 
+import star.vector;
+import star.math_common;
 using namespace Star;
 
 int main(int argc, char** argv) {

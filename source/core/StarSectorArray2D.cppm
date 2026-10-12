@@ -1,8 +1,8 @@
 module;
 
-#include "StarMultiArray.hpp"
+import star.multi_array;
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 

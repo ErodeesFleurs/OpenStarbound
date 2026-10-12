@@ -1,10 +1,8 @@
 #include "StarJson.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.random;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -14,8 +13,8 @@ import star.game_types;
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
@@ -30,7 +29,7 @@ import star.image_processing;
 import star.directives;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
+import star.poly;
 import star.asset_path;
 import star.listener;
 #include "StarSet.hpp"
@@ -119,6 +118,7 @@ import star.scroll_area;
 
 import star.item_bag;
 
+import star.matrix3;
 namespace Star {
 
 LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {

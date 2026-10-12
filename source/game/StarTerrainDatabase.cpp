@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"

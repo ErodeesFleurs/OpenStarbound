@@ -1,9 +1,12 @@
-#include "StarPoly.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 import star.world_geometry;
 
 #include "gtest/gtest.h"
 
+import star.vector;
+import star.line;
+import star.rect;
+import star.math_common;
 using namespace Star;
 
 TEST(WorldGeometryTest, All) {

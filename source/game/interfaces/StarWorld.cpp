@@ -1,9 +1,9 @@
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -31,6 +31,9 @@ import star.force_regions;
 import star.world;
 import star.scripted_entity;
 
+import star.line;
+import star.rect;
+import star.math_common;
 namespace Star {
 
 bool World::isServer() const {

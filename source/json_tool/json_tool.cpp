@@ -1,3 +1,4 @@
+#include "StarJson.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "json_tool.hpp"
@@ -6,6 +7,7 @@
 // Tool for scripting and mass-editing of JSON+Comments files without affecting
 // formatting.
 
+import star.algorithm;
 using namespace Star;
 
 FormattedJson GenericInputFormat::toJson(String const& input) const {

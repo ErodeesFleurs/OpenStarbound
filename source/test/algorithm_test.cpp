@@ -1,10 +1,11 @@
 #include "StarList.hpp"
-#include "StarMultiArray.hpp"
 
 #include <list>
 
 #include "gtest/gtest.h"
 
+import star.algorithm;
+import star.pythonic;
 using namespace Star;
 
 TEST(any, allTests) {

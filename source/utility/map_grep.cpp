@@ -7,7 +7,6 @@
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -22,13 +21,11 @@ import star.ref_ptr;
 import star.listener;
 import star.image;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.material_types;
 import star.random;
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 
 import star.option_parser;

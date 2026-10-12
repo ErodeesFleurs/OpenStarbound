@@ -1,20 +1,16 @@
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 import star.either;
-#include "StarRect.hpp"
 import star.image;
 import star.color;
-#include "StarInterpolation.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarString.hpp"
@@ -29,7 +25,6 @@ import star.asset_path;
 import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarSet.hpp"
 import star.worker_pool;
 
@@ -40,7 +35,6 @@ import star.sector_array_2d;
 import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -50,7 +44,6 @@ import star.rpc_promise;
 import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -157,6 +150,7 @@ import star.player;
 
 import star.tick_rate_monitor;
 
+import star.algorithm;
 namespace Star {
 
 WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)

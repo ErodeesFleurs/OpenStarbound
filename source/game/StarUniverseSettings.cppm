@@ -1,11 +1,10 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarThread.hpp"
-#include "StarJson.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 
 namespace Star {

@@ -1,7 +1,6 @@
 module;
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

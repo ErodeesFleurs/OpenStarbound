@@ -1,6 +1,14 @@
-#include "StarPoly.hpp"
+#include "StarList.hpp"
+#include "StarMaybe.hpp"
+import star.poly;
 import star.world_geometry;
 
+import star.array;
+import star.vector;
+import star.line;
+import star.rect;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 function<float(float, float)> WorldGeometry::xDiffFunction() const {

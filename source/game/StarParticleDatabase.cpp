@@ -3,7 +3,6 @@
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -12,7 +11,6 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;

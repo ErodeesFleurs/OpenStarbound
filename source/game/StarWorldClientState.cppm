@@ -1,7 +1,9 @@
 module;
+#include "StarList.hpp"
+#include "StarMaybe.hpp"
 
-#include "StarRect.hpp"
-#include "StarVector.hpp"
+import star.rect;
+import star.vector;
 import star.net_compatibility;
 import star.game_types;
 

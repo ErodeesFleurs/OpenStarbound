@@ -6,10 +6,7 @@ import star.id_map;
 #include "StarLuaConverters.hpp"
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 import star.a_star;
 import star.game_types;
 import star.liquid_types;
@@ -29,7 +26,6 @@ import star.audio;
 #include "StarSet.hpp"
 import star.random;
 import star.weighted_pool;
-#include "StarArray.hpp"
 import star.either;
 
 

@@ -3,7 +3,6 @@
 #include "StarXXHash.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -15,8 +14,7 @@ import star.game_types;
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
@@ -30,7 +28,6 @@ import star.image_processing;
 import star.directives;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 import star.listener;
 #include "StarSet.hpp"
@@ -43,12 +40,8 @@ import star.ref_ptr;
 #include "StarConfig.hpp"
 import star.version;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 import star.either;
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
-#include "StarArray.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -61,7 +54,6 @@ import star.perlin;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.periodic;
 
 #include "StarLuaRoot.hpp"

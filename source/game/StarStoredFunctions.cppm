@@ -1,9 +1,7 @@
 module;
-
-#include "StarInterpolation.hpp"
-import star.parametric_function;
 #include "StarJson.hpp"
-#include "StarMultiArray.hpp"
+
+import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
 

@@ -3,17 +3,14 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.math_common;
+import star.vector;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
 #include "StarVariant.hpp"
 import star.color;
@@ -26,7 +23,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 import star.net_compatibility;
@@ -36,10 +32,8 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;

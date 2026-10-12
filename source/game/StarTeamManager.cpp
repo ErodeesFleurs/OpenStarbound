@@ -1,35 +1,26 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.json_rpc;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarVector.hpp"
 import star.game_types;
 #include "StarThread.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarConfig.hpp"
 import star.version;
 import star.random;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -50,6 +41,7 @@ import star.root;
 
 import star.team_manager;
 
+import star.algorithm;
 namespace Star {
   
 // update this in the rare case that backwards compat code has to be set up in TeamClient

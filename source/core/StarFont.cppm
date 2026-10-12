@@ -1,7 +1,7 @@
 module;
 
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.image;
 import star.byte_array;
 #include "StarMap.hpp"

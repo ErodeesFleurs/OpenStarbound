@@ -1,15 +1,18 @@
 module;
-
-#include "StarVector.hpp"
-#include "StarCasting.hpp"
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarJson.hpp"
+
+import star.vector;
+#include "StarCasting.hpp"
 import star.input_event;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarMaybe.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 
+import star.rect;
 namespace Star {
 
 class GuiContext;

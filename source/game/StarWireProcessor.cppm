@@ -1,8 +1,7 @@
 module;
 
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
-#include "StarPoly.hpp"
 import star.world_geometry;
 #include "StarDataStream.hpp"
 import star.wiring;

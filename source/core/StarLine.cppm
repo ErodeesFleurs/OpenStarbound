@@ -1,8 +1,11 @@
-#pragma once
+module;
 
 #include "fmt/ostream.h"
+#include "StarHash.hpp"
 
-#include "StarMatrix3.hpp"
+import star.math_common;
+import star.vector;
+import star.matrix3;
 
 namespace Star {
 
@@ -289,3 +292,18 @@ struct hash<Line<T, N>> {
 
 template <typename T, size_t N>
 struct fmt::formatter<Star::Line<T, N>> : ostream_formatter {};
+
+export module star.line;
+
+export namespace Star {
+  using ::Star::Line;
+  using ::Star::Line2F;
+  using ::Star::Line2D;
+  using ::Star::Line2I;
+  using ::Star::operator<<;
+  using ::Star::hash;
+}
+
+export namespace fmt {
+  using ::fmt::formatter;
+}

@@ -1,10 +1,10 @@
-import star.id_map;
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
+import star.id_map;
 #include "StarLogging.hpp"
 import star.random;
 #include "StarBiMap.hpp"
 import star.a_star;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -13,10 +13,9 @@ import star.a_star;
 import star.rpc_promise;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
-#include "StarMathCommon.hpp"
-#include "StarJsonExtra.hpp"
+import star.vector;
+import star.rect;
+import star.math_common;
 #include "StarLuaRoot.hpp"
 import star.damage_types;
 import star.world_geometry;

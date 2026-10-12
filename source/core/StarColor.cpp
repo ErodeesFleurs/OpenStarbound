@@ -3,11 +3,13 @@
 import star.byte_array;
 import star.encode;
 #include "StarFormat.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 #include "StarStringView.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.color;
 
+import star.array;
+import star.math_common;
 namespace Star {
 
 Color const Color::Red = Color::rgba(255, 73, 66, 255);

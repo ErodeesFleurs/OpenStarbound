@@ -3,7 +3,7 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -11,14 +11,12 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarPoly.hpp"
 import star.game_types;
-#include "StarInterpolation.hpp"
 import star.color;
 import star.font;
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.text;
 #include "StarConfig.hpp"
 import star.version;
@@ -35,14 +33,12 @@ import star.audio;
 import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.either;
 import star.random;
 import star.weighted_pool;
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarArray.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -51,7 +47,6 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -156,6 +151,7 @@ import star.stored_functions;
 
 import star.image_metadata_database;
 
+import star.algorithm;
 namespace Star {
 
 ChatBubbleManager::ChatBubbleManager()

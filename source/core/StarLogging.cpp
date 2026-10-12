@@ -1,5 +1,10 @@
 #include "StarLogging.hpp"
 
+import star.array;
+import star.vector;
+import star.line;
+import star.poly;
+import star.algorithm;
 namespace Star {
 
 EnumMap<LogLevel> const LogLevelNames{

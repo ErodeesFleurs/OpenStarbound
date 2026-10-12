@@ -1,9 +1,8 @@
 module;
-import star.id_map;
 #include "StarJson.hpp"
+import star.id_map;
 #include "StarBiMap.hpp"
 import star.a_star;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -12,8 +11,8 @@ import star.a_star;
 import star.rpc_promise;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 
 import star.damage_types;
 import star.world_geometry;

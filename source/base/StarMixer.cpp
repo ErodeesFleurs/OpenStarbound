@@ -3,15 +3,16 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.mixer;
-#include "StarIterator.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.time;
 #include "StarLogging.hpp"
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 namespace {

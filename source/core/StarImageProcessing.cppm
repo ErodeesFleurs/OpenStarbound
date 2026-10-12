@@ -1,11 +1,13 @@
 module;
 
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarVariant.hpp"
 #include "StarString.hpp"
 
+import star.array;
+import star.vector;
 namespace Star {
 
 class Json;

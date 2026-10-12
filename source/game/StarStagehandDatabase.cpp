@@ -2,15 +2,12 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"

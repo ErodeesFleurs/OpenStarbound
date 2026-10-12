@@ -1,9 +1,9 @@
 #include "StarList.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.cellular_light_array;
-#include "StarInterpolation.hpp"
 // just specializing these in a cpp file so I can iterate on them without recompiling like 40 files!!
 
+import star.math_common;
 namespace Star {
 
 template <>

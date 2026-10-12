@@ -1,14 +1,13 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarStrongTypedef.hpp"
 import star.id_map;
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -34,6 +33,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
+import star.line;
 namespace Star {
 
 DamageSource::DamageSource()

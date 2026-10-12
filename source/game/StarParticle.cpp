@@ -1,10 +1,8 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -13,13 +11,11 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.random;
@@ -31,6 +27,8 @@ import star.assets;
 import star.drawable;
 import star.animation;
 
+import star.vector;
+import star.math_common;
 namespace Star {
 
 EnumMap<Particle::Type> const Particle::TypeNames{{Particle::Type::Variance, "variance"},

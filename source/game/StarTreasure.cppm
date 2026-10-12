@@ -1,14 +1,13 @@
 module;
-
 #include "StarJson.hpp"
-#include "StarInterpolation.hpp"
+
 import star.parametric_function;
 import star.random;
 import star.weighted_pool;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 
 namespace Star {

@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -14,13 +13,12 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -46,6 +44,7 @@ import star.effect_emitter;
 import star.effect_source_database;
 import star.particle_database;
 
+import star.algorithm;
 namespace Star {
 
 EffectEmitter::EffectEmitter() {

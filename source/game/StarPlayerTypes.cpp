@@ -4,6 +4,7 @@
 import star.either;
 import star.player_types;
 
+import star.algorithm;
 namespace Star {
 
 extern EnumMap<PlayerMode> const PlayerModeNames{

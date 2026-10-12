@@ -9,6 +9,7 @@ import star.byte_array;
 
 import star.net_element;
 
+import star.algorithm;
 namespace Star {
 
 template <typename T>

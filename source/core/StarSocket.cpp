@@ -6,6 +6,7 @@ import star.socket;
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 
+import star.pythonic;
 namespace Star {
 
 Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {

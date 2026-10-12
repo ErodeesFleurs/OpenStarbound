@@ -1,11 +1,11 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
-#include "StarVector.hpp"
-#include "StarJson.hpp"
+import star.vector;
 import star.rpc_promise;
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include <cstdint>
 #include <cmath>
 

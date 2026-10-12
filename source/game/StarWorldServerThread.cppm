@@ -1,15 +1,14 @@
 module;
-
 #include "StarJson.hpp"
+
 import star.game_types;
 import star.byte_array;
 #include "StarMap.hpp"
 import star.net_compatibility;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
 import star.warping;
 #include "StarThread.hpp"

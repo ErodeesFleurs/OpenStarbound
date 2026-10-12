@@ -1,8 +1,7 @@
+#include "StarHash.hpp"
 #include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
-#include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"

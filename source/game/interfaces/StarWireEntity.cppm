@@ -3,10 +3,9 @@ module;
 import star.id_map;
 import star.color;
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarDataStream.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"

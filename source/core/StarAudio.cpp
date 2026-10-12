@@ -19,6 +19,7 @@ import star.sha256;
 import star.io_device_callbacks;
 
 import star.bytes;
+import star.math_common;
 namespace Star {
 
 extern float const DefaultPerceptualRangeDb = 40.f;

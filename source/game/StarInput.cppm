@@ -1,10 +1,10 @@
 module;
+#include "StarHash.hpp"
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.input_event;
 #include "StarThread.hpp"
 import star.listener;
-#include "StarHash.hpp"
 
 
 namespace Star {

@@ -1,9 +1,8 @@
+#include <limits>
 #include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
-#include "StarMatrix3.hpp"
-#include "StarInterpolation.hpp"
 import star.lexical_cast;
 import star.color;
 import star.image;
@@ -15,6 +14,8 @@ import star.encode;
 
 import star.image_scaling;
 
+import star.vector;
+import star.math_common;
 namespace Star {
 
 StringList colorDirectivesFromConfig(JsonArray const& directives) {

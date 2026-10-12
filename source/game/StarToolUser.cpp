@@ -4,12 +4,10 @@ import star.id_map;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 import star.color;
 #include "StarString.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -24,14 +22,12 @@ import star.audio;
 #include "StarMaybe.hpp"
 #include "StarConfig.hpp"
 import star.rpc_promise;
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.random;
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -133,6 +129,7 @@ import star.light_source;
 
 import star.net_element;
 
+import star.algorithm;
 namespace Star {
 
 ToolUser::ToolUser()

@@ -10,7 +10,7 @@ import star.random;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarArray.hpp"
+import star.array;
 
 export module star.curve25519;
 

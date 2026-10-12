@@ -1,10 +1,10 @@
 module;
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -24,6 +24,7 @@ import star.collision_block;
 
 import star.force_regions;
 
+import star.rect;
 namespace Star {
 
 STAR_CLASS(PhysicsEntity);

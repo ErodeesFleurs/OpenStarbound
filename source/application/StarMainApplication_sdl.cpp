@@ -1,16 +1,15 @@
 #include "StarJson.hpp"
 import star.input_event;
 import star.application;
-#include "StarVector.hpp"
+import star.vector;
 import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
-#include "StarRect.hpp"
+import star.rect;
 import star.application_controller;
 #include "StarVariant.hpp"
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
@@ -22,7 +21,6 @@ import star.texture_atlas;
 #include "GL/glew.h"
 import star.renderer_opengl;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -56,6 +54,8 @@ import star.signal_handler;
 import star.tick_rate_monitor;
 
 import star.byte_array;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS

@@ -1,8 +1,8 @@
 #include "StarJson.hpp"
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -14,7 +14,7 @@ import star.time;
 import star.id_map;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -31,7 +31,6 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarPoly.hpp"
 
 import star.asset_source;
 import star.assets;
@@ -78,6 +77,8 @@ import star.biome_database;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 ServerWeather::ServerWeather() {

@@ -1,10 +1,12 @@
 module;
 
-#include "StarVector.hpp"
-#include "StarInterpolation.hpp"
+import star.vector;
+import star.interpolation;
 #include "StarLogging.hpp"
 import star.lru_cache;
 
+import star.array;
+import star.math_common;
 namespace Star {
 
 // Implementation of DeCasteljau Algorithm for Bezier Curves

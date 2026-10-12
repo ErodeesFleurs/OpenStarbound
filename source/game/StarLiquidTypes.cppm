@@ -1,6 +1,7 @@
 module;
+#include "StarMaybe.hpp"
 
-#include "StarMathCommon.hpp"
+import star.math_common;
 
 namespace Star {
 

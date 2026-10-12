@@ -1,9 +1,8 @@
 module;
+#include "StarJson.hpp"
 import star.net_compatibility;
 import star.byte_array;
-#include "StarJson.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -12,7 +11,6 @@ import star.color;
 import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -20,7 +18,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarStrongTypedef.hpp"
 import star.either;
 

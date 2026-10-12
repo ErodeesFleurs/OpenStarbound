@@ -1,11 +1,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -62,6 +60,9 @@ import star.celestial_database;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.array;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 Sky::Sky() {

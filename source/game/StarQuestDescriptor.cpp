@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -14,12 +13,9 @@ import star.game_types;
 #include "StarVariant.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarSet.hpp"
@@ -39,10 +35,7 @@ import star.version;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarLua.hpp"
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
-#include "StarMathCommon.hpp"
 import star.periodic;
 
 #include "StarLuaRoot.hpp"
@@ -110,6 +103,7 @@ import star.monster_database;
 import star.object_database;
 
 
+import star.algorithm;
 namespace Star {
 
 bool QuestItem::operator==(QuestItem const& rhs) const {

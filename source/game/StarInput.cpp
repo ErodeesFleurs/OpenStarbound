@@ -1,11 +1,10 @@
+#include "StarHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.input_event;
 #include "StarThread.hpp"
 import star.listener;
-#include "StarHash.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -27,6 +26,8 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
+import star.vector;
+import star.algorithm;
 namespace Star {
 
 const char* InputBindingConfigRoot = "modBindings";

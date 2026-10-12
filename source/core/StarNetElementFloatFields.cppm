@@ -4,10 +4,11 @@ import star.net_compatibility;
 #include <type_traits>
 
 #include "StarDataStream.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 
 import star.net_element;
 
+import star.math_common;
 namespace Star {
 
 struct StepStreamExceptionTag {

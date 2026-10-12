@@ -5,7 +5,7 @@ import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
@@ -13,9 +13,8 @@ import star.rpc_promise;
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.color;
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

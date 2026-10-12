@@ -1,4 +1,4 @@
-#include "StarStaticVector.hpp"
+import star.static_vector;
 
 #include "gtest/gtest.h"
 

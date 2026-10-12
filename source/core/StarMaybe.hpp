@@ -1,9 +1,10 @@
 #pragma once
-
+#include "fmt/format.h"
 #include "fmt/ostream.h"
+#include "StarHash.hpp"
+
 
 #include "StarException.hpp"
-#include "StarHash.hpp"
 
 namespace Star {
 

@@ -3,9 +3,8 @@ module;
 import star.id_map;
 import star.game_types;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 
@@ -23,6 +22,7 @@ import star.item_descriptor;
 import star.celestial_coordinate;
 import star.quest_descriptor;
 
+import star.rect;
 namespace Star {
 
 STAR_CLASS(InteractiveEntity);

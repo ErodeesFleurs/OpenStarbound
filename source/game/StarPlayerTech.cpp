@@ -4,7 +4,6 @@
 import star.game_types;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"

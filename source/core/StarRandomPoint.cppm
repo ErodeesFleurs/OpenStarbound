@@ -1,12 +1,15 @@
 module;
+#include "StarList.hpp"
 
 import star.random;
-#include "StarPoly.hpp"
+import star.poly;
 import star.lru_cache;
 import star.time;
 import star.ttl_cache;
 
 import star.static_random;
+import star.vector;
+import star.rect;
 namespace Star {
 
 // An "infinite" generator of points on a 2d plane, generated cell by cell with

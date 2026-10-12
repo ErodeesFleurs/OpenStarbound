@@ -7,11 +7,9 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.image_processing;
 #include "StarHash.hpp"

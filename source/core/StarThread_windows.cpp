@@ -8,6 +8,7 @@ import star.time;
 #include <process.h>
 #include <locale.h>
 
+import star.algorithm;
 namespace Star {
 
 // This is the CONDITIONAL_VARIABLE typedef for using Window's native

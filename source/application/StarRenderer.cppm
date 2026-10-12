@@ -1,12 +1,15 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarVariant.hpp"
 import star.image;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 
+import star.vector;
+import star.matrix3;
+import star.rect;
 namespace Star {
 
 struct RendererExceptionTag {

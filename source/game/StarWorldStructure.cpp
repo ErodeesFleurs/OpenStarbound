@@ -1,20 +1,17 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRect.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.material_types;
 #include "StarOrderedMap.hpp"
@@ -41,6 +38,7 @@ import star.world_structure;
 import star.material_database;
 import star.image_metadata_database;
 
+import star.algorithm;
 namespace Star {
 
 WorldStructure::WorldStructure() {}

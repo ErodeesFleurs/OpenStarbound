@@ -5,6 +5,7 @@ import star.color;
 import star.sky_types;
 #include "StarDataStreamExtra.hpp"
 
+import star.vector;
 namespace Star {
 
 extern EnumMap<SkyType> const SkyTypeNames{

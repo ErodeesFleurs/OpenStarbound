@@ -1,11 +1,10 @@
 module;
 #include "StarJson.hpp"
-import star.id_map;
 #include "StarJsonExtra.hpp"
-#include "StarPoly.hpp"
+import star.id_map;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"

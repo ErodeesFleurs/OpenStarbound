@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -11,7 +10,7 @@ import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.lexical_cast;
 #include "StarOrderedMap.hpp"
@@ -36,6 +35,7 @@ import star.root;
 
 import star.image_metadata_database;
 
+import star.algorithm;
 namespace Star {
 
 ParallaxLayer::ParallaxLayer() {

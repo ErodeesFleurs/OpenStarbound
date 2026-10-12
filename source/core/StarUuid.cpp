@@ -1,4 +1,4 @@
-#include "StarArray.hpp"
+#include "StarHash.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
 import star.random;

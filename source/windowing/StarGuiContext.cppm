@@ -1,11 +1,11 @@
 module;
+#include "StarJson.hpp"
 import star.byte_array;
 
-#include "StarJson.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -14,7 +14,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 import star.input_event;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 
 namespace Star {

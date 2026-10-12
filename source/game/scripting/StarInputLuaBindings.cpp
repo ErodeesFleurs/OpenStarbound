@@ -13,6 +13,7 @@ import star.input;
 
 module star.input_lua_bindings;
 
+import star.vector;
 namespace Star {
 
 LuaCallbacks LuaBindings::makeInputCallbacks() {

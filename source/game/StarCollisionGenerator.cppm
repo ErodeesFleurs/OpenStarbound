@@ -1,13 +1,14 @@
 module;
 
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include "StarMultiArray.hpp"
+import star.multi_array;
 
 #include <functional>
 
+import star.vector;
+import star.rect;
 namespace Star {
 
 STAR_CLASS(CollisionGenerator);

@@ -1,11 +1,10 @@
-#pragma once
+module;
 
 #include <array>
 #include <vector>
 #include <unordered_map>
 #include <limits>
 #include <typeindex>
-
 #include "StarException.hpp"
 
 namespace Star {
@@ -262,4 +261,10 @@ typename BlockAllocator<T, BlockSize>::Data* BlockAllocator<T, BlockSize>::getAl
   return (Data*)dataptr.get();
 }
 
+}
+
+export module star.block_allocator;
+
+export namespace Star {
+  using ::Star::BlockAllocator;
 }

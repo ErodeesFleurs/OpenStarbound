@@ -1,7 +1,7 @@
 module;
-
-#include "StarVector.hpp"
 #include "StarJson.hpp"
+
+import star.vector;
 import star.game_types;
 
 import star.net_element_basic_fields;

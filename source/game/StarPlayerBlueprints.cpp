@@ -7,6 +7,7 @@ import star.item_descriptor;
 
 import star.player_blueprints;
 
+import star.algorithm;
 namespace Star {
 
 PlayerBlueprints::PlayerBlueprints() {}

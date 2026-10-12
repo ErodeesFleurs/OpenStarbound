@@ -1,9 +1,12 @@
 module;
+#include "StarList.hpp"
 
-#include "StarMultiArray.hpp"
-#include "StarInterpolation.hpp"
+import star.multi_array;
+import star.interpolation;
 import star.multi_array_interpolator;
 
+import star.array;
+import star.math_common;
 namespace Star {
 
 // Provides a method for storing, retrieving, and interpolating uneven

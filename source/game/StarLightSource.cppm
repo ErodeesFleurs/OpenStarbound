@@ -1,6 +1,6 @@
 module;
 
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 

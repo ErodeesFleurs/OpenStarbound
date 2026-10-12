@@ -1,9 +1,10 @@
 module;
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarString.hpp"
 #include "StarSet.hpp"
 
+import star.vector;
 namespace Star {
 STAR_CLASS(DungeonGeneratorWorldFacade);
 }

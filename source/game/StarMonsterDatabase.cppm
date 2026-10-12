@@ -1,6 +1,6 @@
 module;
-import star.id_map;
 #include "StarJson.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
@@ -8,12 +8,11 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -23,7 +22,7 @@ import star.ttl_cache;
 import star.image_processing;
 import star.color;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;

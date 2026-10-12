@@ -1,7 +1,6 @@
 module;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
@@ -9,7 +8,7 @@ import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -19,8 +18,7 @@ import star.directives;
 import star.asset_path;
 import star.game_types;
 import star.liquid_types;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 
 import star.animation;

@@ -1,4 +1,6 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 
 #include <map>
 #include <unordered_map>
@@ -7,6 +9,7 @@
 #include "StarList.hpp"
 
 import star.output_proxy;
+import star.algorithm;
 namespace Star {
 
 struct MapExceptionTag {

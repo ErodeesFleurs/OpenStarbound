@@ -1,5 +1,4 @@
 #include "StarIODevice.hpp"
-#include "StarMathCommon.hpp"
 #include "StarFormat.hpp"
 
 import star.byte_array;

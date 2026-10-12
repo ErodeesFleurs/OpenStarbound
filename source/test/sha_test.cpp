@@ -1,7 +1,6 @@
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarPythonic.hpp"
 
 #include "gtest/gtest.h"
 

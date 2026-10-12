@@ -1,8 +1,10 @@
-#pragma once
+module;
 
-#include "StarAlgorithm.hpp"
-
+#include "StarException.hpp"
+#include "StarFormat.hpp"
+import star.algorithm;
 import star.memory;
+
 namespace Star {
 
 // A vector that is stack allocated up to a maximum size, becoming heap
@@ -442,4 +444,10 @@ bool SmallVector<Element, MaxStackSize>::isHeapAllocated() const {
   return m_begin != (Element*)&m_stackElements;
 }
 
+}
+
+export module star.small_vector;
+
+export namespace Star {
+  using ::Star::SmallVector;
 }

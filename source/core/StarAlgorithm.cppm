@@ -1,10 +1,9 @@
-#pragma once
+module;
 
 #include "StarException.hpp"
-
 #include <type_traits>
-
 import star.output_proxy;
+
 namespace Star {
 
 // Function that does nothing and takes any number of arguments
@@ -655,4 +654,66 @@ struct FunctionTraits<T&&> : public FunctionTraits<T> {};
 template <typename T>
 struct FunctionTraits<T const&&> : public FunctionTraits<T> {};
 
+}
+
+export module star.algorithm;
+
+export namespace Star {
+  using ::Star::nothing;
+  using ::Star::construct;
+  using ::Star::identity;
+  using ::Star::SwallowReturn;
+  using ::Star::swallow;
+  using ::Star::Empty;
+  using ::Star::FunctionComposer;
+  using ::Star::compose;
+  using ::Star::fold;
+  using ::Star::fold1;
+  using ::Star::intersect;
+  using ::Star::mapMerge;
+  using ::Star::mapsEqual;
+  using ::Star::filter;
+  using ::Star::filtered;
+  using ::Star::eraseWhere;
+  using ::Star::sort;
+  using ::Star::stableSort;
+  using ::Star::sorted;
+  using ::Star::stableSorted;
+  using ::Star::sortByComputedValue;
+  using ::Star::stableSortByComputedValue;
+  using ::Star::reverse;
+  using ::Star::reverseCopy;
+  using ::Star::copy;
+  using ::Star::sum;
+  using ::Star::product;
+  using ::Star::transformInto;
+  using ::Star::transform;
+  using ::Star::zipWith;
+  using ::Star::take;
+  using ::Star::containersEqual;
+  using ::Star::FunctionOutputIterator;
+  using ::Star::makeFunctionOutputIterator;
+  using ::Star::FunctionInputIterator;
+  using ::Star::makeFunctionInputIterator;
+  using ::Star::ReverseWrapper;
+  using ::Star::reverseIterate;
+  using ::Star::FinallyGuard;
+  using ::Star::finally;
+  using ::Star::IndexSequence;
+  using ::Star::GenIndexSequence;
+  using ::Star::tupleUnpackFunctionIndexes;
+  using ::Star::tupleUnpackFunction;
+  using ::Star::tupleApplyFunctionIndexes;
+  using ::Star::tupleApplyFunction;
+  using ::Star::tupleCallFunctionCaller;
+  using ::Star::tupleCallFunctionExpander;
+  using ::Star::tupleCallFunction;
+  using ::Star::subTupleIndexes;
+  using ::Star::subTuple;
+  using ::Star::trimTuple;
+  using ::Star::unpackVariadicImpl;
+  using ::Star::unpackVariadic;
+  using ::Star::callFunctionVariadic;
+  using ::Star::VariadicTypedef;
+  using ::Star::FunctionTraits;
 }

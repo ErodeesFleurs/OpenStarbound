@@ -1,8 +1,9 @@
 module;
 
 #include "StarList.hpp"
-#include "StarVector.hpp"
+import star.vector;
 
+import star.math_common;
 namespace Star {
 
 // Operations for simple scalar lighting.

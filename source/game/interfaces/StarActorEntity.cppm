@@ -3,13 +3,10 @@ module;
 import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"

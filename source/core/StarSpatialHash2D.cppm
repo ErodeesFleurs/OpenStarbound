@@ -1,10 +1,13 @@
 module;
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
+import star.block_allocator;
 
+import star.vector;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 // Dual-map based on key and 2 dimensional bounding rectangle.  Implements a 2d

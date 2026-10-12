@@ -1,8 +1,7 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarLua.hpp"
-#include "StarVector.hpp"
 #include "StarCasting.hpp"
 import star.input_event;
 import star.application;
@@ -11,12 +10,10 @@ import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
-#include "StarRect.hpp"
 import star.application_controller;
 import star.color;
 import star.font;
 #include "StarVariant.hpp"
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
@@ -33,7 +30,6 @@ import star.directives;
 import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;

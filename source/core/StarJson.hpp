@@ -1,10 +1,14 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
+#include "StarXXHash.hpp"
 
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarString.hpp"
-#include "StarXXHash.hpp"
 
+import star.algorithm;
 namespace Star {
 
 struct JsonExceptionTag {

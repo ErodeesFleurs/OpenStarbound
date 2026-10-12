@@ -1,10 +1,11 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.random;
 
+import star.math_common;
 namespace Star {
 
 struct PerlinExceptionTag {

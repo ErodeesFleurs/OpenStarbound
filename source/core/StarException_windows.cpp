@@ -8,6 +8,8 @@ import star.version;
 
 #include <dbghelp.h>
 
+import star.array;
+import star.math_common;
 namespace Star {
 
 struct WindowsSymInitializer {

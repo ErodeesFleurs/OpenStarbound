@@ -1,7 +1,6 @@
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 import star.buffer;
-#include "StarMathCommon.hpp"
 #include "StarIODevice.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"

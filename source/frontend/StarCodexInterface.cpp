@@ -1,13 +1,10 @@
 #include "StarJson.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarVector.hpp"
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -22,7 +19,6 @@ import star.ref_ptr;
 import star.version;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -36,10 +32,8 @@ import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
 import star.a_star;
 #include "StarOrderedSet.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.either;
 
 
@@ -134,6 +128,7 @@ import star.image_widget;
 import star.button_group;
 import star.button_widget;
 
+import star.algorithm;
 namespace Star {
 
 CodexInterface::CodexInterface(PlayerPtr player) {

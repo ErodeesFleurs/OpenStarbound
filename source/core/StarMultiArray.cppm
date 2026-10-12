@@ -1,7 +1,9 @@
-#pragma once
+module;
 
-#include "StarArray.hpp"
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarList.hpp"
+import star.array;
 
 namespace Star {
 
@@ -511,3 +513,27 @@ std::ostream& operator<<(std::ostream& os, MultiArray<Element, Rank> const& arra
 
 template <typename Element, size_t Rank>
 struct fmt::formatter<Star::MultiArray<Element, Rank>> : ostream_formatter {};
+
+export module star.multi_array;
+
+export namespace Star {
+  using ::Star::MultiArrayExceptionTag;
+  using ::Star::MultiArrayException;
+  using ::Star::MultiArray;
+  using ::Star::MultiArray2I;
+  using ::Star::MultiArray2S;
+  using ::Star::MultiArray2U;
+  using ::Star::MultiArray2F;
+  using ::Star::MultiArray2D;
+  using ::Star::MultiArray3I;
+  using ::Star::MultiArray3S;
+  using ::Star::MultiArray3U;
+  using ::Star::MultiArray3F;
+  using ::Star::MultiArray3D;
+  using ::Star::MultiArray4I;
+  using ::Star::MultiArray4S;
+  using ::Star::MultiArray4U;
+  using ::Star::MultiArray4F;
+  using ::Star::MultiArray4D;
+  using ::Star::operator<<;
+}

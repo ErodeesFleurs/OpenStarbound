@@ -16,7 +16,6 @@ import star.desktop_service;
 #endif
 import star.platform_services_pc;
 
-#include "StarAlgorithm.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
 import star.p2p_networking_service_pc;

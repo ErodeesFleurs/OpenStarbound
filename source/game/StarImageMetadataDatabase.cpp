@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 import star.image_processing;
@@ -9,7 +9,6 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.random;
@@ -20,7 +19,7 @@ import star.image;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
@@ -38,6 +37,7 @@ import star.root;
 
 import star.image_metadata_database;
 
+import star.math_common;
 namespace Star {
 
 ImageMetadataDatabase::ImageMetadataDatabase() {

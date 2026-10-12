@@ -1,4 +1,4 @@
-#include "StarVector.hpp"
+import star.vector;
 import star.blocks_along_line;
 #include "StarList.hpp"
 

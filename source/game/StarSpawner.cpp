@@ -1,28 +1,25 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarMathCommon.hpp"
 import star.random;
 import star.periodic;
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.ttl_cache;
-#include "StarPoly.hpp"
+import star.poly;
 import star.game_types;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarCasting.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.audio;
@@ -36,9 +33,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 import star.either;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 import star.listener;
@@ -116,6 +111,7 @@ import star.spawner;
 import star.monster_database;
 
 import star.static_random;
+import star.algorithm;
 namespace Star {
 
 Spawner::Spawner() {

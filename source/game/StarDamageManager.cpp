@@ -1,19 +1,16 @@
+#include "StarJson.hpp"
 import star.id_map;
-#include "StarRect.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
-#include "StarJson.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarBiMap.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarLogging.hpp"
 import star.color;
 #include "StarVariant.hpp"
@@ -42,6 +39,8 @@ import star.damage_manager;
 
 import star.entity_map;
 
+import star.line;
+import star.algorithm;
 namespace Star {
 
 ConnectionId RemoteHitRequest::destinationConnection() const {

@@ -3,24 +3,20 @@ module;
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
-#include "StarIterator.hpp"
-#include "StarPoly.hpp"
+import star.iterator;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.math_common;
+import star.vector;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -99,6 +95,8 @@ import star.sky;
 import star.entity_map;
 import star.world;
 
+import star.line;
+import star.pythonic;
 namespace Star {
 
 namespace WorldImpl {

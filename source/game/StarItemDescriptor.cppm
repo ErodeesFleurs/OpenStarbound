@@ -1,6 +1,9 @@
 module;
-
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
 #include "StarJson.hpp"
+
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 

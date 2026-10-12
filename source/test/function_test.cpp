@@ -1,13 +1,13 @@
 #include "StarJson.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
 
 #include "gtest/gtest.h"
 import star.stored_functions;
 
+import star.math_common;
 using namespace Star;
 
 TEST(StoredFunctionTest, All) {

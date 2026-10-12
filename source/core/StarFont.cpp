@@ -1,6 +1,6 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
-#include "StarVector.hpp"
+import star.vector;
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -8,6 +8,7 @@ import star.image;
 import star.font;
 
 import star.byte_array;
+import star.math_common;
 namespace Star {
 
 constexpr int FontLoadFlags = FT_LOAD_NO_SVG | FT_LOAD_COLOR;

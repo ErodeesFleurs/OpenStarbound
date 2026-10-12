@@ -3,7 +3,6 @@
 #include "StarXXHash.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -12,13 +11,12 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
@@ -31,7 +29,6 @@ import star.lexical_cast;
 #include "StarConfig.hpp"
 import star.version;
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
 import star.parametric_function;
 #include "StarLogging.hpp"
 #include "StarSet.hpp"
@@ -43,14 +40,11 @@ import star.directives;
 import star.asset_path;
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarMap.hpp"
-#include "StarMultiArray.hpp"
 import star.either;
 import star.image;
-#include "StarMathCommon.hpp"
-#include "StarArray.hpp"
+import star.math_common;
 import star.worker_pool;
 
 #include "thread"
@@ -209,6 +203,7 @@ import star.item_database;
 import star.celestial_database;
 
 
+import star.algorithm;
 namespace Star {
 
 CommandProcessor::CommandProcessor(UniverseServer* universe)

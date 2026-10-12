@@ -4,26 +4,24 @@
 #include "StarDataStreamExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.json_rpc;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
-#include "StarArray.hpp"
+import star.vector;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -39,9 +37,9 @@ import star.a_star;
 import star.audio;
 #include "StarMap.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
+import star.matrix3;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -62,8 +60,7 @@ import star.zstd_compression;
 import star.net_compatibility;
 #include <atomic>
 #include <memory>
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include <functional>
 import star.worker_pool;
 
@@ -243,6 +240,7 @@ import star.tool_user;
 import star.tech_controller;
 import star.entity_splash;
 
+import star.algorithm;
 namespace Star {
 
 EnumMap<Player::State> const Player::StateNames{

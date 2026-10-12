@@ -1,13 +1,11 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarVector.hpp"
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -20,7 +18,6 @@ import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -36,7 +33,6 @@ import star.either;
 import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
@@ -50,24 +46,19 @@ import star.net_compatibility;
 #include <atomic>
 #include <memory>
 import star.id_map;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include <functional>
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
 import star.rpc_promise;
 import star.image;
 import star.lexical_cast;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 
 #include "StarLuaRoot.hpp"

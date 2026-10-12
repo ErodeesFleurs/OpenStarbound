@@ -1,10 +1,10 @@
 module;
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.liquid_types;
@@ -40,6 +40,8 @@ import star.tile_modification;
 
 import star.force_regions;
 
+import star.line;
+import star.rect;
 namespace Star {
 
 STAR_CLASS(World);

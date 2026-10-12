@@ -1,7 +1,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -13,7 +13,6 @@ import star.game_types;
 import star.liquid_types;
 #include "StarVariant.hpp"
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -21,13 +20,12 @@ import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarPoly.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -73,6 +71,9 @@ import star.biome_database;
 
 
 import star.static_random;
+import star.math_common;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 WorldRegion::WorldRegion()

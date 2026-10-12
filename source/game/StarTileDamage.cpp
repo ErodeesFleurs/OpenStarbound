@@ -1,11 +1,10 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInterpolation.hpp"
-#include "StarVector.hpp"
+import star.interpolation;
+import star.vector;
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"
@@ -28,6 +27,8 @@ import star.configuration;
 import star.root;
 import star.tile_damage;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool squareMode) {

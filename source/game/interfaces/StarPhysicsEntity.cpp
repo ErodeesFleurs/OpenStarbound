@@ -1,15 +1,14 @@
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.damage_types;
 import star.world_geometry;
@@ -21,6 +20,7 @@ import star.collision_block;
 import star.force_regions;
 import star.physics_entity;
 
+import star.rect;
 namespace Star {
 
 PhysicsMovingCollision PhysicsMovingCollision::fromJson(Json const& json) {

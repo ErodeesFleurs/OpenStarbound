@@ -2,22 +2,19 @@
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
 import star.id_map;
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarFile.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
@@ -26,12 +23,9 @@ import star.lru_cache;
 #include "StarThread.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
 import star.rpc_promise;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -99,6 +93,7 @@ import star.entity_factory;
 import star.entity_map;
 
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 WorldChunks WorldStorage::getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) {

@@ -1,6 +1,8 @@
 module;
-
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 #include "StarHash.hpp"
+
 #include "StarDataStream.hpp"
 import star.directives;
 

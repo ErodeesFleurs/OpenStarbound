@@ -5,6 +5,7 @@ import star.net_compatibility;
 
 import star.byte_array;
 import star.bytes;
+import star.math_common;
 namespace Star {
 
 struct DataStreamExceptionTag {

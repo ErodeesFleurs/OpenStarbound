@@ -1,10 +1,9 @@
 module;
-
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+
+import star.vector;
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.random;

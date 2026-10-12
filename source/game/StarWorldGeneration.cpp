@@ -1,25 +1,23 @@
+#include <limits>
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 #include "StarMap.hpp"
 import star.random;
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRect.hpp"
-#include "StarBlockAllocator.hpp"
+import star.rect;
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
@@ -49,12 +47,10 @@ import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.rpc_promise;
 import star.either;
-#include "StarArray.hpp"
 import star.net_compatibility;
 import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -183,6 +179,7 @@ import star.falling_blocks_agent;
 import star.entity_map;
 
 import star.static_random;
+import star.algorithm;
 namespace Star {
 namespace {
 

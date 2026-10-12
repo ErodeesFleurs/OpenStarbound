@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -19,12 +18,10 @@ import star.listener;
 import star.version;
 import star.image;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.game_types;
 import star.material_types;
 import star.random;
 import star.lexical_cast;
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarSet.hpp"
 

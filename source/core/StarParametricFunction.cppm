@@ -1,7 +1,9 @@
 module;
 
-#include "StarInterpolation.hpp"
+import star.interpolation;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 // Describes a simple table from index to value, which operates on bins

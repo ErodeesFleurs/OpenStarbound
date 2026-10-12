@@ -1,13 +1,13 @@
 module;
-import star.id_map;
 #include "StarJson.hpp"
+import star.id_map;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 import star.game_types;
 import star.liquid_types;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
@@ -27,6 +27,7 @@ import star.net_element_basic_fields;
 import star.net_element_float_fields;
 import star.net_element_group;
 
+import star.rect;
 namespace Star {
 
 class World;

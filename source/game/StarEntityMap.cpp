@@ -1,15 +1,13 @@
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
@@ -57,6 +55,8 @@ import star.projectile;
 
 import star.entity_map;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 float const EntityMapSpatialHashSectorSize = 16.0f;

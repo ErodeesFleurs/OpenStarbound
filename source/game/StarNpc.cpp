@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -18,7 +17,7 @@ import star.game_types;
 import star.rpc_promise;
 #include "StarLogging.hpp"
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.parametric_function;
 #include "StarString.hpp"
 import star.byte_array;
@@ -27,11 +26,11 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
+import star.poly;
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -40,7 +39,6 @@ import star.asset_path;
 import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 import star.listener;
@@ -142,6 +140,8 @@ import star.entity_splash;
 
 import star.net_compatibility;
 import star.static_random;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 Npc::Npc(NpcVariant const& npcVariant) {

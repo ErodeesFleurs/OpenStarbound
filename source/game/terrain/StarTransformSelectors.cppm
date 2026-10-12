@@ -1,12 +1,12 @@
 module;
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
-#include "StarVector.hpp"
-#include "StarJsonExtra.hpp"
+import star.vector;
+import star.math_common;
 
 export module star.terrain_transform;
 import star.terrain_database;

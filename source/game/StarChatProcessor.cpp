@@ -1,16 +1,16 @@
+#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 import star.rpc_promise;
-#include "StarJson.hpp"
 import star.game_types;
 import star.chat_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
 
 import star.chat_processor;
 
+import star.algorithm;
 namespace Star {
 
 char const* ChatProcessor::ServerNick = "server";

@@ -3,7 +3,6 @@
 #include "StarDataStreamExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -12,17 +11,14 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarMultiArray.hpp"
+import star.multi_array;
 #include "StarString.hpp"
 import star.color;
 import star.image_processing;
@@ -37,14 +33,12 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarArray.hpp"
+import star.array;
 #include "StarOrderedSet.hpp"
 import star.audio;
 #include "StarMap.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 #include "StarLuaRoot.hpp"
 
@@ -132,6 +126,8 @@ import star.net_element_basic_fields;
 import star.net_element_sync_group;
 
 import star.net_compatibility;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) {

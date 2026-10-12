@@ -1,12 +1,13 @@
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include "StarMultiArray.hpp"
 #include <functional>
 
 import star.collision_generator;
 
+import star.vector;
+import star.rect;
 namespace Star {
 
 void CollisionGenerator::init(CollisionKindAccessor accessor) {

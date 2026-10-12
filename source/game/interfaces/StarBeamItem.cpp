@@ -1,16 +1,14 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarVector.hpp"
-#include "StarMathCommon.hpp"
+import star.vector;
+import star.math_common;
 import star.spline;
 import star.game_types;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -74,6 +72,7 @@ import star.configuration;
 import star.root;
 import star.item;
 
+import star.line;
 namespace Star {
 
 BeamItem::BeamItem(Json config) {

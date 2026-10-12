@@ -1,8 +1,8 @@
 #include "StarFlatHashSet.hpp"
 #include "StarFlatHashMap.hpp"
 import star.random;
-#include "StarVector.hpp"
-#include "StarIterator.hpp"
+import star.vector;
+import star.iterator;
 
 #include "gtest/gtest.h"
 

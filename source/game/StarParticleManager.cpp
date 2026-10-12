@@ -1,10 +1,9 @@
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -12,17 +11,14 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarMultiArray.hpp"
 #include <functional>
 import star.game_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
@@ -30,7 +26,6 @@ import star.weighted_pool;
 #include "StarVariant.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarIterator.hpp"
 #include "StarLogging.hpp"
 
 import star.world_geometry;
@@ -52,6 +47,7 @@ import star.world_tiles;
 
 import star.particle_manager;
 
+import star.line;
 namespace Star {
 
 ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray)

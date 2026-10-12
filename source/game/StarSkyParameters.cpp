@@ -1,11 +1,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -33,7 +31,6 @@ import star.sky_types;
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.celestial_coordinate;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.sky_types;

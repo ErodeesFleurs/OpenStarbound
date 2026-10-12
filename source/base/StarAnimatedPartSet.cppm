@@ -1,8 +1,8 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarOrderedMap.hpp"
-#include "StarJson.hpp"
-#include "StarMatrix3.hpp"
+import star.matrix3;
 
 namespace Star {
 

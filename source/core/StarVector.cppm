@@ -1,9 +1,10 @@
-#pragma once
+module;
 
-#include "StarArray.hpp"
-#include "StarMathCommon.hpp"
-#include "StarAlgorithm.hpp"
 #include "StarHash.hpp"
+
+import star.array;
+import star.math_common;
+import star.algorithm;
 
 namespace Star {
 
@@ -918,4 +919,40 @@ T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
   return v1[0] * v2[1] - v1[1] * v2[0];
 }
 
+}
+
+export module star.vector;
+
+export namespace Star {
+  using ::Star::Vector;
+  using ::Star::Vec2I;
+  using ::Star::Vec2U;
+  using ::Star::Vec2F;
+  using ::Star::Vec2D;
+  using ::Star::Vec2B;
+  using ::Star::Vec2S;
+  using ::Star::Vec3I;
+  using ::Star::Vec3U;
+  using ::Star::Vec3F;
+  using ::Star::Vec3D;
+  using ::Star::Vec3B;
+  using ::Star::Vec3S;
+  using ::Star::Vec4I;
+  using ::Star::Vec4U;
+  using ::Star::Vec4F;
+  using ::Star::Vec4D;
+  using ::Star::Vec4B;
+  using ::Star::Vec4S;
+  using ::Star::vnorm;
+  using ::Star::vmag;
+  using ::Star::vmagSquared;
+  using ::Star::vmin;
+  using ::Star::vmax;
+  using ::Star::vclamp;
+  using ::Star::vmult;
+  using ::Star::vdiv;
+  using ::Star::operator<<;
+  using ::Star::operator*;
+  using ::Star::operator^;
+  using ::Star::hash;
 }

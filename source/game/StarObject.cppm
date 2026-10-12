@@ -2,17 +2,15 @@ module;
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarMathCommon.hpp"
 import star.random;
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarSet.hpp"
 import star.color;
 #include "StarLua.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.audio;
@@ -22,15 +20,14 @@ import star.audio;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
+import star.poly;
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 
 import star.net_element_basic_fields;
 import star.net_element_float_fields;

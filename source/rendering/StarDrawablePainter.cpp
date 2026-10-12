@@ -1,10 +1,9 @@
+#include "StarJson.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
+import star.poly;
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -23,6 +22,8 @@ import star.listener;
 import star.asset_texture_group;
 import star.drawable_painter;
 
+import star.vector;
+import star.matrix3;
 namespace Star {
 
 DrawablePainter::DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup) {

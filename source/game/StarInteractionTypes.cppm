@@ -1,8 +1,8 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarBiMap.hpp"
-#include "StarVector.hpp"
-#include "StarJson.hpp"
+import star.vector;
 import star.game_types;
 
 namespace Star {

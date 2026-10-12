@@ -1,15 +1,12 @@
 module;
+#include "StarJson.hpp"
 
 // Keep Uuid's textual definition ahead of the global codex interface on GCC.
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarJson.hpp"
 import star.input_event;
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -20,7 +17,6 @@ import star.directives;
 #include "StarString.hpp"
 import star.text;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;

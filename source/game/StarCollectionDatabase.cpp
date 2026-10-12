@@ -1,11 +1,8 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -14,13 +11,11 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
 import star.game_types;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;

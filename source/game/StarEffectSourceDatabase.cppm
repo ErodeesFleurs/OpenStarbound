@@ -1,7 +1,7 @@
 module;
-
-#include "StarVector.hpp"
 #include "StarJson.hpp"
+
+import star.vector;
 
 namespace Star {
 

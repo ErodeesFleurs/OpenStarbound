@@ -3,15 +3,15 @@
 import star.id_map;
 #include "StarBiMap.hpp"
 import star.a_star;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -28,10 +28,9 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.random;
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarSet.hpp"
 import star.color;
@@ -39,7 +38,6 @@ import star.color;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarString.hpp"
-#include "StarMatrix3.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -93,6 +91,7 @@ import star.object;
 
 import star.platformer_astar;
 
+import star.algorithm;
 namespace Star {
 
 ActorJumpProfile::ActorJumpProfile() {}

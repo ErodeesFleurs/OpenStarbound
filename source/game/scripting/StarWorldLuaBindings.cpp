@@ -3,7 +3,6 @@
 #include "StarXXHash.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -14,8 +13,8 @@ import star.game_types;
 import star.material_types;
 #include "StarMaybe.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
@@ -25,25 +24,22 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarPoly.hpp"
+import star.poly;
 import star.color;
 #include "StarString.hpp"
 #include "StarLua.hpp"
 #include "StarVariant.hpp"
 import star.weighted_pool;
 #include "StarLogging.hpp"
-#include "StarInterpolation.hpp"
 import star.parametric_function;
 import star.perlin;
 #include "StarStrongTypedef.hpp"
 #include "StarSet.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.periodic;
 import star.periodic_function;
 import star.audio;
 #include "StarMap.hpp"
-#include "StarMatrix3.hpp"
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.either;
 #include "StarIODevice.hpp"
@@ -51,7 +47,6 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarMultiArray.hpp"
 import star.image;
 import star.worker_pool;
 
@@ -203,6 +198,9 @@ import star.item_bag;
 import star.sky;
 
 
+import star.line;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 STAR_CLASS(World);

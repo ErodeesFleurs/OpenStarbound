@@ -1,13 +1,13 @@
 module;
+#include "StarJson.hpp"
 import star.net_compatibility;
 import star.byte_array;
-#include "StarJson.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 
@@ -18,6 +18,8 @@ import star.damage;
 
 import star.light_source;
 
+import star.rect;
+import star.algorithm;
 namespace Star {
 
 STAR_CLASS(RenderCallback);

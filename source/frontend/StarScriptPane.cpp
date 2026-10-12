@@ -1,13 +1,12 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -23,7 +22,6 @@ import star.ref_ptr;
 import star.version;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -33,16 +31,12 @@ import star.audio;
 #include "StarMap.hpp"
 import star.id_map;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
 import star.either;
 import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarInterpolation.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarArray.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -51,14 +45,12 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.byte_array;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;

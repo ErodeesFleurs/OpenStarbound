@@ -3,7 +3,7 @@
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.option_parser;
-#include "StarIterator.hpp"
+import star.iterator;
 
 namespace Star {
 

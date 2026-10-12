@@ -1,7 +1,7 @@
 module;
-
-#include "StarMathCommon.hpp"
 #include "StarJson.hpp"
+
+import star.math_common;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;

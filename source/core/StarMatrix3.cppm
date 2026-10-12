@@ -1,8 +1,11 @@
-#pragma once
+module;
 
 #include "fmt/ostream.h"
+#include "StarConfig.hpp"
 
-#include "StarVector.hpp"
+import star.array;
+import star.math_common;
+import star.vector;
 
 namespace Star {
 
@@ -464,3 +467,20 @@ std::ostream& operator<<(std::ostream& os, Matrix3<T> m) {
 
 template <typename T>
 struct fmt::formatter<Star::Matrix3<T>> : ostream_formatter {};
+
+export module star.matrix3;
+
+export namespace Star {
+  using ::Star::Matrix3;
+  using ::Star::Mat3F;
+  using ::Star::Mat3D;
+  using ::Star::determinant;
+  using ::Star::transpose;
+  using ::Star::ortho;
+  using ::Star::operator*;
+  using ::Star::operator<<;
+}
+
+export namespace fmt {
+  using ::fmt::formatter;
+}

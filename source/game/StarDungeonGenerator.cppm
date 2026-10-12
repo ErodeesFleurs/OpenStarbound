@@ -3,8 +3,8 @@ module;
 import star.image;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarPoly.hpp"
-#include "StarVector.hpp"
+import star.poly;
+import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
@@ -12,12 +12,12 @@ import star.random;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 
 import star.item_descriptor;
 import star.world_geometry;
 
+import star.rect;
 namespace Star {
 
 struct DungeonExceptionTag {

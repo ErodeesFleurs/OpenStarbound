@@ -1,7 +1,6 @@
 module;
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -25,6 +24,7 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
+import star.vector;
 namespace Star {
 
 STAR_STRUCT(DanceStep);

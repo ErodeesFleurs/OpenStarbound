@@ -1,11 +1,13 @@
-#include "StarPoly.hpp"
-#include "StarVariant.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+import star.poly;
+#include "StarVariant.hpp"
 #include "StarDataStreamExtra.hpp"
 
 import star.force_regions;
 
+import star.vector;
+import star.rect;
 namespace Star {
 
 PhysicsCategoryFilter PhysicsCategoryFilter::whitelist(StringSet categories) {

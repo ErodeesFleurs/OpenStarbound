@@ -1,9 +1,10 @@
 module;
 
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarIODevice.hpp"
 
+import star.math_common;
 namespace Star {
 
 enum class PixelFormat : uint8_t {

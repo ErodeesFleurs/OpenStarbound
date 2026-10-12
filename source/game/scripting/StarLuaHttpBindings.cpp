@@ -1,6 +1,5 @@
 module;
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarThread.hpp"
 #include "StarConfig.hpp"
@@ -9,7 +8,6 @@ import star.version;
 #include "StarFormat.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"

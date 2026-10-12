@@ -1,15 +1,14 @@
 module;
-
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
+
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;
-#include "StarVector.hpp"
 import star.celestial_coordinate;
 
+import star.rect;
 namespace Star {
 
 // Item name - always one single item. QuestItem and QuestItemList are

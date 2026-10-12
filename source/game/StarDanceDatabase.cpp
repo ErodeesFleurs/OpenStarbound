@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -26,6 +25,7 @@ import star.root;
 
 import star.dance_database;
 
+import star.vector;
 namespace Star {
 
 DanceDatabase::DanceDatabase() {

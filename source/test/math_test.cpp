@@ -1,4 +1,4 @@
-#include "StarMathCommon.hpp"
+import star.math_common;
 
 #include "gtest/gtest.h"
 

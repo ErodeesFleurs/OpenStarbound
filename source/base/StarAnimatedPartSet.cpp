@@ -1,10 +1,10 @@
-#include "StarOrderedMap.hpp"
 #include "StarJson.hpp"
-#include "StarMatrix3.hpp"
-import star.animated_part_set;
-#include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInterpolation.hpp"
+#include "StarOrderedMap.hpp"
+import star.matrix3;
+import star.animated_part_set;
+import star.math_common;
+import star.interpolation;
 
 namespace Star {
 

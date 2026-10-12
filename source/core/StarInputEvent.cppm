@@ -3,7 +3,7 @@ module;
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarVariant.hpp"
-#include "StarVector.hpp"
+import star.vector;
 
 namespace Star {
 

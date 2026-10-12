@@ -1,17 +1,15 @@
 module;
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -22,8 +20,8 @@ import star.asset_path;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
+import star.poly;
 #include "StarVariant.hpp"
 import star.id_map;
 #include "StarSet.hpp"

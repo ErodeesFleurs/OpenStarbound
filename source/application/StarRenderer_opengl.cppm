@@ -1,19 +1,20 @@
 module;
+#include "StarJson.hpp"
 import star.byte_array;
 
-#include "StarJson.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image;
 #include "StarCasting.hpp"
 import star.texture_atlas;
 #include "StarVariant.hpp"
-#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 import star.ref_ptr;
 import star.renderer;
 
 #include "GL/glew.h"
 
+import star.vector;
+import star.matrix3;
 namespace Star {
 
 STAR_CLASS(OpenGlRenderer);

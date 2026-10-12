@@ -1,19 +1,17 @@
 module;
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarSet.hpp"
 #include "StarMap.hpp"
 import star.random;
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 #include <functional>
-#include "StarMathCommon.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarThread.hpp"
 import star.worker_pool;
 
@@ -32,7 +30,6 @@ import star.asset_path;
 import star.version;
 import star.image;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.id_map;
 #include "StarBTree.hpp"
@@ -41,7 +38,6 @@ import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
 import star.rpc_promise;
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"

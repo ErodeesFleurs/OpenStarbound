@@ -2,6 +2,12 @@
 #include "StarLogging.hpp"
 import star.random;
 
+import star.vector;
+import star.matrix3;
+import star.line;
+import star.rect;
+import star.poly;
+import star.algorithm;
 namespace Star {
 
 size_t jsonToSize(Json const& v) {

@@ -1,3 +1,4 @@
+#include "StarHash.hpp"
 #include "StarJson.hpp"
 import star.lexical_cast;
 #include "StarFormat.hpp"
@@ -5,7 +6,6 @@ import star.lexical_cast;
 import star.json_parser;
 import star.json_builder;
 import star.json_path;
-#include "StarIterator.hpp"
 #include "StarFile.hpp"
 
 namespace Star {

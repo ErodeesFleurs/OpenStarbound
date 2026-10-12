@@ -8,17 +8,12 @@ import star.observer_stream;
 #include "StarDataStream.hpp"
 import star.id_map;
 import star.either;
-#include "StarVector.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 #include "StarString.hpp"
 import star.color;
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

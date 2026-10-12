@@ -1,8 +1,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarDataStreamExtra.hpp"
 import star.id_map;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -19,11 +20,10 @@ import star.image;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
@@ -82,6 +82,8 @@ import star.plant_drop;
 import star.net_compatibility;
 import star.random;
 import star.byte_array;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 float const Plant::PlantScanThreshold = 0.1f;

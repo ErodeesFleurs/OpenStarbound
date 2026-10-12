@@ -8,17 +8,13 @@ import star.either;
 #include <memory>
 import star.id_map;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.math_common;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarVariant.hpp"
 import star.color;
 #include "StarMaybe.hpp"
@@ -29,7 +25,6 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include <functional>
@@ -38,10 +33,8 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -55,7 +48,7 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarLogging.hpp"
 
 import star.host_address;
@@ -110,6 +103,7 @@ import star.net_packets;
 import star.net_packet_socket;
 import star.compression;
 
+import star.algorithm;
 namespace Star {
 
 PacketStatCollector::PacketStatCollector() : PacketStatCollector(1.0f) {}

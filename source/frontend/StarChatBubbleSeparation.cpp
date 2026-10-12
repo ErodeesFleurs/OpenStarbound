@@ -1,11 +1,13 @@
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarList.hpp"
 
 
 import star.chat_bubble_separation;
 //#include "StarLogging.hpp"
 
+import star.vector;
+import star.algorithm;
 namespace Star {
 
 bool compareLeft(RectF const& a, RectF const& b) {

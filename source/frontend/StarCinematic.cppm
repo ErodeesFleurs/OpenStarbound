@@ -1,13 +1,12 @@
 module;
+#include "StarJson.hpp"
 #include "StarThread.hpp"
 import star.time;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -16,14 +15,13 @@ import star.asset_path;
 import star.input_event;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.text;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 
 import star.drawable;

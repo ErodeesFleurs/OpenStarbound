@@ -5,9 +5,7 @@
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -18,7 +16,6 @@ import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
 #include "StarLua.hpp"

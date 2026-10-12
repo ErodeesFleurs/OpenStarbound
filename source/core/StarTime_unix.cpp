@@ -1,6 +1,5 @@
 #include "StarThread.hpp"
 import star.time;
-#include "StarMathCommon.hpp"
 
 #include <sys/time.h>
 

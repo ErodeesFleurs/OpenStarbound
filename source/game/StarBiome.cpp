@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -11,9 +10,7 @@ import star.id_map;
 #include "StarDataStream.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -23,7 +20,6 @@ import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarVector.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -48,6 +44,7 @@ import star.tile_damage;
 import star.parallax;
 import star.ambient;
 
+import star.algorithm;
 namespace Star {
 
 BiomePlaceables::BiomePlaceables() {

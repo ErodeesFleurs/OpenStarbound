@@ -1,10 +1,12 @@
-#include "StarMultiArray.hpp"
-#include "StarInterpolation.hpp"
+import star.multi_array;
+import star.interpolation;
 import star.multi_array_interpolator;
 import star.multi_table;
 
 #include "gtest/gtest.h"
 
+import star.array;
+import star.math_common;
 using namespace Star;
 
 TEST(MultiArrayTest, All) {

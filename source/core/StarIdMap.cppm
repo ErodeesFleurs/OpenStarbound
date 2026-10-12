@@ -1,7 +1,7 @@
 module;
 
 #include "StarMap.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarDataStream.hpp"
 
 namespace Star {

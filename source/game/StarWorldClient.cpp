@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -13,27 +12,24 @@ import star.ttl_cache;
 import star.game_types;
 import star.material_types;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
-#include "StarIterator.hpp"
 #include "StarLogging.hpp"
-#include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarMultiArray.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
@@ -47,7 +43,6 @@ import star.version;
 import star.either;
 import star.audio;
 #include "StarMap.hpp"
-#include "StarArray.hpp"
 import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
@@ -63,7 +58,6 @@ import star.ref_ptr;
 import star.listener;
 import star.spatial_hash_2d;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include "StarLua.hpp"
 import star.periodic;
 import star.byte_array;
@@ -215,6 +209,8 @@ import star.entity_factory;
 
 import star.sky;
 
+import star.line;
+import star.algorithm;
 namespace Star {
 
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";

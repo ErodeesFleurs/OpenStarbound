@@ -2,10 +2,8 @@
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -21,7 +19,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarArray.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -30,7 +27,6 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.id_map;
-#include "StarMultiArray.hpp"
 #include "StarCasting.hpp"
 import star.net_compatibility;
 #include <functional>
@@ -39,16 +35,14 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.rpc_promise;
-#include "StarMathCommon.hpp"
+import star.math_common;
 
 #include "StarSystemWorldServer.inc"
 import star.celestial_coordinate;
@@ -107,6 +101,8 @@ import star.celestial_database;
 
 import star.byte_array;
 import star.static_random;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 SystemWorldServer::SystemWorldServer(Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)

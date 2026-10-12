@@ -9,7 +9,6 @@ import star.either;
 #include <random>
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"
@@ -27,8 +26,6 @@ import star.id_map;
 #include "StarMaybe.hpp"
 import star.lock_file;
 import star.game_types;
-#include "StarVector.hpp"
-#include "StarArray.hpp"
 import star.rpc_promise;
 import star.byte_array;
 
@@ -41,15 +38,10 @@ import star.zstd_compression;
 import star.net_compatibility;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarPoly.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -64,7 +56,7 @@ import star.color;
 import star.image;
 #include <atomic>
 #include <memory>
-#include "StarIterator.hpp"
+import star.iterator;
 
 
 import star.host_address;

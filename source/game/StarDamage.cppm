@@ -1,11 +1,11 @@
 module;
-
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
 #include "StarJson.hpp"
+
+import star.vector;
+#include "StarDataStream.hpp"
 import star.game_types;
 import star.damage_types;
-#include "StarPoly.hpp"
+import star.poly;
 import star.world_geometry;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
@@ -13,6 +13,7 @@ import star.id_map;
 import star.status_types;
 
 import star.either;
+import star.line;
 namespace Star {
 
 struct DamageSource {

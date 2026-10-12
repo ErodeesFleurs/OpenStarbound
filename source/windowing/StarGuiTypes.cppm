@@ -1,7 +1,7 @@
 module;
 
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.game_types;
 

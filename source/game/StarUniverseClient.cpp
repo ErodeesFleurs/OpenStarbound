@@ -3,15 +3,13 @@
 #include "StarJsonExtra.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.color;
 #include "StarBiMap.hpp"
 import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -20,7 +18,6 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
@@ -35,8 +32,7 @@ import star.net_compatibility;
 #include <atomic>
 #include <memory>
 import star.id_map;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include "StarOrderedMap.hpp"
 #include "StarCasting.hpp"
 #include <functional>
@@ -45,10 +41,8 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
 import star.rpc_promise;
@@ -62,7 +56,6 @@ import star.ref_ptr;
 import star.listener;
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 import star.time;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
@@ -194,6 +187,7 @@ import star.sky;
 
 import star.net_element;
 
+import star.algorithm;
 namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, String const& customWorldStorageDir) {

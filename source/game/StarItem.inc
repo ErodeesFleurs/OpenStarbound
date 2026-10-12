@@ -3,10 +3,8 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -16,7 +14,6 @@ import star.asset_path;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarVector.hpp"
 
 namespace Star {
 STAR_CLASS(Item);

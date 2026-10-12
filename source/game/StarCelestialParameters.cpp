@@ -1,9 +1,5 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -12,7 +8,6 @@ import star.color;
 import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -24,7 +19,6 @@ import star.static_random;
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -53,6 +47,7 @@ import star.particle;
 import star.weather_types;
 
 import star.byte_array;
+import star.pythonic;
 namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}

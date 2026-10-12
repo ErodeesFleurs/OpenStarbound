@@ -5,7 +5,6 @@
 import star.image;
 import star.color;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -23,6 +22,7 @@ import star.asset_source;
 import star.assets;
 import star.root_base;
 
+import star.vector;
 namespace Star {
 
 LuaMethods<Image> LuaUserDataMethods<Image>::make() {

@@ -1,13 +1,11 @@
 module;
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
-#include "StarInterpolation.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"

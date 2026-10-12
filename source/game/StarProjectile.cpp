@@ -1,13 +1,13 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
@@ -15,17 +15,15 @@ import star.material_types;
 import star.rpc_promise;
 #include "StarLogging.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarInterpolation.hpp"
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarIterator.hpp"
+import star.iterator;
 #include "StarOrderedMap.hpp"
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
 import star.color;
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -37,7 +35,6 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.random;
@@ -48,7 +45,6 @@ import star.audio;
 #include "StarString.hpp"
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 import star.collision_block;
 import star.item_descriptor;
@@ -120,6 +116,8 @@ import star.material_database;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.line;
+import star.math_common;
 namespace Star {
 
 Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters) {

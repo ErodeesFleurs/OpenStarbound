@@ -2,10 +2,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -14,7 +12,6 @@ import star.directives;
 import star.asset_path;
 import star.random;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -35,6 +32,7 @@ import star.root;
 
 import star.animation;
 
+import star.math_common;
 namespace Star {
 
 Animation::Animation() : Animation({}, {}) {}

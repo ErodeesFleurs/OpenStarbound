@@ -3,6 +3,7 @@ module;
 #include <cstdint>
 #include <cmath>
 
+import star.math_common;
 namespace Star {
 
 typedef uint16_t MaterialId;

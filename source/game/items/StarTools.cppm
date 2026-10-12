@@ -1,13 +1,12 @@
 module;
 #include "StarJson.hpp"
 import star.id_map;
-#include "StarVector.hpp"
+import star.vector;
 import star.spline;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarRect.hpp"
 import star.a_star;
 #include "StarConfig.hpp"
 import star.audio;
@@ -20,7 +19,6 @@ import star.audio;
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

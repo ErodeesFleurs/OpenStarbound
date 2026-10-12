@@ -2,7 +2,6 @@
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -15,18 +14,15 @@ import star.game_types;
 #include "StarSet.hpp"
 import star.json_rpc;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarFile.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -42,10 +38,7 @@ import star.rpc_promise;
 import star.audio;
 #include "StarMap.hpp"
 import star.a_star;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
-#include "StarMathCommon.hpp"
 import star.periodic;
 #include "StarOrderedSet.hpp"
 import star.either;
@@ -61,7 +54,6 @@ import star.zstd_compression;
 import star.net_compatibility;
 #include <atomic>
 #include <memory>
-#include "StarMultiArray.hpp"
 #include <functional>
 import star.worker_pool;
 
@@ -204,6 +196,7 @@ import star.object_database;
 import star.player_inventory;
 import star.client_context;
 
+import star.algorithm;
 namespace Star {
 
 extern EnumMap<QuestState> const QuestStateNames {

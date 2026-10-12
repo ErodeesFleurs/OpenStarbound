@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -13,22 +12,20 @@ import star.color;
 import star.font;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarStringView.hpp"
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarMaybe.hpp"
 import star.listener;
 import star.input_event;
 #include "StarThread.hpp"
-#include "StarVector.hpp"
 import star.game_types;
 #include "StarSet.hpp"
 import star.audio;
@@ -41,7 +38,6 @@ import star.version;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 

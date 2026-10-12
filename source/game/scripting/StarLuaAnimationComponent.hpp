@@ -1,18 +1,13 @@
 #pragma once
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -21,19 +16,16 @@ import star.directives;
 import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.game_types;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -60,6 +52,7 @@ import star.particle_database;
 
 import star.light_source;
 
+import star.algorithm;
 namespace Star {
 
 struct LuaAnimationComponentExceptionTag {

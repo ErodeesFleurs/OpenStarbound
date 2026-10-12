@@ -1,12 +1,10 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -19,6 +17,7 @@ import star.asset_path;
 import star.drawable;
 import star.animation;
 
+import star.vector;
 namespace Star {
 
 class InterfaceCursor {

@@ -17,7 +17,7 @@ import star.desktop_service;
 #include "discord/discord.h"
 #endif
 import star.platform_services_pc;
-#include "StarAlgorithm.hpp"
+import star.algorithm;
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
 import star.p2p_networking_service_pc;
@@ -27,7 +27,6 @@ import star.either;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
 

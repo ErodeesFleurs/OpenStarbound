@@ -9,6 +9,7 @@ import star.either;
 import star.stat_collection;
 import star.stat_set;
 
+import star.math_common;
 using namespace Star;
 
 bool withinAmount(float value, float target, float amount) {

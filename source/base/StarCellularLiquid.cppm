@@ -1,13 +1,15 @@
 module;
 #include "StarVariant.hpp"
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.random;
-#include "StarBlockAllocator.hpp"
+import star.block_allocator;
 
 
+import star.vector;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 struct CellularLiquidCollisionCell {};

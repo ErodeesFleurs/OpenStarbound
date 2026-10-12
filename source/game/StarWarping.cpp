@@ -1,16 +1,16 @@
+#include "StarHash.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
 #include "StarBiMap.hpp"
 import star.game_types;
 import star.warping;
 #include "StarDataStreamExtra.hpp"
 import star.lexical_cast;
-#include "StarJsonExtra.hpp"
 
 namespace Star {
 

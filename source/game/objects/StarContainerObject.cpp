@@ -2,7 +2,6 @@
 #include "StarJson.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -14,14 +13,12 @@ import star.game_types;
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarDataStream.hpp"
 import star.lexical_cast;
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.parametric_function;
 #include "StarLogging.hpp"
 import star.audio;
@@ -30,17 +27,15 @@ import star.audio;
 #include "StarSet.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.periodic;
 import star.periodic_function;
 #include "StarLua.hpp"
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 import star.listener;
@@ -114,6 +109,7 @@ import star.item_bag;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.algorithm;
 namespace Star {
 
 ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {

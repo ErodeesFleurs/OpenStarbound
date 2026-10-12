@@ -1,11 +1,11 @@
 module;
-
 #include "StarJson.hpp"
+
 import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 import star.either;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
 import star.sky_parameters;
 

@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
@@ -25,6 +24,7 @@ import star.root;
 
 import star.interpolation_tracker;
 
+import star.math_common;
 namespace Star {
 
 constexpr double VanillaStepsPerSecond = 60.0;

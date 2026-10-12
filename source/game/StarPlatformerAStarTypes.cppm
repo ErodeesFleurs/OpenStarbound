@@ -1,7 +1,9 @@
 module;
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
+import star.rect;
 #include "StarBiMap.hpp"
 import star.a_star;
 

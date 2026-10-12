@@ -1,8 +1,9 @@
+#include <array>
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarThread.hpp"
@@ -10,11 +11,9 @@ import star.game_types;
 #include "StarFormat.hpp"
 import star.time;
 #include "StarLogging.hpp"
-#include "StarInterpolation.hpp"
 import star.audio;
 #include <queue>
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"
 import star.image_processing;
@@ -60,6 +59,7 @@ constexpr int VOICE_MAX_PACKET_SIZE = 3 * 1276;
 
 constexpr uint16_t VOICE_VERSION = 1;
 
+import star.math_common;
 namespace Star {
 
 extern EnumMap<VoiceInputMode> const VoiceInputModeNames{

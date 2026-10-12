@@ -1,7 +1,12 @@
-#pragma once
+module;
 
-#include "StarLine.hpp"
+#include "fmt/ostream.h"
 #include "StarList.hpp"
+
+import star.array;
+import star.math_common;
+import star.vector;
+import star.line;
 
 namespace Star {
 
@@ -1074,3 +1079,15 @@ auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
 
 template <typename T, size_t N>
 struct fmt::formatter<Star::Box<T, N>> : ostream_formatter {};
+
+export module star.rect;
+
+export namespace Star {
+  using ::Star::Box;
+  using ::Star::Rect;
+  using ::Star::RectI;
+  using ::Star::RectU;
+  using ::Star::RectF;
+  using ::Star::RectD;
+  using ::Star::operator<<;
+}

@@ -1,11 +1,13 @@
 #include "StarIODevice.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.image;
 #include "StarLogging.hpp"
 
 #include <png.h>
 
 import star.memory;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 void logPngError(png_structp png_ptr, png_const_charp c) {

@@ -1,7 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 import star.weighted_pool;
@@ -10,10 +9,8 @@ import star.id_map;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -55,6 +52,8 @@ import star.root;
 
 
 import star.static_random;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 BiomeItem variantToBiomeItem(Json const& store) {

@@ -1,25 +1,25 @@
+#include <limits>
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.image;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarCasting.hpp"
 import star.random;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
+import star.rect;
 #include "StarIODevice.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -48,6 +48,8 @@ import star.material_database;
 
 
 import star.static_random;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 size_t const DefinitionsCacheSize = 20;

@@ -4,7 +4,6 @@ import star.random;
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
-#include "StarMathCommon.hpp"
 #include "StarThread.hpp"
 
 #include "StarString_windows.hpp"

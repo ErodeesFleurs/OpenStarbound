@@ -1,10 +1,10 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
+import star.poly;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
@@ -14,15 +14,12 @@ import star.rpc_promise;
 import star.game_types;
 import star.random;
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
 import star.parametric_function;
-#include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
 #include "StarThread.hpp"
 import star.time;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.ttl_cache;
 import star.audio;
@@ -31,7 +28,7 @@ import star.audio;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -40,7 +37,6 @@ import star.asset_path;
 import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 import star.listener;
@@ -119,6 +115,8 @@ import star.behavior_state;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.line;
+import star.algorithm;
 namespace Star {
 
 Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {

@@ -1,8 +1,11 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 
 #include "StarMap.hpp"
 
 import star.output_proxy;
+import star.algorithm;
 namespace Star {
 
 // Wraps a normal map type and provides an element order independent of the

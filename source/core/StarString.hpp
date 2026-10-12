@@ -1,16 +1,19 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
 
 #include "StarFormat.hpp"
 #include <compare>
 
 import star.byte_array;
 #include "StarMaybe.hpp"
-#include "StarHash.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarUnicode.inc"
 
+import star.pythonic;
 namespace Star {
 
 STAR_CLASS(StringList);

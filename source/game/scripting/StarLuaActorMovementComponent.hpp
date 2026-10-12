@@ -1,17 +1,15 @@
 #pragma once
-import star.id_map;
 #include "StarJson.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.a_star;
 
@@ -45,6 +43,8 @@ import star.actor_movement_controller;
 
 import star.movement_controller_lua_bindings;
 
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 // Wraps a LuaUpdatableComponent to handle the particularly tricky case of

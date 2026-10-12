@@ -1,9 +1,7 @@
-#pragma once
+module;
 
 #include <compare>
-
 #include <array>
-
 #include "StarHash.hpp"
 
 namespace Star {
@@ -223,4 +221,27 @@ size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const
   return hashval;
 }
 
+}
+
+export module star.array;
+
+export namespace Star {
+  using ::Star::Array;
+  using ::Star::Array2I;
+  using ::Star::Array2S;
+  using ::Star::Array2U;
+  using ::Star::Array2F;
+  using ::Star::Array2D;
+  using ::Star::Array3I;
+  using ::Star::Array3S;
+  using ::Star::Array3U;
+  using ::Star::Array3F;
+  using ::Star::Array3D;
+  using ::Star::Array4I;
+  using ::Star::Array4S;
+  using ::Star::Array4U;
+  using ::Star::Array4F;
+  using ::Star::Array4D;
+  using ::Star::hash;
+  using ::Star::operator<<;
 }

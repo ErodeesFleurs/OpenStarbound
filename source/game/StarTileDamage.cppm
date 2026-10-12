@@ -1,7 +1,7 @@
 module;
-
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+
+import star.vector;
 #include "StarBiMap.hpp"
 
 import star.net_element_basic_fields;

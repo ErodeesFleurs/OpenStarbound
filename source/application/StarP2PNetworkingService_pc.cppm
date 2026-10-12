@@ -18,7 +18,7 @@ import star.desktop_service;
 #include "discord/discord.h"
 #endif
 import star.platform_services_pc;
-#include "StarAlgorithm.hpp"
+import star.algorithm;
 #include "StarStrongTypedef.hpp"
 import star.either;
 #include "StarVariant.hpp"

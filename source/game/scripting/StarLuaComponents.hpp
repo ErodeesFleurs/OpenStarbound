@@ -1,16 +1,13 @@
 #pragma once
+#include "StarJson.hpp"
 import star.id_map;
-#include "StarMathCommon.hpp"
 import star.random;
 import star.periodic;
 #include "StarLogging.hpp"
 #include "StarThread.hpp"
 import star.listener;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"

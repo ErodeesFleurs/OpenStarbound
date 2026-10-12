@@ -1,10 +1,7 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -35,12 +32,8 @@ import star.listener;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
 import star.id_map;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
-#include "StarInterpolation.hpp"
 import star.rpc_promise;
 import star.net_compatibility;
 #include <functional>
@@ -50,7 +43,6 @@ import star.worker_pool;
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -66,7 +58,6 @@ import star.zstd_compression;
 #include <memory>
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 #include "StarLuaRoot.hpp"
 import star.celestial_coordinate;
@@ -212,6 +203,7 @@ import star.team_client;
 
 import star.quest_manager;
 
+import star.algorithm;
 namespace Star {
 
 TeleportDialog::TeleportDialog(UniverseClientPtr client,

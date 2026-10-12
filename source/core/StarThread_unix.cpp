@@ -26,6 +26,7 @@ import star.time;
 #define STAR_RECURSIVE_MUTEX_TIMED
 #endif
 
+import star.algorithm;
 namespace Star {
 
 struct ThreadImpl {

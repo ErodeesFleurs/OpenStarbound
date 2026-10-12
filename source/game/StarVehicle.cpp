@@ -6,12 +6,11 @@ import star.id_map;
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
 #include "StarLua.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
-#include "StarRect.hpp"
+import star.matrix3;
+import star.rect;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -24,20 +23,19 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 import star.game_types;
-#include "StarArray.hpp"
 import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.either;
@@ -113,6 +111,8 @@ import star.movement_controller_lua_bindings;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)

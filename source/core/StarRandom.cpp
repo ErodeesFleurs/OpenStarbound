@@ -1,6 +1,6 @@
 #include "StarXXHash.hpp"
 #include "StarThread.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 
 import star.random;
 import star.byte_array;

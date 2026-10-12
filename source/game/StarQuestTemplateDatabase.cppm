@@ -1,10 +1,10 @@
 module;
-
 #include "StarJson.hpp"
+
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;
-#include "StarVector.hpp"
+import star.vector;
 
 namespace Star {
 

@@ -1,20 +1,18 @@
 module;
-
 #include "StarJson.hpp"
+
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.mixer;
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -26,7 +24,6 @@ import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.drawable;
 #include "StarDataStream.hpp"
 import star.game_types;

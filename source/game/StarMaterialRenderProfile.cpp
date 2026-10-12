@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
@@ -11,10 +11,9 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarVector.hpp"
+import star.vector;
 import star.lexical_cast;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
@@ -35,6 +34,7 @@ import star.root;
 
 import star.image_metadata_database;
 
+import star.math_common;
 namespace Star {
 
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames = {

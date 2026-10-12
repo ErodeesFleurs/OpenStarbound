@@ -2,10 +2,8 @@
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -25,7 +23,6 @@ import star.id_map;
 #include "StarConfig.hpp"
 #include "StarString.hpp"
 import star.lock_file;
-#include "StarArray.hpp"
 import star.rpc_promise;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
@@ -38,14 +35,10 @@ import star.zstd_compression;
 import star.net_compatibility;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
-#include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarStrongTypedef.hpp"
 #include <functional>
@@ -164,6 +157,7 @@ import star.sky;
 
 import star.command_processor;
 
+import star.algorithm;
 namespace Star {
 
 UniverseServer::UniverseServer(String const& storageDir, bool const& isLocal)

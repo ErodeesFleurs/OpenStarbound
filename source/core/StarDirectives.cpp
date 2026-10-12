@@ -1,14 +1,13 @@
-#include "StarList.hpp"
-#include "StarRect.hpp"
-#include "StarJson.hpp"
-import star.image_processing;
 #include "StarHash.hpp"
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
+#include "StarList.hpp"
+import star.image_processing;
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
 import star.image;
-#include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {

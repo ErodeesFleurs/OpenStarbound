@@ -1,4 +1,5 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
@@ -6,13 +7,10 @@ module;
 #include "StarThread.hpp"
 import star.listener;
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 import star.image;
-#include "StarPoly.hpp"
 import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

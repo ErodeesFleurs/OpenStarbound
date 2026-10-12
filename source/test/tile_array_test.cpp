@@ -1,7 +1,7 @@
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
+import star.rect;
+import star.multi_array;
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
@@ -14,6 +14,7 @@ import star.tile_sector_array;
 
 #include "gtest/gtest.h"
 
+import star.array;
 using namespace Star;
 
 TEST(TileSectorArrayTest, All) {

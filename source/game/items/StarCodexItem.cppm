@@ -3,15 +3,13 @@ module;
 #include "StarJsonExtra.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -31,15 +29,12 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.audio;
 #include "StarMap.hpp"
 import star.either;
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 
 import star.drawable;

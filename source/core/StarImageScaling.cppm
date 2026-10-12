@@ -1,7 +1,9 @@
 module;
+#include "StarConfig.hpp"
 
-#include "StarInterpolation.hpp"
-#include "StarVector.hpp"
+import star.interpolation;
+import star.vector;
+import star.math_common;
 import star.image;
 
 export module star.image_scaling;

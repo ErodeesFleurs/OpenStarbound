@@ -1,8 +1,15 @@
-#pragma once
+module;
 
 #include <numeric>
+#include "StarList.hpp"
+#include "StarMaybe.hpp"
 
-#include "StarRect.hpp"
+import star.math_common;
+import star.algorithm;
+import star.vector;
+import star.matrix3;
+import star.line;
+import star.rect;
 
 namespace Star {
 
@@ -744,4 +751,14 @@ std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly) {
   return os;
 }
 
+}
+
+export module star.poly;
+
+export namespace Star {
+  using ::Star::Polygon;
+  using ::Star::PolyI;
+  using ::Star::PolyF;
+  using ::Star::PolyD;
+  using ::Star::operator<<;
 }

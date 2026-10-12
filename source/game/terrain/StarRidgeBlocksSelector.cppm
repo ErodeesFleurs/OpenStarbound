@@ -2,7 +2,6 @@ module;
 #include "StarJson.hpp"
 
 #include "StarBiMap.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.perlin;
 

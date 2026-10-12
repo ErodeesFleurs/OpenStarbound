@@ -3,27 +3,23 @@ module;
 #include "StarXXHash.hpp"
 import star.id_map;
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.random;
 import star.ttl_cache;
 import star.image;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarMathCommon.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarConfig.hpp"
 import star.version;
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -34,7 +30,6 @@ import star.either;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarInterpolation.hpp"
 #include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;
@@ -77,6 +72,7 @@ import star.cellular_lighting;
 import star.world_render_data;
 import star.material_render_profile;
 
+import star.array;
 namespace Star {
 
 STAR_CLASS(Assets);

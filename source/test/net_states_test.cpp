@@ -4,9 +4,9 @@
 #include "StarDataStreamDevices.hpp"
 #include "StarList.hpp"
 #include "StarString.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStreamExtra.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.net_element_basic_fields;
 import star.net_element_float_fields;
 import star.net_element_containers;
@@ -16,6 +16,7 @@ import star.net_element_signal;
 import star.net_element_system;
 import star.net_element_top;
 
+import star.math_common;
 using namespace Star;
 
 TEST(NetElements, DataRounding) {

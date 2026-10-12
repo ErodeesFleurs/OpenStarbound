@@ -1,7 +1,5 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.either;
@@ -11,12 +9,9 @@ import star.liquid_types;
 import star.material_types;
 #include "StarList.hpp"
 #include "StarVariant.hpp"
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
 #include "StarMap.hpp"
 #include "StarOrderedSet.hpp"
 import star.random;
-#include "StarBlockAllocator.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.lexical_cast;
@@ -47,6 +42,7 @@ import star.liquids_database;
 import star.material_database;
 
 
+import star.algorithm;
 namespace Star {
 
 LiquidSettings::LiquidSettings() : id(EmptyLiquidId) {}

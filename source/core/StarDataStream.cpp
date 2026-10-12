@@ -7,6 +7,7 @@ import star.vlq;
 
 import star.net_compatibility;
 import star.byte_array;
+import star.algorithm;
 namespace Star {
 
 unsigned const CurrentStreamVersion = 18; // update OpenProtocolVersion too!

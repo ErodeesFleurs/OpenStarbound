@@ -1,3 +1,6 @@
+#include "fmt/format.h"
+#include "fmt/ostream.h"
+#include "StarHash.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"
 import star.bytes;
@@ -7,6 +10,8 @@ import star.bytes;
 #include <re2/re2.h>
 
 import star.byte_array;
+import star.algorithm;
+import star.pythonic;
 namespace Star {
 
 bool String::isSpace(Char c) {

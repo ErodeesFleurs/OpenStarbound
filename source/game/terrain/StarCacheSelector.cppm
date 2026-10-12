@@ -2,9 +2,8 @@ module;
 #include "StarJson.hpp"
 
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarVector.hpp"
+import star.vector;
 
 export module star.terrain_cache;
 import star.terrain_database;

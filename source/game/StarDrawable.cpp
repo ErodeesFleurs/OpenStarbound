@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -11,16 +11,15 @@ import star.directives;
 import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
+import star.poly;
 import star.color;
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarLogging.hpp"
 import star.listener;
@@ -37,6 +36,8 @@ import star.root;
 
 import star.image_metadata_database;
 
+import star.matrix3;
+import star.line;
 namespace Star {
 
 Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) {

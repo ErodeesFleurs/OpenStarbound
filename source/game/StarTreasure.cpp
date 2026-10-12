@@ -1,10 +1,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.id_map;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
@@ -14,7 +13,6 @@ import star.rpc_promise;
 #include "StarSet.hpp"
 #include "StarString.hpp"
 import star.color;
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -30,15 +28,12 @@ import star.listener;
 import star.version;
 import star.random;
 import star.weighted_pool;
-#include "StarMathCommon.hpp"
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarLua.hpp"
 import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarMatrix3.hpp"
 
 import star.drawable;
 import star.item;
@@ -94,6 +89,7 @@ import star.treasure;
 import star.item_bag;
 
 import star.static_random;
+import star.algorithm;
 namespace Star {
 
 TreasureDatabase::TreasureDatabase() {

@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
-#include "StarRect.hpp"
-#include "StarVector.hpp"
+import star.rect;
+import star.vector;
 import star.game_types;
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"

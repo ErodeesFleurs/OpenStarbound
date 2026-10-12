@@ -1,12 +1,12 @@
 #pragma once
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 
 #include <type_traits>
 #include <utility>
 #include <initializer_list>
 
-#include "fmt/ostream.h"
 
-#include "StarAlgorithm.hpp"
 #include "StarMaybe.hpp"
 
 namespace Star {

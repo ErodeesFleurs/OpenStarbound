@@ -16,7 +16,7 @@ import star.encode;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -28,17 +28,14 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 #include "StarCasting.hpp"
 import star.lexical_cast;
-#include "StarRect.hpp"
 import star.image;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.random;
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 
 

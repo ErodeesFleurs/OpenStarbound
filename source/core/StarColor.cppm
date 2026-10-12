@@ -1,9 +1,12 @@
 module;
+#include "fmt/format.h"
+#include "fmt/ostream.h"
 
 #include "StarStringView.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarFormat.hpp"
 
+import star.math_common;
 namespace Star {
 
 struct ColorExceptionTag {

@@ -5,24 +5,19 @@ import star.id_map;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarInterpolation.hpp"
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.either;
 import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include "StarRect.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.ttl_cache;
 import star.perlin;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
+import star.vector;
 import star.random_point;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -50,7 +45,6 @@ import star.version;
 import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarVariant.hpp"
-#include "StarArray.hpp"
 import star.net_compatibility;
 import star.worker_pool;
 
@@ -63,7 +57,6 @@ import star.btree_database;
 #include <functional>
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 
 import star.item;
 import star.asset_source;
@@ -210,6 +203,7 @@ import star.object_database;
 
 import star.player_inventory;
 
+import star.algorithm;
 namespace Star {
 
 CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json const& settings, EntityId sourceEntityId) {

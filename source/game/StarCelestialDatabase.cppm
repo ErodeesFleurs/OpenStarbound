@@ -1,9 +1,8 @@
 module;
-
-#include "StarRect.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 #include "StarJson.hpp"
+
+import star.rect;
+#include "StarOrderedMap.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
@@ -16,11 +15,9 @@ import star.weighted_pool;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 import star.either;
-#include "StarVector.hpp"
+import star.vector;
 import star.celestial_coordinate;
-#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
 import star.color;
@@ -41,7 +38,6 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
-#include "StarInterpolation.hpp"
 import star.perlin;
 
 namespace Star {

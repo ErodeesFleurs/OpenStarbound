@@ -1,13 +1,12 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarDataStream.hpp"
 import star.rpc_promise;
-#include "StarJson.hpp"
 import star.game_types;
 import star.chat_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
 

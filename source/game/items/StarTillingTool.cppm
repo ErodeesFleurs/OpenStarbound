@@ -3,7 +3,6 @@ module;
 #include "StarJsonExtra.hpp"
 import star.random;
 import star.id_map;
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
@@ -11,13 +10,12 @@ import star.id_map;
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarRect.hpp"
 import star.a_star;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarString.hpp"

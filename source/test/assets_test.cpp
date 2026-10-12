@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -23,6 +22,7 @@ import star.directory_asset_source;
 
 #include "gtest/gtest.h"
 
+import star.algorithm;
 using namespace Star;
 
 namespace {

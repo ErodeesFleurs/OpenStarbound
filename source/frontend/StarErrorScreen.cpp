@@ -1,13 +1,11 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarString.hpp"
 import star.input_event;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -17,7 +15,6 @@ import star.asset_path;
 #include "StarCasting.hpp"
 import star.font;
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"

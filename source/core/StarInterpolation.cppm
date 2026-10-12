@@ -1,8 +1,11 @@
-#pragma once
+module;
 
-#include "StarMathCommon.hpp"
-#include "StarArray.hpp"
-#include "StarAlgorithm.hpp"
+#include "StarMaybe.hpp"
+#include "StarException.hpp"
+
+import star.math_common;
+import star.array;
+import star.algorithm;
 
 namespace Star {
 
@@ -448,4 +451,38 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
   return listInterpolate4(yvals, ipos, weightOp, bmode);
 }
 
+}
+
+export module star.interpolation;
+
+export namespace Star {
+  using ::Star::BoundMode;
+  using ::Star::InterpolationMode;
+  using ::Star::angleLerp;
+  using ::Star::sinEase;
+  using ::Star::lerp;
+  using ::Star::lerpWithLimit;
+  using ::Star::step;
+  using ::Star::halfStep;
+  using ::Star::cubic4;
+  using ::Star::catmulRom4;
+  using ::Star::hermite2;
+  using ::Star::quintic2;
+  using ::Star::LinearWeightOperator;
+  using ::Star::StepWeightOperator;
+  using ::Star::SinWeightOperator;
+  using ::Star::Hermite2WeightOperator;
+  using ::Star::Quintic2WeightOperator;
+  using ::Star::Cubic4WeightOperator;
+  using ::Star::Catmul4WeightOperator;
+  using ::Star::Bound2;
+  using ::Star::getBound2;
+  using ::Star::Bound4;
+  using ::Star::getBound4;
+  using ::Star::listInterpolate2;
+  using ::Star::listInterpolate4;
+  using ::Star::inverseLinearInterpolateLower;
+  using ::Star::inverseLinearInterpolateUpper;
+  using ::Star::parametricInterpolate2;
+  using ::Star::parametricInterpolate4;
 }

@@ -1,10 +1,13 @@
 module;
 
-#include "StarRect.hpp"
+import star.rect;
 #include "StarSet.hpp"
 import star.image;
 #include "StarCasting.hpp"
 
+import star.vector;
+import star.math_common;
+import star.algorithm;
 namespace Star {
 
 struct TextureAtlasExceptionTag {

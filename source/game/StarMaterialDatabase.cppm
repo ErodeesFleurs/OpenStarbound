@@ -1,14 +1,12 @@
 module;
-
 #include "StarJson.hpp"
+
 import star.color;
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarVector.hpp"
+import star.vector;
 import star.tile_damage;
 #include "StarList.hpp"
 import star.image_processing;

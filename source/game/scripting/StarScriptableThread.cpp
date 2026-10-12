@@ -3,15 +3,12 @@
 import star.id_map;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
 import star.rpc_promise;
-#include "StarVector.hpp"
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 import star.a_star;
 #include "StarString.hpp"
@@ -23,11 +20,9 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarLua.hpp"
-#include "StarInterpolation.hpp"
 import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
-#include "StarMatrix3.hpp"
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
@@ -98,6 +93,7 @@ import star.root;
 import star.tick_rate_monitor;
 import star.config_lua_bindings;
 
+import star.math_common;
 namespace Star {
 
 ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)

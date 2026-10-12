@@ -1,12 +1,12 @@
 module;
+#include "StarJson.hpp"
 
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
+import star.poly;
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -14,6 +14,9 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 
+import star.vector;
+import star.matrix3;
+import star.line;
 namespace Star {
 
 struct Drawable {

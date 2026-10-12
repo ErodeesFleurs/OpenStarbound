@@ -7,21 +7,18 @@ import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarPoly.hpp"
-#include "StarInterpolation.hpp"
+import star.interpolation;
 import star.image;
-#include "StarMultiArray.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -33,7 +30,6 @@ import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
 import star.ttl_cache;
@@ -48,7 +44,6 @@ import star.text;
 import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarVariant.hpp"
-#include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 import star.byte_array;
 
@@ -69,7 +64,6 @@ import star.btree_database;
 import star.rpc_promise;
 import star.a_star;
 import star.periodic_function;
-#include "StarMatrix3.hpp"
 #include <functional>
 #include <queue>
 

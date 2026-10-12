@@ -1,7 +1,7 @@
 module;
+#include "StarJson.hpp"
 import star.byte_array;
 
-#include "StarJson.hpp"
 #include <utility>
 
 #include "StarIODevice.hpp"
@@ -10,6 +10,7 @@ import star.asset_source;
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
 import star.image;
+import star.math_common;
 
 export module star.memory_asset_source;
 

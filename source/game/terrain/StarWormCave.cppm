@@ -1,13 +1,12 @@
 module;
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 
 #include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarVector.hpp"
-#include "StarJsonExtra.hpp"
+import star.vector;
 import star.random;
-#include "StarInterpolation.hpp"
+import star.math_common;
 
 export module star.terrain_worm_cave;
 import star.terrain_database;

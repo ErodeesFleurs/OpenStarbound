@@ -1,11 +1,11 @@
 #include "StarJson.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
 import star.font;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -14,7 +14,6 @@ import star.image_processing;
 import star.directives;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 import star.ref_ptr;
 #include "StarLogging.hpp"
@@ -25,7 +24,6 @@ import star.version;
 import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
@@ -66,6 +64,7 @@ import star.button_widget;
 import star.image_widget;
 import star.scroll_area;
 
+import star.math_common;
 namespace Star {
 
 // TODO: I hate these hardcoded values.  Please smite with fire.

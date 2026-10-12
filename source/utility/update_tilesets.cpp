@@ -1,10 +1,8 @@
 #include "StarJson.hpp"
-#include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.image;
@@ -15,24 +13,21 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.id_map;
-#include "StarMathCommon.hpp"
 import star.random;
 import star.periodic;
-#include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarSet.hpp"
 import star.color;
 #include "StarLua.hpp"
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
 import star.material_types;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarMatrix3.hpp"
 #include "StarVariant.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
@@ -87,6 +82,7 @@ import star.material_database;
 import star.object_database;
 
 
+import star.algorithm;
 using namespace Star;
 
 String const InboundNode = "/tilesets/inboundnode.png";

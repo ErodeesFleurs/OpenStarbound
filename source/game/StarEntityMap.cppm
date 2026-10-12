@@ -1,16 +1,14 @@
 module;
+#include "StarJson.hpp"
 import star.id_map;
-#include "StarRect.hpp"
+import star.rect;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarBlockAllocator.hpp"
-#include "StarJson.hpp"
 import star.spatial_hash_2d;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
+import star.vector;
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 
@@ -21,6 +19,7 @@ import star.damage;
 import star.light_source;
 import star.entity;
 
+import star.algorithm;
 namespace Star {
 
 STAR_CLASS(EntityMap);

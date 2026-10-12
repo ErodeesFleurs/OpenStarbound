@@ -1,11 +1,12 @@
 module;
 
-#include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarVector.hpp"
+import star.vector;
 import star.game_types;
-#include "StarInterpolation.hpp"
+import star.interpolation;
 
+import star.rect;
+import star.math_common;
 namespace Star {
 
 class WorldCamera {

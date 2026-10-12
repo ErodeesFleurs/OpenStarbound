@@ -6,6 +6,11 @@ import star.behavior_database;
 import star.behavior_state;
 import star.platformer_astar;
 
+import star.vector;
+import star.matrix3;
+import star.line;
+import star.rect;
+import star.poly;
 namespace Star {
 
 LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {

@@ -1,4 +1,5 @@
 module;
+#include "StarJson.hpp"
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;
@@ -7,11 +8,8 @@ import star.bytes;
 #include "StarThread.hpp"
 import star.time;
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -20,14 +18,12 @@ import star.asset_path;
 import star.input_event;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
-#include "StarVector.hpp"
 import star.text;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 import star.rpc_promise;
 import star.game_types;

@@ -5,18 +5,17 @@ import star.id_map;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarList.hpp"
-#include "StarRect.hpp"
+import star.rect;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarVector.hpp"
+import star.vector;
 #include "StarBiMap.hpp"
 import star.image;
-#include "StarPoly.hpp"
-#include "StarMultiArray.hpp"
+import star.poly;
 import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
@@ -27,14 +26,13 @@ import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarInterpolation.hpp"
 import star.listener;
 import star.perlin;
 import star.random_point;
 import star.lexical_cast;
 import star.time;
 #include "StarLogging.hpp"
-#include "StarMathCommon.hpp"
+import star.math_common;
 #include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;
@@ -81,6 +79,7 @@ import star.environment_painter;
 import star.world_camera;
 
 import star.static_random;
+import star.matrix3;
 namespace Star {
 
 float const EnvironmentPainter::SunriseTime = 0.072f;

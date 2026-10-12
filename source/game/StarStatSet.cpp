@@ -3,7 +3,7 @@
 #include "StarDataStream.hpp"
 import star.id_map;
 import star.status_types;
-#include "StarMathCommon.hpp"
+import star.math_common;
 
 import star.stat_set;
 
