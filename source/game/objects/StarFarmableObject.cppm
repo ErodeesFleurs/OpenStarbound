@@ -7,15 +7,14 @@ import star.game_types;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"

@@ -12,9 +12,8 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -22,7 +21,7 @@ import star.game_types;
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -32,19 +31,15 @@ import star.asset_path;
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarInputEvent.hpp"
-#include "StarFont.hpp"
-#include "StarStringView.hpp"
+import star.input_event;
+import star.font;
 import star.text;
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarJsonRpc.hpp"
+import star.json_rpc;
 #include "StarEither.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
@@ -54,7 +49,6 @@ import star.version;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 import star.weighted_pool;
 #include "StarByteArray.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -65,7 +59,6 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 #include "StarMultiArray.hpp"
@@ -78,9 +71,7 @@ import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
 import star.btree_database;
-#include "StarNetElementFloatFields.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
+import star.image;
 
 #include "StarLuaRoot.hpp"
 
@@ -185,9 +176,7 @@ import star.celestial_parameters;
 import star.chat_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
 import star.liquid_types;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;

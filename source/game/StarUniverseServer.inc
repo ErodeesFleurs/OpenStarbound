@@ -9,11 +9,10 @@ import star.lock_file;
 #include "StarThread.hpp"
 import star.game_types;
 #include "StarVector.hpp"
-#include "StarString.hpp"
 #include "StarEither.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarIODevice.hpp"
 #include "StarByteArray.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -37,7 +36,6 @@ import star.btree_database;
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 import star.version;
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -50,27 +48,19 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarSet.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarNetElementFloatFields.hpp"
+import star.image;
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 #include <atomic>
 #include <memory>
 
 import star.universe;
-import star.worker_pool;
 import star.celestial_coordinate;
 import star.host_address;
 import star.uuid;

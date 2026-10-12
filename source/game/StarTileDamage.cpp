@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarInterpolation.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"

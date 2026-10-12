@@ -2,7 +2,7 @@ module;
 
 #include "StarJson.hpp"
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"

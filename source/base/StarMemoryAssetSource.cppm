@@ -8,7 +8,7 @@ import star.asset_source;
 #include "StarIODevice.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarImage.hpp"
+import star.image;
 
 export module star.memory_asset_source;
 

@@ -1,11 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
+#include "StarInterpolation.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
@@ -13,7 +8,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -33,40 +28,11 @@ import star.asset_path;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
-#include "StarVariant.hpp"
-import star.game_types;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarMaybe.hpp"
 import star.time;
 #include "StarRandomPoint.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
-#include "StarEither.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarVector.hpp"
-#include "StarPoly.hpp"
-#include "StarVariant.hpp"
-import star.game_types;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarMaybe.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarEither.hpp"
-#include "StarVector.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarEither.hpp"
-#include "StarVector.hpp"
 
 import star.celestial_coordinate;
 import star.sky_types;
@@ -82,29 +48,8 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-import star.celestial_coordinate;
-import star.sky_types;
-import star.animation;
-import star.particle;
-import star.weather_types;
-import star.force_regions;
-import star.world_parameters;
-import star.celestial_parameters;
 import star.celestial_graphics;
 import star.mixer;
-import star.celestial_coordinate;
-import star.sky_types;
-import star.animation;
-import star.particle;
-import star.weather_types;
-import star.force_regions;
-import star.world_parameters;
-import star.celestial_parameters;
-import star.sky_types;
-import star.celestial_coordinate;
-import star.sky_parameters;
-import star.sky_types;
-import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
 
@@ -112,6 +57,8 @@ import star.sky;
 
 import star.compression;
 import star.celestial_database;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

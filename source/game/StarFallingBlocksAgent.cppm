@@ -11,22 +11,18 @@ import star.game_types;
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 #include <functional>
-import star.game_types;
 #include "StarMathCommon.hpp"
-#include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarThread.hpp"
 #include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -41,7 +37,6 @@ import star.version;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;

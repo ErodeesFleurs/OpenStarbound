@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -20,7 +20,6 @@ import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"

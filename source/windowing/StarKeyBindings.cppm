@@ -1,8 +1,9 @@
 module;
 
-#include "StarInputEvent.hpp"
-#include "StarSet.hpp"
 #include "StarJson.hpp"
+#include "StarBiMap.hpp"
+import star.input_event;
+#include "StarSet.hpp"
 
 namespace Star {
 

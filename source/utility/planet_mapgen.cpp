@@ -1,5 +1,4 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
@@ -8,7 +7,7 @@
 #include "StarVariant.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -23,12 +22,11 @@ import star.directives;
 import star.asset_path;
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarString.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -39,11 +37,8 @@ import star.lru_cache;
 import star.perlin;
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarList.hpp"
 
 import star.celestial_coordinate;
 import star.sky_types;

@@ -5,18 +5,17 @@
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -29,11 +28,15 @@ import star.asset_path;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElement.hpp"
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_dynamic_group;
+import star.net_element_system;
 
 namespace Star {
 STAR_CLASS(Npc);

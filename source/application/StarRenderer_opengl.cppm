@@ -1,9 +1,9 @@
 module;
 
 #include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarCasting.hpp"
 #include "StarJson.hpp"
+import star.image;
+#include "StarCasting.hpp"
 import star.texture_atlas;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"

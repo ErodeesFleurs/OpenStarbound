@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <list>
 
@@ -130,3 +130,23 @@ std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
 }
 
 template <> struct fmt::formatter<Star::FormattedJson> : ostream_formatter {};
+
+export module star.formatted_json;
+
+export namespace Star {
+  using ::Star::FormattedJson;
+  using ::Star::FormattedJsonPtr;
+  using ::Star::FormattedJsonConstPtr;
+  using ::Star::FormattedJsonWeakPtr;
+  using ::Star::FormattedJsonConstWeakPtr;
+  using ::Star::FormattedJsonUPtr;
+  using ::Star::FormattedJsonConstUPtr;
+  using ::Star::JsonElement;
+  using ::Star::ObjectElement;
+  using ::Star::ObjectKeyElement;
+  using ::Star::ValueElement;
+  using ::Star::WhitespaceElement;
+  using ::Star::ColonElement;
+  using ::Star::CommaElement;
+  using ::Star::operator<<;
+}

@@ -4,7 +4,7 @@
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -23,17 +23,13 @@ import star.game_types;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarNetElementSystem.hpp"
 #include "StarSet.hpp"
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

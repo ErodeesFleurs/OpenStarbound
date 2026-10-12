@@ -23,24 +23,21 @@ import star.asset_path;
 import star.listener;
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarCasting.hpp"
 #include "StarEither.hpp"
-#include "StarImage.hpp"
-#include "StarColor.hpp"
+import star.image;
+import star.color;
 #include "StarInterpolation.hpp"
 #include "StarVector.hpp"
 import star.game_types;
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarDataStream.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarSet.hpp"
 import star.worker_pool;
 
@@ -54,11 +51,7 @@ import star.perlin;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 
 import star.option_parser;
 import star.version_option_parser;
@@ -69,7 +62,6 @@ import star.configuration;
 import star.root;
 import star.root_loader;
 #include "StarLuaRoot.hpp"
-import star.worker_pool;
 import star.tile_sector_array;
 import star.collision_block;
 import star.damage_types;

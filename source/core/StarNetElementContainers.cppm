@@ -1,9 +1,10 @@
-#pragma once
+module;
 
 #include "StarMap.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarNetElement.hpp"
 #include "StarStrongTypedef.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -471,4 +472,12 @@ void NetElementMapWrapper<BaseMap>::applyChange(ElementChange change) {
   m_updated = true;
 }
 
+}
+
+export module star.net_element_containers;
+
+export namespace Star {
+  using ::Star::NetElementMapWrapper;
+  using ::Star::NetElementMap;
+  using ::Star::NetElementHashMap;
 }

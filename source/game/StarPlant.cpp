@@ -1,6 +1,5 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -14,26 +13,19 @@ import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarNetElementSystem.hpp"
+import star.rpc_promise;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarImage.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.image;
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
-#include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.game_types;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -84,6 +76,8 @@ import star.plant_database;
 
 
 import star.plant_drop;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

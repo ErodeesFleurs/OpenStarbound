@@ -22,7 +22,7 @@ import star.btree_database;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarList.hpp"

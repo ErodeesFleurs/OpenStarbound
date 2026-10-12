@@ -12,14 +12,13 @@ import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"

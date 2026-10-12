@@ -9,15 +9,11 @@ module;
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
-#include "StarRect.hpp"
-#include "StarAStar.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -45,7 +41,6 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-import star.platformer_astar_types;
 
 namespace Star {
 namespace PlatformerAStar {

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarStringView.hpp"
 #include "StarVector.hpp"
@@ -173,3 +173,12 @@ inline Vec4B Color::v4fToByte(Vec4F const& f, bool doClamp) {
 }
 
 template <> struct fmt::formatter<Star::Color> : ostream_formatter {};
+
+export module star.color;
+
+export namespace Star {
+  using ::Star::ColorExceptionTag;
+  using ::Star::ColorException;
+  using ::Star::Color;
+  using ::Star::operator<<;
+}

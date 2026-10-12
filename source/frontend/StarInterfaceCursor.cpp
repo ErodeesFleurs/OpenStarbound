@@ -12,7 +12,7 @@ import star.asset_path;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"

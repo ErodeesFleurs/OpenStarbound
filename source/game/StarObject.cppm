@@ -7,16 +7,15 @@ module;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
@@ -32,6 +31,11 @@ import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_system;
 
 namespace Star {
 STAR_CLASS(AudioInstance);

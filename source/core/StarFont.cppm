@@ -1,7 +1,8 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
-#include "StarImage.hpp"
+#include "StarVector.hpp"
+import star.image;
 #include "StarByteArray.hpp"
 #include "StarMap.hpp"
 
@@ -51,4 +52,25 @@ private:
   HashMap<pair<String::Char, unsigned>, unsigned> m_widthCache;
 };
 
+}
+
+export module star.font;
+
+export namespace Star {
+  using ::Star::FontExceptionTag;
+  using ::Star::FontException;
+  using ::Star::FontImpl;
+  using ::Star::FontImplPtr;
+  using ::Star::FontImplConstPtr;
+  using ::Star::FontImplWeakPtr;
+  using ::Star::FontImplConstWeakPtr;
+  using ::Star::FontImplUPtr;
+  using ::Star::FontImplConstUPtr;
+  using ::Star::Font;
+  using ::Star::FontPtr;
+  using ::Star::FontConstPtr;
+  using ::Star::FontWeakPtr;
+  using ::Star::FontConstWeakPtr;
+  using ::Star::FontUPtr;
+  using ::Star::FontConstUPtr;
 }

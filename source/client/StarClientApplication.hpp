@@ -3,10 +3,9 @@
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarEither.hpp"
@@ -22,7 +21,6 @@ import star.directives;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRect.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
@@ -32,30 +30,21 @@ import star.listener;
 #include "StarBiMap.hpp"
 import star.perlin;
 #include "StarRandomPoint.hpp"
-#include "StarFont.hpp"
-#include "StarStringView.hpp"
+import star.font;
 #include "StarString.hpp"
 #include "StarVector.hpp"
 import star.text;
 import star.game_types;
-#include "StarRpcPromise.hpp"
-#include "StarOrderedMap.hpp"
+import star.rpc_promise;
 #include "StarArray.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
-#include "StarString.hpp"
-#include "StarInputEvent.hpp"
-#include "StarDataStream.hpp"
+import star.input_event;
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.asset_path;
-#include "StarConfig.hpp"
 import star.lock_file;
 #include "StarIODevice.hpp"
 #include "StarByteArray.hpp"
@@ -75,9 +64,6 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include "StarVariant.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 #include <atomic>
 #include <memory>
 #include <functional>
@@ -86,7 +72,6 @@ import star.sector_array_2d;
 
 
 import star.universe;
-import star.worker_pool;
 import star.host_address;
 import star.tile_sector_array;
 import star.force_regions;

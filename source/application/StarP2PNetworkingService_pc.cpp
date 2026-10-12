@@ -1,6 +1,6 @@
 #include "StarThread.hpp"
-#include "StarInputEvent.hpp"
 #include "StarRandom.hpp"
+import star.input_event;
 import star.application;
 import star.host_address;
 import star.statistics_service;
@@ -18,7 +18,7 @@ import star.desktop_service;
 import star.platform_services_pc;
 #include "StarAlgorithm.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.p2p_networking_service_pc;
 #include "StarLexicalCast.hpp"
 #include "StarEither.hpp"

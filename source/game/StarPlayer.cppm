@@ -3,11 +3,10 @@ module;
 #include "StarIdMap.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
 #include "StarCasting.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
@@ -16,12 +15,12 @@ import star.game_types;
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -34,7 +33,6 @@ import star.asset_path;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 import star.uuid;
 import star.item_descriptor;
@@ -88,6 +86,12 @@ import star.player_types;
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
 import star.radio_message_database;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_dynamic_group;
+import star.net_element_system;
 
 namespace Star {
 

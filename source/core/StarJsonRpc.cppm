@@ -1,8 +1,8 @@
-#pragma once
+module;
 
 #include "StarJson.hpp"
 #include "StarByteArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 namespace Star {
 
@@ -51,4 +51,27 @@ private:
   uint64_t m_requestId;
 };
 
+}
+
+export module star.json_rpc;
+
+export namespace Star {
+using ::Star::JsonRpcInterface;
+using ::Star::JsonRpc;
+using ::Star::JsonRpcExceptionTag;
+using ::Star::JsonRpcException;
+using ::Star::JsonRpcRemoteFunction;
+using ::Star::JsonRpcHandlers;
+using ::Star::JsonRpcInterfacePtr;
+using ::Star::JsonRpcInterfaceConstPtr;
+using ::Star::JsonRpcInterfaceWeakPtr;
+using ::Star::JsonRpcInterfaceConstWeakPtr;
+using ::Star::JsonRpcInterfaceUPtr;
+using ::Star::JsonRpcInterfaceConstUPtr;
+using ::Star::JsonRpcPtr;
+using ::Star::JsonRpcConstPtr;
+using ::Star::JsonRpcWeakPtr;
+using ::Star::JsonRpcConstWeakPtr;
+using ::Star::JsonRpcUPtr;
+using ::Star::JsonRpcConstUPtr;
 }

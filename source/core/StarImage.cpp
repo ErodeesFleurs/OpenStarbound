@@ -1,4 +1,6 @@
-#include "StarImage.hpp"
+#include "StarIODevice.hpp"
+#include "StarVector.hpp"
+import star.image;
 #include "StarLogging.hpp"
 
 #include <png.h>

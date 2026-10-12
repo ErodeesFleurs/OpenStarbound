@@ -18,7 +18,6 @@ import star.game_types;
 import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarInterpolation.hpp"
@@ -27,10 +26,8 @@ import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarEither.hpp"
-#include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarColor.hpp"
-#include "StarInterpolation.hpp"
+import star.image;
+import star.color;
 #include "StarThread.hpp"
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
@@ -45,7 +42,6 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarSet.hpp"
 #include "StarOrderedMap.hpp"
 import star.lru_cache;
 #include "StarIODevice.hpp"
@@ -62,7 +58,6 @@ import star.entity;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;

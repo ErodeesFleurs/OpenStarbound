@@ -1,8 +1,8 @@
 module;
 
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
 #include "StarJson.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -11,9 +11,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarJson.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
 import star.tile_damage;
 

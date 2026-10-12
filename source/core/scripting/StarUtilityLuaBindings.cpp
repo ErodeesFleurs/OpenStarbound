@@ -11,6 +11,7 @@ import star.perlin;
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
+import star.rpc_promise;
 #include "StarLuaConverters.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"

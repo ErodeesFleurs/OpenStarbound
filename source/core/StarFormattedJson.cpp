@@ -1,6 +1,9 @@
-#include "StarFormattedJson.hpp"
-#include "StarJsonBuilder.hpp"
+#include "StarJson.hpp"
 #include "StarLexicalCast.hpp"
+
+import star.json_parser;
+import star.json_builder;
+import star.formatted_json;
 
 namespace Star {
 

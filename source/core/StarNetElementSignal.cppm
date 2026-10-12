@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarNetElement.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -141,4 +143,10 @@ List<Signal> NetElementSignal<Signal>::receive() {
   return received;
 }
 
+}
+
+export module star.net_element_signal;
+
+export namespace Star {
+  using ::Star::NetElementSignal;
 }

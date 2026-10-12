@@ -11,9 +11,8 @@ import star.liquid_types;
 import star.material_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 
 import star.damage_types;

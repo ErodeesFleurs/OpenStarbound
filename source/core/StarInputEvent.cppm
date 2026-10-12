@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
@@ -317,4 +317,38 @@ inline KeyMod& operator&=(KeyMod& a, KeyMod b) {
   return a;
 }
 
+}
+
+export module star.input_event;
+
+export namespace Star {
+  using ::Star::Key;
+  using ::Star::KeyNames;
+  using ::Star::KeyMod;
+  using ::Star::KeyModNames;
+  using ::Star::operator|;
+  using ::Star::operator&;
+  using ::Star::operator~;
+  using ::Star::operator|=;
+  using ::Star::operator&=;
+  using ::Star::MouseButton;
+  using ::Star::MouseButtonNames;
+  using ::Star::MouseWheel;
+  using ::Star::MouseWheelNames;
+  using ::Star::ControllerId;
+  using ::Star::ControllerAxis;
+  using ::Star::ControllerAxisNames;
+  using ::Star::ControllerButton;
+  using ::Star::ControllerButtonNames;
+  using ::Star::KeyDownEvent;
+  using ::Star::KeyUpEvent;
+  using ::Star::TextInputEvent;
+  using ::Star::MouseMoveEvent;
+  using ::Star::MouseButtonDownEvent;
+  using ::Star::MouseButtonUpEvent;
+  using ::Star::MouseWheelEvent;
+  using ::Star::ControllerAxisEvent;
+  using ::Star::ControllerButtonDownEvent;
+  using ::Star::ControllerButtonUpEvent;
+  using ::Star::InputEvent;
 }

@@ -1,16 +1,18 @@
 module;
 
 #include "StarJson.hpp"
+#include "StarArray.hpp"
 import star.game_types;
-#include "StarNetElementSystem.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
 import star.status_types;
 
+
+import star.net_element_basic_fields;
+import star.net_element_sync_group;
 
 namespace Star {
 

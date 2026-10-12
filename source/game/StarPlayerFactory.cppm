@@ -1,7 +1,5 @@
 module;
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
@@ -12,17 +10,14 @@ import star.game_types;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElement.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"

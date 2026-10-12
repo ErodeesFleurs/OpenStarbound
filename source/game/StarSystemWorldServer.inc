@@ -4,7 +4,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -19,11 +19,8 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarEither.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarNetElementSystem.hpp"
 
 import star.celestial_coordinate;
 import star.sky_types;

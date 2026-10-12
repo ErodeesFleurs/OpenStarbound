@@ -3,8 +3,8 @@ module;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarJson.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -15,7 +15,7 @@ import star.directives;
 import star.asset_path;
 import star.drawable;
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;

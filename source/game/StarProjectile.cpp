@@ -1,12 +1,10 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -14,8 +12,7 @@ import star.game_types;
 import star.liquid_types;
 import star.material_types;
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLogging.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarInterpolation.hpp"
@@ -27,7 +24,7 @@ import star.multi_table;
 #include "StarOrderedMap.hpp"
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -35,8 +32,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRect.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
@@ -47,7 +42,7 @@ import star.lru_cache;
 import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
@@ -120,6 +115,8 @@ import star.movement_controller_lua_bindings;
 import star.particle_database;
 import star.material_database;
 
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

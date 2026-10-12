@@ -2,7 +2,6 @@ module;
 #include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"

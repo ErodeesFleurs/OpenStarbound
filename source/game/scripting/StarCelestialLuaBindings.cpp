@@ -2,7 +2,6 @@ module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
-#include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
@@ -28,7 +27,6 @@ import star.zstd_compression;
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -48,19 +46,14 @@ import star.perlin;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
-#include "StarRpcPromise.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
-#include "StarAudio.hpp"
+import star.rpc_promise;
+import star.image;
+import star.audio;
 #include "StarMap.hpp"
-#include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
+import star.color;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
 import star.image_processing;
@@ -88,7 +81,6 @@ import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;

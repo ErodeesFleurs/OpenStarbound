@@ -3,9 +3,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.color;
+import star.font;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -15,24 +15,18 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
-#include "StarThread.hpp"
 import star.game_types;
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarConfig.hpp"
 import star.version;
@@ -53,13 +47,11 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 #include "StarIdMap.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include <functional>
 import star.worker_pool;
 
@@ -71,14 +63,11 @@ import star.perlin;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
-#include "StarRpcPromise.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
+import star.rpc_promise;
+import star.image;
 #include "StarLexicalCast.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 
 #include "StarLuaRoot.hpp"
@@ -131,11 +120,9 @@ import star.quest_descriptor;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;
@@ -156,7 +143,6 @@ import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
 import star.biome_placement;
-#include "StarLuaRoot.hpp"
 import star.versioning_database;
 import star.world_storage;
 import star.player_types;

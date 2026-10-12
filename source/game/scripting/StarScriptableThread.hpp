@@ -3,7 +3,7 @@
 #include "StarThread.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 namespace Star {
 

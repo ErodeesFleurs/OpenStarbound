@@ -10,11 +10,10 @@ module;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarNetElementSystem.hpp"
+import star.rpc_promise;
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -51,6 +50,10 @@ import star.animation;
 import star.particle;
 #include "StarLuaComponents.hpp"
 import star.effect_emitter;
+
+#include "StarDataStreamDevices.hpp"
+import star.net_element_basic_fields;
+import star.net_element_system;
 
 namespace Star {
 

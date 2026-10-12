@@ -1,14 +1,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
@@ -19,8 +15,7 @@ import star.material_types;
 #include "StarList.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -28,12 +23,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
-#include "StarRandom.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -44,11 +34,7 @@ import star.parametric_function;
 #include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarMaybe.hpp"
-#include "StarColor.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -79,7 +65,6 @@ import star.root_base;
 import star.configuration;
 import star.root;
 import star.tile_damage;
-import star.plant_database;
 import star.parallax;
 import star.stored_functions;
 import star.ambient;

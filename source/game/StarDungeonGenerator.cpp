@@ -5,7 +5,7 @@
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarVector.hpp"
 import star.game_types;
 import star.liquid_types;

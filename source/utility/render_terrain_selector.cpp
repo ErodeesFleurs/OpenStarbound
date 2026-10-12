@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarString.hpp"
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
@@ -23,7 +23,7 @@ import star.asset_path;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarRandom.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarMultiArray.hpp"
 
 import star.option_parser;

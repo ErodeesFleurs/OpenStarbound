@@ -1,9 +1,9 @@
 module;
 
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
-#include "StarPoly.hpp"
 #include "StarJson.hpp"
+import star.image;
+#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 

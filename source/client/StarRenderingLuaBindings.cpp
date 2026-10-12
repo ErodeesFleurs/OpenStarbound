@@ -7,7 +7,7 @@ module;
 #include "StarLuaConverters.hpp"
 #include "StarClientApplication.hpp"
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"

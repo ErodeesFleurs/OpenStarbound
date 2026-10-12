@@ -1,8 +1,9 @@
-#pragma once
+module;
 
 #include "StarSet.hpp"
-#include "StarNetElement.hpp"
 #include "StarDataStreamDevices.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -62,4 +63,10 @@ inline float NetElementGroup::netExtrapolationHint() const {
   return m_extrapolationHint;
 }
 
+}
+
+export module star.net_element_group;
+
+export namespace Star {
+  using ::Star::NetElementGroup;
 }

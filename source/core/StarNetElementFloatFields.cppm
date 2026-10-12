@@ -1,9 +1,11 @@
-#pragma once
+module;
 
 #include <type_traits>
 
-#include "StarNetElement.hpp"
+#include "StarDataStream.hpp"
 #include "StarInterpolation.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -247,4 +249,14 @@ T NetElementFloating<T>::interpolate() const {
   }
 }
 
+}
+
+export module star.net_element_float_fields;
+
+export namespace Star {
+  using ::Star::StepStreamExceptionTag;
+  using ::Star::StepStreamException;
+  using ::Star::NetElementFloating;
+  using ::Star::NetElementFloat;
+  using ::Star::NetElementDouble;
 }

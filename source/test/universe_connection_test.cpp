@@ -15,13 +15,12 @@
 import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarVariant.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
@@ -47,9 +46,7 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
+import star.rpc_promise;
 #include "StarByteArray.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -58,10 +55,6 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarIODevice.hpp"
-#include "StarString.hpp"
-#include "StarEither.hpp"
-#include "StarThread.hpp"
 
 import star.host_address;
 import star.socket;
@@ -71,7 +64,6 @@ import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;
@@ -115,9 +107,6 @@ import star.damage_manager;
 import star.net_packets;
 import star.net_packet_socket;
 import star.universe_connection;
-import star.host_address;
-import star.socket;
-import star.tcp;
 
 #include "gtest/gtest.h"
 

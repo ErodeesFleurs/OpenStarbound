@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -21,7 +21,7 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarRandom.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"

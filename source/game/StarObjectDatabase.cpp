@@ -1,13 +1,5 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -18,15 +10,13 @@ import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
 import star.ttl_cache;
-#include "StarThread.hpp"
 import star.game_types;
 import star.material_types;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -34,45 +24,21 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
-import star.game_types;
-import star.material_types;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
-#include "StarColor.hpp"
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
-import star.game_types;
-import star.material_types;
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 #include "StarIterator.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLogging.hpp"
-#include "StarPoly.hpp"
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
 #include "StarMathCommon.hpp"
 import star.periodic;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
@@ -90,7 +56,6 @@ import star.particle;
 import star.tile_damage;
 import star.damage_types;
 import star.status_types;
-import star.drawable;
 import star.entity_rendering_types;
 #include "StarLuaComponents.hpp"
 import star.status_effect_entity;
@@ -136,6 +101,8 @@ import star.image_metadata_database;
 import star.rebuilder;
 
 import star.light_source;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

@@ -1,5 +1,6 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -9,7 +10,6 @@ import star.game_types;
 import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarRect.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
@@ -17,13 +17,12 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarThread.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -33,12 +32,10 @@ import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarMathCommon.hpp"
 
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;
@@ -51,7 +48,6 @@ import star.celestial_parameters;
 import star.world_layout;
 import star.collision_generator;
 import star.world_tiles;
-import star.liquid_types;
 
 namespace Star {
 

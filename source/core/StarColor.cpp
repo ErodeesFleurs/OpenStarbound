@@ -1,10 +1,12 @@
-#include "StarColor.hpp"
 #include "StarMap.hpp"
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 import star.encode;
 #include "StarFormat.hpp"
 #include "StarInterpolation.hpp"
+#include "StarStringView.hpp"
+#include "StarVector.hpp"
+import star.color;
 
 namespace Star {
 

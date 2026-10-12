@@ -2,14 +2,12 @@ set (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
-    StarAudio.hpp
     StarBTree.hpp
     StarBiMap.hpp
     StarBlockAllocator.hpp
     StarByteArray.hpp
     StarBytes.hpp
     StarCasting.hpp
-    StarColor.hpp
     StarConfig.hpp
     StarDataStream.hpp
     StarDataStreamDevices.hpp
@@ -19,22 +17,15 @@ set (star_core_HEADERS
     StarFile.hpp
     StarFlatHashMap.hpp
     StarFlatHashSet.hpp
-    StarFont.hpp
     StarFormat.hpp
     StarHash.hpp
     StarIODevice.hpp
     StarIdMap.hpp
-    StarImage.hpp
-    StarInputEvent.hpp
     StarInterpolation.hpp
     StarRefPtr.hpp
     StarIterator.hpp
     StarJson.hpp
-    StarJsonBuilder.hpp
     StarJsonExtra.hpp
-    StarJsonParser.hpp
-    StarJsonRpc.hpp
-    StarFormattedJson.hpp
     StarLexicalCast.hpp
     StarLine.hpp
     StarList.hpp
@@ -48,17 +39,6 @@ set (star_core_HEADERS
     StarMemory.hpp
     StarMultiArray.hpp
     StarNetCompatibility.hpp
-    StarNetElement.hpp
-    StarNetElementBasicFields.hpp
-    StarNetElementContainers.hpp
-    StarNetElementDynamicGroup.hpp
-    StarNetElementExt.hpp
-    StarNetElementFloatFields.hpp
-    StarNetElementGroup.hpp
-    StarNetElementSignal.hpp
-    StarNetElementSyncGroup.hpp
-    StarNetElementSystem.hpp
-    StarNetElementTop.hpp
     StarNetImpl.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
@@ -69,7 +49,6 @@ set (star_core_HEADERS
     StarRandom.hpp
     StarRandomPoint.hpp
     StarRect.hpp
-    StarRpcPromise.hpp
     StarSet.hpp
     StarSpline.hpp
     StarStaticRandom.hpp
@@ -84,31 +63,19 @@ set (star_core_HEADERS
   )
 
 set (star_core_SOURCES
-    StarAudio.cpp
     StarByteArray.cpp
-    StarColor.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
     StarFile.cpp
-    StarFont.cpp
     StarIODevice.cpp
-    StarImage.cpp
-    StarInputEvent.cpp
     StarJson.cpp
-    StarJsonBuilder.cpp
     StarJsonExtra.cpp
-    StarJsonRpc.cpp
-    StarFormattedJson.cpp
     StarLexicalCast.cpp
     StarLogging.cpp
     StarLua.cpp
     StarLuaConverters.cpp
     StarMemory.cpp
     StarNetCompatibility.cpp
-    StarNetElement.cpp
-    StarNetElementBasicFields.cpp
-    StarNetElementGroup.cpp
-    StarNetElementSyncGroup.cpp
     StarRandom.cpp
     StarString.cpp
     StarStringView.cpp
@@ -153,6 +120,13 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarUuid.cppm StarHostAddress.cppm StarSocket.cppm StarTcp.cppm
           StarWorkerPool.cppm StarOptionParser.cppm StarShellParser.cppm
           StarJsonPath.cppm
+          StarJsonParser.cppm StarJsonBuilder.cppm StarFormattedJson.cppm
+          StarRpcPromise.cppm StarJsonRpc.cppm
+          StarNetElement.cppm StarNetElementBasicFields.cppm
+          StarNetElementContainers.cppm StarNetElementDynamicGroup.cppm
+          StarNetElementExt.cppm StarNetElementFloatFields.cppm
+          StarNetElementGroup.cppm StarNetElementSignal.cppm
+          StarNetElementSyncGroup.cppm StarNetElementSystem.cppm StarNetElementTop.cppm
           StarAssetPath.cppm
           StarBTreeDatabase.cppm
           StarBuffer.cppm
@@ -177,10 +151,18 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarMultiTable.cppm
           StarMultiArrayInterpolator.cppm
           StarSpatialHash2D.cppm
+          StarAudio.cppm
+          StarColor.cppm
+          StarFont.cppm
+          StarImage.cppm
+          StarInputEvent.cppm
           StarSectorArray2D.cppm)
 target_sources (star_modules PRIVATE
     StarUuid.cpp StarHostAddress.cpp StarSocket.cpp StarTcp.cpp
     StarWorkerPool.cpp StarOptionParser.cpp StarShellParser.cpp StarJsonPath.cpp
+    StarJsonBuilder.cpp StarFormattedJson.cpp StarJsonRpc.cpp
+    StarNetElement.cpp StarNetElementBasicFields.cpp
+    StarNetElementGroup.cpp StarNetElementSyncGroup.cpp
     StarAssetPath.cpp
     StarBTreeDatabase.cpp
     StarBuffer.cpp
@@ -194,6 +176,11 @@ target_sources (star_modules PRIVATE
     StarUnicode.inc
     StarZSTDCompression.cpp
     StarListener.cpp
+    StarAudio.cpp
+    StarColor.cpp
+    StarFont.cpp
+    StarImage.cpp
+    StarInputEvent.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 if (STAR_SYSTEM_FAMILY_UNIX)
   target_sources (star_modules PRIVATE StarLockFile_unix.cpp StarTime_unix.cpp)

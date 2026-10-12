@@ -20,7 +20,7 @@ import star.directives;
 import star.asset_path;
 #include "StarRefPtr.hpp"
 import star.listener;
-#include "StarImage.hpp"
+import star.image;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarVector.hpp"

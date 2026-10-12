@@ -1,7 +1,7 @@
 module;
 #include "StarConfig.hpp"
 #include "StarJson.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.game_types;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"

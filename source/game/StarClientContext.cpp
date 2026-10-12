@@ -1,21 +1,12 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarJson.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarJsonRpc.hpp"
+import star.json_rpc;
 import star.game_types;
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-import star.game_types;
-#include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
-#include "StarVector.hpp"
-import star.game_types;
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
@@ -33,7 +24,7 @@ import star.btree_database;
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -45,17 +36,14 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarThread.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarSet.hpp"
-#include "StarBiMap.hpp"
 #include "StarEither.hpp"
 #include "StarDataStreamExtra.hpp"
 
@@ -63,7 +51,6 @@ import star.asset_path;
 import star.damage_types;
 import star.celestial_coordinate;
 import star.uuid;
-import star.celestial_coordinate;
 import star.warping;
 import star.world_geometry;
 import star.status_types;
@@ -73,7 +60,6 @@ import star.entity;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;

@@ -10,14 +10,11 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

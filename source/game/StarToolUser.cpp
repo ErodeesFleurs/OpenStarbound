@@ -1,32 +1,13 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarNetElementSystem.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
-import star.game_types;
 #include "StarPoly.hpp"
-#include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -35,17 +16,14 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-import star.game_types;
 #include "StarVariant.hpp"
-#include "StarList.hpp"
 #include "StarCasting.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 #include "StarConfig.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarMathCommon.hpp"
 #include "StarRandom.hpp"
 import star.periodic;
@@ -54,8 +32,6 @@ import star.periodic_function;
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -64,7 +40,6 @@ import star.version;
 #include "StarAStar.hpp"
 #include "StarSpline.hpp"
 import star.observer_stream;
-#include "StarNetElementExt.hpp"
 #include "StarEither.hpp"
 
 // Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
@@ -84,11 +59,9 @@ import star.item;
 import star.item_descriptor;
 import star.item_recipe;
 import star.humanoid;
-import star.item_descriptor;
 import star.status_types;
 import star.damage_types;
 import star.world_geometry;
-import star.status_types;
 import star.damage;
 import star.drawable;
 import star.entity_rendering_types;
@@ -156,6 +129,8 @@ import star.object_database;
 import star.effect_emitter;
 
 import star.light_source;
+
+import star.net_element;
 
 namespace Star {
 

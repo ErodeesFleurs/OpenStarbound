@@ -1,9 +1,13 @@
 module;
 
 #include "StarRect.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
+#include "StarNetCompatibility.hpp"
 import star.game_types;
+
+#include "StarByteArray.hpp"
+import star.net_element_basic_fields;
+import star.net_element_system;
 
 namespace Star {
 

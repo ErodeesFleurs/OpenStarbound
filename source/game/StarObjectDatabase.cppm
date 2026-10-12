@@ -14,7 +14,7 @@ import star.game_types;
 import star.material_types;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -23,22 +23,10 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarDataStream.hpp"
-import star.game_types;
-import star.material_types;
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
-#include "StarColor.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
-import star.game_types;
-import star.material_types;
-#include "StarDataStream.hpp"
 #include "StarCasting.hpp"
-#include "StarList.hpp"
 
 import star.item_descriptor;
 import star.animation;

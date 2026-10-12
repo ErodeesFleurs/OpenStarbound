@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarNetElementGroup.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element_group;
 
 namespace Star {
 
@@ -48,4 +50,11 @@ private:
   function<void()> m_netElementsNeedStore;
 };
 
+}
+
+export module star.net_element_sync_group;
+
+export namespace Star {
+  using ::Star::NetElementSyncGroup;
+  using ::Star::NetElementCallbackGroup;
 }

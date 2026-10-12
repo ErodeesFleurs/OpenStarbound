@@ -1,7 +1,8 @@
 module;
 
 #include "StarRect.hpp"
-#include "StarImage.hpp"
+#include "StarSet.hpp"
+import star.image;
 #include "StarCasting.hpp"
 
 namespace Star {

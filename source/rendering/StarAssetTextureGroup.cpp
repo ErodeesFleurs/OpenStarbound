@@ -24,7 +24,7 @@ import star.time;
 import star.version;
 
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarPoly.hpp"
 import star.renderer;
 import star.asset_texture_group;

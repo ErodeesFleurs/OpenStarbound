@@ -6,7 +6,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -33,7 +33,6 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
 #include "StarBiMap.hpp"
 
 import star.celestial_coordinate;

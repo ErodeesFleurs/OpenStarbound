@@ -13,10 +13,10 @@ import star.ttl_cache;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarSet.hpp"
-#include "StarJsonRpc.hpp"
+import star.json_rpc;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -25,21 +25,15 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarVector.hpp"
-#include "StarThread.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarInputEvent.hpp"
-#include "StarFont.hpp"
-#include "StarStringView.hpp"
+import star.input_event;
+import star.font;
 import star.text;
 #include "StarMaybe.hpp"
 import star.listener;
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarRandom.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -58,13 +52,11 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 #include "StarIdMap.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include <functional>
 import star.worker_pool;
 
@@ -74,14 +66,11 @@ import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
 import star.btree_database;
-#include "StarRpcPromise.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
+import star.rpc_promise;
+import star.image;
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 #include "StarLuaRoot.hpp"
 #include "StarLuaActorMovementComponent.hpp"
@@ -138,11 +127,9 @@ import star.chat_types;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;

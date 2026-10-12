@@ -2,9 +2,11 @@ module;
 
 #include "StarThread.hpp"
 #include "StarJson.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 import star.game_types;
+
+import star.net_element_basic_fields;
+import star.net_element_sync_group;
 
 namespace Star {
 

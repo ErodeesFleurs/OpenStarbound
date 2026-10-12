@@ -8,12 +8,10 @@ import star.game_types;
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarEither.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.color;
+import star.font;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -23,24 +21,19 @@ import star.image_processing;
 import star.directives;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
 #include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 
 
@@ -62,7 +55,7 @@ import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 import star.application_controller;
 import star.renderer;
 import star.asset_source;

@@ -11,7 +11,7 @@ import star.game_types;
 import star.time;
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include <queue>
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -33,13 +33,13 @@ typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
 typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 import star.voice;
-#include "StarInputEvent.hpp"
+import star.input_event;
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 import star.application_controller;
 import star.asset_source;
 import star.assets;

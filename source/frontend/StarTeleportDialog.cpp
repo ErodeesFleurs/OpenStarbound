@@ -7,7 +7,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -21,34 +21,27 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.font;
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarIdMap.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarNetCompatibility.hpp"
 #include <functional>
 import star.worker_pool;
@@ -69,13 +62,11 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 #include "StarLuaRoot.hpp"
 import star.celestial_coordinate;
@@ -128,7 +119,6 @@ import star.teleport_dialog;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;
@@ -176,7 +166,6 @@ import star.host_address;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.world_client_thread;

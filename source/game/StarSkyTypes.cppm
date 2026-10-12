@@ -1,8 +1,9 @@
 module;
 
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
 #include "StarJson.hpp"
+#include "StarVector.hpp"
+import star.color;
+#include "StarBiMap.hpp"
 
 namespace Star {
 

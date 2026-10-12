@@ -1,8 +1,5 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
@@ -16,33 +13,22 @@ import star.ttl_cache;
 import star.game_types;
 import star.material_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
-import star.material_types;
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRect.hpp"
-#include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
-import star.game_types;
-import star.material_types;
-#include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
@@ -53,17 +39,14 @@ import star.multi_array_interpolator;
 import star.multi_table;
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.asset_path;
-#include "StarImage.hpp"
+import star.image;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarEither.hpp"
-#include "StarThread.hpp"
-#include "StarInterpolation.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
@@ -75,14 +58,12 @@ import star.sector_array_2d;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
 import star.spatial_hash_2d;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include "StarLua.hpp"
 import star.periodic;
 #include "StarByteArray.hpp"
@@ -92,7 +73,6 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 
@@ -125,7 +105,6 @@ import star.item;
 import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;

@@ -1,8 +1,7 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -17,16 +16,11 @@ import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
 import star.game_types;
 import star.liquid_types;
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

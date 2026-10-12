@@ -4,7 +4,7 @@ module;
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
 #include "StarJson.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarMathCommon.hpp"
 #include <cstdint>
 #include <cmath>

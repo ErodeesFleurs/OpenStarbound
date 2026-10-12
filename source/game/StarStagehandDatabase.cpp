@@ -9,7 +9,6 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"

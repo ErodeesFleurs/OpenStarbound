@@ -1,5 +1,4 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -8,7 +7,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -25,7 +24,6 @@ import star.asset_path;
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -36,17 +34,13 @@ import star.lru_cache;
 import star.perlin;
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
+import star.image;
 #include "StarMathCommon.hpp"
 #include "StarArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.worker_pool;
 
 #include "thread"
@@ -56,10 +50,7 @@ import star.sector_array_2d;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
-#include "StarNetElementFloatFields.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 
 #include "StarLuaRoot.hpp"
 import star.celestial_coordinate;
@@ -99,7 +90,6 @@ import star.plant_database;
 import star.biome_placement;
 import star.sky_parameters;
 import star.world_template;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.tile_modification;
 import star.world;

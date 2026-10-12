@@ -1,15 +1,15 @@
 module;
 
 #include "StarSet.hpp"
-#include "StarJsonRpc.hpp"
 #include "StarJson.hpp"
+import star.json_rpc;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -26,8 +26,6 @@ import star.celestial_coordinate;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-import star.item_descriptor;
-import star.celestial_coordinate;
 import star.quest_descriptor;
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
@@ -35,8 +33,6 @@ import star.quest_descriptor;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-import star.celestial_coordinate;
-import star.game_types;
 import star.warping;
 
 namespace Star {

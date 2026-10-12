@@ -12,7 +12,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 

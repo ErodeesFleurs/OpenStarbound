@@ -6,7 +6,7 @@ import star.game_types;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
@@ -19,7 +19,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
@@ -36,12 +35,9 @@ import star.zstd_compression;
 #include <atomic>
 #include <memory>
 #include "StarIdMap.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarCasting.hpp"
 #include <functional>
 #include "StarSet.hpp"
@@ -55,28 +51,22 @@ import star.perlin;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
-#include "StarRpcPromise.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
-#include "StarAudio.hpp"
+import star.rpc_promise;
+import star.image;
+import star.audio;
 #include "StarMap.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
 import star.version;
 #include "StarRefPtr.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 import star.time;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
-#include "StarThread.hpp"
 import star.encode;
 #include "StarLua.hpp"
 
@@ -99,7 +89,6 @@ import star.p2p_networking_service;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.collision_generator;
@@ -202,6 +191,8 @@ import star.statistics;
 import star.team_client;
 
 import star.sky;
+
+import star.net_element;
 
 namespace Star {
 

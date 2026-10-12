@@ -3,7 +3,6 @@ module;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -14,7 +13,7 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 import star.mobile_entity;
 import star.actor_movement_controller;

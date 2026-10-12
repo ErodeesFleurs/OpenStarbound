@@ -1,6 +1,5 @@
 #include "StarJson.hpp"
 #include "StarRect.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 import star.game_types;
 #include "StarDataStreamExtra.hpp"

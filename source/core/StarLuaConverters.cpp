@@ -1,5 +1,5 @@
 #include "StarLuaConverters.hpp"
-#include "StarColor.hpp"
+import star.color;
 
 namespace Star {
 

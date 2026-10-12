@@ -5,10 +5,8 @@
 #include "StarRandom.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
@@ -25,8 +23,6 @@ import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
@@ -57,7 +53,6 @@ import star.root_base;
 import star.configuration;
 import star.root;
 
-import star.plant_database;
 
 namespace Star {
 

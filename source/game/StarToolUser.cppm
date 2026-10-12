@@ -5,7 +5,7 @@ import star.game_types;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -14,35 +14,18 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarNetElementSystem.hpp"
-#include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
-#include "StarDataStream.hpp"
-import star.game_types;
-#include "StarPoly.hpp"
-#include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
-#include "StarColor.hpp"
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
-import star.game_types;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarList.hpp"
 
 import star.drawable;
 import star.item_descriptor;
 import star.status_types;
 import star.damage_types;
 import star.world_geometry;
-import star.status_types;
 import star.damage;
-import star.drawable;
 import star.entity_rendering_types;
 import star.entity;
 import star.collision_block;
@@ -50,6 +33,12 @@ import star.force_regions;
 import star.physics_entity;
 
 import star.light_source;
+
+#include "StarDataStreamDevices.hpp"
+import star.net_element;
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_sync_group;
 
 namespace Star {
 

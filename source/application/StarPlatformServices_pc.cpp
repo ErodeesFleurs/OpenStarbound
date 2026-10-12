@@ -1,6 +1,6 @@
 #include "StarLogging.hpp"
 #include "StarThread.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;
@@ -18,7 +18,7 @@ import star.platform_services_pc;
 
 #include "StarAlgorithm.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.p2p_networking_service_pc;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION

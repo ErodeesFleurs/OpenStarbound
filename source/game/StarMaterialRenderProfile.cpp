@@ -2,6 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -9,16 +10,13 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 import star.game_types;
 import star.material_types;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

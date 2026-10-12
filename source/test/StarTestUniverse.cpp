@@ -20,11 +20,9 @@ import star.version;
 #include "StarFile.hpp"
 #include "StarIdMap.hpp"
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
@@ -32,23 +30,20 @@ import star.game_types;
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarEither.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 import star.weighted_pool;
-#include "StarInterpolation.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
 import star.worker_pool;
@@ -61,7 +56,6 @@ import star.perlin;
 import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
-#include "StarNetElementFloatFields.hpp"
 #include "StarLua.hpp"
 
 #include "StarTestUniverse.hpp"
@@ -125,7 +119,6 @@ import star.player_types;
 import star.radio_message_database;
 import star.player;
 import star.liquid_types;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.weather_types;
 import star.sky_types;

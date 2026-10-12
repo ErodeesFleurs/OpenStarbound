@@ -1,15 +1,13 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLogging.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -27,12 +25,11 @@ import star.time;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.ttl_cache;
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -40,11 +37,9 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarLua.hpp"
 import star.periodic_function;
-#include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
@@ -52,7 +47,6 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.observer_stream;
-#include "StarNetElementExt.hpp"
 #include "StarEither.hpp"
 
 #include "StarMonster.inc"

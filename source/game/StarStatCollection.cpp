@@ -1,5 +1,4 @@
 #include "StarEither.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"

@@ -2,9 +2,9 @@ module;
 
 #include "StarEither.hpp"
 #include "StarRect.hpp"
-#include "StarImage.hpp"
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.image;
+import star.color;
 #include "StarInterpolation.hpp"
 #include "StarList.hpp"
 #include "StarVector.hpp"

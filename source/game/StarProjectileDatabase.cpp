@@ -1,13 +1,11 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -22,13 +20,10 @@ import star.game_types;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarNetElementSystem.hpp"
+import star.rpc_promise;
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -73,6 +68,8 @@ import star.configuration;
 import star.root;
 
 import star.projectile_database;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

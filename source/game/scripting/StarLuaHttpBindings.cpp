@@ -22,7 +22,7 @@ import star.asset_path;
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
 import star.listener;
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 
 import star.configuration;

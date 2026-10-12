@@ -23,7 +23,7 @@ import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"

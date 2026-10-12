@@ -1,7 +1,6 @@
 module;
 
 #include "StarEither.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
@@ -9,6 +8,11 @@ module;
 import star.status_types;
 
 import star.stat_set;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_sync_group;
 
 namespace Star {
 

@@ -6,7 +6,7 @@ module;
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 import star.host_address;
 

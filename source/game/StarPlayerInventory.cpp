@@ -1,8 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -14,34 +12,25 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
-#include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarMultiArray.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarSet.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -50,13 +39,12 @@ import star.listener;
 import star.version;
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarEither.hpp"
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 #include "StarLuaRoot.hpp"
 
@@ -91,7 +79,6 @@ import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
 import star.inventory_types;
-import star.item_descriptor;
 import star.asset_source;
 import star.assets;
 import star.root_base;
@@ -140,6 +127,9 @@ import star.material_item;
 import star.object_item;
 import star.item_bag;
 
+
+import star.net_element_basic_fields;
+import star.net_element_sync_group;
 
 namespace Star {
 

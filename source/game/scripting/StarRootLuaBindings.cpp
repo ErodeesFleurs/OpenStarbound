@@ -1,9 +1,6 @@
 module;
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -17,9 +14,8 @@ import star.game_types;
 import star.liquid_types;
 import star.material_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -31,36 +27,19 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
-import star.liquid_types;
-import star.material_types;
 #include "StarPoly.hpp"
-#include "StarList.hpp"
-#include "StarBiMap.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-#include "StarRect.hpp"
-import star.game_types;
-import star.liquid_types;
-import star.material_types;
 #include "StarInterpolation.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarLua.hpp"
 import star.parametric_function;
 #include "StarMultiArray.hpp"
 import star.multi_array_interpolator;
 import star.multi_table;
-#include "StarRandom.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarThread.hpp"
+import star.color;
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -69,10 +48,9 @@ import star.listener;
 import star.version;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
-#include "StarNetElement.hpp"
-#include "StarImage.hpp"
+import star.image;
 
 
 #include "StarLuaRoot.hpp"
@@ -105,7 +83,6 @@ import star.item_descriptor;
 import star.item_database;
 import star.item_recipe;
 import star.collision_block;
-import star.item_descriptor;
 import star.inspectable_entity;
 import star.plant;
 import star.plant_database;
@@ -167,7 +144,6 @@ import star.npc_database;
 import star.image_metadata_database;
 import star.biome_database;
 import star.material_database;
-import star.plant_database;
 
 
 namespace Star::LuaBindings {

@@ -12,36 +12,29 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
 #include "StarEither.hpp"
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarNetElementSystem.hpp"
 #include "StarLogging.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarFont.hpp"
-#include "StarStringView.hpp"
+import star.input_event;
+import star.font;
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarBlockAllocator.hpp"
@@ -51,7 +44,7 @@ import star.ttl_cache;
 import star.perlin;
 #include "StarRandomPoint.hpp"
 #include "StarArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarByteArray.hpp"
 import star.encode;
 #include "StarBytes.hpp"
@@ -60,7 +53,6 @@ import star.encode;
 import star.version;
 #include "StarStrongTypedef.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarInterpolation.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -71,7 +63,6 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 import star.worker_pool;
@@ -80,12 +71,10 @@ import star.worker_pool;
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 import star.btree_database;
-#include "StarNetElementFloatFields.hpp"
 #include <functional>
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include "StarLua.hpp"
 
 #include "StarLuaRoot.hpp"
@@ -106,8 +95,6 @@ import star.root;
 import star.host_address;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.tile_modification;
@@ -340,14 +327,12 @@ import star.bookmark_interface;
 
 
 import star.teleport_dialog;
-import star.cinematic;
 
 
 
 
 import star.chat_bubble_separation;
 
-import star.world_camera;
 
 
 import star.nameplate_painter;

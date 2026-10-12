@@ -19,13 +19,12 @@ import star.time;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLua.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -74,6 +73,8 @@ import star.weather;
 import star.projectile_database;
 import star.biome_database;
 
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

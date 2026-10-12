@@ -2,10 +2,10 @@ module;
 
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
+#include "StarJson.hpp"
+import star.input_event;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"

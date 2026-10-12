@@ -1,5 +1,5 @@
 #include "StarDataStream.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarJson.hpp"
 import star.game_types;
 import star.chat_types;

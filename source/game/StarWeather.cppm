@@ -1,11 +1,10 @@
 module;
 
-#include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -21,6 +20,10 @@ import star.particle;
 import star.weather_types;
 #include "StarPoly.hpp"
 import star.world_geometry;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_system;
 
 namespace Star {
 

@@ -1,9 +1,11 @@
-#pragma once
+module;
 
-#include "StarNetElement.hpp"
 #include "StarIdMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarDataStreamDevices.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -324,4 +326,10 @@ void NetElementDynamicGroup<Element>::readyElement(ElementPtr const& element) {
     element->disableNetInterpolation();
 }
 
+}
+
+export module star.net_element_dynamic_group;
+
+export namespace Star {
+  using ::Star::NetElementDynamicGroup;
 }

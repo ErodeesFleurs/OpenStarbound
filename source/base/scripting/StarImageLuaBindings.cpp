@@ -2,7 +2,8 @@
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarImage.hpp"
+import star.image;
+import star.color;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"

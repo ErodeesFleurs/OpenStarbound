@@ -1,6 +1,7 @@
 module;
 #include "StarIdMap.hpp"
 #include "StarJson.hpp"
+import star.color;
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarDataStream.hpp"
@@ -8,7 +9,6 @@ import star.game_types;
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 
 import star.world_geometry;

@@ -3,7 +3,6 @@
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
 import star.status_types;
-#include "StarNetElementSystem.hpp"
 #include "StarEither.hpp"
 
 #include "gtest/gtest.h"

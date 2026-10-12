@@ -4,7 +4,7 @@
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 import star.buffer;
@@ -20,8 +20,8 @@ import star.io_device_callbacks;
 
 namespace Star {
 
-float const DefaultPerceptualRangeDb = 40.f;
-float const DefaultPerceptualBoostRangeDb = 6.f;
+extern float const DefaultPerceptualRangeDb = 40.f;
+extern float const DefaultPerceptualBoostRangeDb = 6.f;
 // https://github.com/discord/perceptual
 float perceptualToAmplitude(float perceptual, float normalizedMax, float range, float boostRange) {
   if (perceptual == 0.f) return 0.f;

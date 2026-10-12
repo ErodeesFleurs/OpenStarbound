@@ -4,10 +4,8 @@ module;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
-#include "StarJson.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -22,9 +20,7 @@ import star.asset_path;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 import star.uuid;
 import star.drawable;

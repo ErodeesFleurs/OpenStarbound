@@ -4,10 +4,9 @@
 import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarIdMap.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarEither.hpp"
@@ -17,7 +16,7 @@ import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarRect.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
 #include "StarNetCompatibility.hpp"
@@ -37,33 +36,24 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.color;
+import star.font;
 #include "StarList.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 import star.directives;
-#include "StarBiMap.hpp"
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
-#include "StarInputEvent.hpp"
-#include "StarThread.hpp"
-#include "StarVector.hpp"
-#include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.input_event;
+import star.audio;
 #include "StarMap.hpp"
 #include "StarByteArray.hpp"
 
@@ -72,7 +62,6 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 
@@ -82,7 +71,6 @@ import star.world_geometry;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.particle;
 import star.weather_types;
@@ -169,7 +157,6 @@ import star.host_address;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
 import star.net_packet_socket;
 import star.universe_connection;
 import star.world_client_thread;

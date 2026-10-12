@@ -2,7 +2,7 @@
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 import star.time;
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"

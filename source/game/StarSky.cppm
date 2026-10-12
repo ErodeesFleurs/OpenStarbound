@@ -1,14 +1,13 @@
 module;
 
 #include "StarEither.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
@@ -29,17 +28,12 @@ import star.weather_types;
 import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
-#include "StarColor.hpp"
-import star.sky_types;
-#include "StarEither.hpp"
-import star.celestial_coordinate;
-import star.sky_parameters;
-#include "StarColor.hpp"
-import star.sky_types;
-#include "StarEither.hpp"
-import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_system;
 
 namespace Star {
 

@@ -1,8 +1,9 @@
-#include "StarInputEvent.hpp"
+#include "StarBiMap.hpp"
+import star.input_event;
 
 namespace Star {
 
-EnumMap<Key> const KeyNames{
+extern EnumMap<Key> const KeyNames{
   {Key::Backspace, "Backspace"},
   {Key::Tab, "Tab"},
   {Key::Clear, "Clear"},
@@ -144,7 +145,7 @@ EnumMap<Key> const KeyNames{
   {Key::Power, "Power"}
 };
 
-EnumMap<KeyMod> const KeyModNames{
+extern EnumMap<KeyMod> const KeyModNames{
   {KeyMod::NoMod, "NoMod"},
   {KeyMod::LShift, "LShift"},
   {KeyMod::RShift, "RShift"},
@@ -159,7 +160,7 @@ EnumMap<KeyMod> const KeyModNames{
   {KeyMod::AltGr, "AltGr"}
 };
 
-EnumMap<MouseButton> const MouseButtonNames{
+extern EnumMap<MouseButton> const MouseButtonNames{
   {MouseButton::Left, "MouseLeft"},
   {MouseButton::Middle, "MouseMiddle"},
   {MouseButton::Right, "MouseRight"},
@@ -167,12 +168,12 @@ EnumMap<MouseButton> const MouseButtonNames{
   {MouseButton::FifthButton, "MouseFifth"}
 };
 
-EnumMap<MouseWheel> const MouseWheelNames{
+extern EnumMap<MouseWheel> const MouseWheelNames{
   {MouseWheel::Up, "MouseWheelUp"},
   {MouseWheel::Down, "MouseWheelDown"}
 };
 
-EnumMap<ControllerAxis> const ControllerAxisNames{
+extern EnumMap<ControllerAxis> const ControllerAxisNames{
   {ControllerAxis::LeftX, "LeftX"},
   {ControllerAxis::LeftY, "LeftY"},
   {ControllerAxis::RightX, "RightX"},
@@ -181,7 +182,7 @@ EnumMap<ControllerAxis> const ControllerAxisNames{
   {ControllerAxis::TriggerRight, "TriggerRight"},
 };
 
-EnumMap<ControllerButton> const ControllerButtonNames{
+extern EnumMap<ControllerButton> const ControllerButtonNames{
   {ControllerButton::A, "A"},
   {ControllerButton::B, "B"},
   {ControllerButton::X, "X"},

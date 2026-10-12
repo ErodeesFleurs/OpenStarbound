@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarString.hpp"
 #include "StarVector.hpp"
@@ -38,7 +38,8 @@ public:
   static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
   // Creates a zero size image
-  Image(PixelFormat pf = PixelFormat::RGBA32);
+  Image() : Image(PixelFormat::RGBA32) {}
+  Image(PixelFormat pf);
   Image(Vec2U size, PixelFormat pf = PixelFormat::RGBA32);
   Image(unsigned width, unsigned height, PixelFormat pf = PixelFormat::RGBA32);
   ~Image();
@@ -331,4 +332,22 @@ struct ImageView {
   PixelFormat format = PixelFormat::RGB24;
 };
 
+}
+
+export module star.image;
+
+export namespace Star {
+  using ::Star::PixelFormat;
+  using ::Star::bitsPerPixel;
+  using ::Star::bytesPerPixel;
+  using ::Star::ImageExceptionTag;
+  using ::Star::ImageException;
+  using ::Star::ImageView;
+  using ::Star::Image;
+  using ::Star::ImagePtr;
+  using ::Star::ImageConstPtr;
+  using ::Star::ImageWeakPtr;
+  using ::Star::ImageConstWeakPtr;
+  using ::Star::ImageUPtr;
+  using ::Star::ImageConstUPtr;
 }

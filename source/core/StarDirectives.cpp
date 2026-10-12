@@ -7,7 +7,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarImage.hpp"
+import star.image;
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 

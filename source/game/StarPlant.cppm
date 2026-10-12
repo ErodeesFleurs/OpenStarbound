@@ -2,7 +2,6 @@ module;
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
@@ -34,6 +33,10 @@ import star.collision_block;
 import star.tile_entity;
 import star.tile_damage;
 import star.inspectable_entity;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_system;
 
 namespace Star {
 

@@ -5,11 +5,10 @@
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -20,14 +19,11 @@ import star.directives;
 import star.asset_path;
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 #include "StarIterator.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -36,7 +32,6 @@ import star.listener;
 import star.version;
 #include "StarLexicalCast.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRandom.hpp"
 import star.game_types;
 
 import star.animated_part_set;

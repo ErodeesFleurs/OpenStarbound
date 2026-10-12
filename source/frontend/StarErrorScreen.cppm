@@ -2,12 +2,12 @@ module;
 
 #include "StarVector.hpp"
 #include "StarString.hpp"
-#include "StarInputEvent.hpp"
-
 #include "StarJson.hpp"
+import star.input_event;
+
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;

@@ -1,29 +1,17 @@
 module;
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarThread.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarJsonRpc.hpp"
-#include "StarRpcPromise.hpp"
+import star.json_rpc;
+import star.rpc_promise;
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
-import star.game_types;
 import star.game_types;
 #include "StarString.hpp"
 #include "StarEither.hpp"
-#include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarArray.hpp"
-#include "StarDataStream.hpp"
-#include "StarVector.hpp"
-import star.game_types;
 #include "StarBiMap.hpp"
-#include "StarEither.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
@@ -51,22 +39,18 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 
 
 import star.uuid;
 import star.damage_types;
 import star.host_address;
-import star.celestial_coordinate;
-import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
 import star.player_types;
@@ -78,7 +62,6 @@ import star.entity;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;
@@ -104,6 +87,9 @@ import star.versioning_database;
 import star.world_storage;
 import star.sky_parameters;
 import star.system_world;
+
+import star.net_element_basic_fields;
+import star.net_element_system;
 
 namespace Star {
 

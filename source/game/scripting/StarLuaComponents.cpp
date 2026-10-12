@@ -16,6 +16,7 @@ import star.asset_path;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
+import star.rpc_promise;
 
 #include "StarLuaComponents.hpp"
 import star.asset_source;

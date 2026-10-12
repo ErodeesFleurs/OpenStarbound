@@ -10,15 +10,14 @@ module;
 #include "StarCasting.hpp"
 #include "StarEither.hpp"
 #include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarColor.hpp"
+import star.image;
+import star.color;
 #include "StarInterpolation.hpp"
 #include "StarVector.hpp"
 #include "StarThread.hpp"
 import star.game_types;
 import star.material_types;
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarString.hpp"
@@ -33,7 +32,7 @@ import star.asset_path;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarSet.hpp"
 import star.worker_pool;
 
@@ -49,14 +48,9 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 
 #include "StarLuaRoot.hpp"
-import star.worker_pool;
 import star.tile_sector_array;
 import star.collision_block;
 import star.damage_types;

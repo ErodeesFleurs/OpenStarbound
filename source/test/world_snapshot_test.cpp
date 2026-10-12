@@ -1,7 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarXXHash.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -11,7 +10,7 @@
 #include "StarVariant.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -24,10 +23,8 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarVector.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFile.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -35,18 +32,15 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarIdMap.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarCasting.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarInterpolation.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarSet.hpp"
 import star.worker_pool;
 
@@ -60,11 +54,7 @@ import star.perlin;
 import star.lru_cache;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 #include <iostream>
 
 import star.celestial_coordinate;
@@ -76,14 +66,12 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
-import star.celestial_coordinate;
 import star.asset_source;
 import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
 #include "StarLuaRoot.hpp"
-import star.worker_pool;
 import star.tile_sector_array;
 import star.collision_block;
 import star.damage_types;

@@ -1,15 +1,14 @@
 module;
 
-#include "StarColor.hpp"
-#include "StarRect.hpp"
 #include "StarJson.hpp"
+import star.color;
+#include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 import star.tile_damage;
 #include "StarList.hpp"
 import star.image_processing;
@@ -19,8 +18,6 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.material_render_profile;
-#include "StarNetElementSystem.hpp"
-import star.tile_damage;
 
 namespace Star {
 

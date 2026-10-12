@@ -10,13 +10,13 @@ import star.game_types;
 #include "StarDataStreamDevices.hpp"
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarInputEvent.hpp"
+import star.input_event;
 import star.application;
 import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 #include "StarRect.hpp"
 import star.application_controller;
 #include <queue>

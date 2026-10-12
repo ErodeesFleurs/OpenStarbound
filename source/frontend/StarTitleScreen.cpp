@@ -9,7 +9,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -26,24 +26,18 @@ import star.asset_path;
 #include "StarByteArray.hpp"
 import star.encode;
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarFont.hpp"
-#include "StarStringView.hpp"
+import star.input_event;
+import star.font;
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarArray.hpp"
 #include "StarLua.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarNetElementSystem.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarStrongTypedef.hpp"
@@ -62,7 +56,6 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 #include "StarNetCompatibility.hpp"
-#include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
 import star.worker_pool;
@@ -73,12 +66,10 @@ import star.sector_array_2d;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.btree_database;
-#include "StarRpcPromise.hpp"
-#include "StarNetElementFloatFields.hpp"
+import star.rpc_promise;
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include <functional>
 
 #include "StarLuaRoot.hpp"
@@ -101,8 +92,6 @@ import star.quest_descriptor;
 import star.ai_types;
 import star.socket;
 import star.tcp;
-import star.p2p_networking_service;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.world_layout;
 import star.tile_modification;

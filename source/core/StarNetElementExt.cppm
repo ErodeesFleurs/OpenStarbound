@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarNetElement.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -82,4 +84,9 @@ inline void NetElementOverride<BaseNetElement>::setOverrides(NetStorer netStorer
   m_netDeltaReader = std::move(netDeltaReader);
 }
 
+}
+export module star.net_element_ext;
+
+export namespace Star {
+  using ::Star::NetElementOverride;
 }

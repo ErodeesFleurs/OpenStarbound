@@ -6,9 +6,9 @@
 import star.game_types;
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.color;
+import star.font;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -33,7 +33,7 @@ import star.asset_path;
 import star.listener;
 #include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarLua.hpp"
@@ -47,7 +47,7 @@ import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 import star.application_controller;
 #include "StarVariant.hpp"
 import star.renderer;

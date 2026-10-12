@@ -13,7 +13,7 @@ import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
 #include "StarThread.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 namespace Star {
 

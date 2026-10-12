@@ -1,6 +1,7 @@
 module;
 
-#include "StarInputEvent.hpp"
+#include "StarString.hpp"
+import star.input_event;
 import star.application;
 #include "StarMap.hpp"
 #include "StarRect.hpp"

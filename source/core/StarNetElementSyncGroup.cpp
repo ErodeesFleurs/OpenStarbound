@@ -1,4 +1,7 @@
-#include "StarNetElementSyncGroup.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element_group;
+import star.net_element_sync_group;
 
 namespace Star {
 

@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarRect.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarPoly.hpp"

@@ -6,7 +6,7 @@ import star.material_types;
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -20,7 +20,6 @@ import star.asset_path;
 import star.animation;
 import star.particle;
 import star.weather_types;
-#include "StarColor.hpp"
 import star.sky_types;
 
 namespace Star {

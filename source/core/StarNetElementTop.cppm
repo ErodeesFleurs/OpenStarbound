@@ -1,6 +1,8 @@
-#pragma once
+module;
 
-#include "StarNetElement.hpp"
+#include "StarDataStreamDevices.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -73,4 +75,9 @@ void NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpola
   }
 }
 
+}
+export module star.net_element_top;
+
+export namespace Star {
+  using ::Star::NetElementTop;
 }

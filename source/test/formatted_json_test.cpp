@@ -1,6 +1,7 @@
-#include "StarFormattedJson.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJson.hpp"
+#include "StarLexicalCast.hpp"
+
+import star.formatted_json;
 import star.json_path;
 
 #include "gtest/gtest.h"

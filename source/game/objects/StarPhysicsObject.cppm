@@ -16,11 +16,10 @@ import star.game_types;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
-#include "StarNetElementSystem.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
@@ -71,6 +70,9 @@ import star.collision_block;
 import star.force_regions;
 import star.physics_entity;
 
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
 
 namespace Star {
 

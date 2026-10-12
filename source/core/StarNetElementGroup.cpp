@@ -1,4 +1,7 @@
-#include "StarNetElementGroup.hpp"
+#include "StarDataStreamDevices.hpp"
+
+import star.net_element;
+import star.net_element_group;
 
 namespace Star {
 

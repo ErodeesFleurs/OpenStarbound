@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarDataStream.hpp"
 
@@ -76,4 +76,11 @@ inline bool NetElement::checkWithRules(NetCompatibilityRules const& rules) const
   return true;
 }
 
+}
+
+export module star.net_element;
+
+export namespace Star {
+  using ::Star::NetElementVersion;
+  using ::Star::NetElement;
 }

@@ -2,8 +2,6 @@ module;
 #include "StarJson.hpp"
 #include "StarList.hpp"
 import star.observer_stream;
-#include "StarNetElementSystem.hpp"
-#include "StarNetElementExt.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
@@ -17,7 +15,7 @@ import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -26,9 +24,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarBiMap.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
@@ -49,6 +45,15 @@ import star.networked_animator;
 import star.entity_rendering_types;
 import star.stat_collection;
 import star.status_effect_database;
+
+import star.net_element;
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_dynamic_group;
+import star.net_element_ext;
+import star.net_element_group;
+import star.net_element_sync_group;
 
 namespace Star {
 

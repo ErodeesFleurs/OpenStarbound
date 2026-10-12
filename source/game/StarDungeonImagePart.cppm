@@ -27,7 +27,7 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarCasting.hpp"
-#include "StarImage.hpp"
+import star.image;
 
 
 import star.item_descriptor;

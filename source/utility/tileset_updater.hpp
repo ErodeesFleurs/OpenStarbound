@@ -1,5 +1,5 @@
-#include "StarImage.hpp"
 #include "StarJson.hpp"
+import star.image;
 
 import star.tileset_database;
 

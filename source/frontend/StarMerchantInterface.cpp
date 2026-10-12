@@ -12,37 +12,32 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.color;
+import star.font;
 #include "StarList.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
 #include "StarPoly.hpp"
 import star.asset_path;
 import star.listener;
-#include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
@@ -50,7 +45,6 @@ import star.version;
 #include "StarEither.hpp"
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
 #include "StarNetCompatibility.hpp"
 #include <functional>
@@ -63,13 +57,11 @@ import star.perlin;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 #include "StarLuaRoot.hpp"
 
@@ -102,7 +94,6 @@ import star.item_database;
 import star.item_recipe;
 
 import star.liquid_types;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.particle;
 import star.weather_types;

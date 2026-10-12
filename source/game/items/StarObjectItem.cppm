@@ -9,7 +9,7 @@ import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -19,18 +19,14 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarRect.hpp"
+import star.rpc_promise;
 #include "StarAStar.hpp"
 #include "StarSpline.hpp"
 #include "StarString.hpp"
 #include "StarLogging.hpp"
 #include "StarSet.hpp"
 #include "StarOrderedMap.hpp"
-#include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
@@ -42,7 +38,7 @@ import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarLuaRoot.hpp"

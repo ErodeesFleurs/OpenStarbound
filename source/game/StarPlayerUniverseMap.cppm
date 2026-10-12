@@ -1,16 +1,13 @@
 module;
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarVector.hpp"
 import star.game_types;
-#include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -24,14 +21,11 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarEither.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarNetElementSystem.hpp"
 
 
 import star.uuid;
 import star.celestial_coordinate;
 import star.warping;
-import star.celestial_coordinate;
 import star.sky_types;
 import star.animation;
 import star.particle;

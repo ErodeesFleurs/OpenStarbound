@@ -1,5 +1,4 @@
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -10,30 +9,23 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarDataStreamExtra.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
-#include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.game_types;
 #include "StarRandom.hpp"
 #include "StarArray.hpp"
-#include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarEither.hpp"
@@ -41,7 +33,6 @@ import star.game_types;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -118,6 +109,8 @@ import star.entity_rendering;
 import star.particle_database;
 import star.image_metadata_database;
 
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

@@ -1,8 +1,8 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarInterpolation.hpp"
 #include "StarIdMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -13,7 +13,7 @@ import star.liquid_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarDataStreamExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarOrderedMap.hpp"

@@ -9,7 +9,6 @@ import star.game_types;
 #include "StarCasting.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 
 import star.uuid;

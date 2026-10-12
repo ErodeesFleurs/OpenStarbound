@@ -5,7 +5,6 @@ module;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
-#include "StarThread.hpp"
 #include "StarMap.hpp"
 import star.game_types;
 #include "StarDataStreamDevices.hpp"
@@ -23,17 +22,14 @@ import star.directives;
 import star.asset_path;
 #include "StarRefPtr.hpp"
 import star.listener;
-#include "StarThread.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarIdMap.hpp"
-#include "StarConfig.hpp"
 #include "StarMaybe.hpp"
 import star.lock_file;
 #include "StarVector.hpp"
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarByteArray.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -50,10 +46,8 @@ import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
@@ -64,15 +58,9 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarVariant.hpp"
-#include "StarSet.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
-#include "StarNetElementFloatFields.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
+import star.image;
 #include <atomic>
 #include <memory>
 #include "StarIterator.hpp"
@@ -87,7 +75,6 @@ import star.root_base;
 import star.root;
 import star.configuration;
 import star.universe;
-import star.worker_pool;
 import star.celestial_coordinate;
 import star.uuid;
 import star.damage_types;

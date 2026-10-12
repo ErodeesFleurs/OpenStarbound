@@ -7,7 +7,6 @@ module;
 import star.game_types;
 import star.material_types;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 import star.tile_damage;
 #include "StarList.hpp"
 import star.image_processing;

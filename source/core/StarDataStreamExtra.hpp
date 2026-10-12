@@ -2,7 +2,7 @@
 
 #include "StarDataStream.hpp"
 #include "StarMultiArray.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarPoly.hpp"
 #include "StarMaybe.hpp"
 #include "StarEither.hpp"

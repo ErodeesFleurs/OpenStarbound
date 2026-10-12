@@ -1,13 +1,11 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -22,15 +20,11 @@ import star.asset_path;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarMaybe.hpp"
-#include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarEither.hpp"
@@ -39,7 +33,6 @@ import star.game_types;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 #include "StarLuaComponents.hpp"
 import star.uuid;

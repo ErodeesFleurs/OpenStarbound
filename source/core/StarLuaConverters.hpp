@@ -2,12 +2,12 @@
 
 #include "StarRect.hpp"
 #include "StarVector.hpp"
-#include "StarColor.hpp"
+#include "StarLua.hpp"
+import star.color;
 #include "StarPoly.hpp"
 #include "StarLine.hpp"
-#include "StarLua.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 
 namespace Star {
 

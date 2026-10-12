@@ -1,9 +1,9 @@
-#include "StarColor.hpp"
-#include "StarFont.hpp"
-#include "StarVariant.hpp"
-#include "StarImage.hpp"
-#include "StarPoly.hpp"
 #include "StarJson.hpp"
+import star.color;
+import star.font;
+#include "StarVariant.hpp"
+import star.image;
+#include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;

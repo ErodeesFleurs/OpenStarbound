@@ -20,10 +20,9 @@ import star.btree_database;
 import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
@@ -35,16 +34,14 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarThread.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarSet.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -55,7 +52,6 @@ import star.entity;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.animation;
 import star.particle;

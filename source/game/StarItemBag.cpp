@@ -4,7 +4,7 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;

@@ -1,12 +1,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
@@ -24,10 +22,8 @@ import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
 
 import star.damage_types;
 import star.world_geometry;
@@ -49,7 +45,6 @@ import star.biome_placement;
 import star.spawn_type_database;
 import star.biome;
 import star.tile_damage;
-import star.plant_database;
 import star.parallax;
 import star.ambient;
 

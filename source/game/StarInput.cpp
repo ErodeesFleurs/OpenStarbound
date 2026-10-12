@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarThread.hpp"
 import star.listener;
 #include "StarHash.hpp"

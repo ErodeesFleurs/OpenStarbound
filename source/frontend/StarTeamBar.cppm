@@ -2,11 +2,11 @@ module;
 
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
+#include "StarJson.hpp"
+import star.input_event;
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -20,14 +20,13 @@ import star.text;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
 #include "StarThread.hpp"
 import star.game_types;
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarArray.hpp"

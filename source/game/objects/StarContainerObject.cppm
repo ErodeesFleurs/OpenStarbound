@@ -7,9 +7,8 @@ import star.weighted_pool;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
@@ -18,9 +17,9 @@ import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
@@ -68,6 +67,9 @@ import star.entity_rendering;
 import star.object;
 import star.container_entity;
 import star.item_recipe;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
 
 namespace Star {
 

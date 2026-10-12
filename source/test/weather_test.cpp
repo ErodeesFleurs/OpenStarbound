@@ -2,7 +2,7 @@
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -18,13 +18,7 @@ import star.particle;
 import star.weather_types;
 #include "StarPoly.hpp"
 import star.world_geometry;
-#include "StarNetElementSystem.hpp"
-#include "StarMaybe.hpp"
-#include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarBiMap.hpp"
 import star.tile_damage;
 import star.plant_database;
 import star.parallax;

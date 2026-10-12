@@ -11,8 +11,8 @@ import star.game_types;
 #include "StarVector.hpp"
 #include "StarArray.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
+import star.input_event;
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -28,7 +28,7 @@ import star.asset_path;
 import star.listener;
 #include "StarThread.hpp"
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 

@@ -9,7 +9,6 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
@@ -39,6 +38,10 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_system;
 
 namespace Star {
 

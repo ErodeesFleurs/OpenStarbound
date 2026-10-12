@@ -1,6 +1,7 @@
 module;
 
-#include "StarAudio.hpp"
+#include "StarJson.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
@@ -8,13 +9,11 @@ module;
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 import star.mixer;
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -24,12 +23,10 @@ import star.asset_path;
 import star.drawable;
 import star.game_types;
 import star.entity_rendering_types;
-#include "StarColor.hpp"
 import star.animation;
 import star.particle;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 import star.drawable;
 #include "StarDataStream.hpp"
 import star.game_types;

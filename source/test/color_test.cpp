@@ -1,5 +1,4 @@
-#include "StarColor.hpp"
-
+import star.color;
 #include "gtest/gtest.h"
 
 using namespace Star;

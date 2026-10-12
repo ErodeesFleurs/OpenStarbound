@@ -2,7 +2,7 @@
 
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarSet.hpp"
 #include "StarRandom.hpp"
 #include "StarList.hpp"

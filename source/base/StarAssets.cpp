@@ -6,6 +6,7 @@
 #include "StarThread.hpp"
 #include "StarRefPtr.hpp"
 #include "StarList.hpp"
+import star.image;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -16,12 +17,13 @@ import star.asset_path;
 import star.time;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
-#include "StarJsonBuilder.hpp"
+import star.json_parser;
+import star.json_builder;
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
-#include "StarFont.hpp"
-#include "StarAudio.hpp"
+import star.font;
+import star.audio;
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarDataStreamDevices.hpp"

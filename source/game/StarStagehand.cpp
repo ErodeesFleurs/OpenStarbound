@@ -9,7 +9,6 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
@@ -48,6 +47,8 @@ import star.entity_lua_bindings;
 import star.config_lua_bindings;
 
 import star.behavior_state;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

@@ -1,8 +1,5 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -14,56 +11,35 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
 #include "StarLexicalCast.hpp"
-#include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
 #include "StarLogging.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-import star.game_types;
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
-#include "StarVector.hpp"
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
 #include "StarMathCommon.hpp"
 import star.periodic;
 import star.periodic_function;
 #include "StarLua.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
@@ -118,7 +94,6 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-import star.item_descriptor;
 import star.mobile_entity;
 import star.item_drop;
 import star.mixer;
@@ -129,7 +104,6 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-import star.mixer;
 import star.augment_item;
 import star.treasure;
 
@@ -137,6 +111,8 @@ import star.treasure;
 import star.object_database;
 
 import star.item_bag;
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

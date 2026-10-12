@@ -1,9 +1,11 @@
-#include "StarFont.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
+#include "StarVector.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
+import star.image;
+import star.font;
 
 namespace Star {
 

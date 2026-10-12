@@ -17,7 +17,7 @@ import star.asset_path;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarImage.hpp"
+import star.image;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.game_types;

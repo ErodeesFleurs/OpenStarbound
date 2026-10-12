@@ -1,11 +1,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLua.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -21,15 +20,14 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarDataStreamExtra.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
@@ -43,7 +41,6 @@ import star.game_types;
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarEither.hpp"
-#include "StarNetElement.hpp"
 
 import star.damage_types;
 import star.world_geometry;

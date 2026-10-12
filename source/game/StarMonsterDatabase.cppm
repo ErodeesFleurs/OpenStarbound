@@ -3,12 +3,11 @@ module;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -20,20 +19,15 @@ import star.lru_cache;
 import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
-#include "StarThread.hpp"
 #include "StarDataStream.hpp"
-import star.game_types;
 import star.image_processing;
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-import star.game_types;
 
 
 import star.world_geometry;

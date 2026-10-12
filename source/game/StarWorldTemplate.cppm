@@ -9,8 +9,7 @@ import star.lru_cache;
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -28,12 +27,8 @@ import star.material_types;
 #include "StarVariant.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
-#include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarList.hpp"
-#include "StarRect.hpp"
 #include "StarEither.hpp"
 
 import star.animation;

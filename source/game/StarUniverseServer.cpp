@@ -1,8 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarEither.hpp"
@@ -10,7 +8,7 @@
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.game_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
@@ -28,8 +26,7 @@ import star.asset_path;
 #include "StarString.hpp"
 import star.lock_file;
 #include "StarArray.hpp"
-#include "StarDataStream.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarByteArray.hpp"
 #include "StarDataStreamDevices.hpp"
 
@@ -46,10 +43,8 @@ import star.lru_cache;
 import star.btree_database;
 #include "StarCasting.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarInterpolation.hpp"
 import star.perlin;
 #include "StarStrongTypedef.hpp"
@@ -58,30 +53,19 @@ import star.worker_pool;
 
 #include "thread"
 import star.sector_array_2d;
-#include "StarSet.hpp"
-#include "StarImage.hpp"
-#include "StarInterpolation.hpp"
-#include "StarNetElementFloatFields.hpp"
+import star.image;
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
 #include <atomic>
 #include <memory>
 #include "StarRefPtr.hpp"
-import star.game_types;
-#include "StarString.hpp"
 import star.encode;
 #include "StarBytes.hpp"
 #include "StarFormat.hpp"
-#include "StarThread.hpp"
 import star.version;
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarIODevice.hpp"
-#include "StarString.hpp"
-#include "StarEither.hpp"
-#include "StarThread.hpp"
 
 #include "StarUniverseServer.inc"
 #include "StarLuaComponents.hpp"
@@ -95,7 +79,6 @@ import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
 import star.universe;
-import star.worker_pool;
 import star.uuid;
 import star.damage_types;
 import star.world_geometry;

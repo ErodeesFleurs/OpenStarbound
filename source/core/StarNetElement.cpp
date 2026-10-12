@@ -1,4 +1,6 @@
-#include "StarNetElement.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element;
 
 
 namespace Star {

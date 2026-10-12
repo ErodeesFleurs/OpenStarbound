@@ -1,4 +1,7 @@
-#include "StarJsonRpc.hpp"
+#include "StarJson.hpp"
+#include "StarByteArray.hpp"
+import star.rpc_promise;
+import star.json_rpc;
 #include "StarDataStreamDevices.hpp"
 #include "StarLogging.hpp"
 

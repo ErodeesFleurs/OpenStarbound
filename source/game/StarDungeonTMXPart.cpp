@@ -33,7 +33,7 @@ import star.game_types;
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRect.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarRandom.hpp"

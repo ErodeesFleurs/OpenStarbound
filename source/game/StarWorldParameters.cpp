@@ -5,7 +5,7 @@
 #include "StarVector.hpp"
 import star.game_types;
 import star.liquid_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"

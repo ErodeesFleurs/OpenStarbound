@@ -1,4 +1,6 @@
-#include "StarNetElementBasicFields.hpp"
+#include "StarDataStream.hpp"
+
+import star.net_element_basic_fields;
 
 namespace Star {
 

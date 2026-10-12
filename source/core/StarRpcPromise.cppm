@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarEither.hpp"
 #include "StarString.hpp"
@@ -257,4 +257,15 @@ decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
   return wrappedPromise;
 }
 
+}
+
+export module star.rpc_promise;
+
+export namespace Star {
+using ::Star::RpcPromiseExceptionTag;
+using ::Star::RpcPromiseException;
+using ::Star::RpcPromiseKeeper;
+using ::Star::AutoFailRpcPromiseKeeper;
+using ::Star::AutoFailRpcPromiseKeeperPtr;
+using ::Star::RpcPromise;
 }

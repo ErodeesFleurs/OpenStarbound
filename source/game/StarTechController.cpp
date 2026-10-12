@@ -1,7 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -13,37 +12,31 @@ import star.directives;
 #include "StarDataStreamExtra.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 import star.observer_stream;
-#include "StarNetElementExt.hpp"
 #include "StarEither.hpp"
 #include "StarArray.hpp"
-#include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarNetElement.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 import star.listener;
@@ -123,6 +116,8 @@ import star.entity_lua_bindings;
 import star.networked_animator_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
+
+import star.net_element;
 
 namespace Star {
 

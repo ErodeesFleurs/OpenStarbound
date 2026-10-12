@@ -10,7 +10,6 @@ import star.game_types;
 #include "StarCasting.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 #include "StarMathCommon.hpp"
 #include "StarRandom.hpp"
@@ -18,9 +17,9 @@ import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"

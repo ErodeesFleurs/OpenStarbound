@@ -1,7 +1,8 @@
-#pragma once
+module;
 
-#include "StarJsonParser.hpp"
 #include "StarJson.hpp"
+
+import star.json_parser;
 
 namespace Star {
 
@@ -98,4 +99,15 @@ void outputUtf32Json(Jsonlike const& val, OutputIterator out, int pretty, bool s
   JsonStreamer<Jsonlike>::toJsonStream(val, writer, sort);
 }
 
+}
+
+export module star.json_builder;
+
+export namespace Star {
+  using ::Star::JsonBuilderStream;
+  using ::Star::JsonStreamer;
+  using ::Star::inputUtf8Json;
+  using ::Star::outputUtf8Json;
+  using ::Star::inputUtf32Json;
+  using ::Star::outputUtf32Json;
 }

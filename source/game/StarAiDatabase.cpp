@@ -6,6 +6,7 @@
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarPoly.hpp"
+import star.color;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"

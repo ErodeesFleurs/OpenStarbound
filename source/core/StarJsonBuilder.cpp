@@ -1,5 +1,8 @@
-#include "StarJsonBuilder.hpp"
+#include "StarJson.hpp"
 #include "StarLexicalCast.hpp"
+
+import star.json_parser;
+import star.json_builder;
 
 namespace Star {
 

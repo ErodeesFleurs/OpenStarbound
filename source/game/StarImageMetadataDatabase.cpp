@@ -15,7 +15,7 @@ import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
 #include "StarFile.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarLogging.hpp"
 #include "StarString.hpp"
 #include "StarByteArray.hpp"

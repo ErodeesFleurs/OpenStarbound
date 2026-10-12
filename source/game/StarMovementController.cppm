@@ -2,7 +2,6 @@ module;
 #include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 import star.game_types;
 import star.liquid_types;
@@ -23,6 +22,10 @@ import star.entity;
 import star.collision_block;
 import star.force_regions;
 import star.physics_entity;
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_group;
 
 namespace Star {
 

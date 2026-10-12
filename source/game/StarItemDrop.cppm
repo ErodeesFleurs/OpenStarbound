@@ -2,20 +2,19 @@ module;
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
 import star.game_types;
-#include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 #include "StarLua.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -49,6 +48,9 @@ import star.mobile_entity;
 import star.scripted_entity;
 import star.drawable;
 import star.game_timers;
+
+import star.net_element_basic_fields;
+import star.net_element_system;
 
 namespace Star {
 

@@ -7,7 +7,7 @@ import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -17,11 +17,8 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarRect.hpp"
+import star.rpc_promise;
 #include "StarAStar.hpp"
 #include "StarLuaRoot.hpp"
 import star.damage_types;

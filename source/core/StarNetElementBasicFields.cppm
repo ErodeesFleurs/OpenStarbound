@@ -1,10 +1,12 @@
-#pragma once
+module;
 
 #include <type_traits>
 
-#include "StarNetElement.hpp"
+#include "StarDataStream.hpp"
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
+
+import star.net_element;
 
 namespace Star {
 
@@ -330,4 +332,20 @@ void NetElementData<T>::writeData(DataStream& ds, T const& v) const {
   m_writer(ds, v);
 }
 
+}
+
+export module star.net_element_basic_fields;
+
+export namespace Star {
+  using ::Star::NetElementBasicField;
+  using ::Star::NetElementIntegral;
+  using ::Star::NetElementInt;
+  using ::Star::NetElementUInt;
+  using ::Star::NetElementSize;
+  using ::Star::NetElementBool;
+  using ::Star::NetElementEnum;
+  using ::Star::NetElementEvent;
+  using ::Star::NetElementData;
+  using ::Star::NetElementString;
+  using ::Star::NetElementBytes;
 }

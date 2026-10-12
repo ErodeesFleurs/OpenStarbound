@@ -3,7 +3,6 @@ module;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -29,6 +28,8 @@ import star.platformer_astar_types;
 import star.anchorable_entity;
 
 import star.game_timers;
+
+import star.net_element_basic_fields;
 
 namespace Star {
 

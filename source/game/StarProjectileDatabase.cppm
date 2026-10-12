@@ -3,11 +3,10 @@ module;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;

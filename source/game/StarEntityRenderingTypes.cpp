@@ -1,10 +1,9 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"

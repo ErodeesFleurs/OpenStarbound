@@ -3,9 +3,9 @@
 #include "StarIdMap.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
-#include "StarInputEvent.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.input_event;
+import star.color;
+import star.font;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -15,25 +15,19 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 #include "StarBiMap.hpp"
-#include "StarStringView.hpp"
 #include "StarString.hpp"
 import star.text;
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.asset_path;
 #include "StarMaybe.hpp"
 import star.listener;
-#include "StarThread.hpp"
 import star.game_types;
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarInterpolation.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
@@ -41,7 +35,6 @@ import star.version;
 #include "StarEither.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarRect.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
@@ -49,12 +42,11 @@ import star.time;
 import star.ttl_cache;
 import star.perlin;
 #include "StarRandomPoint.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarArray.hpp"
 #include "StarNetCompatibility.hpp"
 import star.worker_pool;
@@ -65,14 +57,11 @@ import star.sector_array_2d;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include <functional>
 #include "StarAStar.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include "StarSpline.hpp"
-#include "StarConfig.hpp"
 
 
 import star.application;
@@ -107,7 +96,6 @@ import star.wiring;
 import star.wire_interface;
 import star.widget_parsing;
 import star.gui_reader;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.force_regions;
 import star.world_parameters;

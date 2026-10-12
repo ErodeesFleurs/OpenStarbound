@@ -6,27 +6,23 @@
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarPoly.hpp"
-#include "StarDataStream.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarSpline.hpp"
 #include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarConfig.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -39,7 +35,7 @@ import star.asset_path;
 #include "StarLogging.hpp"
 import star.listener;
 import star.version;
-#include "StarImage.hpp"
+import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarEither.hpp"
@@ -60,7 +56,6 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarLuaComponents.hpp"
 
@@ -116,7 +111,6 @@ import star.tile_modification;
 import star.force_regions;
 import star.world;
 import star.liquid_types;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.weather_types;
 import star.sky_types;

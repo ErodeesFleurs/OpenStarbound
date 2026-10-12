@@ -2,10 +2,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarString.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -15,7 +15,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
-#include "StarFont.hpp"
+import star.font;
 #include "StarBiMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
@@ -30,7 +30,7 @@ import star.listener;
 #include "StarThread.hpp"
 import star.game_types;
 #include "StarSet.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarOrderedMap.hpp"
@@ -51,7 +51,7 @@ import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 import star.application_controller;
 #include "StarVariant.hpp"
 import star.renderer;

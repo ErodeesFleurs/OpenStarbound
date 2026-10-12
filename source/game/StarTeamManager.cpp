@@ -5,7 +5,7 @@
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -16,7 +16,7 @@ import star.directives;
 import star.asset_path;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarJsonRpc.hpp"
+import star.json_rpc;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
@@ -25,7 +25,6 @@ import star.game_types;
 #include "StarThread.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-import star.game_types;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarRandom.hpp"
@@ -39,7 +38,6 @@ import star.text;
 #include "StarLogging.hpp"
 
 import star.drawable;
-import star.uuid;
 import star.uuid;
 import star.celestial_coordinate;
 import star.warping;

@@ -26,7 +26,7 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarDataStreamExtra.hpp"
-#include "StarImage.hpp"
+import star.image;
 
 import star.collision_block;
 import star.item_descriptor;

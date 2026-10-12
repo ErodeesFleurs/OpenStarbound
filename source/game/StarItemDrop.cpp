@@ -1,7 +1,5 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -13,39 +11,28 @@ import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
-import star.game_types;
-#include "StarRandom.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
-#include "StarMaybe.hpp"
-#include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-import star.game_types;
 #include "StarDataStreamExtra.hpp"
 #include "StarLua.hpp"
-#include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -58,7 +45,6 @@ import star.version;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 
 // Parse JSON iterator templates before game headers import modules (GCC 16).
 #include "StarLuaRoot.hpp"
@@ -134,6 +120,8 @@ import star.entity_lua_bindings;
 import star.item_lua_bindings;
 import star.movement_controller_lua_bindings;
 
+
+#include "StarDataStreamDevices.hpp"
 
 namespace Star {
 

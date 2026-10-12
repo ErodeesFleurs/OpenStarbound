@@ -10,7 +10,7 @@ import star.game_types;
 #include "StarList.hpp"
 
 
-#include "StarColor.hpp"
+import star.color;
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

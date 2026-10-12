@@ -5,8 +5,8 @@ import star.image_processing;
 #include "StarMatrix3.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarColor.hpp"
-#include "StarImage.hpp"
+import star.color;
+import star.image;
 #include "StarStringView.hpp"
 #include "StarString.hpp"
 #include "StarByteArray.hpp"

@@ -4,8 +4,8 @@ import star.time;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarJson.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -13,12 +13,12 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarBiMap.hpp"
 #include "StarStringView.hpp"
 #include "StarVector.hpp"
 import star.text;
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"

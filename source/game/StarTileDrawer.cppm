@@ -1,10 +1,6 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarIdMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -13,7 +9,7 @@ import star.lru_cache;
 import star.time;
 #include "StarRandom.hpp"
 import star.ttl_cache;
-#include "StarImage.hpp"
+import star.image;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -22,49 +18,23 @@ import star.game_types;
 import star.material_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarColor.hpp"
+import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
-#include "StarPoly.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-import star.game_types;
-import star.material_types;
-#include "StarBiMap.hpp"
 #include "StarEither.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarThread.hpp"
-#include "StarEither.hpp"
-#include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarColor.hpp"
 #include "StarInterpolation.hpp"
-#include "StarList.hpp"
-#include "StarVector.hpp"
-#include "StarThread.hpp"
-#include "StarRect.hpp"
-#include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
-import star.game_types;
-import star.material_types;
-#include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarString.hpp"
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;
@@ -78,7 +48,6 @@ import star.perlin;
 import star.collision_block;
 import star.liquid_types;
 import star.tile_damage;
-import star.worker_pool;
 import star.tile_sector_array;
 import star.force_regions;
 import star.world_parameters;
@@ -92,7 +61,6 @@ import star.sky_types;
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.sky_render_data;
-import star.tile_damage;
 import star.plant_database;
 import star.parallax;
 import star.animation;
@@ -107,9 +75,7 @@ import star.entity;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
-import star.tile_damage;
 import star.material_render_profile;
-import star.drawable;
 
 namespace Star {
 

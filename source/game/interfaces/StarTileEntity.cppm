@@ -9,7 +9,6 @@ import star.material_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 
 import star.damage_types;

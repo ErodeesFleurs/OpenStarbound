@@ -6,13 +6,12 @@ module;
 #include "StarVector.hpp"
 import star.game_types;
 import star.liquid_types;
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
-#include "StarColor.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;

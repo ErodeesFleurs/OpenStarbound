@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include <vector>
 
@@ -805,4 +805,13 @@ private:
   std::vector<State> m_state;
 };
 
+}
+
+export module star.json_parser;
+
+export namespace Star {
+  using ::Star::JsonStream;
+  using ::Star::JsonParseType;
+  using ::Star::JsonParser;
+  using ::Star::JsonWriter;
 }

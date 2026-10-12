@@ -1,9 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarIdMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -13,7 +11,7 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -43,6 +41,9 @@ import star.collision_block;
 import star.tile_entity;
 import star.inspectable_entity;
 import star.plant;
+
+import star.net_element_basic_fields;
+import star.net_element_system;
 
 namespace Star {
 

@@ -2,7 +2,7 @@ module;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarThread.hpp"
 import star.listener;
 #include "StarHash.hpp"

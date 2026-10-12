@@ -16,13 +16,12 @@ module;
 import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarVariant.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarMaybe.hpp"
 #include "StarRandom.hpp"
 import star.weighted_pool;
@@ -48,9 +47,7 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarSet.hpp"
-#include "StarNetElementFloatFields.hpp"
+import star.rpc_promise;
 #include "StarByteArray.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;

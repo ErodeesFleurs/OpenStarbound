@@ -5,10 +5,8 @@ module;
 #include "StarRandom.hpp"
 import star.perlin;
 import star.weighted_pool;
-#include "StarBiMap.hpp"
 #include "StarIdMap.hpp"
 #include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;

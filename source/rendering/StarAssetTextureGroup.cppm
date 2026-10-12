@@ -6,9 +6,9 @@ module;
 #include "StarThread.hpp"
 import star.listener;
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
-#include "StarPoly.hpp"
 #include "StarJson.hpp"
+import star.image;
+#include "StarPoly.hpp"
 #include "StarRefPtr.hpp"
 import star.renderer;
 #include "StarList.hpp"

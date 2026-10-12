@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarIODevice.hpp"
 //#define STAR_STREAM_AUDIO
@@ -106,4 +106,36 @@ private:
   String m_name;
 };
 
+}
+
+export module star.audio;
+
+export namespace Star {
+  using ::Star::DefaultPerceptualRangeDb;
+  using ::Star::DefaultPerceptualBoostRangeDb;
+  using ::Star::perceptualToAmplitude;
+  using ::Star::amplitudeToPerceptual;
+  using ::Star::AudioExceptionTag;
+  using ::Star::AudioException;
+  using ::Star::CompressedAudioImpl;
+  using ::Star::CompressedAudioImplPtr;
+  using ::Star::CompressedAudioImplConstPtr;
+  using ::Star::CompressedAudioImplWeakPtr;
+  using ::Star::CompressedAudioImplConstWeakPtr;
+  using ::Star::CompressedAudioImplUPtr;
+  using ::Star::CompressedAudioImplConstUPtr;
+  using ::Star::UncompressedAudioImpl;
+  using ::Star::UncompressedAudioImplPtr;
+  using ::Star::UncompressedAudioImplConstPtr;
+  using ::Star::UncompressedAudioImplWeakPtr;
+  using ::Star::UncompressedAudioImplConstWeakPtr;
+  using ::Star::UncompressedAudioImplUPtr;
+  using ::Star::UncompressedAudioImplConstUPtr;
+  using ::Star::Audio;
+  using ::Star::AudioPtr;
+  using ::Star::AudioConstPtr;
+  using ::Star::AudioWeakPtr;
+  using ::Star::AudioConstWeakPtr;
+  using ::Star::AudioUPtr;
+  using ::Star::AudioConstUPtr;
 }

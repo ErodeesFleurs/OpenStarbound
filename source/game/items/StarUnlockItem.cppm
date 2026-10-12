@@ -9,10 +9,9 @@ module;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarColor.hpp"
+import star.rpc_promise;
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -21,14 +20,12 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarRect.hpp"
 #include "StarAStar.hpp"
 #include "StarString.hpp"
 #include "StarSet.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarEither.hpp"
 #include "StarInterpolation.hpp"
@@ -36,7 +33,6 @@ import star.asset_path;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElement.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

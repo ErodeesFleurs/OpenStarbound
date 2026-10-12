@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarColor.hpp"
-#include "StarFont.hpp"
+import star.color;
+import star.font;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -27,7 +27,7 @@ import star.version;
 import star.text;
 
 #include "StarVariant.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarPoly.hpp"
 import star.renderer;
 import star.font_texture_group;

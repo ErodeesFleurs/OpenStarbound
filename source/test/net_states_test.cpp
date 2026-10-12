@@ -1,6 +1,20 @@
-#include "StarNetElementSystem.hpp"
 
 #include "gtest/gtest.h"
+
+#include "StarDataStreamDevices.hpp"
+#include "StarList.hpp"
+#include "StarString.hpp"
+#include "StarVector.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarInterpolation.hpp"
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_containers;
+import star.net_element_dynamic_group;
+import star.net_element_group;
+import star.net_element_signal;
+import star.net_element_system;
+import star.net_element_top;
 
 using namespace Star;
 

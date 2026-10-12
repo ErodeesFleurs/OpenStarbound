@@ -1,7 +1,7 @@
 module;
 
 #include "StarThread.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 import star.application;
 #include "StarString.hpp"
 import star.statistics_service;

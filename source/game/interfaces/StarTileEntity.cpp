@@ -8,10 +8,9 @@ import star.material_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"

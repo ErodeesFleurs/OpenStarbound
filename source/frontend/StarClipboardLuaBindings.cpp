@@ -2,7 +2,7 @@ module;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarThread.hpp"
 import star.listener;
 #include "StarHash.hpp"
@@ -29,7 +29,7 @@ import star.statistics_service;
 import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
-#include "StarImage.hpp"
+import star.image;
 import star.application_controller;
 import star.input;
 import star.asset_source;

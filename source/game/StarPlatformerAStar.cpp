@@ -10,15 +10,11 @@
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.game_types;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
-#include "StarRect.hpp"
-#include "StarAStar.hpp"
 #include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaRoot.hpp"
@@ -47,7 +43,6 @@ import star.anchorable_entity;
 
 import star.game_timers;
 import star.actor_movement_controller;
-import star.platformer_astar_types;
 import star.liquid_types;
 
 import star.platformer_astar;

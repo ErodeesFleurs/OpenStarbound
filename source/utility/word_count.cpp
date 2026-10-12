@@ -3,7 +3,7 @@
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -20,7 +20,7 @@ import star.asset_path;
 import star.game_types;
 #include "StarFile.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarImage.hpp"
+import star.image;
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"

@@ -1,8 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarIdMap.hpp"
-#include "StarNetElementBasicFields.hpp"
-#include "StarNetElementFloatFields.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
@@ -10,7 +8,7 @@ import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -20,11 +18,8 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVariant.hpp"
-#include "StarList.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarRect.hpp"
+import star.rpc_promise;
 #include "StarAStar.hpp"
 #include "StarConfig.hpp"
 #include "StarDataStreamExtra.hpp"
@@ -35,8 +30,7 @@ import star.asset_path;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
@@ -46,7 +40,6 @@ import star.version;
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarEither.hpp"
-#include "StarNetElement.hpp"
 
 
 #include "StarLuaRoot.hpp"

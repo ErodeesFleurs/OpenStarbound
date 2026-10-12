@@ -4,7 +4,7 @@
 import star.game_types;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -19,16 +19,11 @@ import star.asset_path;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarVector.hpp"
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
-#include "StarList.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElement.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -40,7 +35,7 @@ import star.version;
 #include "StarStrongTypedef.hpp"
 #include "StarCasting.hpp"
 #include "StarVariant.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 #include "StarAStar.hpp"
 
 import star.drawable;
@@ -94,6 +89,8 @@ import star.armors;
 import star.species_database;
 import star.dance_database;
 import star.particle_database;
+
+import star.net_element_sync_group;
 
 namespace Star {
 

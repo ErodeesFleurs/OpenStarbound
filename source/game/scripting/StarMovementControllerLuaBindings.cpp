@@ -2,9 +2,7 @@ module;
 #include "StarIdMap.hpp"
 #include "StarJson.hpp"
 #include "StarLua.hpp"
-#include "StarJson.hpp"
 #include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -15,7 +13,7 @@ import star.liquid_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.damage_types;
 import star.world_geometry;
 import star.status_types;

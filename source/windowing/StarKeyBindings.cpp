@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarInputEvent.hpp"
+import star.input_event;
 #include "StarSet.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"

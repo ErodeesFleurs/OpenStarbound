@@ -4,7 +4,7 @@ module;
 #include "StarRandom.hpp"
 import star.weighted_pool;
 #include "StarJson.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"

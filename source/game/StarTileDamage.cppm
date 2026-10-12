@@ -2,8 +2,11 @@ module;
 
 #include "StarJson.hpp"
 #include "StarVector.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarBiMap.hpp"
+
+import star.net_element_basic_fields;
+import star.net_element_float_fields;
+import star.net_element_group;
 
 namespace Star {
 

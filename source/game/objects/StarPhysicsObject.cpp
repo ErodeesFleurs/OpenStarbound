@@ -16,11 +16,10 @@ import star.game_types;
 #include "StarRandom.hpp"
 import star.periodic;
 import star.periodic_function;
-#include "StarNetElementSystem.hpp"
 #include "StarSet.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarLua.hpp"
-#include "StarAudio.hpp"
+import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
 #include "StarMaybe.hpp"
@@ -33,7 +32,6 @@ import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"

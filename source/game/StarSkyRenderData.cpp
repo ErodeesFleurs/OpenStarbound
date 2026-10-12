@@ -1,7 +1,7 @@
 #include "StarJsonExtra.hpp"
-#include "StarColor.hpp"
-#include "StarBiMap.hpp"
 #include "StarJson.hpp"
+import star.color;
+#include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarEither.hpp"
 #include "StarVector.hpp"
@@ -13,7 +13,6 @@ import star.sky_render_data;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"

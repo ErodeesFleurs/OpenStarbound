@@ -10,11 +10,9 @@
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarList.hpp"
-#include "StarRpcPromise.hpp"
+import star.rpc_promise;
 import star.observer_stream;
-#include "StarNetElementExt.hpp"
 #include "StarEither.hpp"
 #include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
@@ -22,7 +20,7 @@ import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarString.hpp"
-#include "StarColor.hpp"
+import star.color;
 #include "StarRect.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
@@ -30,12 +28,10 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarAudio.hpp"
-#include "StarThread.hpp"
+import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
-#include "StarRect.hpp"
 #include "StarIODevice.hpp"
 #include "StarRefPtr.hpp"
 #include "StarLogging.hpp"
@@ -86,6 +82,9 @@ import star.networked_animator_lua_bindings;
 import star.entity_lua_bindings;
 import star.config_lua_bindings;
 import star.status_controller_lua_bindings;
+
+import star.net_element;
+import star.net_element_containers;
 
 namespace Star {
 
