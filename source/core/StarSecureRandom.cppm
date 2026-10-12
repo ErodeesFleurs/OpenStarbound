@@ -1,6 +1,8 @@
 module;
 
-#include "StarByteArray.hpp"
+#include "StarException.hpp"
+
+import star.byte_array;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 #define NOMINMAX

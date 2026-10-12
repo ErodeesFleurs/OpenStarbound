@@ -1,7 +1,7 @@
 #include "StarThread.hpp"
 import star.time;
 #include "StarMathCommon.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 namespace Star {
 namespace Time {

@@ -3,14 +3,14 @@
 #include "StarPoly.hpp"
 import star.game_types;
 #include "StarInterpolation.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarEither.hpp"
-#include "StarRandom.hpp"
+import star.either;
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -19,7 +19,7 @@ import star.weighted_pool;
 import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 #include "StarSet.hpp"
 #include "StarVector.hpp"
@@ -37,7 +37,7 @@ import star.lru_cache;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.color;
 import star.font;
@@ -55,7 +55,7 @@ import star.listener;
 import star.input_event;
 import star.audio;
 #include "StarMap.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;

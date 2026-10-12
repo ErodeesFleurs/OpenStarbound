@@ -2,9 +2,9 @@ module;
 
 #include "StarJson.hpp"
 import star.game_types;
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMap.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"

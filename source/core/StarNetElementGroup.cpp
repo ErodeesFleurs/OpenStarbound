@@ -3,6 +3,8 @@
 import star.net_element;
 import star.net_element_group;
 
+import star.net_compatibility;
+import star.version;
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {

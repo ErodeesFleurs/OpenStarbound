@@ -1,10 +1,12 @@
 #include "StarDataStream.hpp"
-#include "StarBytes.hpp"
+import star.bytes;
 
 #include <string.h>
 
 import star.vlq;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 unsigned const CurrentStreamVersion = 18; // update OpenProtocolVersion too!

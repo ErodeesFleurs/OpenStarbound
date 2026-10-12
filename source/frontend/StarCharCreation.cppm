@@ -24,7 +24,7 @@ import star.game_types;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

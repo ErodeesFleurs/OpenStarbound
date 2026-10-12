@@ -12,19 +12,19 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.game_types;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 import star.drawable;
 import star.asset_source;

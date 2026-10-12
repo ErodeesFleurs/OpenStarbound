@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 
+import star.byte_array;
 namespace Star {
 
 namespace {

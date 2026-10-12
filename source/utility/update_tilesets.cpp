@@ -13,10 +13,10 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
-#include "StarIdMap.hpp"
+import star.ref_ptr;
+import star.id_map;
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;

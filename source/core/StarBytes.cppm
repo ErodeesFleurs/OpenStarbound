@@ -1,8 +1,8 @@
-#pragma once
+module;
 
 #include <bit>
-
-#include "StarMemory.hpp"
+#include "StarConfig.hpp"
+import star.memory;
 
 namespace Star {
 
@@ -101,4 +101,18 @@ inline void fromByteOrder(ByteOrder order, void* dest, void const* src, size_t l
     memcpy(dest, src, len);
 }
 
+}
+
+export module star.bytes;
+
+export namespace Star {
+  using ::Star::ByteOrder;
+  using ::Star::platformByteOrder;
+  using ::Star::swapByteOrder;
+  using ::Star::toByteOrder;
+  using ::Star::fromByteOrder;
+  using ::Star::toBigEndian;
+  using ::Star::fromBigEndian;
+  using ::Star::toLittleEndian;
+  using ::Star::fromLittleEndian;
 }

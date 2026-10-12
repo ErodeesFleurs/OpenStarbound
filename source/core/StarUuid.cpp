@@ -1,10 +1,10 @@
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarFormat.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 
 namespace Star {

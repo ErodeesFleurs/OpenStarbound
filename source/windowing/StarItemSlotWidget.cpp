@@ -33,7 +33,7 @@ import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.version;
 #include "StarStrongTypedef.hpp"

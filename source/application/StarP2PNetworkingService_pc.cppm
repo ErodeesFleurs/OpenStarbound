@@ -1,4 +1,5 @@
 module;
+import star.byte_array;
 
 #include "StarThread.hpp"
 import star.input_event;
@@ -19,7 +20,7 @@ import star.desktop_service;
 import star.platform_services_pc;
 #include "StarAlgorithm.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 

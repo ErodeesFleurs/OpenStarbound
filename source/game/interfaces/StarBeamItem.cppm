@@ -1,6 +1,7 @@
 module;
-#include "StarIdMap.hpp"
-#include "StarSpline.hpp"
+import star.id_map;
+#include "StarVector.hpp"
+import star.spline;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarString.hpp"
@@ -16,13 +17,12 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
-#include "StarVector.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarAStar.hpp"
+import star.a_star;
 
 
 import star.drawable;

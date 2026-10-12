@@ -6,12 +6,13 @@ module;
 import star.lru_cache;
 #include "StarVector.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarInterpolation.hpp"
 
 export module star.terrain_worm_cave;
 import star.terrain_database;
 
+import star.static_random;
 export namespace Star {
 
 class WormCaveSector {

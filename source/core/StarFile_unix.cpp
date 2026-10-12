@@ -1,8 +1,8 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 
 #include <errno.h>

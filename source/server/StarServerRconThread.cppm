@@ -4,11 +4,11 @@ module;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarMap.hpp"
 import star.game_types;
 #include "StarDataStreamDevices.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -20,24 +20,25 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMaybe.hpp"
 import star.lock_file;
 #include "StarVector.hpp"
 #include "StarArray.hpp"
 import star.rpc_promise;
-#include "StarByteArray.hpp"
+import star.byte_array;
 
+import star.bytes;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"
@@ -49,7 +50,7 @@ import star.btree_database;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"

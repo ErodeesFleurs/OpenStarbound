@@ -1,4 +1,8 @@
-#include "StarLexicalCast.hpp"
+#include "StarFormat.hpp"
+#include "StarStringView.hpp"
+#include "fast_float.h"
+
+import star.lexical_cast;
 
 namespace Star {
 

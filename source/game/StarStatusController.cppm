@@ -1,16 +1,17 @@
 module;
+import star.net_compatibility;
 #include "StarJson.hpp"
 #include "StarList.hpp"
 import star.observer_stream;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
-#include "StarEither.hpp"
+import star.id_map;
+import star.either;
 #include "StarVector.hpp"
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

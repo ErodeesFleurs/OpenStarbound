@@ -1,4 +1,4 @@
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarCasting.hpp"

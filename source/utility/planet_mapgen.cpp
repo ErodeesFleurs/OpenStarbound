@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -10,7 +10,7 @@ import star.material_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -21,21 +21,21 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarFile.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 import star.image;
 #include "StarString.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarInterpolation.hpp"
 import star.perlin;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -81,6 +81,7 @@ import star.world_template;
 
 import star.celestial_database;
 
+import star.static_random;
 using namespace Star;
 
 int main(int argc, char** argv) {

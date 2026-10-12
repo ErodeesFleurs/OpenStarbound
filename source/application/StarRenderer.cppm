@@ -1,11 +1,11 @@
 module;
 
-#include "StarVariant.hpp"
 #include "StarJson.hpp"
+#include "StarVariant.hpp"
 import star.image;
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 
 namespace Star {
 

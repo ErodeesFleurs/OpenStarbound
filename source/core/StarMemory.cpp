@@ -1,4 +1,8 @@
-#include "StarMemory.hpp"
+#include <new>
+
+#include "StarConfig.hpp"
+
+import star.memory;
 
 #ifdef STAR_USE_JEMALLOC
 #include "jemalloc/jemalloc.h"

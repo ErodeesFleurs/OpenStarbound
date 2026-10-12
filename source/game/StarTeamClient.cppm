@@ -1,8 +1,8 @@
 module;
 
+#include "StarJson.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 import star.uuid;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"

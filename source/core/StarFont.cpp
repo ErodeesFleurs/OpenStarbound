@@ -7,6 +7,7 @@
 import star.image;
 import star.font;
 
+import star.byte_array;
 namespace Star {
 
 constexpr int FontLoadFlags = FT_LOAD_NO_SVG | FT_LOAD_COLOR;

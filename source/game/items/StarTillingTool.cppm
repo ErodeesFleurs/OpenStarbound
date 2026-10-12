@@ -1,7 +1,8 @@
 module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.random;
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -11,7 +12,7 @@ module;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarMap.hpp"
@@ -29,7 +30,7 @@ import star.game_types;
 import star.material_types;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

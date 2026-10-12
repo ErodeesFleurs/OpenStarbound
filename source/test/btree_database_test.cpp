@@ -7,10 +7,12 @@ import star.lru_cache;
 #include "StarThread.hpp"
 import star.btree_database;
 #include "StarFile.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 #include "gtest/gtest.h"
 
+import star.byte_array;
+import star.bytes;
 using namespace Star;
 
 namespace {

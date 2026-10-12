@@ -11,7 +11,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"
 import star.listener;
@@ -22,8 +22,8 @@ import star.image;
 #include "StarPoly.hpp"
 import star.game_types;
 import star.material_types;
-#include "StarRandom.hpp"
-#include "StarLexicalCast.hpp"
+import star.random;
+import star.lexical_cast;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarSet.hpp"

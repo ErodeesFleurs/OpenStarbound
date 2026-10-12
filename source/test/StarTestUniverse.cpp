@@ -12,13 +12,13 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarFile.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarArray.hpp"
 #include "StarCasting.hpp"
 #include "StarVariant.hpp"
@@ -27,7 +27,7 @@ import star.rpc_promise;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
 import star.audio;
@@ -35,16 +35,16 @@ import star.audio;
 #include "StarSet.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 import star.weighted_pool;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
 

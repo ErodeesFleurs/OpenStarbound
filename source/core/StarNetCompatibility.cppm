@@ -1,14 +1,15 @@
-#pragma once
+module;
+
 #include "StarConfig.hpp"
-import star.version;
 #include "StarHash.hpp"
+import star.version;
 
 namespace Star {
 
 extern VersionNumber const OpenProtocolVersion;
 
-constexpr VersionNumber AnyVersion = 0xFFFFFFFF;
-constexpr VersionNumber LegacyVersion = 0;
+inline constexpr VersionNumber AnyVersion = 0xFFFFFFFF;
+inline constexpr VersionNumber LegacyVersion = 0;
 
 class NetCompatibilityRules {
 public:
@@ -66,4 +67,14 @@ struct hash<NetCompatibilityRules> {
   }
 };
 
+}
+
+export module star.net_compatibility;
+
+export namespace Star {
+  using ::Star::OpenProtocolVersion;
+  using ::Star::AnyVersion;
+  using ::Star::LegacyVersion;
+  using ::Star::NetCompatibilityRules;
+  using ::Star::hash;
 }

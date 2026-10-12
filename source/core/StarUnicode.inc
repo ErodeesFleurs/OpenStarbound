@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMaybe.hpp"
 
 namespace Star {

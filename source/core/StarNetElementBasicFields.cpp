@@ -2,6 +2,7 @@
 
 import star.net_element_basic_fields;
 
+import star.net_compatibility;
 namespace Star {
 
 void NetElementSize::readData(DataStream& ds, size_t& v) const {

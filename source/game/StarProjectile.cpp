@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -33,20 +33,20 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 
@@ -118,6 +118,8 @@ import star.material_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters) {

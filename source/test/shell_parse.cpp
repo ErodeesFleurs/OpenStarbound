@@ -1,7 +1,7 @@
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
-#include "StarBytes.hpp"
+import star.bytes;
 #include "StarFormat.hpp"
 import star.shell_parser;
 

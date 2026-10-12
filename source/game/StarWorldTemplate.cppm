@@ -5,7 +5,7 @@ module;
 import star.lru_cache;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
@@ -25,11 +25,11 @@ import star.material_types;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarEither.hpp"
+import star.either;
 
 import star.animation;
 import star.particle;

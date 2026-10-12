@@ -2,6 +2,7 @@
 
 #include "StarString.hpp"
 
+import star.output_proxy;
 namespace Star {
 
 // Bi-directional map of unique sets of elements with quick map access from

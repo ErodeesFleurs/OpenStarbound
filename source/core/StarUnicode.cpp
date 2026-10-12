@@ -2,6 +2,8 @@
 #include "StarString.hpp"
 import star.encode;
 
+import star.byte_array;
+import star.bytes;
 namespace Star {
 
 void throwInvalidUtf8Sequence() {

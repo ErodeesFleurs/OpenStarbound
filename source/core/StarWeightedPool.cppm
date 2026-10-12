@@ -1,7 +1,11 @@
 module;
 
-#include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarList.hpp"
+#include "StarConfig.hpp"
+import star.random;
 
+import star.static_random;
 namespace Star {
 
 template <typename Item>

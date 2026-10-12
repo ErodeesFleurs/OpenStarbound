@@ -1,8 +1,9 @@
 module;
+import star.byte_array;
 
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 
 namespace Star {
 

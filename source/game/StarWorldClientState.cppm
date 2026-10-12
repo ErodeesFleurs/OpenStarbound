@@ -2,10 +2,10 @@ module;
 
 #include "StarRect.hpp"
 #include "StarVector.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 import star.game_types;
 
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.net_element_basic_fields;
 import star.net_element_system;
 

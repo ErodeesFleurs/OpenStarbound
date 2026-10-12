@@ -1,8 +1,8 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"

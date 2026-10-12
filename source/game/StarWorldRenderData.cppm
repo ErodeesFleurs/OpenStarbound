@@ -1,7 +1,7 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.image;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -22,9 +22,9 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"

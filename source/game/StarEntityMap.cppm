@@ -1,5 +1,5 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarRect.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"

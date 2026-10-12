@@ -1,8 +1,8 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -23,13 +23,13 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;

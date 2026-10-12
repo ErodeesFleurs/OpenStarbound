@@ -1,5 +1,5 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 import star.color;
@@ -14,7 +14,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 import star.game_types;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -25,7 +25,7 @@ import star.rpc_promise;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -71,6 +71,8 @@ import star.projectile_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 ProjectileDatabase::ProjectileDatabase() {

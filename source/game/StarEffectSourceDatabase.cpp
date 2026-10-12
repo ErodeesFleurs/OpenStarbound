@@ -15,12 +15,12 @@ import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRandom.hpp"
+import star.random;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"

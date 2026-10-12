@@ -1,6 +1,6 @@
-#include "StarEither.hpp"
-#include "StarRect.hpp"
 #include "StarJson.hpp"
+import star.either;
+#include "StarRect.hpp"
 import star.image;
 import star.color;
 #include "StarInterpolation.hpp"

@@ -1,6 +1,6 @@
 #include "StarMap.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 #include "StarFormat.hpp"
 #include "StarInterpolation.hpp"

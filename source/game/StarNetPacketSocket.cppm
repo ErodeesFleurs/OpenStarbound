@@ -2,7 +2,7 @@ module;
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.host_address;
 #include "StarThread.hpp"
 import star.socket;
@@ -12,7 +12,7 @@ import star.tcp;
 
 #include "StarThread.hpp"
 import star.p2p_networking_service;
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"
 
@@ -21,7 +21,7 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 
 namespace Star {
 

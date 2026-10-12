@@ -15,7 +15,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -25,7 +25,7 @@ import star.audio;
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 
 
 import star.item_descriptor;

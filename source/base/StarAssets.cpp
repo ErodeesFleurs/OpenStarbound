@@ -1,10 +1,10 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarList.hpp"
 import star.image;
 import star.image_processing;
@@ -21,11 +21,11 @@ import star.json_parser;
 import star.json_builder;
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.font;
 import star.audio;
 #include "StarCasting.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarDataStreamDevices.hpp"
 #include "StarLua.hpp"
 
@@ -40,6 +40,7 @@ import star.memory_asset_source;
 import star.packed_asset_source;
 import star.json_patch;
 
+import star.byte_array;
 namespace Star {
 
 // if a ptr is returned, can be optionally used to format an error

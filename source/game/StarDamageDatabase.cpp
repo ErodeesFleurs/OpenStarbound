@@ -2,7 +2,7 @@
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -14,7 +14,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarFormat.hpp"
 
 import star.json_parser;

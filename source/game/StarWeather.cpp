@@ -5,13 +5,13 @@
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.time;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -22,7 +22,7 @@ import star.game_types;
 import star.rpc_promise;
 #include "StarLua.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
@@ -76,6 +76,8 @@ import star.biome_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 ServerWeather::ServerWeather() {

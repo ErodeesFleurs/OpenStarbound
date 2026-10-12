@@ -4,7 +4,7 @@ module;
 import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 import star.sky_parameters;

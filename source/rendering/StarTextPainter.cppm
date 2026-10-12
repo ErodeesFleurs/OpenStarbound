@@ -16,7 +16,7 @@ import star.directives;
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

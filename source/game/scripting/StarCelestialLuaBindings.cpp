@@ -1,17 +1,17 @@
 module;
+#include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
 #include "StarLua.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
 #include "StarThread.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -19,11 +19,11 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarList.hpp"
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
@@ -40,7 +40,7 @@ import star.worker_pool;
 import star.sector_array_2d;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"
@@ -61,7 +61,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 

@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
@@ -25,7 +25,7 @@ import star.audio;
 #include "StarConfig.hpp"
 import star.rpc_promise;
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
@@ -33,14 +33,14 @@ import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 import star.version;
-#include "StarAStar.hpp"
-#include "StarSpline.hpp"
+import star.a_star;
+import star.spline;
 import star.observer_stream;
-#include "StarEither.hpp"
+import star.either;
 
 // Keep Object's Lua/JSON foundations first for GCC 16 BMI loading.
 #include "StarLuaRoot.hpp"
@@ -100,6 +100,7 @@ import star.non_rotated_drawables_item;
 import star.beam_item;
 import star.durability_item;
 import star.pointable_item;
+import star.net_compatibility;
 STAR_STRUCT(PreviewTile);
 STAR_CLASS(PreviewTileTool);
 import star.preview_tile_tool;

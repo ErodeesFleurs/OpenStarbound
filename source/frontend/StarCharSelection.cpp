@@ -15,7 +15,7 @@ import star.directives;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
@@ -30,15 +30,15 @@ import star.game_types;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarArray.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 

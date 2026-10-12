@@ -1,13 +1,13 @@
 #pragma once
 
+#include "StarJson.hpp"
 #include <typeindex>
 #include <type_traits>
 #include <lua.hpp>
 
-#include "StarJson.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarString.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -17,6 +17,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 
+import star.byte_array;
 namespace Star {
 
 class LuaEngine;

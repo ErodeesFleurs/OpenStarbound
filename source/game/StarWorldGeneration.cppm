@@ -1,10 +1,10 @@
 module;
-#include "StarXXHash.hpp"
 #include "StarJson.hpp"
+#include "StarXXHash.hpp"
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.game_types;
 import star.material_types;
 #include "StarPoly.hpp"
@@ -34,7 +34,7 @@ import star.image;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;

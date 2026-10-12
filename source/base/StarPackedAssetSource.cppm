@@ -1,11 +1,12 @@
 module;
+import star.byte_array;
 
+#include "StarJson.hpp"
 #include <utility>
 
 #include "StarOrderedMap.hpp"
 #include "StarFile.hpp"
 #include "StarIODevice.hpp"
-#include "StarJson.hpp"
 import star.asset_source;
 #include "StarString.hpp"
 import star.directory_asset_source;

@@ -1,14 +1,12 @@
-#pragma once
+module;
 
-#include "StarRandom.hpp"
+import star.random;
 #include "StarPoly.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
-#include "StarThread.hpp"
 import star.time;
 import star.ttl_cache;
 
+import star.static_random;
 namespace Star {
 
 // An "infinite" generator of points on a 2d plane, generated cell by cell with
@@ -82,4 +80,10 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
   return finalResult;
 }
 
+}
+
+export module star.random_point;
+
+export namespace Star {
+  using ::Star::Random2dPointGenerator;
 }

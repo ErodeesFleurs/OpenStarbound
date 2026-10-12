@@ -10,7 +10,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarFile.hpp"

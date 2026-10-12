@@ -1,18 +1,14 @@
 set (star_core_HEADERS
-    StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
     StarBTree.hpp
     StarBiMap.hpp
     StarBlockAllocator.hpp
-    StarByteArray.hpp
-    StarBytes.hpp
     StarCasting.hpp
     StarConfig.hpp
     StarDataStream.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
-    StarEither.hpp
     StarException.hpp
     StarFile.hpp
     StarFlatHashMap.hpp
@@ -20,13 +16,10 @@ set (star_core_HEADERS
     StarFormat.hpp
     StarHash.hpp
     StarIODevice.hpp
-    StarIdMap.hpp
     StarInterpolation.hpp
-    StarRefPtr.hpp
     StarIterator.hpp
     StarJson.hpp
     StarJsonExtra.hpp
-    StarLexicalCast.hpp
     StarLine.hpp
     StarList.hpp
     StarLogging.hpp
@@ -36,22 +29,15 @@ set (star_core_HEADERS
     StarMathCommon.hpp
     StarMatrix3.hpp
     StarMaybe.hpp
-    StarMemory.hpp
     StarMultiArray.hpp
-    StarNetCompatibility.hpp
     StarNetImpl.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
-    StarOutputProxy.hpp
     StarPch.hpp
     StarPoly.hpp
     StarPythonic.hpp
-    StarRandom.hpp
-    StarRandomPoint.hpp
     StarRect.hpp
     StarSet.hpp
-    StarSpline.hpp
-    StarStaticRandom.hpp
     StarStaticVector.hpp
     StarString.hpp
     StarStringView.hpp
@@ -63,20 +49,15 @@ set (star_core_HEADERS
   )
 
 set (star_core_SOURCES
-    StarByteArray.cpp
     StarDataStream.cpp
     StarDataStreamDevices.cpp
     StarFile.cpp
     StarIODevice.cpp
     StarJson.cpp
     StarJsonExtra.cpp
-    StarLexicalCast.cpp
     StarLogging.cpp
     StarLua.cpp
     StarLuaConverters.cpp
-    StarMemory.cpp
-    StarNetCompatibility.cpp
-    StarRandom.cpp
     StarString.cpp
     StarStringView.cpp
     StarThread.cpp
@@ -151,6 +132,11 @@ target_sources (star_modules PUBLIC FILE_SET CXX_MODULES
           StarMultiTable.cppm
           StarMultiArrayInterpolator.cppm
           StarSpatialHash2D.cppm
+          StarSpline.cppm StarRandomPoint.cppm
+          StarAStar.cppm StarEither.cppm StarRefPtr.cppm StarIdMap.cppm
+          StarOutputProxy.cppm StarMemory.cppm StarNetCompatibility.cppm
+          StarLexicalCast.cppm StarRandom.cppm StarByteArray.cppm
+          StarBytes.cppm StarStaticRandom.cppm
           StarAudio.cppm
           StarColor.cppm
           StarFont.cppm
@@ -163,6 +149,8 @@ target_sources (star_modules PRIVATE
     StarJsonBuilder.cpp StarFormattedJson.cpp StarJsonRpc.cpp
     StarNetElement.cpp StarNetElementBasicFields.cpp
     StarNetElementGroup.cpp StarNetElementSyncGroup.cpp
+    StarByteArray.cpp StarLexicalCast.cpp StarMemory.cpp
+    StarNetCompatibility.cpp StarRandom.cpp
     StarAssetPath.cpp
     StarBTreeDatabase.cpp
     StarBuffer.cpp

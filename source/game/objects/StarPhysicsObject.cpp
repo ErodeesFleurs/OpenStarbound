@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -13,7 +13,7 @@ import star.game_types;
 #include "StarInterpolation.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 import star.periodic_function;
 #include "StarSet.hpp"
@@ -33,7 +33,7 @@ import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

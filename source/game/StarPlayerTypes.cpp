@@ -1,7 +1,7 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.player_types;
 
 namespace Star {

@@ -1,6 +1,6 @@
 #pragma once
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarLuaConverters.hpp"
@@ -10,7 +10,7 @@
 #include "StarList.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.game_types;
 import star.liquid_types;
 #include "StarMaybe.hpp"
@@ -27,10 +27,10 @@ import star.asset_path;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarArray.hpp"
-#include "StarEither.hpp"
+import star.either;
 
 
 import star.light_source;

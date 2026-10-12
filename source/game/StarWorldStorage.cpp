@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarRect.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
@@ -32,7 +32,7 @@ import star.btree_database;
 import star.version;
 import star.rpc_promise;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include <functional>
@@ -49,7 +49,7 @@ import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 
 import star.damage_types;
@@ -98,6 +98,7 @@ import star.entity_factory;
 
 import star.entity_map;
 
+import star.byte_array;
 namespace Star {
 
 WorldChunks WorldStorage::getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) {

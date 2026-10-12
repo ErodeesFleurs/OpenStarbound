@@ -8,7 +8,7 @@ import star.damage_types;
 #include "StarPoly.hpp"
 import star.world_geometry;
 #include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
 import star.damage;
 #include "StarDataStream.hpp"

@@ -1,9 +1,10 @@
 module;
+import star.byte_array;
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarFormat.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 #include <zlib-ng.h>
 #include <errno.h>

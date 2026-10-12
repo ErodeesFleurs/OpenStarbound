@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
-#include "StarRandom.hpp"
+import star.id_map;
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"

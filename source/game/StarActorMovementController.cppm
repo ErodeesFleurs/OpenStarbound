@@ -1,6 +1,6 @@
 module;
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarPoly.hpp"
@@ -12,7 +12,7 @@ import star.game_types;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 
 import star.damage_types;
 import star.world_geometry;

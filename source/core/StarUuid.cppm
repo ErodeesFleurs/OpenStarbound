@@ -1,4 +1,5 @@
 module;
+import star.byte_array;
 
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"

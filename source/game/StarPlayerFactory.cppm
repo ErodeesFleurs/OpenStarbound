@@ -1,4 +1,6 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -6,7 +8,7 @@ import star.game_types;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

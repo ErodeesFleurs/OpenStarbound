@@ -1,5 +1,5 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
@@ -11,13 +11,13 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarDataStream.hpp"
 import star.image_processing;
@@ -58,6 +58,9 @@ import star.damage_types;
 import star.drawable;
 import star.entity_rendering_types;
 
+import star.either;
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(LuaRoot);

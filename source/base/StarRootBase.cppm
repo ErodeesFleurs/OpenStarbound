@@ -1,6 +1,6 @@
 module;
 
-#include "StarMemory.hpp"
+import star.memory;
 #include "StarException.hpp"
 
 namespace Star {

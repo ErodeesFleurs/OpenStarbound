@@ -1,6 +1,7 @@
 module;
-#include "StarArray.hpp"
+import star.byte_array;
 #include "StarJson.hpp"
+#include "StarArray.hpp"
 #include "StarBiMap.hpp"
 #include "StarException.hpp"
 #include "StarVector.hpp"

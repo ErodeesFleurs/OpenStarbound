@@ -1,11 +1,12 @@
 #pragma once
 
+#include "StarVariant.hpp"
 #include "StarDataStream.hpp"
 #include "StarMultiArray.hpp"
 import star.color;
 #include "StarPoly.hpp"
 #include "StarMaybe.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
 

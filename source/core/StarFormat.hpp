@@ -1,7 +1,7 @@
 #pragma once
 #include <utility>
 
-#include "StarMemory.hpp"
+import star.memory;
 #include "StarException.hpp"
 
 #include "fmt/core.h"

@@ -1,6 +1,8 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -12,7 +14,7 @@ import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVector.hpp"
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 #include "StarPoly.hpp"
 import star.audio;
@@ -27,9 +29,9 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

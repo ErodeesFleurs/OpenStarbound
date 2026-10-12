@@ -1,15 +1,15 @@
+#include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarMatrix3.hpp"
 #include "StarInterpolation.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 import star.color;
 import star.image;
 #include "StarStringView.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 #include "StarLogging.hpp"
 

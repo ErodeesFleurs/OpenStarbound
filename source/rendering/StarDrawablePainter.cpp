@@ -15,7 +15,7 @@ import star.drawable;
 #include "StarVariant.hpp"
 import star.image;
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"

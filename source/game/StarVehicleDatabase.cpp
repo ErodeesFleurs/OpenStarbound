@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -23,7 +23,7 @@ import star.directives;
 import star.asset_path;
 #include "StarLua.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -31,7 +31,7 @@ import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -83,6 +83,8 @@ import star.vehicle_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle")) {

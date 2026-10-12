@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -24,17 +24,17 @@ import star.color;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarArray.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -112,6 +112,8 @@ import star.image_metadata_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 PlantDrop::PlantDropPiece::PlantDropPiece() {

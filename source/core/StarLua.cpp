@@ -4,6 +4,10 @@
 import star.time;
 #include "imgui_lua_bindings.hpp"
 
+import star.ref_ptr;
+import star.memory;
+import star.lexical_cast;
+import star.byte_array;
 auto fmt::formatter<Star::LuaValue>::format(Star::LuaValue const& value, fmt::format_context& context) const
     -> fmt::format_context::iterator {
   return fmt::ostream_formatter::format(value, context);

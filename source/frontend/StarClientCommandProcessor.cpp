@@ -6,7 +6,7 @@
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -18,9 +18,9 @@ import star.json_rpc;
 #include "StarVector.hpp"
 #include "StarArray.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
-#include "StarBytes.hpp"
+import star.bytes;
 #include "StarFormat.hpp"
 #include "StarOrderedSet.hpp"
 import star.input_event;
@@ -40,24 +40,25 @@ import star.listener;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarEither.hpp"
+import star.either;
 #include "StarVariant.hpp"
 import star.weighted_pool;
 #include "StarDataStreamDevices.hpp"
 
+import star.lexical_cast;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <atomic>
 #include <memory>
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include <functional>
@@ -71,7 +72,7 @@ import star.perlin;
 import star.btree_database;
 import star.rpc_promise;
 import star.image;
-#include "StarAStar.hpp"
+import star.a_star;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 

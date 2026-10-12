@@ -1,7 +1,7 @@
 module;
 
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include <bit>
 #include "StarFormat.hpp"
 import star.encode;

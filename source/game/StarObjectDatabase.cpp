@@ -1,8 +1,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -40,7 +40,7 @@ import star.audio;
 #include "StarMaybe.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -104,6 +104,8 @@ import star.light_source;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 ObjectOrientation::ParticleEmissionEntry ObjectOrientation::parseParticleEmitter(

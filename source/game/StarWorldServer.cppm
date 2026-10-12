@@ -1,14 +1,14 @@
 module;
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarMultiArray.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarRect.hpp"
 import star.image;
 import star.color;
@@ -28,7 +28,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
@@ -40,7 +40,7 @@ import star.worker_pool;
 import star.sector_array_2d;
 #include <functional>
 #include "StarOrderedMap.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"
@@ -110,6 +110,7 @@ import star.interpolation_tracker;
 import star.spawn_type_database;
 import star.spawner;
 
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(Player);

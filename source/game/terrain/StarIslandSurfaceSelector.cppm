@@ -6,15 +6,15 @@ module;
 import star.lru_cache;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.game_types;
-#include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
 export module star.terrain_island_surface;
 import star.terrain_database;
 
+import star.static_random;
 export namespace Star {
 
 struct IslandColumn {

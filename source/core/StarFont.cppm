@@ -3,7 +3,7 @@ module;
 #include "StarString.hpp"
 #include "StarVector.hpp"
 import star.image;
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMap.hpp"
 
 namespace Star {

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "StarString.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 
+import star.byte_array;
+import star.bytes;
 namespace Star {
 
 struct DataStreamExceptionTag {

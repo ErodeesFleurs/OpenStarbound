@@ -2,8 +2,8 @@
 #include "StarString.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarRandom.hpp"
+import star.lexical_cast;
+import star.random;
 
 #include "gtest/gtest.h"
 

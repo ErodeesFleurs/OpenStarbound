@@ -1,9 +1,9 @@
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
-#include "StarEither.hpp"
+import star.either;
 
 #include "gtest/gtest.h"
 import star.stat_collection;

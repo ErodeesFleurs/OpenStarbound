@@ -7,7 +7,7 @@ module;
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 import star.weighted_pool;
 #include "StarThread.hpp"
@@ -17,7 +17,7 @@ import star.weighted_pool;
 import star.btree_database;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"

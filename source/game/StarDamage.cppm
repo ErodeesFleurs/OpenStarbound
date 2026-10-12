@@ -9,9 +9,10 @@ import star.damage_types;
 import star.world_geometry;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
 
+import star.either;
 namespace Star {
 
 struct DamageSource {

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarVariant.hpp"
 
@@ -240,4 +240,16 @@ Right* Either<Left, Right>::rightPtr() {
   return nullptr;
 }
 
+}
+
+export module star.either;
+
+export namespace Star {
+  using ::Star::EitherExceptionTag;
+  using ::Star::EitherException;
+  using ::Star::EitherLeftValue;
+  using ::Star::EitherRightValue;
+  using ::Star::makeLeft;
+  using ::Star::makeRight;
+  using ::Star::Either;
 }

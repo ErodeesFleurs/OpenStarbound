@@ -1,5 +1,5 @@
 #pragma once
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
@@ -13,7 +13,7 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 
 
 import star.damage_types;

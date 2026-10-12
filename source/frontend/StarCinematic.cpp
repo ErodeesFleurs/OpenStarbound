@@ -1,6 +1,6 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarThread.hpp"
 import star.time;
 import star.color;
@@ -28,16 +28,16 @@ import star.audio;
 #include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarEither.hpp"
-#include "StarRandom.hpp"
+import star.either;
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -45,7 +45,7 @@ import star.weighted_pool;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarArray.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
 
@@ -58,7 +58,7 @@ import star.lru_cache;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 

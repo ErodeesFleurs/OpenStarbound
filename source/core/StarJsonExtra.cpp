@@ -1,6 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 namespace Star {
 

@@ -1,5 +1,7 @@
+#include "StarHash.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+import star.item_recipe;
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
@@ -7,7 +9,6 @@ import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
-#include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
@@ -22,7 +23,7 @@ import star.game_types;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -33,7 +34,6 @@ import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.item;
 import star.item_descriptor;
-import star.item_recipe;
 import star.asset_source;
 import star.assets;
 import star.root_base;

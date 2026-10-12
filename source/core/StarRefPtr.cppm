@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarException.hpp"
 #include "StarHash.hpp"
@@ -297,4 +297,20 @@ inline void refPtrDecRef(RefCounter* p) {
 inline RefCounter::RefCounter()
   : m_refCounter(0) {}
 
+}
+
+export module star.ref_ptr;
+
+export namespace Star {
+  using ::Star::RefPtr;
+  using ::Star::RefCounter;
+  using ::Star::operator==;
+  using ::Star::operator!=;
+  using ::Star::operator<;
+  using ::Star::is;
+  using ::Star::as;
+  using ::Star::make_ref;
+  using ::Star::hash;
+  using ::Star::refPtrIncRef;
+  using ::Star::refPtrDecRef;
 }

@@ -1,4 +1,6 @@
 module;
+import star.byte_array;
+#include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
@@ -7,7 +9,7 @@ import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -20,16 +22,15 @@ import star.directives;
 import star.asset_path;
 #include "StarArray.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarEither.hpp"
-#include "StarIdMap.hpp"
+import star.either;
+import star.id_map;
 #include "StarMultiArray.hpp"
-#include "StarXXHash.hpp"
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarCasting.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;

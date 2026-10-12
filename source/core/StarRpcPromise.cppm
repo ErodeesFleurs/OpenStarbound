@@ -1,6 +1,7 @@
 module;
 
-#include "StarEither.hpp"
+#include "StarVariant.hpp"
+import star.either;
 #include "StarString.hpp"
 #include "StarThread.hpp"
 

@@ -1,5 +1,5 @@
 #include "StarJson.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.rpc_promise;
 import star.json_rpc;
 #include "StarDataStreamDevices.hpp"

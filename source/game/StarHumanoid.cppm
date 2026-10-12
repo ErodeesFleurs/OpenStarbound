@@ -15,7 +15,7 @@ import star.directives;
 import star.asset_path;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -36,6 +36,7 @@ import star.networked_animator;
 import star.net_element_containers;
 import star.net_element_sync_group;
 
+import star.net_compatibility;
 namespace Star {
 
 // Required for renderDummy

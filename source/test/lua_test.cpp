@@ -1,6 +1,6 @@
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 #include "gtest/gtest.h"
 

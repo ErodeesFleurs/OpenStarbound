@@ -18,7 +18,7 @@ import star.font;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
 import star.image_processing;
@@ -58,6 +58,7 @@ import star.pane;
 import star.game_timers;
 import star.pane_manager;
 
+import star.output_proxy;
 namespace Star {
 
 // This class inherits PaneManager to allow for registered panes that are kept

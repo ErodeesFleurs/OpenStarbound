@@ -1,10 +1,9 @@
 module;
 
 #include "StarJson.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJson.hpp"
+import star.lexical_cast;
 import star.json_path;
-#include "StarLexicalCast.hpp"
 
 export module star.json_patch;
 

@@ -2,7 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -19,7 +19,7 @@ import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

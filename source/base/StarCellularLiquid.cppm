@@ -4,7 +4,7 @@ module;
 #include "StarMultiArray.hpp"
 #include "StarMap.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarBlockAllocator.hpp"
 
 

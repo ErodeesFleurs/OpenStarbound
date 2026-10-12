@@ -1,4 +1,4 @@
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"

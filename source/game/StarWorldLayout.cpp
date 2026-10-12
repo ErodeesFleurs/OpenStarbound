@@ -14,17 +14,17 @@ import star.liquid_types;
 #include "StarVariant.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarPoly.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarMaybe.hpp"
 import star.color;
 #include "StarVector.hpp"
@@ -72,6 +72,7 @@ import star.terrain_database;
 import star.biome_database;
 
 
+import star.static_random;
 namespace Star {
 
 WorldRegion::WorldRegion()

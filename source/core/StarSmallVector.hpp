@@ -2,6 +2,7 @@
 
 #include "StarAlgorithm.hpp"
 
+import star.memory;
 namespace Star {
 
 // A vector that is stack allocated up to a maximum size, becoming heap

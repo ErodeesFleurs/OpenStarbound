@@ -1,7 +1,7 @@
-#pragma once
+module;
 
-#include "StarString.hpp"
 #include "StarXXHash.hpp"
+#include "StarString.hpp"
 #include "StarException.hpp"
 
 namespace Star {
@@ -149,4 +149,27 @@ void staticRandomShuffle(Container& container, T const& d, TL const&... rest) {
   }
 }
 
+}
+
+export module star.static_random;
+
+export namespace Star {
+  using ::Star::staticRandomHash32Iter;
+  using ::Star::staticRandomHash32;
+  using ::Star::staticRandomHash64Iter;
+  using ::Star::staticRandomHash64;
+  using ::Star::staticRandomU32;
+  using ::Star::staticRandomU64;
+  using ::Star::staticRandomI32;
+  using ::Star::staticRandomI32Range;
+  using ::Star::staticRandomU32Range;
+  using ::Star::staticRandomI64;
+  using ::Star::staticRandomFloat;
+  using ::Star::staticRandomFloatRange;
+  using ::Star::staticRandomDouble;
+  using ::Star::staticRandomDoubleRange;
+  using ::Star::staticRandomFrom;
+  using ::Star::staticRandomValueFrom;
+  using ::Star::URBG;
+  using ::Star::staticRandomShuffle;
 }

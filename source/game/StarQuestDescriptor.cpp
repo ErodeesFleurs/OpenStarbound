@@ -1,12 +1,12 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+#include "StarJsonExtra.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
@@ -17,7 +17,7 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -31,7 +31,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

@@ -6,7 +6,7 @@ import star.image;
 #include "StarPoly.hpp"
 #include "StarVector.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"
@@ -22,7 +22,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;

@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarHash.hpp"
 #include "StarException.hpp"
@@ -268,3 +268,17 @@ inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
 }
 
 template <> struct fmt::formatter<Star::ByteArray> : ostream_formatter {};
+
+export module star.byte_array;
+
+export namespace Star {
+  using ::Star::ByteArray;
+  using ::Star::ByteArrayPtr;
+  using ::Star::ByteArrayConstPtr;
+  using ::Star::ByteArrayWeakPtr;
+  using ::Star::ByteArrayConstWeakPtr;
+  using ::Star::ByteArrayUPtr;
+  using ::Star::ByteArrayConstUPtr;
+  using ::Star::hash;
+  using ::Star::operator<<;
+}

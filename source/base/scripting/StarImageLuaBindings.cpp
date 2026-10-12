@@ -1,5 +1,5 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
 import star.image;
@@ -16,7 +16,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 
 import star.image_lua_bindings;
 import star.asset_source;

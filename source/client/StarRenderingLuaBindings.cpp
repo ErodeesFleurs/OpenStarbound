@@ -10,7 +10,7 @@ module;
 import star.image;
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 
 module star.rendering_lua_bindings;

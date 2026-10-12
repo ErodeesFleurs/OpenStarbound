@@ -1,13 +1,12 @@
-#pragma once
+module;
 
 #include <queue>
-
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarMathCommon.hpp"
 #include "StarBlockAllocator.hpp"
+import star.lexical_cast;
 
 namespace Star {
 namespace AStar {
@@ -270,4 +269,12 @@ namespace AStar {
   }
 }
 
+}
+
+export module star.a_star;
+
+export namespace Star::AStar {
+  using ::Star::AStar::Score;
+  using ::Star::AStar::Path;
+  using ::Star::AStar::Search;
 }

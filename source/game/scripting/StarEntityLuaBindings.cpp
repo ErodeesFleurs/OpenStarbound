@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarLua.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -16,7 +16,7 @@ import star.rpc_promise;
 #include "StarArray.hpp"
 #include "StarMaybe.hpp"
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.audio;
 #include "StarThread.hpp"
@@ -29,9 +29,9 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

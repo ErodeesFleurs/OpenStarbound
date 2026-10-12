@@ -1,9 +1,11 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 
-#include "StarMaybe.hpp"
-#include "StarRandom.hpp"
-import star.weighted_pool;
 #include "StarJson.hpp"
+#include "StarMaybe.hpp"
+import star.random;
+import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"

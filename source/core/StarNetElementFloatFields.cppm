@@ -1,4 +1,5 @@
 module;
+import star.net_compatibility;
 
 #include <type_traits>
 

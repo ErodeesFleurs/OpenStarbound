@@ -12,7 +12,7 @@ import star.application_controller;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 import star.main_application;
 #include "StarLogging.hpp"
@@ -26,7 +26,7 @@ import star.renderer_opengl;
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarList.hpp"
 import star.image_processing;
@@ -55,6 +55,7 @@ import star.platform_services_pc;
 import star.signal_handler;
 import star.tick_rate_monitor;
 
+import star.byte_array;
 namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS

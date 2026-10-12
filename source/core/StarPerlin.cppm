@@ -3,7 +3,7 @@ module;
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 namespace Star {
 

@@ -1,4 +1,4 @@
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;

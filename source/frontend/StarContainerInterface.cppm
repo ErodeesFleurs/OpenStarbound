@@ -1,5 +1,5 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
 #include "StarJson.hpp"

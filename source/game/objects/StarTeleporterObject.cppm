@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
@@ -12,7 +12,7 @@ import star.game_types;
 #include "StarBiMap.hpp"
 #include "StarList.hpp"
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;

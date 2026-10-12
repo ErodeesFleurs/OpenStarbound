@@ -1,7 +1,7 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarInterpolation.hpp"
 import star.image;
@@ -9,7 +9,7 @@ import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarVector.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -18,7 +18,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -30,11 +30,11 @@ import star.ttl_cache;
 import star.listener;
 #include "StarBiMap.hpp"
 import star.perlin;
-#include "StarRandomPoint.hpp"
+#include "StarPoly.hpp"
+import star.random_point;
 import star.font;
 #include "StarString.hpp"
 import star.text;
-#include "StarPoly.hpp"
 import star.color;
 import star.asset_path;
 #include "StarConfig.hpp"
@@ -47,7 +47,7 @@ import star.worker_pool;
 import star.sector_array_2d;
 #include "StarVariant.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 
 import star.world_geometry;

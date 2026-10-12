@@ -1,14 +1,14 @@
+#include "StarJson.hpp"
+#include "StarXXHash.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 import star.uuid;
-#include "StarRandom.hpp"
-#include "StarJson.hpp"
+import star.random;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
 import star.perlin;
-#include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 import star.rpc_promise;
@@ -25,6 +25,7 @@ import star.directives;
 import star.text;
 import star.time;
 
+import star.static_random;
 namespace Star {
 
 template <>

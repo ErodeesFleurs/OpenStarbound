@@ -1,5 +1,5 @@
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 #include "StarPythonic.hpp"
 

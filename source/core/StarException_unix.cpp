@@ -10,6 +10,7 @@
 #include <execinfo.h>
 #endif
 
+import star.output_proxy;
 namespace Star {
 
 #ifdef STAR_USE_CPPTRACE

@@ -1,13 +1,13 @@
 module;
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+#include "StarJsonExtra.hpp"
+import star.id_map;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
@@ -28,7 +28,7 @@ import star.asset_path;
 import star.game_types;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 
 
 import star.item;

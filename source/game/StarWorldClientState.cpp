@@ -14,7 +14,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -28,6 +28,8 @@ import star.root;
 
 import star.world_client_state;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 WorldClientState::WorldClientState() {

@@ -5,9 +5,9 @@
 #include "StarVector.hpp"
 import star.game_types;
 #include "StarVariant.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
-#include "StarEither.hpp"
+import star.either;
 #include "StarCasting.hpp"
 import star.input_event;
 import star.color;
@@ -22,7 +22,7 @@ import star.directives;
 #include "StarBiMap.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;

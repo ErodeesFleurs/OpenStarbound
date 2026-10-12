@@ -4,6 +4,7 @@
 #include "StarLua.hpp"
 import star.listener;
 
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(LuaRoot);

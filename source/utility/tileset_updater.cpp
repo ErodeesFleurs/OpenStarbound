@@ -1,7 +1,7 @@
 #include "StarLogging.hpp"
 #include "StarJson.hpp"
 import star.game_types;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "tileset_updater.hpp"
 
 using namespace Star;

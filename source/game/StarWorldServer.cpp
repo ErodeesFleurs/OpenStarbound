@@ -1,11 +1,11 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.game_types;
 import star.material_types;
 #include "StarPoly.hpp"
@@ -42,10 +42,10 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.image;
 #include "StarOrderedMap.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
@@ -53,7 +53,7 @@ import star.lru_cache;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 import star.spatial_hash_2d;
 #include "StarLua.hpp"
@@ -61,9 +61,9 @@ import star.periodic;
 import star.periodic_function;
 import star.audio;
 #include "StarMatrix3.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 import star.lock_file;
-#include "StarByteArray.hpp"
+import star.byte_array;
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;

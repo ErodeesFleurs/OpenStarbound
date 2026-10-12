@@ -1,6 +1,6 @@
 module;
-#include "StarIdMap.hpp"
 #include "StarJson.hpp"
+import star.id_map;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 

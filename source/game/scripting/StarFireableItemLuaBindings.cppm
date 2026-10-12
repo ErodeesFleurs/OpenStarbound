@@ -1,5 +1,5 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarJson.hpp"
 #include "StarLua.hpp"
 #include "StarJsonExtra.hpp"
@@ -22,7 +22,7 @@ import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarAStar.hpp"
+import star.a_star;
 
 #include "StarLuaGameConverters.hpp"
 import star.damage_types;

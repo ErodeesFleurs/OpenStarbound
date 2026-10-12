@@ -8,7 +8,7 @@ import star.liquid_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -25,7 +25,7 @@ import star.asset_path;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -47,6 +47,8 @@ import star.liquids_database;
 import star.biome_database;
 
 
+import star.byte_array;
+import star.static_random;
 namespace Star {
 
 extern EnumMap<WorldParametersType> const WorldParametersTypeNames{

@@ -6,6 +6,7 @@
 #include "StarFlatHashMap.hpp"
 #include "StarList.hpp"
 
+import star.output_proxy;
 namespace Star {
 
 struct MapExceptionTag {

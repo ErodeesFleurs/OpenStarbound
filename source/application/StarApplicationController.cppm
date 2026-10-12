@@ -1,4 +1,5 @@
 module;
+import star.byte_array;
 
 #include "StarString.hpp"
 import star.input_event;

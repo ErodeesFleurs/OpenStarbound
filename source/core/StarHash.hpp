@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarBytes.hpp"
-
+#include "StarConfig.hpp"
+import star.bytes;
 namespace Star {
 
 // To avoid having to specialize std::hash in the std namespace, which is

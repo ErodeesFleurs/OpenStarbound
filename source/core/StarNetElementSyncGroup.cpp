@@ -3,6 +3,7 @@
 import star.net_element_group;
 import star.net_element_sync_group;
 
+import star.net_compatibility;
 namespace Star {
 
 void NetElementSyncGroup::enableNetInterpolation(float extrapolationHint) {

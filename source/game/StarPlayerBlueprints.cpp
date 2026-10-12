@@ -1,6 +1,6 @@
-#include "StarByteArray.hpp"
-#include "StarSet.hpp"
 #include "StarJson.hpp"
+import star.byte_array;
+#include "StarSet.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.item_descriptor;

@@ -1,7 +1,8 @@
 module;
+import star.net_compatibility;
 #include "StarJson.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

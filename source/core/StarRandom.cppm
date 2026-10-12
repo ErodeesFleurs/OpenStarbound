@@ -1,7 +1,8 @@
-#pragma once
+module;
 
-#include "StarStaticRandom.hpp"
-#include "StarByteArray.hpp"
+#include "StarException.hpp"
+import star.static_random;
+import star.byte_array;
 
 namespace Star {
 
@@ -215,4 +216,33 @@ void Random::shuffle(Container& container) {
   std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() { return static_cast<size_t>(random.randu64()); }));
 }
 
+}
+
+export module star.random;
+
+export namespace Star {
+  using ::Star::RandomExceptionTag;
+  using ::Star::RandomException;
+  using ::Star::RandomSource;
+}
+
+export namespace Star::Random {
+  using ::Star::Random::init;
+  using ::Star::Random::addEntropy;
+  using ::Star::Random::randu32;
+  using ::Star::Random::randu64;
+  using ::Star::Random::randi32;
+  using ::Star::Random::randi64;
+  using ::Star::Random::randf;
+  using ::Star::Random::randd;
+  using ::Star::Random::randInt;
+  using ::Star::Random::randUInt;
+  using ::Star::Random::randb;
+  using ::Star::Random::nrandf;
+  using ::Star::Random::nrandd;
+  using ::Star::Random::stochasticRound;
+  using ::Star::Random::randBytes;
+  using ::Star::Random::randFrom;
+  using ::Star::Random::randValueFrom;
+  using ::Star::Random::shuffle;
 }

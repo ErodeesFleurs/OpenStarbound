@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fmt/ostream.h"
+
 #include "StarException.hpp"
 #include "StarHash.hpp"
 

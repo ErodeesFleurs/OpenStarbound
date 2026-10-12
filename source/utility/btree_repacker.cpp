@@ -17,6 +17,7 @@ import star.option_parser;
 import star.version;
 import star.version_option_parser;
 
+import star.byte_array;
 using namespace Star;
 
 int main(int argc, char** argv) {

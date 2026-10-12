@@ -1,7 +1,9 @@
 module;
 
-#include "StarByteArray.hpp"
-#include "StarEither.hpp"
+#include "StarVariant.hpp"
+
+import star.byte_array;
+import star.either;
 #include "StarList.hpp"
 #include "StarMaybe.hpp"
 #include "StarString.hpp"

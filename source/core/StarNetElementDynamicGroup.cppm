@@ -1,6 +1,8 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarDataStreamDevices.hpp"

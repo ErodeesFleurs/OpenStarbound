@@ -1,8 +1,9 @@
 module;
 
+#include "StarFormat.hpp"
 #include <vector>
 
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMaybe.hpp"
 #include "StarUnicode.inc"
 

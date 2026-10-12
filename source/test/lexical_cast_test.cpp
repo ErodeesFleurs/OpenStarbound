@@ -1,4 +1,4 @@
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 #include <string_view>
 

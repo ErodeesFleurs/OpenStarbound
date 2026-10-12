@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -23,12 +23,12 @@ import star.directives;
 import star.asset_path;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarMathCommon.hpp"
 import star.periodic;
@@ -93,6 +93,7 @@ import star.treasure;
 
 import star.item_bag;
 
+import star.static_random;
 namespace Star {
 
 TreasureDatabase::TreasureDatabase() {

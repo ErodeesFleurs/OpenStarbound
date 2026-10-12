@@ -13,15 +13,15 @@ import star.asset_path;
 import star.color;
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarDataStreamExtra.hpp"
 
 import star.tile_damage;

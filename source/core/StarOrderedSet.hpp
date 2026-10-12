@@ -6,6 +6,7 @@
 #include "StarSet.hpp"
 #include "StarList.hpp"
 
+import star.either;
 namespace Star {
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>

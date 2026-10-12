@@ -1,7 +1,7 @@
-#include "StarIdMap.hpp"
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"

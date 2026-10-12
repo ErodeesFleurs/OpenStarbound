@@ -12,6 +12,7 @@ import star.buffer;
 #include "gtest/gtest.h"
 import star.io_device_callbacks;
 
+import star.byte_array;
 using namespace Star;
 
 namespace {

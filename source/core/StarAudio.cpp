@@ -12,12 +12,13 @@ import star.buffer;
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 
 import star.sha256;
 import star.io_device_callbacks;
 
+import star.bytes;
 namespace Star {
 
 extern float const DefaultPerceptualRangeDb = 40.f;

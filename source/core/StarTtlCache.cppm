@@ -5,7 +5,7 @@ module;
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 
 namespace Star {
 

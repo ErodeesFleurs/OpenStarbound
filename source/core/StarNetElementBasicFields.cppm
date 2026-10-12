@@ -1,10 +1,11 @@
 module;
+import star.net_compatibility;
 
 #include <type_traits>
 
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 
 import star.net_element;
 

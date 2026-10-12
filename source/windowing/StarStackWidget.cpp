@@ -16,7 +16,7 @@ import star.directives;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
@@ -35,7 +35,7 @@ import star.game_types;
 import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarEither.hpp"
+import star.either;
 
 import star.application;
 import star.statistics_service;

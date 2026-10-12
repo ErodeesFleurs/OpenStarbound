@@ -16,7 +16,7 @@ import star.material_types;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarCasting.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -26,8 +26,8 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
-#include "StarLexicalCast.hpp"
+import star.ref_ptr;
+import star.lexical_cast;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -47,6 +47,7 @@ import star.dungeon_tmx_part;
 import star.material_database;
 
 
+import star.static_random;
 namespace Star {
 
 size_t const DefinitionsCacheSize = 20;

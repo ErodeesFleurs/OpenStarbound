@@ -21,11 +21,11 @@ import star.game_types;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarLogging.hpp"
 
 #include "StarItem.inc"

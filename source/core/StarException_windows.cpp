@@ -1,5 +1,5 @@
 #include "StarException.hpp"
-#include "StarOutputProxy.hpp"
+import star.output_proxy;
 #include "StarLogging.hpp"
 #include "StarCasting.hpp"
 #include "StarString_windows.hpp"

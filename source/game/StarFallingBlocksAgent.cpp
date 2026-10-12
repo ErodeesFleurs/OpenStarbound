@@ -3,7 +3,7 @@
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -33,7 +33,7 @@ import star.asset_path;
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 

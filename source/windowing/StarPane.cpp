@@ -19,7 +19,7 @@ import star.directives;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
@@ -78,6 +78,7 @@ import star.image_widget;
 
 import star.item_database;
 
+import star.random;
 namespace Star {
 
 extern EnumMap<PaneAnchor> const PaneAnchorNames{

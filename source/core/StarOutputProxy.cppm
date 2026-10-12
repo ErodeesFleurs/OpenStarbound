@@ -1,9 +1,9 @@
-#pragma once
+module;
 
-#include "StarMemory.hpp"
-
+#include "StarConfig.hpp"
 #include "fmt/format.h"
 #include "fmt/ostream.h"
+import star.memory;
 
 namespace Star {
 
@@ -63,3 +63,22 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 template <typename T>
 struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
 template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};
+
+export module star.output_proxy;
+
+export namespace Star {
+  using ::Star::outputAny;
+  using ::Star::OutputProxy;
+  using ::Star::operator<<;
+}
+
+export namespace Star::OutputAnyDetail {
+  using ::Star::OutputAnyDetail::string;
+  using ::Star::OutputAnyDetail::output;
+  using ::Star::OutputAnyDetail::Wrapper;
+  using ::Star::OutputAnyDetail::operator<<;
+}
+
+export namespace Star::OutputAnyDetail::Operator {
+  using ::Star::OutputAnyDetail::Operator::operator<<;
+}

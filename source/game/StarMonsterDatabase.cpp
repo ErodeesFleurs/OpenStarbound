@@ -1,6 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
@@ -11,13 +11,13 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarDataStream.hpp"
 import star.image_processing;
@@ -29,7 +29,7 @@ import star.color;
 import star.directives;
 import star.asset_path;
 #include "StarDataStreamDevices.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
@@ -38,7 +38,7 @@ import star.audio;
 #include "StarSet.hpp"
 #include "StarLua.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -102,6 +102,9 @@ import star.rebuilder;
 
 import star.monster_database;
 
+import star.net_compatibility;
+import star.byte_array;
+import star.static_random;
 namespace Star {
 
 MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {

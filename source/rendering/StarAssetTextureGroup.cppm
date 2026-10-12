@@ -9,7 +9,7 @@ import star.listener;
 #include "StarJson.hpp"
 import star.image;
 #include "StarPoly.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
 #include "StarRect.hpp"

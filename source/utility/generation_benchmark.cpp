@@ -2,7 +2,7 @@
 #include "StarXXHash.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -10,7 +10,7 @@ import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -25,14 +25,14 @@ import star.asset_path;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarInterpolation.hpp"
 import star.perlin;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -46,7 +46,7 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include <functional>
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
@@ -125,6 +125,7 @@ import star.world_server;
 
 import star.celestial_database;
 
+import star.lexical_cast;
 using namespace Star;
 
 int main(int argc, char** argv) {

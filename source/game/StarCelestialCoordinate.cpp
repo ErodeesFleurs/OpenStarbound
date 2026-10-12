@@ -4,7 +4,7 @@
 import star.celestial_coordinate;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 import star.celestial_coordinate;
@@ -16,7 +16,7 @@ import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -33,8 +33,8 @@ import star.force_regions;
 import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
-#include "StarLexicalCast.hpp"
-#include "StarStaticRandom.hpp"
+import star.lexical_cast;
+import star.static_random;
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

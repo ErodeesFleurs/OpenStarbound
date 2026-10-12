@@ -1,6 +1,8 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"

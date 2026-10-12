@@ -9,7 +9,7 @@ import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -20,14 +20,14 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarStaticRandom.hpp"
+import star.static_random;
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -52,6 +52,7 @@ import star.animation;
 import star.particle;
 import star.weather_types;
 
+import star.byte_array;
 namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}

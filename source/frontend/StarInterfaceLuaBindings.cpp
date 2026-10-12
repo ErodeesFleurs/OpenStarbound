@@ -2,7 +2,7 @@ module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
@@ -32,19 +32,19 @@ import star.audio;
 import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
-#include "StarBytes.hpp"
+import star.bytes;
 #include "StarFormat.hpp"
 import star.time;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarEither.hpp"
+import star.either;
 #include "StarVariant.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -54,7 +54,7 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <atomic>
 #include <memory>
 #include "StarMultiArray.hpp"

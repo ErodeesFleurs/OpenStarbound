@@ -1,10 +1,10 @@
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.game_types;
 import star.material_types;
 #include "StarPoly.hpp"
@@ -48,16 +48,16 @@ import star.lru_cache;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.rpc_promise;
-#include "StarEither.hpp"
+import star.either;
 #include "StarArray.hpp"
-#include "StarNetCompatibility.hpp"
-#include "StarAStar.hpp"
+import star.net_compatibility;
+import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 import star.audio;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 import star.periodic;
 import star.time;
@@ -182,6 +182,7 @@ import star.sky;
 import star.falling_blocks_agent;
 import star.entity_map;
 
+import star.static_random;
 namespace Star {
 namespace {
 

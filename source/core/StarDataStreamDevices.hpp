@@ -5,6 +5,8 @@
 import star.buffer;
 #include "StarDataStream.hpp"
 
+import star.either;
+import star.byte_array;
 namespace Star {
 
 // Implements DataStream using function objects as implementations of read/write.

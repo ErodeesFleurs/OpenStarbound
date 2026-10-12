@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -12,7 +12,7 @@ import star.rpc_promise;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
@@ -37,17 +37,17 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarLua.hpp"
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.observer_stream;
-#include "StarEither.hpp"
+import star.either;
 
 #include "StarMonster.inc"
 import star.mixer;
@@ -117,6 +117,8 @@ import star.status_controller_lua_bindings;
 import star.monster_database;
 import star.behavior_state;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {

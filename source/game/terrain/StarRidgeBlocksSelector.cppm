@@ -3,9 +3,8 @@ module;
 
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
-#include "StarRandom.hpp"
 
 export module star.terrain_ridge_blocks;
 import star.terrain_database;

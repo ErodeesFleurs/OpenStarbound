@@ -1,12 +1,12 @@
+#include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
 #include "StarThread.hpp"
 #include "StarConfig.hpp"
 import star.version;
 #include "StarFile.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
 #include "StarLogging.hpp"
 #include "StarVariant.hpp"
@@ -38,14 +38,14 @@ import star.listener;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
-#include "StarIdMap.hpp"
+import star.ref_ptr;
+import star.id_map;
 #include "StarArray.hpp"
 import star.rpc_promise;
 #include "StarStrongTypedef.hpp"
-#include "StarAStar.hpp"
-#include "StarEither.hpp"
-#include "StarRandom.hpp"
+import star.a_star;
+import star.either;
+import star.random;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 #include "StarBlockAllocator.hpp"
@@ -55,7 +55,7 @@ import star.weighted_pool;
 import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
 
@@ -160,6 +160,8 @@ import star.weather;
 import star.world_client;
 import star.root_loader;
 import star.input;
+import star.lexical_cast;
+import star.bytes;
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;

@@ -17,10 +17,10 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 import star.option_parser;
 import star.version_option_parser;

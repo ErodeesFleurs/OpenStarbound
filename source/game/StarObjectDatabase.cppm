@@ -1,8 +1,8 @@
 module;
-#include "StarIdMap.hpp"
-#include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
 #include "StarJson.hpp"
+import star.id_map;
+#include "StarInterpolation.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
@@ -48,6 +48,8 @@ import star.tile_entity;
 
 import star.light_source;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(World);

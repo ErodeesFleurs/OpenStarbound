@@ -20,7 +20,7 @@ import star.game_types;
 import star.liquid_types;
 import star.material_types;
 import star.entity_rendering_types;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 namespace Star {
 

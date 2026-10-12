@@ -1,13 +1,13 @@
 module;
-#include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+#include "StarXXHash.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 import star.image;
 #include "StarPoly.hpp"
@@ -29,7 +29,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
 #include "StarCasting.hpp"

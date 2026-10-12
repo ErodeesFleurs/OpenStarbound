@@ -1,9 +1,10 @@
 module;
+import star.byte_array;
 
+#include "StarJson.hpp"
 #include <utility>
 
 #include "StarIODevice.hpp"
-#include "StarJson.hpp"
 import star.asset_source;
 #include "StarIODevice.hpp"
 #include "StarDataStreamDevices.hpp"

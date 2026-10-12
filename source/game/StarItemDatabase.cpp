@@ -7,7 +7,7 @@
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
@@ -25,18 +25,18 @@ import star.asset_path;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarLua.hpp"
-#include "StarSpline.hpp"
-#include "StarAStar.hpp"
+import star.spline;
+import star.a_star;
 import star.audio;
 #include "StarMap.hpp"
 

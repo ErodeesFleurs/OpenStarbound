@@ -5,7 +5,7 @@ module;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -33,6 +33,7 @@ import star.celestial_coordinate;
 import star.quest_descriptor;
 import star.item;
 
+import star.either;
 namespace Star {
 
 STAR_CLASS(RecipeDatabase);

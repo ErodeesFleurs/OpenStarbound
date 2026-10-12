@@ -1,20 +1,20 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStream.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 import star.image;
 #include "StarMultiArray.hpp"
@@ -32,7 +32,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
@@ -42,7 +42,7 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 import star.perlin;
@@ -96,6 +96,8 @@ import star.world_camera;
 
 import star.tile_drawer;
 
+import star.byte_array;
+import star.static_random;
 namespace Star {
 
 TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {

@@ -1,7 +1,7 @@
 module;
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+#include "StarJson.hpp"
+import star.id_map;
 import star.game_types;
 import star.material_types;
 import star.image;
@@ -23,9 +23,9 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -37,7 +37,7 @@ import star.audio;
 import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 import star.worker_pool;
 

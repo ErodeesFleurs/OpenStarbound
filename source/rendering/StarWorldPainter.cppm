@@ -1,7 +1,7 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 import star.game_types;
 #include "StarInterpolation.hpp"
@@ -23,9 +23,9 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarEither.hpp"
+import star.either;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -81,7 +81,7 @@ import star.entity;
 import star.cellular_light_array;
 import star.cellular_lighting;
 import star.world_render_data;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 import star.font_texture_group;
 import star.anchor_types;

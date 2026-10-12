@@ -1,6 +1,6 @@
 module;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -38,6 +38,8 @@ import star.net_element_basic_fields;
 import star.net_element_float_fields;
 import star.net_element_system;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(RenderCallback);

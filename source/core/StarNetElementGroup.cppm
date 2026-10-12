@@ -1,4 +1,6 @@
 module;
+import star.net_compatibility;
+import star.version;
 
 #include "StarSet.hpp"
 #include "StarDataStreamDevices.hpp"

@@ -24,7 +24,7 @@
 #endif
 
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.host_address;
 
 #ifndef AI_ADDRCONFIG

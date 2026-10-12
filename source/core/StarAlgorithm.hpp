@@ -4,6 +4,7 @@
 
 #include <type_traits>
 
+import star.output_proxy;
 namespace Star {
 
 // Function that does nothing and takes any number of arguments

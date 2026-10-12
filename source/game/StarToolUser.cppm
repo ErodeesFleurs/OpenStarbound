@@ -1,6 +1,7 @@
 module;
-#include "StarIdMap.hpp"
+import star.net_compatibility;
 #include "StarJson.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"

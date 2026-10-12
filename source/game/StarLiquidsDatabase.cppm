@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarJson.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.game_types;
 import star.liquid_types;
@@ -12,7 +12,7 @@ import star.material_types;
 #include "StarMultiArray.hpp"
 #include "StarMap.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarBlockAllocator.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"

@@ -7,7 +7,7 @@ module;
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 
 namespace Star {

@@ -20,7 +20,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
@@ -38,6 +38,7 @@ import star.root_base;
 
 module star.clipboard_lua_bindings;
 
+import star.byte_array;
 namespace Star {
 
 LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {

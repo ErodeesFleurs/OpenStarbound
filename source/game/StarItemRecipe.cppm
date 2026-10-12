@@ -1,4 +1,5 @@
 module;
+#include "StarHash.hpp"
 
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
@@ -49,4 +50,5 @@ export namespace Star {
   using ::Star::RecipeExceptionTag;
   using ::Star::RecipeException;
   using ::Star::ItemRecipe;
+  using ::Star::hash;
 }

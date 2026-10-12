@@ -18,7 +18,7 @@ import star.asset_path;
 import star.game_types;
 #include "StarStrongTypedef.hpp"
 #include "StarVector.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 
 import star.drawable;

@@ -4,6 +4,8 @@
 #include <utility>
 #include <initializer_list>
 
+#include "fmt/ostream.h"
+
 #include "StarAlgorithm.hpp"
 #include "StarMaybe.hpp"
 

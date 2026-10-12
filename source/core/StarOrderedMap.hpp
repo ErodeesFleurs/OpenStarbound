@@ -2,6 +2,7 @@
 
 #include "StarMap.hpp"
 
+import star.output_proxy;
 namespace Star {
 
 // Wraps a normal map type and provides an element order independent of the

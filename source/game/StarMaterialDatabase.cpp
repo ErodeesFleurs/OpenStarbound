@@ -16,12 +16,12 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarFormat.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;

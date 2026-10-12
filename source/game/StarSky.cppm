@@ -1,7 +1,9 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 
-#include "StarEither.hpp"
 #include "StarJson.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
@@ -11,7 +13,7 @@ import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"

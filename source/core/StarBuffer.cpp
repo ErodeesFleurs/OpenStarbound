@@ -6,6 +6,7 @@ import star.buffer;
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 
+import star.byte_array;
 namespace Star {
 
 Buffer::Buffer()

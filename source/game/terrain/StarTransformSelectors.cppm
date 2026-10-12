@@ -3,10 +3,9 @@ module;
 
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 #include "StarVector.hpp"
-#include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 
 export module star.terrain_transform;

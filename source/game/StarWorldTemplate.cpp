@@ -19,19 +19,19 @@ import star.material_types;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarCasting.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
 #include "StarIterator.hpp"
 #include "StarBiMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -84,6 +84,7 @@ import star.celestial_database;
 import star.ambient;
 
 
+import star.static_random;
 namespace Star {
 
 WorldTemplate::WorldTemplate(Vec2U const& size) : WorldTemplate() {

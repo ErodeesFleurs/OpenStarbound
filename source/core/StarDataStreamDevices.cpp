@@ -1,5 +1,6 @@
 #include "StarDataStreamDevices.hpp"
 
+import star.byte_array;
 namespace Star {
 
 DataStreamFunctions::DataStreamFunctions(function<size_t(char*, size_t)> reader, function<size_t(char const*, size_t)> writer)

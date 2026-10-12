@@ -1,10 +1,8 @@
-#pragma once
+module;
 
 #include "StarVector.hpp"
 #include "StarInterpolation.hpp"
 #include "StarLogging.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarBlockAllocator.hpp"
 import star.lru_cache;
 
 namespace Star {
@@ -154,4 +152,11 @@ protected:
 
 typedef Spline<float, 2, 3, Vec2F> CSplineF;
 
+}
+
+export module star.spline;
+
+export namespace Star {
+  using ::Star::Spline;
+  using ::Star::CSplineF;
 }

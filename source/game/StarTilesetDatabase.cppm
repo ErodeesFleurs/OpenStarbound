@@ -5,9 +5,9 @@ import star.image;
 #include "StarBiMap.hpp"
 #include "StarPoly.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarThread.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;

@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 
 namespace Star {

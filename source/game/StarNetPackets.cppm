@@ -1,7 +1,7 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
@@ -14,11 +14,11 @@ import star.game_types;
 import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVariant.hpp"
 import star.color;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 import star.image_processing;
 #include "StarHash.hpp"
@@ -29,7 +29,7 @@ import star.asset_path;
 #include "StarArray.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;
@@ -90,6 +90,7 @@ import star.sky_parameters;
 import star.system_world;
 import star.damage_manager;
 
+import star.byte_array;
 namespace Star {
 
 STAR_STRUCT(Packet);

@@ -1,6 +1,6 @@
+#include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
@@ -8,7 +8,7 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 namespace Star {
 

@@ -1,5 +1,5 @@
 #include "StarPoly.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 #include "gtest/gtest.h"
 

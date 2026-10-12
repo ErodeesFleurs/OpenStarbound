@@ -1,7 +1,9 @@
 #pragma once
 
-#include "StarMemory.hpp"
-#include "StarOutputProxy.hpp"
+#include "StarConfig.hpp"
+#include "fmt/format.h"
+import star.memory;
+import star.output_proxy;
 
 #include <string>
 #include <sstream>

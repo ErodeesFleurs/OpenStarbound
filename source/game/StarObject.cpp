@@ -1,6 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
@@ -9,10 +9,10 @@
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 import star.rpc_promise;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarLogging.hpp"
 import star.game_types;
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
@@ -38,7 +38,7 @@ import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -105,6 +105,8 @@ import star.material_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 Object::Object(ObjectConfigConstPtr config, Json const& parameters) {

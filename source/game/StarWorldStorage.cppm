@@ -1,7 +1,7 @@
 module;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
@@ -24,7 +24,7 @@ import star.game_types;
 import star.version;
 import star.rpc_promise;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
@@ -76,6 +76,7 @@ import star.biome_placement;
 #include "StarLuaRoot.hpp"
 import star.versioning_database;
 
+import star.byte_array;
 namespace Star {
 
 struct WorldStorageExceptionTag {

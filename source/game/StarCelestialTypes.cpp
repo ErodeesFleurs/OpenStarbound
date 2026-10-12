@@ -1,19 +1,19 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
-#include "StarJson.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
 import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -32,6 +32,7 @@ import star.celestial_parameters;
 import star.celestial_types;
 #include "StarDataStreamExtra.hpp"
 
+import star.byte_array;
 namespace Star {
 
 DataStream& operator>>(DataStream& ds, CelestialPlanet& planet) {

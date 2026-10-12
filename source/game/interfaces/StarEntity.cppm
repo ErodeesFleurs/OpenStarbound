@@ -1,9 +1,11 @@
 module;
-#include "StarIdMap.hpp"
+import star.net_compatibility;
+import star.byte_array;
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"

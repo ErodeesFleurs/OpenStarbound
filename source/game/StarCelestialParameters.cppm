@@ -11,7 +11,7 @@ import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -28,6 +28,7 @@ import star.weather_types;
 import star.force_regions;
 import star.world_parameters;
 
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(CelestialParameters);

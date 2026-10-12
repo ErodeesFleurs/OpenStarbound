@@ -2,7 +2,7 @@ module;
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.host_address;
 #include "StarThread.hpp"
 import star.socket;

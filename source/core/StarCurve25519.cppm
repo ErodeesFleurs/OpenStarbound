@@ -1,5 +1,5 @@
 module;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarLogging.hpp"
 #include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
@@ -8,9 +8,8 @@ module;
 // GCC has no header units, so the headers this module needs arrive through the
 // global module fragment.
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.encode;
-#include "StarByteArray.hpp"
 #include "StarArray.hpp"
 
 export module star.curve25519;

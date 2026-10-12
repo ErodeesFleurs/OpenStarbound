@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -25,12 +25,12 @@ import star.audio;
 #include "StarMaybe.hpp"
 #include "StarIterator.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarDataStreamExtra.hpp"
 import star.game_types;
 

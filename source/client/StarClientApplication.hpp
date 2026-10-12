@@ -1,14 +1,14 @@
 #pragma once
-#include "StarXXHash.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+#include "StarXXHash.hpp"
+import star.id_map;
 #include "StarInterpolation.hpp"
 import star.image;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarConfig.hpp"
 import star.version;
-#include "StarEither.hpp"
+import star.either;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -17,7 +17,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 import star.directives;
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -29,10 +29,11 @@ import star.ttl_cache;
 import star.listener;
 #include "StarBiMap.hpp"
 import star.perlin;
-#include "StarRandomPoint.hpp"
+#include "StarVector.hpp"
+#include "StarPoly.hpp"
+import star.random_point;
 import star.font;
 #include "StarString.hpp"
-#include "StarVector.hpp"
 import star.text;
 import star.game_types;
 import star.rpc_promise;
@@ -42,12 +43,11 @@ import star.audio;
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 import star.input_event;
-#include "StarPoly.hpp"
 import star.color;
 import star.asset_path;
 import star.lock_file;
 #include "StarIODevice.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -55,7 +55,7 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarBTree.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
@@ -67,7 +67,7 @@ import star.sector_array_2d;
 #include <atomic>
 #include <memory>
 #include <functional>
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 
 

@@ -5,6 +5,7 @@ import star.image;
 
 #include <png.h>
 
+import star.memory;
 namespace Star {
 
 void logPngError(png_structp png_ptr, png_const_charp c) {

@@ -1,11 +1,12 @@
 #include "StarFlatHashSet.hpp"
 #include "StarFlatHashMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarVector.hpp"
 #include "StarIterator.hpp"
 
 #include "gtest/gtest.h"
 
+#include "StarList.hpp"
 using namespace Star;
 
 TEST(FlatHashSet, Preset) {

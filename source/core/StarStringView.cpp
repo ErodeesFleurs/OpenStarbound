@@ -1,5 +1,6 @@
 #include "StarStringView.hpp"
 
+import star.byte_array;
 namespace Star {
 // To string
 String::String(StringView s) : m_string(s.utf8()) {}

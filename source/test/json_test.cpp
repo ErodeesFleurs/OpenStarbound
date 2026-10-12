@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarFile.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarJson.hpp"
 import star.json_path;
 

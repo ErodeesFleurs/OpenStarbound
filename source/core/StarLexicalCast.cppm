@@ -1,10 +1,9 @@
-#pragma once
+module;
 
 #include "StarFormat.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"
 #include "StarMaybe.hpp"
-
 #include "fast_float.h"
 
 namespace Star {
@@ -67,4 +66,15 @@ Type lexicalCast(StringView s) {
   return lexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
+}
+
+export module star.lexical_cast;
+
+export namespace Star {
+  using ::Star::BadLexicalCastTag;
+  using ::Star::BadLexicalCast;
+  using ::Star::throwLexicalCastError;
+  using ::Star::tryLexicalCast;
+  using ::Star::maybeLexicalCast;
+  using ::Star::lexicalCast;
 }

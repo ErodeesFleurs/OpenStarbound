@@ -1,6 +1,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMaybe.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -21,15 +21,15 @@ import star.directives;
 import star.asset_path;
 #include "StarSet.hpp"
 #include "StarArray.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.audio;
 #include "StarMap.hpp"
 import star.color;
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -41,7 +41,7 @@ import star.ttl_cache;
 #include "StarMathCommon.hpp"
 import star.periodic;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -132,6 +132,8 @@ import star.monster_database;
 import star.npc_database;
 
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{

@@ -3,7 +3,7 @@ module;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 
 namespace Star {
 namespace PlatformerAStar {

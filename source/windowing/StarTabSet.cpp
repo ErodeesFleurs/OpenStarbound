@@ -17,7 +17,7 @@ import star.font;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarConfig.hpp"
 import star.version;
@@ -35,8 +35,8 @@ import star.game_types;
 import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarEither.hpp"
-#include "StarLexicalCast.hpp"
+import star.either;
+import star.lexical_cast;
 
 import star.application;
 import star.statistics_service;

@@ -1,4 +1,6 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 
 #include "StarDataStreamDevices.hpp"
 

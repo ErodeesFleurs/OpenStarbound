@@ -2,6 +2,7 @@
 
 #include "StarString.hpp"
 
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(StringView);

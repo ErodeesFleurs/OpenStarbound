@@ -1,4 +1,5 @@
 module;
+import star.byte_array;
 
 #include "StarSet.hpp"
 #include "StarBTree.hpp"

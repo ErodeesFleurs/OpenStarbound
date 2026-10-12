@@ -4,7 +4,7 @@ module;
 #include "StarVector.hpp"
 #include "StarSet.hpp"
 #include "StarMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarList.hpp"

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fmt/ostream.h"
+
 #include "StarMatrix3.hpp"
 
 namespace Star {

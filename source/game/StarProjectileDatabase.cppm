@@ -1,8 +1,10 @@
 module;
-#include "StarIdMap.hpp"
+import star.net_compatibility;
+import star.byte_array;
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarJson.hpp"
 import star.color;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"

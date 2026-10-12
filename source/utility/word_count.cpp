@@ -19,7 +19,7 @@ import star.asset_path;
 #include "StarBiMap.hpp"
 import star.game_types;
 #include "StarFile.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 import star.image;
 #include "StarVariant.hpp"
 #include "StarOrderedMap.hpp"
@@ -29,7 +29,7 @@ import star.version;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 

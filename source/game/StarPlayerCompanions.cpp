@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarString.hpp"
@@ -22,14 +22,14 @@ import star.game_types;
 #include "StarBiMap.hpp"
 import star.rpc_promise;
 #include "StarMaybe.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

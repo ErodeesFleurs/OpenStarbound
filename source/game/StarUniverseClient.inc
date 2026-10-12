@@ -1,16 +1,16 @@
 #pragma once
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
+#include "StarJson.hpp"
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 import star.color;
 #include "StarBiMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 #include "StarRect.hpp"
@@ -25,7 +25,7 @@ import star.asset_path;
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -33,11 +33,11 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarConfig.hpp"
 #include <atomic>
 #include <memory>
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 import star.version;

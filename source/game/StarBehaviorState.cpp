@@ -1,7 +1,7 @@
 #include "StarJson.hpp"
 import star.game_types;
 #include "StarLua.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarLuaGameConverters.hpp"
 
 import star.behavior_database;

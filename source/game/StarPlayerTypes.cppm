@@ -2,7 +2,7 @@ module;
 
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
-#include "StarEither.hpp"
+import star.either;
 
 namespace Star {
 

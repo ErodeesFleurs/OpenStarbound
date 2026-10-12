@@ -17,7 +17,7 @@ import star.font;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
 import star.image_processing;
@@ -42,7 +42,7 @@ import star.game_types;
 import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.font_texture_group;
 import star.anchor_types;
 import star.text_painter;

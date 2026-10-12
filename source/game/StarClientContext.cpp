@@ -7,7 +7,7 @@ import star.game_types;
 #include "StarDataStream.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarOrderedMap.hpp"
@@ -27,7 +27,7 @@ import star.version;
 import star.rpc_promise;
 #include "StarBiMap.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include <functional>
@@ -44,7 +44,7 @@ import star.image_processing;
 import star.directives;
 import star.asset_path;
 #include "StarVariant.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarDataStreamExtra.hpp"
 
 #include "StarLuaRoot.hpp"
@@ -86,6 +86,8 @@ import star.player_types;
 
 import star.client_context;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades) {

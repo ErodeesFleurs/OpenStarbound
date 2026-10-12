@@ -8,7 +8,7 @@ import star.image;
 import star.game_types;
 import star.liquid_types;
 import star.material_types;
-#include "StarRandom.hpp"
+import star.random;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarOrderedMap.hpp"

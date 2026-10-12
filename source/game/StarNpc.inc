@@ -1,6 +1,6 @@
 #pragma once
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
@@ -13,7 +13,7 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarString.hpp"
 import star.color;
 import star.image_processing;
@@ -24,7 +24,7 @@ import star.directives;
 import star.asset_path;
 #include "StarLua.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -38,6 +38,8 @@ import star.net_element_containers;
 import star.net_element_dynamic_group;
 import star.net_element_system;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 STAR_CLASS(Npc);
 }

@@ -1,8 +1,8 @@
 module;
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 
-#include "StarLexicalCast.hpp"
-#include "StarJson.hpp"
+import star.lexical_cast;
 
 namespace Star {
 

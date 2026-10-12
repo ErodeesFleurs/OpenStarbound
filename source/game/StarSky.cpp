@@ -1,9 +1,9 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -11,7 +11,7 @@ import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -23,13 +23,13 @@ import star.directives;
 import star.asset_path;
 #include "StarDataStreamExtra.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 import star.time;
-#include "StarRandomPoint.hpp"
+import star.random_point;
 import star.audio;
 #include "StarMap.hpp"
 #include "StarSet.hpp"
@@ -60,6 +60,8 @@ import star.celestial_database;
 
 #include "StarDataStreamDevices.hpp"
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 Sky::Sky() {

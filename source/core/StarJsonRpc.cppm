@@ -1,7 +1,7 @@
 module;
 
 #include "StarJson.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 import star.rpc_promise;
 
 namespace Star {

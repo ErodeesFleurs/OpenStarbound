@@ -1,6 +1,6 @@
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarLogging.hpp"
 #include "StarString.hpp"
 #include "StarVariant.hpp"
@@ -19,13 +19,13 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarMultiArray.hpp"
 #include "StarCasting.hpp"
-#include "StarEither.hpp"
+import star.either;
 import star.image;
 import star.color;
 #include "StarInterpolation.hpp"
@@ -33,7 +33,7 @@ import star.color;
 import star.game_types;
 #include "StarMathCommon.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
@@ -44,7 +44,7 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include <functional>
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"

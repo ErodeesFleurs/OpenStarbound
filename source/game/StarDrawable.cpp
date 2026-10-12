@@ -19,7 +19,7 @@ import star.color;
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarVector.hpp"
 import star.game_types;
 #include "StarLogging.hpp"

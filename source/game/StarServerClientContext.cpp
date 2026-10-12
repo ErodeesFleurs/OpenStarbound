@@ -1,13 +1,13 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+#include "StarJsonExtra.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarDataStream.hpp"
@@ -18,7 +18,7 @@ import star.json_rpc;
 import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarLogging.hpp"
@@ -52,10 +52,10 @@ import star.sector_array_2d;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.image;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 
 #include "StarLuaRoot.hpp"
@@ -135,6 +135,7 @@ import star.universe_settings;
 
 
 
+import star.byte_array;
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,

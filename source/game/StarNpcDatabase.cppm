@@ -3,7 +3,7 @@ module;
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -17,7 +17,7 @@ import star.audio;
 #include "StarDataStream.hpp"
 import star.game_types;
 #include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarRect.hpp"
@@ -42,6 +42,8 @@ import star.item_descriptor;
 
 import star.entity_splash;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(Rebuilder);

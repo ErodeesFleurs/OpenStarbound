@@ -1,9 +1,9 @@
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarThread.hpp"
 import star.game_types;
-#include "StarLexicalCast.hpp"
-#include "StarRandom.hpp"
+import star.lexical_cast;
+import star.random;
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -29,7 +29,7 @@ import star.asset_path;
 import star.time;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;

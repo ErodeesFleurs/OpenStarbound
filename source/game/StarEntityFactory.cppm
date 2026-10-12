@@ -1,5 +1,5 @@
 module;
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarThread.hpp"
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
@@ -17,6 +17,8 @@ import star.damage;
 import star.light_source;
 import star.entity;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_STRUCT(VersionedJson);

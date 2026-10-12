@@ -1,19 +1,19 @@
 module;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
 #include "StarRect.hpp"
-#include "StarAStar.hpp"
-#include "StarSpline.hpp"
+import star.a_star;
+#include "StarVector.hpp"
+import star.spline;
 import star.audio;
 #include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
 #include "StarBiMap.hpp"
 import star.color;
@@ -30,7 +30,7 @@ import star.liquid_types;
 import star.material_types;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

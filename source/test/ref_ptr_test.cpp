@@ -1,4 +1,4 @@
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarCasting.hpp"
 
 #include "gtest/gtest.h"

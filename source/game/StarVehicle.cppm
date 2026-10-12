@@ -1,6 +1,8 @@
 module;
+import star.net_compatibility;
+import star.byte_array;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
 #include "StarCasting.hpp"
@@ -23,7 +25,7 @@ import star.directives;
 import star.asset_path;
 #include "StarLua.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"

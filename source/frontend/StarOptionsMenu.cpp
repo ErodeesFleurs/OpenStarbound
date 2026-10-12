@@ -1,5 +1,5 @@
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarVector.hpp"
 #include "StarCasting.hpp"
@@ -16,7 +16,7 @@ import star.image_processing;
 import star.directives;
 #include "StarBiMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarString.hpp"
 import star.text;
@@ -31,14 +31,14 @@ import star.audio;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarOrderedMap.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVariant.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
@@ -46,10 +46,10 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include <atomic>
 #include <memory>
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMultiArray.hpp"
 #include "StarMathCommon.hpp"
 #include <functional>
@@ -65,7 +65,7 @@ import star.lru_cache;
 import star.btree_database;
 import star.rpc_promise;
 import star.image;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 import star.periodic_function;
 #include "StarMatrix3.hpp"
 

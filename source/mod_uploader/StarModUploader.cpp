@@ -9,7 +9,7 @@
 #include "StarModUploader.hpp"
 #include "StarFile.hpp"
 #include "StarThread.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarStringConversion.hpp"
 import star.packed_asset_source;
 

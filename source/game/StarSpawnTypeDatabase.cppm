@@ -3,7 +3,7 @@ module;
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 #include "StarBiMap.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 
 namespace Star {

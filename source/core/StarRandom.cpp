@@ -1,7 +1,10 @@
-#include "StarRandom.hpp"
+#include "StarXXHash.hpp"
 #include "StarThread.hpp"
-import star.time;
 #include "StarMathCommon.hpp"
+
+import star.random;
+import star.byte_array;
+import star.time;
 
 namespace Star {
 

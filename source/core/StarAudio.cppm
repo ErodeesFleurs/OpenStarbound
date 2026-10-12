@@ -1,4 +1,5 @@
 module;
+import star.byte_array;
 
 #include "StarIODevice.hpp"
 //#define STAR_STREAM_AUDIO

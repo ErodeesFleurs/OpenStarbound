@@ -1,8 +1,8 @@
-#include "StarIdMap.hpp"
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
-#include "StarJson.hpp"
 import star.color;
 #include "StarList.hpp"
 #include "StarRect.hpp"

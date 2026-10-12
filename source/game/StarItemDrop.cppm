@@ -1,6 +1,6 @@
 module;
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.game_types;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
@@ -52,6 +52,8 @@ import star.game_timers;
 import star.net_element_basic_fields;
 import star.net_element_system;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 
 STAR_CLASS(Item);

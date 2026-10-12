@@ -1,9 +1,9 @@
 module;
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 #include "StarInterpolation.hpp"
 import star.periodic_function;
@@ -37,6 +37,8 @@ import star.net_element_float_fields;
 import star.net_element_containers;
 import star.net_element_system;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 STAR_CLASS(AudioInstance);
 STAR_CLASS(ObjectDatabase);

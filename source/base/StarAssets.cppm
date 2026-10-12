@@ -1,4 +1,6 @@
 module;
+import star.either;
+import star.byte_array;
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
@@ -12,7 +14,7 @@ import star.image_processing;
 #include "StarStringView.hpp"
 import star.directives;
 import star.asset_path;
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 
 import star.asset_source;
 

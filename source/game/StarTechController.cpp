@@ -1,6 +1,6 @@
-#include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
-#include "StarIdMap.hpp"
+#include "StarJsonExtra.hpp"
+import star.id_map;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 import star.image_processing;
@@ -24,7 +24,7 @@ import star.asset_path;
 import star.rpc_promise;
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic_function;
 #include "StarOrderedMap.hpp"
 #include "StarMatrix3.hpp"
@@ -33,12 +33,12 @@ import star.audio;
 #include "StarSet.hpp"
 #include "StarMaybe.hpp"
 import star.observer_stream;
-#include "StarEither.hpp"
+import star.either;
 #include "StarArray.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarOrderedSet.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -119,6 +119,7 @@ import star.status_controller_lua_bindings;
 
 import star.net_element;
 
+import star.net_compatibility;
 namespace Star {
 
 EnumMap<TechController::ParentState> const TechController::ParentStateNames{

@@ -1,5 +1,6 @@
-#include "StarRandom.hpp"
-#include "StarStaticRandom.hpp"
+#include "StarException.hpp"
+import star.random;
+import star.static_random;
 
 #include <vector>
 

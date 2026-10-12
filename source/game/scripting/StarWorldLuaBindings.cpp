@@ -1,13 +1,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 import star.game_types;
@@ -17,7 +17,7 @@ import star.rpc_promise;
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarDataStream.hpp"
 #include "StarList.hpp"
 import star.image_processing;
@@ -45,9 +45,9 @@ import star.audio;
 #include "StarMatrix3.hpp"
 #include "StarArray.hpp"
 #include "StarOrderedSet.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
@@ -58,7 +58,7 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include <functional>
-#include "StarNetCompatibility.hpp"
+import star.net_compatibility;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;

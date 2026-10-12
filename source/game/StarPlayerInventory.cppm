@@ -11,6 +11,8 @@ import star.item_descriptor;
 import star.net_element_basic_fields;
 import star.net_element_sync_group;
 
+import star.either;
+import star.net_compatibility;
 namespace Star {
 
 STAR_CLASS(Item);

@@ -1,7 +1,7 @@
 module;
 
 #include "StarString.hpp"
-#include "StarEither.hpp"
+import star.either;
 
 namespace Star {
 

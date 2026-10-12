@@ -1,6 +1,6 @@
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
-#include "StarIdMap.hpp"
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarRect.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
@@ -28,7 +28,7 @@ import star.btree_database;
 import star.version;
 import star.rpc_promise;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include <functional>

@@ -15,10 +15,10 @@ import star.asset_path;
 import star.game_types;
 import star.material_types;
 #include "StarVector.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"

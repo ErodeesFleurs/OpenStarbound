@@ -1,11 +1,11 @@
 module;
-#include "StarJson.hpp"
 #include "StarXXHash.hpp"
+#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarBlockAllocator.hpp"
@@ -25,7 +25,7 @@ import star.game_types;
 import star.version;
 import star.rpc_promise;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"

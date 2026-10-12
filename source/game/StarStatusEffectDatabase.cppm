@@ -3,7 +3,7 @@ module;
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
 
 namespace Star {

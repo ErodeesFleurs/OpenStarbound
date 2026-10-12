@@ -1,10 +1,11 @@
 module;
+import star.byte_array;
 
+#include "StarJson.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
 import star.image_processing;
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+import star.byte_array;
 
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 #include "xxh3.h"
 
+import star.bytes;
 namespace Star {
 
 class XXHash32 {

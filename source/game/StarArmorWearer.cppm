@@ -7,7 +7,7 @@ import star.game_types;
 #include "StarBiMap.hpp"
 import star.item_descriptor;
 #include "StarStrongTypedef.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
 
 

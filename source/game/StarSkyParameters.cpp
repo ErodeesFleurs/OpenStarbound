@@ -1,8 +1,8 @@
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
-#include "StarJson.hpp"
+import star.either;
 #include "StarVector.hpp"
 import star.celestial_coordinate;
 #include "StarPoly.hpp"
@@ -12,7 +12,7 @@ import star.color;
 #include "StarBiMap.hpp"
 import star.sky_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -30,7 +30,6 @@ import star.world_parameters;
 import star.celestial_parameters;
 import star.celestial_types;
 import star.sky_types;
-#include "StarEither.hpp"
 import star.celestial_coordinate;
 import star.sky_parameters;
 import star.celestial_coordinate;
@@ -52,6 +51,7 @@ import star.celestial_graphics;
 
 import star.celestial_database;
 
+import star.static_random;
 namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}

@@ -1,15 +1,14 @@
 #pragma once
 
+#include "StarFormat.hpp"
 #include <compare>
 
-#include "StarByteArray.hpp"
+import star.byte_array;
 #include "StarMaybe.hpp"
 #include "StarHash.hpp"
-#include "StarByteArray.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarFormat.hpp"
 #include "StarUnicode.inc"
 
 namespace Star {

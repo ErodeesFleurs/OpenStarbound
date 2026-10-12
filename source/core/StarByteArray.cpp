@@ -1,5 +1,6 @@
-#include "StarByteArray.hpp"
 #include "StarString.hpp"
+import star.byte_array;
+import star.memory;
 import star.encode;
 
 namespace Star {

@@ -1,10 +1,10 @@
+#include "StarJson.hpp"
+#include "StarJson.hpp"
+#include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
-#include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -12,7 +12,7 @@ import star.game_types;
 import star.color;
 #include "StarBiMap.hpp"
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 #include "StarList.hpp"
 import star.image_processing;
@@ -25,12 +25,12 @@ import star.asset_path;
 #include "StarDataStreamExtra.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarFormat.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarInterpolation.hpp"
 import star.parametric_function;
 #include "StarMultiArray.hpp"
@@ -63,6 +63,7 @@ import star.npc_database;
 import star.celestial_database;
 
 
+import star.byte_array;
 namespace Star {
 
 char const* const VersionedJson::Magic = "SBVJ01";

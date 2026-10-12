@@ -1,7 +1,6 @@
-#pragma once
+module;
 
 #include <new>
-
 #include "StarConfig.hpp"
 
 namespace Star {
@@ -14,4 +13,12 @@ void* realloc(void* ptr, size_t size);
 void free(void* ptr);
 void free(void* ptr, size_t size);
 
+}
+
+export module star.memory;
+
+export namespace Star {
+  using ::Star::malloc;
+  using ::Star::realloc;
+  using ::Star::free;
 }

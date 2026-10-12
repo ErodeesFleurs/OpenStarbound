@@ -18,7 +18,7 @@ import star.directives;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarStringView.hpp"
@@ -39,7 +39,7 @@ import star.audio;
 #include "StarStrongTypedef.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 
 import star.application;

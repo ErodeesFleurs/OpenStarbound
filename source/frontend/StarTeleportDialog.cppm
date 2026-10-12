@@ -26,9 +26,9 @@ import star.audio;
 #include "StarStrongTypedef.hpp"
 #include "StarArray.hpp"
 #include "StarVariant.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
-#include "StarEither.hpp"
+import star.either;
 
 
 

@@ -1,9 +1,9 @@
 module;
-#include "StarIdMap.hpp"
+#include "StarJson.hpp"
+import star.id_map;
 #include "StarCasting.hpp"
 #include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 import star.game_types;
 #include "StarPoly.hpp"
 #include "StarStrongTypedef.hpp"
@@ -20,7 +20,7 @@ import star.asset_path;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarAStar.hpp"
+import star.a_star;
 
 import star.actor_entity;
 import star.status_types;

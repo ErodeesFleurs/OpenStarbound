@@ -1,5 +1,5 @@
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 
 #include "gtest/gtest.h"

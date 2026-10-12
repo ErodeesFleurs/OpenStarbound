@@ -1,11 +1,12 @@
 #include "StarString.hpp"
 #include "StarStringView.hpp"
-#include "StarBytes.hpp"
+import star.bytes;
 #include "StarFormat.hpp"
 
 #include <cctype>
 #include <re2/re2.h>
 
+import star.byte_array;
 namespace Star {
 
 bool String::isSpace(Char c) {

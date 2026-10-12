@@ -18,7 +18,7 @@ import star.worker_pool;
 #include "thread"
 import star.sector_array_2d;
 #include "StarInterpolation.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.perlin;
 #include "StarMaybe.hpp"
 import star.weighted_pool;

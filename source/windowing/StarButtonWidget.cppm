@@ -17,7 +17,7 @@ import star.font;
 #include "StarVariant.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
 import star.image_processing;
@@ -56,6 +56,7 @@ import star.gui_context;
 import star.widget;
 import star.button_group;
 
+import star.either;
 namespace Star {
 STAR_CLASS(ButtonWidget);
 

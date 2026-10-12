@@ -4,7 +4,7 @@ module;
 import star.game_types;
 import star.material_types;
 #include "StarMaybe.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.weighted_pool;
 import star.color;
 #include "StarBiMap.hpp"

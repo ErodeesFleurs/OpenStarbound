@@ -1,8 +1,8 @@
-#include "StarEither.hpp"
 #include "StarJson.hpp"
+import star.either;
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 import star.status_types;
 #include "StarDataStreamExtra.hpp"
 import star.game_types;

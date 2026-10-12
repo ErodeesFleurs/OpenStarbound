@@ -15,7 +15,7 @@ import star.font;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 #include "StarStringView.hpp"
 #include "StarString.hpp"
@@ -74,6 +74,7 @@ import star.mixer;
 
 import star.image_metadata_database;
 
+import star.byte_array;
 namespace Star {
 
 GuiContext* GuiContext::s_singleton;

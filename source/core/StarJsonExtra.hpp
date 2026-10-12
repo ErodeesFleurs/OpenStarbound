@@ -4,7 +4,7 @@
 #include "StarPoly.hpp"
 import star.color;
 #include "StarSet.hpp"
-#include "StarRandom.hpp"
+import star.random;
 #include "StarList.hpp"
 #include "StarRect.hpp"
 #include "StarHash.hpp"

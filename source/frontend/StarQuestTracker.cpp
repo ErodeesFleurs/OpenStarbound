@@ -16,7 +16,7 @@ import star.directives;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarStringView.hpp"

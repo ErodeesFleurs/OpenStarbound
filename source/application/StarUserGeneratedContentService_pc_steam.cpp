@@ -17,7 +17,7 @@ import star.desktop_service;
 import star.platform_services_pc;
 import star.user_generated_content_service_pc_steam;
 #include "StarLogging.hpp"
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 
 namespace Star {
 

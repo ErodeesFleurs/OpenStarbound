@@ -1,8 +1,7 @@
 module;
 
-// GCC has no header units, so what the module needs arrives through the global
-// module fragment.  StarMemory.hpp is this facility's only dependency.
-#include "StarMemory.hpp"
+#include "StarConfig.hpp"
+import star.memory;
 
 export module star.vlq;
 

@@ -16,13 +16,13 @@ import star.asset_path;
 #include "StarRect.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRandom.hpp"
+import star.random;
 
 import star.animation;
 import star.particle;

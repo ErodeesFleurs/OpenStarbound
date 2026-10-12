@@ -1,13 +1,13 @@
 #pragma once
 #include "StarJson.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
@@ -31,7 +31,7 @@ import star.asset_path;
 import star.game_types;
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarLua.hpp"
 #include "StarInterpolation.hpp"
 import star.periodic_function;
@@ -41,6 +41,8 @@ import star.net_element_basic_fields;
 import star.net_element_containers;
 import star.net_element_system;
 
+import star.net_compatibility;
+import star.byte_array;
 namespace Star {
 STAR_CLASS(Monster);
 }

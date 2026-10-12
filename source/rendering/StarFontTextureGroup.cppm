@@ -7,7 +7,7 @@ import star.font;
 import star.image;
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 import star.renderer;
 #include "StarList.hpp"
 #include "StarRect.hpp"

@@ -7,7 +7,7 @@
 import star.lru_cache;
 #include "StarThread.hpp"
 import star.time;
-#include "StarRandom.hpp"
+import star.random;
 import star.ttl_cache;
 import star.weighted_pool;
 #include "StarThread.hpp"
@@ -17,7 +17,7 @@ import star.weighted_pool;
 import star.btree_database;
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
-#include "StarEither.hpp"
+import star.either;
 #include "StarVector.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
@@ -34,13 +34,12 @@ import star.directives;
 import star.asset_path;
 #include "StarInterpolation.hpp"
 import star.perlin;
-#include "StarLexicalCast.hpp"
+import star.lexical_cast;
 #include "StarCasting.hpp"
-#include "StarRandom.hpp"
 #include "StarFile.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarLogging.hpp"
 import star.listener;
 #include "StarConfig.hpp"
@@ -66,6 +65,7 @@ import star.celestial_database;
 import star.versioning_database;
 import star.compression;
 
+import star.static_random;
 namespace Star {
 
 CelestialDatabase::~CelestialDatabase() {}

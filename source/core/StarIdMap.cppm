@@ -1,4 +1,4 @@
-#pragma once
+module;
 
 #include "StarMap.hpp"
 #include "StarMathCommon.hpp"
@@ -148,4 +148,14 @@ DataStream& operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
   return ds;
 }
 
+}
+
+export module star.id_map;
+
+export namespace Star {
+  using ::Star::IdMapExceptionTag;
+  using ::Star::IdMapException;
+  using ::Star::IdMapWrapper;
+  using ::Star::IdMap;
+  using ::Star::IdHashMap;
 }

@@ -1,5 +1,5 @@
-#include "StarIODevice.hpp"
 #include "StarJson.hpp"
+#include "StarIODevice.hpp"
 import star.asset_source;
 #include "StarString.hpp"
 import star.directory_asset_source;
@@ -9,6 +9,7 @@ import star.directory_asset_source;
 
 #include <filesystem>
 
+import star.byte_array;
 namespace Star {
 
 namespace {

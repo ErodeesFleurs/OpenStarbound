@@ -12,6 +12,7 @@ import star.sha256;
 
 import star.vlq;
 
+import star.byte_array;
 namespace Star {
 
 BTreeDatabase::BTreeDatabase() {

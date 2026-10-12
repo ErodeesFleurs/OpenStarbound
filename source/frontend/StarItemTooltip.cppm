@@ -1,7 +1,7 @@
 module;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarIdMap.hpp"
+import star.id_map;
 #include "StarString.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
@@ -34,15 +34,15 @@ import star.multi_array_interpolator;
 import star.multi_table;
 #include "StarVariant.hpp"
 import star.rpc_promise;
-#include "StarAStar.hpp"
+import star.a_star;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
-#include "StarRefPtr.hpp"
+import star.ref_ptr;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarMathCommon.hpp"
-#include "StarRandom.hpp"
+import star.random;
 import star.periodic;
 import star.periodic_function;
 #include "StarLua.hpp"
