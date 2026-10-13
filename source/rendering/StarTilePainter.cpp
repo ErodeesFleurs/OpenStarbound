@@ -35,7 +35,7 @@ import star.weighted_pool;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
 #include "StarIODevice.hpp"
 import star.ref_ptr;
@@ -43,7 +43,6 @@ import star.ref_ptr;
 import star.listener;
 import star.perlin;
 #include "StarVariant.hpp"
-#include <functional>
 
 import star.tile_sector_array;
 import star.asset_source;

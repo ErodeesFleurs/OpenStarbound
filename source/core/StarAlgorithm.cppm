@@ -1,7 +1,7 @@
 module;
 
 #include "StarException.hpp"
-#include <type_traits>
+import std;
 import star.output_proxy;
 
 namespace Star {

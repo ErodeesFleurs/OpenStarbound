@@ -1,13 +1,7 @@
 #define STEAM_API_EXPORTS
 #include "../application/StarSteamDispatch.hpp"
 
-#include <deque>
-#include <functional>
-#include <map>
-#include <memory>
-#include <stdexcept>
-#include <utility>
-#include <vector>
+import std;
 
 #include "gtest/gtest.h"
 

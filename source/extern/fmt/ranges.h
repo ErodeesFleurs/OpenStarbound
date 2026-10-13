@@ -8,9 +8,7 @@
 #ifndef FMT_RANGES_H_
 #define FMT_RANGES_H_
 
-#include <initializer_list>
-#include <tuple>
-#include <type_traits>
+import std;
 
 #include "format.h"
 

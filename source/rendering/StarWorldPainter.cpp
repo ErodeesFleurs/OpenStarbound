@@ -37,11 +37,10 @@ import star.color;
 import star.asset_path;
 #include "StarConfig.hpp"
 import star.version;
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarVariant.hpp"
 #include "StarIODevice.hpp"

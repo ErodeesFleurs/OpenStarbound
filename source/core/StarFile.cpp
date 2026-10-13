@@ -1,8 +1,7 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 
-#include <filesystem>
-#include <fstream>
+import std;
 
 import star.byte_array;
 namespace Star {

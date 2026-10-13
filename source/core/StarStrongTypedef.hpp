@@ -1,7 +1,6 @@
 #pragma once
 
-#include <compare>
-#include <type_traits>
+import std;
 
 // Defines a new type that behaves nearly identical to 'parentType', with the
 // added benefit that though the new type can be implicitly converted to the

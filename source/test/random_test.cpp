@@ -2,7 +2,7 @@
 import star.random;
 import star.static_random;
 
-#include <vector>
+import std;
 
 #include "gtest/gtest.h"
 

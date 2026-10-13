@@ -11,6 +11,9 @@
 #include <limits.h>
 #include <stddef.h>
 
+/* Userdata stores C++ objects, including libc++'s 16-byte-aligned functions. */
+#define LUAI_USER_ALIGNMENT_T max_align_t
+
 
 /*
 ** ===================================================================

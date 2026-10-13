@@ -30,11 +30,10 @@ import star.either;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarVariant.hpp"

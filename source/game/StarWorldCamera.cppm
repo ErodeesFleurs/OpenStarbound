@@ -1,5 +1,6 @@
 module;
 
+#include "StarConfig.hpp"
 import star.world_geometry;
 import star.vector;
 import star.game_types;

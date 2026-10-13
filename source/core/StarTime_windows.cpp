@@ -2,7 +2,8 @@
 import star.time;
 import star.lexical_cast;
 
-#include <ctime>
+import std;
+#include <time.h>
 #define NOMINMAX
 #include <windows.h>
 

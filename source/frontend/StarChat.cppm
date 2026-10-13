@@ -1,5 +1,5 @@
 module;
-#include <limits>
+import std;
 #include "StarJson.hpp"
 
 import star.vector;

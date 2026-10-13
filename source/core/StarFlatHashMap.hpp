@@ -1,6 +1,6 @@
 #pragma once
 
-#include <type_traits>
+import std;
 
 #include "StarFlatHashTable.hpp"
 #include "StarHash.hpp"

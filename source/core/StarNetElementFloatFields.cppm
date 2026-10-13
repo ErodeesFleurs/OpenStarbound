@@ -1,7 +1,7 @@
 module;
 import star.net_compatibility;
 
-#include <type_traits>
+import std;
 
 #include "StarDataStream.hpp"
 import star.interpolation;

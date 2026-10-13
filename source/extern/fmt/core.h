@@ -8,14 +8,12 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <cstddef>  // std::byte
-#include <cstdio>   // std::FILE
-#include <cstring>  // std::strlen
-#include <iterator>
-#include <limits>
-#include <memory>  // std::addressof
-#include <string>
-#include <type_traits>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <version>
+
+import std;
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 100201
@@ -207,15 +205,7 @@
 #  define FMT_API
 #endif
 
-// libc++ supports string_view in pre-c++17.
-#if FMT_HAS_INCLUDE(<string_view>) && \
-    (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
-#  include <string_view>
-#  define FMT_USE_STRING_VIEW
-#elif FMT_HAS_INCLUDE("experimental/string_view") && FMT_CPLUSPLUS >= 201402L
-#  include <experimental/string_view>
-#  define FMT_USE_EXPERIMENTAL_STRING_VIEW
-#endif
+#define FMT_USE_STRING_VIEW
 
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE !FMT_MSC_VERSION

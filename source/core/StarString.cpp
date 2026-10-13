@@ -6,7 +6,7 @@
 import star.bytes;
 #include "StarFormat.hpp"
 
-#include <cctype>
+import std;
 #include <re2/re2.h>
 
 import star.byte_array;

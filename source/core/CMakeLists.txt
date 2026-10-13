@@ -24,7 +24,6 @@ set (star_core_HEADERS
     StarNetImpl.hpp
     StarOrderedMap.hpp
     StarOrderedSet.hpp
-    StarPch.hpp
     StarSet.hpp
     StarString.hpp
     StarStringView.hpp
@@ -74,7 +73,7 @@ configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS})
 target_include_directories (star_core PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 
-# All importers share their standard-header PCH in the parent directory.
+# All importers share the bundled standard-library module from the parent.
 # Thin global-type interfaces retain ordinary companions below;
 # naturally self-contained core interfaces remain single-file.
 add_library (star_modules STATIC)
@@ -169,6 +168,7 @@ endif ()
 set_target_properties (star_modules PROPERTIES CXX_SCAN_FOR_MODULES ON)
 target_include_directories (star_modules PRIVATE ${STAR_EXTERN_INCLUDES} ${STAR_CORE_INCLUDES})
 target_link_libraries (star_modules PRIVATE star_build_config star_module_dependencies star_core_dependencies)
+target_link_libraries (star_modules PUBLIC star_std)
 target_link_libraries (star_core PRIVATE star_modules star_build_config star_core_dependencies)
 # Sources that import a module need the module flags and the module dependency
 # scan too; CMake only turns those on for targets that declare module sources.

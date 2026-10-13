@@ -1,5 +1,5 @@
 module;
-#include <limits>
+import std;
 
 #include "StarXXHash.hpp"
 #include "StarString.hpp"

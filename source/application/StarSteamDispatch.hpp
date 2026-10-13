@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstring>
-#include <type_traits>
+import std;
 
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"

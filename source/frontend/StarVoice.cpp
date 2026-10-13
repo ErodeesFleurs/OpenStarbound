@@ -1,4 +1,4 @@
-#include <array>
+import std;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarBiMap.hpp"
@@ -12,7 +12,6 @@ import star.game_types;
 import star.time;
 #include "StarLogging.hpp"
 import star.audio;
-#include <queue>
 #include "StarOrderedMap.hpp"
 #include "StarIODevice.hpp"
 #include "StarList.hpp"

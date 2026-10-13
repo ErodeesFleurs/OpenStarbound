@@ -1,6 +1,6 @@
 module;
 
-#include <algorithm>
+import std;
 #include "StarException.hpp"
 
 namespace Star {

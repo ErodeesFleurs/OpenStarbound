@@ -3,8 +3,7 @@
 #include "fmt/ostream.h"
 #include "StarJson.hpp"
 
-#include <typeindex>
-#include <type_traits>
+import std;
 #include <lua.hpp>
 
 import star.lexical_cast;

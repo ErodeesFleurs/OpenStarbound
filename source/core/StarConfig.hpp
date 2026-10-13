@@ -1,6 +1,15 @@
 #pragma once
 
-#include "StarPch.hpp"
+// Modules do not export macros or global C names used by the native platform
+// implementations. Keep only their C headers textual.
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+
+import std;
 
 #define NOMINMAX
 

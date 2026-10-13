@@ -45,7 +45,7 @@ import star.listener;
 import star.net_compatibility;
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
@@ -53,7 +53,6 @@ import star.perlin;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 import star.input_event;
-#include <functional>
 import star.periodic_function;
 
 

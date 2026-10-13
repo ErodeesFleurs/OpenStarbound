@@ -12,7 +12,7 @@ import star.game_types;
 
 
 
-#include <queue>
+import std;
 
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;

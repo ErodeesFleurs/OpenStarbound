@@ -39,9 +39,8 @@ import star.rpc_promise;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
-#include <functional>
 import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"
@@ -49,7 +48,6 @@ import star.lru_cache;
 import star.btree_database;
 #include "StarOrderedSet.hpp"
 #include "StarMap.hpp"
-#include <iostream>
 
 import star.celestial_coordinate;
 import star.sky_types;

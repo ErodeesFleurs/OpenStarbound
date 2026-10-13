@@ -7,12 +7,11 @@ import star.random;
 import star.game_types;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include <functional>
+import std;
 import star.rect;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarMaybe.hpp"

@@ -47,19 +47,16 @@ import star.weighted_pool;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
+import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include <atomic>
-#include <memory>
 import star.math_common;
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

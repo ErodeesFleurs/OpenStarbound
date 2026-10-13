@@ -6,7 +6,7 @@ module;
 import star.either;
 #include "StarMap.hpp"
 #include "StarDataStreamDevices.hpp"
-#include <random>
+import std;
 #include "StarLogging.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarBiMap.hpp"
@@ -46,16 +46,12 @@ import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.color;
 #include "StarVariant.hpp"
 import star.image;
-#include <atomic>
-#include <memory>
 import star.iterator;
 
 

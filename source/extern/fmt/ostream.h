@@ -8,7 +8,7 @@
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
 
-#include <fstream>  // std::filebuf
+import std;
 
 #ifdef _WIN32
 #  ifdef __GLIBCXX__

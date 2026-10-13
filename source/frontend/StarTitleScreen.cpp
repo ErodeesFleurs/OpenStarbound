@@ -46,17 +46,15 @@ import star.ref_ptr;
 #include "StarOrderedSet.hpp"
 #include "StarDataStreamDevices.hpp"
 
+import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include <atomic>
-#include <memory>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 import star.lru_cache;
@@ -64,7 +62,6 @@ import star.btree_database;
 import star.rpc_promise;
 import star.a_star;
 import star.periodic_function;
-#include <functional>
 
 #include "StarLuaRoot.hpp"
 import star.application;

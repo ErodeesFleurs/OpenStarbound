@@ -5,7 +5,7 @@ module;
 import star.collision_block;
 import star.multi_array;
 
-#include <functional>
+import std;
 
 import star.vector;
 import star.rect;

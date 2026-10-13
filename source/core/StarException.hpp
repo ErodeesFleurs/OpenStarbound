@@ -5,12 +5,7 @@
 import star.memory;
 import star.output_proxy;
 
-#include <string>
-#include <sstream>
-#include <string_view>
-#include <type_traits>
-#include <concepts>
-#include <source_location>
+import std;
 
 namespace Star {
 

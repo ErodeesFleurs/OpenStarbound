@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "StarJson.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"

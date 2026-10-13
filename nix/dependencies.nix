@@ -116,6 +116,9 @@ let
         cmakeFlags = (old.cmakeFlags or [ ]) ++ [
           (lib.cmakeBool "CPPTRACE_UNWIND_WITH_LIBUNWIND" false)
           (lib.cmakeBool "CPPTRACE_UNWIND_WITH_UNWIND" true)
+          # Upstream excludes instruction-byte bounds under instrumentation;
+          # the semantic tracing tests still run with ASan/UBSan enabled.
+          (lib.cmakeBool "CPPTRACE_SANITIZER_BUILD" sanitizers)
         ];
       })
   );

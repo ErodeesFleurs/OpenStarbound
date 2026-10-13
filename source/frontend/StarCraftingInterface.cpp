@@ -48,13 +48,12 @@ import star.ref_ptr;
 import star.net_compatibility;
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 #include "StarOrderedSet.hpp"
-#include <functional>
 import star.a_star;
 import star.periodic_function;
 

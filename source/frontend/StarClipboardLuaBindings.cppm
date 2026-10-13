@@ -1,6 +1,6 @@
 module;
 
-#include <memory>
+import std;
 
 namespace Star {
 class LuaCallbacks;

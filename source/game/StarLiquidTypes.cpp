@@ -59,7 +59,7 @@ Maybe<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float p
   this->pressure = pressure;
 
   if (netUpdate)
-    return LiquidNetUpdate{liquid, floatToByte(level)};
+    return LiquidNetUpdate{liquid, floatToByte(level, true)};
   else
     return {};
 }

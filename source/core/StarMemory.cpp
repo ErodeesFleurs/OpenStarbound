@@ -1,4 +1,4 @@
-#include <new>
+import std;
 
 #include "StarConfig.hpp"
 

@@ -25,7 +25,7 @@ Use `/help` for commands. See the [command reference](assets/opensb/help.config.
 
 ## Building
 
-Requires **CMake 3.28+**, **Ninja 1.11+**, and pinned [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled **libc++/libc++abi/libunwind**. Nix, presets and CI use this toolchain; Windows uses the MinGW ABI, not MSVC STL.
+Requires **C++23**, **CMake 3.28+**, **Ninja 1.11+**, and pinned [xclang](https://github.com/clice-io/xclang) **23.1.2.9** with bundled **libc++/libc++abi/libunwind** and its `std` module sources. Nix, presets and CI use this toolchain; Windows uses the MinGW ABI, not MSVC STL.
 
 C++ dependencies and Qt plugins use the same compiler/runtime and static linkage. Do not mix GNU/MSVC C++ objects or pass C++ objects, exceptions or RTTI across independently linked shared libraries. Opaque C-ABI system libraries and vendor SDKs are supported.
 
@@ -120,11 +120,12 @@ Reports default to `./game-tests-report`; override with `OPENSTARBOUND_TEST_OUT`
 
 ### Development notes
 
-- C++20 module interfaces use `.cppm`; implementations use matching `.cpp` companions where needed. Import converted families, including template-only math, containers and algorithms, instead of restoring retired headers; register them in the owning CMake file set and link the complete module provider.
+- C++23 module interfaces use `.cppm`; implementations use matching `.cpp` companions where needed. Import converted families, including template-only math, containers and algorithms, instead of restoring retired headers; register them in the owning CMake file set and link the complete module provider.
 - Import APIs used by declarations and template bodies directly, at file scope before namespaces; private imports are not re-exports. Parse caller-owned codecs, canonical hash/JSON headers and formatter bases (such as `StarDataStreamExtra.hpp` and `fmt/ostream.h`) before imports.
-- Project module importers share the `StarPch.hpp` AST from `star_modules`. Do not introduce independent libc++ PCHs. See [game target definitions](source/game/CMakeLists.txt) and the [clangd setup](scripts/ide/configure-clangd.sh).
+- Use `import std;` for standard C++ APIs. `star_std` builds the pinned libc++ `std.cppm` from `libc++.modules.json` once per build tree and propagates through `star_modules`; no PCH or prebuilt BMI is used. Bundled fmt also imports `std` to avoid repeating standard-header ASTs across the game module graph; `<version>` retains its feature macros. Keep C macro/global-name headers and third-party declarations textual. The Linux `sys/cdefs.h` overlay preserves glibc's checked fortify bodies with hidden inline C++ linkage so they can be exported by `std`; include C headers before imports in files that call fortified global functions.
+- Lua userdata must retain `max_align_t` alignment for stored C++ objects. Liquid network updates saturate their byte representation without clamping physical levels or pressure; hue conversion truncates while signed before byte wrapping. Check a positive remaining tick budget before converting it to unsigned sleep milliseconds.
 - Build configurations are `Debug`, `RelWithAsserts`, `RelWithDebInfo` and `Release`; `STAR_DEBUG_SYMBOL_LEVEL` accepts `default`, `minimal` or `full`. Caller compiler flags are preserved.
-- Retain compatible objects/PCHs/BMIs for incremental builds. Use fresh build directories after compiler, ABI or sanitizer changes, and separate checkouts when retaining native/cross outputs: in-tree builds share `dist/`. Adjust parallelism to available memory.
+- Retain compatible objects/BMIs for incremental builds. Use fresh build directories after language-standard, compiler, ABI or sanitizer changes, and separate checkouts when retaining native/cross outputs: in-tree builds share `dist/`. Adjust parallelism to available memory.
 
 ## Community
 

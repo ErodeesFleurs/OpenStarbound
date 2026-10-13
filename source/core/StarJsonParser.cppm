@@ -1,7 +1,7 @@
 module;
 
 #include "StarFormat.hpp"
-#include <vector>
+import std;
 
 import star.byte_array;
 #include "StarMaybe.hpp"

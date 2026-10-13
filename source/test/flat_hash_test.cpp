@@ -1,3 +1,4 @@
+#include "StarException.hpp"
 #include "StarFlatHashSet.hpp"
 #include "StarFlatHashMap.hpp"
 import star.random;

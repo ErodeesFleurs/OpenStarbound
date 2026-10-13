@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include "StarString.hpp"
 import star.byte_array;
 import star.encode;

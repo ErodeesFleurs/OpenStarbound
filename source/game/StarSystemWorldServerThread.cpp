@@ -25,11 +25,10 @@ import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarCasting.hpp"
 import star.net_compatibility;
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"
@@ -164,9 +163,8 @@ void SystemWorldServerThread::run() {
     tickApproacher.tick();
 
     double spareTime = tickApproacher.spareTime();
-    uint64_t millis = floor(spareTime * 1000);
     if (spareTime > 0)
-      sleepPrecise(millis);
+      sleepPrecise(static_cast<uint64_t>(floor(spareTime * 1000)));
   }
 
   store();

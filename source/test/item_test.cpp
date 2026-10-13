@@ -22,7 +22,7 @@ import star.ref_ptr;
 import star.listener;
 #include "StarConfig.hpp"
 import star.version;
-#include <list>
+import std;
 
 import star.drawable;
 import star.celestial_coordinate;

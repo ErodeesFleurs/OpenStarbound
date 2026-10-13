@@ -1,8 +1,6 @@
 module;
 
-#include <bit>
-#include <type_traits>
-#include <limits>
+import std;
 #include "StarMaybe.hpp"
 
 namespace Star {

@@ -26,11 +26,10 @@ import star.version;
 #include "StarOrderedMap.hpp"
 #include "StarCasting.hpp"
 import star.net_compatibility;
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

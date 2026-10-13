@@ -27,10 +27,9 @@ import star.version;
 import star.random;
 import star.perlin;
 import star.weighted_pool;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
 import star.color;

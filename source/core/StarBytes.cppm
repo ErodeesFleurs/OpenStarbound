@@ -1,6 +1,6 @@
 module;
 
-#include <bit>
+import std;
 #include "StarConfig.hpp"
 import star.memory;
 

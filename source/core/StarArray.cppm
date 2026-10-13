@@ -1,7 +1,6 @@
 module;
 
-#include <compare>
-#include <array>
+import std;
 #include "StarHash.hpp"
 
 namespace Star {

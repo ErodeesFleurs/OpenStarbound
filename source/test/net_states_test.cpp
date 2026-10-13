@@ -1,4 +1,5 @@
 
+#include "StarException.hpp"
 #include "gtest/gtest.h"
 
 #include "StarDataStreamDevices.hpp"

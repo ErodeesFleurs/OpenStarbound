@@ -51,14 +51,12 @@ import star.weighted_pool;
 import star.image;
 import star.math_common;
 import star.net_compatibility;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 import star.btree_database;
-#include <queue>
 
 #include "StarClientApplication.hpp"
 #include "StarLuaRoot.hpp"

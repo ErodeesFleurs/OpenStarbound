@@ -33,14 +33,11 @@ if(NOT DEFINED CMAKE_BUILD_RPATH AND DEFINED ENV{OPENSTARBOUND_BUILD_RPATH})
 endif()
 project(starbound)
 
-# All module importers share standard headers to avoid conflicting libc++
-# ASTs and Clang's source-location exhaustion in large importers.
-option(STAR_PRECOMPILED_HEADERS "Use shared precompiled standard headers" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../cmake")
 
-# Every platform uses xclang's C++20 frontend and bundled libc++.
-set(CMAKE_CXX_STANDARD 20)
+# Every platform uses xclang's C++23 frontend and bundled libc++.
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 include(CheckCXXSourceCompiles)
@@ -53,7 +50,7 @@ if(NOT STAR_USES_LIBCXX)
   message(FATAL_ERROR "OpenStarbound requires xclang's bundled libc++; use nix develop or the xclang presets.")
 endif()
 # Only the targets that import modules opt into scanning; module file sets are
-# scanned regardless. Avoid scanning every unrelated C++20 translation unit.
+# scanned regardless. Avoid scanning third-party translation units.
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 
@@ -253,6 +250,11 @@ endif()
 
 # Compiler/configuration defaults belong only to in-tree compiled targets.
 include(StarBuildOptions)
+if(STAR_SYSTEM_LINUX)
+  target_include_directories(star_build_config SYSTEM BEFORE INTERFACE
+    "$<$<COMPILE_LANGUAGE:CXX>:${PROJECT_SOURCE_DIR}/../cmake/standard_headers>")
+endif()
+include(StarStd)
 if(NOT DEFINED CMAKE_SKIP_BUILD_RPATH)
   set(CMAKE_SKIP_BUILD_RPATH FALSE)
 endif()
@@ -293,7 +295,7 @@ if(STAR_USE_MIMALLOC)
 endif()
 
 find_package(zlib-ng CONFIG REQUIRED)
-# Keep project-wide definitions identical for targets reusing star_core's PCH.
+# Keep project-wide definitions identical across module providers and importers.
 target_compile_definitions(star_build_config INTERFACE WITH_GZFILEOP)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
@@ -493,25 +495,4 @@ if(STAR_BUILD_GUI)
   endif()
 endif()
 
-# Every importer reuses one standard-header AST. Independent libc++ PCHs
-# conflict when their declarations meet through modules; sharing locations
-# also avoids exhausting Clang's 31-bit source-location space.
-if(STAR_PRECOMPILED_HEADERS)
-  target_precompile_headers(star_modules PRIVATE "${PROJECT_SOURCE_DIR}/core/StarPch.hpp")
-  foreach(pch_target
-      star_core star_base_modules star_platform_modules star_game_module_interfaces star_game_modules
-      star_game star_server_modules starbound_server
-      star_application_module_interfaces star_application_modules star_application
-      star_rendering_module_interfaces star_rendering_modules
-      star_windowing_module_interfaces star_windowing_modules
-      star_frontend_module_interfaces star_frontend_modules
-      star_client_module_interfaces starbound
-      asset_packer asset_unpacker btree_repacker dump_versioned_json make_versioned_json
-      update_tilesets fix_embedded_tilesets map_grep core_tests game_tests
-      json_tool mod_uploader)
-    if(TARGET ${pch_target})
-      target_precompile_headers(${pch_target} REUSE_FROM star_modules)
-    endif()
-  endforeach()
-endif()
 

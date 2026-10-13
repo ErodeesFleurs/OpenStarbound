@@ -86,3 +86,5 @@ target_include_directories (star_extern PRIVATE
     lua
   )
 target_link_libraries (star_extern PRIVATE star_build_config star_extern_dependencies)
+target_link_libraries (star_extern PRIVATE star_std)
+set_target_properties (star_extern PROPERTIES CXX_SCAN_FOR_MODULES ON)

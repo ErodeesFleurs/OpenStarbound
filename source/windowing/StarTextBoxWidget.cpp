@@ -35,8 +35,7 @@ import star.game_types;
 import star.audio;
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include <limits>
-#include <utility>
+import std;
 
 import star.application;
 import star.statistics_service;

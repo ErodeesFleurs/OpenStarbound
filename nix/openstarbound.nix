@@ -242,7 +242,8 @@ stdenv.mkDerivation {
     # Include maintenance utilities (map_grep and tileset tools) in package builds.
     (lib.cmakeBool "STAR_BUILD_DEV_TOOLS" true)
     (lib.cmakeBool "BUILD_TESTING" withTests)
-    (lib.cmakeBool "STAR_PRECOMPILED_HEADERS" true)
+    (lib.cmakeFeature "STAR_STD_MODULE_MANIFEST"
+      "${stdenv.cc.bundledRuntime}/${stdenv.hostPlatform.config}/usr/lib/libc++.modules.json")
     (lib.cmakeFeature "CMAKE_C_COMPILER" "${stdenv.cc}/bin/clang")
     (lib.cmakeFeature "CMAKE_CXX_COMPILER" "${stdenv.cc}/bin/clang++")
     (lib.cmakeBool "STAR_ENABLE_STEAM_INTEGRATION" steamSupport)

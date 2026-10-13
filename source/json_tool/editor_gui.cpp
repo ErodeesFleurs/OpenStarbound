@@ -1,3 +1,5 @@
+#include "StarException.hpp"
+
 #include <QApplication>
 #include <QGridLayout>
 #include <QPushButton>

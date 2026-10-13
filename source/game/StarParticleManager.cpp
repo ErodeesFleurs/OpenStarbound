@@ -11,13 +11,12 @@ import star.image_processing;
 #include "StarThread.hpp"
 import star.directives;
 import star.asset_path;
-#include <functional>
+import std;
 import star.game_types;
 import star.vector;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.random;
 import star.perlin;

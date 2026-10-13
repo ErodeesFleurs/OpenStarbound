@@ -2,7 +2,7 @@ import star.poly;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.collision_block;
-#include <functional>
+import std;
 
 import star.collision_generator;
 

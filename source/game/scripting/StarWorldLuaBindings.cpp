@@ -50,9 +50,8 @@ import star.version;
 import star.image;
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
-#include <functional>
 import star.net_compatibility;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"

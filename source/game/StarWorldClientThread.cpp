@@ -30,10 +30,9 @@ import star.audio;
 import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 import star.net_compatibility;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

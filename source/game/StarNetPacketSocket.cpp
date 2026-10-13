@@ -4,8 +4,7 @@
 #include "StarString.hpp"
 import star.either;
 #include "StarThread.hpp"
-#include <atomic>
-#include <memory>
+import std;
 import star.id_map;
 #include "StarDataStream.hpp"
 #include "StarList.hpp"
@@ -27,11 +26,9 @@ import star.directives;
 import star.asset_path;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-#include <functional>
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

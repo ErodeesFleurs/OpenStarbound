@@ -4,7 +4,7 @@ module;
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
 import star.multi_array;
-#include <functional>
+import std;
 import star.game_types;
 import star.material_types;
 import star.vector;
@@ -12,7 +12,6 @@ import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.random;
 import star.perlin;

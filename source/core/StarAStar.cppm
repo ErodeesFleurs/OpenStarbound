@@ -1,6 +1,6 @@
 module;
 
-#include <queue>
+import std;
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"

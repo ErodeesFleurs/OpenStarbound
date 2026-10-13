@@ -3,9 +3,7 @@
 #include "fmt/ostream.h"
 #include "StarHash.hpp"
 
-#include <vector>
-#include <deque>
-#include <list>
+import std;
 
 #include "StarException.hpp"
 import star.static_vector;

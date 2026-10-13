@@ -7,8 +7,7 @@ import star.host_address;
 #include "StarThread.hpp"
 import star.socket;
 import star.tcp;
-#include <atomic>
-#include <memory>
+import std;
 
 #include "StarThread.hpp"
 import star.p2p_networking_service;

@@ -13,7 +13,7 @@ import star.ref_ptr;
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 #include "StarFile.hpp"
-#include <filesystem>
+import std;
 
 import star.assets;
 import star.asset_source;

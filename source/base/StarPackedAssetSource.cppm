@@ -2,7 +2,7 @@ module;
 #include "StarJson.hpp"
 import star.byte_array;
 
-#include <utility>
+import std;
 
 #include "StarOrderedMap.hpp"
 #include "StarFile.hpp"

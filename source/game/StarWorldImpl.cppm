@@ -27,10 +27,9 @@ import star.color;
 #include "StarThread.hpp"
 #include "StarDataStream.hpp"
 #include "StarVariant.hpp"
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
 import star.image_processing;

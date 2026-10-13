@@ -33,18 +33,10 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include <cmath>             // std::signbit
-#include <cstdint>           // uint32_t
-#include <cstring>           // std::memcpy
-#include <initializer_list>  // std::initializer_list
-#include <limits>            // std::numeric_limits
-#include <memory>            // std::uninitialized_copy
-#include <stdexcept>         // std::runtime_error
-#include <system_error>      // std::system_error
+#include <stdint.h>
+#include <math.h>
 
-#ifdef __cpp_lib_bit_cast
-#  include <bit>  // std::bit_cast
-#endif
+import std;
 
 #include "core.h"
 

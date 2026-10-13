@@ -1,10 +1,3 @@
-#include "StarFile.hpp"
-#include "StarFormat.hpp"
-import star.random;
-#include "StarString.hpp"
-import star.byte_array;
-import star.encode;
-
 #include <errno.h>
 #include <string.h>
 #include <limits.h>
@@ -21,6 +14,13 @@ import star.encode;
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
+#include "StarFile.hpp"
+#include "StarFormat.hpp"
+import star.random;
+#include "StarString.hpp"
+import star.byte_array;
+import star.encode;
+
 
 namespace Star {
 

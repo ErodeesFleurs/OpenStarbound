@@ -1,10 +1,6 @@
 module;
 
-#include <array>
-#include <vector>
-#include <unordered_map>
-#include <limits>
-#include <typeindex>
+import std;
 #include "StarException.hpp"
 
 namespace Star {

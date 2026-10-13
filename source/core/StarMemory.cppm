@@ -1,6 +1,6 @@
 module;
 
-#include <new>
+import std;
 #include "StarConfig.hpp"
 
 namespace Star {

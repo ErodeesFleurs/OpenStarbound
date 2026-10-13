@@ -1,5 +1,6 @@
 module;
 #include "StarJson.hpp"
+#include "StarLuaComponents.hpp"
 import star.id_map;
 #include "StarCasting.hpp"
 import star.vector;
@@ -68,7 +69,6 @@ import star.tool_user_entity;
 import star.tool_user_item;
 
 import star.status_effect_item;
-#include "StarLuaComponents.hpp"
 
 namespace Star {
 

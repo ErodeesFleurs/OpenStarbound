@@ -1,4 +1,4 @@
-#include <limits>
+import std;
 #include "StarJson.hpp"
 #include "StarXXHash.hpp"
 #include "StarJsonExtra.hpp"
@@ -44,10 +44,8 @@ import star.interpolation;
 #include "StarVariant.hpp"
 import star.rpc_promise;
 import star.net_compatibility;
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

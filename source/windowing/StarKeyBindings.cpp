@@ -19,7 +19,7 @@ import star.listener;
 #include "StarConfig.hpp"
 import star.version;
 #include "StarLogging.hpp"
-#include <bitset>
+import std;
 
 import star.key_bindings;
 import star.asset_source;

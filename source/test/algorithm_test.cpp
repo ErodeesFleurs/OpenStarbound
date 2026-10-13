@@ -1,6 +1,6 @@
 #include "StarList.hpp"
 
-#include <list>
+import std;
 
 #include "gtest/gtest.h"
 

@@ -4,7 +4,7 @@
 #include "StarHash.hpp"
 
 #include "StarFormat.hpp"
-#include <compare>
+import std;
 
 import star.byte_array;
 #include "StarMaybe.hpp"

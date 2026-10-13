@@ -2,7 +2,7 @@
 #include "fmt/format.h"
 #include "fmt/ostream.h"
 
-#include <map>
+import std;
 
 #include "StarFlatHashMap.hpp"
 #include "StarSet.hpp"

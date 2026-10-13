@@ -6,8 +6,7 @@ import star.buffer;
 #include "StarString.hpp"
 #include "StarFormat.hpp"
 
-#include <filesystem>
-#include <limits>
+import std;
 
 #include "gtest/gtest.h"
 import star.io_device_callbacks;

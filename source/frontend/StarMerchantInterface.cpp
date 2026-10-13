@@ -41,10 +41,9 @@ import star.version;
 import star.either;
 import star.weighted_pool;
 import star.net_compatibility;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

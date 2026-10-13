@@ -24,7 +24,6 @@
         "CMAKE_VERBOSE_MAKEFILE": true,
         "CMAKE_EXPORT_COMPILE_COMMANDS": true,
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "STAR_PRECOMPILED_HEADERS": true,
         "STAR_BUILD_QT_TOOLS": true,
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,

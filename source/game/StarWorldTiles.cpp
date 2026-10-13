@@ -3,14 +3,13 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarList.hpp"
 #include "StarBiMap.hpp"
-#include <functional>
+import std;
 import star.game_types;
 import star.material_types;
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.random;
 import star.perlin;

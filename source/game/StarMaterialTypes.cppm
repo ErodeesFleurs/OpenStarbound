@@ -1,7 +1,8 @@
 module;
 
-#include <cstdint>
-#include <cmath>
+import std;
+#include <stdint.h>
+#include <math.h>
 
 import star.math_common;
 namespace Star {
@@ -73,7 +74,8 @@ inline float materialHueToDegrees(MaterialHue hue) {
 }
 
 inline MaterialHue materialHueFromDegrees(float degrees) {
-  return (MaterialHue)(fmod(degrees, 360.0f) * 255.0f / 360.0f);
+  // Truncate while signed; only the integer conversion wraps negative hues.
+  return static_cast<MaterialHue>(static_cast<int>(fmod(degrees, 360.0f) * 255.0f / 360.0f));
 }
 
 inline bool isRealMaterial(MaterialId material) {

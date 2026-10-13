@@ -1,6 +1,6 @@
 module;
 
-#include <numeric>
+import std;
 #include "StarList.hpp"
 #include "StarMaybe.hpp"
 

@@ -2,7 +2,8 @@
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"
 
-#include <cstdlib>
+import std;
+#include <stdlib.h>
 #ifdef STAR_USE_CPPTRACE
 #include "cpptrace/cpptrace.hpp"
 #include "cpptrace/formatting.hpp"

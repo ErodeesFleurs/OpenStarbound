@@ -7,7 +7,7 @@ import star.directory_asset_source;
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 
-#include <filesystem>
+import std;
 
 import star.byte_array;
 namespace Star {

@@ -1,4 +1,4 @@
-#include <limits>
+import std;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 import star.game_types;

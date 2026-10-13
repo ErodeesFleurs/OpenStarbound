@@ -39,10 +39,9 @@ import star.ref_ptr;
 import star.listener;
 import star.image;
 import star.net_compatibility;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"

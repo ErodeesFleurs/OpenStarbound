@@ -2,9 +2,7 @@
 #include "fmt/format.h"
 #include "fmt/ostream.h"
 
-#include <type_traits>
-#include <utility>
-#include <initializer_list>
+import std;
 
 
 #include "StarMaybe.hpp"

@@ -16,6 +16,7 @@ import star.rpc_promise;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
+import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -36,10 +37,8 @@ import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.color;
 import star.image_processing;
@@ -50,8 +49,6 @@ import star.asset_path;
 #include "StarVariant.hpp"
 import star.image;
 #include "StarMap.hpp"
-#include <atomic>
-#include <memory>
 
 import star.universe;
 import star.celestial_coordinate;

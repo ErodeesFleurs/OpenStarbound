@@ -6,7 +6,7 @@ import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
+import std;
 
 namespace Star {
 

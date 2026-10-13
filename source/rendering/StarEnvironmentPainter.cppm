@@ -27,11 +27,10 @@ import star.weighted_pool;
 import star.listener;
 import star.perlin;
 import star.random_point;
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarVariant.hpp"
 

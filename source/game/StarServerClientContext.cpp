@@ -36,10 +36,9 @@ import star.btree_database;
 import star.version;
 import star.perlin;
 import star.weighted_pool;
-#include <functional>
+import std;
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
 #include "StarVariant.hpp"

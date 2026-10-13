@@ -2,8 +2,7 @@
 #include "fmt/format.h"
 #include "fmt/ostream.h"
 
-#include <map>
-#include <unordered_map>
+import std;
 
 #include "StarFlatHashMap.hpp"
 #include "StarList.hpp"

@@ -5,7 +5,7 @@ import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
 #include "StarThread.hpp"
 

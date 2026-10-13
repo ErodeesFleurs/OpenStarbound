@@ -6,8 +6,9 @@ module;
 import star.vector;
 import star.rpc_promise;
 import star.math_common;
-#include <cstdint>
-#include <cmath>
+import std;
+#include <stdint.h>
+#include <math.h>
 
 namespace Star {
 

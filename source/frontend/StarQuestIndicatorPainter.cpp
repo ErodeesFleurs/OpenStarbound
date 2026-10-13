@@ -14,13 +14,12 @@ import star.weighted_pool;
 import star.rpc_promise;
 #include "StarOrderedMap.hpp"
 import star.net_compatibility;
-#include <functional>
+import std;
 #include "StarSet.hpp"
 import star.vector;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarBiMap.hpp"
 import star.perlin;
@@ -55,8 +54,6 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include <atomic>
-#include <memory>
 
 #include "StarLuaRoot.hpp"
 import star.world_geometry;

@@ -24,12 +24,11 @@ import star.weighted_pool;
 #include "StarCasting.hpp"
 import star.rpc_promise;
 #include "StarVariant.hpp"
-#include <functional>
+import std;
 import star.rect;
 #include "StarThread.hpp"
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
 import star.color;
@@ -65,8 +64,6 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include <atomic>
-#include <memory>
 
 import star.collision_block;
 import star.liquid_types;

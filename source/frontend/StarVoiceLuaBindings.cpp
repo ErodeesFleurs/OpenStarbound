@@ -18,7 +18,7 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-#include <queue>
+import std;
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;

@@ -47,9 +47,8 @@ import star.image;
 import star.math_common;
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
-#include <functional>
 import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"
@@ -64,8 +63,6 @@ typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
-#include <atomic>
-#include <memory>
 import star.ref_ptr;
 import star.listener;
 

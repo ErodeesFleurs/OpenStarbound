@@ -1,4 +1,4 @@
-#include <limits>
+import std;
 #include "StarXXHash.hpp"
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
@@ -21,10 +21,8 @@ import star.random;
 import star.perlin;
 import star.weighted_pool;
 #include "StarStrongTypedef.hpp"
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 #include "StarMaybe.hpp"
 import star.color;

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <set>
-#include <unordered_set>
+import std;
 
 #include "StarFlatHashSet.hpp"
 #include "StarList.hpp"

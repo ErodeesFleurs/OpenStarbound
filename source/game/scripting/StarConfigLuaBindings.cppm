@@ -1,6 +1,6 @@
 module;
 
-#include <functional>
+import std;
 
 namespace Star {
 class Json;

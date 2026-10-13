@@ -1,5 +1,6 @@
 module;
 
+#include "StarConfig.hpp"
 import star.multi_array;
 import star.interpolation;
 

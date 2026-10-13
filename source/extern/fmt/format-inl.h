@@ -8,15 +8,10 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#include <algorithm>
-#include <cerrno>  // errno
-#include <climits>
-#include <cmath>
-#include <exception>
+#include <errno.h>
+#include <limits.h>
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
-#  include <locale>
-#endif
+import std;
 
 #if defined(_WIN32) && !defined(FMT_WINDOWS_NO_WCHAR)
 #  include <io.h>  // _isatty

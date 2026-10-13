@@ -1,5 +1,5 @@
 module;
-#include <limits>
+import std;
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
@@ -52,12 +52,8 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include <atomic>
-#include <memory>
-#include <functional>
 import star.worker_pool;
 
-#include "thread"
 import star.sector_array_2d;
 import star.perlin;
 #include "StarBTree.hpp"

@@ -1,5 +1,5 @@
 #pragma once
-#include <utility>
+import std;
 
 import star.memory;
 #include "StarException.hpp"
@@ -9,7 +9,6 @@ import star.memory;
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 
-#include <string_view>
 
 namespace Star {
 

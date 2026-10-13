@@ -38,9 +38,8 @@ import star.image;
 import star.rpc_promise;
 import star.worker_pool;
 
-#include "thread"
+import std;
 import star.sector_array_2d;
-#include <functional>
 import star.net_compatibility;
 import star.perlin;
 #include "StarBTree.hpp"

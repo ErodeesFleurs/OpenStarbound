@@ -1,6 +1,7 @@
 // Fixes unused variable warning
 #define OV_EXCLUDE_STATIC_CALLBACKS
 
+#include <ctype.h>
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 

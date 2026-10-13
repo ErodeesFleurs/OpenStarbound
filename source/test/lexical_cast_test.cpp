@@ -1,6 +1,6 @@
 import star.lexical_cast;
 
-#include <string_view>
+import std;
 
 #include "gtest/gtest.h"
 
