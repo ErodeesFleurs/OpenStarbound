@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarJson.hpp"
 
 import star.vector;
@@ -190,9 +189,9 @@ shared_ptr<WidgetType> Widget::findChild(String const& name) {
 
 }
 
-template <> struct fmt::formatter<Star::Widget> : ostream_formatter {};
-
 export module star.widget;
+
+export template <> struct std::formatter<Star::Widget> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::GuiExceptionTag;

@@ -1,6 +1,4 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
 #include "StarHash.hpp"
 
 #include "StarFormat.hpp"
@@ -525,6 +523,9 @@ StringList StringList::sorted(Comparator&& comparator) const {
 
 }
 
-template <> struct fmt::formatter<Star::String> : formatter<std::string> {
-  fmt::appender format(Star::String const& s, format_context& ctx) const;
+template <> struct std::formatter<Star::String> : std::formatter<std::string> {
+  template <typename Context>
+  auto format(Star::String const& s, Context& ctx) const -> typename Context::iterator {
+    return std::formatter<std::string>::format(s.utf8(), ctx);
+  }
 };

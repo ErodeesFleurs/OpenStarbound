@@ -25,6 +25,7 @@ set (star_core_HEADERS
     StarOrderedMap.hpp
     StarOrderedSet.hpp
     StarSet.hpp
+    StarStreamFormatter.hpp
     StarString.hpp
     StarStringView.hpp
     StarStrongTypedef.hpp

@@ -1,8 +1,7 @@
 module;
 
 #include "StarConfig.hpp"
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 import star.memory;
 
 namespace Star {
@@ -10,7 +9,7 @@ namespace Star {
 namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
   std::basic_string<CharT, Traits> string(T const& t) {
-    return fmt::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
+    return std::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
   }
 
   template<typename T, typename CharT, typename Traits>
@@ -60,10 +59,6 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 
 }
 
-template <typename T>
-struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
-template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};
-
 export module star.output_proxy;
 
 export namespace Star {
@@ -82,3 +77,7 @@ export namespace Star::OutputAnyDetail {
 export namespace Star::OutputAnyDetail::Operator {
   using ::Star::OutputAnyDetail::Operator::operator<<;
 }
+
+export template <typename T>
+struct std::formatter<Star::OutputAnyDetail::Wrapper<T>> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::OutputProxy> : Star::StreamFormatter {};

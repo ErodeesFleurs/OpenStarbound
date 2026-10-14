@@ -1,4 +1,5 @@
-﻿#include "StarThread.hpp"
+#include <stdio.h>
+#include "StarThread.hpp"
 import star.time;
 #include "StarLogging.hpp"
 

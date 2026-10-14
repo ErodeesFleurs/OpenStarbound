@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarJson.hpp"
 
 import star.vector;
@@ -97,9 +96,9 @@ private:
 
 }
 
-template <> struct fmt::formatter<Star::CelestialCoordinate> : ostream_formatter {};
-
 export module star.celestial_coordinate;
+
+export template <> struct std::formatter<Star::CelestialCoordinate> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::CelestialExceptionTag;

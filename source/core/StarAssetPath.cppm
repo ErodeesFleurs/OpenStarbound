@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 
 #include "StarDataStream.hpp"
@@ -82,9 +81,9 @@ struct hash<AssetPath> {
 
 }
 
-template <> struct fmt::formatter<Star::AssetPath> : ostream_formatter {};
-
 export module star.asset_path;
+
+export template <> struct std::formatter<Star::AssetPath> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::AssetPath;

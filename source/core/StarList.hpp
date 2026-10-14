@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 
 import std;
@@ -1137,4 +1136,4 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 }
 
 template <typename BaseList>
-struct fmt::formatter<Star::ListMixin<BaseList>> : ostream_formatter {};
+struct std::formatter<Star::ListMixin<BaseList>> : Star::StreamFormatter {};

@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarJson.hpp"
 
 import std;
@@ -2228,6 +2227,4 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 
 }
 
-template <> struct fmt::formatter<Star::LuaValue> : ostream_formatter {
-  auto format(Star::LuaValue const& value, fmt::format_context& context) const -> fmt::format_context::iterator;
-};
+template <> struct std::formatter<Star::LuaValue> : Star::StreamFormatter {};

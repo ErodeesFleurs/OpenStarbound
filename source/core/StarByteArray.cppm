@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 
 #include "StarException.hpp"
@@ -269,9 +268,9 @@ inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
 
 }
 
-template <> struct fmt::formatter<Star::ByteArray> : ostream_formatter {};
-
 export module star.byte_array;
+
+export template <> struct std::formatter<Star::ByteArray> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::ByteArray;

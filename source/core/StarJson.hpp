@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 #include "StarXXHash.hpp"
 
@@ -382,5 +381,5 @@ bool jsonPartialMatch(Json const& base, Json const& compare);
 
 }
 
-template <> struct fmt::formatter<Star::Json> : ostream_formatter {};
-template <> struct fmt::formatter<Star::JsonObject> : ostream_formatter {};
+template <> struct std::formatter<Star::Json> : Star::StreamFormatter {};
+template <> struct std::formatter<Star::JsonObject> : Star::StreamFormatter {};

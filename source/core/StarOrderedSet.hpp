@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 
 import std;
 
@@ -430,4 +429,4 @@ std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocat
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-struct fmt::formatter<Star::OrderedSetWrapper<Map, Value, Allocator, Args...>> : ostream_formatter {};
+struct std::formatter<Star::OrderedSetWrapper<Map, Value, Allocator, Args...>> : Star::StreamFormatter {};

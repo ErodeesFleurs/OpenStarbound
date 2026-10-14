@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 #include "StarJson.hpp"
 
@@ -249,15 +248,15 @@ DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
 }
 
-template <> struct fmt::formatter<Star::CelestialWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::ClientShipWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::InstanceWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::CustomWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::ClientCustomWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::WorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::WarpToWorld> : ostream_formatter {};
-
 export module star.warping;
+
+export template <> struct std::formatter<Star::CelestialWorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::ClientShipWorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::InstanceWorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::CustomWorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::ClientCustomWorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::WorldId> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::WarpToWorld> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::WarpMode;

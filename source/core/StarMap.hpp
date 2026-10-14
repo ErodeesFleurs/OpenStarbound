@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 
 import std;
 
@@ -321,4 +320,4 @@ std::ostream& operator<<(std::ostream& os, MapMixin<BaseMap> const& m) {
 }
 
 template <typename BaseMap>
-struct fmt::formatter<Star::MapMixin<BaseMap>> : ostream_formatter {};
+struct std::formatter<Star::MapMixin<BaseMap>> : Star::StreamFormatter {};

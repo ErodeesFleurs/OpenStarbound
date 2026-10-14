@@ -1,5 +1,3 @@
-#include "fmt/format.h"
-#include "fmt/ostream.h"
 #include "StarHash.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"
@@ -1111,7 +1109,3 @@ size_t hash<StringList>::operator()(StringList const& sl) const {
 }
 
 }
-
-fmt::appender fmt::formatter<Star::String>::format(Star::String const& s, format_context& ctx) const {
-  return formatter<std::string>::format(s.utf8(), ctx);
-};

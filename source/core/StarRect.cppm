@@ -1,6 +1,6 @@
 module;
 
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarList.hpp"
 
 import star.array;
@@ -1077,10 +1077,10 @@ auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
 
 }
 
-template <typename T, size_t N>
-struct fmt::formatter<Star::Box<T, N>> : ostream_formatter {};
-
 export module star.rect;
+
+export template <typename T, size_t N>
+struct std::formatter<Star::Box<T, N>> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::Box;

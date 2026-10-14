@@ -1,6 +1,4 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
 
 #include "StarString.hpp"
 
@@ -119,6 +117,9 @@ private:
 
 }
 
-template <> struct fmt::formatter<Star::StringView> : formatter<std::string_view> {
-  fmt::appender format(Star::StringView const& s, format_context& ctx) const;
+template <> struct std::formatter<Star::StringView> : std::formatter<std::string_view> {
+  template <typename Context>
+  auto format(Star::StringView const& s, Context& ctx) const -> typename Context::iterator {
+    return std::formatter<std::string_view>::format(s.utf8(), ctx);
+  }
 };

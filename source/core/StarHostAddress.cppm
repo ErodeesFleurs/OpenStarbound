@@ -1,4 +1,5 @@
 module;
+#include "StarStreamFormatter.hpp"
 
 #include "StarString.hpp"
 import star.either;
@@ -96,10 +97,10 @@ struct hash<HostAddressWithPort> {
 
 }
 
-template <> struct fmt::formatter<Star::HostAddress> : ostream_formatter {};
-template <> struct fmt::formatter<Star::HostAddressWithPort> : ostream_formatter {};
-
 export module star.host_address;
+
+export template <> struct std::formatter<Star::HostAddress> : Star::StreamFormatter {};
+export template <> struct std::formatter<Star::HostAddressWithPort> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::NetworkExceptionTag;

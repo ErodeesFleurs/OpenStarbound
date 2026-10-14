@@ -1,6 +1,5 @@
 #pragma once
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 
 import std;
 
@@ -959,4 +958,4 @@ void MVariant<Types...>::ConstRefCaller<Function>::operator()(T const& t) {
 }
 
 template <typename FirstType, typename... RestTypes>
-struct fmt::formatter<Star::Variant<FirstType, RestTypes...>> : ostream_formatter {};
+struct std::formatter<Star::Variant<FirstType, RestTypes...>> : Star::StreamFormatter {};

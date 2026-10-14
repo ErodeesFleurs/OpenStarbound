@@ -1,5 +1,11 @@
 #include "StarString.hpp"
 #include "StarFormat.hpp"
+#include "StarJson.hpp"
+#include "StarMaybe.hpp"
+#include "StarSet.hpp"
+import star.line;
+import star.matrix3;
+import star.vector;
 
 #include "gtest/gtest.h"
 
@@ -114,6 +120,33 @@ TEST(StringTest, contains) {
 TEST(StringTest, format) {
   EXPECT_EQ(strf("({}, {}, {})", 1, "foo", 3.2), "(1, foo, 3.2)");
   EXPECT_EQ(strf("{} ({}, {}, {})", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
+}
+
+TEST(StringTest, RuntimeFormattingPreservesByteLengthsAndErrors) {
+  std::string pattern = "{1}:{0:04x}";
+  EXPECT_EQ(strf(pattern, 42, String("日")), "日:002a");
+  String withNull("x\0{}", 4);
+  EXPECT_EQ(strf(withNull, "y"), std::string("x\0y", 3));
+  EXPECT_THROW(strf(std::string("{} {}"), 1), FormatException);
+  EXPECT_THROW(strf(std::string("{:invalid}"), 1), FormatException);
+}
+
+TEST(StringTest, StandardFormattersPreserveProjectRepresentations) {
+  EXPECT_EQ(std::format("{:>6.2}", String("abcd")), "    ab");
+  EXPECT_EQ(std::format("{}", Maybe<int>{42}), "Just (42)");
+  EXPECT_EQ(std::format("{}", Maybe<int>{}), "Nothing");
+  EXPECT_EQ(std::format("{}", Line2I(Vec2I(1, 2), Vec2I(3, 4))), "[(1, 2), (3, 4)]");
+  EXPECT_EQ(std::format("{}", Mat3F(1, 2, 3, 4, 5, 6, 7, 8, 9)), "1 2 3\n4 5 6\n7 8 9");
+  EXPECT_EQ(std::format("{}", List<String>{"a", "b"}), "[\"a\", \"b\"]");
+  EXPECT_EQ(std::format("{}", Set<int>{1, 2}), "{1, 2}");
+}
+
+TEST(StringTest, StreamFormattingPreservesLongEscapedJson) {
+  String text(std::string(700, 'x') + "\n\"");
+  auto json = Json(text);
+  std::string expected = "\"" + std::string(700, 'x') + "\\n\\\"\"";
+  EXPECT_EQ(std::format("{}", json), expected);
+  EXPECT_EQ(std::format("{:.5}", json), "\"xxxx");
 }
 
 TEST(StringTest, append) {

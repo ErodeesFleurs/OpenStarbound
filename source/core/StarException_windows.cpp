@@ -135,7 +135,7 @@ OutputProxy outputStack(StackCapture stack) {
         format(os, " ({}:{})", ++file, line.LineNumber);
       }
       if (SymFromAddr(process, stack.first[i], NULL, symbol))
-        format(os, " {}", symbol->Name);
+        format(os, " {}", std::string_view(symbol->Name, symbol->NameLen));
 
       if (i + 1 < stack.second)
         os << std::endl;

@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 
 import star.vector;
 import star.rect;
@@ -116,9 +115,9 @@ inline std::ostream& operator<<(std::ostream& os, Edge const& edge);
 
 // The formatter specializations have to be visible before the stream operators
 // that use them are defined below, otherwise the instantiations come first.
-template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};
+template <> struct std::formatter<Star::PlatformerAStar::Node> : Star::StreamFormatter {};
+template <> struct std::formatter<Star::PlatformerAStar::Action> : Star::StreamFormatter {};
+template <> struct std::formatter<Star::PlatformerAStar::Edge> : Star::StreamFormatter {};
 
 namespace Star {
 namespace PlatformerAStar {
@@ -174,6 +173,10 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 }
 
 export module star.platformer_astar_types;
+
+export template <> struct std::formatter<Star::PlatformerAStar::Node>;
+export template <> struct std::formatter<Star::PlatformerAStar::Action>;
+export template <> struct std::formatter<Star::PlatformerAStar::Edge>;
 
 export namespace Star::PlatformerAStar {
   using ::Star::PlatformerAStar::PathFinder;

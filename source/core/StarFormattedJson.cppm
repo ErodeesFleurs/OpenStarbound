@@ -1,4 +1,5 @@
 module;
+#include "StarStreamFormatter.hpp"
 
 import std;
 
@@ -129,9 +130,9 @@ std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
 
 }
 
-template <> struct fmt::formatter<Star::FormattedJson> : ostream_formatter {};
-
 export module star.formatted_json;
+
+export template <> struct std::formatter<Star::FormattedJson> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::FormattedJson;

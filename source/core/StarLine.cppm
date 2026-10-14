@@ -1,6 +1,6 @@
 module;
 
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 
 import star.math_common;
@@ -290,10 +290,10 @@ struct hash<Line<T, N>> {
 
 }
 
-template <typename T, size_t N>
-struct fmt::formatter<Star::Line<T, N>> : ostream_formatter {};
-
 export module star.line;
+
+export template <typename T, size_t N>
+struct std::formatter<Star::Line<T, N>> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::Line;
@@ -302,8 +302,4 @@ export namespace Star {
   using ::Star::Line2I;
   using ::Star::operator<<;
   using ::Star::hash;
-}
-
-export namespace fmt {
-  using ::fmt::formatter;
 }

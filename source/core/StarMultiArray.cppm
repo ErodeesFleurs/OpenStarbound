@@ -1,7 +1,6 @@
 module;
 
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarList.hpp"
 import star.array;
 
@@ -511,10 +510,10 @@ std::ostream& operator<<(std::ostream& os, MultiArray<Element, Rank> const& arra
 
 }
 
-template <typename Element, size_t Rank>
-struct fmt::formatter<Star::MultiArray<Element, Rank>> : ostream_formatter {};
-
 export module star.multi_array;
+
+export template <typename Element, size_t Rank>
+struct std::formatter<Star::MultiArray<Element, Rank>> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::MultiArrayExceptionTag;

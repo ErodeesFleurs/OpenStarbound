@@ -1,4 +1,5 @@
 module;
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 
 #include "StarJson.hpp"
@@ -42,9 +43,9 @@ struct hash<ItemRecipe> {
 std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
-template <> struct fmt::formatter<Star::ItemRecipe> : ostream_formatter {};
-
 export module star.item_recipe;
+
+export template <> struct std::formatter<Star::ItemRecipe> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::RecipeExceptionTag;

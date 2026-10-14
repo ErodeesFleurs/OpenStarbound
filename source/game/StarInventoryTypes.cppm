@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarJson.hpp"
 
 #include "StarBiMap.hpp"
@@ -110,11 +109,9 @@ inline constexpr uint8_t EssentialItemCount = 4;
 
 }
 
-template <> struct fmt::formatter<Star::InventorySlot> : ostream_formatter {
-  auto format(Star::InventorySlot const& value, fmt::format_context& context) const -> fmt::format_context::iterator;
-};
-
 export module star.inventory_types;
+
+export template <> struct std::formatter<Star::InventorySlot> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::EquipmentSlot;

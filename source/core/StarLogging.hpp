@@ -72,28 +72,28 @@ public:
   static void log(LogLevel level, char const* msg);
 
   template <typename... Args>
-  static void logf(LogLevel level, fmt::format_string<Args...> msg, Args const&... args);
+  static void logf(LogLevel level, std::format_string<Args...> msg, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static void logf(LogLevel level, S const& msg, Args const&... args);
 
   template <typename... Args>
-  static void debug(fmt::format_string<Args...> msg, Args const&... args);
+  static void debug(std::format_string<Args...> msg, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static void debug(S const& msg, Args const&... args);
   template <typename... Args>
-  static void info(fmt::format_string<Args...> msg, Args const&... args);
+  static void info(std::format_string<Args...> msg, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static void info(S const& msg, Args const&... args);
   template <typename... Args>
-  static void warn(fmt::format_string<Args...> msg, Args const&... args);
+  static void warn(std::format_string<Args...> msg, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static void warn(S const& msg, Args const&... args);
   template <typename... Args>
-  static void error(fmt::format_string<Args...> msg, Args const&... args);
+  static void error(std::format_string<Args...> msg, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static void error(S const& msg, Args const&... args);
@@ -176,7 +176,7 @@ private:
 };
 
 template <typename... Args>
-void Logger::logf(LogLevel level, fmt::format_string<Args...> msg, Args const&... args) {
+void Logger::logf(LogLevel level, std::format_string<Args...> msg, Args const&... args) {
   if (loggable(level)) {
     std::string output = strfChecked(msg, args...);
     MutexLocker locker(s_mutex);
@@ -203,7 +203,7 @@ void Logger::logf(LogLevel level, S const& msg, Args const&... args) {
 }
 
 template <typename... Args>
-void Logger::debug(fmt::format_string<Args...> msg, Args const&... args) {
+void Logger::debug(std::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Debug, msg, args...);
 }
 
@@ -214,7 +214,7 @@ void Logger::debug(S const& msg, Args const&... args) {
 }
 
 template <typename... Args>
-void Logger::info(fmt::format_string<Args...> msg, Args const&... args) {
+void Logger::info(std::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Info, msg, args...);
 }
 
@@ -225,7 +225,7 @@ void Logger::info(S const& msg, Args const&... args) {
 }
 
 template <typename... Args>
-void Logger::warn(fmt::format_string<Args...> msg, Args const&... args) {
+void Logger::warn(std::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Warn, msg, args...);
 }
 
@@ -236,7 +236,7 @@ void Logger::warn(S const& msg, Args const&... args) {
 }
 
 template <typename... Args>
-void Logger::error(fmt::format_string<Args...> msg, Args const&... args) {
+void Logger::error(std::format_string<Args...> msg, Args const&... args) {
   logf(LogLevel::Error, msg, args...);
 }
 

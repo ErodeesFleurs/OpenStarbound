@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarConfig.hpp"
-#include "fmt/format.h"
 import star.memory;
 import star.output_proxy;
 
@@ -9,24 +8,18 @@ import std;
 
 namespace Star {
 
-// A format string that fmt cannot check at compile time: string literals are
-// excluded (they take the checked overload directly), as are fmt's own
-// format_string types (they are already checked), and Star::String is included
-// through its utf8Ptr() rather than a conversion to string_view.
 template <typename S>
 struct IsFormatStringType : std::false_type {};
 template <typename C, typename... A>
-struct IsFormatStringType<fmt::basic_format_string<C, A...>> : std::true_type {};
+struct IsFormatStringType<std::basic_format_string<C, A...>> : std::true_type {};
 
 template <typename S, typename = void>
 struct HasUtf8Ptr : std::false_type {};
 template <typename S>
 struct HasUtf8Ptr<S, std::void_t<decltype(std::declval<S const&>().utf8Ptr())>> : std::true_type {};
 
-// A format string that is only known at run time: string literals are excluded
-// (they take the checked overload directly), as are fmt's own format_string
-// types (they are already checked), and Star::String is included through its
-// utf8Ptr() rather than a conversion to string_view.
+// Runtime text excludes literals and already checked std::format_string values.
+// Star::String participates through utf8Ptr(), without copying its UTF-8 bytes.
 template <typename S>
 concept RuntimeFormatString = !std::is_array_v<std::remove_reference_t<S>>
     && !IsFormatStringType<std::remove_cv_t<std::remove_reference_t<S>>>::value
@@ -34,7 +27,7 @@ concept RuntimeFormatString = !std::is_array_v<std::remove_reference_t<S>>
         || HasUtf8Ptr<std::remove_reference_t<S>>::value);
 
 template <typename... T>
-std::string strf(fmt::format_string<T...> fmt, T&&... args);
+std::string strf(std::format_string<T...> fmt, T&&... args);
 
 // The runtime overload is declared here as well: StarError is defined in this
 // header, and a call to strf from inside it only sees the declarations above it
@@ -45,12 +38,12 @@ template <typename S, typename... T>
 std::string strf(S const& fmt, T&&... args);
 
 template <typename Char, typename... T>
-std::string strfChecked(fmt::basic_format_string<Char, T...> fmt, T const&... args);
+std::string strfChecked(std::basic_format_string<Char, T...> fmt, T const&... args);
 
 class StarException : public std::exception {
 public:
   template <typename... Args>
-  static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
+  static StarException format(std::format_string<Args...> fmt, Args const&... args);
   template <typename S, typename... Args>
   requires RuntimeFormatString<S>
   static StarException format(S const& fmt, Args const&... args);
@@ -143,7 +136,7 @@ template <typename Tag, typename Base>
 class StarError : public Base {
 public:
   template <typename... Args>
-  static StarError format(fmt::format_string<Args...> fmt, Args const&... args) {
+  static StarError format(std::format_string<Args...> fmt, Args const&... args) {
     return StarError(strfChecked(fmt, args...));
   }
 
@@ -180,7 +173,7 @@ struct MemoryExceptionTag {
 using MemoryException = StarError<MemoryExceptionTag, StarException>;
 
 template <typename... Args>
-StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
+StarException StarException::format(std::format_string<Args...> fmt, Args const&... args) {
   return StarException(strfChecked(fmt, args...));
 }
 

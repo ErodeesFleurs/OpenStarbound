@@ -1,6 +1,5 @@
 module;
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarHash.hpp"
 #include "StarJson.hpp"
 
@@ -81,9 +80,9 @@ struct hash<ItemDescriptor> {
 
 }
 
-template <> struct fmt::formatter<Star::ItemDescriptor> : ostream_formatter {};
-
 export module star.item_descriptor;
+
+export template <> struct std::formatter<Star::ItemDescriptor> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::ItemDescriptor;

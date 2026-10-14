@@ -1,6 +1,6 @@
 module;
 
-#include "fmt/ostream.h"
+#include "StarStreamFormatter.hpp"
 #include "StarConfig.hpp"
 
 import star.array;
@@ -465,10 +465,10 @@ std::ostream& operator<<(std::ostream& os, Matrix3<T> m) {
 
 }
 
-template <typename T>
-struct fmt::formatter<Star::Matrix3<T>> : ostream_formatter {};
-
 export module star.matrix3;
+
+export template <typename T>
+struct std::formatter<Star::Matrix3<T>> : Star::StreamFormatter {};
 
 export namespace Star {
   using ::Star::Matrix3;
@@ -479,8 +479,4 @@ export namespace Star {
   using ::Star::ortho;
   using ::Star::operator*;
   using ::Star::operator<<;
-}
-
-export namespace fmt {
-  using ::fmt::formatter;
 }
