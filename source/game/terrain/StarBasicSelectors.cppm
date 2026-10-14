@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 

@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +16,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -57,7 +57,7 @@ import star.stack_widget;
 
 namespace Star {
 
-void StackWidget::showPage(size_t page) {
+void StackWidget::showPage(std::size_t page) {
   if (m_shownPage)
     m_shownPage->hide();
   m_shownPage = m_members[page];
@@ -75,7 +75,7 @@ void StackWidget::showPage(String const& name) {
     m_shownPage->show();
 }
 
-Either<size_t, String> StackWidget::currentPage() const {
+Either<std::size_t, String> StackWidget::currentPage() const {
   return m_page;
 }
 

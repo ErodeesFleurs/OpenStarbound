@@ -1,3 +1,4 @@
+import std;
 import star.ref_ptr;
 #include "StarCasting.hpp"
 
@@ -48,7 +49,7 @@ TEST(IntrusivePtr, All) {
     RefPtr<Base> p4 = p2;
 
     p3 = p3;
-    swap(p3, p4);
+    std::swap(p3, p4);
 
     EXPECT_TRUE(is<Test1>(p4));
     EXPECT_FALSE(is<Test2>(p4));
@@ -58,7 +59,7 @@ TEST(IntrusivePtr, All) {
     EXPECT_EQ(p3, p2);
     EXPECT_EQ(p4, p1);
 
-    swap(p3, p4);
+    std::swap(p3, p4);
 
     EXPECT_EQ(p3, p1);
     EXPECT_EQ(p4, p2);

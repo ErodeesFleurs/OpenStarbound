@@ -15,7 +15,6 @@ import star.game_types;
 import star.material_types;
 import star.math_common;
 import star.vector;
-#include "StarConfig.hpp"
 import star.version;
 import star.random;
 import star.perlin;
@@ -100,29 +99,29 @@ namespace Star {
 
 namespace WorldImpl {
   template <typename TileSectorArray>
-  bool tileIsOccupied(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision = false);
 
   template <typename TileSectorArray>
-  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
     Vec2I const& pos);
 
   template <typename TileSectorArray>
-  bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
+  bool rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, bool solidCollision);
 
   template <typename TileSectorArray>
-  bool lineTileCollision(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  bool lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
-      Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges);
+  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+      Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, std::size_t maxSize, bool includeEdges);
 
   inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
   template <typename TileSectorArray>
-  bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
+  bool damageWouldDestroy(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
   
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
@@ -138,25 +137,25 @@ namespace WorldImpl {
   template <typename GetTileFunction>
   bool canPlaceMod(Vec2I const& pos, TileLayer layer, ModId mod, GetTileFunction& getTile);
   template <typename GetTileFunction>
-  pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
+  std::pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile);
   bool validateTileReplacement(TileModification const& modification);
   // Split modification list into good and bad
   template <typename GetTileFunction>
-  pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, GetTileFunction& getTile, function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
+    bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck = {});
 
   template <typename TileSectorArray>
-  float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
+  float windLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel);
 
   template <typename TileSectorArray>
-  float temperature(shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate,
+  float temperature(std::shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate,
       SkyConstPtr const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
+  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  float lightLevel(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
+  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
       WorldTemplateConstPtr const& worldTemplate, SkyConstPtr const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos);
 
   InteractiveEntityPtr getInteractiveInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap,
@@ -164,11 +163,11 @@ namespace WorldImpl {
   bool isTileEntityInRange(WorldGeometry const& geometry, EntityMapPtr const& entityMap,
       EntityId targetEntity, Vec2F const& sourcePosition, float maxRange);
   template <typename TileSectorArray>
-  bool canReachEntity(WorldGeometry const& geometry, shared_ptr<TileSectorArray> const& tileSectorArray,
+  bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       EntityMapPtr const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive = true);
 
   template <typename TileSectorArray>
-  bool tileIsOccupied(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
+  bool tileIsOccupied(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, bool includeEphemeral, bool checkCollision) {
     auto& tile = tileSectorArray->tile(pos);
     if (layer == TileLayer::Foreground)
@@ -178,20 +177,20 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  CollisionKind tileCollisionKind(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const&,
+  CollisionKind tileCollisionKind(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const&,
     Vec2I const& pos) {
     return tileSectorArray->tile(pos).getCollision();
   }
 
   template <typename TileSectorArray>
-  bool rectTileCollision(shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet) {
+  bool rectTileCollision(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectI const& region, CollisionSet const& collisionSet) {
     return tileSectorArray->tileSatisfies(region, [&collisionSet](Vec2I const&, typename TileSectorArray::Tile const& tile) {
         return isColliding(tile.getCollision(), collisionSet);
       });
   }
 
   template <typename TileSectorArray>
-  bool lineTileCollision(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
+  bool lineTileCollision(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
     return !forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=](int x, int y) -> bool {
         return !tileSectorArray->tile({x, y}).isColliding(collisionSet);
@@ -199,7 +198,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
+  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
     Maybe<Vec2I> collidingBlock;
     auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=, &collidingBlock](int x, int y) -> bool {
@@ -227,27 +226,27 @@ namespace WorldImpl {
     if (direction[1] * blockDistance[1] < 0) blockDistance[1] = 0.0f;
 
     // line length per block in each axis, don't divide by 0
-    float deltaDistX = direction[0] == 0 ? 0.0f : 1.0f / abs(direction[0]);
-    float deltaDistY = direction[1] == 0 ? 0.0f : 1.0f / abs(direction[1]);
+    float deltaDistX = direction[0] == 0 ? 0.0f : 1.0f / std::abs(direction[0]);
+    float deltaDistY = direction[1] == 0 ? 0.0f : 1.0f / std::abs(direction[1]);
 
     // distance to each edge of the intersect
-    Vec2F intersectDist = Vec2F(abs(blockDistance[0]) * deltaDistX, abs(blockDistance[1]) * deltaDistY);
+    Vec2F intersectDist = Vec2F(std::abs(blockDistance[0]) * deltaDistX, std::abs(blockDistance[1]) * deltaDistY);
 
     Vec2I normal = Vec2I(intersectDist[0] > intersectDist[1] ? 1 : 0, intersectDist[1] > intersectDist[0] ? 1 : 0);
-    normal[0] *= copysign(1.0f, direction[0]);
-    normal[1] *= copysign(1.0f, direction[1]);
-    Vec2F position = begin + (direction * max(intersectDist[0], intersectDist[1]));
+    normal[0] *= std::copysign(1.0f, direction[0]);
+    normal[1] *= std::copysign(1.0f, direction[1]);
+    Vec2F position = begin + (direction * std::max(intersectDist[0], intersectDist[1]));
     // HACK: Keeps the end position from being right on a tile border, making line check
     // *from* this end position from colliding with the first tile
     if (intersectDist[0] > intersectDist[1])
       position[0] = blockPosition[0] + (normal[0] * -0.0001f);
     else
       position[1] = blockPosition[1] + (normal[1] * -0.0001f);
-    return pair<Vec2F, Vec2I>(position, normal);
+    return std::pair<Vec2F, Vec2I>(position, normal);
   }
 
   template <typename TileSectorArray>
-  inline LiquidLevel liquidLevel(shared_ptr<TileSectorArray> const& tileSectorArray, RectF const& region) {
+  inline LiquidLevel liquidLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, RectF const& region) {
     if (region.isEmpty())
       return LiquidLevel();
 
@@ -262,7 +261,7 @@ namespace WorldImpl {
         totalSpace += blockIncidence;
         auto liquidLevel = tile.liquid;
         if (liquidLevel.liquid != EmptyLiquidId)
-          totals[liquidLevel.liquid] += min(1.0f, liquidLevel.level) * blockIncidence;
+          totals[liquidLevel.liquid] += std::min(1.0f, liquidLevel.level) * blockIncidence;
       });
 
     float totalLiquidLevel = 0.0f;
@@ -279,8 +278,8 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
-      Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges) {
+  List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
+      Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, std::size_t maxSize, bool includeEdges) {
     List<Vec2I> res;
     forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [&](int x, int y) {
         if (res.size() >= maxSize)
@@ -323,7 +322,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
+  bool damageWouldDestroy(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage) {
     if (auto tile = tileSectorArray->modifyTile(pos)) {
       auto damageParameters = tileDamageParameters(tile, layer, tileDamage);
       float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
@@ -443,7 +442,7 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
+  std::pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
     bool good = false;
     bool perhaps = false;
     
@@ -481,8 +480,8 @@ namespace WorldImpl {
   }
 
   template <typename GetTileFunction>
-  pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
-    bool allowEntityOverlap, GetTileFunction& getTile, function<bool(Vec2I pos, TileModification modification)> extraCheck) {
+  std::pair<TileModificationList, TileModificationList> splitTileModifications(EntityMapPtr const& entityMap, TileModificationList const& modificationList,
+    bool allowEntityOverlap, GetTileFunction& getTile, std::function<bool(Vec2I pos, TileModification modification)> extraCheck) {
     TileModificationList success;
     TileModificationList unknown;
     TileModificationList failures;
@@ -509,7 +508,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  float windLevel(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel) {
+  float windLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& position, float weatherWindLevel) {
     auto const& tile = tileSectorArray->tile(Vec2I::floor(position));
     if (tile.material(TileLayer::Background) != EmptyMaterialId)
       return 0.0f;
@@ -519,7 +518,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+  bool breathable(World const* world, std::shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
       WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos) {
     Vec2I ipos = Vec2I::floor(pos);
     float remainder = pos[1] - ipos[1];
@@ -535,7 +534,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  float lightLevel(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
+  float lightLevel(std::shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
       WorldTemplateConstPtr const& worldTemplate, SkyConstPtr const& sky, CellularLightIntensityCalculator& lighting, Vec2F pos) {
     if (pos[1] < 0 || pos[1] >= worldGeometry.height())
       return 0;
@@ -553,8 +552,8 @@ namespace WorldImpl {
     // Each column in tileEvalColumns is guaranteed to be no larger than the
     // sector size.
     CellularLightIntensityCalculator::Cell lightingCellColumn[WorldSectorSize];
-    tileSectorArray->tileEvalColumns(lighting.calculationRegion(), [&](Vec2I const& pos, typename TileSectorArray::Tile const* column, size_t ySize) {
-        for (size_t y = 0; y < ySize; ++y) {
+    tileSectorArray->tileEvalColumns(lighting.calculationRegion(), [&](Vec2I const& pos, typename TileSectorArray::Tile const* column, std::size_t ySize) {
+        for (std::size_t y = 0; y < ySize; ++y) {
           auto& tile = column[y];
           auto& cell = lightingCellColumn[y];
 
@@ -616,7 +615,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool canReachEntity(WorldGeometry const& geometry, shared_ptr<TileSectorArray> const& tileSectorArray,
+  bool canReachEntity(WorldGeometry const& geometry, std::shared_ptr<TileSectorArray> const& tileSectorArray,
       EntityMapPtr const& entityMap, Vec2F const& sourcePosition, float maxRange, EntityId targetEntity, bool preferInteractive) {
     auto entity = entityMap->entity(targetEntity);
     if (!entity)

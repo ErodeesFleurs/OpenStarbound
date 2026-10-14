@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.data_stream;
@@ -16,8 +16,20 @@ import star.drawable;
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PreviewableItem);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class PreviewableItem;
+using PreviewableItemPtr = std::shared_ptr<PreviewableItem>;
+using PreviewableItemConstPtr = std::shared_ptr<const PreviewableItem>;
+using PreviewableItemWeakPtr = std::weak_ptr<PreviewableItem>;
+using PreviewableItemConstWeakPtr = std::weak_ptr<const PreviewableItem>;
+using PreviewableItemUPtr = std::unique_ptr<PreviewableItem>;
+using PreviewableItemConstUPtr = std::unique_ptr<const PreviewableItem>;
 
 class PreviewableItem {
 public:

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
@@ -28,7 +28,13 @@ import star.quest_descriptor;
 import star.rect;
 namespace Star {
 
-STAR_CLASS(InteractiveEntity);
+class InteractiveEntity;
+using InteractiveEntityPtr = std::shared_ptr<InteractiveEntity>;
+using InteractiveEntityConstPtr = std::shared_ptr<const InteractiveEntity>;
+using InteractiveEntityWeakPtr = std::weak_ptr<InteractiveEntity>;
+using InteractiveEntityConstWeakPtr = std::weak_ptr<const InteractiveEntity>;
+using InteractiveEntityUPtr = std::unique_ptr<InteractiveEntity>;
+using InteractiveEntityConstUPtr = std::unique_ptr<const InteractiveEntity>;
 
 class InteractiveEntity : public virtual Entity {
 public:

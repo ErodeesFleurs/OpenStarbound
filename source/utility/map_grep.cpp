@@ -6,7 +6,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.bi_map;
@@ -48,7 +48,7 @@ using namespace Star;
 using namespace Star::Dungeon;
 
 typedef String TileName;
-typedef pair<String, String> TileProperty;
+typedef std::pair<String, String> TileProperty;
 
 typedef MVariant<TileName, TileProperty> MatchCriteria;
 
@@ -56,7 +56,7 @@ struct SearchParameters {
   MatchCriteria criteria;
 };
 
-typedef function<void(String, Vec2I)> MatchReporter;
+typedef std::function<void(String, Vec2I)> MatchReporter;
 
 String const MapFilenameSuffix = ".json";
 
@@ -69,7 +69,7 @@ Maybe<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile)
   } else {
     String propertyName;
     String matchValue;
-    tie(propertyName, matchValue) = search.criteria.get<TileProperty>();
+    std::tie(propertyName, matchValue) = search.criteria.get<TileProperty>();
     if (auto propertyValue = properties.opt<String>(propertyName))
       if (propertyValue->regexMatch(matchValue))
         return properties.opt<String>("//name").value("?");
@@ -94,7 +94,7 @@ void grepObjectGroup(SearchParameters const& search, TMXObjectGroupPtr objectGro
 }
 
 void grepMap(SearchParameters const& search, String file) {
-  auto map = make_shared<TMXMap>(Json::parseJson(File::readFileString(file)));
+  auto map = std::make_shared<TMXMap>(Json::parseJson(File::readFileString(file)));
 
   for (auto tileLayer : map->tileLayers())
     grepTileLayer(search, map, tileLayer, [&](String const& tileName, Vec2I const& pos) {
@@ -108,7 +108,7 @@ void grepMap(SearchParameters const& search, String file) {
 }
 
 void grepDirectory(SearchParameters const& search, String directory) {
-  for (pair<String, bool> entry : File::dirList(directory)) {
+  for (std::pair<String, bool> entry : File::dirList(directory)) {
     String entryPath = File::relativeTo(directory, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree, or
     // at one of its own parents (which would recurse until the OS errors out).
@@ -135,7 +135,7 @@ void grepPath(SearchParameters const& search, String path) {
 MatchCriteria parseMatchCriteria(String const& criteriaStr) {
   if (criteriaStr.contains("=")) {
     StringList parts = criteriaStr.split('=', 1);
-    return make_pair(parts[0], parts[1]);
+    return std::make_pair(parts[0], parts[1]);
   }
   return TileName(criteriaStr);
 }
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     SearchParameters search = {parseMatchCriteria(options.arguments[0])};
     StringList files = options.arguments.slice(1);

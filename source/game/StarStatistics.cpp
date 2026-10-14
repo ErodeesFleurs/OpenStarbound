@@ -13,7 +13,7 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.lua;
 import star.maybe;
@@ -45,7 +45,7 @@ Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr serv
 
   auto assets = Root::singleton().assets();
 
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>();
 }
 
 void Statistics::writeStatistics() {
@@ -53,7 +53,7 @@ void Statistics::writeStatistics() {
   String filename = File::relativeTo(m_storageDirectory, "statistics");
 
   Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
-      return make_pair(entry.first, entry.second.toJson());
+      return std::make_pair(entry.first, entry.second.toJson());
     }));
   JsonObject storage = {
       { "stats", stats },
@@ -81,7 +81,7 @@ bool Statistics::achievementUnlocked(String const& name) const {
 }
 
 void Statistics::recordEvent(String const& name, Json const& fields) {
-  m_pendingEvents.append(make_pair(name, fields));
+  m_pendingEvents.append(std::make_pair(name, fields));
 }
 
 bool Statistics::reset() {
@@ -190,7 +190,7 @@ void Statistics::readStatistics() {
       Json storage = versioningDatabase->loadVersionedJson(VersionedJson::readFile(filename), "Statistics");
 
       m_stats = StringMap<Stat>::from(storage.getObject("stats", {}).pairs().transformed([](auto const& entry) {
-          return make_pair(entry.first, Stat::fromJson(entry.second));
+          return std::make_pair(entry.first, Stat::fromJson(entry.second));
         }));
       m_achievements = jsonToStringSet(storage.get("achievements", JsonArray{}));
 
@@ -232,17 +232,17 @@ void Statistics::mergeServiceStatistics() {
 LuaCallbacks Statistics::makeStatisticsCallbacks() {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, String, String, Json>("setStat", bind(&Statistics::setStat, this, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<void, String, String, Json>("setStat", std::bind(&Statistics::setStat, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  callbacks.registerCallbackWithSignature<Json, String, Json>("stat", bind(&Statistics::stat, this, _1, _2));
+  callbacks.registerCallbackWithSignature<Json, String, Json>("stat", std::bind(&Statistics::stat, this, std::placeholders::_1, std::placeholders::_2));
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", bind(&Statistics::statType, this, _1));
+  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", std::bind(&Statistics::statType, this, std::placeholders::_1));
 
-  callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", bind(&Statistics::achievementUnlocked, this, _1));
+  callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", std::bind(&Statistics::achievementUnlocked, this, std::placeholders::_1));
 
-  callbacks.registerCallbackWithSignature<bool, String>("checkAchievement", bind(&Statistics::checkAchievement, this, _1));
+  callbacks.registerCallbackWithSignature<bool, String>("checkAchievement", std::bind(&Statistics::checkAchievement, this, std::placeholders::_1));
 
-  callbacks.registerCallbackWithSignature<void, String>("unlockAchievement", bind(&Statistics::unlockAchievement, this, _1));
+  callbacks.registerCallbackWithSignature<void, String>("unlockAchievement", std::bind(&Statistics::unlockAchievement, this, std::placeholders::_1));
 
   return callbacks;
 }

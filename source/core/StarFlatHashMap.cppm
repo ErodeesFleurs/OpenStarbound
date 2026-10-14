@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 
 import std;
 
@@ -13,9 +12,9 @@ class FlatHashMap {
 public:
   typedef Key key_type;
   typedef Mapped mapped_type;
-  typedef pair<key_type const, mapped_type> value_type;
-  typedef size_t size_type;
-  typedef ptrdiff_t difference_type;
+  typedef std::pair<key_type const, mapped_type> value_type;
+  typedef std::size_t size_type;
+  typedef std::ptrdiff_t difference_type;
   typedef Hash hasher;
   typedef Equals key_equal;
   typedef Allocator allocator_type;
@@ -25,7 +24,7 @@ public:
   typedef value_type const* const_pointer;
 
 private:
-  typedef pair<key_type, mapped_type> TableValue;
+  typedef std::pair<key_type, mapped_type> TableValue;
 
   struct GetKey {
     key_type const& operator()(TableValue const& value) const;
@@ -37,7 +36,7 @@ public:
   struct const_iterator {
     typedef std::forward_iterator_tag iterator_category;
     typedef typename FlatHashMap::value_type const value_type;
-    typedef ptrdiff_t difference_type;
+    typedef std::ptrdiff_t difference_type;
     typedef value_type* pointer;
     typedef value_type& reference;
 
@@ -56,7 +55,7 @@ public:
   struct iterator {
     typedef std::forward_iterator_tag iterator_category;
     typedef typename FlatHashMap::value_type value_type;
-    typedef ptrdiff_t difference_type;
+    typedef std::ptrdiff_t difference_type;
     typedef value_type* pointer;
     typedef value_type& reference;
 
@@ -75,20 +74,20 @@ public:
   };
 
   FlatHashMap();
-  explicit FlatHashMap(size_t bucketCount, hasher const& hash = hasher(),
+  explicit FlatHashMap(std::size_t bucketCount, hasher const& hash = hasher(),
       key_equal const& equal = key_equal(), allocator_type const& alloc = allocator_type());
-  FlatHashMap(size_t bucketCount, allocator_type const& alloc);
-  FlatHashMap(size_t bucketCount, hasher const& hash, allocator_type const& alloc);
+  FlatHashMap(std::size_t bucketCount, allocator_type const& alloc);
+  FlatHashMap(std::size_t bucketCount, hasher const& hash, allocator_type const& alloc);
   explicit FlatHashMap(allocator_type const& alloc);
 
   template <typename InputIt>
-  FlatHashMap(InputIt first, InputIt last, size_t bucketCount = 0,
+  FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount = 0,
       hasher const& hash = hasher(), key_equal const& equal = key_equal(),
       allocator_type const& alloc = allocator_type());
   template <typename InputIt>
-  FlatHashMap(InputIt first, InputIt last, size_t bucketCount, allocator_type const& alloc);
+  FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount, allocator_type const& alloc);
   template <typename InputIt>
-  FlatHashMap(InputIt first, InputIt last, size_t bucketCount,
+  FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount,
       hasher const& hash, allocator_type const& alloc);
 
   FlatHashMap(FlatHashMap const& other);
@@ -96,16 +95,16 @@ public:
   FlatHashMap(FlatHashMap&& other);
   FlatHashMap(FlatHashMap&& other, allocator_type const& alloc);
 
-  FlatHashMap(initializer_list<value_type> init, size_t bucketCount = 0,
+  FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount = 0,
       hasher const& hash = hasher(), key_equal const& equal = key_equal(),
       allocator_type const& alloc = allocator_type());
-  FlatHashMap(initializer_list<value_type> init, size_t bucketCount, allocator_type const& alloc);
-  FlatHashMap(initializer_list<value_type> init, size_t bucketCount, hasher const& hash,
+  FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount, allocator_type const& alloc);
+  FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount, hasher const& hash,
       allocator_type const& alloc);
 
   FlatHashMap& operator=(FlatHashMap const& other);
   FlatHashMap& operator=(FlatHashMap&& other);
-  FlatHashMap& operator=(initializer_list<value_type> init);
+  FlatHashMap& operator=(std::initializer_list<value_type> init);
 
   iterator begin();
   iterator end();
@@ -116,28 +115,28 @@ public:
   const_iterator cbegin() const;
   const_iterator cend() const;
 
-  size_t empty() const;
-  size_t size() const;
+  std::size_t empty() const;
+  std::size_t size() const;
   void clear();
 
-  pair<iterator, bool> insert(value_type const& value);
+  std::pair<iterator, bool> insert(value_type const& value);
   template <typename T, typename = typename std::enable_if<std::is_constructible<TableValue, T&&>::value>::type>
-  pair<iterator, bool> insert(T&& value);
+  std::pair<iterator, bool> insert(T&& value);
   iterator insert(const_iterator hint, value_type const& value);
   template <typename T, typename = typename std::enable_if<std::is_constructible<TableValue, T&&>::value>::type>
   iterator insert(const_iterator hint, T&& value);
   template <typename InputIt>
   void insert(InputIt first, InputIt last);
-  void insert(initializer_list<value_type> init);
+  void insert(std::initializer_list<value_type> init);
 
   template <typename... Args>
-  pair<iterator, bool> emplace(Args&&... args);
+  std::pair<iterator, bool> emplace(Args&&... args);
   template <typename... Args>
   iterator emplace_hint(const_iterator hint, Args&&... args);
 
   iterator erase(const_iterator pos);
   iterator erase(const_iterator first, const_iterator last);
-  size_t erase(key_type const& key);
+  std::size_t erase(key_type const& key);
 
   mapped_type& at(key_type const& key);
   mapped_type const& at(key_type const& key) const;
@@ -145,13 +144,13 @@ public:
   mapped_type& operator[](key_type const& key);
   mapped_type& operator[](key_type&& key);
 
-  size_t count(key_type const& key) const;
+  std::size_t count(key_type const& key) const;
   const_iterator find(key_type const& key) const;
   iterator find(key_type const& key);
-  pair<iterator, iterator> equal_range(key_type const& key);
-  pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
+  std::pair<iterator, iterator> equal_range(key_type const& key);
+  std::pair<const_iterator, const_iterator> equal_range(key_type const& key) const;
 
-  void reserve(size_t capacity);
+  void reserve(std::size_t capacity);
 
   bool operator==(FlatHashMap const& rhs) const;
   bool operator!=(FlatHashMap const& rhs) const;
@@ -241,16 +240,16 @@ FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap()
   : FlatHashMap(0) {}
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(size_t bucketCount, hasher const& hash,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::size_t bucketCount, hasher const& hash,
     key_equal const& equal, allocator_type const& alloc)
   : m_table(bucketCount, GetKey(), hash, equal, alloc) {}
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(size_t bucketCount, allocator_type const& alloc)
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::size_t bucketCount, allocator_type const& alloc)
   : FlatHashMap(bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(size_t bucketCount, hasher const& hash,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::size_t bucketCount, hasher const& hash,
     allocator_type const& alloc)
   : FlatHashMap(bucketCount, hash, key_equal(), alloc) {}
 
@@ -260,7 +259,7 @@ FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(allocator_type co
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, size_t bucketCount,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount,
     hasher const& hash, key_equal const& equal, allocator_type const& alloc)
   : FlatHashMap(bucketCount, hash, equal, alloc) {
   insert(first, last);
@@ -268,13 +267,13 @@ FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, In
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, size_t bucketCount,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount,
     allocator_type const& alloc)
   : FlatHashMap(first, last, bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, size_t bucketCount,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(InputIt first, InputIt last, std::size_t bucketCount,
     hasher const& hash, allocator_type const& alloc)
   : FlatHashMap(first, last, bucketCount, hash, key_equal(), alloc) {}
 
@@ -299,19 +298,19 @@ FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(FlatHashMap&& oth
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(initializer_list<value_type> init, size_t bucketCount, hasher const& hash,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount, hasher const& hash,
     key_equal const& equal, allocator_type const& alloc)
   : FlatHashMap(bucketCount, hash, equal, alloc) {
   operator=(init);
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(initializer_list<value_type> init, size_t bucketCount,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount,
     allocator_type const& alloc)
   : FlatHashMap(init, bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(initializer_list<value_type> init, size_t bucketCount, hasher const& hash,
+FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::FlatHashMap(std::initializer_list<value_type> init, std::size_t bucketCount, hasher const& hash,
     allocator_type const& alloc)
   : FlatHashMap(init, bucketCount, hash, key_equal(), alloc) {}
 
@@ -331,7 +330,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator=(FlatHashMap&& 
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator=(initializer_list<value_type> init) -> FlatHashMap& {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator=(std::initializer_list<value_type> init) -> FlatHashMap& {
   clear();
   insert(init.begin(), init.end());
   return *this;
@@ -368,12 +367,12 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::cend() const -> const_it
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
+std::size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::empty() const {
   return m_table.empty();
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::size() const {
+std::size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::size() const {
   return m_table.size();
 }
 
@@ -383,14 +382,14 @@ void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::clear() {
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(value_type const& value) -> pair<iterator, bool> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(value_type const& value) -> std::pair<iterator, bool> {
   auto res = m_table.insert(TableValue(value));
   return {iterator{res.first}, res.second};
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename T, typename>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(T&& value) -> pair<iterator, bool> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(T&& value) -> std::pair<iterator, bool> {
   auto res = m_table.insert(TableValue(std::forward<T&&>(value)));
   return {iterator{res.first}, res.second};
 }
@@ -415,13 +414,13 @@ void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(InputIt first, In
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(initializer_list<value_type> init) {
+void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::insert(std::initializer_list<value_type> init) {
   insert(init.begin(), init.end());
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 template <typename... Args>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::emplace(Args&&... args) -> pair<iterator, bool> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::emplace(Args&&... args) -> std::pair<iterator, bool> {
   return insert(TableValue(std::forward<Args>(args)...));
 }
 
@@ -442,7 +441,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::erase(const_iterator fir
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::erase(key_type const& key) {
+std::size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::erase(key_type const& key) {
   auto i = m_table.find(key);
   if (i != m_table.end()) {
     m_table.erase(i);
@@ -484,7 +483,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type&& ke
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::count(key_type const& key) const {
+std::size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::count(key_type const& key) const {
   if (m_table.find(key) != m_table.end())
     return 1;
   else
@@ -502,7 +501,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::find(key_type const& key
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) -> pair<iterator, iterator> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) -> std::pair<iterator, iterator> {
   auto i = find(key);
   if (i != end()) {
     auto j = i;
@@ -514,7 +513,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type con
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) const -> pair<const_iterator, const_iterator> {
+auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type const& key) const -> std::pair<const_iterator, const_iterator> {
   auto i = find(key);
   if (i != end()) {
     auto j = i;
@@ -526,7 +525,7 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::equal_range(key_type con
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
-void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::reserve(size_t capacity) {
+void FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::reserve(std::size_t capacity) {
   m_table.reserve(capacity);
 }
 

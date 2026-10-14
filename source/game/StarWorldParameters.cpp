@@ -24,7 +24,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -461,11 +461,11 @@ VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store) 
 
   auto type = WorldParametersTypeNames.getLeft(store.getString("type"));
   if (type == WorldParametersType::TerrestrialWorldParameters)
-    return make_shared<TerrestrialWorldParameters>(store);
+    return std::make_shared<TerrestrialWorldParameters>(store);
   else if (type == WorldParametersType::AsteroidsWorldParameters)
-    return make_shared<AsteroidsWorldParameters>(store);
+    return std::make_shared<AsteroidsWorldParameters>(store);
   else if (type == WorldParametersType::FloatingDungeonWorldParameters)
-    return make_shared<FloatingDungeonWorldParameters>(store);
+    return std::make_shared<FloatingDungeonWorldParameters>(store);
   throw StarException("No such WorldParametersType");
 }
 
@@ -488,11 +488,11 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
 
   VisitableWorldParametersPtr parameters;
   if (type == WorldParametersType::TerrestrialWorldParameters)
-    parameters = make_shared<TerrestrialWorldParameters>();
+    parameters = std::make_shared<TerrestrialWorldParameters>();
   else if (type == WorldParametersType::AsteroidsWorldParameters)
-    parameters = make_shared<AsteroidsWorldParameters>();
+    parameters = std::make_shared<AsteroidsWorldParameters>();
   else if (type == WorldParametersType::FloatingDungeonWorldParameters)
-    parameters = make_shared<FloatingDungeonWorldParameters>();
+    parameters = std::make_shared<FloatingDungeonWorldParameters>();
   else
     throw StarException("No such WorldParametersType");
 
@@ -501,7 +501,7 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
   return parameters;
 }
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed) {
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto liquidsDatabase = root.liquidsDatabase();
@@ -633,7 +633,7 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   auto surfaceLayer = readLayer("surface").take();
   String primaryBiome = surfaceLayer.primaryRegion.biome;
 
-  auto parameters = make_shared<TerrestrialWorldParameters>();
+  auto parameters = std::make_shared<TerrestrialWorldParameters>();
 
   parameters->threatLevel = threatLevel;
   parameters->typeName = typeName;
@@ -677,11 +677,11 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
   return parameters;
 }
 
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
+AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(std::uint64_t seed) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
-  auto parameters = make_shared<AsteroidsWorldParameters>();
+  auto parameters = std::make_shared<AsteroidsWorldParameters>();
 
   auto asteroidsConfig = assets->json("/asteroids_worlds.config");
   String biome = asteroidsConfig.getString("biome");
@@ -714,7 +714,7 @@ FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String 
 
   auto worldConfig = assets->json("/dungeon_worlds.config:" + dungeonWorldName);
 
-  auto parameters = make_shared<FloatingDungeonWorldParameters>();
+  auto parameters = std::make_shared<FloatingDungeonWorldParameters>();
 
   parameters->threatLevel = worldConfig.getFloat("threatLevel", 0);
   parameters->typeName = dungeonWorldName;

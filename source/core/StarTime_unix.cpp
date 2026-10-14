@@ -1,8 +1,3 @@
-#include "StarConfig.hpp"
-import star.format;
-import star.thread;
-import star.time;
-
 #include <sys/time.h>
 
 #ifdef STAR_SYSTEM_MACOS
@@ -10,15 +5,20 @@ import star.time;
 #else
 #include <time.h>
 #endif
+import std;
+import star.format;
+import star.thread;
+import star.time;
+
 import star.string;
 
 namespace Star {
 namespace Time {
 
-String printDateAndTime(int64_t epochTicks, String format) {
+String printDateAndTime(std::int64_t epochTicks, String format) {
   // playing fast and loose with the standard here...
-  time_t requestedTime = epochTicks / epochTickFrequency();
-  struct tm ptm;
+  std::time_t requestedTime = epochTicks / epochTickFrequency();
+  struct std::tm ptm;
   localtime_r(&requestedTime, &ptm);
 
   return format.replaceTags(StringMap<String>{
@@ -32,13 +32,13 @@ String printDateAndTime(int64_t epochTicks, String format) {
     });
 }
 
-int64_t epochTicks() {
+std::int64_t epochTicks() {
   timeval tv;
   gettimeofday(&tv, NULL);
-  return (int64_t)tv.tv_sec * 1'000'000 + tv.tv_usec;
+  return (std::int64_t)tv.tv_sec * 1'000'000 + tv.tv_usec;
 }
 
-int64_t epochTickFrequency() {
+std::int64_t epochTickFrequency() {
   return 1'000'000;
 }
 
@@ -51,12 +51,12 @@ struct MonotonicClock {
     mach_timebase_info(&timebaseInfo);
   };
 
-  int64_t ticks() const {
-    int64_t t = mach_absolute_time();
+  std::int64_t ticks() const {
+    std::int64_t t = mach_absolute_time();
     return (t / 100) * timebaseInfo.numer / timebaseInfo.denom;
   }
 
-  int64_t frequency() const {
+  std::int64_t frequency() const {
     // hard coded to 100ns increments
     return 10'000'000;
   }
@@ -70,21 +70,23 @@ struct MonotonicClock {
   MonotonicClock() {
     timespec ts;
     clock_getres(CLOCK_MONOTONIC, &ts);
-    starAssert(ts.tv_sec == 0);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((ts.tv_sec == 0));
+    }
     storedFrequency = 1'000'000'000 / ts.tv_nsec;
   };
 
-  int64_t ticks() const {
+  std::int64_t ticks() const {
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec * storedFrequency + ts.tv_nsec * storedFrequency / 1'000'000'000;
   }
 
-  int64_t frequency() const {
+  std::int64_t frequency() const {
     return storedFrequency;
   }
 
-  int64_t storedFrequency;
+  std::int64_t storedFrequency;
 };
 
 #endif
@@ -93,11 +95,11 @@ static MonotonicClock g_monotonicClock;
 
 namespace Time {
 
-int64_t monotonicTicks() {
+std::int64_t monotonicTicks() {
   return g_monotonicClock.ticks();
 }
 
-int64_t monotonicTickFrequency() {
+std::int64_t monotonicTickFrequency() {
   return g_monotonicClock.frequency();
 }
 

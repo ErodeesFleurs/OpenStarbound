@@ -28,7 +28,6 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.version;
 import star.id_map;
 #include "StarCasting.hpp"
@@ -129,21 +128,21 @@ namespace {
   // Hashes one tile together with its position.  The per sample hashes are
   // combined order independently, so that two worlds can be compared without
   // serialising all of them.
-  uint64_t tileHash(Vec2I position, ServerTile const& tile) {
+  std::uint64_t tileHash(Vec2I position, ServerTile const& tile) {
     DataStreamBuffer buffer;
     buffer.write(position);
     tile.write(buffer);
 
-    uint64_t hash = 14695981039346656037ull;
+    std::uint64_t hash = 14695981039346656037ull;
     for (auto byte : buffer.data())
-      hash = (hash ^ (uint8_t)byte) * 1099511628211ull;
+      hash = (hash ^ (std::uint8_t)byte) * 1099511628211ull;
     return hash;
   }
 
   // Samples a fixed grid around the surface of a world.  Reading a tile
   // generates the sector it is in, so only the sampled sectors are generated.
-  uint64_t sampleWorld(WorldServer& world, float surfaceLevel) {
-    uint64_t hash = 0;
+  std::uint64_t sampleWorld(WorldServer& world, float surfaceLevel) {
+    std::uint64_t hash = 0;
     for (int x : {0, 128, 256, 384, 512, 640, 768, 896}) {
       for (int y = (int)surfaceLevel - 1280; y <= (int)surfaceLevel + 512; y += 128)
         hash ^= tileHash(Vec2I(x, y), world.getServerTile(Vec2I(x, y)));
@@ -161,7 +160,7 @@ namespace {
 TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
   auto storagePath = File::temporaryDirectory();
   auto finallyGuard = finally([&storagePath]() { File::removeDirectoryRecursive(storagePath); });
-  auto celestialDatabase = make_shared<CelestialMasterDatabase>(File::relativeTo(storagePath, "universe.chunks"));
+  auto celestialDatabase = std::make_shared<CelestialMasterDatabase>(File::relativeTo(storagePath, "universe.chunks"));
 
   // Find a real planet: the celestial generator places systems sparsely, and a
   // hand picked coordinate is most likely empty.
@@ -181,17 +180,17 @@ TEST(WorldSnapshot, FixedCoordinateGenerationIsDeterministic) {
   ASSERT_TRUE(coordinate.isValid()) << "no planetary body found in the scanned region";
   // A separate template for the surface level: a template handed to a WorldServer
   // is modified by world generation.
-  float surfaceLevel = make_shared<WorldTemplate>(*coordinate, celestialDatabase)->surfaceLevel();
+  float surfaceLevel = std::make_shared<WorldTemplate>(*coordinate, celestialDatabase)->surfaceLevel();
 
   auto makeWorld = [&]() {
-    auto worldTemplate = make_shared<WorldTemplate>(*coordinate, celestialDatabase);
-    return make_shared<WorldServer>(worldTemplate, File::ephemeralFile());
+    auto worldTemplate = std::make_shared<WorldTemplate>(*coordinate, celestialDatabase);
+    return std::make_shared<WorldServer>(worldTemplate, File::ephemeralFile());
   };
   auto firstWorld = makeWorld();
   auto secondWorld = makeWorld();
 
-  uint64_t firstHash = sampleWorld(*firstWorld, surfaceLevel);
-  uint64_t secondHash = sampleWorld(*secondWorld, surfaceLevel);
+  std::uint64_t firstHash = sampleWorld(*firstWorld, surfaceLevel);
+  std::uint64_t secondHash = sampleWorld(*secondWorld, surfaceLevel);
   std::cerr << "WorldSnapshot: " << coordinate->id() << " hashes to 0x" << std::hex << firstHash << std::dec << std::endl;
 
   EXPECT_EQ(firstHash, secondHash);
@@ -208,7 +207,7 @@ TEST(WorldSnapshot, ShipWorldIsDeterministic) {
     worldSize = jsonToVec2U(jWorldSize);
 
   auto makeWorld = [&]() {
-    auto world = make_shared<WorldServer>(worldSize, File::ephemeralFile());
+    auto world = std::make_shared<WorldServer>(worldSize, File::ephemeralFile());
     world->setCentralStructure(shipStructure);
     return world;
   };
@@ -217,8 +216,8 @@ TEST(WorldSnapshot, ShipWorldIsDeterministic) {
 
   // The ship structure is placed around the middle of the world.
   Vec2I center((int)worldSize[0] / 2, (int)worldSize[1] / 2);
-  uint64_t firstHash = 0;
-  uint64_t secondHash = 0;
+  std::uint64_t firstHash = 0;
+  std::uint64_t secondHash = 0;
   unsigned nonEmptyTiles = 0;
   for (int x = -160; x <= 160; x += 16) {
     for (int y = -160; y <= 160; y += 16) {

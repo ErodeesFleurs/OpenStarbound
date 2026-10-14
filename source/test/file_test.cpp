@@ -1,9 +1,10 @@
-#include "StarConfig.hpp"
+#include <stdio.h>
+#include "vorbis/vorbisfile.h"
+
 import star.file;
 import star.io_device;
 import star.string;
 import star.buffer;
-#include "vorbis/vorbisfile.h"
 import star.format;
 
 import std;
@@ -19,18 +20,18 @@ namespace {
   // An IODevice that reports more bytes than it was asked for, the way
   // File::pread used to turn a failed read into SIZE_MAX.
   struct OverlongReadDevice : IODevice {
-    size_t read(char*, size_t) override { return 0; }
-    size_t write(char const*, size_t) override { return 0; }
+    std::size_t read(char*, std::size_t) override { return 0; }
+    std::size_t write(char const*, std::size_t) override { return 0; }
     StreamOffset pos() override { return 0; }
     void seek(StreamOffset, IOSeek) override {}
-    size_t readAbsolute(StreamOffset, char*, size_t) override { return std::numeric_limits<size_t>::max(); }
-    size_t writeAbsolute(StreamOffset, char const*, size_t) override { return std::numeric_limits<size_t>::max(); }
-    IODevicePtr clone() override { return make_shared<OverlongReadDevice>(); }
+    std::size_t readAbsolute(StreamOffset, char*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
+    std::size_t writeAbsolute(StreamOffset, char const*, std::size_t) override { return std::numeric_limits<std::size_t>::max(); }
+    IODevicePtr clone() override { return std::make_shared<OverlongReadDevice>(); }
   };
 }
 
 TEST(FileTest, FullReadRejectsImpossibleLengths) {
-  auto device = make_shared<OverlongReadDevice>();
+  auto device = std::make_shared<OverlongReadDevice>();
   char buffer[4];
   // Without the length check these underflow the remaining length and loop
   // forever instead of failing.
@@ -142,7 +143,7 @@ TEST(FileTest, RemoveDirectoryRecursiveHandlesSymlinkLoops) {
 }
 
 TEST(FileTest, OggDeviceCallbacksReadAndSeek) {
-  auto device = make_shared<Buffer>(ByteArray::fromCString("abcdef"));
+  auto device = std::make_shared<Buffer>(ByteArray::fromCString("abcdef"));
   IODeviceCallbacks adapter(device);
   ov_callbacks callbacks{};
   adapter.setupOggCallbacks(callbacks);

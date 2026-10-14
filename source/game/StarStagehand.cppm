@@ -23,7 +23,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.version;
@@ -48,8 +48,20 @@ import star.net_element_system;
 
 namespace Star {
 
-STAR_CLASS(Stagehand);
-STAR_CLASS(BehaviorState);
+class Stagehand;
+using StagehandPtr = std::shared_ptr<Stagehand>;
+using StagehandConstPtr = std::shared_ptr<const Stagehand>;
+using StagehandWeakPtr = std::weak_ptr<Stagehand>;
+using StagehandConstWeakPtr = std::weak_ptr<const Stagehand>;
+using StagehandUPtr = std::unique_ptr<Stagehand>;
+using StagehandConstUPtr = std::unique_ptr<const Stagehand>;
+class BehaviorState;
+using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
+using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
+using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
+using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
+using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
+using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
 
 class Stagehand : public virtual ScriptedEntity {
 public:
@@ -70,12 +82,12 @@ public:
 
   RectF metaBoundBox() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   String name() const override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
   

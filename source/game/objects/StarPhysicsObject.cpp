@@ -33,7 +33,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 
@@ -154,7 +154,7 @@ void PhysicsObject::uninit() {
   Object::uninit();
 }
 
-void PhysicsObject::update(float dt, uint64_t currentStep) {
+void PhysicsObject::update(float dt, std::uint64_t currentStep) {
   Object::update(dt, currentStep);
   if (isSlave())
     m_netGroup.tickNetInterpolation(dt);
@@ -176,11 +176,11 @@ List<PhysicsForceRegion> PhysicsObject::forceRegions() const {
   return forces;
 }
 
-size_t PhysicsObject::movingCollisionCount() const {
+std::size_t PhysicsObject::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(size_t positionIndex) const {
+Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(std::size_t positionIndex) const {
   auto const& collisionConfig = m_physicsCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

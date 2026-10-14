@@ -1,4 +1,6 @@
 #include "StarJsonExtra.hpp"
+import std;
+import star.memory;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -40,14 +42,12 @@ import star.either;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.periodic_function;
 import star.weighted_pool;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -233,14 +233,14 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   auto assets = Root::singleton().assets();
 
   GuiReader reader;
-  reader.registerCallback("close", bind(mem_fn(&AiInterface::dismiss), this));
-  reader.registerCallback("missionItemList", bind(mem_fn(&AiInterface::selectMission), this));
-  reader.registerCallback("startMission", bind(mem_fn(&AiInterface::startMission), this));
-  reader.registerCallback("crewItemList", bind(mem_fn(&AiInterface::selectRecruit), this));
-  reader.registerCallback("dismissRecruit", bind(mem_fn(&AiInterface::dismissRecruit), this));
-  reader.registerCallback("showMissions", bind(mem_fn(&AiInterface::showMissions), this));
-  reader.registerCallback("showCrew", bind(mem_fn(&AiInterface::showCrew), this));
-  reader.registerCallback("goBack", bind(mem_fn(&AiInterface::goBack), this));
+  reader.registerCallback("close", std::bind(std::mem_fn(&AiInterface::dismiss), this));
+  reader.registerCallback("missionItemList", std::bind(std::mem_fn(&AiInterface::selectMission), this));
+  reader.registerCallback("startMission", std::bind(std::mem_fn(&AiInterface::startMission), this));
+  reader.registerCallback("crewItemList", std::bind(std::mem_fn(&AiInterface::selectRecruit), this));
+  reader.registerCallback("dismissRecruit", std::bind(std::mem_fn(&AiInterface::dismissRecruit), this));
+  reader.registerCallback("showMissions", std::bind(std::mem_fn(&AiInterface::showMissions), this));
+  reader.registerCallback("showCrew", std::bind(std::mem_fn(&AiInterface::showCrew), this));
+  reader.registerCallback("goBack", std::bind(std::mem_fn(&AiInterface::goBack), this));
 
   reader.construct(assets->json("/interface/ai/ai.config:guiConfig"), this);
 
@@ -301,13 +301,13 @@ void AiInterface::update(float dt) {
   if (m_currentSpeech) {
     m_textLength += m_currentSpeech->speedModifier * m_aiDatabase->charactersPerSecond() * dt;
     m_currentTextWidget->setText(m_currentSpeech->text);
-    m_currentTextWidget->setTextCharLimit(min(m_textMaxLength, floor(m_textLength)));
+    m_currentTextWidget->setTextCharLimit(std::min(m_textMaxLength, std::floor(m_textLength)));
 
     if (m_textLength < m_textMaxLength) {
       setFaceAnimation(m_currentSpeech->animation);
       if (!m_chatterSound || m_chatterSound->finished()) {
         auto assets = Root::singleton().assets();
-        m_chatterSound = make_shared<AudioInstance>(*assets->audio(assets->json("/interface/ai/ai.config:chatterSound").toString()));
+        m_chatterSound = std::make_shared<AudioInstance>(*assets->audio(assets->json("/interface/ai/ai.config:chatterSound").toString()));
         m_chatterSound->setLoops(-1);
         GuiContext::singleton().playAudio(m_chatterSound);
       }
@@ -428,7 +428,7 @@ void AiInterface::showMissions() {
 }
 
 void AiInterface::selectMission() {
-  size_t selectedItem = m_missionListWidget->selectedItem();
+  std::size_t selectedItem = m_missionListWidget->selectedItem();
 
   Maybe<String> mission = {};
   if (selectedItem < m_availableMissions.size())
@@ -476,7 +476,7 @@ void AiInterface::showCrew() {
 
 void AiInterface::selectRecruit() {
   CompanionPtr recruit = {};
-  size_t selectedItem = m_crewListWidget->selectedItem();
+  std::size_t selectedItem = m_crewListWidget->selectedItem();
   if (selectedItem < m_crew.size())
     recruit = m_crew.at(selectedItem);
 

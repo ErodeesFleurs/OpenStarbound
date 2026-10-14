@@ -22,7 +22,6 @@ import star.btree_database;
 #include "StarCasting.hpp"
 import star.ordered_set;
 import star.list;
-#include "StarConfig.hpp"
 import star.map;
 import star.version;
 import star.random;
@@ -87,9 +86,27 @@ import star.net_element_system;
 
 namespace Star {
 
-STAR_CLASS(WorldServerThread);
-STAR_CLASS(SystemWorldServerThread);
-STAR_CLASS(ServerClientContext);
+class WorldServerThread;
+using WorldServerThreadPtr = std::shared_ptr<WorldServerThread>;
+using WorldServerThreadConstPtr = std::shared_ptr<const WorldServerThread>;
+using WorldServerThreadWeakPtr = std::weak_ptr<WorldServerThread>;
+using WorldServerThreadConstWeakPtr = std::weak_ptr<const WorldServerThread>;
+using WorldServerThreadUPtr = std::unique_ptr<WorldServerThread>;
+using WorldServerThreadConstUPtr = std::unique_ptr<const WorldServerThread>;
+class SystemWorldServerThread;
+using SystemWorldServerThreadPtr = std::shared_ptr<SystemWorldServerThread>;
+using SystemWorldServerThreadConstPtr = std::shared_ptr<const SystemWorldServerThread>;
+using SystemWorldServerThreadWeakPtr = std::weak_ptr<SystemWorldServerThread>;
+using SystemWorldServerThreadConstWeakPtr = std::weak_ptr<const SystemWorldServerThread>;
+using SystemWorldServerThreadUPtr = std::unique_ptr<SystemWorldServerThread>;
+using SystemWorldServerThreadConstUPtr = std::unique_ptr<const SystemWorldServerThread>;
+class ServerClientContext;
+using ServerClientContextPtr = std::shared_ptr<ServerClientContext>;
+using ServerClientContextConstPtr = std::shared_ptr<const ServerClientContext>;
+using ServerClientContextWeakPtr = std::weak_ptr<ServerClientContext>;
+using ServerClientContextConstWeakPtr = std::weak_ptr<const ServerClientContext>;
+using ServerClientContextUPtr = std::unique_ptr<ServerClientContext>;
+using ServerClientContextConstUPtr = std::unique_ptr<const ServerClientContext>;
 
 class ServerClientContext {
 public:
@@ -119,8 +136,8 @@ public:
 
   // Warp action and warp mode to the planet the player is currently orbiting
   // valid when the player is on any ship world orbiting a location
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
-  void setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> warpAction);
+  Maybe<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  void setOrbitWarpAction(Maybe<std::pair<WarpAction, WarpMode>> warpAction);
 
   bool isAdmin() const;
   void setAdmin(bool admin);
@@ -181,7 +198,7 @@ public:
   void loadServerData(Json const& store);
   Json storeServerData();
 
-  int64_t creationTime() const;
+  std::int64_t creationTime() const;
 
 private:
   struct CustomWorld {
@@ -225,13 +242,13 @@ private:
   SystemWorldServerThreadPtr m_systemWorldThread;
 
   NetElementTopGroup m_netGroup;
-  uint64_t m_netVersion = 0;
-  int64_t m_creationTime;
+  std::uint64_t m_netVersion = 0;
+  std::int64_t m_creationTime;
   
   StringMap<RpcPromiseKeeper<WorldChunks>> m_worldRequests;
   StringMap<CustomWorld> m_customWorlds;
 
-  NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<Maybe<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

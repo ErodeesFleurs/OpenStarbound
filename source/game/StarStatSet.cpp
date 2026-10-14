@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.variant;
@@ -305,7 +305,7 @@ float StatSet::Resource::setValue(float v) {
   if (maxValue)
     value = clamp(v, 0.0f, *maxValue);
   else
-    value = Star::max(v, 0.0f);
+    value = std::max(v, 0.0f);
   return value;
 }
 

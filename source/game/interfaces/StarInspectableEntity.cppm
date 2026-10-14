@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -21,7 +21,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(InspectableEntity);
+class InspectableEntity;
+using InspectableEntityPtr = std::shared_ptr<InspectableEntity>;
+using InspectableEntityConstPtr = std::shared_ptr<const InspectableEntity>;
+using InspectableEntityWeakPtr = std::weak_ptr<InspectableEntity>;
+using InspectableEntityConstWeakPtr = std::weak_ptr<const InspectableEntity>;
+using InspectableEntityUPtr = std::unique_ptr<InspectableEntity>;
+using InspectableEntityConstUPtr = std::unique_ptr<const InspectableEntity>;
 
 class InspectableEntity : public virtual Entity {
 public:

@@ -30,7 +30,7 @@ import star.lexical_cast;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.variant;
@@ -162,7 +162,7 @@ FarmableObject::FarmableObject(ObjectConfigConstPtr config, Json const& paramete
   m_consumeSoilMoisture = configValue("consumeSoilMoisture", true).toBool();
 }
 
-void FarmableObject::update(float dt, uint64_t currentStep) {
+void FarmableObject::update(float dt, std::uint64_t currentStep) {
   Object::update(dt, currentStep);
 
   if (isMaster()) {
@@ -180,7 +180,7 @@ void FarmableObject::update(float dt, uint64_t currentStep) {
     }
 
     // update immersion and check whether farmable should break
-    m_immersion.update(bind(&Object::liquidFillLevel, this));
+    m_immersion.update(std::bind(&Object::liquidFillLevel, this));
     if (m_immersion.average() > m_maxImmersion || m_immersion.average() < m_minImmersion)
       breakObject(false);
   }

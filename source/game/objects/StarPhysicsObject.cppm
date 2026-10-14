@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -82,14 +82,14 @@ public:
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   RectF metaBoundBox() const override;
 
   List<PhysicsForceRegion> forceRegions() const override;
 
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::size_t movingCollisionCount() const override;
+  Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
 
 private:
   struct PhysicsForceConfig {

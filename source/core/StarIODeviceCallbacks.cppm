@@ -1,10 +1,9 @@
 module;
-
-#include "StarConfig.hpp"
-import star.io_device;
 #define OV_EXCLUDE_STATIC_CALLBACKS
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
+import std;
+import star.io_device;
 
 export module star.io_device_callbacks;
 
@@ -27,7 +26,7 @@ public:
   IODevicePtr const& device() const;
 
   // Callback functions for Ogg Vorbis
-  static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource);
+  static std::size_t readFunc(void* ptr, std::size_t size, std::size_t nmemb, void* datasource);
   static int seekFunc(void* datasource, ogg_int64_t offset, int whence);
   static long int tellFunc(void* datasource);
 
@@ -52,7 +51,7 @@ IODevicePtr const& IODeviceCallbacks::device() const {
   return m_device;
 }
 
-size_t IODeviceCallbacks::readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
+std::size_t IODeviceCallbacks::readFunc(void* ptr, std::size_t size, std::size_t nmemb, void* datasource) {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
   return callbacks->m_device->read((char*)ptr, size * nmemb) / size;
 }

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 
 import star.io_device;
@@ -9,7 +9,13 @@ import star.list;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(File);
+class File;
+using FilePtr = std::shared_ptr<File>;
+using FileConstPtr = std::shared_ptr<const File>;
+using FileWeakPtr = std::weak_ptr<File>;
+using FileConstWeakPtr = std::weak_ptr<const File>;
+using FileUPtr = std::unique_ptr<File>;
+using FileConstUPtr = std::unique_ptr<const File>;
 
 // All file methods are thread safe.
 class File : public IODevice {
@@ -29,7 +35,7 @@ public:
 
   // List all files or directories under given directory.  skipDots skips the
   // special '.' and '..' entries.  Bool value is true for directories.
-  static List<pair<String, bool>> dirList(String const& dirName, bool skipDots = true);
+  static List<std::pair<String, bool>> dirList(String const& dirName, bool skipDots = true);
 
   // Returns the final component of the given path with no directory separators
   static String baseName(String const& fileName);
@@ -85,7 +91,7 @@ public:
   static String readFileString(String const& filename);
   static StreamOffset fileSize(String const& filename);
 
-  static void writeFile(char const* data, size_t len, String const& filename);
+  static void writeFile(char const* data, std::size_t len, String const& filename);
   static void writeFile(ByteArray const& data, String const& filename);
   static void writeFile(String const& data, String const& filename);
 
@@ -94,7 +100,7 @@ public:
   // operation completes.  Writes to the same path as the existing file to
   // avoid different partition copying.  This may clobber anything in the given
   // path that matches filename + newSuffix.
-  static void overwriteFileWithRename(char const* data, size_t len, String const& filename, String const& newSuffix = ".new");
+  static void overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix = ".new");
   static void overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
   static void overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
 
@@ -118,15 +124,15 @@ public:
   void resize(StreamOffset size) override;
   StreamOffset size() override;
   bool atEnd() override;
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  std::size_t read(char* data, std::size_t len) override;
+  std::size_t write(char const* data, std::size_t len) override;
 
   // Do an immediate read / write of an absolute location in the file, without
   // modifying the current file cursor.  Safe to call in a threaded context
   // with other reads and writes, but not safe vs changing the File state like
   // open and close.
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
   void open(IOMode mode) override;
   void close() override;
@@ -141,13 +147,13 @@ private:
   static void* fopen(char const* filename, IOMode mode);
   static void fseek(void* file, StreamOffset offset, IOSeek seek);
   static StreamOffset ftell(void* file);
-  static size_t fread(void* file, char* data, size_t len);
-  static size_t fwrite(void* file, char const* data, size_t len);
+  static std::size_t fread(void* file, char* data, std::size_t len);
+  static std::size_t fwrite(void* file, char const* data, std::size_t len);
   static void fsync(void* file);
   static void fclose(void* file);
   static StreamOffset fsize(void* file);
-  static size_t pread(void* file, char* data, size_t len, StreamOffset absPosition);
-  static size_t pwrite(void* file, char const* data, size_t len, StreamOffset absPosition);
+  static std::size_t pread(void* file, char* data, std::size_t len, StreamOffset absPosition);
+  static std::size_t pwrite(void* file, char const* data, std::size_t len, StreamOffset absPosition);
   static void resize(void* file, StreamOffset size);
 
   String m_filename;

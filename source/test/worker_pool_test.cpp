@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 import star.list;
 import star.worker_pool;
@@ -20,12 +20,12 @@ TEST(WorkerPoolTest, All) {
   Deque<WorkerPoolHandle> handles;
 
   WorkerPool workerPool("WorkerPoolTest");
-  for (size_t i = 0; i < 10; ++i)
+  for (std::size_t i = 0; i < 10; ++i)
     handles.append(workerPool.addWork(incCounter));
 
   workerPool.start(10);
 
-  for (size_t i = 0; i < 90; ++i)
+  for (std::size_t i = 0; i < 90; ++i)
     handles.append(workerPool.addWork(incCounter));
 
   while (handles.size() > 20)

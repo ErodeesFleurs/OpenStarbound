@@ -1,6 +1,12 @@
 module;
 
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -10,18 +16,18 @@ import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
 
-#ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
-#endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 
 namespace Star {
 
-STAR_CLASS(SteamDesktopService);
+class SteamDesktopService;
+using SteamDesktopServicePtr = std::shared_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstPtr = std::shared_ptr<SteamDesktopService const>;
+using SteamDesktopServiceWeakPtr = std::weak_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstWeakPtr = std::weak_ptr<SteamDesktopService const>;
+using SteamDesktopServiceUPtr = std::unique_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstUPtr = std::unique_ptr<SteamDesktopService const>;
 
 class SteamDesktopService final : public DesktopService {
 public:

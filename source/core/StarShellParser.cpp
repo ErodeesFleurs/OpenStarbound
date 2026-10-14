@@ -1,5 +1,5 @@
 #include <ctype.h>
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.unicode;
 import star.maybe;
@@ -190,7 +190,7 @@ auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> C
       break;
     }
 
-    if (!isxdigit(*letter)) {
+    if (!std::isxdigit(*letter)) {
       return STAR_UTF32_REPLACEMENT_CHAR;
     }
 

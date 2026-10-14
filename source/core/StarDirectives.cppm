@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.string_view;
 import star.list;
@@ -12,8 +11,20 @@ import star.image_processing;
 
 namespace Star {
 
-STAR_CLASS(Directives);
-STAR_CLASS(DirectivesGroup);
+class Directives;
+using DirectivesPtr = std::shared_ptr<Directives>;
+using DirectivesConstPtr = std::shared_ptr<const Directives>;
+using DirectivesWeakPtr = std::weak_ptr<Directives>;
+using DirectivesConstWeakPtr = std::weak_ptr<const Directives>;
+using DirectivesUPtr = std::unique_ptr<Directives>;
+using DirectivesConstUPtr = std::unique_ptr<const Directives>;
+class DirectivesGroup;
+using DirectivesGroupPtr = std::shared_ptr<DirectivesGroup>;
+using DirectivesGroupConstPtr = std::shared_ptr<const DirectivesGroup>;
+using DirectivesGroupWeakPtr = std::weak_ptr<DirectivesGroup>;
+using DirectivesGroupConstWeakPtr = std::weak_ptr<const DirectivesGroup>;
+using DirectivesGroupUPtr = std::unique_ptr<DirectivesGroup>;
+using DirectivesGroupConstUPtr = std::unique_ptr<const DirectivesGroup>;
 struct DirectivesExceptionTag {
   static constexpr char const* name() { return "DirectivesException"; }
 };
@@ -25,20 +36,20 @@ public:
   struct Shared;
   struct Entry {
     mutable ImageOperation operation;
-    size_t begin;
-    size_t length;
+    std::size_t begin;
+    std::size_t length;
 
     ImageOperation const& loadOperation(Shared const& parent) const;
     StringView string(Shared const& parent) const;
-    Entry(ImageOperation&& newOperation, size_t begin, size_t end);
-    Entry(ImageOperation const& newOperation, size_t begin, size_t end);
+    Entry(ImageOperation&& newOperation, std::size_t begin, std::size_t end);
+    Entry(ImageOperation const& newOperation, std::size_t begin, std::size_t end);
     Entry(Entry const& other);
   };
 
   struct Shared {
     List<Entry> entries;
     String string;
-    size_t hash = 0;
+    std::size_t hash = 0;
     mutable Mutex mutex;
 
     bool empty() const;
@@ -67,8 +78,8 @@ public:
   String const* stringPtr() const;
   String buildString() const;
   String& addToString(String& out) const;
-  size_t hash() const;
-  size_t size() const;
+  std::size_t hash() const;
+  std::size_t size() const;
   bool empty() const;
   operator bool() const;
 
@@ -111,8 +122,8 @@ public:
   String toString() const;
   void addToString(String& string) const;
 
-  typedef function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
-  typedef function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
+  typedef std::function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
+  typedef std::function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
 
   void forEach(DirectivesCallback callback) const;
   bool forEachAbortable(AbortableDirectivesCallback callback) const;
@@ -120,7 +131,7 @@ public:
   Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
   
-  size_t hash() const;
+  std::size_t hash() const;
   const List<Directives>& list() const;
 
   friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
@@ -132,12 +143,12 @@ private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
   List<Directives> m_directives;
-  size_t m_count = 0;
+  std::size_t m_count = 0;
 };
 
 template <>
 struct hash<DirectivesGroup> {
-  size_t operator()(DirectivesGroup const& s) const;
+  std::size_t operator()(DirectivesGroup const& s) const;
 };
 
 typedef DirectivesGroup ImageDirectives;

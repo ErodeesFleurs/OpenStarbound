@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -47,7 +47,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(FuelWidget);
+class FuelWidget;
+using FuelWidgetPtr = std::shared_ptr<FuelWidget>;
+using FuelWidgetConstPtr = std::shared_ptr<FuelWidget const>;
+using FuelWidgetWeakPtr = std::weak_ptr<FuelWidget>;
+using FuelWidgetConstWeakPtr = std::weak_ptr<FuelWidget const>;
+using FuelWidgetUPtr = std::unique_ptr<FuelWidget>;
+using FuelWidgetConstUPtr = std::unique_ptr<FuelWidget const>;
 
 class FuelWidget : public Widget {
 public:

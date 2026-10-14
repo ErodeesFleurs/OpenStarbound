@@ -20,7 +20,6 @@ import star.asset_path;
 import star.either;
 import star.id_map;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.version;
@@ -143,7 +142,7 @@ void SystemWorldServerThread::removeClient(ConnectionId clientId) {
   m_outgoingPacketQueue.remove(clientId);
 }
 
-void SystemWorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void SystemWorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
   m_pause = std::move(pause);
 }
 
@@ -166,7 +165,7 @@ void SystemWorldServerThread::run() {
 
     double spareTime = tickApproacher.spareTime();
     if (spareTime > 0)
-      sleepPrecise(static_cast<uint64_t>(floor(spareTime * 1000)));
+      sleepPrecise(static_cast<std::uint64_t>(std::floor(spareTime * 1000)));
   }
 
   store();
@@ -234,7 +233,7 @@ SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId
   return m_clientShipLocations.get(clientId).first;
 }
 
-Maybe<pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
+Maybe<std::pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
   ReadLocker locker(m_queueMutex);
   if (m_clientShipDestinations.contains(clientId))
     return {};
@@ -250,7 +249,7 @@ List<InstanceWorldId> SystemWorldServerThread::activeInstanceWorlds() const {
   return m_activeInstanceWorlds;
 }
 
-void SystemWorldServerThread::setUpdateAction(function<void(SystemWorldServerThread*)> updateAction) {
+void SystemWorldServerThread::setUpdateAction(std::function<void(SystemWorldServerThread*)> updateAction) {
   m_updateAction = updateAction;
 }
 

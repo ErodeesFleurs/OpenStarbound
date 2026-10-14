@@ -1,4 +1,11 @@
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.thread;
 import star.input_event;
 import star.application;
@@ -8,14 +15,7 @@ import star.p2p_networking_service;
 import star.user_generated_content_service;
 import star.desktop_service;
 
-#ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
-#include "steam/steam_api_flat.h"
-#endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 import star.desktop_service_pc_steam;
 

@@ -1,3 +1,4 @@
+import std;
 import star.math_common;
 
 #include "gtest/gtest.h"
@@ -5,9 +6,9 @@ import star.math_common;
 using namespace Star;
 
 TEST(MathTest, All) {
-  EXPECT_EQ(countSetBits<uint32_t>(7), 3u);
-  EXPECT_EQ(countSetBits<uint32_t>(15), 4u);
-  EXPECT_EQ(countSetBits<uint32_t>(-1), 32u);
+  EXPECT_EQ(countSetBits<std::uint32_t>(7), 3u);
+  EXPECT_EQ(countSetBits<std::uint32_t>(15), 4u);
+  EXPECT_EQ(countSetBits<std::uint32_t>(-1), 32u);
 }
 
 TEST(Math, CycleIncrement) {

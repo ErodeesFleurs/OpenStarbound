@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.list;
@@ -52,7 +52,13 @@ struct AfterKey {
 
 typedef MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey> InsertLocation;
 
-STAR_CLASS(JsonInputFormat);
+class JsonInputFormat;
+using JsonInputFormatPtr = std::shared_ptr<JsonInputFormat>;
+using JsonInputFormatConstPtr = std::shared_ptr<const JsonInputFormat>;
+using JsonInputFormatWeakPtr = std::weak_ptr<JsonInputFormat>;
+using JsonInputFormatConstWeakPtr = std::weak_ptr<const JsonInputFormat>;
+using JsonInputFormatUPtr = std::unique_ptr<JsonInputFormat>;
+using JsonInputFormatConstUPtr = std::unique_ptr<const JsonInputFormat>;
 
 class JsonInputFormat {
 public:
@@ -83,7 +89,13 @@ public:
   virtual FormattedJson getDefault() const override;
 };
 
-STAR_CLASS(Output);
+class Output;
+using OutputPtr = std::shared_ptr<Output>;
+using OutputConstPtr = std::shared_ptr<const Output>;
+using OutputWeakPtr = std::weak_ptr<Output>;
+using OutputConstWeakPtr = std::weak_ptr<const Output>;
+using OutputUPtr = std::unique_ptr<Output>;
+using OutputConstUPtr = std::unique_ptr<const Output>;
 
 class Output {
 public:
@@ -91,7 +103,7 @@ public:
   virtual void out(FormattedJson const& json) = 0;
   virtual void flush() = 0;
 
-  function<void(FormattedJson const& json)> toFunction() {
+  std::function<void(FormattedJson const& json)> toFunction() {
     return [this](FormattedJson const& json) { this->out(json); };
   }
 };

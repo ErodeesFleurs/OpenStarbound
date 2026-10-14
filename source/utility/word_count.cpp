@@ -20,7 +20,7 @@ import star.image;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.io_device;
@@ -56,12 +56,12 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     StringMap<int> wordCounts;
     auto assets = Root::singleton().assets();
 
-    auto countWordsInType = [&](String const& type, function<int(Json const&)> countFunction, Maybe<function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
+    auto countWordsInType = [&](String const& type, std::function<int(Json const&)> countFunction, Maybe<std::function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
       auto files = assets->scanExtension(type).values();
       if (filterFunction)
         files.filter(*filterFunction);
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
         return wordCount;
       });
 
-    function<int(Json const& json)> countOnlyStrings;
+    std::function<int(Json const& json)> countOnlyStrings;
     countOnlyStrings = [&](Json const& json) {
       int wordCount = 0;
       if (json.isType(Json::Type::Object)) {
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
       return wordCount;
     };
 
-    function<bool(String const&)> dialogFilter = [](String const& filePath) { return filePath.beginsWith("/dialog/"); };
+    std::function<bool(String const&)> dialogFilter = [](String const& filePath) { return filePath.beginsWith("/dialog/"); };
     countWordsInType("config", countOnlyStrings, dialogFilter, String("NPC dialog (.config files)"));
 
     countWordsInType("npctype", [&](Json const& json) {

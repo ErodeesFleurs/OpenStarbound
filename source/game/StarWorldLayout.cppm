@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -34,15 +34,39 @@ import star.celestial_parameters;
 
 namespace Star {
 
-STAR_STRUCT(Biome);
-STAR_STRUCT(TerrainSelector);
-STAR_STRUCT(WorldRegion);
-STAR_CLASS(WorldLayout);
+struct Biome;
+using BiomePtr = std::shared_ptr<Biome>;
+using BiomeConstPtr = std::shared_ptr<const Biome>;
+using BiomeWeakPtr = std::weak_ptr<Biome>;
+using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
+using BiomeUPtr = std::unique_ptr<Biome>;
+using BiomeConstUPtr = std::unique_ptr<const Biome>;
+struct TerrainSelector;
+using TerrainSelectorPtr = std::shared_ptr<TerrainSelector>;
+using TerrainSelectorConstPtr = std::shared_ptr<const TerrainSelector>;
+using TerrainSelectorWeakPtr = std::weak_ptr<TerrainSelector>;
+using TerrainSelectorConstWeakPtr = std::weak_ptr<const TerrainSelector>;
+using TerrainSelectorUPtr = std::unique_ptr<TerrainSelector>;
+using TerrainSelectorConstUPtr = std::unique_ptr<const TerrainSelector>;
+struct WorldRegion;
+using WorldRegionPtr = std::shared_ptr<WorldRegion>;
+using WorldRegionConstPtr = std::shared_ptr<const WorldRegion>;
+using WorldRegionWeakPtr = std::weak_ptr<WorldRegion>;
+using WorldRegionConstWeakPtr = std::weak_ptr<const WorldRegion>;
+using WorldRegionUPtr = std::unique_ptr<WorldRegion>;
+using WorldRegionConstUPtr = std::unique_ptr<const WorldRegion>;
+class WorldLayout;
+using WorldLayoutPtr = std::shared_ptr<WorldLayout>;
+using WorldLayoutConstPtr = std::shared_ptr<const WorldLayout>;
+using WorldLayoutWeakPtr = std::weak_ptr<WorldLayout>;
+using WorldLayoutConstWeakPtr = std::weak_ptr<const WorldLayout>;
+using WorldLayoutUPtr = std::unique_ptr<WorldLayout>;
+using WorldLayoutConstUPtr = std::unique_ptr<const WorldLayout>;
 
-typedef uint8_t BiomeIndex;
+typedef std::uint8_t BiomeIndex;
 inline constexpr BiomeIndex NullBiomeIndex = 0;
 
-typedef uint32_t TerrainSelectorIndex;
+typedef std::uint32_t TerrainSelectorIndex;
 inline constexpr TerrainSelectorIndex NullTerrainSelectorIndex = 0;
 
 struct WorldRegionLiquids {
@@ -81,7 +105,7 @@ class WorldLayout {
   friend DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
 public:
   struct BlockNoise {
-    static BlockNoise build(Json const& config, uint64_t seed);
+    static BlockNoise build(Json const& config, std::uint64_t seed);
 
     BlockNoise();
     explicit BlockNoise(Json const& store);
@@ -105,9 +129,9 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
+  static WorldLayout buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed);
+  static WorldLayout buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed);
+  static WorldLayout buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed);
 
   WorldLayout();
   WorldLayout(Json const& store);
@@ -128,14 +152,14 @@ public:
   List<RectI> previewAddBiomeRegion(Vec2I const& position, int width) const;
   List<RectI> previewExpandBiomeRegion(Vec2I const& position, int width) const;
 
-  void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
+  void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // sets the environment biome index for all regions in the current layer
   // to the biome at the specified position, and returns the name of the biome
   String setLayerEnvironmentBiome(Vec2I const& position);
 
-  pair<size_t, size_t> findLayerAndCell(int x, int y) const;
+  std::pair<std::size_t, std::size_t> findLayerAndCell(int x, int y) const;
 
 private:
   struct WorldLayer {
@@ -159,22 +183,22 @@ private:
     WorldRegionLiquids regionLiquids;
   };
 
-  pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const;
+  std::pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const;
 
   BiomeIndex registerBiome(BiomeConstPtr biome);
   TerrainSelectorIndex registerTerrainSelector(TerrainSelectorConstPtr terrainSelector);
 
-  WorldRegion buildRegion(uint64_t seed, RegionParams const& regionParams);
-  void addLayer(uint64_t seed, int yStart, RegionParams regionParams);
-  void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
+  WorldRegion buildRegion(std::uint64_t seed, RegionParams const& regionParams);
+  void addLayer(std::uint64_t seed, int yStart, RegionParams regionParams);
+  void addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
       RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
       List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
       Vec2F secondaryRegionSize, Vec2F subRegionSize);
   void finalize(Color mainSkyColor);
 
-  pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
-  pair<size_t, int> leftCell(WorldLayer const& layer, size_t cellIndex, int x) const;
-  pair<size_t, int> rightCell(WorldLayer const& layer, size_t cellIndex, int x) const;
+  std::pair<std::size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
+  std::pair<std::size_t, int> leftCell(WorldLayer const& layer, std::size_t cellIndex, int x) const;
+  std::pair<std::size_t, int> rightCell(WorldLayer const& layer, std::size_t cellIndex, int x) const;
 
   Vec2U m_worldSize;
 

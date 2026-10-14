@@ -16,7 +16,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 
@@ -65,12 +65,12 @@ UniqueStatusEffectConfig StatusEffectDatabase::parseUniqueEffect(Json const& con
     effect.effectConfig = config.get("effectConfig", JsonObject());
     effect.defaultDuration = config.getFloat("defaultDuration", 0.0f);
     effect.scripts =
-        jsonToStringList(config.get("scripts", JsonArray{})).transformed(bind(&AssetPath::relativeTo, path, _1));
+        jsonToStringList(config.get("scripts", JsonArray{})).transformed(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     effect.scriptDelta = config.getUInt("scriptDelta", 1);
-    effect.animationConfig = config.optString("animationConfig").apply(bind(&AssetPath::relativeTo, path, _1));
+    effect.animationConfig = config.optString("animationConfig").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     effect.label = config.getString("label", "");
     effect.description = config.getString("description", "");
-    effect.icon = config.optString("icon").apply(bind(&AssetPath::relativeTo, path, _1));
+    effect.icon = config.optString("icon").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
     return effect;
   } catch (std::exception const& e) {
     throw StatusEffectDatabaseException("Error reading StatusEffect config", e);

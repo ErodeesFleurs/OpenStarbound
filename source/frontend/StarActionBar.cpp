@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -20,7 +21,6 @@ import star.font;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -39,7 +39,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -223,16 +222,16 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
 
   GuiReader reader;
 
-  for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
-    reader.registerCallback(strf("customBar{}L", i + 1), bind(&ActionBar::customBarClick, this, i, true));
-    reader.registerCallback(strf("customBar{}R", i + 1), bind(&ActionBar::customBarClick, this, i, false));
+  for (std::uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
+    reader.registerCallback(strf("customBar{}L", i + 1), std::bind(&ActionBar::customBarClick, this, i, true));
+    reader.registerCallback(strf("customBar{}R", i + 1), std::bind(&ActionBar::customBarClick, this, i, false));
 
-    reader.registerCallback(strf("customBar{}L.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, true));
-    reader.registerCallback(strf("customBar{}R.right", i + 1), bind(&ActionBar::customBarClickRight, this, i, false));
+    reader.registerCallback(strf("customBar{}L.right", i + 1), std::bind(&ActionBar::customBarClickRight, this, i, true));
+    reader.registerCallback(strf("customBar{}R.right", i + 1), std::bind(&ActionBar::customBarClickRight, this, i, false));
   }
 
-  for (uint8_t i = 0; i < EssentialItemCount; ++i)
-    reader.registerCallback(strf("essentialBar{}", i + 1), bind(&ActionBar::essentialBarClick, this, i));
+  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
+    reader.registerCallback(strf("essentialBar{}", i + 1), std::bind(&ActionBar::essentialBarClick, this, i));
 
   reader.registerCallback("pickupToActionBar", [=](Widget* widget) {
       auto button = as<ButtonWidget>(widget);
@@ -259,7 +258,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
       m_bgHeader += "?flipy";
     if (!m_bgFooter.empty())
       m_bgFooter += "?flipy";
-    swap(m_bgHeader, m_bgFooter);
+    std::swap(m_bgHeader, m_bgFooter);
 
     for (auto& child : m_members) {
       auto position = child->relativePosition();
@@ -267,7 +266,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
     }
   }
 
-  for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
+  for (std::uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
     auto customBarLeft = fetchChild<ItemSlotWidget>(strf("customBar{}L", i + 1));
     auto customBarRight = fetchChild<ItemSlotWidget>(strf("customBar{}R", i + 1));
     auto customBarLeftOverlay = fetchChild<ImageWidget>(strf("customBar{}LOverlay", i + 1));
@@ -281,7 +280,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   }
   m_customSelectedWidget = fetchChild<ImageWidget>("customSelect");
 
-  for (uint8_t i = 0; i < EssentialItemCount; ++i)
+  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
     m_essentialBarWidgets.append(fetchChild<ItemSlotWidget>(strf("essentialBar{}", i + 1)));
   m_essentialSelectedWidget = fetchChild<ImageWidget>("essentialSelect");
 }
@@ -355,11 +354,11 @@ bool ActionBar::sendEvent(InputEvent const& event) {
   if (event.is<MouseMoveEvent>()) {
     m_customBarHover.reset();
     Vec2I screenPosition = *GuiContext::singleton().mousePosition(event);
-    for (uint8_t i = 0; i < customBarIndexes; ++i) {
+    for (std::uint8_t i = 0; i < customBarIndexes; ++i) {
       if (m_customBarWidgets[i].left->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair((CustomBarIndex)i, false);
+        m_customBarHover = std::make_pair((CustomBarIndex)i, false);
       else if (m_customBarWidgets[i].right->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair((CustomBarIndex)i, true);
+        m_customBarHover = std::make_pair((CustomBarIndex)i, true);
     }
   }
 
@@ -396,7 +395,7 @@ void ActionBar::update(float) {
     m_customSelectedWidget->show();
     m_essentialSelectedWidget->hide();
   } else if (abl.is<EssentialItem>()) {
-    auto overlayLoc = m_essentialBarWidgets.at((size_t)abl.get<EssentialItem>())->position();
+    auto overlayLoc = m_essentialBarWidgets.at((std::size_t)abl.get<EssentialItem>())->position();
     m_essentialSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     m_essentialSelectedWidget->show();
     m_customSelectedWidget->hide();
@@ -405,10 +404,10 @@ void ActionBar::update(float) {
     m_customSelectedWidget->hide();
   }
 
-  for (uint8_t i = 0; i < EssentialItemCount; ++i)
+  for (std::uint8_t i = 0; i < EssentialItemCount; ++i)
     m_essentialBarWidgets[i]->setItem(inventory->essentialItem((EssentialItem)i));
 
-  for (uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
+  for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
     // If there is no swap slot item being hovered over the custom bar, then
     // simply set the left and right item widgets in the custom bar to the
     // primary and secondary items.  If the primary item is two handed, the
@@ -498,7 +497,7 @@ Maybe<String> ActionBar::cursorOverride(Vec2I const&) {
   return {};
 }
 
-void ActionBar::customBarClick(uint8_t index, bool primary) {
+void ActionBar::customBarClick(std::uint8_t index, bool primary) {
   if (auto swapItem = m_player->inventory()->swapSlotItem()) {
     if (primary || itemSafeTwoHanded(swapItem))
       m_player->inventory()->setCustomBarPrimarySlot(index, InventorySlot(SwapSlot()));
@@ -512,7 +511,7 @@ void ActionBar::customBarClick(uint8_t index, bool primary) {
   }
 }
 
-void ActionBar::customBarClickRight(uint8_t index, bool primary) {
+void ActionBar::customBarClickRight(std::uint8_t index, bool primary) {
   if (m_paneManager->registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
     auto inventory = m_player->inventory();
     auto primarySlot = inventory->customBarPrimarySlot(index);
@@ -525,7 +524,7 @@ void ActionBar::customBarClickRight(uint8_t index, bool primary) {
   }
 }
 
-void ActionBar::essentialBarClick(uint8_t index) {
+void ActionBar::essentialBarClick(std::uint8_t index) {
   m_player->inventory()->selectActionBarLocation((EssentialItem)index);
 }
 

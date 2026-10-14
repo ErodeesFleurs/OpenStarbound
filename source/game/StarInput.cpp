@@ -15,7 +15,7 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -79,12 +79,12 @@ Json keyModsToJson(KeyMod mod) {
 }
 
 // Optional pointer argument to output calculated priority
-KeyMod keyModsFromJson(Json const& json, uint8_t* priority = nullptr) {
+KeyMod keyModsFromJson(Json const& json, std::uint8_t* priority = nullptr) {
   KeyMod mod = KeyMod::NoMod;
   if (!json.isType(Json::Type::Array))
     return mod;
 
-  uint8_t modPriority = 0;
+  std::uint8_t modPriority = 0;
   for (Json const& jMod : json.toArray()) {
     KeyMod changedMod = mod | KeyModNames.getLeft(jMod.toString());
     if (mod != changedMod) {
@@ -98,8 +98,8 @@ KeyMod keyModsFromJson(Json const& json, uint8_t* priority = nullptr) {
   return mod;
 }
 
-size_t hash<InputVariant>::operator()(InputVariant const& v) const {
-  size_t indexHash = hashOf(v.typeIndex());
+std::size_t hash<InputVariant>::operator()(InputVariant const& v) const {
+  std::size_t indexHash = hashOf(v.typeIndex());
   if (auto key = v.ptr<Key>())
     hashCombine(indexHash, hashOf(*key));
   else if (auto mButton = v.ptr<MouseButton>())
@@ -335,7 +335,7 @@ void Input::BindCategory::mergeJson(String const& categoryId, Json const& catego
 }
 
 List<Input::BindEntry*> Input::filterBindEntries(List<Input::BindRef> const& binds, KeyMod mods) const {
-  uint8_t maxPriority = 0;
+  std::uint8_t maxPriority = 0;
   List<BindEntry*> result{};
   for (const BindRef& bind : binds) {
     if (bind.priority < maxPriority)
@@ -404,7 +404,7 @@ Input::Input() {
 
   reload();
 
-  m_rootReloadListener = make_shared<CallbackListener>([&]() {
+  m_rootReloadListener = std::make_shared<CallbackListener>([&]() {
     reload();
   });
 
@@ -592,7 +592,7 @@ void Input::reload() {;
     }
   }
 
-  size_t count = 0;
+  std::size_t count = 0;
   for (auto& pair : m_bindCategories)
     count += pair.second.entries.size();
 

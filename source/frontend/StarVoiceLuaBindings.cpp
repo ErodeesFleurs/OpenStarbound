@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.lua;
 import star.string;
@@ -21,7 +21,6 @@ import star.user_generated_content_service;
 import star.desktop_service;
 import star.image;
 import star.application_controller;
-import std;
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
 struct OpusEncoder;
@@ -38,7 +37,7 @@ LuaCallbacks LuaBindings::makeVoiceCallbacks() {
 
   auto voice = Voice::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<StringList>("devices", bind(&Voice::availableDevices, voice));
+  callbacks.registerCallbackWithSignature<StringList>("devices", std::bind(&Voice::availableDevices, voice));
   callbacks.registerCallback(  "getSettings", [voice]() -> Json      { return voice->saveJson();         });
   callbacks.registerCallback("mergeSettings", [voice](Json const& settings) { voice->loadJson(settings); });
   // i have an alignment addiction i'm so sorry

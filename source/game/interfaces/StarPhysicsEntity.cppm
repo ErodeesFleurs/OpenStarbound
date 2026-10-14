@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 import star.id_map;
@@ -29,7 +29,13 @@ import star.force_regions;
 import star.rect;
 namespace Star {
 
-STAR_CLASS(PhysicsEntity);
+class PhysicsEntity;
+using PhysicsEntityPtr = std::shared_ptr<PhysicsEntity>;
+using PhysicsEntityConstPtr = std::shared_ptr<const PhysicsEntity>;
+using PhysicsEntityWeakPtr = std::weak_ptr<PhysicsEntity>;
+using PhysicsEntityConstWeakPtr = std::weak_ptr<const PhysicsEntity>;
+using PhysicsEntityUPtr = std::unique_ptr<PhysicsEntity>;
+using PhysicsEntityConstUPtr = std::unique_ptr<const PhysicsEntity>;
 
 struct PhysicsMovingCollision {
   friend DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
@@ -55,7 +61,7 @@ struct MovingCollisionId {
   friend DataStream& operator>>(DataStream& ds, MovingCollisionId& mci);
   friend DataStream& operator<<(DataStream& ds, MovingCollisionId const& mci);
   MovingCollisionId();
-  MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex);
+  MovingCollisionId(EntityId physicsEntityId, std::size_t collisionIndex);
 
   bool operator==(MovingCollisionId const& rhs);
 
@@ -65,7 +71,7 @@ struct MovingCollisionId {
   operator bool() const;
 
   EntityId physicsEntityId;
-  size_t collisionIndex;
+  std::size_t collisionIndex;
 };
 
 DataStream& operator>>(DataStream& ds, MovingCollisionId& mci);
@@ -75,8 +81,8 @@ class PhysicsEntity : public virtual Entity {
 public:
   virtual List<PhysicsForceRegion> forceRegions() const;
 
-  virtual size_t movingCollisionCount() const;
-  virtual Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const;
+  virtual std::size_t movingCollisionCount() const;
+  virtual Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const;
 };
 
 }

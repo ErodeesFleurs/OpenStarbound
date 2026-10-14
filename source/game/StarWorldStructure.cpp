@@ -18,7 +18,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -155,8 +155,8 @@ WorldStructure::WorldStructure(String const& configPath) {
         NoModId
       };
 
-    for (size_t y = 0; y < blocksImage->height(); ++y) {
-      for (size_t x = 0; x < blocksImage->width(); ++x) {
+    for (std::size_t y = 0; y < blocksImage->height(); ++y) {
+      for (std::size_t x = 0; x < blocksImage->width(); ++x) {
         auto blockKey = blockKeys.value(blocksImage->getrgb(x, y), defaultBlockKey);
         auto pos = blockPosition + Vec2I(x, y);
 
@@ -228,7 +228,7 @@ WorldStructure::WorldStructure(Json const& store) {
   m_foregroundBlocks = store.getArray("foregroundBlocks").transformed(blockFromJson);
   m_objects = store.getArray("objects").transformed(objectFromJson);
   m_flaggedBlocks = transform<StringMap<List<Vec2I>>>(store.getObject("flaggedBlocks"),
-      [](pair<String, Json> const& p) { return make_pair(p.first, p.second.toArray().transformed(jsonToVec2I)); });
+      [](std::pair<String, Json> const& p) { return std::make_pair(p.first, p.second.toArray().transformed(jsonToVec2I)); });
 }
 
 Json WorldStructure::configValue(String const& name) const {
@@ -335,8 +335,8 @@ Json WorldStructure::store() const {
       {"objects", m_objects.transformed(objectToJson)},
       {"flaggedBlocks",
           transform<JsonObject>(m_flaggedBlocks,
-              [](pair<String, List<Vec2I>> const& p) {
-                return pair<String, Json>(p.first, p.second.transformed(jsonFromVec2I));
+              [](std::pair<String, List<Vec2I>> const& p) {
+                return std::pair<String, Json>(p.first, p.second.transformed(jsonFromVec2I));
               })}};
 }
 

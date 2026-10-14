@@ -1,6 +1,13 @@
 module;
 
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.maybe;
 import star.thread;
 import star.input_event;
@@ -15,14 +22,23 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 
 namespace Star {
 
-STAR_CLASS(PcPlatformServices);
-STAR_STRUCT(PcPlatformServicesState);
+class PcPlatformServices;
+using PcPlatformServicesPtr = std::shared_ptr<PcPlatformServices>;
+using PcPlatformServicesConstPtr = std::shared_ptr<PcPlatformServices const>;
+using PcPlatformServicesWeakPtr = std::weak_ptr<PcPlatformServices>;
+using PcPlatformServicesConstWeakPtr = std::weak_ptr<PcPlatformServices const>;
+using PcPlatformServicesUPtr = std::unique_ptr<PcPlatformServices>;
+using PcPlatformServicesConstUPtr = std::unique_ptr<PcPlatformServices const>;
+struct PcPlatformServicesState;
+using PcPlatformServicesStatePtr = std::shared_ptr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstPtr = std::shared_ptr<PcPlatformServicesState const>;
+using PcPlatformServicesStateWeakPtr = std::weak_ptr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstWeakPtr = std::weak_ptr<PcPlatformServicesState const>;
+using PcPlatformServicesStateUPtr = std::unique_ptr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstUPtr = std::unique_ptr<PcPlatformServicesState const>;
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();
@@ -43,11 +59,11 @@ struct PcPlatformServicesState {
   // a discord callback.
   Mutex discordMutex;
 
-  unique_ptr<discord::Core> discordCore;
+  std::unique_ptr<discord::Core> discordCore;
   
   Maybe<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
-  atomic<bool> discordEventShutdown;
+  std::atomic<bool> discordEventShutdown;
 #endif
 
   bool overlayActive = false;

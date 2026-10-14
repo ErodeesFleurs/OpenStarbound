@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.maybe;
 import star.json;
@@ -45,8 +45,20 @@ import star.world;
 
 namespace Star {
 
-STAR_CLASS(Companion);
-STAR_CLASS(PlayerCompanions);
+class Companion;
+using CompanionPtr = std::shared_ptr<Companion>;
+using CompanionConstPtr = std::shared_ptr<const Companion>;
+using CompanionWeakPtr = std::weak_ptr<Companion>;
+using CompanionConstWeakPtr = std::weak_ptr<const Companion>;
+using CompanionUPtr = std::unique_ptr<Companion>;
+using CompanionConstUPtr = std::unique_ptr<const Companion>;
+class PlayerCompanions;
+using PlayerCompanionsPtr = std::shared_ptr<PlayerCompanions>;
+using PlayerCompanionsConstPtr = std::shared_ptr<const PlayerCompanions>;
+using PlayerCompanionsWeakPtr = std::weak_ptr<PlayerCompanions>;
+using PlayerCompanionsConstWeakPtr = std::weak_ptr<const PlayerCompanions>;
+using PlayerCompanionsUPtr = std::unique_ptr<PlayerCompanions>;
+using PlayerCompanionsConstUPtr = std::unique_ptr<const PlayerCompanions>;
 
 class Companion {
 public:

@@ -1,4 +1,5 @@
 module;
+import std;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -15,7 +16,6 @@ import star.vector;
 import star.bi_map;
 import star.image;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.asset_path;
@@ -27,7 +27,6 @@ import star.weighted_pool;
 import star.listener;
 import star.perlin;
 import star.random_point;
-import std;
 import star.set;
 import star.worker_pool;
 
@@ -76,7 +75,13 @@ namespace Star {
 
 class WorldCamera;
 
-STAR_CLASS(EnvironmentPainter);
+class EnvironmentPainter;
+using EnvironmentPainterPtr = std::shared_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstPtr = std::shared_ptr<EnvironmentPainter const>;
+using EnvironmentPainterWeakPtr = std::weak_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstWeakPtr = std::weak_ptr<EnvironmentPainter const>;
+using EnvironmentPainterUPtr = std::unique_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstUPtr = std::unique_ptr<EnvironmentPainter const>;
 
 class EnvironmentPainter {
 public:
@@ -93,7 +98,7 @@ public:
 
   void renderParallaxLayers(Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky);
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
 
 private:
   static float const SunriseTime;
@@ -125,7 +130,7 @@ private:
       float alpha);
   void drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter);
 
-  uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
+  std::uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
   void setupStars(SkyRenderData const& sky);
 
   RendererPtr m_renderer;
@@ -134,10 +139,10 @@ private:
   double m_timer;
   PerlinF m_rayPerlin;
 
-  uint64_t m_starsHash{};
+  std::uint64_t m_starsHash{};
   List<TexturePtr> m_starTextures;
-  shared_ptr<Random2dPointGenerator<pair<size_t, float>>> m_starGenerator;
-  List<shared_ptr<Random2dPointGenerator<pair<String, float>, double>>> m_debrisGenerators;
+  std::shared_ptr<Random2dPointGenerator<std::pair<std::size_t, float>>> m_starGenerator;
+  List<std::shared_ptr<Random2dPointGenerator<std::pair<String, float>, double>>> m_debrisGenerators;
 };
 
 }

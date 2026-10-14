@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.data_stream;
 import star.bi_map;
@@ -9,7 +9,7 @@ import star.game_types;
 
 namespace Star {
 
-enum class ChatSendMode : uint8_t {
+enum class ChatSendMode : std::uint8_t {
   Broadcast,
   Local,
   Party
@@ -20,7 +20,7 @@ extern EnumMap<ChatSendMode> const ChatSendModeNames;
 struct MessageContext {
   friend DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
   friend DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
-  enum Mode : uint8_t {
+  enum Mode : std::uint8_t {
     Local,
     Party,
     Broadcast,

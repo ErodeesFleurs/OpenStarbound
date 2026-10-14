@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.hash;
 import star.data_stream;
 import star.uuid;
@@ -57,9 +57,9 @@ bool Uuid::operator>=(Uuid const& u) const {
   return m_data >= u.m_data;
 }
 
-size_t hash<Uuid>::operator()(Uuid const& u) const {
-  size_t hashval = 0;
-  for (size_t i = 0; i < UuidSize; ++i)
+std::size_t hash<Uuid>::operator()(Uuid const& u) const {
+  std::size_t hashval = 0;
+  for (std::size_t i = 0; i < UuidSize; ++i)
     hashCombine(hashval, u.ptr()[i]);
   return hashval;
 }

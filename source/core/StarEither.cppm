@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.variant;

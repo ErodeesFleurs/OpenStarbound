@@ -19,7 +19,7 @@ import star.io_device;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.version;
@@ -124,7 +124,7 @@ MaterialDatabase::MaterialDatabase() {
         material.miningParticle = pdb->config(matConfig.getString("miningParticle"));
       if (matConfig.contains("miningSounds"))
         material.miningSounds = transform<StringList>(
-            jsonToStringList(matConfig.get("miningSounds")), bind(AssetPath::relativeTo, file, _1));
+            jsonToStringList(matConfig.get("miningSounds")), std::bind(AssetPath::relativeTo, file, std::placeholders::_1));
       if (matConfig.contains("footstepSound"))
         material.footstepSound = AssetPath::relativeTo(file, matConfig.getString("footstepSound"));
 
@@ -136,7 +136,7 @@ MaterialDatabase::MaterialDatabase() {
       if (matConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(matConfig.get("renderTemplate"), file);
         auto renderParameters = matConfig.get("renderParameters");
-        material.materialRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        material.materialRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
       }
 
       material.damageParameters =
@@ -201,7 +201,7 @@ MaterialDatabase::MaterialDatabase() {
         mod.miningParticle = pdb->config(modConfig.getString("miningParticle"));
       if (modConfig.contains("miningSounds"))
         mod.miningSounds = transform<StringList>(
-            jsonToStringList(modConfig.get("miningSounds")), bind(AssetPath::relativeTo, file, _1));
+            jsonToStringList(modConfig.get("miningSounds")), std::bind(AssetPath::relativeTo, file, std::placeholders::_1));
       if (modConfig.contains("footstepSound"))
         mod.footstepSound = AssetPath::relativeTo(file, modConfig.getString("footstepSound"));
 
@@ -212,7 +212,7 @@ MaterialDatabase::MaterialDatabase() {
       if (modConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(modConfig.get("renderTemplate"));
         auto renderParameters = modConfig.get("renderParameters");
-        mod.modRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        mod.modRenderProfile = std::make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
       }
 
       mod.damageParameters =
@@ -568,7 +568,7 @@ MaterialDatabase::MaterialInfo::MaterialInfo() : id(NullMaterialId), tillableMod
 
 MaterialDatabase::ModInfo::ModInfo() : id(NoModId), tilled(), breaksWithTile() {}
 
-size_t MaterialDatabase::metaMaterialIndex(MaterialId materialId) const {
+std::size_t MaterialDatabase::metaMaterialIndex(MaterialId materialId) const {
   return materialId - FirstMetaMaterialId;
 }
 
@@ -581,7 +581,7 @@ void MaterialDatabase::setMetaMaterial(MaterialId materialId, MetaMaterialInfo i
   auto i = metaMaterialIndex(materialId);
   if (i >= m_metaMaterials.size())
     m_metaMaterials.resize(i + 1);
-  m_metaMaterials[i] = make_shared<MetaMaterialInfo>(info);
+  m_metaMaterials[i] = std::make_shared<MetaMaterialInfo>(info);
   m_metaMaterialIndex[info.name] = materialId;
 }
 
@@ -592,7 +592,7 @@ bool MaterialDatabase::containsMaterial(MaterialId materialId) const {
 void MaterialDatabase::setMaterial(MaterialId materialId, MaterialInfo info) {
   if (materialId >= m_materials.size())
     m_materials.resize(materialId + 1);
-  m_materials[materialId] = make_shared<MaterialInfo>(info);
+  m_materials[materialId] = std::make_shared<MaterialInfo>(info);
   m_materialIndex[info.name] = materialId;
 }
 
@@ -603,24 +603,24 @@ bool MaterialDatabase::containsMod(ModId modId) const {
 void MaterialDatabase::setMod(ModId modId, ModInfo info) {
   if (modId >= m_mods.size())
     m_mods.resize(modId + 1);
-  m_mods[modId] = make_shared<ModInfo>(info);
+  m_mods[modId] = std::make_shared<ModInfo>(info);
 }
 
-shared_ptr<MaterialDatabase::MetaMaterialInfo const> const& MaterialDatabase::getMetaMaterialInfo(MaterialId materialId) const {
+std::shared_ptr<MaterialDatabase::MetaMaterialInfo const> const& MaterialDatabase::getMetaMaterialInfo(MaterialId materialId) const {
   if (!containsMetaMaterial(materialId))
     throw MaterialException(strf("No such metamaterial id: {}\n", materialId));
   else
     return m_metaMaterials[metaMaterialIndex(materialId)];
 }
 
-shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMaterialInfo(MaterialId materialId) const {
+std::shared_ptr<MaterialDatabase::MaterialInfo const> const& MaterialDatabase::getMaterialInfo(MaterialId materialId) const {
   if (materialId >= m_materials.size() || !m_materials[materialId])
     throw MaterialException(strf("No such material id: {}\n", materialId));
   else
     return m_materials[materialId];
 }
 
-shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
+std::shared_ptr<MaterialDatabase::ModInfo const> const& MaterialDatabase::getModInfo(ModId modId) const {
   if (modId >= m_mods.size() || !m_mods[modId])
     throw MaterialException(strf("No such mod id: {}\n", modId));
   else

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 
@@ -87,7 +87,7 @@ float IslandSurfaceSelector::get(int x, int y) const {
       return IslandSurfaceSelector::generateColumn(x);
     });
 
-  return (col.topLevel - col.bottomLevel) / 2 - abs((col.topLevel + col.bottomLevel) / 2 - y);
+  return (col.topLevel - col.bottomLevel) / 2 - std::abs((col.topLevel + col.bottomLevel) / 2 - y);
 }
 
 }

@@ -37,7 +37,7 @@ import star.periodic_function;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.lua;
@@ -382,7 +382,7 @@ void Spawner::spawnInCell(Vec2I const& cell) {
       continue;
 
     if (Random::randf() < spawnType.spawnChance) {
-      uint64_t spawnSeed = staticRandomU64(spawnType.seedMix, m_facade->spawnSeed());
+      std::uint64_t spawnSeed = staticRandomU64(spawnType.seedMix, m_facade->spawnSeed());
       int targetGroupSize = Random::randInt(spawnType.groupSize[0], spawnType.groupSize[1]);
       for (int i = 0; i < targetGroupSize; ++i) {
         String monsterType;

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.data_stream;
@@ -42,20 +42,74 @@ import star.pane;
 import star.game_timers;
 
 namespace Star {
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 }
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(PlayerBlueprints);
-STAR_CLASS(ListWidget);
-STAR_CLASS(TextBoxWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(AudioInstance);
+class WorldClient;
+using WorldClientPtr = std::shared_ptr<WorldClient>;
+using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
+using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
+using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
+using WorldClientUPtr = std::unique_ptr<WorldClient>;
+using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
+class PlayerBlueprints;
+using PlayerBlueprintsPtr = std::shared_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstPtr = std::shared_ptr<PlayerBlueprints const>;
+using PlayerBlueprintsWeakPtr = std::weak_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstWeakPtr = std::weak_ptr<PlayerBlueprints const>;
+using PlayerBlueprintsUPtr = std::unique_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstUPtr = std::unique_ptr<PlayerBlueprints const>;
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
+class TextBoxWidget;
+using TextBoxWidgetPtr = std::shared_ptr<TextBoxWidget>;
+using TextBoxWidgetConstPtr = std::shared_ptr<TextBoxWidget const>;
+using TextBoxWidgetWeakPtr = std::weak_ptr<TextBoxWidget>;
+using TextBoxWidgetConstWeakPtr = std::weak_ptr<TextBoxWidget const>;
+using TextBoxWidgetUPtr = std::unique_ptr<TextBoxWidget>;
+using TextBoxWidgetConstUPtr = std::unique_ptr<TextBoxWidget const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 
-STAR_CLASS(CraftingPane);
+class CraftingPane;
+using CraftingPanePtr = std::shared_ptr<CraftingPane>;
+using CraftingPaneConstPtr = std::shared_ptr<CraftingPane const>;
+using CraftingPaneWeakPtr = std::weak_ptr<CraftingPane>;
+using CraftingPaneConstWeakPtr = std::weak_ptr<CraftingPane const>;
+using CraftingPaneUPtr = std::unique_ptr<CraftingPane>;
+using CraftingPaneConstUPtr = std::unique_ptr<CraftingPane const>;
 
 class CraftingPane : public Pane {
 public:
@@ -85,11 +139,11 @@ private:
   int maxCraft();
   void setupList(WidgetPtr widget, ItemRecipe const& recipe);
   ItemRecipe recipeFromSelectedWidget() const;
-  void setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag);
+  void setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag);
 
   PanePtr setupTooltip(ItemRecipe const& recipe);
 
-  size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
+  std::size_t itemCount(List<ItemPtr> const& store, ItemDescriptor const& item);
 
   WorldClientPtr m_worldClient;
   PlayerPtr m_player;
@@ -105,7 +159,7 @@ private:
   ListWidgetPtr m_guiList;
   TextBoxWidgetPtr m_textBox;
   ButtonWidgetPtr m_filterHaveMaterials;
-  size_t m_displayedRecipe;
+  std::size_t m_displayedRecipe;
 
   StringSet m_filter;
 

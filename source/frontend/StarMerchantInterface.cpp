@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -36,13 +38,11 @@ import star.map;
 import star.lexical_cast;
 import star.image;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.either;
 import star.weighted_pool;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -212,7 +212,7 @@ MerchantPane::MerchantPane(
   m_buyFactor = m_settings.getFloat("buyFactor", assets->json("/merchant.config:defaultBuyFactor").toFloat());
   m_sellFactor = m_settings.getFloat("sellFactor", assets->json("/merchant.config:defaultSellFactor").toFloat());
 
-  m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
+  m_itemBag = std::make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
 
   m_maxBuyCount = m_settings.getUInt("maxSpinCount", assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 
@@ -302,7 +302,7 @@ void MerchantPane::dismissed() {
 
 PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
   if (m_tabSet->selectedTab() == 0) {
-    for (size_t i = 0; i < m_itemGuiList->numChildren(); ++i) {
+    for (std::size_t i = 0; i < m_itemGuiList->numChildren(); ++i) {
       auto entry = m_itemGuiList->itemAt(i);
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
@@ -324,7 +324,7 @@ void MerchantPane::update(float dt) {
     dismiss();
 
   if (m_refreshTimer.wrapTick()) {
-    for (size_t i = 0; i < m_itemList.size(); ++i) {
+    for (std::size_t i = 0; i < m_itemList.size(); ++i) {
       auto itemConfig = m_itemList.get(i);
       auto itemWidget = m_itemGuiList->itemAt(i);
       setupWidget(itemWidget, itemConfig);
@@ -420,7 +420,7 @@ void MerchantPane::setupWidget(WidgetPtr const& widget, Json const& itemConfig) 
   auto itemName = widget->fetchChild<LabelWidget>("itemName");
   itemName->setText(name);
 
-  unsigned price = ceil(itemConfig.getInt("price", item->price()) * m_buyFactor);
+  unsigned price = std::ceil(itemConfig.getInt("price", item->price()) * m_buyFactor);
   widget->setLabel("priceLabel", toString(price));
   widget->setData(price);
 
@@ -510,7 +510,7 @@ void MerchantPane::updateSellTotal() {
   m_sellTotal = 0;
   for (auto item : m_itemBag->items()) {
     if (item)
-      m_sellTotal += round(item->price() * m_sellFactor);
+      m_sellTotal += std::round(item->price() * m_sellFactor);
   }
   m_sellTotalLabel->setText(toString(m_sellTotal));
   if (m_sellTotal > 0)
@@ -539,7 +539,7 @@ int MerchantPane::maxBuyCount() {
     auto unitPrice = selected->data().toUInt();
     if (unitPrice == 0)
       return m_maxBuyCount;
-    return min(m_maxBuyCount, (int)floor(m_player->currency("money") / unitPrice));
+    return std::min(m_maxBuyCount, (int)std::floor(m_player->currency("money") / unitPrice));
   } else {
     return 0;
   }

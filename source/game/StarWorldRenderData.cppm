@@ -7,7 +7,6 @@ import star.list;
 import star.bi_map;
 import star.game_types;
 import star.vector;
-#include "StarConfig.hpp"
 import star.map;
 import star.version;
 import star.color;

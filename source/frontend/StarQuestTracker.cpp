@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.vector;
 #include "StarCasting.hpp"
@@ -15,7 +16,6 @@ import star.bi_map;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -170,7 +170,7 @@ void QuestTrackerPane::update(float dt) {
       m_expandedFrame->show();
       m_frame->hide();
 
-      int frameHeight = max(m_expandedFrameMinHeight, m_questObjectiveList->size()[1] + m_expandedFramePadding * 2);
+      int frameHeight = std::max(m_expandedFrameMinHeight, m_questObjectiveList->size()[1] + m_expandedFramePadding * 2);
       m_expandedFrame->setSize(Vec2I(m_expandedFrame->size()[0], frameHeight));
       m_expandedFrame->setPosition(Vec2I(m_expandedFrame->relativePosition()[0], -frameHeight));
     } else {
@@ -210,16 +210,16 @@ void QuestTrackerPane::update(float dt) {
         m_compassFrame->setImage(m_compassFrameImage);
 
       float compassDiff = pfmod(*compassDirection - m_compassDirection, (float)Constants::pi * 2);
-      if (abs(compassDiff) < m_compassAcceleration && abs(m_compassSpeed) < m_compassAcceleration) {
+      if (std::abs(compassDiff) < m_compassAcceleration && std::abs(m_compassSpeed) < m_compassAcceleration) {
         m_compassSpeed = 0;
         m_compassDirection = *compassDirection;
       } else {
-        if (abs(compassDiff) > Constants::pi)
-          compassDiff -= copysign(2 * Constants::pi, compassDiff);
-        float diffRatio = abs(compassDiff) / Constants::pi;
+        if (std::abs(compassDiff) > Constants::pi)
+          compassDiff -= std::copysign(2 * Constants::pi, compassDiff);
+        float diffRatio = std::abs(compassDiff) / Constants::pi;
         float speedChange = m_compassAcceleration * diffRatio;
 
-        m_compassSpeed += copysign(speedChange, compassDiff);
+        m_compassSpeed += std::copysign(speedChange, compassDiff);
         m_compassSpeed -= m_compassSpeed * m_compassFriction;
         m_compassDirection += m_compassSpeed;
       }

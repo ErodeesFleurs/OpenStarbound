@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.format;
 import star.string;
 import star.maybe;
@@ -9,11 +9,41 @@ import star.maybe;
 
 namespace Star {
 
-STAR_STRUCT(ThreadImpl);
-STAR_STRUCT(ThreadFunctionImpl);
-STAR_STRUCT(MutexImpl);
-STAR_STRUCT(ConditionVariableImpl);
-STAR_STRUCT(RecursiveMutexImpl);
+struct ThreadImpl;
+using ThreadImplPtr = std::shared_ptr<ThreadImpl>;
+using ThreadImplConstPtr = std::shared_ptr<const ThreadImpl>;
+using ThreadImplWeakPtr = std::weak_ptr<ThreadImpl>;
+using ThreadImplConstWeakPtr = std::weak_ptr<const ThreadImpl>;
+using ThreadImplUPtr = std::unique_ptr<ThreadImpl>;
+using ThreadImplConstUPtr = std::unique_ptr<const ThreadImpl>;
+struct ThreadFunctionImpl;
+using ThreadFunctionImplPtr = std::shared_ptr<ThreadFunctionImpl>;
+using ThreadFunctionImplConstPtr = std::shared_ptr<const ThreadFunctionImpl>;
+using ThreadFunctionImplWeakPtr = std::weak_ptr<ThreadFunctionImpl>;
+using ThreadFunctionImplConstWeakPtr = std::weak_ptr<const ThreadFunctionImpl>;
+using ThreadFunctionImplUPtr = std::unique_ptr<ThreadFunctionImpl>;
+using ThreadFunctionImplConstUPtr = std::unique_ptr<const ThreadFunctionImpl>;
+struct MutexImpl;
+using MutexImplPtr = std::shared_ptr<MutexImpl>;
+using MutexImplConstPtr = std::shared_ptr<const MutexImpl>;
+using MutexImplWeakPtr = std::weak_ptr<MutexImpl>;
+using MutexImplConstWeakPtr = std::weak_ptr<const MutexImpl>;
+using MutexImplUPtr = std::unique_ptr<MutexImpl>;
+using MutexImplConstUPtr = std::unique_ptr<const MutexImpl>;
+struct ConditionVariableImpl;
+using ConditionVariableImplPtr = std::shared_ptr<ConditionVariableImpl>;
+using ConditionVariableImplConstPtr = std::shared_ptr<const ConditionVariableImpl>;
+using ConditionVariableImplWeakPtr = std::weak_ptr<ConditionVariableImpl>;
+using ConditionVariableImplConstWeakPtr = std::weak_ptr<const ConditionVariableImpl>;
+using ConditionVariableImplUPtr = std::unique_ptr<ConditionVariableImpl>;
+using ConditionVariableImplConstUPtr = std::unique_ptr<const ConditionVariableImpl>;
+struct RecursiveMutexImpl;
+using RecursiveMutexImplPtr = std::shared_ptr<RecursiveMutexImpl>;
+using RecursiveMutexImplConstPtr = std::shared_ptr<const RecursiveMutexImpl>;
+using RecursiveMutexImplWeakPtr = std::weak_ptr<RecursiveMutexImpl>;
+using RecursiveMutexImplConstWeakPtr = std::weak_ptr<const RecursiveMutexImpl>;
+using RecursiveMutexImplUPtr = std::unique_ptr<RecursiveMutexImpl>;
+using RecursiveMutexImplConstUPtr = std::unique_ptr<const RecursiveMutexImpl>;
 
 template <typename Return>
 class ThreadFunction;
@@ -69,7 +99,7 @@ protected:
   virtual void run() = 0;
 
 private:
-  unique_ptr<ThreadImpl> m_impl;
+  std::unique_ptr<ThreadImpl> m_impl;
 };
 
 // Wraps a function call and calls in another thread, very nice lightweight
@@ -84,7 +114,7 @@ public:
 
   // Automatically starts the given function, ThreadFunction can also be
   // constructed with Thread::invoke, which is a shorthand.
-  ThreadFunction(function<void()> function, String const& name);
+  ThreadFunction(std::function<void()> function, String const& name);
 
   // Automatically calls finish, though BEWARE that often times this is quite
   // dangerous, and this is here mostly as a fallback.  The natural destructor
@@ -113,7 +143,7 @@ public:
   String name();
 
 private:
-  unique_ptr<ThreadFunctionImpl> m_impl;
+  std::unique_ptr<ThreadFunctionImpl> m_impl;
 };
 
 template <typename Return>
@@ -121,7 +151,7 @@ class ThreadFunction {
 public:
   ThreadFunction();
   ThreadFunction(ThreadFunction&&);
-  ThreadFunction(function<Return()> function, String const& name);
+  ThreadFunction(std::function<Return()> function, String const& name);
 
   ~ThreadFunction();
 
@@ -141,7 +171,7 @@ public:
 
 private:
   ThreadFunction<void> m_function;
-  shared_ptr<Maybe<Return>> m_return;
+  std::shared_ptr<Maybe<Return>> m_return;
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
@@ -162,7 +192,7 @@ public:
 
 private:
   friend struct ConditionVariableImpl;
-  unique_ptr<MutexImpl> m_impl;
+  std::unique_ptr<MutexImpl> m_impl;
 };
 
 class ConditionVariable {
@@ -188,7 +218,7 @@ public:
   void broadcast();
 
 private:
-  unique_ptr<ConditionVariableImpl> m_impl;
+  std::unique_ptr<ConditionVariableImpl> m_impl;
 };
 
 // Recursive mutex lock.  lock() may be called many times freely by the same
@@ -213,7 +243,7 @@ public:
   void unlock();
 
 private:
-  unique_ptr<RecursiveMutexImpl> m_impl;
+  std::unique_ptr<RecursiveMutexImpl> m_impl;
   #ifdef STAR_MUTEX_LOG
   bool m_log = false;
   #endif
@@ -313,7 +343,7 @@ public:
   void unlock();
 
 private:
-  atomic_flag m_lock;
+  std::atomic_flag m_lock;
 };
 typedef MLocker<SpinLock> SpinLocker;
 
@@ -362,7 +392,7 @@ bool MLocker<MutexType>::tryLock() {
 
 template <typename Function, typename... Args>
 ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {bind(std::forward<Function>(f), std::forward<Args>(args)...), name};
+  return {std::bind(std::forward<Function>(f), std::forward<Args>(args)...), name};
 }
 
 template <typename Return>
@@ -372,8 +402,8 @@ template <typename Return>
 ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction(function<Return()> function, String const& name) {
-  m_return = make_shared<Maybe<Return>>();
+ThreadFunction<Return>::ThreadFunction(std::function<Return()> function, String const& name) {
+  m_return = std::make_shared<Maybe<Return>>();
   m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() {
       *retValue = function();
     }, name);

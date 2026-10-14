@@ -27,7 +27,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.ordered_set;
 import star.audio;
@@ -142,7 +142,7 @@ CodexItem::CodexItem(Json const& config, String const& directory, Json const& da
 }
 
 ItemPtr CodexItem::clone() const {
-  return make_shared<CodexItem>(*this);
+  return std::make_shared<CodexItem>(*this);
 }
 
 List<Drawable> CodexItem::drawables() const {

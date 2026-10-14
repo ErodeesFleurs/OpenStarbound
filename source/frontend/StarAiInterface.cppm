@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -34,19 +34,97 @@ import star.ordered_map;
 
 
 namespace Star {
-STAR_CLASS(UniverseClient);
-STAR_CLASS(AiDatabase);
-STAR_CLASS(Cinematic);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(ImageStretchWidget);
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(QuestManager);
-STAR_CLASS(StackWidget);
-STAR_CLASS(TabSetWidget);
-STAR_CLASS(Companion);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class AiDatabase;
+using AiDatabasePtr = std::shared_ptr<AiDatabase>;
+using AiDatabaseConstPtr = std::shared_ptr<AiDatabase const>;
+using AiDatabaseWeakPtr = std::weak_ptr<AiDatabase>;
+using AiDatabaseConstWeakPtr = std::weak_ptr<AiDatabase const>;
+using AiDatabaseUPtr = std::unique_ptr<AiDatabase>;
+using AiDatabaseConstUPtr = std::unique_ptr<AiDatabase const>;
+class Cinematic;
+using CinematicPtr = std::shared_ptr<Cinematic>;
+using CinematicConstPtr = std::shared_ptr<Cinematic const>;
+using CinematicWeakPtr = std::weak_ptr<Cinematic>;
+using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
+using CinematicUPtr = std::unique_ptr<Cinematic>;
+using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class ImageWidget;
+using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
+using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
+using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
+using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
+using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
+using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
+using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
+using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
+class CanvasWidget;
+using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
+using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
+using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
+using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
+using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
+using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class QuestManager;
+using QuestManagerPtr = std::shared_ptr<QuestManager>;
+using QuestManagerConstPtr = std::shared_ptr<QuestManager const>;
+using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
+using QuestManagerConstWeakPtr = std::weak_ptr<QuestManager const>;
+using QuestManagerUPtr = std::unique_ptr<QuestManager>;
+using QuestManagerConstUPtr = std::unique_ptr<QuestManager const>;
+class StackWidget;
+using StackWidgetPtr = std::shared_ptr<StackWidget>;
+using StackWidgetConstPtr = std::shared_ptr<StackWidget const>;
+using StackWidgetWeakPtr = std::weak_ptr<StackWidget>;
+using StackWidgetConstWeakPtr = std::weak_ptr<StackWidget const>;
+using StackWidgetUPtr = std::unique_ptr<StackWidget>;
+using StackWidgetConstUPtr = std::unique_ptr<StackWidget const>;
+class TabSetWidget;
+using TabSetWidgetPtr = std::shared_ptr<TabSetWidget>;
+using TabSetWidgetConstPtr = std::shared_ptr<TabSetWidget const>;
+using TabSetWidgetWeakPtr = std::weak_ptr<TabSetWidget>;
+using TabSetWidgetConstWeakPtr = std::weak_ptr<TabSetWidget const>;
+using TabSetWidgetUPtr = std::unique_ptr<TabSetWidget>;
+using TabSetWidgetConstUPtr = std::unique_ptr<TabSetWidget const>;
+class Companion;
+using CompanionPtr = std::shared_ptr<Companion>;
+using CompanionConstPtr = std::shared_ptr<Companion const>;
+using CompanionWeakPtr = std::weak_ptr<Companion>;
+using CompanionConstWeakPtr = std::weak_ptr<Companion const>;
+using CompanionUPtr = std::unique_ptr<Companion>;
+using CompanionConstUPtr = std::unique_ptr<Companion const>;
 }
 
 import star.item_descriptor;
@@ -77,7 +155,13 @@ import star.tech_database;
 namespace Star {
 
 
-STAR_CLASS(AiInterface);
+class AiInterface;
+using AiInterfacePtr = std::shared_ptr<AiInterface>;
+using AiInterfaceConstPtr = std::shared_ptr<AiInterface const>;
+using AiInterfaceWeakPtr = std::weak_ptr<AiInterface>;
+using AiInterfaceConstWeakPtr = std::weak_ptr<AiInterface const>;
+using AiInterfaceUPtr = std::unique_ptr<AiInterface>;
+using AiInterfaceConstUPtr = std::unique_ptr<AiInterface const>;
 
 struct AiInterfaceExceptionTag {
   static constexpr char const* name() { return "AiInterfaceException"; }
@@ -96,7 +180,7 @@ public:
   void setSourceEntityId(EntityId sourceEntityId);
 
 private:
-  enum class AiPages : uint8_t {
+  enum class AiPages : std::uint8_t {
     StatusPage,
     MissionList,
     MissionPage,
@@ -137,7 +221,7 @@ private:
 
   Animation m_staticAnimation;
   Animation m_scanlineAnimation;
-  pair<String, Animation> m_faceAnimation;
+  std::pair<String, Animation> m_faceAnimation;
 
   AudioInstancePtr m_chatterSound;
 

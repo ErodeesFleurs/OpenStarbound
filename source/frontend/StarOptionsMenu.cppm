@@ -1,4 +1,5 @@
 module;
+import std;
 import star.json;
 
 import star.vector;
@@ -22,7 +23,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.version;
 
 import star.ordered_map;
@@ -49,19 +49,73 @@ import star.registered_pane_manager;
 import star.main_interface_types;
 
 namespace Star {
-STAR_CLASS(UniverseClient);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 }
 
 namespace Star {
 
-STAR_CLASS(SliderBarWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(VoiceSettingsMenu);
-STAR_CLASS(KeybindingsMenu);
-STAR_CLASS(GraphicsMenu);
-STAR_CLASS(BindingsMenu);
-STAR_CLASS(OptionsMenu);
+class SliderBarWidget;
+using SliderBarWidgetPtr = std::shared_ptr<SliderBarWidget>;
+using SliderBarWidgetConstPtr = std::shared_ptr<SliderBarWidget const>;
+using SliderBarWidgetWeakPtr = std::weak_ptr<SliderBarWidget>;
+using SliderBarWidgetConstWeakPtr = std::weak_ptr<SliderBarWidget const>;
+using SliderBarWidgetUPtr = std::unique_ptr<SliderBarWidget>;
+using SliderBarWidgetConstUPtr = std::unique_ptr<SliderBarWidget const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class VoiceSettingsMenu;
+using VoiceSettingsMenuPtr = std::shared_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstPtr = std::shared_ptr<VoiceSettingsMenu const>;
+using VoiceSettingsMenuWeakPtr = std::weak_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstWeakPtr = std::weak_ptr<VoiceSettingsMenu const>;
+using VoiceSettingsMenuUPtr = std::unique_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstUPtr = std::unique_ptr<VoiceSettingsMenu const>;
+class KeybindingsMenu;
+using KeybindingsMenuPtr = std::shared_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstPtr = std::shared_ptr<KeybindingsMenu const>;
+using KeybindingsMenuWeakPtr = std::weak_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstWeakPtr = std::weak_ptr<KeybindingsMenu const>;
+using KeybindingsMenuUPtr = std::unique_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstUPtr = std::unique_ptr<KeybindingsMenu const>;
+class GraphicsMenu;
+using GraphicsMenuPtr = std::shared_ptr<GraphicsMenu>;
+using GraphicsMenuConstPtr = std::shared_ptr<GraphicsMenu const>;
+using GraphicsMenuWeakPtr = std::weak_ptr<GraphicsMenu>;
+using GraphicsMenuConstWeakPtr = std::weak_ptr<GraphicsMenu const>;
+using GraphicsMenuUPtr = std::unique_ptr<GraphicsMenu>;
+using GraphicsMenuConstUPtr = std::unique_ptr<GraphicsMenu const>;
+class BindingsMenu;
+using BindingsMenuPtr = std::shared_ptr<BindingsMenu>;
+using BindingsMenuConstPtr = std::shared_ptr<BindingsMenu const>;
+using BindingsMenuWeakPtr = std::weak_ptr<BindingsMenu>;
+using BindingsMenuConstWeakPtr = std::weak_ptr<BindingsMenu const>;
+using BindingsMenuUPtr = std::unique_ptr<BindingsMenu>;
+using BindingsMenuConstUPtr = std::unique_ptr<BindingsMenu const>;
+class OptionsMenu;
+using OptionsMenuPtr = std::shared_ptr<OptionsMenu>;
+using OptionsMenuConstPtr = std::shared_ptr<OptionsMenu const>;
+using OptionsMenuWeakPtr = std::weak_ptr<OptionsMenu>;
+using OptionsMenuConstWeakPtr = std::weak_ptr<OptionsMenu const>;
+using OptionsMenuUPtr = std::unique_ptr<OptionsMenu>;
+using OptionsMenuConstUPtr = std::unique_ptr<OptionsMenu const>;
 
 class OptionsMenu : public Pane {
 public:

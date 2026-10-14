@@ -1,21 +1,32 @@
 module;
+import std;
 import star.byte_array;
-
-#include "StarConfig.hpp"
 import star.io_device;
 import star.string;
 
 namespace Star {
 
-STAR_CLASS(Buffer);
-STAR_CLASS(ExternalBuffer);
+class Buffer;
+using BufferPtr = std::shared_ptr<Buffer>;
+using BufferConstPtr = std::shared_ptr<const Buffer>;
+using BufferWeakPtr = std::weak_ptr<Buffer>;
+using BufferConstWeakPtr = std::weak_ptr<const Buffer>;
+using BufferUPtr = std::unique_ptr<Buffer>;
+using BufferConstUPtr = std::unique_ptr<const Buffer>;
+class ExternalBuffer;
+using ExternalBufferPtr = std::shared_ptr<ExternalBuffer>;
+using ExternalBufferConstPtr = std::shared_ptr<const ExternalBuffer>;
+using ExternalBufferWeakPtr = std::weak_ptr<ExternalBuffer>;
+using ExternalBufferConstWeakPtr = std::weak_ptr<const ExternalBuffer>;
+using ExternalBufferUPtr = std::unique_ptr<ExternalBuffer>;
+using ExternalBufferConstUPtr = std::unique_ptr<const ExternalBuffer>;
 
 // Wraps a ByteArray to an IODevice
 class Buffer : public IODevice {
 public:
   // Constructs buffer open ReadWrite
   Buffer();
-  Buffer(size_t initialSize);
+  Buffer(std::size_t initialSize);
   Buffer(ByteArray b);
   Buffer(Buffer const& buffer);
   Buffer(Buffer&& buffer);
@@ -25,11 +36,11 @@ public:
   void resize(StreamOffset size) override;
   bool atEnd() override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  std::size_t read(char* data, std::size_t len) override;
+  std::size_t write(char const* data, std::size_t len) override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
   void open(IOMode mode) override;
 
@@ -52,25 +63,25 @@ public:
   char const* ptr() const;
 
   // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
-  void reserve(size_t size);
+  std::size_t dataSize() const;
+  void reserve(std::size_t size);
 
   // Clears buffer, moves position to 0.
   void clear();
   bool empty() const;
 
   // Reset buffer with new contents, moves position to 0.
-  void reset(size_t newSize);
+  void reset(std::size_t newSize);
   void reset(ByteArray b);
 
   Buffer& operator=(Buffer const& buffer);
   Buffer& operator=(Buffer&& buffer);
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
-  size_t doWrite(size_t pos, char const* data, size_t len);
+  std::size_t doRead(std::size_t pos, char* data, std::size_t len);
+  std::size_t doWrite(std::size_t pos, char const* data, std::size_t len);
 
-  size_t m_pos;
+  std::size_t m_pos;
   ByteArray m_bytes;
 };
 
@@ -81,7 +92,7 @@ public:
   ExternalBuffer();
   // Constructs a ReadOnly ExternalBuffer pointing to the given external data, which
   // must be valid for the lifetime of the ExternalBuffer.
-  ExternalBuffer(char const* externalData, size_t len);
+  ExternalBuffer(char const* externalData, std::size_t len);
 
   ExternalBuffer(ExternalBuffer const& buffer) = default;
   ExternalBuffer& operator=(ExternalBuffer const& buffer) = default;
@@ -90,11 +101,11 @@ public:
   void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
   bool atEnd() override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  std::size_t read(char* data, std::size_t len) override;
+  std::size_t write(char const* data, std::size_t len) override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len) override;
+  std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) override;
 
   String deviceName() const override;
 
@@ -106,7 +117,7 @@ public:
   char const* ptr() const;
 
   // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
+  std::size_t dataSize() const;
 
   // Clears buffer, moves position to 0.
   bool empty() const;
@@ -114,14 +125,14 @@ public:
   operator bool() const;
 
   // Reset buffer with new contents, moves position to 0.
-  void reset(char const* externalData, size_t len);
+  void reset(char const* externalData, std::size_t len);
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
+  std::size_t doRead(std::size_t pos, char* data, std::size_t len);
 
-  size_t m_pos;
+  std::size_t m_pos;
   char const* m_bytes;
-  size_t m_size;
+  std::size_t m_size;
 };
 
 }

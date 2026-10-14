@@ -11,7 +11,6 @@ import star.list;
 import star.bi_map;
 import star.game_types;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.time;
 import star.map;
 import star.format;
@@ -111,19 +110,19 @@ PacketStatCollector::PacketStatCollector() : PacketStatCollector(1.0f) {}
 PacketStatCollector::PacketStatCollector(float calculationWindow)
   : m_calculationWindow(calculationWindow), m_stats(), m_totalBytes(0), m_lastMixTime(0) {}
 
-void PacketStatCollector::mix(size_t size) {
+void PacketStatCollector::mix(std::size_t size) {
   calculate();
   m_totalBytes += size;
 }
 
-void PacketStatCollector::mix(PacketType type, size_t size, bool addToTotal) {
+void PacketStatCollector::mix(PacketType type, std::size_t size, bool addToTotal) {
   calculate();
   m_unmixed[type] += size;
   if (addToTotal)
     m_totalBytes += size;
 }
 
-void PacketStatCollector::mix(HashMap<PacketType, size_t> const& sizes, bool addToTotal) {
+void PacketStatCollector::mix(HashMap<PacketType, std::size_t> const& sizes, bool addToTotal) {
   calculate();
   for (auto const& p : sizes) {
     if (addToTotal)
@@ -138,7 +137,7 @@ PacketStats PacketStatCollector::stats() const {
 }
 
 void PacketStatCollector::calculate() {
-  int64_t currentTime = Time::monotonicMilliseconds();
+  std::int64_t currentTime = Time::monotonicMilliseconds();
   float elapsedTime = (currentTime - m_lastMixTime) / 1000.0f;
   if (elapsedTime >= m_calculationWindow) {
     m_lastMixTime = currentTime;
@@ -150,9 +149,9 @@ void PacketStatCollector::calculate() {
         m_stats.worstPacketSize = pair.second;
       }
 
-      m_stats.packetBytesPerSecond[pair.first] = round(pair.second / elapsedTime);
+      m_stats.packetBytesPerSecond[pair.first] = std::round(pair.second / elapsedTime);
     }
-    m_stats.bytesPerSecond = round(float(m_totalBytes) / elapsedTime);
+    m_stats.bytesPerSecond = std::round(float(m_totalBytes) / elapsedTime);
     m_totalBytes = 0;
     m_unmixed.clear();
   }
@@ -171,13 +170,13 @@ NetCompatibilityRules PacketSocket::netRules() const { return m_netRules; }
 void CompressedPacketSocket::setCompressionStreamEnabled(bool enabled) { m_useCompressionStream = enabled; }
 bool CompressedPacketSocket::compressionStreamEnabled() const { return m_useCompressionStream; }
 
-pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair() {
-  auto lhsIncomingPipe = make_shared<Pipe>();
-  auto rhsIncomingPipe = make_shared<Pipe>();
+std::pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair() {
+  auto lhsIncomingPipe = std::make_shared<Pipe>();
+  auto rhsIncomingPipe = std::make_shared<Pipe>();
 
   return {
-    LocalPacketSocketUPtr(new LocalPacketSocket(lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe))),
-    LocalPacketSocketUPtr(new LocalPacketSocket(rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe)))
+    LocalPacketSocketUPtr(new LocalPacketSocket(lhsIncomingPipe, std::weak_ptr<Pipe>(rhsIncomingPipe))),
+    LocalPacketSocketUPtr(new LocalPacketSocket(rhsIncomingPipe, std::weak_ptr<Pipe>(lhsIncomingPipe)))
   };
 }
 
@@ -186,7 +185,7 @@ bool LocalPacketSocket::isOpen() const {
 }
 
 void LocalPacketSocket::close() {
-  std::atomic_store(&m_incomingPipe, shared_ptr<Pipe>());
+  std::atomic_store(&m_incomingPipe, std::shared_ptr<Pipe>());
 }
 
 void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
@@ -196,8 +195,8 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
   if (auto outgoingPipe = m_outgoingPipe.lock()) {
     MutexLocker locker(outgoingPipe->mutex);
 
-#ifdef STAR_DEBUG
-    // Self test the serialization if STAR_DEBUG is enabled, but forward the
+#ifndef NDEBUG
+    // Self test the serialization when assertions are enabled, but forward the
     // original packets.  The round trip is not bijective for every packet (see
     // the compatibility hack in ProtocolResponsePacket::read, which keys off the
     // compression mode), so replacing the packets with their round tripped
@@ -247,7 +246,7 @@ bool LocalPacketSocket::readData() {
   return false;
 }
 
-LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe)
+LocalPacketSocket::LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe)
   : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
 TcpPacketSocketUPtr TcpPacketSocket::open(TcpSocketPtr socket) {
@@ -295,7 +294,9 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((!packetBuffer.empty()));
+      }
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
@@ -323,21 +324,21 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
 List<PacketPtr> TcpPacketSocket::receivePackets() {
   // How large can uncompressed packets be
   // this limit is now also used during decompression
-  uint64_t const PacketSizeLimit = 64 << 20;
+  std::uint64_t const PacketSizeLimit = 64 << 20;
   // How many packets can be batched together into one compressed chunk at once
-  uint64_t const PacketBatchLimit = 131072;
+  std::uint64_t const PacketBatchLimit = 131072;
   List<PacketPtr> packets;
   try {
     DataStreamExternalBuffer ds(m_inputBuffer);
-    size_t trimPos = 0;
+    std::size_t trimPos = 0;
     while (!ds.atEnd()) {
       PacketType packetType;
-      uint64_t packetSize = 0;
+      std::uint64_t packetSize = 0;
       bool packetCompressed = false;
 
       try {
         packetType = ds.read<PacketType>();
-        int64_t len = ds.readVlqI();
+        std::int64_t len = ds.readVlqI();
         packetCompressed = len < 0;
         packetSize = packetCompressed ? -len : len;
       } catch (EofException const&) {
@@ -364,7 +365,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
       ds.seek(packetSize, IOSeek::Relative);
       trimPos = ds.pos();
 
-      size_t count = 0;
+      std::size_t count = 0;
       do {
         if (++count > PacketBatchLimit) {
           throw IOException::format("Packet batch limit {} reached while reading {}s!", PacketBatchLimit, PacketTypeNames.getRight(packetType));
@@ -403,7 +404,7 @@ bool TcpPacketSocket::writeData() {
           m_outputBuffer.clear();
         }
         do {
-          size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
+          std::size_t written = m_socket->send(m_compressedOutputBuffer.ptr(), m_compressedOutputBuffer.size());
           if (written == 0)
             break;
           dataSent = true;
@@ -412,7 +413,7 @@ bool TcpPacketSocket::writeData() {
         } while (!m_compressedOutputBuffer.empty());
       } else {
         do {
-          size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
+          std::size_t written = m_socket->send(m_outputBuffer.ptr(), m_outputBuffer.size());
           if (written == 0)
             break;
           dataSent = true;
@@ -434,7 +435,7 @@ bool TcpPacketSocket::readData() {
   try {
     char readBuffer[1024];
     while (true) {
-      size_t readAmount = m_socket->receive(readBuffer, 1024);
+      std::size_t readAmount = m_socket->receive(readBuffer, 1024);
       if (readAmount == 0)
         break;
       dataReceived = true;
@@ -508,7 +509,9 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((!packetBuffer.empty()));
+      }
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
@@ -541,7 +544,7 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
 
       PacketType packetType = ds.read<PacketType>();
       bool packetCompressed = ds.read<bool>();
-      size_t packetSize = ds.size() - ds.pos();
+      std::size_t packetSize = ds.size() - ds.pos();
 
       ByteArray packetBytes = ds.readBytes(packetSize);
       if (packetCompressed)

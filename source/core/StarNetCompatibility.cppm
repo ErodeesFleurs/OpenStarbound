@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.hash;
 import star.version;
 
@@ -14,7 +13,7 @@ inline constexpr VersionNumber LegacyVersion = 0;
 class NetCompatibilityRules {
 public:
   NetCompatibilityRules();
-  NetCompatibilityRules(uint64_t) = delete;
+  NetCompatibilityRules(std::uint64_t) = delete;
   NetCompatibilityRules(VersionNumber version);
 
   VersionNumber version() const;
@@ -62,7 +61,7 @@ inline bool NetCompatibilityRules::operator==(NetCompatibilityRules const& a) co
 
 template <>
 struct hash<NetCompatibilityRules> {
-  size_t operator()(NetCompatibilityRules const& s) const {
+  std::size_t operator()(NetCompatibilityRules const& s) const {
     return s.version();
   }
 };

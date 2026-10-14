@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.static_random;
 import star.byte_array;
@@ -20,22 +19,22 @@ class RandomSource {
 public:
   // Generates a RandomSource with a seed from Random::randu64()
   RandomSource();
-  RandomSource(uint64_t seed);
+  RandomSource(std::uint64_t seed);
 
   // Re-initializes the random number generator using the given seed.  It is
   // exactly equivalent to constructing a new RandomSource, just using the same
   // buffer.
   void init();
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
   void addEntropy();
-  void addEntropy(uint64_t seed);
+  void addEntropy(std::uint64_t seed);
 
-  uint32_t randu32();
-  uint64_t randu64();
+  std::uint32_t randu32();
+  std::uint64_t randu64();
 
-  int32_t randi32();
-  int64_t randi64();
+  std::int32_t randi32();
+  std::int64_t randi64();
 
   // Generates values in the range [0.0, 1.0]
   float randf();
@@ -43,12 +42,12 @@ public:
   double randd();
 
   // Random integer from [0, max], max must be >= 0
-  int64_t randInt(int64_t max);
-  uint64_t randUInt(uint64_t max);
+  std::int64_t randInt(std::int64_t max);
+  std::uint64_t randUInt(std::uint64_t max);
 
   // Random integer from [min, max]
-  int64_t randInt(int64_t min, int64_t max);
-  uint64_t randUInt(uint64_t min, uint64_t max);
+  std::int64_t randInt(std::int64_t min, std::int64_t max);
+  std::uint64_t randUInt(std::uint64_t min, std::uint64_t max);
 
   float randf(float min, float max);
   double randd(double min, double max);
@@ -62,10 +61,10 @@ public:
   // Round a fractional value statistically towards the floor or ceiling.  For
   // example, if a value is 5.2, 80% of the time it will round to 5, but 20% of
   // the time it will round to 6.
-  int64_t stochasticRound(double val);
+  std::int64_t stochasticRound(double val);
 
-  void randBytes(char* buf, size_t len);
-  ByteArray randBytes(size_t len);
+  void randBytes(char* buf, std::size_t len);
+  ByteArray randBytes(std::size_t len);
 
   // Pick a random value out of a container
   template <typename Container>
@@ -81,11 +80,11 @@ public:
   void shuffle(Container& container);
 
 private:
-  uint32_t gen32();
+  std::uint32_t gen32();
 
-  uint32_t m_data[256];
-  uint32_t m_carry;
-  uint8_t m_index;
+  std::uint32_t m_data[256];
+  std::uint32_t m_carry;
+  std::uint8_t m_index;
 };
 
 // Global static versions of the methods in RandomSource.  It is not necessary
@@ -93,15 +92,15 @@ private:
 // initialized with a random seed on first use if it is not already initialized.
 namespace Random {
   void init();
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
   void addEntropy();
-  void addEntropy(uint64_t seed);
+  void addEntropy(std::uint64_t seed);
 
-  uint32_t randu32();
-  uint64_t randu64();
-  int32_t randi32();
-  int64_t randi64();
+  std::uint32_t randu32();
+  std::uint64_t randu64();
+  std::int32_t randi32();
+  std::int64_t randi64();
   float randf();
   double randd();
   long long randInt(long long max);
@@ -115,10 +114,10 @@ namespace Random {
   float nrandf(float stddev = 1.0f, float mean = 0.0f);
   double nrandd(double stddev = 1.0, double mean = 0.0);
 
-  int64_t stochasticRound(double val);
+  std::int64_t stochasticRound(double val);
 
-  void randBytes(char* buf, size_t len);
-  ByteArray randBytes(size_t len);
+  void randBytes(char* buf, std::size_t len);
+  ByteArray randBytes(std::size_t len);
 
   template <typename Container>
   typename Container::value_type const& randFrom(Container const& container);
@@ -191,8 +190,8 @@ typename Container::value_type RandomSource::randValueFrom(
 
 template <typename Container>
 void RandomSource::shuffle(Container& container) {
-  size_t max = container.size();
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([this, max]() { return randUInt(max - 1); }));
+  std::size_t max = container.size();
+  std::shuffle(container.begin(), container.end(), URBG<std::size_t>([this, max]() { return randUInt(max - 1); }));
 }
 
 template <typename Container>
@@ -214,7 +213,7 @@ typename Container::value_type Random::randValueFrom(
 template <typename Container>
 void Random::shuffle(Container& container) {
   RandomSource random;
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() { return static_cast<size_t>(random.randu64()); }));
+  std::shuffle(container.begin(), container.end(), URBG<std::size_t>([&]() { return static_cast<std::size_t>(random.randu64()); }));
 }
 
 }

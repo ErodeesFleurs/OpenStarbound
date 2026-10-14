@@ -22,7 +22,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 
@@ -103,7 +103,7 @@ List<Vec2I> TileEntity::interactiveSpaces() const {
 }
 
 InteractAction TileEntity::interact(InteractRequest const& request) {
-  _unused(request);
+  ((void)(request));
   return InteractAction();
 }
 

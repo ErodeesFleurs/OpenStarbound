@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -13,11 +13,17 @@ struct NameGeneratorExceptionTag {
 };
 using NameGeneratorException = StarError<NameGeneratorExceptionTag, StarException>;
 
-STAR_CLASS(PatternedNameGenerator);
+class PatternedNameGenerator;
+using PatternedNameGeneratorPtr = std::shared_ptr<PatternedNameGenerator>;
+using PatternedNameGeneratorConstPtr = std::shared_ptr<const PatternedNameGenerator>;
+using PatternedNameGeneratorWeakPtr = std::weak_ptr<PatternedNameGenerator>;
+using PatternedNameGeneratorConstWeakPtr = std::weak_ptr<const PatternedNameGenerator>;
+using PatternedNameGeneratorUPtr = std::unique_ptr<PatternedNameGenerator>;
+using PatternedNameGeneratorConstUPtr = std::unique_ptr<const PatternedNameGenerator>;
 
 struct MarkovSource {
-  size_t prefixSize;
-  size_t endSize;
+  std::size_t prefixSize;
+  std::size_t endSize;
   StringList starts;
   StringMap<StringList> chains;
   StringSet ends;
@@ -28,7 +34,7 @@ public:
   PatternedNameGenerator();
 
   String generateName(String const& rulesAsset) const;
-  String generateName(String const& rulesAsset, uint64_t seed) const;
+  String generateName(String const& rulesAsset, std::uint64_t seed) const;
   String generateName(String const& rulesAsset, RandomSource& random) const;
 
 private:
@@ -36,7 +42,7 @@ private:
 
   bool isProfane(String const& name) const;
 
-  MarkovSource makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames);
+  MarkovSource makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames);
 
   StringMap<MarkovSource> m_markovSources;
   StringSet m_profanityFilter;

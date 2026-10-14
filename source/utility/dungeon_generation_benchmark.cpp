@@ -20,7 +20,6 @@ import star.directives;
 import star.asset_path;
 import star.string;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -135,7 +134,7 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();
@@ -163,7 +162,7 @@ int main(int argc, char** argv) {
       }
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
-      auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
+      auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
       WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     }
 

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -23,8 +23,20 @@ import star.item_descriptor;
 
 namespace Star {
 
-STAR_STRUCT(LiquidSettings);
-STAR_CLASS(LiquidsDatabase);
+struct LiquidSettings;
+using LiquidSettingsPtr = std::shared_ptr<LiquidSettings>;
+using LiquidSettingsConstPtr = std::shared_ptr<const LiquidSettings>;
+using LiquidSettingsWeakPtr = std::weak_ptr<LiquidSettings>;
+using LiquidSettingsConstWeakPtr = std::weak_ptr<const LiquidSettings>;
+using LiquidSettingsUPtr = std::unique_ptr<LiquidSettings>;
+using LiquidSettingsConstUPtr = std::unique_ptr<const LiquidSettings>;
+class LiquidsDatabase;
+using LiquidsDatabasePtr = std::shared_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstPtr = std::shared_ptr<const LiquidsDatabase>;
+using LiquidsDatabaseWeakPtr = std::weak_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstWeakPtr = std::weak_ptr<const LiquidsDatabase>;
+using LiquidsDatabaseUPtr = std::unique_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstUPtr = std::unique_ptr<const LiquidsDatabase>;
 
 struct LiquidExceptionTag {
   static constexpr char const* name() { return "LiquidException"; }

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.string;
@@ -24,7 +24,13 @@ import star.asset_texture_group;
 
 namespace Star {
 
-STAR_CLASS(DrawablePainter);
+class DrawablePainter;
+using DrawablePainterPtr = std::shared_ptr<DrawablePainter>;
+using DrawablePainterConstPtr = std::shared_ptr<DrawablePainter const>;
+using DrawablePainterWeakPtr = std::weak_ptr<DrawablePainter>;
+using DrawablePainterConstWeakPtr = std::weak_ptr<DrawablePainter const>;
+using DrawablePainterUPtr = std::unique_ptr<DrawablePainter>;
+using DrawablePainterConstUPtr = std::unique_ptr<DrawablePainter const>;
 
 class DrawablePainter {
 public:
@@ -32,7 +38,7 @@ public:
 
   void drawDrawable(Drawable const& drawable);
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
 
 private:
   RendererPtr m_renderer;

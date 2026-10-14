@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.net_compatibility;
@@ -39,10 +39,28 @@ import star.net_element_system;
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(AudioInstance);
+class Clock;
+using ClockPtr = std::shared_ptr<Clock>;
+using ClockConstPtr = std::shared_ptr<const Clock>;
+using ClockWeakPtr = std::weak_ptr<Clock>;
+using ClockConstWeakPtr = std::weak_ptr<const Clock>;
+using ClockUPtr = std::unique_ptr<Clock>;
+using ClockConstUPtr = std::unique_ptr<const Clock>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
 
-STAR_CLASS(Sky);
+class Sky;
+using SkyPtr = std::shared_ptr<Sky>;
+using SkyConstPtr = std::shared_ptr<const Sky>;
+using SkyWeakPtr = std::weak_ptr<Sky>;
+using SkyConstWeakPtr = std::weak_ptr<const Sky>;
+using SkyUPtr = std::unique_ptr<Sky>;
+using SkyConstUPtr = std::unique_ptr<const Sky>;
 
 // Sky objects, such as stars and orbiters, are given in a pseudo screen space,
 // "view space", that does not take the pixel ratio into account.  "viewSize"
@@ -61,7 +79,7 @@ public:
 
   void jumpTo(SkyParameters SkyParameters);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  std::pair<ByteArray, std::uint64_t> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
   
   // handles flying and warp state transitions
@@ -73,10 +91,10 @@ public:
 
   bool inSpace() const;
 
-  uint64_t seed() const;
+  std::uint64_t seed() const;
 
   float dayLength() const;
-  uint32_t day() const;
+  std::uint32_t day() const;
   float timeOfDay() const;
 
   // Total time since the 0th day for this world.
@@ -120,7 +138,7 @@ public:
 
   // Base sky rect colors, top and bottom, includes calculation based on day /
   // night alpha
-  pair<Color, Color> skyRectColors() const;
+  std::pair<Color, Color> skyRectColors() const;
   Color skyFlashColor() const;
 
   bool flying() const;
@@ -195,7 +213,7 @@ private:
   Vec2F m_pathOffset;
   float m_pathRotation = 0.0f;
 
-  size_t m_starFrames = 0;
+  std::size_t m_starFrames = 0;
   StringList m_starList;
   StringList m_hyperStarList;
 

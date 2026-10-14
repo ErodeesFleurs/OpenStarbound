@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 import star.net_compatibility;
@@ -45,8 +45,20 @@ import star.net_element_group;
 
 namespace Star {
 
-STAR_CLASS(TechController);
-STAR_CLASS(StatusController);
+class TechController;
+using TechControllerPtr = std::shared_ptr<TechController>;
+using TechControllerConstPtr = std::shared_ptr<const TechController>;
+using TechControllerWeakPtr = std::weak_ptr<TechController>;
+using TechControllerConstWeakPtr = std::weak_ptr<const TechController>;
+using TechControllerUPtr = std::unique_ptr<TechController>;
+using TechControllerConstUPtr = std::unique_ptr<const TechController>;
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 // Class that acts as a movement controller for the parent entity that supports
 // a variety scriptable "Tech" that the entity can use that affect movement,
@@ -134,7 +146,7 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
@@ -163,7 +175,7 @@ private:
   };
 
   // Name of module, any existing module script data.
-  void setupTechModules(List<tuple<String, JsonObject>> const& moduleInits);
+  void setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits);
 
   void unloadModule(TechModule& techModule);
 

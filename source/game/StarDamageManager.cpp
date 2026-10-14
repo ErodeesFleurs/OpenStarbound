@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.id_map;
@@ -169,7 +169,9 @@ void DamageManager::pushRemoteHitRequest(RemoteHitRequest const& remoteHitReques
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
   if (auto causingEntity = m_world->entity(remoteHitRequest.causingEntityId)) {
-    starAssert(causingEntity->isMaster());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((causingEntity->isMaster()));
+    }
     causingEntity->hitOther(remoteHitRequest.targetEntityId, remoteHitRequest.damageRequest);
   }
 }
@@ -179,7 +181,9 @@ void DamageManager::pushRemoteDamageRequest(RemoteDamageRequest const& remoteDam
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
   if (auto targetEntity = m_world->entity(remoteDamageRequest.targetEntityId)) {
-    starAssert(targetEntity->isMaster());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((targetEntity->isMaster()));
+    }
     for (auto& damageNotification : targetEntity->applyDamage(remoteDamageRequest.damageRequest))
       addDamageNotification({remoteDamageRequest.damageRequest.sourceEntityId, std::move(damageNotification)});
   }
@@ -211,8 +215,8 @@ List<DamageNotification> DamageManager::pullPendingNotifications() {
   return take(m_pendingNotifications);
 }
 
-SmallList<pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const& source, EntityId causingId) const {
-  SmallList<pair<EntityId, HitType>, 4> resultList;
+SmallList<std::pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const& source, EntityId causingId) const {
+  SmallList<std::pair<EntityId, HitType>, 4> resultList;
   auto doQueryHit = [&source, &resultList, causingId, this](EntityPtr const& targetEntity) {
     if (targetEntity->entityId() == causingId)
       return;

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.ordered_map;
 import star.bi_map;
@@ -18,7 +18,7 @@ import star.assets;
 import star.root_base;
 
 namespace Star {
-  atomic<RootBase*> RootBase::s_singleton;
+  std::atomic<RootBase*> RootBase::s_singleton;
 
   RootBase* RootBase::singletonPtr() {
     return s_singleton.load();

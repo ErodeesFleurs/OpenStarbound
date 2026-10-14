@@ -1,19 +1,31 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
 
 namespace Star {
-STAR_CLASS(Codex);
+class Codex;
+using CodexPtr = std::shared_ptr<Codex>;
+using CodexConstPtr = std::shared_ptr<const Codex>;
+using CodexWeakPtr = std::weak_ptr<Codex>;
+using CodexConstWeakPtr = std::weak_ptr<const Codex>;
+using CodexUPtr = std::unique_ptr<Codex>;
+using CodexConstUPtr = std::unique_ptr<const Codex>;
 
 struct CodexDatabaseExceptionTag {
   static constexpr char const* name() { return "CodexDatabaseException"; }
 };
 using CodexDatabaseException = StarError<CodexDatabaseExceptionTag, StarException>;
 
-STAR_CLASS(CodexDatabase);
+class CodexDatabase;
+using CodexDatabasePtr = std::shared_ptr<CodexDatabase>;
+using CodexDatabaseConstPtr = std::shared_ptr<const CodexDatabase>;
+using CodexDatabaseWeakPtr = std::weak_ptr<CodexDatabase>;
+using CodexDatabaseConstWeakPtr = std::weak_ptr<const CodexDatabase>;
+using CodexDatabaseUPtr = std::unique_ptr<CodexDatabase>;
+using CodexDatabaseConstUPtr = std::unique_ptr<const CodexDatabase>;
 
 class CodexDatabase {
 public:

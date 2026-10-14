@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.vector;
@@ -18,7 +19,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.string;
@@ -31,7 +31,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-import std;
 
 import star.application;
 import star.statistics_service;
@@ -208,7 +207,7 @@ bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) 
     return false;
 
   m_text = text;
-  size_t size = m_text.size();
+  std::size_t size = m_text.size();
   if (moveCursor || std::cmp_greater(m_cursorOffset, size))
     m_cursorOffset = (int)size;
 
@@ -231,7 +230,7 @@ int const& TextBoxWidget::getCursorPosition() const {
 }
 
 void TextBoxWidget::setCursorPosition(int cursorPosition) {
-  m_cursorOffset = clamp(cursorPosition, 0, (int)std::min<size_t>(m_text.size(), (size_t)std::numeric_limits<int>::max()));
+  m_cursorOffset = clamp(cursorPosition, 0, (int)std::min<std::size_t>(m_text.size(), (std::size_t)std::numeric_limits<int>::max()));
 }
 
 bool TextBoxWidget::getHidden() const {
@@ -325,9 +324,9 @@ KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-Maybe<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
+Maybe<std::pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
   if (active() && hasFocus()) {
-    return make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
+    return std::make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
   }
   return {};
 }

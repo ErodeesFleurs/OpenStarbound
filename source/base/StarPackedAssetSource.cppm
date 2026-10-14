@@ -1,10 +1,10 @@
 module;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.json;
 import star.byte_array;
 
-import std;
 
 import star.ordered_map;
 import star.file;
@@ -24,11 +24,17 @@ import star.sha256;
 
 export namespace Star {
 
-STAR_CLASS(PackedAssetSource);
+class PackedAssetSource;
+using PackedAssetSourcePtr = std::shared_ptr<PackedAssetSource>;
+using PackedAssetSourceConstPtr = std::shared_ptr<PackedAssetSource const>;
+using PackedAssetSourceWeakPtr = std::weak_ptr<PackedAssetSource>;
+using PackedAssetSourceConstWeakPtr = std::weak_ptr<PackedAssetSource const>;
+using PackedAssetSourceUPtr = std::unique_ptr<PackedAssetSource>;
+using PackedAssetSourceConstUPtr = std::unique_ptr<PackedAssetSource const>;
 
 class PackedAssetSource : public AssetSource {
 public:
-  typedef function<void(size_t, size_t, String, String)> BuildProgressCallback;
+  typedef std::function<void(std::size_t, std::size_t, String, String)> BuildProgressCallback;
 
   // Build a packed asset file from the given DirectoryAssetSource.
   //
@@ -54,7 +60,7 @@ public:
 private:
   FilePtr m_packedFile;
   JsonObject m_metadata;
-  OrderedHashMap<String, pair<uint64_t, uint64_t>> m_index;
+  OrderedHashMap<String, std::pair<std::uint64_t, std::uint64_t>> m_index;
 };
 
 }
@@ -73,7 +79,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
 
   // Insert every found entry into the packed file, and also simultaneously
   // compute the full index.
-  StringMap<pair<uint64_t, uint64_t>> index;
+  StringMap<std::pair<std::uint64_t, std::uint64_t>> index;
 
   OrderedHashSet<String> extensionOrdering;
   for (auto const& str : extensionSorting)
@@ -85,7 +91,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
   // by name and then by extension, where every extension listed in
   // "extensionSorting" will come first, and then any extension not listed will
   // come after.
-  auto getOrderingValue = [&extensionOrdering](String const& asset) -> pair<size_t, String> {
+  auto getOrderingValue = [&extensionOrdering](String const& asset) -> std::pair<std::size_t, String> {
     String extension;
     auto lastDot = asset.findLast(".");
     if (lastDot != NPos)
@@ -102,7 +108,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
       return getOrderingValue(a) < getOrderingValue(b);
     });
 
-  for (size_t i = 0; i < assetPaths.size(); ++i) {
+  for (std::size_t i = 0; i < assetPaths.size(); ++i) {
     String const& assetPath = assetPaths[i];
     ByteArray contents = directorySource.read(assetPath);
 
@@ -112,7 +118,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
     ds.writeBytes(contents);
   }
 
-  uint64_t indexStart = ds.pos();
+  std::uint64_t indexStart = ds.pos();
   ds.writeData("INDEX", 5);
   ds.write(directorySource.metadata());
   ds.write(index);
@@ -128,7 +134,7 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
   if (ds.readBytes(8) != ByteArray("SBAsset6", 8))
     throw AssetSourceException("Packed assets file format unrecognized!");
 
-  uint64_t indexStart = ds.read<uint64_t>();
+  std::uint64_t indexStart = ds.read<std::uint64_t>();
 
   ds.seek(indexStart);
   ByteArray header = ds.readBytes(5);
@@ -153,14 +159,14 @@ IODevicePtr PackedAssetSource::open(String const& path) {
       setMode(IOMode::Read);
     }
 
-    size_t read(char* data, size_t len) override {
-      len = min<StreamOffset>(len, assetSize - assetPos);
+    std::size_t read(char* data, std::size_t len) override {
+      len = std::min<StreamOffset>(len, assetSize - assetPos);
       file->readFullAbsolute(fileOffset + assetPos, data, len);
       assetPos += len;
       return len;
     }
 
-    size_t write(char const*, size_t) override {
+    std::size_t write(char const*, std::size_t) override {
       throw IOException("Assets IODevices are read-only");
     }
 
@@ -190,7 +196,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
     }
 
     IODevicePtr clone() override {
-      auto cloned = make_shared<AssetReader>(file, path, fileOffset, assetSize);
+      auto cloned = std::make_shared<AssetReader>(file, path, fileOffset, assetSize);
       cloned->assetPos = assetPos;
       return cloned;
     }
@@ -208,10 +214,10 @@ IODevicePtr PackedAssetSource::open(String const& path) {
 
   // Same as read(): the declared size is untrusted index data.
   auto fileSize = m_packedFile->size();
-  if (fileSize < 0 || p->second > static_cast<uint64_t>(fileSize))
+  if (fileSize < 0 || p->second > static_cast<std::uint64_t>(fileSize))
     throw AssetSourceException::format("Requested file '{}' has an out of range size in the packed assets file", path);
 
-  return make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
+  return std::make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
 }
 
 ByteArray PackedAssetSource::read(String const& path) {
@@ -222,7 +228,7 @@ ByteArray PackedAssetSource::read(String const& path) {
   // The index comes from the file, so its declared size cannot be trusted to be
   // reasonable before it is used as an allocation size.
   auto fileSize = m_packedFile->size();
-  if (fileSize < 0 || p->second > static_cast<uint64_t>(fileSize))
+  if (fileSize < 0 || p->second > static_cast<std::uint64_t>(fileSize))
     throw AssetSourceException::format("Requested file '{}' has an out of range size in the packed assets file", path);
 
   ByteArray data(p->second, 0);

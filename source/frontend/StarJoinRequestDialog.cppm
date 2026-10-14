@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -42,7 +42,13 @@ namespace Star {
 
 enum class P2PJoinRequestReply;
 
-STAR_CLASS(JoinRequestDialog);
+class JoinRequestDialog;
+using JoinRequestDialogPtr = std::shared_ptr<JoinRequestDialog>;
+using JoinRequestDialogConstPtr = std::shared_ptr<JoinRequestDialog const>;
+using JoinRequestDialogWeakPtr = std::weak_ptr<JoinRequestDialog>;
+using JoinRequestDialogConstWeakPtr = std::weak_ptr<JoinRequestDialog const>;
+using JoinRequestDialogUPtr = std::unique_ptr<JoinRequestDialog>;
+using JoinRequestDialogConstUPtr = std::unique_ptr<JoinRequestDialog const>;
 
 class JoinRequestDialog : public Pane {
 public:
@@ -50,14 +56,14 @@ public:
 
   virtual ~JoinRequestDialog() {}
 
-  void displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback);
+  void displayRequest(String const& userName, std::function<void(P2PJoinRequestReply)> callback);
 
   void dismissed() override;
 
 private:
   void reply(P2PJoinRequestReply reply);
 
-  function<void(P2PJoinRequestReply)> m_callback;
+  std::function<void(P2PJoinRequestReply)> m_callback;
   bool m_confirmed;
 };
 

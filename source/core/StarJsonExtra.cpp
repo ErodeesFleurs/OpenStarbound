@@ -1,5 +1,6 @@
 #include "StarJsonExtra.hpp"
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string;
 import star.list;
 import star.json;
@@ -15,7 +16,7 @@ import star.poly;
 import star.algorithm;
 namespace Star {
 
-size_t jsonToSize(Json const& v) {
+std::size_t jsonToSize(Json const& v) {
   if (v.isNull())
     return NPos;
 
@@ -25,7 +26,7 @@ size_t jsonToSize(Json const& v) {
   return v.toUInt();
 }
 
-Json jsonFromSize(size_t s) {
+Json jsonFromSize(std::size_t s) {
   if (s == NPos)
     return Json();
   return Json(s);
@@ -399,9 +400,9 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
     return default_;
   if (source.type() != Json::Type::Array)
     throw StarException("Json of array type expected.");
-  List<pair<float, Json>> options;
+  List<std::pair<float, Json>> options;
   float sum = 0;
-  size_t idx = 0;
+  std::size_t idx = 0;
   while (idx < source.size()) {
     float weight = 1;
     Json entry = source.get(idx);
@@ -411,10 +412,10 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
       if (idx >= source.size())
         throw StarException("Weighted companion cube cannot cry.");
       sum += weight;
-      options.append(pair<float, Json>{weight, source.get(idx)});
+      options.append(std::pair<float, Json>{weight, source.get(idx)});
     } else {
       sum += weight;
-      options.append(pair<float, Json>{weight, entry});
+      options.append(std::pair<float, Json>{weight, entry});
     }
     idx++;
   }

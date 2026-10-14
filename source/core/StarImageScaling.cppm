@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.interpolation;
 import star.vector;
 import star.math_common;
@@ -21,8 +21,8 @@ namespace Star {
 Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -36,8 +36,8 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
 Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -59,8 +59,8 @@ Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
 Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 

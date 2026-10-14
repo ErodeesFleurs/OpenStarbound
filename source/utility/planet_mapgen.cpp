@@ -23,7 +23,7 @@ import star.lexical_cast;
 import star.image;
 import star.string;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.io_device;
@@ -96,16 +96,16 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>();
+    CelestialMasterDatabasePtr celestialDatabase = std::make_shared<CelestialMasterDatabase>();
 
     Maybe<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())
       coordinate = CelestialCoordinate(options.parameters["coordinate"].first());
     else if (!options.parameters["coordseed"].empty())
       coordinate = celestialDatabase->findRandomWorld(
-          10, 50, {}, lexicalCast<uint64_t>(options.parameters["coordseed"].first()));
+          10, 50, {}, lexicalCast<std::uint64_t>(options.parameters["coordseed"].first()));
     else
       coordinate = celestialDatabase->findRandomWorld();
 
@@ -126,14 +126,14 @@ int main(int argc, char** argv) {
     }
 
     coutf("Generating {} size image for world of type '{}'\n", size, worldTemplate.worldParameters()->typeName);
-    auto outputImage = make_shared<Image>(size, PixelFormat::RGB24);
+    auto outputImage = std::make_shared<Image>(size, PixelFormat::RGB24);
 
     Color groundColor = Color::rgb(255, 0, 0);
     Color caveColor = Color::rgb(128, 0, 0);
     Color blankColor = Color::rgb(0, 0, 0);
 
-    for (size_t x = 0; x < size[0]; ++x) {
-      for (size_t y = 0; y < size[1]; ++y) {
+    for (std::size_t x = 0; x < size[0]; ++x) {
+      for (std::size_t y = 0; y < size[1]; ++y) {
         if (options.switches.contains("weighting")) {
           auto layout = worldTemplate.worldLayout();
           Color color = Color::Black;
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
           auto weightings = layout->getWeighting(pos[0], pos[1]);
           for (auto const& weighting : weightings) {
             Color mixColor = Color::rgb(128, 0, 0);
-            mixColor.setHue(staticRandomFloat((uint64_t)weighting.region));
+            mixColor.setHue(staticRandomFloat((std::uint64_t)weighting.region));
             color = Color::rgbaf(color.toRgbaF() + mixColor.toRgbaF() * weighting.weight);
           }
           outputImage->set(x, y, color.toRgb());

@@ -1,6 +1,6 @@
+import std;
 import star.json;
 import star.thread;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 import star.configuration;

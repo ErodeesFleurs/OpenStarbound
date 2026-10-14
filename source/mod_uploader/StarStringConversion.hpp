@@ -2,7 +2,7 @@
 
 #include <QString>
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 
 namespace Star {

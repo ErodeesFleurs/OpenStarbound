@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarStrongTypedef.hpp"
 import star.data_stream;
@@ -21,7 +22,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;

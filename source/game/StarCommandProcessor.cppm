@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 import star.lua;
 import star.maybe;
@@ -17,8 +17,20 @@ import star.shell_parser;
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
-STAR_CLASS(CommandProcessor);
+class UniverseServer;
+using UniverseServerPtr = std::shared_ptr<UniverseServer>;
+using UniverseServerConstPtr = std::shared_ptr<const UniverseServer>;
+using UniverseServerWeakPtr = std::weak_ptr<UniverseServer>;
+using UniverseServerConstWeakPtr = std::weak_ptr<const UniverseServer>;
+using UniverseServerUPtr = std::unique_ptr<UniverseServer>;
+using UniverseServerConstUPtr = std::unique_ptr<const UniverseServer>;
+class CommandProcessor;
+using CommandProcessorPtr = std::shared_ptr<CommandProcessor>;
+using CommandProcessorConstPtr = std::shared_ptr<const CommandProcessor>;
+using CommandProcessorWeakPtr = std::weak_ptr<CommandProcessor>;
+using CommandProcessorConstWeakPtr = std::weak_ptr<const CommandProcessor>;
+using CommandProcessorUPtr = std::unique_ptr<CommandProcessor>;
+using CommandProcessorConstUPtr = std::unique_ptr<const CommandProcessor>;
 
 class CommandProcessor {
 public:

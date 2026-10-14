@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.bi_map;
 import star.math_common;
 import star.format;
@@ -85,7 +85,7 @@ ConnectionId connectionForEntity(EntityId entityId) {
     return (-entityId - 1) / 65536 + 1;
 }
 
-pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
+std::pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
   angle = constrainAngle(angle);
   Direction direction = Direction::Right;
   if (angle > Constants::pi / 2) {
@@ -99,7 +99,7 @@ pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
   if (direction == Direction::Left && ccRotation)
     angle *= -1;
 
-  return make_pair(angle, direction);
+  return std::make_pair(angle, direction);
 }
 
 }

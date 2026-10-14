@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.either;
 import star.rect;
@@ -33,7 +33,7 @@ Lightmap& Lightmap::operator=(Lightmap const& lightMap) {
   m_height = lightMap.m_height;
   if (lightMap.m_data) {
     m_data = std::make_unique<float[]>(len());
-    memcpy(m_data.get(), lightMap.m_data.get(), len());
+    std::memcpy(m_data.get(), lightMap.m_data.get(), len());
   }
   return *this;
 }
@@ -47,7 +47,7 @@ Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
 
 Lightmap::operator ImageView() {
   ImageView view;
-  view.data = (uint8_t*)m_data.get();
+  view.data = (std::uint8_t*)m_data.get();
   view.size = size();
   view.format = PixelFormat::RGB_F;
   return view;
@@ -146,14 +146,14 @@ void CellularLightingCalculator::calculate(Image& output) {
   output.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], PixelFormat::RGB24);
 
   if (m_monochrome) {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.right().getLight(x, y)).toRgb());
       }
     }
   } else {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
       }
     }
@@ -174,15 +174,15 @@ void CellularLightingCalculator::calculate(Lightmap& output) {
   float brightnessLimit = m_config.getFloat("brightnessLimit");
 
   if (m_monochrome) {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = min(m_lightArray.right().getLight(x, y), brightnessLimit);
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+        auto light = std::min(m_lightArray.right().getLight(x, y), brightnessLimit);
         output.set(x - arrayMin[0], y - arrayMin[1], light);
       }
     }
   } else {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         auto light = m_lightArray.left().getLight(x, y);
         float intensity = ColoredLightTraits::maxIntensity(light);
         if (intensity > brightnessLimit)
@@ -228,9 +228,9 @@ void CellularLightIntensityCalculator::setCell(Vec2I const& position, Cell const
   setCellColumn(position, &cell, 1);
 }
 
-void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell const* cells, size_t count) {
-  size_t baseIndex = (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
-  for (size_t i = 0; i < count; ++i)
+void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell const* cells, std::size_t count) {
+  std::size_t baseIndex = (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
+  for (std::size_t i = 0; i < count; ++i)
     m_lightArray.cellAtIndex(baseIndex + i) = cells[i];
 }
 

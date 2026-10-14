@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.net_compatibility;
@@ -31,17 +31,41 @@ import star.net_element_system;
 import star.vector;
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(Projectile);
+class Clock;
+using ClockPtr = std::shared_ptr<Clock>;
+using ClockConstPtr = std::shared_ptr<const Clock>;
+using ClockWeakPtr = std::weak_ptr<Clock>;
+using ClockConstWeakPtr = std::weak_ptr<const Clock>;
+using ClockUPtr = std::unique_ptr<Clock>;
+using ClockConstUPtr = std::unique_ptr<const Clock>;
+class Projectile;
+using ProjectilePtr = std::shared_ptr<Projectile>;
+using ProjectileConstPtr = std::shared_ptr<const Projectile>;
+using ProjectileWeakPtr = std::weak_ptr<Projectile>;
+using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
+using ProjectileUPtr = std::unique_ptr<Projectile>;
+using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
 
-STAR_CLASS(ServerWeather);
-STAR_CLASS(ClientWeather);
+class ServerWeather;
+using ServerWeatherPtr = std::shared_ptr<ServerWeather>;
+using ServerWeatherConstPtr = std::shared_ptr<const ServerWeather>;
+using ServerWeatherWeakPtr = std::weak_ptr<ServerWeather>;
+using ServerWeatherConstWeakPtr = std::weak_ptr<const ServerWeather>;
+using ServerWeatherUPtr = std::unique_ptr<ServerWeather>;
+using ServerWeatherConstUPtr = std::unique_ptr<const ServerWeather>;
+class ClientWeather;
+using ClientWeatherPtr = std::shared_ptr<ClientWeather>;
+using ClientWeatherConstPtr = std::shared_ptr<const ClientWeather>;
+using ClientWeatherWeakPtr = std::weak_ptr<ClientWeather>;
+using ClientWeatherConstWeakPtr = std::weak_ptr<const ClientWeather>;
+using ClientWeatherUPtr = std::unique_ptr<ClientWeather>;
+using ClientWeatherConstUPtr = std::unique_ptr<const ClientWeather>;
 
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as
 // whether or not the region is below the underground level are performed
 // separately of this, this is just to check the actual tile data.
-typedef function<bool(Vec2I)> WeatherEffectsActiveQuery;
+typedef std::function<bool(Vec2I)> WeatherEffectsActiveQuery;
 
 class ServerWeather {
 public:
@@ -54,14 +78,14 @@ public:
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  std::pair<ByteArray, std::uint64_t> writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
 
   void update(double dt);
 
   // Immediately sets the active weather index. If the index is NPos or out of
   // range, weather is cleared.  If force is true, weather will not automatically
   // change until setWeatherIndex/SetWeather is called again.
-  void setWeatherIndex(size_t weatherIndex, bool force = false);
+  void setWeatherIndex(std::size_t weatherIndex, bool force = false);
   // Immediately sets the active weather type by name. If not found, weather is
   // cleared.  Behavior of |force| is the same as above.
   void setWeather(String const& weatherName, bool force = false);
@@ -93,7 +117,7 @@ private:
 
   List<RectI> m_clientVisibleRegions;
 
-  size_t m_currentWeatherIndex;
+  std::size_t m_currentWeatherIndex;
   Maybe<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
@@ -152,7 +176,7 @@ private:
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
-  size_t m_currentWeatherIndex;
+  std::size_t m_currentWeatherIndex;
   Maybe<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;

@@ -13,7 +13,6 @@ import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
 import star.game_types;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.ordered_map;
@@ -192,9 +191,9 @@ void TeamClient::invitePlayer(String const& playerName) {
   request["inviterName"] = m_mainPlayer->name();
   invokeRemote("team.invite", request, [=, this](Json response) {
     if (!response)
-      m_pendingInviteResults.append(make_pair(playerName, true));
+      m_pendingInviteResults.append(std::make_pair(playerName, true));
     else if (response == "inviteeNotFound")
-      m_pendingInviteResults.append(make_pair(playerName, false));
+      m_pendingInviteResults.append(std::make_pair(playerName, false));
     else if (response.isType(Json::Type::Array)) {
       m_pendingInviteResults.push_back(StringList());
       StringList& invited = m_pendingInviteResults.back().get<StringList>();
@@ -251,7 +250,7 @@ std::pair<Uuid, String> TeamClient::pullInvitation() {
   return m_pendingInvitation;
 }
 
-List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
+List<Variant<std::pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
   return take(m_pendingInviteResults);
 }
 
@@ -353,7 +352,7 @@ void TeamClient::forceUpdate() {
   m_pollInvitationsTimer = 0;
 }
 
-void TeamClient::invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction) {
+void TeamClient::invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction) {
   auto promise = m_clientContext->rpcInterface()->invokeRemote(method, args);
   m_pendingResponses.append({std::move(promise), std::move(responseFunction)});
 }
@@ -395,7 +394,7 @@ void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool ful
 
   if (fullWrite) {
     request["name"] = player->name();
-    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), mem_fn(&Drawable::toJson));
+    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), std::mem_fn(&Drawable::toJson));
   }
 }
 

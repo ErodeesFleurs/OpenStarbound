@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 #include "StarCasting.hpp"
@@ -16,7 +17,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -36,7 +36,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;

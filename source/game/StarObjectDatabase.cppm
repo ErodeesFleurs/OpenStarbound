@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -53,16 +53,76 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Image);
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(RecipeDatabase);
-STAR_CLASS(Object);
-STAR_STRUCT(ObjectOrientation);
-STAR_STRUCT(ObjectConfig);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class Image;
+using ImagePtr = std::shared_ptr<Image>;
+using ImageConstPtr = std::shared_ptr<const Image>;
+using ImageWeakPtr = std::weak_ptr<Image>;
+using ImageConstWeakPtr = std::weak_ptr<const Image>;
+using ImageUPtr = std::unique_ptr<Image>;
+using ImageConstUPtr = std::unique_ptr<const Image>;
+class ItemDatabase;
+using ItemDatabasePtr = std::shared_ptr<ItemDatabase>;
+using ItemDatabaseConstPtr = std::shared_ptr<const ItemDatabase>;
+using ItemDatabaseWeakPtr = std::weak_ptr<ItemDatabase>;
+using ItemDatabaseConstWeakPtr = std::weak_ptr<const ItemDatabase>;
+using ItemDatabaseUPtr = std::unique_ptr<ItemDatabase>;
+using ItemDatabaseConstUPtr = std::unique_ptr<const ItemDatabase>;
+class RecipeDatabase;
+using RecipeDatabasePtr = std::shared_ptr<RecipeDatabase>;
+using RecipeDatabaseConstPtr = std::shared_ptr<const RecipeDatabase>;
+using RecipeDatabaseWeakPtr = std::weak_ptr<RecipeDatabase>;
+using RecipeDatabaseConstWeakPtr = std::weak_ptr<const RecipeDatabase>;
+using RecipeDatabaseUPtr = std::unique_ptr<RecipeDatabase>;
+using RecipeDatabaseConstUPtr = std::unique_ptr<const RecipeDatabase>;
+class Object;
+using ObjectPtr = std::shared_ptr<Object>;
+using ObjectConstPtr = std::shared_ptr<const Object>;
+using ObjectWeakPtr = std::weak_ptr<Object>;
+using ObjectConstWeakPtr = std::weak_ptr<const Object>;
+using ObjectUPtr = std::unique_ptr<Object>;
+using ObjectConstUPtr = std::unique_ptr<const Object>;
+struct ObjectOrientation;
+using ObjectOrientationPtr = std::shared_ptr<ObjectOrientation>;
+using ObjectOrientationConstPtr = std::shared_ptr<const ObjectOrientation>;
+using ObjectOrientationWeakPtr = std::weak_ptr<ObjectOrientation>;
+using ObjectOrientationConstWeakPtr = std::weak_ptr<const ObjectOrientation>;
+using ObjectOrientationUPtr = std::unique_ptr<ObjectOrientation>;
+using ObjectOrientationConstUPtr = std::unique_ptr<const ObjectOrientation>;
+struct ObjectConfig;
+using ObjectConfigPtr = std::shared_ptr<ObjectConfig>;
+using ObjectConfigConstPtr = std::shared_ptr<const ObjectConfig>;
+using ObjectConfigWeakPtr = std::weak_ptr<ObjectConfig>;
+using ObjectConfigConstWeakPtr = std::weak_ptr<const ObjectConfig>;
+using ObjectConfigUPtr = std::unique_ptr<ObjectConfig>;
+using ObjectConfigConstUPtr = std::unique_ptr<const ObjectConfig>;
+class ObjectDatabase;
+using ObjectDatabasePtr = std::shared_ptr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = std::shared_ptr<const ObjectDatabase>;
+using ObjectDatabaseWeakPtr = std::weak_ptr<ObjectDatabase>;
+using ObjectDatabaseConstWeakPtr = std::weak_ptr<const ObjectDatabase>;
+using ObjectDatabaseUPtr = std::unique_ptr<ObjectDatabase>;
+using ObjectDatabaseConstUPtr = std::unique_ptr<const ObjectDatabase>;
+class LuaRoot;
+using LuaRootPtr = std::shared_ptr<LuaRoot>;
+using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
+using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
+using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
+using LuaRootUPtr = std::unique_ptr<LuaRoot>;
+using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
 
 struct ObjectExceptionTag {
   static constexpr char const* name() { return "ObjectException"; }
@@ -154,7 +214,7 @@ struct ObjectOrientation {
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
   // valid, returns NPos
-  size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
+  std::size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
 
   String path;
   // The JSON values that were used to configure this Object

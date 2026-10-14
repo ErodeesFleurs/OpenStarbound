@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -66,9 +66,9 @@ public:
   void deregisterAllPanes();
 
   template <typename T = Pane>
-  shared_ptr<T> registeredPane(KeyT const& paneId) const;
+  std::shared_ptr<T> registeredPane(KeyT const& paneId) const;
   template <typename T = Pane>
-  shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
+  std::shared_ptr<T> maybeRegisteredPane(KeyT const& paneId) const;
 
   // Displays a registred pane if it is not already displayed.  Returns true
   // if it is newly displayed.
@@ -97,7 +97,7 @@ private:
 
 template <typename KeyT>
 template <typename T>
-shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
+std::shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
     return convert<T>(v->pane);
   throw GuiException(strf("No pane named '{}' found in RegisteredPaneManager", outputAny(paneId)));
@@ -105,7 +105,7 @@ shared_ptr<T> RegisteredPaneManager<KeyT>::registeredPane(KeyT const& paneId) co
 
 template <typename KeyT>
 template <typename T>
-shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
+std::shared_ptr<T> RegisteredPaneManager<KeyT>::maybeRegisteredPane(KeyT const& paneId) const {
   if (auto v = m_registeredPanes.ptr(paneId))
     return convert<T>(v->pane);
   return {};

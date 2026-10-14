@@ -1,5 +1,5 @@
 
-#include "StarConfig.hpp"
+import std;
 import star.format;
 #include "gtest/gtest.h"
 
@@ -51,8 +51,8 @@ TEST(NetElements, DataRounding) {
   auto masterUpdate1 = master.writeNetState();
   slave.readNetState(masterUpdate1.first);
 
-  EXPECT_LT(fabs(slaveField1.get() - 2.2f), 0.00001f);
-  EXPECT_LT(fabs(slaveField2.get() - 100), 0.0000001);
+  EXPECT_LT(std::fabs(slaveField1.get() - 2.2f), 0.00001f);
+  EXPECT_LT(std::fabs(slaveField2.get() - 100), 0.0000001);
 
   // Make sure that jittering a fixed point or limited value doesn't cause
   // extra deltas
@@ -73,8 +73,8 @@ TEST(NetElements, DataRounding) {
   EXPECT_FALSE(masterUpdate3.first.empty());
   slave.readNetState(masterUpdate3.first);
 
-  EXPECT_LT(fabs(slaveField1.get() - 10.0f), 0.00001f);
-  EXPECT_LT(fabs(slaveField2.get() - 50.0f), 0.0000001);
+  EXPECT_LT(std::fabs(slaveField1.get() - 10.0f), 0.00001f);
+  EXPECT_LT(std::fabs(slaveField2.get() - 50.0f), 0.0000001);
 }
 
 TEST(NetElements, DirectWriteRead) {
@@ -626,37 +626,37 @@ TEST(NetElements, Interpolation) {
   auto masterUpdate4 = master.writeNetState(masterUpdate3.second);
   slave.readNetState(masterUpdate4.first, 6.0);
 
-  EXPECT_TRUE(fabs(slaveField1.get() - 1.0) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 1.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 1.5) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 1.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 2.0) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 2.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "no");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 2.5) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 2.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "no");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 3.0) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 3.0) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), true);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 3.5) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 3.5) < 0.001);
   EXPECT_EQ(slaveField2.get(), "yes");
   EXPECT_EQ(slaveField2.pullUpdated(), false);
 
   slave.tickNetInterpolation(1.0f);
-  EXPECT_TRUE(fabs(slaveField1.get() - 4.0) < 0.001);
+  EXPECT_TRUE(std::fabs(slaveField1.get() - 4.0) < 0.001);
   EXPECT_EQ(slaveField2.pullUpdated(), true);
   EXPECT_EQ(slaveField2.get(), "no");
 }
@@ -784,15 +784,15 @@ TEST(NetElements, NetElementDynamicGroup) {
   NetElementTop<NetElementDynamicGroup<TestElement>> masterGroup;
 
   NetElementTop<NetElementDynamicGroup<TestElement>> slaveGroup;
-  uint64_t lastSlaveUpdateVersion = 0;
+  std::uint64_t lastSlaveUpdateVersion = 0;
   auto sendSlaveUpdate = [&]() {
     auto p = masterGroup.writeNetState(lastSlaveUpdateVersion);
     lastSlaveUpdateVersion = p.second;
     slaveGroup.readNetState(p.first);
   };
 
-  auto objId1 = masterGroup.addNetElement(make_shared<TestElement>(1000));
-  auto objId2 = masterGroup.addNetElement(make_shared<TestElement>(2000));
+  auto objId1 = masterGroup.addNetElement(std::make_shared<TestElement>(1000));
+  auto objId2 = masterGroup.addNetElement(std::make_shared<TestElement>(2000));
 
   EXPECT_EQ(masterGroup.netElementIds().size(), 2u);
   EXPECT_EQ(masterGroup.getNetElement(objId1)->getData(), 1000);
@@ -822,7 +822,7 @@ TEST(NetElements, NetElementDynamicGroup) {
   EXPECT_EQ(slaveGroup.getNetElement(objId1)->getData(), 1002);
   EXPECT_EQ(slaveGroup.getNetElement(objId2)->getData(), 2002);
 
-  auto objId3 = masterGroup.addNetElement(make_shared<TestElement>(3001));
+  auto objId3 = masterGroup.addNetElement(std::make_shared<TestElement>(3001));
 
   sendSlaveUpdate();
 
@@ -830,7 +830,7 @@ TEST(NetElements, NetElementDynamicGroup) {
   EXPECT_EQ(slaveGroup.getNetElement(objId3)->getData(), 3001);
 
   // Delta must be greater than MaxChangeDataSteps
-  auto objId4 = masterGroup.addNetElement(make_shared<TestElement>(4001));
+  auto objId4 = masterGroup.addNetElement(std::make_shared<TestElement>(4001));
   masterGroup.getNetElement(objId3)->setData(3002);
   masterGroup.getNetElement(objId4)->setData(4002);
 
@@ -843,7 +843,7 @@ TEST(NetElements, NetElementDynamicGroup) {
   EXPECT_EQ(slaveGroup.getNetElement(objId4)->getData(), 4002);
 
   NetElementTop<NetElementDynamicGroup<TestElement>> forwardedSlaveGroup;
-  uint64_t lastForwardedSlaveUpdateVersion = 0;
+  std::uint64_t lastForwardedSlaveUpdateVersion = 0;
   auto sendForwardedSlaveUpdate = [&]() {
     auto p = slaveGroup.writeNetState(lastForwardedSlaveUpdateVersion);
     lastForwardedSlaveUpdateVersion = p.second;
@@ -866,7 +866,7 @@ TEST(NetElements, NetElementDynamicGroup) {
   sendSlaveUpdate();
   sendForwardedSlaveUpdate();
 
-  auto obj5 = masterGroup.addNetElement(make_shared<TestElement>(5001));
+  auto obj5 = masterGroup.addNetElement(std::make_shared<TestElement>(5001));
   masterGroup.removeNetElement(obj5);
 
   sendSlaveUpdate();
@@ -885,7 +885,7 @@ TEST(NetElements, NetElementMap) {
   NetElementTop<NetElementMap<String, String>> masterMap;
   NetElementTop<NetElementMap<String, String>> slaveMap;
 
-  uint64_t lastUpdateVersion = 0;
+  std::uint64_t lastUpdateVersion = 0;
 
   auto sendUpdate = [&]() {
     DataStreamBuffer ds;
@@ -942,7 +942,7 @@ TEST(NetElements, NetElementMapInterpolated) {
   TestMap masterMap;
 
   TestMap forwarderMap;
-  uint64_t lastForwarderUpdateVersion = 0;
+  std::uint64_t lastForwarderUpdateVersion = 0;
   auto sendForwarderUpdate = [&]() {
     auto p = masterMap.writeNetState(lastForwarderUpdateVersion);
     lastForwarderUpdateVersion = p.second;
@@ -951,7 +951,7 @@ TEST(NetElements, NetElementMapInterpolated) {
   };
 
   TestMap slaveMap;
-  uint64_t lastSlaveUpdateVersion = 0;
+  std::uint64_t lastSlaveUpdateVersion = 0;
   auto sendSlaveUpdate = [&](float interpolationTime) {
     auto p = forwarderMap.writeNetState(lastSlaveUpdateVersion);
     lastSlaveUpdateVersion = p.second;

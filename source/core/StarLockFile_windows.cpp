@@ -1,7 +1,5 @@
-#define NOMINMAX
 #include <windows.h>
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.maybe;
 import star.string;
@@ -14,9 +12,9 @@ import star.string_windows;
 
 namespace Star {
 
-int64_t const LockFile::MaximumSleepMillis;
+std::int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
+Maybe<LockFile> LockFile::acquireLock(String const& filename, std::int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return std::move(lock);
@@ -40,8 +38,8 @@ LockFile& LockFile::operator=(LockFile&& lockFile) {
   return *this;
 }
 
-bool LockFile::lock(int64_t timeout) {
-  auto doFLock = [](String const& filename) -> shared_ptr<HANDLE> {
+bool LockFile::lock(std::int64_t timeout) {
+  auto doFLock = [](String const& filename) -> std::shared_ptr<HANDLE> {
     HANDLE handle = CreateFileW(
         stringToUtf16(filename).get(), GENERIC_READ, 0, nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     if (handle == INVALID_HANDLE_VALUE) {
@@ -50,14 +48,14 @@ bool LockFile::lock(int64_t timeout) {
       throw StarException(strf("Could not open lock file {}, error code {}\n", filename, GetLastError()));
     }
 
-    return make_shared<HANDLE>(handle);
+    return std::make_shared<HANDLE>(handle);
   };
 
   if (timeout == 0) {
     m_handle = doFLock(m_filename);
     return (bool)m_handle;
   } else {
-    int64_t startTime = Time::monotonicMilliseconds();
+    std::int64_t startTime = Time::monotonicMilliseconds();
     while (true) {
       m_handle = doFLock(m_filename);
       if (m_handle)
@@ -66,7 +64,7 @@ bool LockFile::lock(int64_t timeout) {
       if (timeout > 0 && Time::monotonicMilliseconds() - startTime > timeout)
         return false;
 
-      Thread::sleep(min(timeout / 4, MaximumSleepMillis));
+      Thread::sleep(std::min(timeout / 4, MaximumSleepMillis));
     }
   }
 }

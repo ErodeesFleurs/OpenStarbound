@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -40,7 +40,13 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(ConfirmationDialog);
+class ConfirmationDialog;
+using ConfirmationDialogPtr = std::shared_ptr<ConfirmationDialog>;
+using ConfirmationDialogConstPtr = std::shared_ptr<ConfirmationDialog const>;
+using ConfirmationDialogWeakPtr = std::weak_ptr<ConfirmationDialog>;
+using ConfirmationDialogConstWeakPtr = std::weak_ptr<ConfirmationDialog const>;
+using ConfirmationDialogUPtr = std::unique_ptr<ConfirmationDialog>;
+using ConfirmationDialogConstUPtr = std::unique_ptr<ConfirmationDialog const>;
 
 class ConfirmationDialog : public Pane {
 public:

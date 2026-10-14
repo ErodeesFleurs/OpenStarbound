@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.io_device;
 import star.string;
@@ -42,7 +42,7 @@ TcpSocketPtr TcpSocket::accept() {
     throw NetworkException(strf("Cannot accept connection: {}", netErrorString()));
   }
 
-  auto socketImpl = make_shared<SocketImpl>();
+  auto socketImpl = std::make_shared<SocketImpl>();
   socketImpl->socketDesc = socketDesc;
 
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
@@ -68,7 +68,7 @@ void TcpSocket::setNoDelay(bool noDelay) {
   m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 }
 
-size_t TcpSocket::receive(char* data, size_t size) {
+std::size_t TcpSocket::receive(char* data, std::size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::receive");
 
@@ -98,7 +98,7 @@ size_t TcpSocket::receive(char* data, size_t size) {
   return r;
 }
 
-size_t TcpSocket::send(char const* data, size_t size) {
+std::size_t TcpSocket::send(char const* data, std::size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::send");
 
@@ -172,7 +172,7 @@ TcpServer::TcpServer(HostAddressWithPort const& address) : m_hostAddress(address
   Logger::debug("TcpServer listening on: {}", address);
 }
 
-TcpServer::TcpServer(uint16_t port) : TcpServer(HostAddressWithPort("*", port)) {}
+TcpServer::TcpServer(std::uint16_t port) : TcpServer(HostAddressWithPort("*", port)) {}
 
 TcpServer::~TcpServer() {
   stop();

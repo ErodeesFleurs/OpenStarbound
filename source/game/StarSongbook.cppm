@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -15,11 +15,41 @@ import star.net_element_sync_group;
 
 namespace Star {
 
-STAR_CLASS(Audio);
-STAR_CLASS(AudioInstance);
-STAR_CLASS(World);
-STAR_CLASS(Songbook);
-STAR_CLASS(RenderCallback);
+class Audio;
+using AudioPtr = std::shared_ptr<Audio>;
+using AudioConstPtr = std::shared_ptr<const Audio>;
+using AudioWeakPtr = std::weak_ptr<Audio>;
+using AudioConstWeakPtr = std::weak_ptr<const Audio>;
+using AudioUPtr = std::unique_ptr<Audio>;
+using AudioConstUPtr = std::unique_ptr<const Audio>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class Songbook;
+using SongbookPtr = std::shared_ptr<Songbook>;
+using SongbookConstPtr = std::shared_ptr<const Songbook>;
+using SongbookWeakPtr = std::weak_ptr<Songbook>;
+using SongbookConstWeakPtr = std::weak_ptr<const Songbook>;
+using SongbookUPtr = std::unique_ptr<Songbook>;
+using SongbookConstUPtr = std::unique_ptr<const Songbook>;
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
 
 class Songbook : public NetElementSyncGroup {
 public:
@@ -67,8 +97,8 @@ private:
   };
 
   struct TimeSource {
-    int64_t keepalive;
-    int64_t epoch;
+    std::int64_t keepalive;
+    std::int64_t epoch;
   };
 
   static double fundamentalFrequency(double p);
@@ -77,7 +107,7 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  static StringMap<shared_ptr<TimeSource>> s_timeSources;
+  static StringMap<std::shared_ptr<TimeSource>> s_timeSources;
   static Mutex s_timeSourcesMutex;
 
   String m_species;
@@ -85,13 +115,13 @@ private:
 
   bool m_serverMode;
 
-  int64_t m_globalNowDelta;
+  std::int64_t m_globalNowDelta;
   int m_activeCooldown;
   bool m_dataUpdated;
   bool m_dataChanged;
 
   String m_timeSource;
-  int64_t m_timeSourceEpoch;
+  std::int64_t m_timeSourceEpoch;
   bool m_epochUpdated;
   String m_instrument;
   Json m_song;
@@ -100,7 +130,7 @@ private:
   Deque<Note> m_track;
 
   List<HeldNote> m_heldNotes;
-  shared_ptr<TimeSource> m_timeSourceInstance;
+  std::shared_ptr<TimeSource> m_timeSourceInstance;
 
   List<AudioInstancePtr> m_pendingAudio;
 

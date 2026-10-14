@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -33,7 +35,6 @@ import star.map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.either;
@@ -43,7 +44,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -256,7 +256,7 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   mainQuestList->disableScissoring();
   sideQuestList->disableScissoring();
 
-  m_rewardItems = make_shared<ItemBag>(5);
+  m_rewardItems = std::make_shared<ItemBag>(5);
   fetchChild<ItemGridWidget>("rewardItems")->setItemBag(m_rewardItems);
 
   m_refreshRate = 30;
@@ -268,15 +268,15 @@ void QuestLogInterface::pollDialog(PaneManager* paneManager) {
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player);
+    auto qfi = std::make_shared<QuestFailedInterface>(failableQuest.value(), m_player);
     (*failableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic);
+    auto qci = std::make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic);
     (*completableQuest)->setDialogShown();
     paneManager->displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player);
+    auto nqd = std::make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player);
     paneManager->displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
@@ -505,7 +505,7 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
   }
 
   if (auto rewardItemsWidget = fetchChild<ItemGridWidget>("rewardItems")) {
-    auto rewardItems = make_shared<ItemBag>(5);
+    auto rewardItems = std::make_shared<ItemBag>(5);
     for (auto const& reward : m_quest->rewards())
       rewardItems->addItems(reward->clone());
     rewardItemsWidget->setItemBag(rewardItems);

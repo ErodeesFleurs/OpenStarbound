@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
@@ -16,9 +16,9 @@ public:
   CompressionStream();
   ~CompressionStream();
 
-  void compress(const char* in, size_t inLen, ByteArray& out);
+  void compress(const char* in, std::size_t inLen, ByteArray& out);
   void compress(ByteArray const& in, ByteArray& out);
-  ByteArray compress(const char* in, size_t inLen);
+  ByteArray compress(const char* in, std::size_t inLen);
   ByteArray compress(ByteArray const& in);
 
 private:
@@ -30,9 +30,9 @@ public:
   DecompressionStream();
   ~DecompressionStream();
 
-  void decompress(const char* in, size_t inLen, ByteArray& out);
+  void decompress(const char* in, std::size_t inLen, ByteArray& out);
   void decompress(ByteArray const& in, ByteArray& out);
-  ByteArray decompress(const char* in, size_t inLen);
+  ByteArray decompress(const char* in, std::size_t inLen);
   ByteArray decompress(ByteArray const& in);
 
 private:
@@ -41,14 +41,14 @@ private:
 
 class ZstdCompression {
 public:
-  static void compress(const char* in, size_t inLen, ByteArray& out, int compressionLevel = 0);
+  static void compress(const char* in, std::size_t inLen, ByteArray& out, int compressionLevel = 0);
   static void compress(ByteArray const& in, ByteArray& out, int compressionLevel = 0);
-  static ByteArray compress(const char* in, size_t inLen, int compressionLevel = 0);
+  static ByteArray compress(const char* in, std::size_t inLen, int compressionLevel = 0);
   static ByteArray compress(ByteArray const& in, int compressionLevel = 0);
 
-  static void decompress(const char* in, size_t inLen, ByteArray& out);
+  static void decompress(const char* in, std::size_t inLen, ByteArray& out);
   static void decompress(ByteArray const& in, ByteArray& out);
-  static ByteArray decompress(const char* in, size_t inLen);
+  static ByteArray decompress(const char* in, std::size_t inLen);
   static ByteArray decompress(ByteArray const& in);
 };
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarDataStreamExtra.hpp"
 import star.id_map;
@@ -42,7 +42,13 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
-STAR_CLASS(Monster);
+class Monster;
+using MonsterPtr = std::shared_ptr<Monster>;
+using MonsterConstPtr = std::shared_ptr<const Monster>;
+using MonsterWeakPtr = std::weak_ptr<Monster>;
+using MonsterConstWeakPtr = std::weak_ptr<const Monster>;
+using MonsterUPtr = std::unique_ptr<Monster>;
+using MonsterConstUPtr = std::unique_ptr<const Monster>;
 }
 
 import star.damage_types;
@@ -94,8 +100,20 @@ import star.effect_emitter;
 
 namespace Star {
 
-STAR_CLASS(StatusController);
-STAR_CLASS(BehaviorState);
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
+class BehaviorState;
+using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
+using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
+using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
+using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
+using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
+using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
 
 class Monster
   : public virtual DamageBarEntity,
@@ -134,7 +152,7 @@ public:
 
   RectF collisionArea() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
@@ -162,7 +180,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 

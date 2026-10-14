@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -15,9 +15,15 @@ struct CollectionDatabaseExceptionTag {
 };
 using CollectionDatabaseException = StarError<CollectionDatabaseExceptionTag, StarException>;
 
-STAR_CLASS(CollectionDatabase);
+class CollectionDatabase;
+using CollectionDatabasePtr = std::shared_ptr<CollectionDatabase>;
+using CollectionDatabaseConstPtr = std::shared_ptr<const CollectionDatabase>;
+using CollectionDatabaseWeakPtr = std::weak_ptr<CollectionDatabase>;
+using CollectionDatabaseConstWeakPtr = std::weak_ptr<const CollectionDatabase>;
+using CollectionDatabaseUPtr = std::unique_ptr<CollectionDatabase>;
+using CollectionDatabaseConstUPtr = std::unique_ptr<const CollectionDatabase>;
 
-enum class CollectionType : uint16_t {
+enum class CollectionType : std::uint16_t {
   Generic,
   Item,
   Monster

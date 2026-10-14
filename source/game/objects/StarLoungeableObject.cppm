@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -76,11 +76,11 @@ public:
 
   InteractAction interact(InteractRequest const& request) override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
+  std::size_t anchorCount() const override;
+  LoungeAnchorConstPtr loungeAnchor(std::size_t positionIndex) const override;
 
 protected:
-  void setOrientationIndex(size_t orientationIndex) override;
+  void setOrientationIndex(std::size_t orientationIndex) override;
 
 private:
   List<Vec2F> m_sitPositions;

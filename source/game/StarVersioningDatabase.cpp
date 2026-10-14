@@ -29,7 +29,7 @@ import star.parametric_function;
 import star.multi_array_interpolator;
 import star.multi_table;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.lua;
 import star.version;
@@ -61,7 +61,7 @@ import star.byte_array;
 namespace Star {
 
 char const* const VersionedJson::Magic = "SBVJ01";
-size_t const VersionedJson::MagicStringSize = 6;
+std::size_t const VersionedJson::MagicStringSize = 6;
 
 VersionNumber const VersionedJson::SubVersioning = 1;
 

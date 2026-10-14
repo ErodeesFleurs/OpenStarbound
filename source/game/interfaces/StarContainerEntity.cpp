@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -28,7 +28,7 @@ import star.item_bag;
 
 namespace Star {
 
-size_t ContainerEntity::containerSize() const {
+std::size_t ContainerEntity::containerSize() const {
   return itemBag()->size();
 }
 

@@ -3,7 +3,7 @@ module;
 import star.json;
 import star.data_stream;
 import star.thread;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -14,8 +14,20 @@ import star.version;
 
 namespace Star {
 
-STAR_STRUCT(VersionedJson);
-STAR_CLASS(VersioningDatabase);
+struct VersionedJson;
+using VersionedJsonPtr = std::shared_ptr<VersionedJson>;
+using VersionedJsonConstPtr = std::shared_ptr<const VersionedJson>;
+using VersionedJsonWeakPtr = std::weak_ptr<VersionedJson>;
+using VersionedJsonConstWeakPtr = std::weak_ptr<const VersionedJson>;
+using VersionedJsonUPtr = std::unique_ptr<VersionedJson>;
+using VersionedJsonConstUPtr = std::unique_ptr<const VersionedJson>;
+class VersioningDatabase;
+using VersioningDatabasePtr = std::shared_ptr<VersioningDatabase>;
+using VersioningDatabaseConstPtr = std::shared_ptr<const VersioningDatabase>;
+using VersioningDatabaseWeakPtr = std::weak_ptr<VersioningDatabase>;
+using VersioningDatabaseConstWeakPtr = std::weak_ptr<const VersioningDatabase>;
+using VersioningDatabaseUPtr = std::unique_ptr<VersioningDatabase>;
+using VersioningDatabaseConstUPtr = std::unique_ptr<const VersioningDatabase>;
 
 struct VersionedJsonExceptionTag {
   static constexpr char const* name() { return "VersionedJsonException"; }
@@ -28,7 +40,7 @@ using VersioningDatabaseException = StarError<VersioningDatabaseExceptionTag, St
 
 struct VersionedJson {
   static char const* const Magic;
-  static size_t const MagicStringSize;
+  static std::size_t const MagicStringSize;
   static VersionNumber const SubVersioning;
 
   // Writes and reads a binary file containing a versioned json with a magic

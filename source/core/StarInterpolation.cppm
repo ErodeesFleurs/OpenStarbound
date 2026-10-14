@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 
@@ -29,7 +28,7 @@ T2 angleLerp(T1 const& offset, T2 const& f0, T2 const& f1) {
 
 template <typename T1, typename T2>
 T2 sinEase(T1 const& offset, T2 const& f0, T2 const& f1) {
-  T1 w = (sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
+  T1 w = (std::sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
   return f0 * (1 - w) + f1 * w;
 }
 
@@ -40,7 +39,7 @@ T2 lerp(T1 const& offset, T2 const& f0, T2 const& f1) {
 
 template <typename T1, typename T2>
 T2 lerpWithLimit(Maybe<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) {
-  if (limit && abs(f1 - f0) > *limit)
+  if (limit && std::abs(f1 - f0) > *limit)
     return f1;
   return lerp(offset, f0, f1);
 }
@@ -120,7 +119,7 @@ struct SinWeightOperator {
   typedef Array<Weight, 2> WeightVec;
 
   WeightVec operator()(Weight x) const {
-    Weight w = (sin(x * Constants::pi - Constants::pi / 2) + 1) / 2;
+    Weight w = (std::sin(x * Constants::pi - Constants::pi / 2) + 1) / 2;
     return {1 - w, w};
   }
 };
@@ -424,8 +423,12 @@ typename YContainer::value_type parametricInterpolate2(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(xvals.size() != 0);
-  starAssert(xvals.size() == yvals.size());
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((xvals.size() != 0));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((xvals.size() == yvals.size()));
+  }
 
   if (yvals.size() == 1)
     return yvals[0];
@@ -441,8 +444,12 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(xvals.size() != 0);
-  starAssert(xvals.size() == yvals.size());
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((xvals.size() != 0));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((xvals.size() == yvals.size()));
+  }
 
   if (yvals.size() == 1)
     return yvals[0];

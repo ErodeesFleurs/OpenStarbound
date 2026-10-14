@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -51,7 +51,13 @@ import star.gui_reader;
 
 namespace Star {
 
-STAR_CLASS(ListWidget);
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
 
 class ListWidget : public Widget {
 public:
@@ -67,27 +73,27 @@ public:
   void setSchema(Json const& schema);
   WidgetPtr constructWidget();
   WidgetPtr addItem();
-  WidgetPtr addItem(size_t at);
+  WidgetPtr addItem(std::size_t at);
   WidgetPtr addItem(WidgetPtr existingItem);
-  void removeItem(size_t at);
+  void removeItem(std::size_t at);
   void removeItem(WidgetPtr item);
   void clear();
-  size_t selectedItem() const;
-  size_t itemPosition(WidgetPtr item) const;
-  WidgetPtr itemAt(size_t n) const;
+  std::size_t selectedItem() const;
+  std::size_t itemPosition(WidgetPtr item) const;
+  WidgetPtr itemAt(std::size_t n) const;
   WidgetPtr selectedWidget() const;
   List<WidgetPtr> const& list() const;
-  size_t listSize() const;
-  void setEnabled(size_t pos, bool enabled);
-  void setHovered(size_t pos, bool hovered);
-  void setSelected(size_t pos);
+  std::size_t listSize() const;
+  void setEnabled(std::size_t pos, bool enabled);
+  void setHovered(std::size_t pos, bool hovered);
+  void setSelected(std::size_t pos);
   void clearSelected();
   void setSelectedWidget(WidgetPtr selected);
 
   void registerMemberCallback(String const& name, WidgetCallbackFunc const& callback);
 
   void setFillDown(bool fillDown);
-  void setColumns(uint64_t columns);
+  void setColumns(std::uint64_t columns);
 
 private:
   void updateSizeAndPosition();
@@ -95,8 +101,8 @@ private:
   Json m_schema;
   GuiReader m_reader;
 
-  Set<size_t> m_disabledItems;
-  size_t m_selectedItem;
+  Set<std::size_t> m_disabledItems;
+  std::size_t m_selectedItem;
   WidgetCallbackFunc m_callback;
 
   String m_selectedBG;
@@ -106,7 +112,7 @@ private:
   Vec2I m_spacing;
 
   bool m_fillDown;
-  uint64_t m_columns;
+  std::uint64_t m_columns;
 };
 
 }

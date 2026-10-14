@@ -15,7 +15,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -70,8 +70,8 @@ TechConfig TechDatabase::parseTech(Json const& config, String const& path) const
 
     tech.type = TechTypeNames.getLeft(config.getString("type"));
 
-    tech.scripts = jsonToStringList(config.get("scripts")).transformed(bind(AssetPath::relativeTo, path, _1));
-    tech.animationConfig = config.optString("animator").apply(bind(&AssetPath::relativeTo, path, _1));
+    tech.scripts = jsonToStringList(config.get("scripts")).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
+    tech.animationConfig = config.optString("animator").apply(std::bind(&AssetPath::relativeTo, path, std::placeholders::_1));
 
     tech.description = config.getString("description");
     tech.shortDescription = config.getString("shortDescription");

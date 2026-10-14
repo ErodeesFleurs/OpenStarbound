@@ -35,7 +35,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.ordered_set;
 import star.either;
@@ -130,9 +130,9 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& pos
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
+  ItemDropPtr itemDrop = std::make_shared<ItemDrop>(item);
   auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
-  offset[1] = fabs(offset[1]);
+  offset[1] = std::fabs(offset[1]);
   itemDrop->setPosition(position + offset / TilePixels);
   itemDrop->setVelocity(offset * idconfig.getFloat("randomizedSpeed"));
   itemDrop->setEternal(eternal);
@@ -157,7 +157,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
+  ItemDropPtr itemDrop = std::make_shared<ItemDrop>(item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
     itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
@@ -264,7 +264,7 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
 
       m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
       m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&ItemDrop::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&ItemDrop::configValue, this, std::placeholders::_1, std::placeholders::_2)));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
       m_scriptComponent.init(world);
@@ -302,7 +302,7 @@ String ItemDrop::description() const {
   return m_item->description();
 }
 
-pair<ByteArray, uint64_t> ItemDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> ItemDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -336,7 +336,7 @@ RectF ItemDrop::collisionArea() const {
   return m_boundBox;
 }
 
-void ItemDrop::update(float dt, uint64_t) {
+void ItemDrop::update(float dt, std::uint64_t) {
   m_dropAge.update(world()->epochTime());
 
   if (isMaster()) {
@@ -355,7 +355,7 @@ void ItemDrop::update(float dt, uint64_t) {
                   && closeDrop->isMaster()) {
                 if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
                   m_item->stackWith(closeDrop->take());
-                  m_dropAge.setElapsedTime(min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
+                  m_dropAge.setElapsedTime(std::min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
 
                   // Average the position and velocity of the drop we merged
                   // with
@@ -456,7 +456,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
 
     beamColor.setAlphaF(0.8f);
     Line2F line = { Vec2F(), Vec2F(0.0f, 1.0f + m_boundBox.height() / 2) };
-    float width = min(2.0f, m_boundBox.width() * TilePixels);
+    float width = std::min(2.0f, m_boundBox.width() * TilePixels);
     auto drawable = Drawable::makeLine(line, width, beamColor, position());
     (drawable.linePart().endColor = beamColor)->setAlphaF(0.0f);
     drawable.fullbright = true;
@@ -634,7 +634,7 @@ void ItemDrop::updateTaken(bool master) {
     }
     Vec2F diff = world()->geometry().diff(targetPosition, position);
     float magnitude = diff.magnitude();
-    Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
+    Vec2F velocity = diff.normalized() * m_velocity * std::min(1.0f, magnitude);
     if (auto playerEntity = as<Player>(owningEntity))
       velocity += playerEntity->velocity();
     m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);

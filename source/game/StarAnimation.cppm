@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -17,7 +17,13 @@ import star.vector;
 namespace Star {
 
 struct Drawable;
-STAR_CLASS(Animation);
+class Animation;
+using AnimationPtr = std::shared_ptr<Animation>;
+using AnimationConstPtr = std::shared_ptr<const Animation>;
+using AnimationWeakPtr = std::weak_ptr<Animation>;
+using AnimationConstWeakPtr = std::weak_ptr<const Animation>;
+using AnimationUPtr = std::unique_ptr<Animation>;
+using AnimationConstUPtr = std::unique_ptr<const Animation>;
 
 class Animation {
 public:

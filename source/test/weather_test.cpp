@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.maybe;
 import star.random;

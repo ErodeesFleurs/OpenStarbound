@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -47,7 +47,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(ImageStretchWidget);
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = std::shared_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstPtr = std::shared_ptr<ImageStretchWidget const>;
+using ImageStretchWidgetWeakPtr = std::weak_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstWeakPtr = std::weak_ptr<ImageStretchWidget const>;
+using ImageStretchWidgetUPtr = std::unique_ptr<ImageStretchWidget>;
+using ImageStretchWidgetConstUPtr = std::unique_ptr<ImageStretchWidget const>;
 
 class ImageStretchWidget : public Widget {
 public:

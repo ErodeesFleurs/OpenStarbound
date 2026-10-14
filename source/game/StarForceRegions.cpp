@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.data_stream;
 import star.json;
@@ -35,7 +35,7 @@ bool PhysicsCategoryFilter::check(StringSet const& otherCategories) const {
 }
 
 bool PhysicsCategoryFilter::operator==(PhysicsCategoryFilter const& rhs) const {
-  return tie(type, categories) == tie(rhs.type, rhs.categories);
+  return std::tie(type, categories) == std::tie(rhs.type, rhs.categories);
 }
 
 DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
@@ -84,8 +84,8 @@ void DirectionalForceRegion::translate(Vec2F const& pos) {
 }
 
 bool DirectionalForceRegion::operator==(DirectionalForceRegion const& rhs) const {
-  return tie(region, xTargetVelocity, yTargetVelocity, controlForce, categoryFilter)
-      == tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
+  return std::tie(region, xTargetVelocity, yTargetVelocity, controlForce, categoryFilter)
+      == std::tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
 DataStream& operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
@@ -126,8 +126,8 @@ void RadialForceRegion::translate(Vec2F const& pos) {
 }
 
 bool RadialForceRegion::operator==(RadialForceRegion const& rhs) const {
-  return tie(center, outerRadius, innerRadius, targetRadialVelocity, controlForce, categoryFilter)
-      == tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
+  return std::tie(center, outerRadius, innerRadius, targetRadialVelocity, controlForce, categoryFilter)
+      == std::tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
 DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr) {
@@ -173,8 +173,8 @@ void GradientForceRegion::translate(Vec2F const& pos) {
 }
 
 bool GradientForceRegion::operator==(GradientForceRegion const& rhs) const {
-  return tie(region, gradient, baseTargetVelocity, baseControlForce, categoryFilter)
-      == tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
+  return std::tie(region, gradient, baseTargetVelocity, baseControlForce, categoryFilter)
+      == std::tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
 }
 
 DataStream& operator>>(DataStream& ds, GradientForceRegion& gfr) {

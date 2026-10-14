@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.json;
 import star.vector;
@@ -36,9 +36,21 @@ import star.system_world;
 
 namespace Star {
 
-STAR_CLASS(SystemWorldServer);
+class SystemWorldServer;
+using SystemWorldServerPtr = std::shared_ptr<SystemWorldServer>;
+using SystemWorldServerConstPtr = std::shared_ptr<const SystemWorldServer>;
+using SystemWorldServerWeakPtr = std::weak_ptr<SystemWorldServer>;
+using SystemWorldServerConstWeakPtr = std::weak_ptr<const SystemWorldServer>;
+using SystemWorldServerUPtr = std::unique_ptr<SystemWorldServer>;
+using SystemWorldServerConstUPtr = std::unique_ptr<const SystemWorldServer>;
 
-STAR_STRUCT(Packet);
+struct Packet;
+using PacketPtr = std::shared_ptr<Packet>;
+using PacketConstPtr = std::shared_ptr<const Packet>;
+using PacketWeakPtr = std::weak_ptr<Packet>;
+using PacketConstWeakPtr = std::weak_ptr<const Packet>;
+using PacketUPtr = std::unique_ptr<Packet>;
+using PacketConstUPtr = std::unique_ptr<const Packet>;
 
 class SystemWorldServer : public SystemWorld {
 public:
@@ -53,7 +65,7 @@ public:
   // planet coordinates while orbiting a planet
   SystemClientShipPtr clientShip(ConnectionId clientId) const;
   SystemLocation clientShipLocation(ConnectionId clientId) const;
-  Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
+  Maybe<std::pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
   SkyParameters clientSkyParameters(ConnectionId clientId) const;
 
   List<ConnectionId> clients() const;
@@ -83,8 +95,8 @@ public:
 
 private:
   struct ClientNetVersions {
-    HashMap<Uuid, uint64_t> ships;
-    HashMap<Uuid, uint64_t> objects;
+    HashMap<Uuid, std::uint64_t> ships;
+    HashMap<Uuid, std::uint64_t> objects;
   };
 
   void queueUpdatePackets();

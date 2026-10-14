@@ -1,6 +1,5 @@
 #pragma once
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 
 namespace Star {
@@ -21,12 +20,12 @@ bool is(Type2 const* p) {
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2> const& p) {
+bool is(std::shared_ptr<Type2> const& p) {
   return (bool)dynamic_cast<Type1*>(p.get());
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2 const> const& p) {
+bool is(std::shared_ptr<Type2 const> const& p) {
   return (bool)dynamic_cast<Type1 const*>(p.get());
 }
 
@@ -51,13 +50,13 @@ Type1 const* as(Type2 const* p) {
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1> as(shared_ptr<Type2> const& p) {
-  return dynamic_pointer_cast<Type1>(p);
+std::shared_ptr<Type1> as(std::shared_ptr<Type2> const& p) {
+  return std::dynamic_pointer_cast<Type1>(p);
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
-  return dynamic_pointer_cast<Type1 const>(p);
+std::shared_ptr<Type1 const> as(std::shared_ptr<Type2 const> const& p) {
+  return std::dynamic_pointer_cast<Type1 const>(p);
 }
 
 template <typename Type, typename Ptr>
@@ -81,13 +80,13 @@ Type1 const& rconvert(Type2 const& r) {
 }
 
 template <typename Type>
-weak_ptr<Type> asWeak(shared_ptr<Type> const& p) {
-  return weak_ptr<Type>(p);
+std::weak_ptr<Type> asWeak(std::shared_ptr<Type> const& p) {
+  return std::weak_ptr<Type>(p);
 }
 
 template <typename Type>
-weak_ptr<Type const> asWeak(shared_ptr<Type const> const& p) {
-  return weak_ptr<Type>(p);
+std::weak_ptr<Type const> asWeak(std::shared_ptr<Type const> const& p) {
+  return std::weak_ptr<Type>(p);
 }
 
 }

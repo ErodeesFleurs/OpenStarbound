@@ -21,7 +21,6 @@ import star.directives;
 import star.asset_path;
 #include "StarStrongTypedef.hpp"
 import star.id_map;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 #include "StarCasting.hpp"
@@ -199,7 +198,7 @@ SystemClientShipPtr SystemWorldClient::getShip(Uuid const & uuid) const
 
 Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Maybe<Uuid> const& uuid, JsonObject overrides) {
   Uuid objectUuid = uuid.value(Uuid());
-  m_outgoingPackets.append(make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
+  m_outgoingPackets.append(std::make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }
 
@@ -244,7 +243,7 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
       auto ship = netLoadShip(netStore);
       m_clientShips.set(ship->uuid(), ship);
     }
-    m_ship = make_shared<SystemClientShip>(this, startPacket->clientShip.first, startPacket->clientShip.second);
+    m_ship = std::make_shared<SystemClientShip>(this, startPacket->clientShip.first, startPacket->clientShip.second);
 
     m_universeMap->addMappedCoordinate(CelestialCoordinate(m_location));
     m_universeMap->filterMappedObjects(CelestialCoordinate(m_location), m_objects.keys());
@@ -271,7 +270,7 @@ SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
   Vec2F position = ds.read<Vec2F>();
 
   JsonObject parameters = ds.read<JsonObject>();
-  return make_shared<SystemObject>(objectConfig, uuid, position, parameters);
+  return std::make_shared<SystemObject>(objectConfig, uuid, position, parameters);
 }
 
 SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
@@ -279,7 +278,7 @@ SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
   SystemLocation location = ds.read<SystemLocation>();
-  return make_shared<SystemClientShip>(this, uuid, location);
+  return std::make_shared<SystemClientShip>(this, uuid, location);
 }
 
 }

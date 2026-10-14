@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string_view;
 import star.unicode;
 import star.string;
@@ -44,8 +43,8 @@ namespace Text {
   String stripEscapeCodes(String const& s);
   inline bool isEscapeCode(Utf32Type c) { return c == CmdEsc || c == StartEsc; }
 
-  typedef function<bool(StringView text)> TextCallback;
-  typedef function<bool(StringView commands)> CommandsCallback;
+  typedef std::function<bool(StringView text)> TextCallback;
+  typedef std::function<bool(StringView commands)> CommandsCallback;
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
 }
 

@@ -18,7 +18,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.version;
@@ -40,7 +40,7 @@ namespace Star {
 
 ItemDescriptor::ItemDescriptor() : m_count(0), m_parameters(JsonObject()) {}
 
-ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters)
+ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters)
   : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {
   if (m_parameters.isNull())
     m_parameters = JsonObject();
@@ -83,7 +83,7 @@ String const& ItemDescriptor::name() const {
   return m_name;
 }
 
-uint64_t ItemDescriptor::count() const {
+std::uint64_t ItemDescriptor::count() const {
   return m_count;
 }
 
@@ -95,11 +95,11 @@ ItemDescriptor ItemDescriptor::singular() const {
   return ItemDescriptor(name(), 1, parameters(), m_parametersHash);
 }
 
-ItemDescriptor ItemDescriptor::withCount(uint64_t count) const {
+ItemDescriptor ItemDescriptor::withCount(std::uint64_t count) const {
   return ItemDescriptor(name(), count, parameters(), m_parametersHash);
 }
 
-ItemDescriptor ItemDescriptor::multiply(uint64_t count) const {
+ItemDescriptor ItemDescriptor::multiply(std::uint64_t count) const {
   return ItemDescriptor(name(), this->count() * count, parameters(), m_parametersHash);
 }
 
@@ -154,10 +154,10 @@ Json ItemDescriptor::toJson() const {
   }
 }
 
-ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash)
+ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters, Maybe<std::size_t> parametersHash)
   : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
 
-size_t ItemDescriptor::parametersHash() const {
+std::size_t ItemDescriptor::parametersHash() const {
   if (!m_parametersHash)
     m_parametersHash = hash<Json>()(m_parameters);
   return *m_parametersHash;
@@ -186,7 +186,7 @@ std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
   return os;
 }
 
-size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {
+std::size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {
   return hashOf(v.m_name, v.m_count, v.m_parametersHash);
 }
 

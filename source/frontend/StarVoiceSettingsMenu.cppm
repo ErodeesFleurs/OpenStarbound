@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -45,7 +45,13 @@ import star.base_script_pane;
 
 namespace Star {
 
-STAR_CLASS(VoiceSettingsMenu);
+class VoiceSettingsMenu;
+using VoiceSettingsMenuPtr = std::shared_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstPtr = std::shared_ptr<VoiceSettingsMenu const>;
+using VoiceSettingsMenuWeakPtr = std::weak_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstWeakPtr = std::weak_ptr<VoiceSettingsMenu const>;
+using VoiceSettingsMenuUPtr = std::unique_ptr<VoiceSettingsMenu>;
+using VoiceSettingsMenuConstUPtr = std::unique_ptr<VoiceSettingsMenu const>;
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:

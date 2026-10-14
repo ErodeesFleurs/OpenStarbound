@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.format;
 import star.json;
@@ -65,11 +65,41 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
-STAR_CLASS(RandomSource);
-STAR_CLASS(Monster);
-STAR_CLASS(MonsterDatabase);
+class LuaRoot;
+using LuaRootPtr = std::shared_ptr<LuaRoot>;
+using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
+using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
+using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
+using LuaRootUPtr = std::unique_ptr<LuaRoot>;
+using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
+class RandomSource;
+using RandomSourcePtr = std::shared_ptr<RandomSource>;
+using RandomSourceConstPtr = std::shared_ptr<const RandomSource>;
+using RandomSourceWeakPtr = std::weak_ptr<RandomSource>;
+using RandomSourceConstWeakPtr = std::weak_ptr<const RandomSource>;
+using RandomSourceUPtr = std::unique_ptr<RandomSource>;
+using RandomSourceConstUPtr = std::unique_ptr<const RandomSource>;
+class Monster;
+using MonsterPtr = std::shared_ptr<Monster>;
+using MonsterConstPtr = std::shared_ptr<const Monster>;
+using MonsterWeakPtr = std::weak_ptr<Monster>;
+using MonsterConstWeakPtr = std::weak_ptr<const Monster>;
+using MonsterUPtr = std::unique_ptr<Monster>;
+using MonsterConstUPtr = std::unique_ptr<const Monster>;
+class MonsterDatabase;
+using MonsterDatabasePtr = std::shared_ptr<MonsterDatabase>;
+using MonsterDatabaseConstPtr = std::shared_ptr<const MonsterDatabase>;
+using MonsterDatabaseWeakPtr = std::weak_ptr<MonsterDatabase>;
+using MonsterDatabaseConstWeakPtr = std::weak_ptr<const MonsterDatabase>;
+using MonsterDatabaseUPtr = std::unique_ptr<MonsterDatabase>;
+using MonsterDatabaseConstUPtr = std::unique_ptr<const MonsterDatabase>;
 
 struct MonsterExceptionTag {
   static constexpr char const* name() { return "MonsterException"; }
@@ -78,7 +108,7 @@ using MonsterException = StarError<MonsterExceptionTag, StarException>;
 
 struct MonsterVariant {
   String type;
-  uint64_t seed;
+  std::uint64_t seed;
   Json uniqueParameters;
 
   Maybe<String> shortDescription;
@@ -131,7 +161,7 @@ struct MonsterVariant {
   bool persistent;
 
   TeamType damageTeamType;
-  uint8_t damageTeam;
+  std::uint8_t damageTeam;
 
   PolyF selfDamagePoly;
 
@@ -154,7 +184,7 @@ public:
   StringList monsterTypes() const;
 
   MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
-  MonsterVariant monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
+  MonsterVariant monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
 
   ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
   MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
@@ -170,10 +200,10 @@ public:
 
   List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
 
-  pair<String, String> skillInfo(String const& skillName) const;
+  std::pair<String, String> skillInfo(String const& skillName) const;
   Json skillConfigParameter(String const& skillName, String const& configParameterName) const;
 
-  ColorReplaceMap colorSwap(String const& setName, uint64_t seed) const;
+  ColorReplaceMap colorSwap(String const& setName, std::uint64_t seed) const;
 
   Json monsterConfig(String const& typeName) const;
 
@@ -241,12 +271,12 @@ private:
   // MonsterPart needs to be be in a predictable order.
   typedef StringMap<StringMap<Map<String, MonsterPart>>> PartDirectory;
 
-  MonsterVariant produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const;
+  MonsterVariant produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const;
 
   // Given a variant including parameters for baseSkills and specialSkills,
   // returns a variant containing a final 'skills' list of chosen skills, also
   // merges animation configs from skills together.
-  pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
+  std::pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
 
   StringMap<MonsterType> m_monsterTypes;
   PartDirectory m_partDirectory;
@@ -258,7 +288,7 @@ private:
   RebuilderPtr m_rebuilder;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
-  mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
+  mutable HashTtlCache<std::tuple<String, std::uint64_t, Json>, MonsterVariant> m_monsterCache;
 };
 
 }

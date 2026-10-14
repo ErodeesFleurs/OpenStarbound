@@ -1,12 +1,11 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.variant;
 import star.format;
 import star.json;
 import star.byte_array;
 
-import std;
 
 import star.io_device;
 import star.asset_source;
@@ -19,7 +18,13 @@ export module star.memory_asset_source;
 
 export namespace Star {
 
-STAR_CLASS(MemoryAssetSource);
+class MemoryAssetSource;
+using MemoryAssetSourcePtr = std::shared_ptr<MemoryAssetSource>;
+using MemoryAssetSourceConstPtr = std::shared_ptr<MemoryAssetSource const>;
+using MemoryAssetSourceWeakPtr = std::weak_ptr<MemoryAssetSource>;
+using MemoryAssetSourceConstWeakPtr = std::weak_ptr<MemoryAssetSource const>;
+using MemoryAssetSourceUPtr = std::unique_ptr<MemoryAssetSource>;
+using MemoryAssetSourceConstUPtr = std::unique_ptr<MemoryAssetSource const>;
 
 class MemoryAssetSource : public AssetSource {
 public:
@@ -68,21 +73,21 @@ StringList MemoryAssetSource::assetPaths() const {
 
 IODevicePtr MemoryAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
-    AssetReader(char* assetData, size_t assetSize, String name) {
+    AssetReader(char* assetData, std::size_t assetSize, String name) {
       this->assetData = assetData;
       this->assetSize = assetSize;
       this->name = std::move(name);
       setMode(IOMode::Read);
     }
 
-    size_t read(char* data, size_t len) override {
-      len = min<StreamOffset>(len, StreamOffset(assetSize) - assetPos);
-      memcpy(data, assetData + assetPos, len);
+    std::size_t read(char* data, std::size_t len) override {
+      len = std::min<StreamOffset>(len, StreamOffset(assetSize) - assetPos);
+      std::memcpy(data, assetData + assetPos, len);
       assetPos += len;
       return len;
     }
 
-    size_t write(char const*, size_t) override {
+    std::size_t write(char const*, std::size_t) override {
       throw IOException("Assets IODevices are read-only");
     }
 
@@ -105,13 +110,13 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     }
 
     IODevicePtr clone() override {
-      auto cloned = make_shared<AssetReader>(assetData, assetSize, name);
+      auto cloned = std::make_shared<AssetReader>(assetData, assetSize, name);
       cloned->assetPos = assetPos;
       return cloned;
     }
 
     char* assetData;
-    size_t assetSize;
+    std::size_t assetSize;
     StreamOffset assetPos = 0;
     String name;
   };
@@ -120,10 +125,10 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
   else if (auto byteArray = p->ptr<ByteArray>())
-    return make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
+    return std::make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
     auto image = p->get<ImagePtr>().get();
-    return make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
+    return std::make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
 
@@ -144,11 +149,11 @@ void MemoryAssetSource::set(String const& path, ByteArray data) {
 }
 
 void MemoryAssetSource::set(String const& path, Image const& image) {
-  m_files[path] = make_shared<Image>(image);
+  m_files[path] = std::make_shared<Image>(image);
 }
 
 void MemoryAssetSource::set(String const& path, Image&& image) {
-  m_files[path] = make_shared<Image>(std::move(image));
+  m_files[path] = std::make_shared<Image>(std::move(image));
 }
 
 ByteArray MemoryAssetSource::read(String const& path) {

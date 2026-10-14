@@ -2,7 +2,6 @@
 import star.xx_hash;
 import star.json;
 import star.id_map;
-#include "StarConfig.hpp"
 import star.format;
 import star.maybe;
 import star.string;
@@ -126,18 +125,90 @@ import star.universe_settings;
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(File);
-STAR_CLASS(Player);
-STAR_CLASS(ChatProcessor);
-STAR_CLASS(CommandProcessor);
-STAR_CLASS(TeamManager);
-STAR_CLASS(UniverseServer);
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(WorldServer);
-STAR_CLASS(UniverseSettings);
-STAR_CLASS(ServerClientContext);
+class Clock;
+using ClockPtr = std::shared_ptr<Clock>;
+using ClockConstPtr = std::shared_ptr<const Clock>;
+using ClockWeakPtr = std::weak_ptr<Clock>;
+using ClockConstWeakPtr = std::weak_ptr<const Clock>;
+using ClockUPtr = std::unique_ptr<Clock>;
+using ClockConstUPtr = std::unique_ptr<const Clock>;
+class File;
+using FilePtr = std::shared_ptr<File>;
+using FileConstPtr = std::shared_ptr<const File>;
+using FileWeakPtr = std::weak_ptr<File>;
+using FileConstWeakPtr = std::weak_ptr<const File>;
+using FileUPtr = std::unique_ptr<File>;
+using FileConstUPtr = std::unique_ptr<const File>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class ChatProcessor;
+using ChatProcessorPtr = std::shared_ptr<ChatProcessor>;
+using ChatProcessorConstPtr = std::shared_ptr<const ChatProcessor>;
+using ChatProcessorWeakPtr = std::weak_ptr<ChatProcessor>;
+using ChatProcessorConstWeakPtr = std::weak_ptr<const ChatProcessor>;
+using ChatProcessorUPtr = std::unique_ptr<ChatProcessor>;
+using ChatProcessorConstUPtr = std::unique_ptr<const ChatProcessor>;
+class CommandProcessor;
+using CommandProcessorPtr = std::shared_ptr<CommandProcessor>;
+using CommandProcessorConstPtr = std::shared_ptr<const CommandProcessor>;
+using CommandProcessorWeakPtr = std::weak_ptr<CommandProcessor>;
+using CommandProcessorConstWeakPtr = std::weak_ptr<const CommandProcessor>;
+using CommandProcessorUPtr = std::unique_ptr<CommandProcessor>;
+using CommandProcessorConstUPtr = std::unique_ptr<const CommandProcessor>;
+class TeamManager;
+using TeamManagerPtr = std::shared_ptr<TeamManager>;
+using TeamManagerConstPtr = std::shared_ptr<const TeamManager>;
+using TeamManagerWeakPtr = std::weak_ptr<TeamManager>;
+using TeamManagerConstWeakPtr = std::weak_ptr<const TeamManager>;
+using TeamManagerUPtr = std::unique_ptr<TeamManager>;
+using TeamManagerConstUPtr = std::unique_ptr<const TeamManager>;
+class UniverseServer;
+using UniverseServerPtr = std::shared_ptr<UniverseServer>;
+using UniverseServerConstPtr = std::shared_ptr<const UniverseServer>;
+using UniverseServerWeakPtr = std::weak_ptr<UniverseServer>;
+using UniverseServerConstWeakPtr = std::weak_ptr<const UniverseServer>;
+using UniverseServerUPtr = std::unique_ptr<UniverseServer>;
+using UniverseServerConstUPtr = std::unique_ptr<const UniverseServer>;
+class WorldTemplate;
+using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
+using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
+using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
+using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
+using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
+using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
+class CelestialMasterDatabase;
+using CelestialMasterDatabasePtr = std::shared_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstPtr = std::shared_ptr<const CelestialMasterDatabase>;
+using CelestialMasterDatabaseWeakPtr = std::weak_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstWeakPtr = std::weak_ptr<const CelestialMasterDatabase>;
+using CelestialMasterDatabaseUPtr = std::unique_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstUPtr = std::unique_ptr<const CelestialMasterDatabase>;
+class WorldServer;
+using WorldServerPtr = std::shared_ptr<WorldServer>;
+using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
+using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
+using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
+using WorldServerUPtr = std::unique_ptr<WorldServer>;
+using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
+class UniverseSettings;
+using UniverseSettingsPtr = std::shared_ptr<UniverseSettings>;
+using UniverseSettingsConstPtr = std::shared_ptr<const UniverseSettings>;
+using UniverseSettingsWeakPtr = std::weak_ptr<UniverseSettings>;
+using UniverseSettingsConstWeakPtr = std::weak_ptr<const UniverseSettings>;
+using UniverseSettingsUPtr = std::unique_ptr<UniverseSettings>;
+using UniverseSettingsConstUPtr = std::unique_ptr<const UniverseSettings>;
+class ServerClientContext;
+using ServerClientContextPtr = std::shared_ptr<ServerClientContext>;
+using ServerClientContextConstPtr = std::shared_ptr<const ServerClientContext>;
+using ServerClientContextWeakPtr = std::weak_ptr<ServerClientContext>;
+using ServerClientContextConstWeakPtr = std::weak_ptr<const ServerClientContext>;
+using ServerClientContextUPtr = std::unique_ptr<ServerClientContext>;
+using ServerClientContextConstUPtr = std::unique_ptr<const ServerClientContext>;
 
 struct UniverseServerExceptionTag {
   static constexpr char const* name() { return "UniverseServerException"; }
@@ -173,9 +244,9 @@ public:
   bool isWorldActive(WorldId const& worldId) const;
 
   List<ConnectionId> clientIds() const;
-  List<pair<ConnectionId, int64_t>> clientIdsAndCreationTime() const;
-  size_t numberOfClients() const;
-  uint32_t maxClients() const;
+  List<std::pair<ConnectionId, std::int64_t>> clientIdsAndCreationTime() const;
+  std::size_t numberOfClients() const;
+  std::uint32_t maxClients() const;
   bool isConnectedClient(ConnectionId clientId) const;
 
   String clientDescriptor(ConnectionId clientId) const;
@@ -221,9 +292,9 @@ public:
   // given function on the client world and player object in a thread safe way.
   // Returns true if function was called, false if client was not found or in
   // an invalid connection state.
-  bool executeForClient(ConnectionId clientId, function<void(WorldServer*, PlayerPtr)> action);
+  bool executeForClient(ConnectionId clientId, std::function<void(WorldServer*, PlayerPtr)> action);
   void disconnectClient(ConnectionId clientId, String const& reason);
-  void banUser(ConnectionId clientId, String const& reason, pair<bool, bool> banType, Maybe<int> timeout);
+  void banUser(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, Maybe<int> timeout);
   bool unbanIp(String const& addressString);
   bool unbanUuid(String const& uuidString);
 
@@ -248,7 +319,7 @@ protected:
 
 private:
   struct TimeoutBan {
-    int64_t banExpiry;
+    std::int64_t banExpiry;
     String reason;
     Maybe<HostAddress> ip;
     Maybe<Uuid> uuid;
@@ -256,11 +327,11 @@ private:
   
   struct WorldServerPromise {
     Variant<WorkerPoolPromise<WorldServerThreadPtr>,RpcPromise<WorldChunks>> currentPromise;
-    Maybe<function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
+    Maybe<std::function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)>> producer;
     
     double startTime;
     
-    WorldServerPromise(function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
+    WorldServerPromise(std::function<WorkerPoolPromise<WorldServerThreadPtr>(WorldChunks)> producer, RpcPromise<WorldChunks> promise);
     WorldServerPromise(WorkerPoolPromise<WorldServerThreadPtr> promise);
     
     bool done() const;
@@ -269,7 +340,7 @@ private:
     WorldServerThreadPtr get();
   };
 
-  enum class TcpState : uint8_t { No, Yes, Fuck };
+  enum class TcpState : std::uint8_t { No, Yes, Fuck };
 
   void processUniverseFlags();
   void sendPendingChat();
@@ -309,8 +380,8 @@ private:
   String tempWorldFile(InstanceWorldId const& worldId) const;
 
   Maybe<String> isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const;
-  void doTempBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType, int timeout);
-  void doPermBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType);
+  void doTempBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType, int timeout);
+  void doPermBan(ConnectionId clientId, String const& reason, std::pair<bool, bool> banType);
   void removeTimedBan();
 
   void addCelestialRequests(ConnectionId clientId, List<CelestialRequest> requests);
@@ -382,40 +453,40 @@ private:
   UniverseSettingsPtr m_universeSettings;
   WorkerPool m_workerPool;
 
-  int64_t m_storageTriggerDeadline;
-  int64_t m_clearBrokenWorldsDeadline;
-  int64_t m_lastClockUpdateSent;
-  atomic<bool> m_stop;
-  atomic<TcpState> m_tcpState;
+  std::int64_t m_storageTriggerDeadline;
+  std::int64_t m_clearBrokenWorldsDeadline;
+  std::int64_t m_lastClockUpdateSent;
+  std::atomic<bool> m_stop;
+  std::atomic<TcpState> m_tcpState;
 
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
-  shared_ptr<atomic<bool>> m_pause;
+  std::shared_ptr<std::atomic<bool>> m_pause;
   bool m_secureWarps;
   Map<WorldId, Maybe<WorldServerPromise>> m_worlds;
-  Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
+  Map<InstanceWorldId, std::pair<std::int64_t, std::int64_t>> m_tempWorldIndex;
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;
 
   RecursiveMutex m_connectionAcceptThreadsMutex;
   List<ThreadFunction<void>> m_connectionAcceptThreads;
-  LinkedList<pair<UniverseConnection, int64_t>> m_deadConnections;
+  LinkedList<std::pair<UniverseConnection, std::int64_t>> m_deadConnections;
 
   ChatProcessorPtr m_chatProcessor;
   CommandProcessorPtr m_commandProcessor;
   TeamManagerPtr m_teamManager;
 
-  HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
+  HashMap<ConnectionId, std::pair<WarpAction, bool>> m_pendingPlayerWarps;
   HashMap<ConnectionId, HashMap<ClientSubWorldId, WorldId>> m_pendingSubWorlds;
-  HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
-  HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
+  HashMap<ConnectionId, std::pair<std::tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
+  HashMap<ConnectionId, std::tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
   HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;
   HashMap<ConnectionId, String> m_pendingDisconnections;
   HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;
-  List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
-  HashMap<ConnectionId, List<tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
+  List<std::pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
+  HashMap<ConnectionId, List<std::tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
   Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
   Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 
@@ -424,14 +495,14 @@ private:
   LuaRootPtr m_luaRoot;
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
   StringMap<ScriptComponentPtr> m_scriptContexts;
 
   mutable RecursiveMutex m_messageLock;
   List<Universe::Message> m_universeMessages;
   
-  HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
-  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_universeMessagePromises;
+  HashMap<Uuid, std::pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_universeMessageResponses;
+  HashMap<Uuid, std::pair<ConnectionId, RpcPromise<Json>>> m_universeMessagePromises;
 };
 
 }

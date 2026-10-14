@@ -22,7 +22,6 @@ import star.directives;
 import star.asset_path;
 import star.string;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -134,7 +133,7 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();
@@ -166,7 +165,7 @@ int main(int argc, char** argv) {
     coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
-    auto worldTemplate = make_shared<WorldTemplate>(worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
+    auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 

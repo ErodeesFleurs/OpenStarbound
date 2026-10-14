@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.list;
 import star.rect;
@@ -16,7 +15,13 @@ class Json;
 class StringView;
 typedef List<Json> JsonArray;
 
-STAR_CLASS(Image);
+class Image;
+using ImagePtr = std::shared_ptr<Image>;
+using ImageConstPtr = std::shared_ptr<const Image>;
+using ImageWeakPtr = std::weak_ptr<Image>;
+using ImageConstWeakPtr = std::weak_ptr<const Image>;
+using ImageUPtr = std::unique_ptr<Image>;
+using ImageConstUPtr = std::unique_ptr<const Image>;
 
 struct ImageOperationExceptionTag {
   static constexpr char const* name() { return "ImageOperationException"; }
@@ -65,9 +70,9 @@ struct FadeToColorImageOperation {
   Vec3B color;
   float amount;
 
-  Array<uint8_t, 256> rTable;
-  Array<uint8_t, 256> gTable;
-  Array<uint8_t, 256> bTable;
+  Array<std::uint8_t, 256> rTable;
+  Array<std::uint8_t, 256> gTable;
+  Array<std::uint8_t, 256> bTable;
 };
 
 // Applies two FadeToColor operations in alternating rows to produce a scanline effect
@@ -152,7 +157,7 @@ typedef Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation,
 ImageOperation imageOperationFromString(StringView string);
 String imageOperationToString(ImageOperation const& operation);
 
-void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter);
+void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter);
 
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
@@ -165,7 +170,7 @@ void addImageOperationReferences(ImageOperation const& operation, StringList& ou
 
 StringList imageOperationReferences(List<ImageOperation> const& operations);
 
-typedef function<Image const*(String const& refName)> ImageReferenceCallback;
+typedef std::function<Image const*(String const& refName)> ImageReferenceCallback;
 
 void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 

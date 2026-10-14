@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -97,7 +97,7 @@ StatEventPtr StatisticsDatabase::readEvent(String const& path) {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 
-  return make_shared<StatEvent>(StatEvent {
+  return std::make_shared<StatEvent>(StatEvent {
       config.getString("eventName"),
       jsonToStringList(config.get("scripts")),
       config
@@ -108,7 +108,7 @@ AchievementPtr StatisticsDatabase::readAchievement(String const& path) {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 
-  return make_shared<Achievement>(Achievement {
+  return std::make_shared<Achievement>(Achievement {
       config.getString("name"),
       jsonToStringList(config.get("triggers")),
       jsonToStringList(config.get("scripts")),

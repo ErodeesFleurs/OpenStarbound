@@ -11,7 +11,6 @@ import star.color;
 import star.vector;
 import star.game_types;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -189,7 +188,7 @@ void WorldServerThread::stop() {
   Thread::join();
 }
 
-void WorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void WorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
   m_pause = pause;
 }
 
@@ -305,7 +304,7 @@ Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) cons
   }
 }
 
-Maybe<pair<String, String>> WorldServerThread::pullNewPlanetType() {
+Maybe<std::pair<String, String>> WorldServerThread::pullNewPlanetType() {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
@@ -400,7 +399,7 @@ void WorldServerThread::run() {
         fidelityScore = 0.0;
       }
 
-      int64_t spareMilliseconds = floor(spareTime * 1000);
+      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }

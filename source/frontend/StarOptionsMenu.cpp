@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -25,7 +26,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.ordered_map;
@@ -38,7 +38,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -280,10 +279,10 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
   m_sfxSlider->setRange(m_sfxRange, assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
-  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
-  m_modBindingsMenu = make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
-  m_keybindingsMenu = make_shared<KeybindingsMenu>();
-  m_graphicsMenu = make_shared<GraphicsMenu>(manager,client);
+  m_voiceSettingsMenu = std::make_shared<VoiceSettingsMenu>(assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")));
+  m_modBindingsMenu = std::make_shared<BindingsMenu>(assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")));
+  m_keybindingsMenu = std::make_shared<KeybindingsMenu>();
+  m_graphicsMenu = std::make_shared<GraphicsMenu>(manager,client);
 
   initConfig();
 }

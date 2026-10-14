@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.stream_formatter;
 import star.hash;
 
@@ -7,7 +7,13 @@ import star.format;
 
 namespace Star {
 
-STAR_CLASS(ByteArray);
+class ByteArray;
+using ByteArrayPtr = std::shared_ptr<ByteArray>;
+using ByteArrayConstPtr = std::shared_ptr<const ByteArray>;
+using ByteArrayWeakPtr = std::weak_ptr<ByteArray>;
+using ByteArrayConstWeakPtr = std::weak_ptr<const ByteArray>;
+using ByteArrayUPtr = std::unique_ptr<ByteArray>;
+using ByteArrayConstUPtr = std::unique_ptr<const ByteArray>;
 
 // Class to hold an array of bytes.  Contains an internal buffer that may be
 // larger than what is reported by size(), to avoid repeated allocations when a
@@ -23,11 +29,11 @@ public:
   static ByteArray fromCString(char const* str);
   // Same, but includes the trailing '\0'
   static ByteArray fromCStringWithNull(char const* str);
-  static ByteArray withReserve(size_t capacity);
+  static ByteArray withReserve(std::size_t capacity);
 
   ByteArray();
-  ByteArray(size_t dataSize, char c);
-  ByteArray(char const* data, size_t dataSize);
+  ByteArray(std::size_t dataSize, char c);
+  ByteArray(char const* data, std::size_t dataSize);
   ByteArray(ByteArray const& b);
   ByteArray(ByteArray&& b) noexcept;
   ~ByteArray();
@@ -38,9 +44,9 @@ public:
   char const* ptr() const;
   char* ptr();
 
-  size_t size() const;
+  std::size_t size() const;
   // Maximum size before realloc
-  size_t capacity() const;
+  std::size_t capacity() const;
   // Is zero size
   bool empty() const;
 
@@ -49,40 +55,40 @@ public:
   // Clears and resets buffer to empty.
   void reset();
 
-  void reserve(size_t capacity);
+  void reserve(std::size_t capacity);
 
-  void resize(size_t size);
+  void resize(std::size_t size);
   // resize, filling new space with given byte if it exists.
-  void resize(size_t size, char f);
+  void resize(std::size_t size, char f);
 
   // fill array with byte.
   void fill(char c);
   // fill array and resize to new size.
-  void fill(size_t size, char c);
+  void fill(std::size_t size, char c);
 
   void append(ByteArray const& b);
-  void append(char const* data, size_t len);
+  void append(char const* data, std::size_t len);
   void appendByte(char b);
 
-  void copyTo(char* data, size_t len) const;
+  void copyTo(char* data, std::size_t len) const;
   void copyTo(char* data) const;
 
   // Copy from ByteArray starting at pos, to data, with size len.
-  void copyTo(char* data, size_t pos, size_t len) const;
+  void copyTo(char* data, std::size_t pos, std::size_t len) const;
   // Copy from data pointer to ByteArray at pos with size len.
   // Resizes if needed.
-  void writeFrom(char const* data, size_t pos, size_t len);
+  void writeFrom(char const* data, std::size_t pos, std::size_t len);
 
-  ByteArray sub(size_t b, size_t s) const;
-  ByteArray left(size_t s) const;
-  ByteArray right(size_t s) const;
+  ByteArray sub(std::size_t b, std::size_t s) const;
+  ByteArray left(std::size_t s) const;
+  ByteArray right(std::size_t s) const;
 
-  void trimLeft(size_t s);
-  void trimRight(size_t s);
+  void trimLeft(std::size_t s);
+  void trimRight(std::size_t s);
 
   // returns location of first character that is different than the given
   // ByteArray.
-  size_t diffChar(ByteArray const& b) const;
+  std::size_t diffChar(ByteArray const& b) const;
   // returns -1 if this < b, 0 if this == b, 1 if this > b
   int compare(ByteArray const& b) const;
 
@@ -99,13 +105,13 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
-  void insert(size_t pos, char byte);
+  void insert(std::size_t pos, char byte);
   iterator insert(const_iterator pos, char byte);
   void push_back(char byte);
 
-  char& operator[](size_t i);
-  char operator[](size_t i) const;
-  char at(size_t i) const;
+  char& operator[](std::size_t i);
+  char operator[](std::size_t i) const;
+  char at(std::size_t i) const;
 
   bool operator<(ByteArray const& b) const;
   bool operator==(ByteArray const& b) const;
@@ -113,13 +119,13 @@ public:
 
 private:
   char* m_data;
-  size_t m_capacity;
-  size_t m_size;
+  std::size_t m_capacity;
+  std::size_t m_size;
 };
 
 template <>
 struct hash<ByteArray> {
-  size_t operator()(ByteArray const& b) const;
+  std::size_t operator()(ByteArray const& b) const;
 };
 
 std::ostream& operator<<(std::ostream& os, ByteArray const& b);
@@ -128,7 +134,7 @@ inline void ByteArray::clear() {
   resize(0);
 }
 
-inline void ByteArray::resize(size_t size) {
+inline void ByteArray::resize(std::size_t size) {
   reserve(size);
   m_size = size;
 }
@@ -137,7 +143,7 @@ inline void ByteArray::append(ByteArray const& b) {
   append(b.ptr(), b.size());
 }
 
-inline void ByteArray::append(const char* data, size_t len) {
+inline void ByteArray::append(const char* data, std::size_t len) {
   // memcpy with a null pointer (an empty ByteArray) and a length of 0 is still
   // undefined behaviour, and both sides can be null here.
   if (len == 0)
@@ -164,16 +170,16 @@ inline char* ByteArray::ptr() {
   return m_data;
 }
 
-inline size_t ByteArray::size() const {
+inline std::size_t ByteArray::size() const {
   return m_size;
 }
 
-inline size_t ByteArray::capacity() const {
+inline std::size_t ByteArray::capacity() const {
   return m_capacity;
 }
 
-inline void ByteArray::copyTo(char* data, size_t len) const {
-  len = min(m_size, len);
+inline void ByteArray::copyTo(char* data, std::size_t len) const {
+  len = std::min(m_size, len);
   if (len == 0)
     return;
 
@@ -184,15 +190,15 @@ inline void ByteArray::copyTo(char* data) const {
   copyTo(data, m_size);
 }
 
-inline void ByteArray::copyTo(char* data, size_t pos, size_t len) const {
+inline void ByteArray::copyTo(char* data, std::size_t pos, std::size_t len) const {
   if (len == 0 || pos >= m_size)
     return;
 
-  len = min(m_size - pos, len);
+  len = std::min(m_size - pos, len);
   std::memcpy(data, m_data + pos, len);
 }
 
-inline void ByteArray::writeFrom(const char* data, size_t pos, size_t len) {
+inline void ByteArray::writeFrom(const char* data, std::size_t pos, std::size_t len) {
   // Also avoids computing 'm_data + pos' for an empty array.
   if (len == 0)
     return;
@@ -209,17 +215,17 @@ ByteArray ByteArray::combineWith(Combiner&& combine, ByteArray const& rhs, bool 
   ByteArray const* largerArray = this;
 
   if (m_size < rhs.size())
-    swap(smallerArray, largerArray);
+    std::swap(smallerArray, largerArray);
 
   ByteArray res;
   res.resize(smallerArray->size());
 
-  for (size_t i = 0; i < smallerArray->size(); ++i)
+  for (std::size_t i = 0; i < smallerArray->size(); ++i)
     res[i] = combine((*smallerArray)[i], (*largerArray)[i]);
 
   if (extend) {
     res.resize(largerArray->size());
-    for (size_t i = smallerArray->size(); i < largerArray->size(); ++i)
+    for (std::size_t i = smallerArray->size(); i < largerArray->size(); ++i)
       res[i] = (*largerArray)[i];
   }
 
@@ -242,26 +248,30 @@ inline ByteArray::const_iterator ByteArray::end() const {
   return m_data + m_size;
 }
 
-inline char& ByteArray::operator[](size_t i) {
-  starAssert(i < m_size);
+inline char& ByteArray::operator[](std::size_t i) {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((i < m_size));
+  }
   return m_data[i];
 }
 
-inline char ByteArray::operator[](size_t i) const {
-  starAssert(i < m_size);
+inline char ByteArray::operator[](std::size_t i) const {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((i < m_size));
+  }
   return m_data[i];
 }
 
-inline char ByteArray::at(size_t i) const {
+inline char ByteArray::at(std::size_t i) const {
   if (i >= m_size)
     throw OutOfRangeException(strf("Out of range in ByteArray::at({})", i));
 
   return m_data[i];
 }
 
-inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
+inline std::size_t hash<ByteArray>::operator()(ByteArray const& b) const {
   PLHasher hash;
-  for (size_t i = 0; i < b.size(); ++i)
+  for (std::size_t i = 0; i < b.size(); ++i)
     hash.put(b[i]);
   return hash.hash();
 }

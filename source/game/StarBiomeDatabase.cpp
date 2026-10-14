@@ -25,7 +25,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.format;
@@ -100,7 +100,7 @@ StringList BiomeDatabase::biomeNames() const {
   return m_biomes.keys();
 }
 
-float BiomeDatabase::biomeHueShift(String const& biomeName, uint64_t seed) const {
+float BiomeDatabase::biomeHueShift(String const& biomeName, std::uint64_t seed) const {
   auto const& config = m_biomes.get(biomeName);
   return pickHueShiftFromJson(config.parameters.get("hueShiftOptions", {}), seed, "BiomeHueShift");
 }
@@ -109,7 +109,7 @@ bool BiomeDatabase::biomeHasWeather(String const& biomeName) const {
   return m_biomes.get(biomeName).parameters.contains("weather");
 }
 
-WeatherPool BiomeDatabase::biomeWeathers(String const& biomeName, uint64_t seed, float threatLevel) const {
+WeatherPool BiomeDatabase::biomeWeathers(String const& biomeName, std::uint64_t seed, float threatLevel) const {
   WeatherPool weatherPool;
   if (auto weatherList = binnedChoiceFromJson(m_biomes.get(biomeName).parameters.get("weather", JsonArray{}), threatLevel).optArray(); weatherList && !weatherList->empty()) {
     auto weatherPoolPath = staticRandomFrom(*weatherList, seed, "WeatherPool");
@@ -127,7 +127,7 @@ bool BiomeDatabase::biomeIsAirless(String const& biomeName) const {
   return config.parameters.getBool("airless", false);
 }
 
-SkyColoring BiomeDatabase::biomeSkyColoring(String const& biomeName, uint64_t seed) const {
+SkyColoring BiomeDatabase::biomeSkyColoring(String const& biomeName, std::uint64_t seed) const {
   SkyColoring skyColoring;
 
   auto const& config = m_biomes.get(biomeName);
@@ -203,7 +203,7 @@ WeatherType BiomeDatabase::weatherType(String const& name) const {
   }
 }
 
-BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) const {
+BiomePtr BiomeDatabase::createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const {
   if (!m_biomes.contains(biomeName))
     throw BiomeException(strf("No such biome '{}'", biomeName));
 
@@ -214,7 +214,7 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
     RandomSource random(seed);
     auto config = m_biomes.get(biomeName);
 
-    auto biome = make_shared<Biome>();
+    auto biome = std::make_shared<Biome>();
     float mainHueShift = biomeHueShift(biomeName, seed);
 
     biome->baseName = biomeName;
@@ -236,14 +236,14 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
 
     if (config.parameters.contains("parallax")) {
       auto parallaxFile = AssetPath::relativeTo(config.path, config.parameters.getString("parallax"));
-      biome->parallax = make_shared<Parallax>(parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
+      biome->parallax = std::make_shared<Parallax>(parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
     }
 
     if (config.parameters.contains("musicTrack"))
-      biome->musicTrack = make_shared<AmbientNoisesDescription>(config.parameters.getObject("musicTrack"), config.path);
+      biome->musicTrack = std::make_shared<AmbientNoisesDescription>(config.parameters.getObject("musicTrack"), config.path);
 
     if (config.parameters.contains("ambientNoises"))
-      biome->ambientNoises = make_shared<AmbientNoisesDescription>(config.parameters.getObject("ambientNoises"), config.path);
+      biome->ambientNoises = std::make_shared<AmbientNoisesDescription>(config.parameters.getObject("ambientNoises"), config.path);
 
     if (config.parameters.contains("spawnProfile"))
       biome->spawnProfile = constructSpawnProfile(config.parameters.getObject("spawnProfile"), seed);
@@ -258,7 +258,7 @@ Json BiomeDatabase::biomeConfig(String const & biomeName) const {
   return m_biomes.get(biomeName).toJson();
 }
 
-float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String const& key) {
+float BiomeDatabase::pickHueShiftFromJson(Json source, std::uint64_t seed, String const& key) {
   if (source.isNull())
     return 0;
   auto options = jsonToFloatList(source);
@@ -268,7 +268,7 @@ float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String con
   return options.at(t % options.size());
 }
 
-BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t seed, float biomeHueShift) const {
+BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, std::uint64_t seed, float biomeHueShift) const {
   auto& root = Root::singleton();
   RandomSource rand(seed);
   BiomePlaceables placeables;
@@ -285,8 +285,8 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t 
   return placeables;
 }
 
-List<pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, float threatLevel) const {
-  List<pair<ModId, float>> ores;
+List<std::pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, float threatLevel) const {
+  List<std::pair<ModId, float>> ores;
   if (!oreDistribution.isNull()) {
     auto& root = Root::singleton();
     auto functionDatabase = root.functionDatabase();

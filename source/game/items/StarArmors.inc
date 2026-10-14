@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -23,11 +23,41 @@ import star.a_star;
 import star.set;
 
 namespace Star {
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class ArmorItem;
+using ArmorItemPtr = std::shared_ptr<ArmorItem>;
+using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
+using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
+using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
+using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
+using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
+class HeadArmor;
+using HeadArmorPtr = std::shared_ptr<HeadArmor>;
+using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
+using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
+using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
+using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
+using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
+class ChestArmor;
+using ChestArmorPtr = std::shared_ptr<ChestArmor>;
+using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
+using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
+using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
+using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
+using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
+class LegsArmor;
+using LegsArmorPtr = std::shared_ptr<LegsArmor>;
+using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
+using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
+using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
+using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
+using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
+class BackArmor;
+using BackArmorPtr = std::shared_ptr<BackArmor>;
+using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
+using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
+using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
+using BackArmorUPtr = std::unique_ptr<BackArmor>;
+using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
 }
 
 import star.drawable;
@@ -71,7 +101,7 @@ import star.swingable_item;
 
 namespace Star {
 
-enum class ArmorType : uint8_t {
+enum class ArmorType : std::uint8_t {
   Head,
   Chest,
   Legs,

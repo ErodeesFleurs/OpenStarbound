@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -34,7 +34,7 @@ namespace JsonPath {
         buffer.append(*iterator++);
     }
 
-    Maybe<size_t> index = maybeLexicalCast<size_t>(buffer);
+    Maybe<std::size_t> index = maybeLexicalCast<std::size_t>(buffer);
     if (index.isValid() || (buffer == "-" && iterator == end))
       return TypeHint::Array;
     return TypeHint::Object;

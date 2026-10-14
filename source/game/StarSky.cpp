@@ -24,7 +24,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 import star.time;
@@ -82,8 +82,8 @@ Sky::Sky() {
   m_netGroup.addNetElement(&m_warpPhaseNetState);
   m_netGroup.addNetElement(&m_flyingTimerNetState);
 
-  m_netGroup.setNeedsLoadCallback(bind(&Sky::readNetStates, this));
-  m_netGroup.setNeedsStoreCallback(bind(&Sky::writeNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Sky::readNetStates, this));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Sky::writeNetStates, this));
 }
 
 Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {
@@ -120,7 +120,7 @@ void Sky::jumpTo(SkyParameters skyParameters) {
   skyParametersUpdated();
 }
 
-pair<ByteArray, uint64_t> Sky::writeUpdate(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Sky::writeUpdate(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -216,11 +216,11 @@ void Sky::update(double dt) {
       float percentage = 0.0;
       float dir = (int)m_warpPhase < 0 ? -1.0 : 1.0;
       if (m_warpPhase == WarpPhase::SpeedingUp)
-        percentage = powf(m_flyingTimer / speedupTime(), 2.0);
+        percentage = std::powf(m_flyingTimer / speedupTime(), 2.0);
       else if (m_warpPhase == WarpPhase::Maintain)
         percentage = 1.0;
       else if (m_warpPhase == WarpPhase::SlowingDown)
-        percentage = powf(1 - m_flyingTimer / slowdownTime(), 2.0);
+        percentage = std::powf(1 - m_flyingTimer / slowdownTime(), 2.0);
 
       if (percentage < 1.0) {
         m_starOffset = (dir * m_starMoveOffset * percentage).rotate(-getStarRotation());
@@ -272,7 +272,7 @@ bool Sky::inSpace() const {
   return m_skyType == SkyType::Orbital || m_skyType == SkyType::Warp || m_skyType == SkyType::Space;
 }
 
-uint64_t Sky::seed() const {
+std::uint64_t Sky::seed() const {
   return m_skyParameters.seed;
 }
 
@@ -280,16 +280,16 @@ float Sky::dayLength() const {
   return m_skyParameters.dayLength.value(DefaultDayLength);
 }
 
-uint32_t Sky::day() const {
+std::uint32_t Sky::day() const {
   if (!m_skyParameters.dayLength)
     return 0;
-  return floor(epochTime() / dayLength());
+  return std::floor(epochTime() / dayLength());
 }
 
 float Sky::timeOfDay() const {
   if (!m_skyParameters.dayLength)
     return 0;
-  return fmod(epochTime(), (double)dayLength());
+  return std::fmod(epochTime(), (double)dayLength());
 }
 
 double Sky::epochTime() const {
@@ -344,7 +344,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
         auto assets = Root::singleton().assets();
         auto SFX = assets->audio(m_settings.queryString("enterHyperspaceAudio"));
         m_sentSFX = true;
-        res.append(make_shared<AudioInstance>(*SFX));
+        res.append(std::make_shared<AudioInstance>(*SFX));
         return res;
       }
     } else if (m_warpPhase == WarpPhase::Maintain && !m_sentSFX) {
@@ -358,7 +358,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
         auto assets = Root::singleton().assets();
         auto SFX = assets->audio(m_settings.queryString("exitHyperspaceAudio"));
         m_sentSFX = true;
-        res.append(make_shared<AudioInstance>(*SFX));
+        res.append(std::make_shared<AudioInstance>(*SFX));
         return res;
       }
     }
@@ -367,7 +367,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
       auto assets = Root::singleton().assets();
       auto SFX = assets->audio(m_settings.queryString("arrivalAudio"));
       m_sentSFX = true;
-      res.append(make_shared<AudioInstance>(*SFX));
+      res.append(std::make_shared<AudioInstance>(*SFX));
       return res;
     }
   }
@@ -440,7 +440,7 @@ float Sky::skyAlpha() const {
     return 0.0f;
   } else {
     float skyLevel = 1.0f - spaceLevel();
-    return clamp(pow(skyLevel, m_settings.getFloat("skyLevelExponent")), 0.0f, 1.0f);
+    return clamp(std::pow(skyLevel, m_settings.getFloat("skyLevelExponent")), 0.0f, 1.0f);
   }
 }
 
@@ -470,7 +470,7 @@ Color Sky::mainSkyColor() const {
   return Color::Black;
 }
 
-pair<Color, Color> Sky::skyRectColors() const {
+std::pair<Color, Color> Sky::skyRectColors() const {
   if (m_skyParameters.skyColoring.isLeft()) {
     auto skyColoring = m_skyParameters.skyColoring.left();
 
@@ -562,7 +562,7 @@ SkyRenderData Sky::renderData() const {
 
   renderData.environmentLight = environmentLight();
   renderData.mainSkyColor = mainSkyColor();
-  tie(renderData.topRectColor, renderData.bottomRectColor) = skyRectColors();
+  std::tie(renderData.topRectColor, renderData.bottomRectColor) = skyRectColors();
   renderData.flashColor = skyFlashColor();
 
   return renderData;

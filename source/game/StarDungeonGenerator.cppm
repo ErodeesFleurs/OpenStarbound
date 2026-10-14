@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -31,9 +31,27 @@ struct DungeonExceptionTag {
 };
 using DungeonException = StarError<DungeonExceptionTag, StarException>;
 
-STAR_CLASS(DungeonGeneratorWorldFacade);
-STAR_CLASS(DungeonDefinition);
-STAR_CLASS(DungeonDefinitions);
+class DungeonGeneratorWorldFacade;
+using DungeonGeneratorWorldFacadePtr = std::shared_ptr<DungeonGeneratorWorldFacade>;
+using DungeonGeneratorWorldFacadeConstPtr = std::shared_ptr<const DungeonGeneratorWorldFacade>;
+using DungeonGeneratorWorldFacadeWeakPtr = std::weak_ptr<DungeonGeneratorWorldFacade>;
+using DungeonGeneratorWorldFacadeConstWeakPtr = std::weak_ptr<const DungeonGeneratorWorldFacade>;
+using DungeonGeneratorWorldFacadeUPtr = std::unique_ptr<DungeonGeneratorWorldFacade>;
+using DungeonGeneratorWorldFacadeConstUPtr = std::unique_ptr<const DungeonGeneratorWorldFacade>;
+class DungeonDefinition;
+using DungeonDefinitionPtr = std::shared_ptr<DungeonDefinition>;
+using DungeonDefinitionConstPtr = std::shared_ptr<const DungeonDefinition>;
+using DungeonDefinitionWeakPtr = std::weak_ptr<DungeonDefinition>;
+using DungeonDefinitionConstWeakPtr = std::weak_ptr<const DungeonDefinition>;
+using DungeonDefinitionUPtr = std::unique_ptr<DungeonDefinition>;
+using DungeonDefinitionConstUPtr = std::unique_ptr<const DungeonDefinition>;
+class DungeonDefinitions;
+using DungeonDefinitionsPtr = std::shared_ptr<DungeonDefinitions>;
+using DungeonDefinitionsConstPtr = std::shared_ptr<const DungeonDefinitions>;
+using DungeonDefinitionsWeakPtr = std::weak_ptr<DungeonDefinitions>;
+using DungeonDefinitionsConstWeakPtr = std::weak_ptr<const DungeonDefinitions>;
+using DungeonDefinitionsUPtr = std::unique_ptr<DungeonDefinitions>;
+using DungeonDefinitionsConstUPtr = std::unique_ptr<const DungeonDefinitions>;
 
 class DungeonGeneratorWorldFacade {
 public:
@@ -74,13 +92,55 @@ public:
 };
 
 namespace Dungeon {
-  STAR_CLASS(DungeonGeneratorWriter);
-  STAR_CLASS(PartReader);
-  STAR_CLASS(Part);
-  STAR_CLASS(Rule);
-  STAR_CLASS(Brush);
-  STAR_STRUCT(Tile);
-  STAR_CLASS(Connector);
+  class DungeonGeneratorWriter;
+  using DungeonGeneratorWriterPtr = std::shared_ptr<DungeonGeneratorWriter>;
+  using DungeonGeneratorWriterConstPtr = std::shared_ptr<const DungeonGeneratorWriter>;
+  using DungeonGeneratorWriterWeakPtr = std::weak_ptr<DungeonGeneratorWriter>;
+  using DungeonGeneratorWriterConstWeakPtr = std::weak_ptr<const DungeonGeneratorWriter>;
+  using DungeonGeneratorWriterUPtr = std::unique_ptr<DungeonGeneratorWriter>;
+  using DungeonGeneratorWriterConstUPtr = std::unique_ptr<const DungeonGeneratorWriter>;
+  class PartReader;
+  using PartReaderPtr = std::shared_ptr<PartReader>;
+  using PartReaderConstPtr = std::shared_ptr<const PartReader>;
+  using PartReaderWeakPtr = std::weak_ptr<PartReader>;
+  using PartReaderConstWeakPtr = std::weak_ptr<const PartReader>;
+  using PartReaderUPtr = std::unique_ptr<PartReader>;
+  using PartReaderConstUPtr = std::unique_ptr<const PartReader>;
+  class Part;
+  using PartPtr = std::shared_ptr<Part>;
+  using PartConstPtr = std::shared_ptr<const Part>;
+  using PartWeakPtr = std::weak_ptr<Part>;
+  using PartConstWeakPtr = std::weak_ptr<const Part>;
+  using PartUPtr = std::unique_ptr<Part>;
+  using PartConstUPtr = std::unique_ptr<const Part>;
+  class Rule;
+  using RulePtr = std::shared_ptr<Rule>;
+  using RuleConstPtr = std::shared_ptr<const Rule>;
+  using RuleWeakPtr = std::weak_ptr<Rule>;
+  using RuleConstWeakPtr = std::weak_ptr<const Rule>;
+  using RuleUPtr = std::unique_ptr<Rule>;
+  using RuleConstUPtr = std::unique_ptr<const Rule>;
+  class Brush;
+  using BrushPtr = std::shared_ptr<Brush>;
+  using BrushConstPtr = std::shared_ptr<const Brush>;
+  using BrushWeakPtr = std::weak_ptr<Brush>;
+  using BrushConstWeakPtr = std::weak_ptr<const Brush>;
+  using BrushUPtr = std::unique_ptr<Brush>;
+  using BrushConstUPtr = std::unique_ptr<const Brush>;
+  struct Tile;
+  using TilePtr = std::shared_ptr<Tile>;
+  using TileConstPtr = std::shared_ptr<const Tile>;
+  using TileWeakPtr = std::weak_ptr<Tile>;
+  using TileConstWeakPtr = std::weak_ptr<const Tile>;
+  using TileUPtr = std::unique_ptr<Tile>;
+  using TileConstUPtr = std::unique_ptr<const Tile>;
+  class Connector;
+  using ConnectorPtr = std::shared_ptr<Connector>;
+  using ConnectorConstPtr = std::shared_ptr<const Connector>;
+  using ConnectorWeakPtr = std::weak_ptr<Connector>;
+  using ConnectorConstWeakPtr = std::weak_ptr<const Connector>;
+  using ConnectorUPtr = std::unique_ptr<Connector>;
+  using ConnectorConstUPtr = std::unique_ptr<const Connector>;
 
   class DungeonGeneratorWriter {
   public:
@@ -159,7 +219,7 @@ namespace Dungeon {
     Map<Vec2I, Mod> m_backgroundMod;
 
     Map<Vec2I, ObjectSettings> m_objects;
-    Map<Vec2F, pair<String, Json>> m_vehicles;
+    Map<Vec2F, std::pair<String, Json>> m_vehicles;
     Set<Vec2I> m_biomeTrees;
     Set<Vec2I> m_biomeItems;
     Map<Vec2F, ItemDescriptor> m_drops;
@@ -340,7 +400,7 @@ namespace Dungeon {
 
   private:
     List<BrushConstPtr> m_brushes;
-    int64_t m_seed;
+    std::int64_t m_seed;
   };
 
   class ClearBrush : public Brush {
@@ -518,7 +578,7 @@ namespace Dungeon {
     Maybe<String> m_nameHint;
   };
 
-  enum class Direction : uint8_t {
+  enum class Direction : std::uint8_t {
     Left = 0,
     Right = 1,
     Up = 2,
@@ -547,7 +607,7 @@ namespace Dungeon {
     Part* m_part;
   };
 
-  typedef function<bool(Vec2I, Tile const&)> TileCallback;
+  typedef std::function<bool(Vec2I, Tile const&)> TileCallback;
 
   class PartReader {
   public:
@@ -702,11 +762,11 @@ private:
 
 class DungeonGenerator {
 public:
-  DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
+  DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
 
-  Maybe<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  Maybe<std::pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
-  pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
+  std::pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
   Dungeon::PartConstPtr pickAnchor();
   List<Dungeon::ConnectorConstPtr> findConnectablePart(Dungeon::ConnectorConstPtr connector) const;
 

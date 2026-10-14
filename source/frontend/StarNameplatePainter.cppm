@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 
@@ -34,8 +34,20 @@ import star.world_camera;
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(NameplatePainter);
+class WorldClient;
+using WorldClientPtr = std::shared_ptr<WorldClient>;
+using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
+using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
+using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
+using WorldClientUPtr = std::unique_ptr<WorldClient>;
+using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
+class NameplatePainter;
+using NameplatePainterPtr = std::shared_ptr<NameplatePainter>;
+using NameplatePainterConstPtr = std::shared_ptr<NameplatePainter const>;
+using NameplatePainterWeakPtr = std::weak_ptr<NameplatePainter>;
+using NameplatePainterConstWeakPtr = std::weak_ptr<NameplatePainter const>;
+using NameplatePainterUPtr = std::unique_ptr<NameplatePainter>;
+using NameplatePainterConstUPtr = std::unique_ptr<NameplatePainter const>;
 
 class NameplatePainter {
 public:

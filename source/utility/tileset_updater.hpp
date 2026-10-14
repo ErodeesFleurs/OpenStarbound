@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.list;
@@ -9,9 +9,27 @@ import star.tileset_database;
 
 namespace Star {
 
-STAR_STRUCT(Tile);
-STAR_CLASS(TileDatabase);
-STAR_CLASS(Tileset);
+struct Tile;
+using TilePtr = std::shared_ptr<Tile>;
+using TileConstPtr = std::shared_ptr<const Tile>;
+using TileWeakPtr = std::weak_ptr<Tile>;
+using TileConstWeakPtr = std::weak_ptr<const Tile>;
+using TileUPtr = std::unique_ptr<Tile>;
+using TileConstUPtr = std::unique_ptr<const Tile>;
+class TileDatabase;
+using TileDatabasePtr = std::shared_ptr<TileDatabase>;
+using TileDatabaseConstPtr = std::shared_ptr<const TileDatabase>;
+using TileDatabaseWeakPtr = std::weak_ptr<TileDatabase>;
+using TileDatabaseConstWeakPtr = std::weak_ptr<const TileDatabase>;
+using TileDatabaseUPtr = std::unique_ptr<TileDatabase>;
+using TileDatabaseConstUPtr = std::unique_ptr<const TileDatabase>;
+class Tileset;
+using TilesetPtr = std::shared_ptr<Tileset>;
+using TilesetConstPtr = std::shared_ptr<const Tileset>;
+using TilesetWeakPtr = std::weak_ptr<Tileset>;
+using TilesetConstWeakPtr = std::weak_ptr<const Tileset>;
+using TilesetUPtr = std::unique_ptr<Tileset>;
+using TilesetConstUPtr = std::unique_ptr<const Tileset>;
 
 struct Tile {
   String source, database, tileset, name;
@@ -61,21 +79,21 @@ private:
   // Determine which tiles already exist in the tileset, returning a map
   // which contains the id of each named tile, and the next available Id after
   // the highest Id seen in the tileset.
-  pair<StringMap<size_t>, size_t> indexExistingTiles(Json tileset) const;
+  std::pair<StringMap<std::size_t>, std::size_t> indexExistingTiles(Json tileset) const;
 
   // Update existing and insert new tile definitions in the tileProperties and
   // tileImages objects.
   StringSet updateTiles(JsonObject& tileProperties,
       JsonObject& tileImages,
-      StringMap<size_t> const& existingTiles,
-      size_t& nextId,
+      StringMap<std::size_t> const& existingTiles,
+      std::size_t& nextId,
       String const& tilesetPath) const;
 
   // Mark the given tiles as 'invalid' so they can't be used. (Actually removing
   // them from the tileset would cause the tile indices to change and break
   // existing maps.)
   void invalidateTiles(StringSet const& invalidTiles,
-      StringMap<size_t> const& existingTiles,
+      StringMap<std::size_t> const& existingTiles,
       JsonObject& tileProperties,
       JsonObject& tileImages,
       String const& tilesetPath) const;

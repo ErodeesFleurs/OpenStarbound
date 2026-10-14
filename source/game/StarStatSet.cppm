@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.variant;
@@ -13,7 +13,13 @@ import star.status_types;
 
 namespace Star {
 
-STAR_CLASS(StatSet);
+class StatSet;
+using StatSetPtr = std::shared_ptr<StatSet>;
+using StatSetConstPtr = std::shared_ptr<const StatSet>;
+using StatSetWeakPtr = std::weak_ptr<StatSet>;
+using StatSetConstWeakPtr = std::weak_ptr<const StatSet>;
+using StatSetUPtr = std::unique_ptr<StatSet>;
+using StatSetConstUPtr = std::unique_ptr<const StatSet>;
 
 // Manages a collection of Stats and Resources.
 //

@@ -1,4 +1,5 @@
 module;
+#include <stddef.h>
 import star.xx_hash;
 import star.json;
 import star.list;
@@ -25,7 +26,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarConfig.hpp"
 import star.version;
 
 import star.collision_block;
@@ -58,7 +58,7 @@ struct WorldTile {
   ModId mod(TileLayer layer) const;
   MaterialColorVariant materialColor(TileLayer layer) const;
   CollisionKind getCollision() const;
-  tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
+  std::tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
   bool isConnectable(TileLayer layer, bool materialOnly) const;
   bool isColliding(CollisionSet const& collisionSet) const;
 
@@ -126,7 +126,7 @@ struct ServerTile : public WorldTile {
   CollisionKind objectCollision;
 };
 typedef TileSectorArray<ServerTile, WorldSectorSize> ServerTileSectorArray;
-typedef shared_ptr<ServerTileSectorArray> ServerTileSectorArrayPtr;
+typedef std::shared_ptr<ServerTileSectorArray> ServerTileSectorArrayPtr;
 
 struct ClientTile : public WorldTile {
   ClientTile();
@@ -142,7 +142,7 @@ struct ClientTile : public WorldTile {
   float gravity;
 };
 typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
-typedef shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
+typedef std::shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
@@ -171,7 +171,7 @@ DataStream& operator<<(DataStream& ds, NetTile const& tile);
 
 // For storing predicted tile state.
 struct PredictedTile {
-  int64_t time;
+  std::int64_t time;
   Maybe<MaterialId> background;
   Maybe<MaterialHue> backgroundHueShift;
   Maybe<MaterialColorVariant> backgroundColorVariant;
@@ -216,16 +216,16 @@ struct RenderTile {
   MaterialHue foregroundModHueShift;
   MaterialColorVariant foregroundColorVariant;
   TileDamageType foregroundDamageType;
-  uint8_t foregroundDamageLevel;
+  std::uint8_t foregroundDamageLevel;
 
   MaterialHue backgroundHueShift;
   MaterialHue backgroundModHueShift;
   MaterialColorVariant backgroundColorVariant;
   TileDamageType backgroundDamageType;
-  uint8_t backgroundDamageLevel;
+  std::uint8_t backgroundDamageLevel;
 
   LiquidId liquidId;
-  uint8_t liquidLevel;
+  std::uint8_t liquidLevel;
 
   template <typename Hasher>
   void hashPushTerrain(Hasher& hasher) const;
@@ -312,7 +312,7 @@ inline CollisionKind WorldTile::getCollision() const {
   return collision;
 }
 
-inline tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialAndColor(TileLayer layer) const {
+inline std::tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialAndColor(TileLayer layer) const {
   if (layer == TileLayer::Foreground)
     return std::tuple<MaterialId, MaterialHue, MaterialColorVariant>{
         foreground, foregroundHueShift, foregroundColorVariant};
@@ -359,11 +359,11 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   // Do the fast path hash if the last (terrain relevant) field is at byte 20, because that means
   // there are no padding bytes between any field and we can simply pass the
   // entire tile as one block of memory.
-  static size_t const TerrainEndOffset = offsetof(RenderTile, liquidId);
-  static size_t const TotalTerrainSize =
+  static std::size_t const TerrainEndOffset = offsetof(RenderTile, liquidId);
+  static std::size_t const TotalTerrainSize =
     sizeof(MaterialId) * 2 + sizeof(ModId) * 2 + sizeof(MaterialHue) * 4 + sizeof(MaterialColorVariant) * 2 * sizeof(TileDamageType) * 2 + 2;
 
-#ifdef STAR_DEBUG
+#ifndef NDEBUG
   static bool const FastHash = false;
 #else
   static bool const FastHash = TerrainEndOffset == TotalTerrainSize;
@@ -373,10 +373,10 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
     hasher.push((char const*)this, TerrainEndOffset);
   } else {
     char buffer[TotalTerrainSize];
-    size_t bufferSize = 0;
+    std::size_t bufferSize = 0;
 
-    auto hashTilePart = [&](void const* data, size_t size) {
-      memcpy(buffer + bufferSize, data, size);
+    auto hashTilePart = [&](void const* data, std::size_t size) {
+      std::memcpy(buffer + bufferSize, data, size);
       bufferSize += size;
     };
 
@@ -406,8 +406,8 @@ template <typename Hasher>
 inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
   char buffer[sizeof(liquidLevel) + sizeof(liquidId)];
 
-  memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
-  memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
+  std::memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
+  std::memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
   hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
 }

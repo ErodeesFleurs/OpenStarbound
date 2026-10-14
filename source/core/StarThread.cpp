@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.thread;
 import star.format;
 

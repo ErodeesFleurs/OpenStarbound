@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.variant;
 import star.maybe;
@@ -46,17 +46,23 @@ import star.plant_database;
 
 namespace Star {
 
-STAR_CLASS(BiomeItemDistribution);
+class BiomeItemDistribution;
+using BiomeItemDistributionPtr = std::shared_ptr<BiomeItemDistribution>;
+using BiomeItemDistributionConstPtr = std::shared_ptr<const BiomeItemDistribution>;
+using BiomeItemDistributionWeakPtr = std::weak_ptr<BiomeItemDistribution>;
+using BiomeItemDistributionConstWeakPtr = std::weak_ptr<const BiomeItemDistribution>;
+using BiomeItemDistributionUPtr = std::unique_ptr<BiomeItemDistribution>;
+using BiomeItemDistributionConstUPtr = std::unique_ptr<const BiomeItemDistribution>;
 
 struct BiomeExceptionTag {
   static constexpr char const* name() { return "BiomeException"; }
 };
 using BiomeException = StarError<BiomeExceptionTag, StarException>;
 
-typedef pair<TreeVariant, TreeVariant> TreePair;
+typedef std::pair<TreeVariant, TreeVariant> TreePair;
 
 // Weighted pairs of object name / parameters.
-typedef WeightedPool<pair<String, Json>> ObjectPool;
+typedef WeightedPool<std::pair<String, Json>> ObjectPool;
 
 strong_typedef(String, TreasureBoxSet);
 strong_typedef(StringSet, MicroDungeonNames);
@@ -90,7 +96,7 @@ public:
   static Maybe<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
-  BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
+  BiomeItemDistribution(Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 
   Json toJson() const;
@@ -119,7 +125,7 @@ private:
   // Used if the distribution type is Random
 
   float m_blockProbability;
-  uint64_t m_blockSeed;
+  std::uint64_t m_blockSeed;
   List<BiomeItem> m_randomItems;
 
   // Used if the distribution type is Periodic
@@ -133,7 +139,7 @@ private:
   // select one of the items (with the highest weight) out of a list of items,
   // causing items to be grouped spatially in a way determined by the shape of
   // each weight function.
-  List<pair<BiomeItem, PerlinF>> m_weightedItems;
+  List<std::pair<BiomeItem, PerlinF>> m_weightedItems;
 };
 
 }

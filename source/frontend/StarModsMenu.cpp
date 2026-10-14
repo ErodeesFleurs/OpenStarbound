@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -16,7 +18,6 @@ import star.io_device;
 import star.file;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -72,8 +73,8 @@ ModsMenu::ModsMenu() {
   auto assets = Root::singleton().assets();
 
   GuiReader reader;
-  reader.registerCallback("linkbutton", bind(&ModsMenu::openLink, this));
-  reader.registerCallback("workshopbutton", bind(&ModsMenu::openWorkshop, this));
+  reader.registerCallback("linkbutton", std::bind(&ModsMenu::openLink, this));
+  reader.registerCallback("workshopbutton", std::bind(&ModsMenu::openWorkshop, this));
   reader.construct(assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
 
   m_assetsSources = assets->assetSources();
@@ -120,7 +121,7 @@ ModsMenu::ModsMenu() {
 void ModsMenu::update(float dt) {
   Pane::update(dt);
 
-  size_t selectedItem = m_modList->selectedItem();
+  std::size_t selectedItem = m_modList->selectedItem();
   if (selectedItem == NPos) {
     m_modName->setText("");
     m_modAuthor->setText("");
@@ -157,7 +158,7 @@ String ModsMenu::bestModName(JsonObject const& metadata, String const& sourcePat
 }
 
 void ModsMenu::openLink() {
-  size_t selectedItem = m_modList->selectedItem();
+  std::size_t selectedItem = m_modList->selectedItem();
   if (selectedItem == NPos)
     return;
 

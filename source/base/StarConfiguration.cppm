@@ -1,15 +1,21 @@
 module;
 
+import std;
 import star.json;
 import star.thread;
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.version;
 
 namespace Star {
 
-STAR_CLASS(Configuration);
+class Configuration;
+using ConfigurationPtr = std::shared_ptr<Configuration>;
+using ConfigurationConstPtr = std::shared_ptr<Configuration const>;
+using ConfigurationWeakPtr = std::weak_ptr<Configuration>;
+using ConfigurationConstWeakPtr = std::weak_ptr<Configuration const>;
+using ConfigurationUPtr = std::unique_ptr<Configuration>;
+using ConfigurationConstUPtr = std::unique_ptr<Configuration const>;
 
 struct ConfigurationExceptionTag {
   static constexpr char const* name() { return "ConfigurationException"; }

@@ -1,14 +1,12 @@
 module;
 
 import std;
-#include <stdint.h>
-#include <math.h>
 
 import star.math_common;
 namespace Star {
 
-typedef uint16_t MaterialId;
-typedef uint8_t MaterialHue;
+typedef std::uint16_t MaterialId;
+typedef std::uint8_t MaterialHue;
 
 // Empty and non-colliding.
 inline constexpr MaterialId EmptyMaterialId = 65535;
@@ -43,11 +41,11 @@ inline constexpr MaterialId FirstEngineMetaMaterialId = 65500;
 // to be used by tile entities or scripts
 inline constexpr MaterialId FirstMetaMaterialId = 65000;
 
-typedef uint8_t MaterialColorVariant;
+typedef std::uint8_t MaterialColorVariant;
 inline constexpr MaterialColorVariant DefaultMaterialColorVariant = 0;
 inline constexpr MaterialColorVariant MaxMaterialColorVariant = 8;
 
-typedef uint16_t ModId;
+typedef std::uint16_t ModId;
 
 // Tile has no tilemod
 inline constexpr ModId NoModId = 65535;
@@ -75,7 +73,7 @@ inline float materialHueToDegrees(MaterialHue hue) {
 
 inline MaterialHue materialHueFromDegrees(float degrees) {
   // Truncate while signed; only the integer conversion wraps negative hues.
-  return static_cast<MaterialHue>(static_cast<int>(fmod(degrees, 360.0f) * 255.0f / 360.0f));
+  return static_cast<MaterialHue>(static_cast<int>(std::fmod(degrees, 360.0f) * 255.0f / 360.0f));
 }
 
 inline bool isRealMaterial(MaterialId material) {

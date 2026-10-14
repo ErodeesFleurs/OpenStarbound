@@ -26,7 +26,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.math_common;
@@ -732,15 +732,15 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
   m_controlFly = velocity;
 }
 
-Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, Maybe<PlatformerAStar::Parameters> const& parameters) {
+Maybe<std::pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, Maybe<PlatformerAStar::Parameters> const& parameters) {
   if (!m_pathController)
-    m_pathController = make_shared<PathController>(world());
+    m_pathController = std::make_shared<PathController>(world());
 
   // set new parameters if they have changed
   if (m_pathController->targetPosition().isNothing() || (parameters && m_pathController->parameters() != *parameters)) {
     if (parameters)
       m_pathController->setParameters(*parameters);
-    m_pathMoveResult = m_pathController->findPath(*this, position).apply([position](bool result) { return pair<Vec2F, bool>(position, result); });
+    m_pathMoveResult = m_pathController->findPath(*this, position).apply([position](bool result) { return std::pair<Vec2F, bool>(position, result); });
   }
 
   // update target position if it has changed
@@ -756,11 +756,11 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
   return take(m_pathMoveResult);
 }
 
-Maybe<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, Maybe<PlatformerAStar::Parameters> const& parameters) {
+Maybe<std::pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, Maybe<PlatformerAStar::Parameters> const& parameters) {
   auto result = pathMove(position, run, parameters);
 
   if (result.isNothing())
-    m_controlPathMove = pair<Vec2F, bool>(position, run);
+    m_controlPathMove = std::pair<Vec2F, bool>(position, run);
 
   return result;
 }
@@ -844,7 +844,7 @@ void ActorMovementController::tickMaster(float dt) {
         m_pathController->reset();
       } else if (!m_pathController->pathfinding()) {
         m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, dt)
-          .apply([this](bool result) { return pair<Vec2F, bool>(m_controlPathMove->first, result); });
+          .apply([this](bool result) { return std::pair<Vec2F, bool>(m_controlPathMove->first, result); });
 
         auto action = m_pathController->curAction();
         bool onGround = false;
@@ -886,7 +886,7 @@ void ActorMovementController::tickMaster(float dt) {
         return;
       } else {
         m_pathMoveResult = m_pathController->findPath(*this, m_controlPathMove->first).apply([this](bool result) {
-            return pair<Vec2F, bool>(m_controlPathMove->first, result);
+            return std::pair<Vec2F, bool>(m_controlPathMove->first, result);
           });
       }
     } else {
@@ -1032,7 +1032,7 @@ void ActorMovementController::tickMaster(float dt) {
       Vec2F surfaceVelocity = MovementController::surfaceVelocity();
 
       // don't ambulate if we're already moving faster than the target velocity in the direction of ambulation
-      bool ambulationWouldAccelerate = abs(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0]) > abs(xVelocity())
+      bool ambulationWouldAccelerate = std::abs(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0]) > std::abs(xVelocity())
           || (m_targetHorizontalAmbulatingVelocity < 0) != (xVelocity() < 0);
 
       if (m_targetHorizontalAmbulatingVelocity != 0.0f && ambulationWouldAccelerate) {
@@ -1130,8 +1130,8 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
   // special 'ambulatingGroundFriction'.
   float relativeXVelocity = xVelocity() - surfaceVelocity()[0];
   bool useAmbulatingGroundFriction = (m_walking.get() || m_running.get())
-      && copysign(1, m_targetHorizontalAmbulatingVelocity) == copysign(1, relativeXVelocity)
-      && fabs(relativeXVelocity) <= fabs(m_targetHorizontalAmbulatingVelocity);
+      && std::copysign(1, m_targetHorizontalAmbulatingVelocity) == std::copysign(1, relativeXVelocity)
+      && std::fabs(relativeXVelocity) <= std::fabs(m_targetHorizontalAmbulatingVelocity);
 
   if (useAmbulatingGroundFriction)
     mcParameters.groundFriction = parameters.ambulatingGroundFriction;
@@ -1241,7 +1241,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
     }
     m_startPosition = movementController.position();
     m_targetPosition = targetPosition;
-    m_pathFinder = make_shared<PathFinder>(m_world, movementController.position(), *m_targetPosition, movementController.baseParameters(), m_parameters);
+    m_pathFinder = std::make_shared<PathFinder>(m_world, movementController.position(), *m_targetPosition, movementController.baseParameters(), m_parameters);
   }
 
   if (!m_pathFinder && m_path && m_edgeIndex == m_path->size())
@@ -1263,9 +1263,9 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
         bool merged = false;
         if (m_path && !path.empty()) {
           // try to fast forward on the new path
-          size_t i = 0;
+          std::size_t i = 0;
           // fast forward from current edge, or the last edge of the path
-          auto curEdgeIndex = min(m_edgeIndex, m_path->size() - 1);
+          auto curEdgeIndex = std::min(m_edgeIndex, m_path->size() - 1);
           auto& curEdge = m_path->at(curEdgeIndex);
           for (auto& edge : path) {
             if (curEdge.action == edge.action && curEdge.source.position == edge.source.position && edge.target.position == edge.target.position) {
@@ -1282,7 +1282,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           if (!merged) {
             // try to splice the new path onto the current path
             auto& newPathStart = path.at(0);
-            for (size_t i = m_edgeIndex; i < m_path->size(); i += 2) {
+            for (std::size_t i = m_edgeIndex; i < m_path->size(); i += 2) {
               auto& edge = m_path->at(i);
               if (edge.target.position == newPathStart.source.position) {
                 // splice the new path onto our current path up to this index
@@ -1303,7 +1303,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
         if (!merged && movementController.position() != *m_startPosition) {
           // merging the paths failed, and the entity has moved from the path start position
           // try to bridge the gap from the current position to the new path
-          auto bridgePathFinder = make_shared<PathFinder>(m_world, movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
+          auto bridgePathFinder = std::make_shared<PathFinder>(m_world, movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
           auto explored = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value(100.0));
 
           if (explored && *explored) {
@@ -1376,7 +1376,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
           float angleFactor = movementController.velocity().normalized() * delta.normalized();
           float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
           auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
+          sourceVelocity = delta.normalized() * std::fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
           targetVelocity = sourceVelocity;
         }
         break;

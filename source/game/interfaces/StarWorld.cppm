@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.lua;
 import star.maybe;
@@ -48,11 +48,29 @@ import star.line;
 import star.rect;
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(TileEntity);
-STAR_CLASS(ScriptedEntity);
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class TileEntity;
+using TileEntityPtr = std::shared_ptr<TileEntity>;
+using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
+using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
+using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
+using TileEntityUPtr = std::unique_ptr<TileEntity>;
+using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
+class ScriptedEntity;
+using ScriptedEntityPtr = std::shared_ptr<ScriptedEntity>;
+using ScriptedEntityConstPtr = std::shared_ptr<const ScriptedEntity>;
+using ScriptedEntityWeakPtr = std::weak_ptr<ScriptedEntity>;
+using ScriptedEntityConstWeakPtr = std::weak_ptr<const ScriptedEntity>;
+using ScriptedEntityUPtr = std::unique_ptr<ScriptedEntity>;
+using ScriptedEntityConstUPtr = std::unique_ptr<const ScriptedEntity>;
 
-typedef function<void(World*)> WorldAction;
+typedef std::function<void(World*)> WorldAction;
 
 class World {
 public:
@@ -65,7 +83,7 @@ public:
   // Update frame counter.  Returns the frame that is *currently* being
   // updated, not the *last* frame, so during the first call to update(), this
   // would return 1
-  virtual uint64_t currentStep() const = 0;
+  virtual std::uint64_t currentStep() const = 0;
 
   // All methods that take int parameters wrap around or clamp so that all int
   // values are valid world indexes.
@@ -125,7 +143,7 @@ public:
   // Iterate over the collision block for each tile in the region.  Collision
   // polys for tiles can extend to a maximum of 1 tile outside of the natural
   // tile bounds.
-  virtual void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const = 0;
+  virtual void forEachCollisionBlock(RectI const& region, std::function<void(CollisionBlock const&)> const& iterator) const = 0;
 
   // Is there some connectable tile / tile based entity in this position?  If
   // tilesOnly is true, only checks to see whether that tile is a connectable
@@ -138,7 +156,7 @@ public:
 
   // Returns whether line intersects with any colliding tiles.
   virtual bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-  virtual Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  virtual Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
 
   // Returns a list of all the collidable tiles along the given line.
   virtual List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const = 0;
@@ -175,7 +193,7 @@ public:
 
   virtual void timer(float delay, WorldAction worldAction) = 0;
   virtual double epochTime() const = 0;
-  virtual uint32_t day() const = 0;
+  virtual std::uint32_t day() const = 0;
   virtual float dayLength() const = 0;
   virtual float timeOfDay() const = 0;
 
@@ -204,7 +222,7 @@ public:
 
   // Find tiles near the given point that are not occupied (according to
   // tileIsOccupied)
-  List<Vec2I> findEmptyTiles(Vec2I pos, unsigned maxDist = 5, size_t maxAmount = 1, bool excludeEphemeral = false) const;
+  List<Vec2I> findEmptyTiles(Vec2I pos, unsigned maxDist = 5, std::size_t maxAmount = 1, bool excludeEphemeral = false) const;
 
   // Do tile modification that only uses a single tile.
   bool canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const;
@@ -221,7 +239,7 @@ public:
 
   // Returns first point along line that collides with any collision geometry, along
   // with the normal of the intersected line, if any.
-  Maybe<pair<Vec2F, Maybe<Vec2F>>> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
+  Maybe<std::pair<Vec2F, Maybe<Vec2F>>> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
 
   // Returns whether poly collides with any collision geometry.
   bool polyCollision(PolyF const& poly, CollisionSet const& collisionSet = DefaultCollisionSet) const;
@@ -230,32 +248,32 @@ public:
   // type, and casts them to the appropriate pointer type.
 
   template <typename EntityT>
-  shared_ptr<EntityT> get(EntityId entityId) const;
+  std::shared_ptr<EntityT> get(EntityId entityId) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
+  List<std::shared_ptr<EntityT>> query(RectF const& boundBox, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
+  std::shared_ptr<EntityT> closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  shared_ptr<EntityT> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
+  std::shared_ptr<EntityT> closestInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
+  List<std::shared_ptr<EntityT>> lineQuery(Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector = {}) const;
 
   template <typename EntityT>
-  List<shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
+  List<std::shared_ptr<EntityT>> atTile(Vec2I const& pos) const;
 };
 
 template <typename EntityT>
-shared_ptr<EntityT> World::get(EntityId entityId) const {
+std::shared_ptr<EntityT> World::get(EntityId entityId) const {
   return as<EntityT>(entity(entityId));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
-  List<shared_ptr<EntityT>> list;
+List<std::shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
+  List<std::shared_ptr<EntityT>> list;
   forEachEntity(boundBox, [&](EntityPtr const& entity) {
       if (auto e = as<EntityT>(entity)) {
         if (!selector || selector(e))
@@ -267,20 +285,20 @@ List<shared_ptr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<Ent
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
+std::shared_ptr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilterOf<EntityT> selector) const {
   return as<EntityT>(closestEntity(center, radius, entityTypeFilter<EntityT>(selector)));
 }
 
 template <typename EntityT>
-shared_ptr<EntityT> World::closestInSight(
+std::shared_ptr<EntityT> World::closestInSight(
     Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector) const {
   return as<EntityT>(closestEntityInSight(center, radius, collisionSet, entityTypeFilter<EntityT>(selector)));
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::lineQuery(
+List<std::shared_ptr<EntityT>> World::lineQuery(
     Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
-  List<shared_ptr<EntityT>> list;
+  List<std::shared_ptr<EntityT>> list;
   forEachEntityLine(begin, end, [&](EntityPtr entity) {
       if (auto e = as<EntityT>(std::move(entity))) {
         if (!selector || selector(e))
@@ -292,8 +310,8 @@ List<shared_ptr<EntityT>> World::lineQuery(
 }
 
 template <typename EntityT>
-List<shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
-  List<shared_ptr<EntityT>> list;
+List<std::shared_ptr<EntityT>> World::atTile(Vec2I const& pos) const {
+  List<std::shared_ptr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
       if (auto e = as<EntityT>(entity))
         list.append(std::move(e));

@@ -1,4 +1,8 @@
-#include "StarConfig.hpp"
+#include <sys/file.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+import std;
 import star.format;
 import star.maybe;
 import star.string;
@@ -6,16 +10,12 @@ import star.lock_file;
 import star.thread;
 import star.time;
 
-#include <sys/file.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
 
 namespace Star {
 
-int64_t const LockFile::MaximumSleepMillis;
+std::int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
+Maybe<LockFile> LockFile::acquireLock(String const& filename, std::int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return lock;
@@ -39,11 +39,11 @@ LockFile& LockFile::operator=(LockFile&& lockFile) {
   return *this;
 }
 
-bool LockFile::lock(int64_t timeout) {
-  auto doFLock = [](String const& filename, bool block) -> shared_ptr<int> {
+bool LockFile::lock(std::int64_t timeout) {
+  auto doFLock = [](String const& filename, bool block) -> std::shared_ptr<int> {
     int fd = open(filename.utf8Ptr(), O_RDONLY | O_CREAT, 0644);
     if (fd < 0)
-      throw StarException(strf("Could not open lock file {}, {}\n", filename, strerror(errno)));
+      throw StarException(strf("Could not open lock file {}, {}\n", filename, std::strerror(errno)));
 
     int ret;
     if (block)
@@ -54,11 +54,11 @@ bool LockFile::lock(int64_t timeout) {
     if (ret != 0) {
       close(fd);
       if (errno != EWOULDBLOCK)
-        throw StarException(strf("Could not lock file {}, {}\n", filename, strerror(errno)));
+        throw StarException(strf("Could not lock file {}, {}\n", filename, std::strerror(errno)));
       return {};
     }
 
-    return make_shared<int>(fd);
+    return std::make_shared<int>(fd);
   };
 
   if (timeout < 0) {
@@ -68,7 +68,7 @@ bool LockFile::lock(int64_t timeout) {
     m_handle = doFLock(m_filename, false);
     return (bool)m_handle;
   } else {
-    int64_t startTime = Time::monotonicMilliseconds();
+    std::int64_t startTime = Time::monotonicMilliseconds();
     while (true) {
       m_handle = doFLock(m_filename, false);
       if (m_handle)
@@ -77,7 +77,7 @@ bool LockFile::lock(int64_t timeout) {
       if (Time::monotonicMilliseconds() - startTime > timeout)
         return false;
 
-      Thread::sleep(min(timeout / 4, MaximumSleepMillis));
+      Thread::sleep(std::min(timeout / 4, MaximumSleepMillis));
     }
   }
 }

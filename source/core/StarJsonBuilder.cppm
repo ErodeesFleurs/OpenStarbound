@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.unicode;
 import star.maybe;
@@ -14,23 +13,23 @@ namespace Star {
 class JsonBuilderStream : public JsonStream {
 public:
   virtual void beginObject();
-  virtual void objectKey(char32_t const* s, size_t len);
+  virtual void objectKey(char32_t const* s, std::size_t len);
   virtual void endObject();
 
   virtual void beginArray();
   virtual void endArray();
 
-  virtual void putString(char32_t const* s, size_t len);
-  virtual void putDouble(char32_t const* s, size_t len);
-  virtual void putInteger(char32_t const* s, size_t len);
+  virtual void putString(char32_t const* s, std::size_t len);
+  virtual void putDouble(char32_t const* s, std::size_t len);
+  virtual void putInteger(char32_t const* s, std::size_t len);
   virtual void putBoolean(bool b);
   virtual void putNull();
 
-  virtual void putWhitespace(char32_t const* s, size_t len);
+  virtual void putWhitespace(char32_t const* s, std::size_t len);
   virtual void putColon();
   virtual void putComma();
 
-  size_t stackSize();
+  std::size_t stackSize();
   Json takeTop();
 
 private:

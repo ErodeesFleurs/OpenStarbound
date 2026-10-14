@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -100,7 +100,7 @@ public:
     bool enabled;
     String defaultState;
     JsonObject stateTypeProperties;
-    OrderedHashMap<String, shared_ptr<State const>> states;
+    OrderedHashMap<String, std::shared_ptr<State const>> states;
 
     ActiveStateInformation activeState;
     State const* activeStatePointer;
@@ -121,7 +121,7 @@ public:
   };
 
   AnimatedPartSet();
-  AnimatedPartSet(Json config, uint8_t animatiorVersion);
+  AnimatedPartSet(Json config, std::uint8_t animatiorVersion);
 
   // Returns the available state types.
   StringList stateTypes() const;
@@ -156,18 +156,18 @@ public:
 
   // Function will be given the name of each state type, and the
   // ActiveStateInformation for the active state for that state type.
-  void forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const;
+  void forEachActiveState(std::function<void(String const&, ActiveStateInformation const&)> callback) const;
 
   // Function will be given the name of each part, and the
   // ActivePartInformation for the active part.
-  void forEachActivePart(function<void(String const&, ActivePartInformation const&)> callback) const;
+  void forEachActivePart(std::function<void(String const&, ActivePartInformation const&)> callback) const;
 
   // Useful for serializing state changes.  Since each set of states for a
   // state type is ordered, it is possible to simply serialize and deserialize
   // the state index for that state type.
-  size_t activeStateIndex(String const& stateTypeName) const;
+  std::size_t activeStateIndex(String const& stateTypeName) const;
   bool activeStateReverse(String const& stateTypeName) const;
-  bool setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart = false, bool reverse = false);
+  bool setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex, bool alwaysStart = false, bool reverse = false);
 
   // Animate each state type forward 'dt' time, and either change state frames
   // or transition to new states, depending on the config.
@@ -176,7 +176,7 @@ public:
   // Pushes all the animations into their final state
   void finishAnimations();
 
-  uint8_t version() const;
+  std::uint8_t version() const;
 
   Json getStateFrameProperty(String const& stateType, String const& propertyName, String state, int frame) const;
   Json getPartStateFrameProperty(String const& partName, String const& propertyName, String const& stateType, String state, int frame) const;
@@ -190,7 +190,7 @@ private:
   OrderedHashMap<String, StateType> m_stateTypes;
   StringMap<Part> m_parts;
 
-  uint8_t m_animatorVersion;
+  std::uint8_t m_animatorVersion;
 };
 
 }

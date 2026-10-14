@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.string;
@@ -27,8 +27,8 @@ namespace Star {
 FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
   : m_textureGroup(std::move(textureGroup)) {}
 
-void FontTextureGroup::cleanup(int64_t timeout) {
-  int64_t currentTime = Time::monotonicMilliseconds();
+void FontTextureGroup::cleanup(std::int64_t timeout) {
+  std::int64_t currentTime = Time::monotonicMilliseconds();
   eraseWhere(m_glyphs, [&](auto const& p) { return currentTime - p.second.time > timeout; });
 }
 
@@ -76,7 +76,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
   if (res.second) {
     font->setPixelSize(size);
     auto renderResult = font->render(c);
-    Image& image = get<0>(renderResult);
+    Image& image = std::get<0>(renderResult);
     if (processingDirectives) {
       Directives const& directives = *processingDirectives;
       Vec2F preSize = Vec2F(image.size());
@@ -116,8 +116,8 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
       glyphTexture.offset = (preSize - Vec2F(image.size())) / 2;
     }
 
-    glyphTexture.colored |= get<2>(renderResult);
-    glyphTexture.offset += Vec2F(get<1>(renderResult));
+    glyphTexture.colored |= std::get<2>(renderResult);
+    glyphTexture.offset += Vec2F(std::get<1>(renderResult));
     glyphTexture.texture = m_textureGroup->create(image);
   }
 

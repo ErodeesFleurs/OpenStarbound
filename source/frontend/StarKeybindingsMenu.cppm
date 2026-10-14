@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -39,9 +39,27 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(TabSetWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(KeybindingsMenu);
+class TabSetWidget;
+using TabSetWidgetPtr = std::shared_ptr<TabSetWidget>;
+using TabSetWidgetConstPtr = std::shared_ptr<TabSetWidget const>;
+using TabSetWidgetWeakPtr = std::weak_ptr<TabSetWidget>;
+using TabSetWidgetConstWeakPtr = std::weak_ptr<TabSetWidget const>;
+using TabSetWidgetUPtr = std::unique_ptr<TabSetWidget>;
+using TabSetWidgetConstUPtr = std::unique_ptr<TabSetWidget const>;
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
+class KeybindingsMenu;
+using KeybindingsMenuPtr = std::shared_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstPtr = std::shared_ptr<KeybindingsMenu const>;
+using KeybindingsMenuWeakPtr = std::weak_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstWeakPtr = std::weak_ptr<KeybindingsMenu const>;
+using KeybindingsMenuUPtr = std::unique_ptr<KeybindingsMenu>;
+using KeybindingsMenuConstUPtr = std::unique_ptr<KeybindingsMenu const>;
 
 class KeybindingsMenu : public Pane {
 public:
@@ -74,7 +92,7 @@ private:
 
   Json m_origConfiguration;
 
-  size_t m_maxBindings;
+  std::size_t m_maxBindings;
   KeyMod m_currentMods;
 };
 

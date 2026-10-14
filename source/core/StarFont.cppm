@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.vector;
@@ -15,8 +14,20 @@ struct FontExceptionTag {
 };
 using FontException = StarError<FontExceptionTag, StarException>;
 
-STAR_STRUCT(FontImpl);
-STAR_CLASS(Font);
+struct FontImpl;
+using FontImplPtr = std::shared_ptr<FontImpl>;
+using FontImplConstPtr = std::shared_ptr<const FontImpl>;
+using FontImplWeakPtr = std::weak_ptr<FontImpl>;
+using FontImplConstWeakPtr = std::weak_ptr<const FontImpl>;
+using FontImplUPtr = std::unique_ptr<FontImpl>;
+using FontImplConstUPtr = std::unique_ptr<const FontImpl>;
+class Font;
+using FontPtr = std::shared_ptr<Font>;
+using FontConstPtr = std::shared_ptr<const Font>;
+using FontWeakPtr = std::weak_ptr<Font>;
+using FontConstWeakPtr = std::weak_ptr<const Font>;
+using FontUPtr = std::unique_ptr<Font>;
+using FontConstUPtr = std::unique_ptr<const Font>;
 
 class Font {
 public:
@@ -33,7 +44,7 @@ public:
   FontPtr clone() const;
 
   void setPixelSize(unsigned pixelSize);
-  void setAlphaThreshold(uint8_t alphaThreshold = 0);
+  void setAlphaThreshold(std::uint8_t alphaThreshold = 0);
 
   unsigned height() const;
   unsigned width(String::Char c);
@@ -41,17 +52,17 @@ public:
   // May return empty image on unrenderable character (Normally, this will
   // render a box, but if there is an internal freetype error this may return
   // an empty image).
-  tuple<Image, Vec2I, bool> render(String::Char c);
+  std::tuple<Image, Vec2I, bool> render(String::Char c);
   bool exists(String::Char c);
 
 private:
   FontImplPtr m_fontImpl;
   ByteArrayConstPtr m_fontBuffer;
   unsigned m_pixelSize;
-  uint8_t m_alphaThreshold;
+  std::uint8_t m_alphaThreshold;
 
   void loadFontImpl();
-  HashMap<pair<String::Char, unsigned>, unsigned> m_widthCache;
+  HashMap<std::pair<String::Char, unsigned>, unsigned> m_widthCache;
 };
 
 }

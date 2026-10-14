@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 import star.net_compatibility;
@@ -55,7 +55,13 @@ import star.net_element_sync_group;
 
 namespace Star {
 
-STAR_CLASS(StatusController);
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 class StatusController : public NetElement {
 public:
@@ -137,9 +143,9 @@ public:
   // another step value to pass into the function on the next call to get
   // damage notifications SINCE the first call.  If since is 0, returns all
   // recent notifications available.
-  pair<List<DamageNotification>, uint64_t> damageTakenSince(uint64_t since = 0) const;
-  pair<List<pair<EntityId, DamageRequest>>, uint64_t> inflictedHitsSince(uint64_t since = 0) const;
-  pair<List<DamageNotification>, uint64_t> inflictedDamageSince(uint64_t since = 0) const;
+  std::pair<List<DamageNotification>, std::uint64_t> damageTakenSince(std::uint64_t since = 0) const;
+  std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t> inflictedHitsSince(std::uint64_t since = 0) const;
+  std::pair<List<DamageNotification>, std::uint64_t> inflictedDamageSince(std::uint64_t since = 0) const;
 
   void init(Entity* parentEntity, ActorMovementController* movementController);
   void uninit();
@@ -153,7 +159,7 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
@@ -188,7 +194,7 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
@@ -277,7 +283,7 @@ private:
 
   List<DamageNotification> m_pendingSelfDamageNotifications;
 
-  ObserverStream<pair<EntityId, DamageRequest>> m_recentHitsGiven;
+  ObserverStream<std::pair<EntityId, DamageRequest>> m_recentHitsGiven;
   ObserverStream<DamageNotification> m_recentDamageGiven;
   ObserverStream<DamageNotification> m_recentDamageTaken;
 };

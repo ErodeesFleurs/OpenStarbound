@@ -1,15 +1,14 @@
 module;
-
-#include "StarConfig.hpp"
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+#include <windows.h>
+#include <wincrypt.h>
+#endif
+import std;
 import star.format;
 
 import star.byte_array;
 
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-#define NOMINMAX
-#include <windows.h>
-#include <wincrypt.h>
-#else
+#ifndef STAR_SYSTEM_FAMILY_WINDOWS
 import star.file;
 import star.io_device;
 #endif
@@ -20,13 +19,13 @@ export namespace Star {
 
 // Generate cryptographically secure random numbers for usage in password salts
 // and such using OS facilities
-ByteArray secureRandomBytes(size_t size);
+ByteArray secureRandomBytes(std::size_t size);
 
 }
 
 namespace Star {
 
-ByteArray secureRandomBytes(size_t size) {
+ByteArray secureRandomBytes(std::size_t size) {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
   HCRYPTPROV context = 0;
   auto res = ByteArray(size, '\0');

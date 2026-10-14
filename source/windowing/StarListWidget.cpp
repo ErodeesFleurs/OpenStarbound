@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.vector;
@@ -18,7 +20,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -92,7 +93,7 @@ bool ListWidget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  for (size_t i = m_members.size(); i != 0; --i) {
+  for (std::size_t i = m_members.size(); i != 0; --i) {
     auto child = m_members[i - 1];
     if (child->sendEvent(event)
         || (event.is<MouseButtonDownEvent>() && child->inMember(*context()->mousePosition(event))
@@ -132,7 +133,7 @@ WidgetPtr ListWidget::addItem() {
   return newItem;
 }
 
-WidgetPtr ListWidget::addItem(size_t at) {
+WidgetPtr ListWidget::addItem(std::size_t at) {
   auto newItem = constructWidget();
   addChildAt(toString(Random::randu64()), newItem, at);
   updateSizeAndPosition();
@@ -151,7 +152,7 @@ WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
 }
 
 WidgetPtr ListWidget::constructWidget() {
-  WidgetPtr newItem = make_shared<Widget>();
+  WidgetPtr newItem = std::make_shared<Widget>();
   m_reader.construct(m_schema.get("listTemplate"), newItem.get());
   newItem->setSize(m_memberSize);
   m_doScissor ? newItem->enableScissoring() : newItem->disableScissoring();
@@ -160,7 +161,7 @@ WidgetPtr ListWidget::constructWidget() {
 
 void ListWidget::updateSizeAndPosition() {
   int rows = m_members.size() % m_columns ? m_members.size() / m_columns + 1 : m_members.size() / m_columns;
-  for (size_t i = 0; i < m_members.size(); i++) {
+  for (std::size_t i = 0; i < m_members.size(); i++) {
     Vec2I currentOffset;
     int col = i % m_columns;
     int row = rows - (i / m_columns) - 1;
@@ -180,7 +181,7 @@ void ListWidget::updateSizeAndPosition() {
   }
 }
 
-void ListWidget::setEnabled(size_t pos, bool enabled) {
+void ListWidget::setEnabled(std::size_t pos, bool enabled) {
   if (pos != NPos && pos < listSize()) {
     if (enabled) {
       m_disabledItems.remove(pos);
@@ -196,7 +197,7 @@ void ListWidget::setEnabled(size_t pos, bool enabled) {
   }
 }
 
-void ListWidget::setHovered(size_t pos, bool hovered) {
+void ListWidget::setHovered(std::size_t pos, bool hovered) {
   if (m_hoverBG == "")
     return;
 
@@ -210,7 +211,7 @@ void ListWidget::setHovered(size_t pos, bool hovered) {
   }
 }
 
-void ListWidget::setSelected(size_t pos) {
+void ListWidget::setSelected(std::size_t pos) {
   if ((m_selectedItem != NPos) && (m_selectedItem < listSize())) {
     if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
       bgWidget->setImage(m_unselectedBG);
@@ -250,11 +251,11 @@ void ListWidget::setFillDown(bool fillDown) {
   m_fillDown = fillDown;
 }
 
-void ListWidget::setColumns(uint64_t columns) {
+void ListWidget::setColumns(std::uint64_t columns) {
   m_columns = columns;
 }
 
-void ListWidget::removeItem(size_t at) {
+void ListWidget::removeItem(std::size_t at) {
   removeChildAt(at);
   if (m_selectedItem == at)
     setSelected(NPos);
@@ -280,13 +281,13 @@ void ListWidget::clear() {
   updateSizeAndPosition();
 }
 
-size_t ListWidget::selectedItem() const {
+std::size_t ListWidget::selectedItem() const {
   return m_selectedItem;
 }
 
-size_t ListWidget::itemPosition(WidgetPtr item) const {
-  size_t offset = NPos;
-  for (size_t i = 0; i < m_members.size(); ++i) {
+std::size_t ListWidget::itemPosition(WidgetPtr item) const {
+  std::size_t offset = NPos;
+  for (std::size_t i = 0; i < m_members.size(); ++i) {
     if (m_members[i] == item) {
       offset = i;
       break;
@@ -295,7 +296,7 @@ size_t ListWidget::itemPosition(WidgetPtr item) const {
   return offset;
 }
 
-WidgetPtr ListWidget::itemAt(size_t n) const {
+WidgetPtr ListWidget::itemAt(std::size_t n) const {
   if (n < m_members.size()) {
     return m_members[n];
   } else {
@@ -311,7 +312,7 @@ List<WidgetPtr> const& ListWidget::list() const {
   return m_members;
 }
 
-size_t ListWidget::listSize() const {
+std::size_t ListWidget::listSize() const {
   return numChildren();
 }
 

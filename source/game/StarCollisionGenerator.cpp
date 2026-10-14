@@ -1,5 +1,4 @@
 import star.poly;
-#include "StarConfig.hpp"
 import star.list;
 import star.bi_map;
 import star.collision_block;
@@ -149,7 +148,7 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
     {6, 8, 3, 4, 9, 9} // lower right corner part 2
   };
 
-  auto addBlock = [&](int x, int y, uint8_t svi) {
+  auto addBlock = [&](int x, int y, std::uint8_t svi) {
     CollisionBlock block;
     block.space = Vec2I(x, y);
     block.poly.clear();
@@ -170,7 +169,7 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
 
   for (int x = xMin; x < xMax; ++x) {
     for (int y = yMin; y < yMax; ++y) {
-      uint8_t neighborMask = 0;
+      std::uint8_t neighborMask = 0;
       if (collisionKind(x, y + 1) >= kind)
         neighborMask |= 1;
       if (collisionKind(x + 1, y + 1) >= kind)

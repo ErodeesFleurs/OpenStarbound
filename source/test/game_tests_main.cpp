@@ -5,7 +5,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.bi_map;
 import star.thread;
@@ -45,15 +45,15 @@ struct ErrorLogSink : public LogSink {
 
 class TestEnvironment : public testing::Environment {
 public:
-  unique_ptr<Root> root;
+  std::unique_ptr<Root> root;
   Root::Settings settings;
 
   TestEnvironment(Root::Settings settings)
     : settings(std::move(settings)) {}
 
   virtual void SetUp() {
-    Logger::addSink(make_shared<ErrorLogSink>());
-    root = make_unique<Root>(settings);
+    Logger::addSink(std::make_shared<ErrorLogSink>());
+    root = std::make_unique<Root>(settings);
     root->configuration()->set("clearUniverseFiles", true);
     root->configuration()->set("clearPlayerFiles", true);
   }

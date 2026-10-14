@@ -1,8 +1,8 @@
 #pragma once
 
+import std;
 import star.rect;
 import star.vector;
-#include "StarConfig.hpp"
 import star.string;
 import star.maybe;
 import star.lua;
@@ -34,22 +34,22 @@ struct LuaConverter<LuaNullTermWrapper<T>> : LuaConverter<T> {
 };
 
 template <typename T1, typename T2>
-struct LuaConverter<pair<T1, T2>> {
-  static LuaValue from(LuaEngine& engine, pair<T1, T2>&& v) {
+struct LuaConverter<std::pair<T1, T2>> {
+  static LuaValue from(LuaEngine& engine, std::pair<T1, T2>&& v) {
     auto t = engine.createTable();
     t.set(1, std::move(v.first));
     t.set(2, std::move(v.second));
     return t;
   }
 
-  static LuaValue from(LuaEngine& engine, pair<T1, T2> const& v) {
+  static LuaValue from(LuaEngine& engine, std::pair<T1, T2> const& v) {
     auto t = engine.createTable();
     t.set(1, v.first);
     t.set(2, v.second);
     return t;
   }
 
-  static Maybe<pair<T1, T2>> to(LuaEngine& engine, LuaValue const& v) {
+  static Maybe<std::pair<T1, T2>> to(LuaEngine& engine, LuaValue const& v) {
     if (auto table = engine.luaMaybeTo<LuaTable>(std::move(v))) {
       auto p1 = engine.luaMaybeTo<T1>(table->get(1));
       auto p2 = engine.luaMaybeTo<T2>(table->get(2));
@@ -60,7 +60,7 @@ struct LuaConverter<pair<T1, T2>> {
   }
 };
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 struct LuaConverter<Vector<T, N>> {
   static LuaValue from(LuaEngine& engine, Vector<T, N> const& v) {
     return engine.createArrayTable(v);
@@ -72,7 +72,7 @@ struct LuaConverter<Vector<T, N>> {
       return {};
 
     Vector<T, N> vec;
-    for (size_t i = 0; i < N; ++i) {
+    for (std::size_t i = 0; i < N; ++i) {
       auto v = engine.luaMaybeTo<T>(table->get(i + 1));
       if (!v)
         return {};
@@ -146,7 +146,7 @@ struct LuaConverter<Polygon<T>> {
   }
 };
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 struct LuaConverter<Line<T, N>> {
   static LuaValue from(LuaEngine& engine, Line<T, N> const& line) {
     auto table = engine.createTable();

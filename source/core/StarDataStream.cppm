@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.string;
 import star.format;
 import star.net_compatibility;
@@ -37,37 +37,37 @@ public:
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
   void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
   // Do direct reads and writes
-  virtual void readData(char* data, size_t len) = 0;
-  virtual void writeData(char const* data, size_t len) = 0;
+  virtual void readData(char* data, std::size_t len) = 0;
+  virtual void writeData(char const* data, std::size_t len) = 0;
   virtual bool atEnd() { return false; };
 
   // These do not read / write sizes, they simply read / write directly.
-  ByteArray readBytes(size_t len);
+  ByteArray readBytes(std::size_t len);
   void writeBytes(ByteArray const& ba);
 
   DataStream& operator<<(bool d);
   DataStream& operator<<(char c);
-  DataStream& operator<<(int8_t d);
-  DataStream& operator<<(uint8_t d);
-  DataStream& operator<<(int16_t d);
-  DataStream& operator<<(uint16_t d);
-  DataStream& operator<<(int32_t d);
-  DataStream& operator<<(uint32_t d);
-  DataStream& operator<<(int64_t d);
-  DataStream& operator<<(uint64_t d);
+  DataStream& operator<<(std::int8_t d);
+  DataStream& operator<<(std::uint8_t d);
+  DataStream& operator<<(std::int16_t d);
+  DataStream& operator<<(std::uint16_t d);
+  DataStream& operator<<(std::int32_t d);
+  DataStream& operator<<(std::uint32_t d);
+  DataStream& operator<<(std::int64_t d);
+  DataStream& operator<<(std::uint64_t d);
   DataStream& operator<<(float d);
   DataStream& operator<<(double d);
 
   DataStream& operator>>(bool& d);
   DataStream& operator>>(char& c);
-  DataStream& operator>>(int8_t& d);
-  DataStream& operator>>(uint8_t& d);
-  DataStream& operator>>(int16_t& d);
-  DataStream& operator>>(uint16_t& d);
-  DataStream& operator>>(int32_t& d);
-  DataStream& operator>>(uint32_t& d);
-  DataStream& operator>>(int64_t& d);
-  DataStream& operator>>(uint64_t& d);
+  DataStream& operator>>(std::int8_t& d);
+  DataStream& operator>>(std::uint8_t& d);
+  DataStream& operator>>(std::int16_t& d);
+  DataStream& operator>>(std::uint16_t& d);
+  DataStream& operator>>(std::int32_t& d);
+  DataStream& operator>>(std::uint32_t& d);
+  DataStream& operator>>(std::int64_t& d);
+  DataStream& operator>>(std::uint64_t& d);
   DataStream& operator>>(float& d);
   DataStream& operator>>(double& d);
 
@@ -76,17 +76,17 @@ public:
   // fewer bytes.  size_t version can be used to portably write a size_t type,
   // and portably and efficiently handles the case of NPos.
 
-  size_t writeVlqU(uint64_t i);
-  size_t writeVlqI(int64_t i);
-  size_t writeVlqS(size_t i);
+  std::size_t writeVlqU(std::uint64_t i);
+  std::size_t writeVlqI(std::int64_t i);
+  std::size_t writeVlqS(std::size_t i);
 
-  size_t readVlqU(uint64_t& i);
-  size_t readVlqI(int64_t& i);
-  size_t readVlqS(size_t& i);
+  std::size_t readVlqU(std::uint64_t& i);
+  std::size_t readVlqI(std::int64_t& i);
+  std::size_t readVlqS(std::size_t& i);
 
-  uint64_t readVlqU();
-  int64_t readVlqI();
-  size_t readVlqS();
+  std::uint64_t readVlqU();
+  std::int64_t readVlqI();
+  std::size_t readVlqS();
 
   // The following functions write / read data with length and then content
   // following, but note that the length is encoded as an unsigned VLQ integer.
@@ -202,7 +202,7 @@ public:
   void readMapContainer(Container& container);
 
 private:
-  void writeStringData(char const* data, size_t len);
+  void writeStringData(char const* data, std::size_t len);
 
   ByteOrder m_byteOrder;
   bool m_nullTerminatedStrings;
@@ -255,53 +255,53 @@ void DataStream::cwrite(Data const& data) {
 
 template <typename IntegralType>
 void DataStream::vuread(IntegralType& data) {
-  uint64_t i = readVlqU();
+  std::uint64_t i = readVlqU();
   data = (IntegralType)i;
 }
 
 template <typename IntegralType>
 void DataStream::viread(IntegralType& data) {
-  int64_t i = readVlqI();
+  std::int64_t i = readVlqI();
   data = (IntegralType)i;
 }
 
 template <typename IntegralType>
 void DataStream::vsread(IntegralType& data) {
-  size_t s = readVlqS();
+  std::size_t s = readVlqS();
   data = (IntegralType)s;
 }
 
 template <typename IntegralType>
 void DataStream::vuwrite(IntegralType const& data) {
-  writeVlqU((uint64_t)data);
+  writeVlqU((std::uint64_t)data);
 }
 
 template <typename IntegralType>
 void DataStream::viwrite(IntegralType const& data) {
-  writeVlqI((int64_t)data);
+  writeVlqI((std::int64_t)data);
 }
 
 template <typename IntegralType>
 void DataStream::vswrite(IntegralType const& data) {
-  writeVlqS((size_t)data);
+  writeVlqS((std::size_t)data);
 }
 
 template <typename FloatType>
 void DataStream::vfread(FloatType& data, FloatType base) {
-  int64_t i = readVlqI();
+  std::int64_t i = readVlqI();
   data = (FloatType)i * base;
 }
 
 template <typename FloatType>
 void DataStream::vfwrite(FloatType const& data, FloatType base) {
-  writeVlqI((int64_t)round(data / base));
+  writeVlqI((std::int64_t)std::round(data / base));
 }
 
 template <typename PointerType, typename ReadFunction>
 void DataStream::pread(PointerType& pointer, ReadFunction readFunction) {
   bool initialized = read<bool>();
   if (initialized) {
-    auto element = make_unique<typename std::decay<typename PointerType::element_type>::type>();
+    auto element = std::make_unique<typename std::decay<typename PointerType::element_type>::type>();
     readFunction(*this, *element);
     pointer.reset(element.release());
   } else {
@@ -343,8 +343,8 @@ void DataStream::writeContainer(Container const& container, WriteFunction functi
 template <typename Container, typename ReadFunction>
 void DataStream::readContainer(Container& container, ReadFunction function) {
   container.clear();
-  size_t size = readVlqU();
-  for (size_t i = 0; i < size; ++i) {
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i) {
     typename Container::value_type elem;
     function(*this, elem);
     container.insert(container.end(), elem);
@@ -361,12 +361,12 @@ void DataStream::writeMapContainer(Container& map, WriteFunction function) {
 template <typename Container, typename ReadFunction>
 void DataStream::readMapContainer(Container& map, ReadFunction function) {
   map.clear();
-  size_t size = readVlqU();
-  for (size_t i = 0; i < size; ++i) {
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i) {
     typename Container::key_type key;
     typename Container::mapped_type mapped;
     function(*this, key, mapped);
-    map.insert(make_pair(std::move(key), std::move(mapped)));
+    map.insert(std::make_pair(std::move(key), std::move(mapped)));
   }
 }
 

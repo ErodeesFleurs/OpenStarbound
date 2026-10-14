@@ -12,7 +12,6 @@ import star.poly;
 import star.list;
 import star.bi_map;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.rect;
@@ -587,7 +586,7 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
   auto kind = parameters.getString("kind");
   if (kind.equals("npc", String::CaseInsensitive)) {
     auto npcDatabase = Root::singleton().npcDatabase();
-    uint64_t seed = parameters.getUInt("seed", Random::randu64());
+    std::uint64_t seed = parameters.getUInt("seed", Random::randu64());
     String species = parameters.getString("species");
     String typeName = parameters.getString("typeName", "default");
     JsonObject uniqueParameters = parameters.getObject("parameters", {});
@@ -598,7 +597,7 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
     m_worldServer->addEntity(npc);
   } else if (kind.equals("monster", String::CaseInsensitive)) {
     auto monsterDatabase = Root::singleton().monsterDatabase();
-    uint64_t seed = parameters.getUInt("seed", Random::randu64());
+    std::uint64_t seed = parameters.getUInt("seed", Random::randu64());
     String typeName = parameters.getString("typeName");
     JsonObject uniqueParameters = parameters.getObject("parameters", {});
     if (!uniqueParameters.contains("persistent"))
@@ -618,7 +617,9 @@ void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& de
 
 void DungeonGeneratorWorld::setLiquid(Vec2I const& pos, LiquidStore const& liquid) {
   ServerTile* tile = m_worldServer->modifyServerTile(pos);
-  starAssert(tile);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((tile));
+  }
   if (tile)
     tile->liquid = liquid;
 }
@@ -636,13 +637,13 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
     Vec2F posf = centerOfTile(entry);
     RectF bounds = {posf - Vec2F(16, 16), posf + Vec2F(16, 16)};
     for (auto entity : m_worldServer->query<WireEntity>(bounds)) {
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         if (entity->tilePosition() + entity->nodePosition({WireDirection::Input, i}) == entry) {
           inbounds.append(WireConnection{entity->tilePosition(), i});
           found = true;
         }
       }
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
         if (entity->tilePosition() + entity->nodePosition({WireDirection::Output, i}) == entry) {
           outbounds.append(WireConnection{entity->tilePosition(), i});
           found = true;
@@ -790,7 +791,7 @@ bool SpawnerWorld::spawningProhibited(RectF const& area) const {
   return false;
 }
 
-uint64_t SpawnerWorld::spawnSeed() const {
+std::uint64_t SpawnerWorld::spawnSeed() const {
   return m_worldServer->worldTemplate()->worldSeed();
 }
 
@@ -830,7 +831,7 @@ EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
 }
 
 WorldGenerator::WorldGenerator(WorldServer* server) : m_worldServer(server) {
-  m_microDungeonFactory = make_shared<MicroDungeonFactory>();
+  m_microDungeonFactory = std::make_shared<MicroDungeonFactory>();
 }
 
 void WorldGenerator::generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) {
@@ -957,7 +958,9 @@ void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorAr
     for (int y = sectorRegion.yMin(); y < sectorRegion.yMax(); ++y) {
       Vec2I pos(x, y);
       ServerTile* tile = tileArray->modifyTile(pos);
-      starAssert(tile);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((tile));
+      }
       if (!tile)
         continue;
 
@@ -1003,12 +1006,12 @@ void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorAr
 }
 
 void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto facade = make_shared<DungeonGeneratorWorld>(m_worldServer, false);
+  auto facade = std::make_shared<DungeonGeneratorWorld>(m_worldServer, false);
 
   RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
   RectI bounds = sectorTiles.padded(WorldSectorSize - 1);
 
-  List<pair<BiomeItemPlacement, QueuedPlacement*>> placementQueue;
+  List<std::pair<BiomeItemPlacement, QueuedPlacement*>> placementQueue;
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       auto potential = m_worldServer->worldTemplate()->potentialBiomeItemsAt(x, y);
@@ -1036,7 +1039,9 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
       auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
       Maybe<DungeonId> dungeonId;
-      starAssert(!dungeonName.empty());
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((!dungeonName.empty()));
+      }
       if (auto generateResult = m_microDungeonFactory->generate(bounds, dungeonName, placement.position, seed, m_worldServer->threatLevel(), facade)) {
         if (queued) {
           dungeonId = queued->dungeonId;
@@ -1105,7 +1110,9 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
     if (badNodes.contains(position))
       return;
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((tile.foreground != NullMaterialId));
+    }
     if (tile.foreground != EmptyMaterialId) {
       // Not sure why this doesn't poison solid materials, but it does (occasionally) encounter that case
       if (!BlockCollisionSet.contains(materialDatabase->materialCollisionKind(tile.foreground)))
@@ -1139,7 +1146,9 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
       return;
     visitedNodes.add(position);
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((tile.foreground != NullMaterialId));
+    }
     if (tile.foreground != EmptyMaterialId)
       return;
     badNodes.add(position);
@@ -1158,7 +1167,9 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
 
   auto solids = [&](Vec2I position) {
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((tile.foreground != NullMaterialId));
+    }
     if (tile.foreground != EmptyMaterialId)
       solidSurroundings.add(position);
   };
@@ -1174,7 +1185,9 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
   Map<Vec2I, float> drops = determineLiquidLevel(candidateNodes, solidSurroundings);
   for (auto iter = drops.begin(); iter != drops.end(); ++iter) {
     auto tile = tileArray->modifyTile(wrapCoords(iter->first));
-    starAssert(tile);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((tile));
+    }
     if (!tile)
       continue;
     if (iter->second)
@@ -1194,10 +1207,14 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = tileArray->modifyTile(position);
-      starAssert(tile);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((tile));
+      }
       if (!tile)
         continue;
-      starAssert(tile->foreground != NullMaterialId);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((tile->foreground != NullMaterialId));
+      }
 
       if (tile->liquid.source) {
         auto blockInfo = planet->blockInfo(position[0], position[1]);
@@ -1371,7 +1388,9 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = m_worldServer->modifyServerTile(position);
-      starAssert(tile);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((tile));
+      }
       if (!tile)
         continue;
 
@@ -1628,8 +1647,8 @@ Set<Vec2I> WorldGenerator::caveLiquidSeeds(WorldStorage* worldStorage, ServerTil
   Set<Vec2I> nodes;
   if (seedDensity > 0) {
     int frequency = int(100 / seedDensity);
-    for (int y = frequency * floor(sectorTiles.min()[1] / frequency); y < sectorTiles.max()[1]; y += frequency) {
-      for (int x = frequency * floor(sectorTiles.min()[0] / frequency); x < sectorTiles.max()[0]; x += frequency) {
+    for (int y = frequency * std::floor(sectorTiles.min()[1] / frequency); y < sectorTiles.max()[1]; y += frequency) {
+      for (int x = frequency * std::floor(sectorTiles.min()[0] / frequency); x < sectorTiles.max()[0]; x += frequency) {
         if (sectorTiles.contains(Vec2I(x, y)))
           nodes.add(Vec2I(x, y));
       }

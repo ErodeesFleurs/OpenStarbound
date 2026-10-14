@@ -30,7 +30,8 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.version;
 
 
@@ -104,10 +105,10 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
 InteractAction LoungeableObject::interact(InteractRequest const& request) {
   auto res = Object::interact(request);
   if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
-    Maybe<size_t> index;
+    Maybe<std::size_t> index;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
-    for (size_t i = 0; i < m_sitPositions.size(); ++i) {
+    for (std::size_t i = 0; i < m_sitPositions.size(); ++i) {
       if (!index || vmag(m_sitPositions[i] + interactOffset) < vmag(m_sitPositions[*index] + interactOffset))
         index = i;
     }
@@ -117,15 +118,15 @@ InteractAction LoungeableObject::interact(InteractRequest const& request) {
   }
 }
 
-size_t LoungeableObject::anchorCount() const {
+std::size_t LoungeableObject::anchorCount() const {
   return m_sitPositions.size();
 }
 
-LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const {
+LoungeAnchorConstPtr LoungeableObject::loungeAnchor(std::size_t positionIndex) const {
   if (positionIndex >= m_sitPositions.size())
     return {};
 
-  auto loungeAnchor = make_shared<LoungeAnchor>();
+  auto loungeAnchor = std::make_shared<LoungeAnchor>();
 
   loungeAnchor->suppressTools = false;
   loungeAnchor->controllable = false;
@@ -157,7 +158,7 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
   return loungeAnchor;
 }
 
-void LoungeableObject::setOrientationIndex(size_t orientationIndex) {
+void LoungeableObject::setOrientationIndex(std::size_t orientationIndex) {
   Object::setOrientationIndex(orientationIndex);
   if (orientationIndex != NPos) {
     if (auto sp = configValue("sitPosition")) {

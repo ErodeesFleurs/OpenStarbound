@@ -4,7 +4,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.file;
 import star.maybe;
 import star.format;
@@ -167,26 +167,26 @@ RootLoader::RootLoader(Defaults defaults) {
   m_defaults = std::move(defaults);
 }
 
-pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
+std::pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
     StringList const& cmdLineArguments) const {
   auto options = VersionOptionParser::parseOrDie(cmdLineArguments);
   return {rootSettingsForOptions(options), options};
 }
 
-pair<RootUPtr, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
+std::pair<RootUPtr, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
   auto p = parseOrDie(cmdLineArguments);
-  auto root = make_unique<Root>(p.first);
+  auto root = std::make_unique<Root>(p.first);
   return {std::move(root), p.second};
 }
 
-pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
+std::pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
   auto options = VersionOptionParser::commandParseOrDie(argc, argv);
   return {rootSettingsForOptions(options), options};
 }
 
-pair<RootUPtr, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
+std::pair<RootUPtr, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
   auto p = commandParseOrDie(argc, argv);
-  auto root = make_unique<Root>(p.first);
+  auto root = std::make_unique<Root>(p.first);
   return {std::move(root), p.second};
 }
 

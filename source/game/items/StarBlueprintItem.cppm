@@ -27,7 +27,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.ordered_set;
 import star.audio;
@@ -106,7 +106,13 @@ export module star.blueprint_item;
 
 export namespace Star {
 
-STAR_CLASS(BlueprintItem);
+class BlueprintItem;
+using BlueprintItemPtr = std::shared_ptr<BlueprintItem>;
+using BlueprintItemConstPtr = std::shared_ptr<const BlueprintItem>;
+using BlueprintItemWeakPtr = std::weak_ptr<BlueprintItem>;
+using BlueprintItemConstWeakPtr = std::weak_ptr<const BlueprintItem>;
+using BlueprintItemUPtr = std::unique_ptr<BlueprintItem>;
+using BlueprintItemConstUPtr = std::unique_ptr<const BlueprintItem>;
 
 class BlueprintItem : public Item, public SwingableItem {
 public:
@@ -148,7 +154,7 @@ BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json c
 }
 
 ItemPtr BlueprintItem::clone() const {
-  return make_shared<BlueprintItem>(*this);
+  return std::make_shared<BlueprintItem>(*this);
 }
 
 List<Drawable> BlueprintItem::drawables() const {

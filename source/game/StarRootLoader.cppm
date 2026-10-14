@@ -4,7 +4,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.version;
 import star.bi_map;
@@ -79,11 +79,11 @@ public:
 
   RootLoader(Defaults defaults);
 
-  pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
-  pair<RootUPtr, Options> initOrDie(StringList const& cmdLineArguments) const;
+  std::pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
+  std::pair<RootUPtr, Options> initOrDie(StringList const& cmdLineArguments) const;
 
-  pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
-  pair<RootUPtr, Options> commandInitOrDie(int argc, char** argv);
+  std::pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
+  std::pair<RootUPtr, Options> commandInitOrDie(int argc, char** argv);
 
 private:
   Root::Settings rootSettingsForOptions(Options const& options) const;

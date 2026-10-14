@@ -36,7 +36,7 @@ import star.ordered_set;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 import star.animated_part_set;
@@ -182,7 +182,7 @@ Json TechController::diskStore() {
 
 void TechController::diskLoad(Json const& store) {
   setupTechModules( store.getArray("techModules", {}).transformed([](Json const& v) {
-      return make_tuple(v.getString("module"), v.getObject("scriptData", {}));
+      return std::make_tuple(v.getString("module"), v.getObject("scriptData", {}));
     }));
 }
 
@@ -211,7 +211,7 @@ void TechController::uninit() {
 
 void TechController::setLoadedTech(StringList const& techModules, bool forceLoad) {
   if (forceLoad || loadedTech() != techModules) {
-    setupTechModules(techModules.transformed([](String const& module) { return make_tuple(module, JsonObject()); }));
+    setupTechModules(techModules.transformed([](String const& module) { return std::make_tuple(module, JsonObject()); }));
     if (m_parentEntity)
       initializeModules();
   }
@@ -486,7 +486,7 @@ void TechController::TechAnimator::tickNetInterpolation(float dt) {
   netGroup.tickNetInterpolation(dt);
 }
 
-bool TechController::TechAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool TechController::TechAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   return netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
@@ -508,7 +508,7 @@ bool TechController::TechAnimator::isVisible() const {
   return visible.get();
 }
 
-void TechController::setupTechModules(List<tuple<String, JsonObject>> const& moduleInits) {
+void TechController::setupTechModules(List<std::tuple<String, JsonObject>> const& moduleInits) {
   for (auto& techModule : m_techModules)
     unloadModule(techModule);
 
@@ -518,24 +518,24 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
   auto techDatabase = Root::singleton().techDatabase();
 
   for (auto const& moduleInit : moduleInits) {
-    if (techDatabase->contains(get<0>(moduleInit))) {
+    if (techDatabase->contains(std::get<0>(moduleInit))) {
       auto& module = m_techModules.emplaceAppend();
 
-      module.config = techDatabase->tech(get<0>(moduleInit));
+      module.config = techDatabase->tech(std::get<0>(moduleInit));
 
       module.scriptComponent.setScripts(module.config.scripts);
-      module.scriptComponent.setScriptStorage(get<1>(moduleInit));
+      module.scriptComponent.setScriptStorage(std::get<1>(moduleInit));
 
       module.visible = module.config.parameters.getBool("visible", true);
 
       module.toolUsageSuppressed = false;
 
-      auto moduleAnimator = make_shared<TechAnimator>(module.config.animationConfig);
+      auto moduleAnimator = std::make_shared<TechAnimator>(module.config.animationConfig);
       for (auto const& pair : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
         moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
     } else {
-      Logger::warn("Tech module '{}' not found in tech database", get<0>(moduleInit));
+      Logger::warn("Tech module '{}' not found in tech database", std::get<0>(moduleInit));
     }
   }
 }

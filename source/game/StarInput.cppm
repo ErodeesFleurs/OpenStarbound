@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -16,7 +16,13 @@ import star.listener;
 
 namespace Star {
 
-STAR_CLASS(Input);
+class Input;
+using InputPtr = std::shared_ptr<Input>;
+using InputConstPtr = std::shared_ptr<const Input>;
+using InputWeakPtr = std::weak_ptr<Input>;
+using InputConstWeakPtr = std::weak_ptr<const Input>;
+using InputUPtr = std::unique_ptr<Input>;
+using InputConstUPtr = std::unique_ptr<const Input>;
 struct InputExceptionTag {
   static constexpr char const* name() { return "InputException"; }
 };
@@ -26,7 +32,7 @@ typedef Variant<Key, MouseButton, ControllerButton> InputVariant;
 
 template <>
 struct hash<InputVariant> {
-  size_t operator()(InputVariant const& v) const;
+  std::size_t operator()(InputVariant const& v) const;
 };
 
 class Input {
@@ -37,7 +43,7 @@ public:
   struct KeyBind {
     Key key = Key::Zero;
     KeyMod mods = KeyMod::NoMod;
-    uint8_t priority = 0;
+    std::uint8_t priority = 0;
 
     inline bool operator<(KeyBind const& rhs) const {
       return priority < rhs.priority;
@@ -51,7 +57,7 @@ public:
   struct MouseBind {
     MouseButton button = MouseButton::Left;
     KeyMod mods = KeyMod::NoMod;
-    uint8_t priority = 0;
+    std::uint8_t priority = 0;
   };
 
   struct ControllerBind {
@@ -87,7 +93,7 @@ public:
 
   struct BindRef {
     KeyMod mods;
-    uint8_t priority = 0;  
+    std::uint8_t priority = 0;  
     BindEntry* entry = nullptr; // Invalidated on reload, careful!
 
     BindRef(BindEntry& bindEntry, KeyBind& keyBind);
@@ -116,7 +122,7 @@ public:
     // Calls the passed functions for each press and release.
     template <typename PressFunction, typename ReleaseFunction>
     void forEach(PressFunction&& pressed, ReleaseFunction&& released) {
-      for (size_t i = 0; i != releases; ++i) {
+      for (std::size_t i = 0; i != releases; ++i) {
         pressed();
         released();
       }

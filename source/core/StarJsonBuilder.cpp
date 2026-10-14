@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -14,7 +14,7 @@ void JsonBuilderStream::beginObject() {
   pushSentry();
 }
 
-void JsonBuilderStream::objectKey(char32_t const* s, size_t len) {
+void JsonBuilderStream::objectKey(char32_t const* s, std::size_t len) {
   push(Json(s, len));
 }
 
@@ -50,15 +50,15 @@ void JsonBuilderStream::endArray() {
   }
 }
 
-void JsonBuilderStream::putString(char32_t const* s, size_t len) {
+void JsonBuilderStream::putString(char32_t const* s, std::size_t len) {
   push(Json(s, len));
 }
 
-void JsonBuilderStream::putDouble(char32_t const* s, size_t len) {
+void JsonBuilderStream::putDouble(char32_t const* s, std::size_t len) {
   push(Json(lexicalCast<double>(String(s, len))));
 }
 
-void JsonBuilderStream::putInteger(char32_t const* s, size_t len) {
+void JsonBuilderStream::putInteger(char32_t const* s, std::size_t len) {
   push(Json(lexicalCast<long long>(String(s, len))));
 }
 
@@ -70,13 +70,13 @@ void JsonBuilderStream::putNull() {
   push(Json());
 }
 
-void JsonBuilderStream::putWhitespace(char32_t const*, size_t) {}
+void JsonBuilderStream::putWhitespace(char32_t const*, std::size_t) {}
 
 void JsonBuilderStream::putColon() {}
 
 void JsonBuilderStream::putComma() {}
 
-size_t JsonBuilderStream::stackSize() {
+std::size_t JsonBuilderStream::stackSize() {
   return m_stack.size();
 }
 

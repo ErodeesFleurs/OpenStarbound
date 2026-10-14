@@ -1,5 +1,6 @@
 #include <string.h>
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.data_stream;
 import star.string;
 import star.format;
@@ -48,7 +49,7 @@ void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rule
   m_streamCompatibilityVersion = rules.version();
 }
 
-ByteArray DataStream::readBytes(size_t len) {
+ByteArray DataStream::readBytes(std::size_t len) {
   ByteArray ba;
   ba.resize(len);
   readData(ba.ptr(), len);
@@ -60,7 +61,7 @@ void DataStream::writeBytes(ByteArray const& ba) {
 }
 
 DataStream& DataStream::operator<<(bool d) {
-  operator<<((uint8_t)d);
+  operator<<((std::uint8_t)d);
   return *this;
 }
 
@@ -69,47 +70,47 @@ DataStream& DataStream::operator<<(char c) {
   return *this;
 }
 
-DataStream& DataStream::operator<<(int8_t d) {
+DataStream& DataStream::operator<<(std::int8_t d) {
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint8_t d) {
+DataStream& DataStream::operator<<(std::uint8_t d) {
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int16_t d) {
+DataStream& DataStream::operator<<(std::int16_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint16_t d) {
+DataStream& DataStream::operator<<(std::uint16_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int32_t d) {
+DataStream& DataStream::operator<<(std::int32_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint32_t d) {
+DataStream& DataStream::operator<<(std::uint32_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int64_t d) {
+DataStream& DataStream::operator<<(std::int64_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint64_t d) {
+DataStream& DataStream::operator<<(std::uint64_t d) {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
@@ -128,7 +129,7 @@ DataStream& DataStream::operator<<(double d) {
 }
 
 DataStream& DataStream::operator>>(bool& d) {
-  uint8_t bu;
+  std::uint8_t bu;
   readData((char*)&bu, sizeof(bu));
   // Converting an arbitrary byte to bool is UB when it is neither 0 nor 1, and
   // a stream can contain anything (a save file written by another version, for
@@ -142,47 +143,47 @@ DataStream& DataStream::operator>>(char& c) {
   return *this;
 }
 
-DataStream& DataStream::operator>>(int8_t& d) {
+DataStream& DataStream::operator>>(std::int8_t& d) {
   readData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint8_t& d) {
+DataStream& DataStream::operator>>(std::uint8_t& d) {
   readData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator>>(int16_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(uint16_t& d) {
+DataStream& DataStream::operator>>(std::int16_t& d) {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(int32_t& d) {
+DataStream& DataStream::operator>>(std::uint16_t& d) {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint32_t& d) {
+DataStream& DataStream::operator>>(std::int32_t& d) {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(int64_t& d) {
+DataStream& DataStream::operator>>(std::uint32_t& d) {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint64_t& d) {
+DataStream& DataStream::operator>>(std::int64_t& d) {
+  readData((char*)&d, sizeof(d));
+  d = fromByteOrder(m_byteOrder, d);
+  return *this;
+}
+
+DataStream& DataStream::operator>>(std::uint64_t& d) {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
@@ -200,16 +201,16 @@ DataStream& DataStream::operator>>(double& d) {
   return *this;
 }
 
-size_t DataStream::writeVlqU(uint64_t i) {
-  return Star::writeVlqU(i, makeFunctionOutputIterator([this](uint8_t b) { *this << b; }));
+std::size_t DataStream::writeVlqU(std::uint64_t i) {
+  return Star::writeVlqU(i, makeFunctionOutputIterator([this](std::uint8_t b) { *this << b; }));
 }
 
-size_t DataStream::writeVlqI(int64_t i) {
-  return Star::writeVlqI(i, makeFunctionOutputIterator([this](uint8_t b) { *this << b; }));
+std::size_t DataStream::writeVlqI(std::int64_t i) {
+  return Star::writeVlqI(i, makeFunctionOutputIterator([this](std::uint8_t b) { *this << b; }));
 }
 
-size_t DataStream::writeVlqS(size_t i) {
-  uint64_t i64;
+std::size_t DataStream::writeVlqS(std::size_t i) {
+  std::uint64_t i64;
   if (i == NPos)
     i64 = 0;
   else
@@ -217,8 +218,8 @@ size_t DataStream::writeVlqS(size_t i) {
   return writeVlqU(i64);
 }
 
-size_t DataStream::readVlqU(uint64_t& i) {
-  size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
+std::size_t DataStream::readVlqU(std::uint64_t& i) {
+  std::size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() { return this->read<std::uint8_t>(); }));
 
   if (bytesRead == NPos)
     throw DataStreamException("Error reading VLQ encoded integer!");
@@ -226,8 +227,8 @@ size_t DataStream::readVlqU(uint64_t& i) {
   return bytesRead;
 }
 
-size_t DataStream::readVlqI(int64_t& i) {
-  size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
+std::size_t DataStream::readVlqI(std::int64_t& i) {
+  std::size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() { return this->read<std::uint8_t>(); }));
 
   if (bytesRead == NPos)
     throw DataStreamException("Error reading VLQ encoded integer!");
@@ -235,36 +236,36 @@ size_t DataStream::readVlqI(int64_t& i) {
   return bytesRead;
 }
 
-size_t DataStream::readVlqS(size_t& i) {
-  uint64_t i64;
-  size_t res = readVlqU(i64);
+std::size_t DataStream::readVlqS(std::size_t& i) {
+  std::uint64_t i64;
+  std::size_t res = readVlqU(i64);
   if (i64 == 0)
     i = NPos;
   else
-    i = (size_t)(i64 - 1);
+    i = (std::size_t)(i64 - 1);
   return res;
 }
 
-uint64_t DataStream::readVlqU() {
-  uint64_t i;
+std::uint64_t DataStream::readVlqU() {
+  std::uint64_t i;
   readVlqU(i);
   return i;
 }
 
-int64_t DataStream::readVlqI() {
-  int64_t i;
+std::int64_t DataStream::readVlqI() {
+  std::int64_t i;
   readVlqI(i);
   return i;
 }
 
-size_t DataStream::readVlqS() {
-  size_t i;
+std::size_t DataStream::readVlqS() {
+  std::size_t i;
   readVlqS(i);
   return i;
 }
 
 DataStream& DataStream::operator<<(char const* s) {
-  writeStringData(s, strlen(s));
+  writeStringData(s, std::strlen(s));
   return *this;
 }
 
@@ -295,14 +296,14 @@ DataStream& DataStream::operator>>(std::string& d) {
       d.push_back(c);
     }
   } else {
-    d.resize((size_t)readVlqU());
+    d.resize((std::size_t)readVlqU());
     readData(&d[0], d.size());
   }
   return *this;
 }
 
 DataStream& DataStream::operator>>(ByteArray& d) {
-  d.resize((size_t)readVlqU());
+  d.resize((std::size_t)readVlqU());
   readData(d.ptr(), d.size());
   return *this;
 }
@@ -314,10 +315,10 @@ DataStream& DataStream::operator>>(String& s) {
   return *this;
 }
 
-void DataStream::writeStringData(char const* data, size_t len) {
+void DataStream::writeStringData(char const* data, std::size_t len) {
   if (m_nullTerminatedStrings) {
     writeData(data, len);
-    operator<<((uint8_t)0x00);
+    operator<<((std::uint8_t)0x00);
   } else {
     writeVlqU(len);
     writeData(data, len);

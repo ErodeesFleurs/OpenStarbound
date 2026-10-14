@@ -1,3 +1,4 @@
+import std;
 import star.world_geometry;
 import star.vector;
 import star.game_types;
@@ -13,8 +14,8 @@ void WorldCamera::setCenterWorldPosition(Vec2F position, bool force) {
   // moved in any direction.  This is sort of arbitrary, but helps prevent
   // judder if the camera is at a boundary and floating point inaccuracy is
   // causing the focus to jitter back and forth across the boundary.
-  if (fabs(position[0] - m_worldCenter[0]) < 1.0f / (TilePixels * m_pixelRatio * 2)
-   && fabs(position[1] - m_worldCenter[1]) < 1.0f / (TilePixels * m_pixelRatio * 2) && !force)
+  if (std::fabs(position[0] - m_worldCenter[0]) < 1.0f / (TilePixels * m_pixelRatio * 2)
+   && std::fabs(position[1] - m_worldCenter[1]) < 1.0f / (TilePixels * m_pixelRatio * 2) && !force)
     return;
 
   // First, make sure the camera center position is inside the main x
@@ -34,14 +35,14 @@ void WorldCamera::setCenterWorldPosition(Vec2F position, bool force) {
   float ratio = TilePixels * m_pixelRatio;
 
   if (m_screenSize[0] % 2 == 0)
-    m_worldCenter[0] = round(m_worldCenter[0] * ratio) / ratio;
+    m_worldCenter[0] = std::round(m_worldCenter[0] * ratio) / ratio;
   else
-    m_worldCenter[0] = (round(m_worldCenter[0] * ratio + 0.5f) - 0.5f) / ratio;
+    m_worldCenter[0] = (std::round(m_worldCenter[0] * ratio + 0.5f) - 0.5f) / ratio;
 
   if (m_screenSize[1] % 2 == 0)
-    m_worldCenter[1] = round(m_worldCenter[1] * ratio) / ratio;
+    m_worldCenter[1] = std::round(m_worldCenter[1] * ratio) / ratio;
   else
-    m_worldCenter[1] = (round(m_worldCenter[1] * ratio + 0.5f) - 0.5f) / ratio;
+    m_worldCenter[1] = (std::round(m_worldCenter[1] * ratio + 0.5f) - 0.5f) / ratio;
 }
 
 }

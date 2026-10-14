@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.vector;
@@ -52,20 +52,26 @@ import star.pane;
 namespace Star {
 
 class Player;
-typedef shared_ptr<Player> PlayerPtr;
+typedef std::shared_ptr<Player> PlayerPtr;
 
 struct CharCreationExceptionTag {
   static constexpr char const* name() { return "CharCreationException"; }
 };
 using CharCreationException = StarError<CharCreationExceptionTag, StarException>;
 
-STAR_CLASS(CharCreationPane);
+class CharCreationPane;
+using CharCreationPanePtr = std::shared_ptr<CharCreationPane>;
+using CharCreationPaneConstPtr = std::shared_ptr<CharCreationPane const>;
+using CharCreationPaneWeakPtr = std::weak_ptr<CharCreationPane>;
+using CharCreationPaneConstWeakPtr = std::weak_ptr<CharCreationPane const>;
+using CharCreationPaneUPtr = std::unique_ptr<CharCreationPane>;
+using CharCreationPaneConstUPtr = std::unique_ptr<CharCreationPane const>;
 class CharCreationPane : public Pane {
 public:
   // The callback here is either called with null (when the user hits the
   // cancel button) or the newly created player (when the user hits the save
   // button).
-  CharCreationPane(function<void(PlayerPtr)> requestCloseFunc);
+  CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc);
 
   void randomize();
   void randomizeName();
@@ -86,18 +92,18 @@ private:
 
   StringList m_speciesList;
 
-  size_t m_speciesChoice;
-  size_t m_genderChoice;
-  size_t m_modeChoice;
-  size_t m_bodyColor;
-  size_t m_alty;
-  size_t m_hairChoice;
-  size_t m_heady;
-  size_t m_shirtChoice;
-  size_t m_shirtColor;
-  size_t m_pantsChoice;
-  size_t m_pantsColor;
-  size_t m_personality;
+  std::size_t m_speciesChoice;
+  std::size_t m_genderChoice;
+  std::size_t m_modeChoice;
+  std::size_t m_bodyColor;
+  std::size_t m_alty;
+  std::size_t m_hairChoice;
+  std::size_t m_heady;
+  std::size_t m_shirtChoice;
+  std::size_t m_shirtColor;
+  std::size_t m_pantsChoice;
+  std::size_t m_pantsColor;
+  std::size_t m_personality;
 };
 
 }

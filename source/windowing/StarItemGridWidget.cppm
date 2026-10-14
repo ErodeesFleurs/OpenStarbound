@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -53,8 +53,20 @@ import star.item_descriptor;
 
 namespace Star {
 
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ItemBag);
+class ItemGridWidget;
+using ItemGridWidgetPtr = std::shared_ptr<ItemGridWidget>;
+using ItemGridWidgetConstPtr = std::shared_ptr<ItemGridWidget const>;
+using ItemGridWidgetWeakPtr = std::weak_ptr<ItemGridWidget>;
+using ItemGridWidgetConstWeakPtr = std::weak_ptr<ItemGridWidget const>;
+using ItemGridWidgetUPtr = std::unique_ptr<ItemGridWidget>;
+using ItemGridWidgetConstUPtr = std::unique_ptr<ItemGridWidget const>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<ItemBag const>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<ItemBag const>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<ItemBag const>;
 
 class ItemGridWidget : public Widget {
 public:
@@ -64,26 +76,26 @@ public:
   ItemBagConstPtr bag() const;
 
   ItemPtr itemAt(Vec2I const& position) const;
-  ItemPtr itemAt(size_t index) const;
+  ItemPtr itemAt(std::size_t index) const;
   ItemPtr selectedItem() const;
 
   ItemSlotWidgetPtr itemWidgetAt(Vec2I const& position) const;
-  ItemSlotWidgetPtr itemWidgetAt(size_t index) const;
+  ItemSlotWidgetPtr itemWidgetAt(std::size_t index) const;
 
   // Returns the dimensions of the item grid
   Vec2I dimensions() const;
 
   // Returns the number of item slots in the grid (dimensions.x() * dimensions.y())
-  size_t itemSlots() const;
+  std::size_t itemSlots() const;
 
   // Returns the size of the underlying bag.
-  size_t bagSize() const;
+  std::size_t bagSize() const;
 
   // Returns the min of bagSize() and itemSlots()
-  size_t effectiveSize() const;
+  std::size_t effectiveSize() const;
 
-  size_t bagLocationAt(Vec2I const& position) const;
-  Vec2I positionOfSlot(size_t slotNumber);
+  std::size_t bagLocationAt(Vec2I const& position) const;
+  Vec2I positionOfSlot(std::size_t slotNumber);
 
   bool sendEvent(InputEvent const& event) override;
   void setCallback(WidgetCallbackFunc callback);
@@ -92,7 +104,7 @@ public:
   void setItemBag(ItemBagConstPtr bag);
   void setProgress(float progress);
 
-  size_t selectedIndex() const;
+  std::size_t selectedIndex() const;
 
   void updateAllItemSlots();
 
@@ -125,7 +137,7 @@ private:
   Vec2I m_columnSpacing;
 
   List<String> m_itemNames;
-  Set<size_t> m_changedSlots;
+  Set<std::size_t> m_changedSlots;
 
   RectI m_itemDraggableArea;
 

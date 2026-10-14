@@ -1,6 +1,5 @@
 #pragma once
-
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.map;
 import star.set;
@@ -50,42 +49,42 @@ inline DataStream& operator>>(DataStream& ds, Empty&) {
   return ds;
 }
 
-template <typename ElementT, size_t SizeN>
+template <typename ElementT, std::size_t SizeN>
 DataStream& operator<<(DataStream& ds, Array<ElementT, SizeN> const& array) {
-  for (size_t i = 0; i < SizeN; ++i)
+  for (std::size_t i = 0; i < SizeN; ++i)
     ds << array[i];
   return ds;
 }
 
-template <typename ElementT, size_t SizeN>
+template <typename ElementT, std::size_t SizeN>
 DataStream& operator>>(DataStream& ds, Array<ElementT, SizeN>& array) {
-  for (size_t i = 0; i < SizeN; ++i)
+  for (std::size_t i = 0; i < SizeN; ++i)
     ds >> array[i];
   return ds;
 }
 
-template <typename ElementT, size_t RankN>
+template <typename ElementT, std::size_t RankN>
 DataStream& operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array) {
   auto size = array.size();
-  for (size_t i = 0; i < RankN; ++i)
+  for (std::size_t i = 0; i < RankN; ++i)
     ds.writeVlqU(size[i]);
 
-  size_t count = array.count();
-  for (size_t i = 0; i < count; ++i)
+  std::size_t count = array.count();
+  for (std::size_t i = 0; i < count; ++i)
     ds << array.atIndex(i);
 
   return ds;
 }
 
-template <typename ElementT, size_t RankN>
+template <typename ElementT, std::size_t RankN>
 DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
   typename MultiArray<ElementT, RankN>::SizeList size;
-  for (size_t i = 0; i < RankN; ++i)
+  for (std::size_t i = 0; i < RankN; ++i)
     size[i] = ds.readVlqU();
 
   array.setSize(size);
-  size_t count = array.count();
-  for (size_t i = 0; i < count; ++i)
+  std::size_t count = array.count();
+  for (std::size_t i = 0; i < count; ++i)
     ds >> array.atIndex(i);
 
   return ds;
@@ -102,14 +101,14 @@ inline DataStream& operator>>(DataStream& ds, Color& color) {
 }
 
 template <typename First, typename Second>
-DataStream& operator<<(DataStream& ds, pair<First, Second> const& pair) {
+DataStream& operator<<(DataStream& ds, std::pair<First, Second> const& pair) {
   ds << pair.first;
   ds << pair.second;
   return ds;
 }
 
 template <typename First, typename Second>
-DataStream& operator>>(DataStream& ds, pair<First, Second>& pair) {
+DataStream& operator>>(DataStream& ds, std::pair<First, Second>& pair) {
   ds >> pair.first;
   ds >> pair.second;
   return ds;
@@ -223,14 +222,14 @@ DataStream& operator>>(DataStream& ds, Polygon<DataT>& poly) {
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 DataStream& operator<<(DataStream& ds, Box<DataT, Dimensions> const& box) {
   ds.write(box.min());
   ds.write(box.max());
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 DataStream& operator>>(DataStream& ds, Box<DataT, Dimensions>& box) {
   ds.read(box.min());
   ds.read(box.max());
@@ -327,20 +326,20 @@ DataStream& operator>>(DataStream& ds, Maybe<T>& maybe) {
 template <typename Left, typename Right>
 DataStream& operator<<(DataStream& ds, Either<Left, Right> const& either) {
   if (either.isLeft()) {
-    ds.write<uint8_t>(1);
+    ds.write<std::uint8_t>(1);
     ds.write(either.left());
   } else if (either.isRight()) {
-    ds.write<uint8_t>(2);
+    ds.write<std::uint8_t>(2);
     ds.write(either.right());
   } else {
-    ds.write<uint8_t>(0);
+    ds.write<std::uint8_t>(0);
   }
   return ds;
 }
 
 template <typename Left, typename Right>
 DataStream& operator>>(DataStream& ds, Either<Left, Right>& either) {
-  uint8_t m = ds.read<uint8_t>();
+  std::uint8_t m = ds.read<std::uint8_t>();
   if (m == 1)
     either = makeLeft(ds.read<Left>());
   else if (m == 2)
@@ -348,14 +347,14 @@ DataStream& operator>>(DataStream& ds, Either<Left, Right>& either) {
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 DataStream& operator<<(DataStream& ds, Line<DataT, Dimensions> const& line) {
   ds.write(line.min());
   ds.write(line.max());
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 DataStream& operator>>(DataStream& ds, Line<DataT, Dimensions>& line) {
   ds.read(line.min());
   ds.read(line.max());
@@ -363,8 +362,8 @@ DataStream& operator>>(DataStream& ds, Line<DataT, Dimensions>& line) {
 }
 
 template <typename T>
-DataStream& operator<<(DataStream& ds, tuple<T> const& t) {
-  ds << get<0>(t);
+DataStream& operator<<(DataStream& ds, std::tuple<T> const& t) {
+  ds << std::get<0>(t);
   return ds;
 }
 
@@ -387,13 +386,13 @@ struct DataStreamWriter {
 };
 
 template <typename... T>
-DataStream& operator>>(DataStream& ds, tuple<T...>& t) {
+DataStream& operator>>(DataStream& ds, std::tuple<T...>& t) {
   tupleCallFunction(t, DataStreamReader{ds});
   return ds;
 }
 
 template <typename... T>
-DataStream& operator<<(DataStream& ds, tuple<T...> const& t) {
+DataStream& operator<<(DataStream& ds, std::tuple<T...> const& t) {
   tupleCallFunction(t, DataStreamWriter{ds});
   return ds;
 }

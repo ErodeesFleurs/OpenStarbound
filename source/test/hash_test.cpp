@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.hash;
 import star.string;
 import star.xx_hash;

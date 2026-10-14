@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 import star.id_map;
@@ -75,8 +75,20 @@ namespace Star {
 
 struct Collection;
 struct Collectable;
-STAR_CLASS(BehaviorState);
-STAR_CLASS(Blackboard);
+class BehaviorState;
+using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
+using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
+using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
+using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
+using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
+using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
+class Blackboard;
+using BlackboardPtr = std::shared_ptr<Blackboard>;
+using BlackboardConstPtr = std::shared_ptr<const Blackboard>;
+using BlackboardWeakPtr = std::weak_ptr<Blackboard>;
+using BlackboardConstWeakPtr = std::weak_ptr<const Blackboard>;
+using BlackboardUPtr = std::unique_ptr<Blackboard>;
+using BlackboardConstUPtr = std::unique_ptr<const Blackboard>;
 enum class NodeStatus;
 
 template <>

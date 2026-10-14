@@ -1,13 +1,13 @@
 module;
 
 import star.vector;
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 import star.bi_map;
 
 namespace Star {
 
-enum class LightType : uint8_t {
+enum class LightType : std::uint8_t {
   Spread = 0,
   Point = 1,
   PointAsSpread = 2 // Point with spread-like range

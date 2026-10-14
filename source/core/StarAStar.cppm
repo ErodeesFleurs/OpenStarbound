@@ -1,7 +1,6 @@
 module;
 
 import std;
-#include "StarConfig.hpp"
 import star.maybe;
 import star.list;
 import star.map;
@@ -33,11 +32,11 @@ namespace AStar {
   template <class Edge, class Node>
   class Search {
   public:
-    typedef function<double(Node, Node)> HeuristicFunction;
-    typedef function<void(Node, List<Edge>& neighbors)> NeighborFunction;
-    typedef function<bool(Node)> GoalFunction;
-    typedef function<bool(Node, Node)> CompareFunction;
-    typedef function<bool(Edge)> ValidateEndFunction;
+    typedef std::function<double(Node, Node)> HeuristicFunction;
+    typedef std::function<void(Node, List<Edge>& neighbors)> NeighborFunction;
+    typedef std::function<bool(Node)> GoalFunction;
+    typedef std::function<bool(Node, Node)> CompareFunction;
+    typedef std::function<bool(Edge)> ValidateEndFunction;
 
     Search(HeuristicFunction heuristicCost,
         NeighborFunction getAdjacent,
@@ -91,7 +90,7 @@ namespace AStar {
     Maybe<unsigned> m_maxNodesToSearch;
 
     Node m_goal;
-    Map<Node, NodeMeta, std::less<Node>, BlockAllocator<pair<Node const, NodeMeta>, 1024>> m_nodeMeta;
+    Map<Node, NodeMeta, std::less<Node>, BlockAllocator<std::pair<Node const, NodeMeta>, 1024>> m_nodeMeta;
     std::priority_queue<ScoredNode> m_openQueue;
     Set<Node, std::less<Node>, BlockAllocator<Node, 1024>> m_openSet;
     Set<Node, std::less<Node>, BlockAllocator<Node, 1024>> m_closedSet;

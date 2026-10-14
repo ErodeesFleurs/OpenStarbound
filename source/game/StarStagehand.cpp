@@ -22,7 +22,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.version;
@@ -124,7 +124,7 @@ RectF Stagehand::metaBoundBox() const {
   return m_boundBox;
 }
 
-pair<ByteArray, uint64_t> Stagehand::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Stagehand::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -136,7 +136,7 @@ String Stagehand::name() const {
   return typeName();
 }
 
-void Stagehand::update(float dt, uint64_t) {
+void Stagehand::update(float dt, std::uint64_t) {
   if (!inWorld())
     return;
 

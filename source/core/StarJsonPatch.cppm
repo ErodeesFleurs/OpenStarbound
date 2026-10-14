@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -71,10 +70,10 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
 
 
 // Returns 0 if not found, index + 1 if found.
-size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) {
+std::size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) {
   if (searchable.isType(Json::Type::Array)) {
     auto array = searchable.toArray();
-    for (size_t i = 0; i != array.size(); ++i) {
+    for (std::size_t i = 0; i != array.size(); ++i) {
       if (jsonPartialMatch(array[i], value))
         return i + 1;
     }
@@ -88,13 +87,13 @@ size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointe
 namespace JsonPatching {
 
   static const StringMap<std::function<Json(Json, Json)>> functionMap = StringMap<std::function<Json(Json, Json)>>{
-      {"test", std::bind(applyTestOperation, _1, _2)},
-      {"remove", std::bind(applyRemoveOperation, _1, _2)},
-      {"add", std::bind(applyAddOperation, _1, _2)},
-      {"replace", std::bind(applyReplaceOperation, _1, _2)},
-      {"move", std::bind(applyMoveOperation, _1, _2)},
-      {"copy", std::bind(applyCopyOperation, _1, _2)},
-      {"merge", std::bind(applyMergeOperation, _1, _2)},
+      {"test", std::bind(applyTestOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"remove", std::bind(applyRemoveOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"add", std::bind(applyAddOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"replace", std::bind(applyReplaceOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"move", std::bind(applyMoveOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"copy", std::bind(applyCopyOperation, std::placeholders::_1, std::placeholders::_2)},
+      {"merge", std::bind(applyMergeOperation, std::placeholders::_1, std::placeholders::_2)},
   };
 
   Json applyOperation(Json const& base, Json const& op, Maybe<Json> const&) {
@@ -151,7 +150,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = pointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, pointer))
+      if (std::size_t index = findJsonMatch(searchable, searchValue, pointer))
         return pointer.add(pointer.remove(base), searchable.eraseIndex(index - 1));
       else
         return base;
@@ -168,7 +167,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = pointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, pointer))
+      if (std::size_t index = findJsonMatch(searchable, searchValue, pointer))
         return pointer.add(pointer.remove(base), searchable.insert(index - 1, value));
       else
         return base;
@@ -185,7 +184,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = pointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, pointer))
+      if (std::size_t index = findJsonMatch(searchable, searchValue, pointer))
         return pointer.add(pointer.remove(base), searchable.set(index - 1, value));
       else
         return base;
@@ -202,7 +201,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = fromPointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, fromPointer)) {
+      if (std::size_t index = findJsonMatch(searchable, searchValue, fromPointer)) {
         auto result = toPointer.add(base, searchable.get(index - 1));
         return fromPointer.add(result, searchable.eraseIndex(index - 1));
       }
@@ -222,7 +221,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = fromPointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, fromPointer))
+      if (std::size_t index = findJsonMatch(searchable, searchValue, fromPointer))
         return toPointer.add(base, searchable.get(index - 1));
       else
         return base;
@@ -239,7 +238,7 @@ namespace JsonPatching {
     if (op.contains("search")) {
       auto searchable = pointer.get(base);
       auto searchValue = op.get("search");
-      if (size_t index = findJsonMatch(searchable, searchValue, pointer))
+      if (std::size_t index = findJsonMatch(searchable, searchValue, pointer))
         return pointer.add(pointer.remove(base), searchable.set(index - 1, jsonMerge(searchable.get(index - 1), op.get("value"))));
       else
         return base;

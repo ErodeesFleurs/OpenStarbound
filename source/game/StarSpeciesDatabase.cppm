@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 import star.thread;
@@ -39,8 +39,20 @@ import star.status_types;
 
 namespace Star {
 
-STAR_CLASS(SpeciesDefinition);
-STAR_CLASS(SpeciesDatabase);
+class SpeciesDefinition;
+using SpeciesDefinitionPtr = std::shared_ptr<SpeciesDefinition>;
+using SpeciesDefinitionConstPtr = std::shared_ptr<const SpeciesDefinition>;
+using SpeciesDefinitionWeakPtr = std::weak_ptr<SpeciesDefinition>;
+using SpeciesDefinitionConstWeakPtr = std::weak_ptr<const SpeciesDefinition>;
+using SpeciesDefinitionUPtr = std::unique_ptr<SpeciesDefinition>;
+using SpeciesDefinitionConstUPtr = std::unique_ptr<const SpeciesDefinition>;
+class SpeciesDatabase;
+using SpeciesDatabasePtr = std::shared_ptr<SpeciesDatabase>;
+using SpeciesDatabaseConstPtr = std::shared_ptr<const SpeciesDatabase>;
+using SpeciesDatabaseWeakPtr = std::weak_ptr<SpeciesDatabase>;
+using SpeciesDatabaseConstWeakPtr = std::weak_ptr<const SpeciesDatabase>;
+using SpeciesDatabaseUPtr = std::unique_ptr<SpeciesDatabase>;
+using SpeciesDatabaseConstUPtr = std::unique_ptr<const SpeciesDatabase>;
 
 struct SpeciesCharCreationTooltip {
   String title;
@@ -140,9 +152,9 @@ public:
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
 
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
-  CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
+  CharacterCreationResult createHumanoid(String name, String speciesChoice, std::size_t genderChoice, std::size_t bodyColor, std::size_t alty, std::size_t hairChoice, std::size_t heady, std::size_t shirtChoice, std::size_t shirtColor, std::size_t pantsChoice, std::size_t pantsColor, std::size_t personality, LuaVariadic<LuaValue> ext = {}) const;
 
-  CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
+  CharacterCreationResult generateHumanoid(String species, std::int64_t seed, Maybe<Gender> = {}) const;
 
 private:
   StringMap<SpeciesDefinitionPtr> m_species;

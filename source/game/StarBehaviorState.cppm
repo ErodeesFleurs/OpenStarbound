@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -16,11 +16,41 @@ import star.behavior_database;
 
 namespace Star {
 
-STAR_CLASS(Blackboard);
-STAR_CLASS(BehaviorState);
-STAR_STRUCT(ActionState);
-STAR_STRUCT(DecoratorState);
-STAR_STRUCT(CompositeState);
+class Blackboard;
+using BlackboardPtr = std::shared_ptr<Blackboard>;
+using BlackboardConstPtr = std::shared_ptr<const Blackboard>;
+using BlackboardWeakPtr = std::weak_ptr<Blackboard>;
+using BlackboardConstWeakPtr = std::weak_ptr<const Blackboard>;
+using BlackboardUPtr = std::unique_ptr<Blackboard>;
+using BlackboardConstUPtr = std::unique_ptr<const Blackboard>;
+class BehaviorState;
+using BehaviorStatePtr = std::shared_ptr<BehaviorState>;
+using BehaviorStateConstPtr = std::shared_ptr<const BehaviorState>;
+using BehaviorStateWeakPtr = std::weak_ptr<BehaviorState>;
+using BehaviorStateConstWeakPtr = std::weak_ptr<const BehaviorState>;
+using BehaviorStateUPtr = std::unique_ptr<BehaviorState>;
+using BehaviorStateConstUPtr = std::unique_ptr<const BehaviorState>;
+struct ActionState;
+using ActionStatePtr = std::shared_ptr<ActionState>;
+using ActionStateConstPtr = std::shared_ptr<const ActionState>;
+using ActionStateWeakPtr = std::weak_ptr<ActionState>;
+using ActionStateConstWeakPtr = std::weak_ptr<const ActionState>;
+using ActionStateUPtr = std::unique_ptr<ActionState>;
+using ActionStateConstUPtr = std::unique_ptr<const ActionState>;
+struct DecoratorState;
+using DecoratorStatePtr = std::shared_ptr<DecoratorState>;
+using DecoratorStateConstPtr = std::shared_ptr<const DecoratorState>;
+using DecoratorStateWeakPtr = std::weak_ptr<DecoratorState>;
+using DecoratorStateConstWeakPtr = std::weak_ptr<const DecoratorState>;
+using DecoratorStateUPtr = std::unique_ptr<DecoratorState>;
+using DecoratorStateConstUPtr = std::unique_ptr<const DecoratorState>;
+struct CompositeState;
+using CompositeStatePtr = std::shared_ptr<CompositeState>;
+using CompositeStateConstPtr = std::shared_ptr<const CompositeState>;
+using CompositeStateWeakPtr = std::weak_ptr<CompositeState>;
+using CompositeStateConstWeakPtr = std::weak_ptr<const CompositeState>;
+using CompositeStateUPtr = std::unique_ptr<CompositeState>;
+using CompositeStateConstUPtr = std::unique_ptr<const CompositeState>;
 
 struct BehaviorExceptionTag {
   static constexpr char const* name() { return "BehaviorException"; }
@@ -36,30 +66,30 @@ public:
   LuaValue get(NodeParameterType type, String const& key) const;
   void set(NodeParameterType type, String const& key, LuaValue value);
 
-  LuaTable parameters(StringMap<NodeParameter> const& nodeParameters, uint64_t nodeId);
+  LuaTable parameters(StringMap<NodeParameter> const& nodeParameters, std::uint64_t nodeId);
   void setOutput(ActionNode const& node, LuaTable const& output);
 
   // takes the set of currently held ephemeral values
-  Set<pair<NodeParameterType, String>> takeEphemerals();
+  Set<std::pair<NodeParameterType, String>> takeEphemerals();
 
   // clears any provided ephemerals that are not currently held
-  void clearEphemerals(Set<pair<NodeParameterType, String>> ephemerals);
+  void clearEphemerals(Set<std::pair<NodeParameterType, String>> ephemerals);
 private:
   LuaTable m_luaContext;
 
-  HashMap<uint64_t, LuaTable> m_parameters;
+  HashMap<std::uint64_t, LuaTable> m_parameters;
   HashMap<NodeParameterType, StringMap<LuaValue>> m_board;
 
-  HashMap<NodeParameterType, StringMap<List<pair<uint64_t, String>>>> m_input;
-  StringMap<List<pair<uint64_t, LuaTable>>> m_vectorNumberInput;
+  HashMap<NodeParameterType, StringMap<List<std::pair<std::uint64_t, String>>>> m_input;
+  StringMap<List<std::pair<std::uint64_t, LuaTable>>> m_vectorNumberInput;
 
-  Set<pair<NodeParameterType, String>> m_ephemeral;
+  Set<std::pair<NodeParameterType, String>> m_ephemeral;
 };
 
 typedef Maybe<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
-typedef shared_ptr<NodeState> NodeStatePtr;
+typedef std::shared_ptr<NodeState> NodeStatePtr;
 
-typedef pair<LuaFunction, LuaThread> Coroutine;
+typedef std::pair<LuaFunction, LuaThread> Coroutine;
 
 enum class NodeStatus {
   Invalid,
@@ -80,10 +110,10 @@ struct DecoratorState {
 };
 
 struct CompositeState {
-  CompositeState(size_t children);
-  CompositeState(size_t children, size_t index);
+  CompositeState(std::size_t children);
+  CompositeState(std::size_t children, std::size_t index);
 
-  size_t index;
+  std::size_t index;
   List<NodeStatePtr> children;
 };
 

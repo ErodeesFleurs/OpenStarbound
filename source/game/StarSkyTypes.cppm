@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.data_stream;
@@ -17,7 +17,7 @@ struct SkyExceptionTag {
 };
 using SkyException = StarError<SkyExceptionTag, StarException>;
 
-enum class SkyType : uint8_t {
+enum class SkyType : std::uint8_t {
   Barren,
   Atmospheric,
   Atmosphereless,
@@ -27,7 +27,7 @@ enum class SkyType : uint8_t {
 };
 extern EnumMap<SkyType> const SkyTypeNames;
 
-enum class FlyingType : uint8_t {
+enum class FlyingType : std::uint8_t {
   None,
   Disembarking,
   Warp,
@@ -35,7 +35,7 @@ enum class FlyingType : uint8_t {
 };
 extern EnumMap<FlyingType> const FlyingTypeNames;
 
-enum class WarpPhase : int8_t {
+enum class WarpPhase : std::int8_t {
   SlowingDown = -1,
   Maintain = 0,
   SpeedingUp = 1
@@ -52,10 +52,10 @@ struct SkyColoring {
 
   Color mainColor;
 
-  pair<Color, Color> morningColors;
-  pair<Color, Color> dayColors;
-  pair<Color, Color> eveningColors;
-  pair<Color, Color> nightColors;
+  std::pair<Color, Color> morningColors;
+  std::pair<Color, Color> dayColors;
+  std::pair<Color, Color> eveningColors;
+  std::pair<Color, Color> nightColors;
 
   Color morningLightColor;
   Color dayLightColor;
@@ -91,7 +91,7 @@ struct SkyWorldHorizon {
   float rotation;
 
   // List of L/R images for each layer of the world horizon, bottom to top.
-  List<pair<String, String>> layers;
+  List<std::pair<String, String>> layers;
 };
 
 }

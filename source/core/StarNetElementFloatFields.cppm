@@ -2,8 +2,6 @@ module;
 import star.net_compatibility;
 
 import std;
-
-#include "StarConfig.hpp"
 import star.list;
 import star.maybe;
 import star.format;
@@ -37,7 +35,7 @@ public:
   // used to interpolate this value.  It is not necessary that senders and
   // receivers both have matching interpolation functions, or any interpolation
   // functions at all.
-  void setInterpolator(function<T(T, T, T)> interpolator);
+  void setInterpolator(std::function<T(T, T, T)> interpolator);
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -50,7 +48,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
@@ -62,12 +60,12 @@ private:
 
   Maybe<T> m_fixedPointBase;
   NetElementVersion const* m_netVersion = nullptr;
-  uint64_t m_latestUpdateVersion = 0;
+  std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
-  function<T(T, T, T)> m_interpolator;
+  std::function<T(T, T, T)> m_interpolator;
   float m_extrapolation = 0.0f;
-  Maybe<Deque<pair<float, T>>> m_interpolationDataPoints;
+  Maybe<Deque<std::pair<float, T>>> m_interpolationDataPoints;
 };
 
 typedef NetElementFloating<float> NetElementFloat;
@@ -83,7 +81,7 @@ void NetElementFloating<T>::set(T value) {
   if (m_value != value) {
     // Only mark the step as updated here if it actually would change the
     // transmitted value.
-    if (!m_fixedPointBase || round(m_value / *m_fixedPointBase) != round(value / *m_fixedPointBase))
+    if (!m_fixedPointBase || std::round(m_value / *m_fixedPointBase) != std::round(value / *m_fixedPointBase))
       m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
 
     m_value = value;
@@ -101,7 +99,7 @@ void NetElementFloating<T>::setFixedPointBase(Maybe<T> fixedPointBase) {
 }
 
 template <typename T>
-void NetElementFloating<T>::setInterpolator(function<T(T, T, T)> interpolator) {
+void NetElementFloating<T>::setInterpolator(std::function<T(T, T, T)> interpolator) {
   m_interpolator = std::move(interpolator);
 }
 
@@ -162,7 +160,7 @@ void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules)
 }
 
 template <typename T>
-bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementFloating<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
@@ -177,7 +175,7 @@ bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, 
 
 template <typename T>
 void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  _unused(rules);
+  ((void)(rules));
   T t = readValue(ds);
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
@@ -209,7 +207,7 @@ void NetElementFloating<T>::blankNetDelta(float interpolationTime) {
 template <typename T>
 void NetElementFloating<T>::writeValue(DataStream& ds, T t) const {
   if (m_fixedPointBase)
-    ds.writeVlqI(round(t / *m_fixedPointBase));
+    ds.writeVlqI(std::round(t / *m_fixedPointBase));
   else
     ds.write(t);
 }
@@ -243,7 +241,7 @@ T NetElementFloating<T>::interpolate() const {
     // If step separation is less than 1.0, don't normalize extrapolation to
     // the very small step difference, because this can result in large jumps
     // during jitter.
-    float stepDist = max(maxPoint.first - minPoint.first, 1.0f);
+    float stepDist = std::max(maxPoint.first - minPoint.first, 1.0f);
     float offset = clamp<float>(bound.offset, 0.0f, 1.0f + m_extrapolation / stepDist);
     return m_interpolator(offset, minPoint.second, maxPoint.second);
 

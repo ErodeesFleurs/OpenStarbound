@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -96,7 +96,7 @@ private:
 
   WidgetCallbackFunc m_callback;
 };
-typedef shared_ptr<SliderBarWidget> SliderBarWidgetPtr;
+typedef std::shared_ptr<SliderBarWidget> SliderBarWidgetPtr;
 }
 
 export module star.slider_bar;

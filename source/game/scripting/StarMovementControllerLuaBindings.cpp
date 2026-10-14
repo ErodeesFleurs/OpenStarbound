@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.lua;
@@ -48,12 +48,12 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
   callbacks.registerCallback(
       "parameters", [movementController]() { return movementController->parameters().toJson(); });
   callbacks.registerCallbackWithSignature<void, Json>(
-      "applyParameters", bind(&MovementController::applyParameters, movementController, _1));
+      "applyParameters", std::bind(&MovementController::applyParameters, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Json>(
-      "resetParameters", bind(&MovementController::resetParameters, movementController, _1));
-  callbacks.registerCallbackWithSignature<float>("mass", bind(&MovementController::mass, movementController));
+      "resetParameters", std::bind(&MovementController::resetParameters, movementController, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<float>("mass", std::bind(&MovementController::mass, movementController));
   callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionPoly", bind(&MovementController::collisionPoly, movementController));
+      "collisionPoly", std::bind(&MovementController::collisionPoly, movementController));
   callbacks.registerCallback("boundBox", [movementController]() -> RectF {
       return movementController->collisionPoly().boundBox();
     });
@@ -61,66 +61,66 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
       return movementController->collisionPoly().convexArea();
     });
 
-  callbacks.registerCallbackWithSignature<Vec2F>("position", bind(&MovementController::position, movementController));
-  callbacks.registerCallbackWithSignature<float>("xPosition", bind(&MovementController::xPosition, movementController));
-  callbacks.registerCallbackWithSignature<float>("yPosition", bind(&MovementController::yPosition, movementController));
-  callbacks.registerCallbackWithSignature<Vec2F>("velocity", bind(&MovementController::velocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("xVelocity", bind(&MovementController::xVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("yVelocity", bind(&MovementController::yVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("rotation", bind(&MovementController::rotation, movementController));
+  callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&MovementController::position, movementController));
+  callbacks.registerCallbackWithSignature<float>("xPosition", std::bind(&MovementController::xPosition, movementController));
+  callbacks.registerCallbackWithSignature<float>("yPosition", std::bind(&MovementController::yPosition, movementController));
+  callbacks.registerCallbackWithSignature<Vec2F>("velocity", std::bind(&MovementController::velocity, movementController));
+  callbacks.registerCallbackWithSignature<float>("xVelocity", std::bind(&MovementController::xVelocity, movementController));
+  callbacks.registerCallbackWithSignature<float>("yVelocity", std::bind(&MovementController::yVelocity, movementController));
+  callbacks.registerCallbackWithSignature<float>("rotation", std::bind(&MovementController::rotation, movementController));
   callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionBody", bind(&MovementController::collisionBody, movementController));
+      "collisionBody", std::bind(&MovementController::collisionBody, movementController));
   callbacks.registerCallbackWithSignature<RectF>(
-      "collisionBoundBox", bind(&MovementController::collisionBoundBox, movementController));
+      "collisionBoundBox", std::bind(&MovementController::collisionBoundBox, movementController));
   callbacks.registerCallbackWithSignature<RectF>(
-      "localBoundBox", bind(&MovementController::localBoundBox, movementController));
+      "localBoundBox", std::bind(&MovementController::localBoundBox, movementController));
   callbacks.registerCallbackWithSignature<bool>(
-      "isColliding", bind(&MovementController::isColliding, movementController));
+      "isColliding", std::bind(&MovementController::isColliding, movementController));
   callbacks.registerCallbackWithSignature<bool>(
-      "isNullColliding", bind(&MovementController::isNullColliding, movementController));
+      "isNullColliding", std::bind(&MovementController::isNullColliding, movementController));
   callbacks.registerCallbackWithSignature<bool>(
-      "isCollisionStuck", bind(&MovementController::isCollisionStuck, movementController));
+      "isCollisionStuck", std::bind(&MovementController::isCollisionStuck, movementController));
   callbacks.registerCallbackWithSignature<Maybe<float>>(
-      "stickingDirection", bind(&MovementController::stickingDirection, movementController));
+      "stickingDirection", std::bind(&MovementController::stickingDirection, movementController));
   callbacks.registerCallbackWithSignature<float>(
-      "liquidPercentage", bind(&MovementController::liquidPercentage, movementController));
+      "liquidPercentage", std::bind(&MovementController::liquidPercentage, movementController));
   callbacks.registerCallbackWithSignature<LiquidId>(
-      "liquidId", bind(&MovementController::liquidId, movementController));
-  callbacks.registerCallbackWithSignature<bool>("onGround", bind(&MovementController::onGround, movementController));
-  callbacks.registerCallbackWithSignature<bool>("zeroG", bind(&MovementController::zeroG, movementController));
-  callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", bind(&MovementController::atWorldLimit, movementController, _1));
+      "liquidId", std::bind(&MovementController::liquidId, movementController));
+  callbacks.registerCallbackWithSignature<bool>("onGround", std::bind(&MovementController::onGround, movementController));
+  callbacks.registerCallbackWithSignature<bool>("zeroG", std::bind(&MovementController::zeroG, movementController));
+  callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", std::bind(&MovementController::atWorldLimit, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setPosition", bind(&MovementController::setPosition, movementController, _1));
+      "setPosition", std::bind(&MovementController::setPosition, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "setXPosition", bind(&MovementController::setXPosition, movementController, _1));
+      "setXPosition", std::bind(&MovementController::setXPosition, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "setYPosition", bind(&MovementController::setYPosition, movementController, _1));
+      "setYPosition", std::bind(&MovementController::setYPosition, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "translate", bind(&MovementController::translate, movementController, _1));
+      "translate", std::bind(&MovementController::translate, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setVelocity", bind(&MovementController::setVelocity, movementController, _1));
+      "setVelocity", std::bind(&MovementController::setVelocity, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "setXVelocity", bind(&MovementController::setXVelocity, movementController, _1));
+      "setXVelocity", std::bind(&MovementController::setXVelocity, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "setYVelocity", bind(&MovementController::setYVelocity, movementController, _1));
+      "setYVelocity", std::bind(&MovementController::setYVelocity, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "addMomentum", bind(&MovementController::addMomentum, movementController, _1));
+      "addMomentum", std::bind(&MovementController::addMomentum, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "setRotation", bind(&MovementController::setRotation, movementController, _1));
+      "setRotation", std::bind(&MovementController::setRotation, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, float>(
-      "rotate", bind(&MovementController::rotate, movementController, _1));
+      "rotate", std::bind(&MovementController::rotate, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "accelerate", bind(&MovementController::accelerate, movementController, _1));
+      "accelerate", std::bind(&MovementController::accelerate, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "force", bind(&MovementController::force, movementController, _1));
+      "force", std::bind(&MovementController::force, movementController, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, Vec2F, float>(
-      "approachVelocity", bind(&MovementController::approachVelocity, movementController, _1, _2));
+      "approachVelocity", std::bind(&MovementController::approachVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void, float, float, float, bool>("approachVelocityAlongAngle",
-      bind(&MovementController::approachVelocityAlongAngle, movementController, _1, _2, _3, _4));
+      std::bind(&MovementController::approachVelocityAlongAngle, movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachXVelocity", bind(&MovementController::approachXVelocity, movementController, _1, _2));
+      "approachXVelocity", std::bind(&MovementController::approachXVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachYVelocity", bind(&MovementController::approachYVelocity, movementController, _1, _2));
+      "approachYVelocity", std::bind(&MovementController::approachYVelocity, movementController, std::placeholders::_1, std::placeholders::_2));
 
   return callbacks;
 }

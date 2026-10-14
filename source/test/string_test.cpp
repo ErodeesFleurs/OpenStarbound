@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string;
 import star.list;
 import star.unicode;
@@ -182,7 +183,7 @@ TEST(StringTest, prepend) {
 
 TEST(StringTest, utf8) {
   char const* utf8String = "This is a [日本語] Unicode String. (日本語)";
-  EXPECT_EQ(utf8Length(utf8String, strlen(utf8String)), 37u);
+  EXPECT_EQ(utf8Length(utf8String, std::strlen(utf8String)), 37u);
 
   String s1 = utf8String;
   EXPECT_EQ(s1.utf8(), std::string(utf8String));

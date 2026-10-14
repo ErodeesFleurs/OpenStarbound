@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.string;
@@ -32,9 +32,15 @@ import star.portrait_entity;
 
 namespace Star {
 
-STAR_CLASS(DamageBarEntity);
+class DamageBarEntity;
+using DamageBarEntityPtr = std::shared_ptr<DamageBarEntity>;
+using DamageBarEntityConstPtr = std::shared_ptr<const DamageBarEntity>;
+using DamageBarEntityWeakPtr = std::weak_ptr<DamageBarEntity>;
+using DamageBarEntityConstWeakPtr = std::weak_ptr<const DamageBarEntity>;
+using DamageBarEntityUPtr = std::unique_ptr<DamageBarEntity>;
+using DamageBarEntityConstUPtr = std::unique_ptr<const DamageBarEntity>;
 
-enum class DamageBarType : uint8_t {
+enum class DamageBarType : std::uint8_t {
   Default,
   None,
   Special

@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.data_stream;
 
@@ -7,15 +8,15 @@ import star.net_element_basic_fields;
 import star.net_compatibility;
 namespace Star {
 
-void NetElementSize::readData(DataStream& ds, size_t& v) const {
-  uint64_t s = ds.readVlqU();
+void NetElementSize::readData(DataStream& ds, std::size_t& v) const {
+  std::uint64_t s = ds.readVlqU();
   if (s == 0)
     v = NPos;
   else
     v = s - 1;
 }
 
-void NetElementSize::writeData(DataStream& ds, size_t const& v) const {
+void NetElementSize::writeData(DataStream& ds, std::size_t const& v) const {
   if (v == NPos)
     ds.writeVlqU(0);
   else
@@ -34,10 +35,12 @@ void NetElementEvent::trigger() {
   set(get() + 1);
 }
 
-uint64_t NetElementEvent::pullOccurrences() {
-  uint64_t occurrences = get();
-  starAssert(occurrences >= m_pulledOccurrences);
-  uint64_t unchecked = occurrences - m_pulledOccurrences;
+std::uint64_t NetElementEvent::pullOccurrences() {
+  std::uint64_t occurrences = get();
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((occurrences >= m_pulledOccurrences));
+  }
+  std::uint64_t unchecked = occurrences - m_pulledOccurrences;
   m_pulledOccurrences = occurrences;
   return unchecked;
 }

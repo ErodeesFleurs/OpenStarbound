@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.set;
@@ -48,7 +48,7 @@ void Blackboard::set(NodeParameterType type, String const& key, LuaValue value) 
 
   // dumb special case for setting number outputs to vec2 inputs
   if (type == NodeParameterType::Number) {
-    for (pair<uint64_t, LuaTable>& input : m_vectorNumberInput.maybe(key).value()) {
+    for (std::pair<std::uint64_t, LuaTable>& input : m_vectorNumberInput.maybe(key).value()) {
       input.second.set(input.first, value);
     }
   }
@@ -58,7 +58,7 @@ LuaValue Blackboard::get(NodeParameterType type, String const& key) const {
   return m_board.get(type).maybe(key).value(LuaNil);
 }
 
-LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint64_t nodeId) {
+LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, std::uint64_t nodeId) {
   if (auto table = m_parameters.maybe(nodeId))
     return *table;
 
@@ -119,11 +119,11 @@ void Blackboard::setOutput(ActionNode const& node, LuaTable const& output) {
   }
 }
 
-Set<pair<NodeParameterType, String>> Blackboard::takeEphemerals() {
+Set<std::pair<NodeParameterType, String>> Blackboard::takeEphemerals() {
   return take(m_ephemeral);
 }
 
-void Blackboard::clearEphemerals(Set<pair<NodeParameterType, String>> ephemerals) {
+void Blackboard::clearEphemerals(Set<std::pair<NodeParameterType, String>> ephemerals) {
   for (auto const& p : ephemerals) {
 	  if (!m_ephemeral.contains(p))
 	    set(p.first, p.second, LuaNil);
@@ -134,12 +134,12 @@ DecoratorState::DecoratorState(LuaThread thread) : thread(std::move(thread)) {
   child = std::make_shared<NodeState>();
 }
 
-CompositeState::CompositeState(size_t childCount) : index() {
-  for (size_t i = 0; i < childCount; i++)
+CompositeState::CompositeState(std::size_t childCount) : index() {
+  for (std::size_t i = 0; i < childCount; i++)
     children.append(std::make_shared<NodeState>());
 }
 
-CompositeState::CompositeState(size_t childCount, size_t begin) : CompositeState(childCount) {
+CompositeState::CompositeState(std::size_t childCount, std::size_t begin) : CompositeState(childCount) {
   index = begin;
 }
 
@@ -147,7 +147,7 @@ BehaviorState::BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, Maybe<
   if (blackboard)
     m_board = *blackboard;
   else
-    m_board = make_shared<Blackboard>(m_luaContext);
+    m_board = std::make_shared<Blackboard>(m_luaContext);
 
   LuaFunction require = m_luaContext.get<LuaFunction>("require");
   for (auto script : m_tree->scripts)
@@ -177,7 +177,7 @@ void BehaviorState::clear() {
 
 BlackboardWeakPtr BehaviorState::blackboardPtr() {
   if (auto master = m_board.maybe<BlackboardPtr>())
-    return weak_ptr<Blackboard>(*master);
+    return std::weak_ptr<Blackboard>(*master);
   else
     return m_board.get<BlackboardWeakPtr>();
 }
@@ -213,7 +213,7 @@ NodeStatus BehaviorState::runNode(BehaviorNode const& node, NodeState& state) {
 }
 
 NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
-  uint64_t id = (uint64_t)&node;
+  std::uint64_t id = (std::uint64_t)&node;
 
   auto result = ActionReturn(NodeStatus::Invalid, LuaNil);
   if (state.isNothing()) {
@@ -225,7 +225,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
       throw StarException(strf("Lua Exception caught running action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
 
-    auto status = get<0>(result);
+    auto status = std::get<0>(result);
     if (status != NodeStatus::Success && status != NodeStatus::Failure)
       state.set(ActionState{thread});
   } else {
@@ -237,19 +237,19 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
       throw StarException(strf("Lua Exception caught resuming action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
 
-    auto status = get<0>(result);
+    auto status = std::get<0>(result);
     if (status == NodeStatus::Success || status == NodeStatus::Failure)
       m_threads.append(thread);
   }
 
-  if (auto table = get<1>(result).maybe<LuaTable>())
+  if (auto table = std::get<1>(result).maybe<LuaTable>())
     board()->setOutput(node, *table);
 
-  return get<0>(result);
+  return std::get<0>(result);
 }
 
 NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& state) {
-  uint64_t id = (uint64_t)&node;
+  std::uint64_t id = (std::uint64_t)&node;
   NodeStatus status = NodeStatus::Running;
   if (state.isNothing()) {
     auto parameters = board()->parameters(node.parameters, id);
@@ -347,7 +347,7 @@ NodeStatus BehaviorState::runParallel(ParallelNode const& node, NodeState& state
 
   int failed = 0;
   int succeeded = 0;
-  for (size_t i = 0; i < node.children.size(); i++) {
+  for (std::size_t i = 0; i < node.children.size(); i++) {
     NodeStatus status = runNode(*node.children[i], *composite.children[i]);
     if (status == NodeStatus::Success)
       succeeded++;
@@ -367,7 +367,7 @@ NodeStatus BehaviorState::runDynamic(DynamicNode const& node, NodeState& state) 
     state.set(CompositeState(node.children.size()));
 
   CompositeState& composite = state->get<CompositeState>();
-  for (size_t i = 0; i <= composite.index; i++) {
+  for (std::size_t i = 0; i <= composite.index; i++) {
     auto child = node.children.get(i);
     auto status = runNode(*child, *composite.children.get(i));
     if (status == NodeStatus::Failure && i == composite.index)

@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 import star.format;
@@ -18,7 +19,6 @@ import star.bi_map;
 import star.image;
 import star.poly;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.asset_path;
@@ -34,7 +34,6 @@ import star.lexical_cast;
 import star.time;
 import star.logging;
 import star.math_common;
-import std;
 import star.set;
 import star.worker_pool;
 
@@ -101,7 +100,7 @@ Vec3B const EnvironmentPainter::RayColor = Vec3B(255, 255, 200);
 
 EnvironmentPainter::EnvironmentPainter(RendererPtr renderer) {
   m_renderer = std::move(renderer);
-  m_textureGroup = make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large));
+  m_textureGroup = std::make_shared<AssetTextureGroup>(m_renderer->createTextureGroup(TextureGroupSize::Large));
   m_timer = 0;
   m_rayPerlin = PerlinF(1, RayPerlinFrequency, RayPerlinAmplitude, 0, 2.0f, 2.0f, Random::randu64());
 }
@@ -113,7 +112,7 @@ void EnvironmentPainter::update(float dt) {
 }
 
 void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky) {
-  float nightSkyAlpha = 1.0f - min(sky.dayLevel, sky.skyAlpha);
+  float nightSkyAlpha = 1.0f - std::min(sky.dayLevel, sky.skyAlpha);
   if (nightSkyAlpha <= 0.0f)
     return;
 
@@ -143,12 +142,12 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 
   int starTwinkleMin = sky.settings.queryInt("stars.twinkleMin");
   int starTwinkleMax = sky.settings.queryInt("stars.twinkleMax");
-  size_t starTypesSize = sky.starTypes().size();
+  std::size_t starTypesSize = sky.starTypes().size();
 
   auto stars = m_starGenerator->generate(field, [&](RandomSource& rand) {
-      size_t starType = rand.randu32() % starTypesSize;
+      std::size_t starType = rand.randu32() % starTypesSize;
       float frameOffset = rand.randu32() % sky.starFrames + rand.randf(starTwinkleMin, starTwinkleMax);
-      return pair<size_t, float>(starType, frameOffset);
+      return std::pair<std::size_t, float>(starType, frameOffset);
     });
 
   RectF viewRect = RectF::withSize(Vec2F(), viewSize).padded(screenBuffer);
@@ -158,7 +157,7 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
   for (auto& star : stars) {
     Vec2F screenPos = transform.transformVec2(star.first);
     if (viewRect.contains(screenPos)) {
-      size_t starFrame = (size_t)(sky.epochTime + star.second.second) % sky.starFrames;
+      std::size_t starFrame = (std::size_t)(sky.epochTime + star.second.second) % sky.starFrames;
       if (auto const& texture = m_starTextures[star.second.first * sky.starFrames + starFrame])
         primitives.emplace_back(std::in_place_type_t<RenderQuad>(), texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f);
     }
@@ -187,7 +186,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
   Mat3F rotMatrix = Mat3F::rotation(sky.starRotation, viewCenter);  
   
   JsonArray debrisFields = sky.settings.queryArray("spaceDebrisFields");  
-  for (size_t i = 0; i < debrisFields.size(); ++i) {  
+  for (std::size_t i = 0; i < debrisFields.size(); ++i) {  
     Json debrisField = debrisFields[i];  
   
     Vec2F spaceDebrisVelocityRange = jsonToVec2F(debrisField.query("velocityRange"));  
@@ -204,7 +203,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       biggest = biggest.piecewiseMax(texture->size());  
     }  
   
-    float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2);  
+    float screenBuffer = std::ceil((float)biggest.max() * (float)Constants::sqrt2);  
     PolyD field = PolyD(RectD::withSize(viewMin + velocityOffset, Vec2D(viewSize)).padded(screenBuffer));  
     Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));  
     auto debrisItems = m_debrisGenerators[i]->generate(field,  
@@ -212,14 +211,14 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
           StringView debrisImage = *rand.randFrom(imageOptions).stringPtr();  
           float debrisAngularVelocity = rand.randf(debrisAngularVelocityRange[0], debrisAngularVelocityRange[1]);  
   
-          return pair<StringView, float>(debrisImage, debrisAngularVelocity);  
+          return std::pair<StringView, float>(debrisImage, debrisAngularVelocity);  
         });  
   
     Vec2D debrisPositionOffset = viewMin + velocityOffset;  
   
     for (auto& debrisItem : debrisItems) {  
       Vec2F debrisPosition = rotMatrix.transformVec2(Vec2F(debrisItem.first - debrisPositionOffset));  
-      float debrisAngle = fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;  
+      float debrisAngle = std::fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;  
       drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});  
     }  
   }  
@@ -322,9 +321,9 @@ void EnvironmentPainter::renderParallaxLayers(
 
     Vec4B drawColor;
     if (layer.unlit || layer.lightMapped)
-      drawColor = Vec4B(255, 255, 255, floor(255 * layer.alpha));
+      drawColor = Vec4B(255, 255, 255, std::floor(255 * layer.alpha));
     else
-      drawColor = Vec4B(sky.environmentLight.toRgb(), floor(255 * layer.alpha));
+      drawColor = Vec4B(sky.environmentLight.toRgb(), std::floor(255 * layer.alpha));
 
     Vec2F parallaxValue = layer.parallaxValue;
     Vec2B parallaxRepeat = layer.repeat;
@@ -340,12 +339,12 @@ void EnvironmentPainter::renderParallaxLayers(
     // texture offset in *screen pixel space*
     Vec2F parallaxOffset = layer.parallaxOffset * camera.pixelRatio();
     if (layer.speed[0] != 0) {
-      double drift = fmod((double)layer.speed[0] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
-      parallaxOffset[0] = fmod(parallaxOffset[0] + drift * camera.pixelRatio(), parallaxPixels[0]);
+      double drift = std::fmod((double)layer.speed[0] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
+      parallaxOffset[0] = std::fmod(parallaxOffset[0] + drift * camera.pixelRatio(), parallaxPixels[0]);
     }
     if (layer.speed[1] != 0) {
-      double drift = fmod((double)layer.speed[1] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[1]);
-      parallaxOffset[1] = fmod(parallaxOffset[1] + drift * camera.pixelRatio(), parallaxPixels[1]);
+      double drift = std::fmod((double)layer.speed[1] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[1]);
+      parallaxOffset[1] = std::fmod(parallaxOffset[1] + drift * camera.pixelRatio(), parallaxPixels[1]);
     }
 
     // parallax camera world position in *parallax space*
@@ -364,10 +363,10 @@ void EnvironmentPainter::renderParallaxLayers(
 
     // screen boundary world positions in *parallax space*
     Vec2F parallaxScreenOffset = parallaxOffset.piecewiseDivide(parallaxPixels);
-    int left = floor(parallaxScreenLeft + parallaxScreenOffset[0]);
-    int bottom = floor(parallaxScreenBottom + parallaxScreenOffset[1]);
-    int right = ceil(parallaxScreenLeft + parallaxScreenWidth + parallaxScreenOffset[0]);
-    int top = ceil(parallaxScreenBottom + parallaxScreenHeight + parallaxScreenOffset[1]);
+    int left = std::floor(parallaxScreenLeft + parallaxScreenOffset[0]);
+    int bottom = std::floor(parallaxScreenBottom + parallaxScreenOffset[1]);
+    int right = std::ceil(parallaxScreenLeft + parallaxScreenWidth + parallaxScreenOffset[0]);
+    int top = std::ceil(parallaxScreenBottom + parallaxScreenHeight + parallaxScreenOffset[1]);
 
     // positions to start tiling in *screen pixel space*
     float pixelLeft = (left - parallaxScreenLeft) * parallaxPixels[0] - parallaxOffset[0];
@@ -404,7 +403,7 @@ void EnvironmentPainter::renderParallaxLayers(
           AssetPath withDirectives = textureImage;
           withDirectives.directives += layer.directives;
           if (layer.frameNumber > 1) {
-            float time_within_cycle = (float)fmod(sky.epochTime, (double)layer.animationCycle);
+            float time_within_cycle = (float)std::fmod(sky.epochTime, (double)layer.animationCycle);
             float time_per_frame = layer.animationCycle / layer.frameNumber;
             float frame_number = time_within_cycle / time_per_frame;
             int frame = (layer.frameOffset + clamp<int>(frame_number, 0, layer.frameNumber - 1)) % layer.frameNumber;
@@ -426,7 +425,7 @@ void EnvironmentPainter::renderParallaxLayers(
   m_renderer->flush();
 }
 
-void EnvironmentPainter::cleanup(int64_t textureTimeout) {
+void EnvironmentPainter::cleanup(std::int64_t textureTimeout) {
   m_textureGroup->cleanup(textureTimeout);
 }
 
@@ -530,7 +529,7 @@ void EnvironmentPainter::drawOrbiter(float pixelRatio, Vec2F const& screenSize, 
     renderColor, 0.0f);
 }
 
-uint64_t EnvironmentPainter::starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const {
+std::uint64_t EnvironmentPainter::starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const {
   XXHash64 hasher;
 
   hasher.push(reinterpret_cast<char const*>(&viewSize[0]), sizeof(viewSize[0]));
@@ -546,26 +545,26 @@ void EnvironmentPainter::setupStars(SkyRenderData const& sky) {
     return;
 
   StringList const& starTypes = sky.starTypes();
-  size_t starTypesSize = starTypes.size();
+  std::size_t starTypesSize = starTypes.size();
 
   m_starTextures.resize(starTypesSize * sky.starFrames);
-  for (size_t i = 0; i < starTypesSize; ++i) {
-    for (size_t j = 0; j < sky.starFrames; ++j)
+  for (std::size_t i = 0; i < starTypesSize; ++i) {
+    for (std::size_t j = 0; j < sky.starFrames; ++j)
       m_starTextures[i * sky.starFrames + j] = m_textureGroup->loadTexture(starTypes[i] + ":" + toString(j));
   }
 
   int starCellSize = sky.settings.queryInt("stars.cellSize");
   Vec2I starCount = jsonToVec2I(sky.settings.query("stars.cellCount"));
 
-  m_starGenerator = make_shared<Random2dPointGenerator<pair<size_t, float>>>(sky.skyParameters.seed, starCellSize, starCount);
+  m_starGenerator = std::make_shared<Random2dPointGenerator<std::pair<std::size_t, float>>>(sky.skyParameters.seed, starCellSize, starCount);
 
   JsonArray debrisFields = sky.settings.queryArray("spaceDebrisFields");
   m_debrisGenerators.resize(debrisFields.size());
-  for (size_t i = 0; i < debrisFields.size(); ++i) {
+  for (std::size_t i = 0; i < debrisFields.size(); ++i) {
     int debrisCellSize = debrisFields[i].getInt("cellSize");
     Vec2I debrisCountRange = jsonToVec2I(debrisFields[i].get("cellCountRange"));
-    uint64_t debrisSeed = staticRandomU64(sky.skyParameters.seed, i, "DebrisFieldSeed");
-    m_debrisGenerators[i] = make_shared<Random2dPointGenerator<pair<String, float>, double>>(debrisSeed, debrisCellSize, debrisCountRange);
+    std::uint64_t debrisSeed = staticRandomU64(sky.skyParameters.seed, i, "DebrisFieldSeed");
+    m_debrisGenerators[i] = std::make_shared<Random2dPointGenerator<std::pair<String, float>, double>>(debrisSeed, debrisCellSize, debrisCountRange);
   }
 }
 

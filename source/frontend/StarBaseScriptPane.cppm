@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -43,8 +43,20 @@ import star.gui_reader;
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(BaseScriptPane);
+class CanvasWidget;
+using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
+using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
+using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
+using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
+using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
+using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
+class BaseScriptPane;
+using BaseScriptPanePtr = std::shared_ptr<BaseScriptPane>;
+using BaseScriptPaneConstPtr = std::shared_ptr<BaseScriptPane const>;
+using BaseScriptPaneWeakPtr = std::weak_ptr<BaseScriptPane>;
+using BaseScriptPaneConstWeakPtr = std::weak_ptr<BaseScriptPane const>;
+using BaseScriptPaneUPtr = std::unique_ptr<BaseScriptPane>;
+using BaseScriptPaneConstUPtr = std::unique_ptr<BaseScriptPane const>;
 
 // A more 'raw' script pane that doesn't depend on a world being present.
 // Requires a derived class to provide a Lua root.

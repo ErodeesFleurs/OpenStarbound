@@ -35,7 +35,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -102,7 +102,7 @@ import star.byte_array;
 import star.static_random;
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {
+MonsterDatabase::MonsterDatabase() : m_rebuilder(std::make_shared<Rebuilder>("monster")) {
   auto assets = Root::singleton().assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
@@ -243,10 +243,10 @@ StringList MonsterDatabase::monsterTypes() const {
 }
 
 MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const& uniqueParameters) const {
-  size_t seed;
+  std::size_t seed;
   if (auto seedConfig = uniqueParameters.opt("seed")) {
     if (seedConfig->type() == Json::Type::String) {
-      seed = lexicalCast<uint64_t>(seedConfig->toString());
+      seed = lexicalCast<std::uint64_t>(seedConfig->toString());
     } else {
       seed = seedConfig->toUInt();
     }
@@ -257,10 +257,10 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
   return monsterVariant(typeName, seed, uniqueParameters);
 }
 
-MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
+MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const {
   MutexLocker locker(m_cacheMutex);
-  return m_monsterCache.get(make_tuple(typeName, seed, uniqueParameters), [this](tuple<String, uint64_t, Json> const& key) {
-      return produceMonster(get<0>(key), get<1>(key), get<2>(key));
+  return m_monsterCache.get(std::make_tuple(typeName, seed, uniqueParameters), [this](std::tuple<String, std::uint64_t, Json> const& key) {
+      return produceMonster(std::get<0>(key), std::get<1>(key), std::get<2>(key));
     });
 }
 
@@ -280,7 +280,7 @@ MonsterVariant MonsterDatabase::readMonsterVariant(ByteArray const& data, NetCom
   ds.setStreamCompatibilityVersion(rules);
 
   String type = ds.read<String>();
-  uint64_t seed = ds.read<uint64_t>();
+  std::uint64_t seed = ds.read<std::uint64_t>();
   Json uniqueParameters = ds.read<Json>();
 
   return monsterVariant(type, seed, uniqueParameters);
@@ -305,18 +305,18 @@ MonsterPtr MonsterDatabase::createMonster(
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
     readCommonParameters(monsterVariant);
   }
-  return make_shared<Monster>(monsterVariant, level);
+  return std::make_shared<Monster>(monsterVariant, level);
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   MonsterPtr monster;
   try {
-    monster = make_shared<Monster>(diskStore);
+    monster = std::make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        monster = make_shared<Monster>(store);
+        monster = std::make_shared<Monster>(store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -331,7 +331,7 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Monster>(readMonsterVariant(netStore, rules));
+  return std::make_shared<Monster>(readMonsterVariant(netStore, rules));
 }
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {
@@ -365,7 +365,7 @@ Json MonsterDatabase::skillConfigParameter(String const& skillName, String const
   }
 }
 
-ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, uint64_t seed) const {
+ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, std::uint64_t seed) const {
   if (m_colorSwaps.contains(setName))
     return staticRandomFrom(m_colorSwaps.get(setName), seed);
   else {
@@ -499,7 +499,7 @@ void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
     });
 }
 
-MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
+MonsterVariant MonsterDatabase::produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const {
   RandomSource rand = RandomSource(seed);
 
   auto const& monsterType = m_monsterTypes.get(typeName);
@@ -545,7 +545,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   monsterVariant.parameters = mergeFinalParameters({baseParameters, mergedPartParameters});
   monsterVariant.parameters = jsonMerge(monsterVariant.parameters, uniqueParameters);
 
-  tie(monsterVariant.parameters, monsterVariant.animatorConfig) = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
+  std::tie(monsterVariant.parameters, monsterVariant.animatorConfig) = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
   monsterVariant.animatorZoom = 1.0f;
   monsterVariant.dropPoolConfig = monsterType.dropPools;
 
@@ -557,7 +557,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   return monsterVariant;
 }
 
-pair<Json, Json> MonsterDatabase::chooseSkills(
+std::pair<Json, Json> MonsterDatabase::chooseSkills(
     Json const& parameters, Json const& animatorConfig, RandomSource& rand) const {
   // Pick a subset of skills, then merge in any params from those skills
   if (parameters.contains("baseSkills") || parameters.contains("specialSkills")) {
@@ -592,10 +592,10 @@ pair<Json, Json> MonsterDatabase::chooseSkills(
     return {finalParameters, finalAnimatorConfig};
   } else if (parameters.contains("skills")) {
     auto availableSkillNames = jsonToStringList(parameters.get("skills"));
-    auto skillCount = min<size_t>(parameters.getUInt("skillCount", 2), availableSkillNames.size());
+    auto skillCount = std::min<std::size_t>(parameters.getUInt("skillCount", 2), availableSkillNames.size());
 
     List<String> skillNames;
-    for (size_t i = 0; i < skillCount; ++i)
+    for (std::size_t i = 0; i < skillCount; ++i)
       skillNames.append(availableSkillNames.takeAt(rand.randInt(availableSkillNames.size() - 1)));
 
     Json finalAnimatorConfig = animatorConfig;

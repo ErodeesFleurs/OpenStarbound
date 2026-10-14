@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.byte_array;
@@ -30,14 +30,14 @@ import star.force_regions;
 
 namespace Star {
 
-enum class WorldParametersType : uint8_t {
+enum class WorldParametersType : std::uint8_t {
   TerrestrialWorldParameters,
   AsteroidsWorldParameters,
   FloatingDungeonWorldParameters
 };
 extern EnumMap<WorldParametersType> const WorldParametersTypeNames;
 
-enum class BeamUpRule : uint8_t {
+enum class BeamUpRule : std::uint8_t {
   Nowhere,
   Surface,
   Anywhere,
@@ -45,7 +45,7 @@ enum class BeamUpRule : uint8_t {
 };
 extern EnumMap<BeamUpRule> const BeamUpRuleNames;
 
-enum class WorldEdgeForceRegionType : uint8_t {
+enum class WorldEdgeForceRegionType : std::uint8_t {
   None,
   Top,
   Bottom,
@@ -53,10 +53,34 @@ enum class WorldEdgeForceRegionType : uint8_t {
 };
 extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames;
 
-STAR_STRUCT(VisitableWorldParameters);
-STAR_STRUCT(TerrestrialWorldParameters);
-STAR_STRUCT(AsteroidsWorldParameters);
-STAR_STRUCT(FloatingDungeonWorldParameters);
+struct VisitableWorldParameters;
+using VisitableWorldParametersPtr = std::shared_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstPtr = std::shared_ptr<const VisitableWorldParameters>;
+using VisitableWorldParametersWeakPtr = std::weak_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstWeakPtr = std::weak_ptr<const VisitableWorldParameters>;
+using VisitableWorldParametersUPtr = std::unique_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstUPtr = std::unique_ptr<const VisitableWorldParameters>;
+struct TerrestrialWorldParameters;
+using TerrestrialWorldParametersPtr = std::shared_ptr<TerrestrialWorldParameters>;
+using TerrestrialWorldParametersConstPtr = std::shared_ptr<const TerrestrialWorldParameters>;
+using TerrestrialWorldParametersWeakPtr = std::weak_ptr<TerrestrialWorldParameters>;
+using TerrestrialWorldParametersConstWeakPtr = std::weak_ptr<const TerrestrialWorldParameters>;
+using TerrestrialWorldParametersUPtr = std::unique_ptr<TerrestrialWorldParameters>;
+using TerrestrialWorldParametersConstUPtr = std::unique_ptr<const TerrestrialWorldParameters>;
+struct AsteroidsWorldParameters;
+using AsteroidsWorldParametersPtr = std::shared_ptr<AsteroidsWorldParameters>;
+using AsteroidsWorldParametersConstPtr = std::shared_ptr<const AsteroidsWorldParameters>;
+using AsteroidsWorldParametersWeakPtr = std::weak_ptr<AsteroidsWorldParameters>;
+using AsteroidsWorldParametersConstWeakPtr = std::weak_ptr<const AsteroidsWorldParameters>;
+using AsteroidsWorldParametersUPtr = std::unique_ptr<AsteroidsWorldParameters>;
+using AsteroidsWorldParametersConstUPtr = std::unique_ptr<const AsteroidsWorldParameters>;
+struct FloatingDungeonWorldParameters;
+using FloatingDungeonWorldParametersPtr = std::shared_ptr<FloatingDungeonWorldParameters>;
+using FloatingDungeonWorldParametersConstPtr = std::shared_ptr<const FloatingDungeonWorldParameters>;
+using FloatingDungeonWorldParametersWeakPtr = std::weak_ptr<FloatingDungeonWorldParameters>;
+using FloatingDungeonWorldParametersConstWeakPtr = std::weak_ptr<const FloatingDungeonWorldParameters>;
+using FloatingDungeonWorldParametersUPtr = std::unique_ptr<FloatingDungeonWorldParameters>;
+using FloatingDungeonWorldParametersConstUPtr = std::unique_ptr<const FloatingDungeonWorldParameters>;
 
 struct VisitableWorldParameters {
   VisitableWorldParameters() = default;
@@ -205,8 +229,8 @@ VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store);
 ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
 VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed);
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed);
+AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(std::uint64_t seed);
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
 
 }

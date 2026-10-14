@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.set;
 import star.variant;
@@ -27,8 +27,8 @@ namespace Star {
 template <typename Element>
 class NetElementDynamicGroup : public NetElement {
 public:
-  typedef shared_ptr<Element> ElementPtr;
-  typedef uint32_t ElementId;
+  typedef std::shared_ptr<Element> ElementPtr;
+  typedef std::uint32_t ElementId;
   static ElementId const NullElementId = 0;
 
   NetElementDynamicGroup() = default;
@@ -60,17 +60,17 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
   // If a delta is written from further back than this many versions, the delta
   // will fall back to a full serialization of the entire state.
-  static int64_t const MaxChangeDataVersions = 100;
+  static std::int64_t const MaxChangeDataVersions = 100;
 
   typedef ElementId ElementRemovalType;
-  typedef pair<ElementId, ByteArray> ElementAdditionType;
+  typedef std::pair<ElementId, ByteArray> ElementAdditionType;
 
   strong_typedef(Empty, ElementReset);
   using ElementRemoval = StrongTypedefBuiltin<ElementRemovalType, struct ElementRemovalTag>;
@@ -90,8 +90,8 @@ private:
 
   ElementMap m_idMap = ElementMap(1, highest<ElementId>());
 
-  Deque<pair<uint64_t, ElementChange>> m_changeData;
-  uint64_t m_changeDataLastVersion = 0;
+  Deque<std::pair<std::uint64_t, ElementChange>> m_changeData;
+  std::uint64_t m_changeDataLastVersion = 0;
 
   mutable DataStreamBuffer m_buffer;
   mutable HashSet<ElementId> m_receivedDeltaIds;
@@ -192,13 +192,13 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
 
   addChangeData(ElementReset());
 
-  uint64_t count = ds.readVlqU();
+  std::uint64_t count = ds.readVlqU();
 
-  for (uint64_t i = 0; i < count; ++i) {
+  for (std::uint64_t i = 0; i < count; ++i) {
     ElementId id = ds.readVlqU();
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
-    ElementPtr element = make_shared<Element>();
+    ElementPtr element = std::make_shared<Element>();
     element->netLoad(storeBuffer, rules);
     readyElement(element);
 
@@ -208,7 +208,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
 }
 
 template <typename Element>
-bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (fromVersion < m_changeDataLastVersion) {
     ds.write<bool>(true);
@@ -228,7 +228,7 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       if (p.first >= fromVersion) {
         if (ElementAddition const* elementAddition = p.second.template ptr<ElementAddition>()) {
           ElementId id = elementAddition->first;
-          if (shared_ptr<Element> const* element = m_idMap.ptr(id)) {
+          if (std::shared_ptr<Element> const* element = m_idMap.ptr(id)) {
             willWrite();
             ds.writeVlqU(1);
             DataStreamBuffer storeBuffer;
@@ -268,7 +268,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
     netLoad(ds, rules);
   } else {
     while (true) {
-      uint64_t code = ds.readVlqU();
+      std::uint64_t code = ds.readVlqU();
       if (code == 0) {
         break;
       }
@@ -279,11 +279,11 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
-          ElementPtr element = make_shared<Element>();
-          DataStreamBuffer storeBuffer(std::move(get<1>(*addition)));
+          ElementPtr element = std::make_shared<Element>();
+          DataStreamBuffer storeBuffer(std::move(std::get<1>(*addition)));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
-          m_idMap.add(get<0>(*addition), std::move(element));
+          m_idMap.add(std::get<0>(*addition), std::move(element));
         } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
           m_idMap.remove(*removal);
         }
@@ -317,12 +317,14 @@ void NetElementDynamicGroup<Element>::blankNetDelta(float interpolationTime) {
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
-  uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
+  std::uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_changeData.empty() || m_changeData.last().first <= currentVersion));
+  }
 
   m_changeData.append({currentVersion, std::move(change)});
 
-  m_changeDataLastVersion = max<int64_t>((int64_t)currentVersion - MaxChangeDataVersions, 0);
+  m_changeDataLastVersion = std::max<std::int64_t>((std::int64_t)currentVersion - MaxChangeDataVersions, 0);
   while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)
     m_changeData.removeFirst();
 }

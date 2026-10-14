@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -111,7 +111,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
   seed = config.getUInt("seed");
   dayLength = config.optFloat("dayLength");
 
-  auto extractLayerData = [](Json const& v, uint64_t selfSeed) -> pair<List<pair<String, float>>, Vec2F> {
+  auto extractLayerData = [](Json const& v, std::uint64_t selfSeed) -> std::pair<List<std::pair<String, float>>, Vec2F> {
     Vec2F pos;
 
     if (v.contains("pos")) {
@@ -121,7 +121,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
       pos[1] = staticRandomFloat(selfSeed, v.getUInt("seed"), "y");
     }
 
-    List<pair<String, float>> layers;
+    List<std::pair<String, float>> layers;
     for (auto const& l : v.get("layers").iterateArray())
       layers.append({l.getString("image"), l.getFloat("scale")});
 
@@ -133,11 +133,11 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 
   if (config.contains("satellites"))
     nearbyMoons =
-        jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), bind(extractLayerData, _1, seed));
+        jsonToList<std::pair<List<std::pair<String, float>>, Vec2F>>(config.get("satellites"), std::bind(extractLayerData, std::placeholders::_1, seed));
 
   if (config.contains("horizonImages")) {
-    horizonImages = jsonToList<pair<String, String>>(config.get("horizonImages"),
-        [](Json const& v) -> pair<String, String> {
+    horizonImages = jsonToList<std::pair<String, String>>(config.get("horizonImages"),
+        [](Json const& v) -> std::pair<String, String> {
           return {v.getString("left"), v.getString("right")};
         });
   }
@@ -166,30 +166,30 @@ Json SkyParameters::toJson() const {
       {"seed", seed},
       {"dayLength", jsonFromMaybe<float>(dayLength)},
       {"planet",
-          jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet,
-              [](pair<List<pair<String, float>>, Vec2F> p) -> Json {
+          jsonFromMaybe<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyPlanet,
+              [](std::pair<List<std::pair<String, float>>, Vec2F> p) -> Json {
                 return JsonObject{
                     {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
+                        p.first.transformed([](std::pair<String, float> const& p) -> Json {
                           return JsonObject{{"image", p.first}, {"scale", p.second}};
                         })},
                     {"pos", jsonFromVec2F(p.second)},
                 };
               })},
       {"satellites",
-          jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons,
-              [](pair<List<pair<String, float>>, Vec2F> const& p) {
+          jsonFromList<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyMoons,
+              [](std::pair<List<std::pair<String, float>>, Vec2F> const& p) {
                 return JsonObject{
                     {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
+                        p.first.transformed([](std::pair<String, float> const& p) -> Json {
                           return JsonObject{{"image", p.first}, {"scale", p.second}};
                         })},
                     {"pos", jsonFromVec2F(p.second)},
                 };
               })},
       {"horizonImages",
-          jsonFromList<pair<String, String>>(horizonImages,
-              [](pair<String, String> p) {
+          jsonFromList<std::pair<String, String>>(horizonImages,
+              [](std::pair<String, String> p) {
                 return JsonObject{
                     {"left", p.first}, {"right", p.second},
                 };

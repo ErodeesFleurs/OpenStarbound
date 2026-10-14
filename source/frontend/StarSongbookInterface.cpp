@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +17,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -149,7 +150,7 @@ SongbookInterface::SongbookInterface(PlayerPtr player) {
   reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 
   Root::singleton().registerReloadListener(
-    m_reloadListener = make_shared<CallbackListener>([this]() {
+    m_reloadListener = std::make_shared<CallbackListener>([this]() {
       refresh(true);
     })
   );
@@ -196,7 +197,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
     auto songList = fetchChild<ListWidget>("songs.list");
     songList->clear();
     if (search.empty()) {
-      for (size_t i = 0; i != m_files.size(); ++i) {
+      for (std::size_t i = 0; i != m_files.size(); ++i) {
         auto widget = songList->addItem();
         widget->setData(i);
         auto songName = widget->fetchChild<LabelWidget>("songName");
@@ -205,7 +206,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
         widget->show();
       }
     } else {
-      for (size_t i = 0; i != m_files.size(); ++i) {
+      for (std::size_t i = 0; i != m_files.size(); ++i) {
         StringView song = m_files[i];
         song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
         auto find = song.find(search, 0, String::CaseInsensitive);
@@ -213,7 +214,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
           auto widget = songList->addItem();
           widget->setData(i);
           String text = "";
-          size_t last = 0;
+          std::size_t last = 0;
           do {
             text += strf("^#bbb;{}^#7f7;{}", song.substr(last, find - last), song.substr(find, search.size()));
             last = find + search.size();

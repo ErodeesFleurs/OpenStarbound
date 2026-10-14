@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #endif
-#include "StarConfig.hpp"
+import std;
 import star.file;
 import star.io_device;
 import star.list;
@@ -30,11 +30,11 @@ namespace Star {
 
 namespace {
   int fdFromHandle(void* ptr) {
-    return (int)(intptr_t)ptr;
+    return (int)(std::intptr_t)ptr;
   }
 
   void* handleFromFd(int handle) {
-    return (void*)(intptr_t)handle;
+    return (void*)(std::intptr_t)handle;
   }
 }
 
@@ -57,10 +57,10 @@ void File::changeDirectory(const String& dirName) {
 
 void File::makeDirectory(String const& dirName) {
   if (::mkdir(dirName.utf8Ptr(), 0777) != 0)
-    throw IOException(strf("could not create directory '{}', {}", dirName, strerror(errno)));
+    throw IOException(strf("could not create directory '{}', {}", dirName, std::strerror(errno)));
 }
 
-List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
+List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   List<std::pair<String, bool>> fileList;
   DIR* directory = ::opendir(dirName.utf8Ptr());
   if (directory == NULL)
@@ -137,13 +137,13 @@ FilePtr File::temporaryFile() {
 }
 
 FilePtr File::ephemeralFile() {
-  auto file = make_shared<File>();
+  auto file = std::make_shared<File>();
   ByteArray path = ByteArray::fromCStringWithNull(relativeTo(P_tmpdir, "starbound.tmpfile.XXXXXXXX").utf8Ptr());
   auto res = mkstemp(path.ptr());
   if (res < 0)
-    throw IOException::format("tmpfile error: {}", strerror(errno));
+    throw IOException::format("tmpfile error: {}", std::strerror(errno));
   if (::unlink(path.ptr()) < 0)
-    throw IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", strerror(errno));
+    throw IOException::format("Could not remove mkstemp file when creating ephemeralFile: {}", std::strerror(errno));
   file->m_file = handleFromFd(res);
   file->setMode(IOMode::ReadWrite);
   return file;
@@ -180,16 +180,16 @@ bool File::isDirectory(String const& path) {
 }
 
 void File::remove(String const& filename) {
-  if (::remove(filename.utf8Ptr()) < 0)
-    throw IOException::format("remove error: {}", strerror(errno));
+  if (std::remove(filename.utf8Ptr()) < 0)
+    throw IOException::format("remove error: {}", std::strerror(errno));
 }
 
 void File::rename(String const& source, String const& target) {
-  if (::rename(source.utf8Ptr(), target.utf8Ptr()) < 0)
-    throw IOException::format("rename error: {}", strerror(errno));
+  if (std::rename(source.utf8Ptr(), target.utf8Ptr()) < 0)
+    throw IOException::format("rename error: {}", std::strerror(errno));
 }
 
-void File::overwriteFileWithRename(char const* data, size_t len, String const& filename, String const& newSuffix) {
+void File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
   String newFile = filename + newSuffix;
   writeFile(data, len, newFile);
   File::rename(newFile, filename);
@@ -210,11 +210,11 @@ void* File::fopen(char const* filename, IOMode mode) {
 
   int fd = ::open(filename, oflag, 0666);
   if (fd < 0)
-    throw IOException::format("Error opening file '{}', error: {}", filename, strerror(errno));
+    throw IOException::format("Error opening file '{}', error: {}", filename, std::strerror(errno));
 
   if (mode & IOMode::Append) {
     if (lseek(fd, 0, SEEK_END) < 0)
-      throw IOException::format("Error opening file '{}', cannot seek: {}", filename, strerror(errno));
+      throw IOException::format("Error opening file '{}', cannot seek: {}", filename, std::strerror(errno));
   }
 
   return handleFromFd(fd);
@@ -231,14 +231,14 @@ void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
     retCode = lseek(fd, offset, SEEK_END);
 
   if (retCode < 0)
-    throw IOException::format("Seek error: {}", strerror(errno));
+    throw IOException::format("Seek error: {}", std::strerror(errno));
 }
 
 StreamOffset File::ftell(void* f) {
   return lseek(fdFromHandle(f), 0, SEEK_CUR);
 }
 
-size_t File::fread(void* file, char* data, size_t len) {
+std::size_t File::fread(void* file, char* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -247,13 +247,13 @@ size_t File::fread(void* file, char* data, size_t len) {
   if (ret < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Read error: {}", strerror(errno));
+    throw IOException::format("Read error: {}", std::strerror(errno));
   } else {
     return ret;
   }
 }
 
-size_t File::fwrite(void* file, char const* data, size_t len) {
+std::size_t File::fwrite(void* file, char const* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -262,7 +262,7 @@ size_t File::fwrite(void* file, char const* data, size_t len) {
   if (ret < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Write error: {}", strerror(errno));
+    throw IOException::format("Write error: {}", std::strerror(errno));
   } else {
     return ret;
   }
@@ -279,7 +279,7 @@ void File::fsync(void* file) {
 
 void File::fclose(void* file) {
   if (::close(fdFromHandle(file)) < 0)
-    throw IOException::format("Close error: {}", strerror(errno));
+    throw IOException::format("Close error: {}", std::strerror(errno));
 }
 
 StreamOffset File::fsize(void* file) {
@@ -289,23 +289,23 @@ StreamOffset File::fsize(void* file) {
   return size;
 }
 
-size_t File::pread(void* file, char* data, size_t len, StreamOffset position) {
+std::size_t File::pread(void* file, char* data, std::size_t len, StreamOffset position) {
   auto ret = ::pread(fdFromHandle(file), data, len, position);
   if (ret < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Read error: {}", strerror(errno));
+    throw IOException::format("Read error: {}", std::strerror(errno));
   } else {
     return ret;
   }
 }
 
-size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset position) {
+std::size_t File::pwrite(void* file, char const* data, std::size_t len, StreamOffset position) {
   auto ret = ::pwrite(fdFromHandle(file), data, len, position);
   if (ret < 0) {
     if (errno == EAGAIN || errno == EINTR)
       return 0;
-    throw IOException::format("Write error: {}", strerror(errno));
+    throw IOException::format("Write error: {}", std::strerror(errno));
   } else {
     return ret;
   }
@@ -313,7 +313,7 @@ size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset posit
 
 void File::resize(void* f, StreamOffset size) {
   if (::ftruncate(fdFromHandle(f), size) < 0)
-    throw IOException::format("resize error: {}", strerror(errno));
+    throw IOException::format("resize error: {}", std::strerror(errno));
 }
 
 }

@@ -10,7 +10,6 @@ import star.data_stream;
 import star.list;
 import star.bi_map;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.ordered_map;
@@ -103,7 +102,7 @@ import star.universe_connection;
 using namespace Star;
 
 unsigned const PacketCount = 20;
-uint16_t const ServerPort = 55555;
+std::uint16_t const ServerPort = 55555;
 
 unsigned const NumLocalASyncConnections = 5;
 unsigned const NumRemoteASyncConnections = 5;
@@ -134,7 +133,7 @@ public:
         }
 
         if (written < PacketCount) {
-          m_connection.push({make_shared<ProtocolRequestPacket>(written)});
+          m_connection.push({std::make_shared<ProtocolRequestPacket>(written)});
           ++written;
         }
         m_connection.send();
@@ -170,7 +169,7 @@ public:
   virtual void run() {
     try {
       for (unsigned i = 0; i < PacketCount; ++i) {
-        m_connection.pushSingle(make_shared<ProtocolRequestPacket>(i));
+        m_connection.pushSingle(std::make_shared<ProtocolRequestPacket>(i));
         EXPECT_TRUE(m_connection.sendAll(SyncWaitMillis));
         EXPECT_TRUE(m_connection.receiveAny(SyncWaitMillis));
         EXPECT_EQ(convert<ProtocolRequestPacket>(m_connection.pullSingle())->requestProtocolVersion, i);

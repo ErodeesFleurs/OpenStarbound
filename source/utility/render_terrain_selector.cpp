@@ -6,7 +6,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.bi_map;
@@ -56,13 +56,13 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     auto size = Vec2U(lexicalCast<unsigned>(options.parameters["size"].first().split(",")[0]), lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
 
     auto seed = Random::randu64();
     if (!options.parameters["seed"].empty())
-      seed = lexicalCast<uint64_t>(options.parameters["seed"].first());
+      seed = lexicalCast<std::uint64_t>(options.parameters["seed"].first());
 
     float commonality = 1.0f;
     if (!options.parameters["commonality"].empty())
@@ -89,20 +89,20 @@ int main(int argc, char** argv) {
     auto selector = Root::singleton().terrainDatabase()->createNamedSelector(options.parameters["selector"].first(), selectorParameters);
 
     MultiArray<float, 2> terrainResult({size[0], size[1]}, 0.0f);
-    for (size_t x = 0; x < size[0]; ++x) {
-      for (size_t y = 0; y < size[1]; ++y) {
+    for (std::size_t x = 0; x < size[0]; ++x) {
+      for (std::size_t y = 0; y < size[1]; ++y) {
         auto value = selector->get(x, y);
         terrainResult(x, y) = value;
         if (autoScale)
-          scale = max(scale, abs(value));
+          scale = std::max(scale, std::abs(value));
       }
     }
 
     coutf("Generating {} size image for selector with scale {}\n", size, scale);
-    auto outputImage = make_shared<Image>(size, PixelFormat::RGB24);
+    auto outputImage = std::make_shared<Image>(size, PixelFormat::RGB24);
 
-    for (size_t x = 0; x < size[0]; ++x) {
-      for (size_t y = 0; y < size[1]; ++y) {
+    for (std::size_t x = 0; x < size[0]; ++x) {
+      for (std::size_t y = 0; y < size[1]; ++y) {
         // Image y = 0 is the top, so reverse it for the world position
         auto value = terrainResult(x, y) / scale;
         if (mode == "heatmap") {
@@ -111,9 +111,9 @@ int main(int argc, char** argv) {
           outputImage->set(x, y, color.toRgb());
         } else if (mode == "terrain") {
           if (value > 0)
-            outputImage->set(x, y, Vec3B(0, 100 + floor(155 * value), floor(255 * value)));
+            outputImage->set(x, y, Vec3B(0, 100 + std::floor(155 * value), std::floor(255 * value)));
           else
-            outputImage->set(x, y, Vec3B(floor(255 * -value), 0, 0));
+            outputImage->set(x, y, Vec3B(std::floor(255 * -value), 0, 0));
         }
       }
     }

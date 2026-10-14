@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.list;
 
 import std;
@@ -82,14 +81,14 @@ struct Add {
 };
 
 struct AddTogether {
-  int operator()(int8_t& a, int64_t& b) {
+  int operator()(std::int8_t& a, std::int64_t& b) {
     return a + b;
   }
 };
 
 TEST(TupleOperators, allTests) {
-  tuple<int8_t, int64_t> t1{3, 5};
-  tuple<int8_t, int64_t> t2{6, 10};
+  std::tuple<std::int8_t, std::int64_t> t1{3, 5};
+  std::tuple<std::int8_t, std::int64_t> t2{6, 10};
 
   auto t3 = tupleApplyFunction(Times<2>(), t1);
   EXPECT_EQ(t2, t3);
@@ -103,21 +102,21 @@ TEST(TupleOperators, allTests) {
 
 TEST(ZipTest, All) {
   List<int> a{1, 2, 3};
-  std::vector<uint64_t> b{5, 4, 3, 2, 1};
-  std::deque<int64_t> c{3, 2, 2};
+  std::vector<std::uint64_t> b{5, 4, 3, 2, 1};
+  std::deque<std::int64_t> c{3, 2, 2};
   std::list<unsigned> d{0, 0, 0, 0, 4, 8};
 
   auto zipResult = zip(a, b, c, d);
 
   EXPECT_EQ(zipResult.size(), 3u);
-  EXPECT_EQ(get<0>(zipResult[0]), 1);
-  EXPECT_EQ(get<1>(zipResult[0]), 5u);
-  EXPECT_EQ(get<2>(zipResult[0]), 3);
-  EXPECT_EQ(get<3>(zipResult[0]), 0u);
-  EXPECT_EQ(get<0>(zipResult[2]), 3);
-  EXPECT_EQ(get<1>(zipResult[2]), 3u);
-  EXPECT_EQ(get<2>(zipResult[2]), 2);
-  EXPECT_EQ(get<3>(zipResult[2]), 0u);
+  EXPECT_EQ(std::get<0>(zipResult[0]), 1);
+  EXPECT_EQ(std::get<1>(zipResult[0]), 5u);
+  EXPECT_EQ(std::get<2>(zipResult[0]), 3);
+  EXPECT_EQ(std::get<3>(zipResult[0]), 0u);
+  EXPECT_EQ(std::get<0>(zipResult[2]), 3);
+  EXPECT_EQ(std::get<1>(zipResult[2]), 3u);
+  EXPECT_EQ(std::get<2>(zipResult[2]), 2);
+  EXPECT_EQ(std::get<3>(zipResult[2]), 0u);
 }
 
 TEST(ZipWith, All) {
@@ -131,7 +130,7 @@ TEST(ZipWith, All) {
 TEST(TupleFunctions, All) {
   std::vector<int> a;
   std::vector<int> b = {1, 2, 3, 4, 5, 6, 7, 8};
-  tupleCallFunction(make_tuple(1, 2, 3, 4, 5, 6, 7, 8), [&a](int i) { a.push_back(i); });
+  tupleCallFunction(std::make_tuple(1, 2, 3, 4, 5, 6, 7, 8), [&a](int i) { a.push_back(i); });
 
   EXPECT_EQ(a, b);
 }

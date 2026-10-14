@@ -1,4 +1,5 @@
 module;
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -16,7 +17,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -60,7 +60,13 @@ export module star.http_trust_dialog;
 
 export namespace Star {
 
-STAR_CLASS(HttpTrustDialog);
+class HttpTrustDialog;
+using HttpTrustDialogPtr = std::shared_ptr<HttpTrustDialog>;
+using HttpTrustDialogConstPtr = std::shared_ptr<HttpTrustDialog const>;
+using HttpTrustDialogWeakPtr = std::weak_ptr<HttpTrustDialog>;
+using HttpTrustDialogConstWeakPtr = std::weak_ptr<HttpTrustDialog const>;
+using HttpTrustDialogUPtr = std::unique_ptr<HttpTrustDialog>;
+using HttpTrustDialogConstUPtr = std::unique_ptr<HttpTrustDialog const>;
 
 enum class HttpTrustReply {
   Allow,
@@ -73,7 +79,7 @@ public:
 
   ~HttpTrustDialog() override;
 
-  void displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback);
+  void displayRequest(String const& domain, std::function<void(HttpTrustReply, bool)> callback);
 
   void dismissed() override;
 
@@ -82,7 +88,7 @@ private:
 
   String m_domain;
   bool m_confirmed;
-  function<void(HttpTrustReply, bool)> m_callback;
+  std::function<void(HttpTrustReply, bool)> m_callback;
 };
 
 }

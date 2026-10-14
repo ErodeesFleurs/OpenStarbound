@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -40,13 +40,55 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(QuestManager);
-STAR_CLASS(Player);
-STAR_CLASS(Cinematic);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(PaneManager);
-STAR_CLASS(ItemBag);
-STAR_CLASS(Quest);
+class QuestManager;
+using QuestManagerPtr = std::shared_ptr<QuestManager>;
+using QuestManagerConstPtr = std::shared_ptr<QuestManager const>;
+using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
+using QuestManagerConstWeakPtr = std::weak_ptr<QuestManager const>;
+using QuestManagerUPtr = std::unique_ptr<QuestManager>;
+using QuestManagerConstUPtr = std::unique_ptr<QuestManager const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class Cinematic;
+using CinematicPtr = std::shared_ptr<Cinematic>;
+using CinematicConstPtr = std::shared_ptr<Cinematic const>;
+using CinematicWeakPtr = std::weak_ptr<Cinematic>;
+using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
+using CinematicUPtr = std::unique_ptr<Cinematic>;
+using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class PaneManager;
+using PaneManagerPtr = std::shared_ptr<PaneManager>;
+using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
+using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
+using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
+using PaneManagerUPtr = std::unique_ptr<PaneManager>;
+using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<ItemBag const>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<ItemBag const>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<ItemBag const>;
+class Quest;
+using QuestPtr = std::shared_ptr<Quest>;
+using QuestConstPtr = std::shared_ptr<Quest const>;
+using QuestWeakPtr = std::weak_ptr<Quest>;
+using QuestConstWeakPtr = std::weak_ptr<Quest const>;
+using QuestUPtr = std::unique_ptr<Quest>;
+using QuestConstUPtr = std::unique_ptr<Quest const>;
 
 class QuestLogInterface : public Pane {
 public:

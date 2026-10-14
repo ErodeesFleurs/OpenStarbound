@@ -20,7 +20,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -43,8 +43,20 @@ export module star.dungeon_image_part;
 
 export namespace Star::Dungeon {
 
-STAR_CLASS(ImagePartReader);
-STAR_CLASS(ImageTileset);
+class ImagePartReader;
+using ImagePartReaderPtr = std::shared_ptr<ImagePartReader>;
+using ImagePartReaderConstPtr = std::shared_ptr<const ImagePartReader>;
+using ImagePartReaderWeakPtr = std::weak_ptr<ImagePartReader>;
+using ImagePartReaderConstWeakPtr = std::weak_ptr<const ImagePartReader>;
+using ImagePartReaderUPtr = std::unique_ptr<ImagePartReader>;
+using ImagePartReaderConstUPtr = std::unique_ptr<const ImagePartReader>;
+class ImageTileset;
+using ImageTilesetPtr = std::shared_ptr<ImageTileset>;
+using ImageTilesetConstPtr = std::shared_ptr<const ImageTileset>;
+using ImageTilesetWeakPtr = std::weak_ptr<ImageTileset>;
+using ImageTilesetConstWeakPtr = std::weak_ptr<const ImageTileset>;
+using ImageTilesetUPtr = std::unique_ptr<ImageTileset>;
+using ImageTilesetConstUPtr = std::unique_ptr<const ImageTileset>;
 
 class ImagePartReader : public PartReader {
 public:
@@ -57,7 +69,7 @@ public:
   virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
 private:
-  List<pair<String, ImageConstPtr>> m_images;
+  List<std::pair<String, ImageConstPtr>> m_images;
   ImageTilesetConstPtr m_tileset;
 };
 
@@ -81,7 +93,7 @@ namespace Dungeon {
 
   void ImagePartReader::readAsset(String const& asset) {
     auto assets = Root::singleton().assets();
-    m_images.push_back(make_pair(asset, assets->image(asset)));
+    m_images.push_back(std::make_pair(asset, assets->image(asset)));
   }
 
   Vec2U ImagePartReader::size() const {
@@ -94,8 +106,8 @@ namespace Dungeon {
     for (auto const& entry : m_images) {
       String const& file = entry.first;
       ImageConstPtr const& image = entry.second;
-      for (size_t y = 0; y < image->height(); y++) {
-        for (size_t x = 0; x < image->width(); x++) {
+      for (std::size_t y = 0; y < image->height(); y++) {
+        for (std::size_t x = 0; x < image->width(); x++) {
 
           Vec2I position(x, y);
           Vec4B tileColor = image->get(x, y);
@@ -189,7 +201,9 @@ namespace Dungeon {
 
   unsigned ImageTileset::colorAsInt(Vec4B color) const {
     if ((color[3] != 0) && (color[3] != 255)) {
-      starAssert(false);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((false));
+      }
       return 0;
     }
     if (color[3] == 0)

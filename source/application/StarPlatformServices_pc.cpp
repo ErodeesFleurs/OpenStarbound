@@ -1,4 +1,11 @@
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.logging;
 import star.thread;
 import star.string;
@@ -14,9 +21,6 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 
 #include "StarStrongTypedef.hpp"
@@ -34,7 +38,7 @@ import star.desktop_service_pc_steam;
 namespace Star {
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-uint64_t const DiscordClientId = 467102538278109224;
+std::uint64_t const DiscordClientId = 467102538278109224;
 #endif
 
 PcPlatformServicesState::PcPlatformServicesState()
@@ -65,7 +69,7 @@ PcPlatformServicesState::PcPlatformServicesState()
     steamFlatpakInstalled = true;
   }
 
-  String steamRootPath = String::joinWith("", getenv("HOME"), "/.steam");
+  String steamRootPath = String::joinWith("", std::getenv("HOME"), "/.steam");
   if (!File::isDirectory(steamRootPath)) {
     if (steamFlatpakInstalled) {
       g_steamIsFlatpak = true;
@@ -105,7 +109,7 @@ PcPlatformServicesState::PcPlatformServicesState()
 #endif
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  static int64_t const DiscordEventSleep = 3;
+  static std::int64_t const DiscordEventSleep = 3;
 
   discord::Core* discordCorePtr = nullptr;
   discord::Result res = discord::Core::Create(DiscordClientId, DiscordCreateFlags_NoRequireDiscord, &discordCorePtr);
@@ -177,9 +181,9 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 #endif
 
 PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
-  auto services = unique_ptr<PcPlatformServices>(new PcPlatformServices);
+  auto services = std::unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
-  services->m_state = make_shared<PcPlatformServicesState>();
+  services->m_state = std::make_shared<PcPlatformServicesState>();
 
   bool provideP2PNetworking = false;
 
@@ -192,7 +196,7 @@ PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const&
 #endif
 
   if (provideP2PNetworking) {
-    auto p2pNetworkingService = make_shared<PcP2PNetworkingService>(services->m_state);
+    auto p2pNetworkingService = std::make_shared<PcP2PNetworkingService>(services->m_state);
     for (auto& argument : platformArguments) {
       if (argument.beginsWith("+platform:connect:")) {
         Logger::info("PC platform services joining from command line argument '{}'", argument);
@@ -207,9 +211,9 @@ PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const&
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   if (services->m_state->steamAvailable) {
-    services->m_statisticsService = make_shared<SteamStatisticsService>(services->m_state);
-    services->m_userGeneratedContentService = make_shared<SteamUserGeneratedContentService>(services->m_state);
-    services->m_desktopService = make_shared<SteamDesktopService>(services->m_state);
+    services->m_statisticsService = std::make_shared<SteamStatisticsService>(services->m_state);
+    services->m_userGeneratedContentService = std::make_shared<SteamUserGeneratedContentService>(services->m_state);
+    services->m_desktopService = std::make_shared<SteamDesktopService>(services->m_state);
   }
 #endif
 

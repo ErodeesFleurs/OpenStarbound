@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.data_stream;
@@ -15,12 +15,36 @@ import star.celestial_coordinate;
 
 namespace Star {
 
-STAR_CLASS(CelestialParameters);
-STAR_CLASS(CelestialDatabase);
+class CelestialParameters;
+using CelestialParametersPtr = std::shared_ptr<CelestialParameters>;
+using CelestialParametersConstPtr = std::shared_ptr<const CelestialParameters>;
+using CelestialParametersWeakPtr = std::weak_ptr<CelestialParameters>;
+using CelestialParametersConstWeakPtr = std::weak_ptr<const CelestialParameters>;
+using CelestialParametersUPtr = std::unique_ptr<CelestialParameters>;
+using CelestialParametersConstUPtr = std::unique_ptr<const CelestialParameters>;
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 
-STAR_STRUCT(SkyParameters);
+struct SkyParameters;
+using SkyParametersPtr = std::shared_ptr<SkyParameters>;
+using SkyParametersConstPtr = std::shared_ptr<const SkyParameters>;
+using SkyParametersWeakPtr = std::weak_ptr<SkyParameters>;
+using SkyParametersConstWeakPtr = std::weak_ptr<const SkyParameters>;
+using SkyParametersUPtr = std::unique_ptr<SkyParameters>;
+using SkyParametersConstUPtr = std::unique_ptr<const SkyParameters>;
 
-STAR_STRUCT(VisitableWorldParameters);
+struct VisitableWorldParameters;
+using VisitableWorldParametersPtr = std::shared_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstPtr = std::shared_ptr<const VisitableWorldParameters>;
+using VisitableWorldParametersWeakPtr = std::weak_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstWeakPtr = std::weak_ptr<const VisitableWorldParameters>;
+using VisitableWorldParametersUPtr = std::unique_ptr<VisitableWorldParameters>;
+using VisitableWorldParametersConstUPtr = std::unique_ptr<const VisitableWorldParameters>;
 
 // This struct is a stripped down version of CelestialParameters that only
 // contains the required inforamtion to generate a sky.  It's constructable
@@ -45,11 +69,11 @@ struct SkyParameters {
 
   void readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters);
 
-  uint64_t seed;
+  std::uint64_t seed;
   Maybe<float> dayLength;
-  Maybe<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
-  List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
-  List<pair<String, String>> horizonImages;
+  Maybe<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyPlanet;
+  List<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyMoons;
+  List<std::pair<String, String>> horizonImages;
   bool horizonClouds = true;
   SkyType skyType = SkyType::Barren;
   Either<SkyColoring, Color> skyColoring;

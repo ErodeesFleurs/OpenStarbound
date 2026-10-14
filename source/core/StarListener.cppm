@@ -1,14 +1,37 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 
 namespace Star {
 
-STAR_CLASS(Listener);
-STAR_CLASS(CallbackListener);
-STAR_CLASS(TrackerListener);
-STAR_CLASS(ListenerGroup);
+class Listener;
+using ListenerPtr = std::shared_ptr<Listener>;
+using ListenerConstPtr = std::shared_ptr<const Listener>;
+using ListenerWeakPtr = std::weak_ptr<Listener>;
+using ListenerConstWeakPtr = std::weak_ptr<const Listener>;
+using ListenerUPtr = std::unique_ptr<Listener>;
+using ListenerConstUPtr = std::unique_ptr<const Listener>;
+class CallbackListener;
+using CallbackListenerPtr = std::shared_ptr<CallbackListener>;
+using CallbackListenerConstPtr = std::shared_ptr<const CallbackListener>;
+using CallbackListenerWeakPtr = std::weak_ptr<CallbackListener>;
+using CallbackListenerConstWeakPtr = std::weak_ptr<const CallbackListener>;
+using CallbackListenerUPtr = std::unique_ptr<CallbackListener>;
+using CallbackListenerConstUPtr = std::unique_ptr<const CallbackListener>;
+class TrackerListener;
+using TrackerListenerPtr = std::shared_ptr<TrackerListener>;
+using TrackerListenerConstPtr = std::shared_ptr<const TrackerListener>;
+using TrackerListenerWeakPtr = std::weak_ptr<TrackerListener>;
+using TrackerListenerConstWeakPtr = std::weak_ptr<const TrackerListener>;
+using TrackerListenerUPtr = std::unique_ptr<TrackerListener>;
+using TrackerListenerConstUPtr = std::unique_ptr<const TrackerListener>;
+class ListenerGroup;
+using ListenerGroupPtr = std::shared_ptr<ListenerGroup>;
+using ListenerGroupConstPtr = std::shared_ptr<const ListenerGroup>;
+using ListenerGroupWeakPtr = std::weak_ptr<ListenerGroup>;
+using ListenerGroupConstWeakPtr = std::weak_ptr<const ListenerGroup>;
+using ListenerGroupUPtr = std::unique_ptr<ListenerGroup>;
+using ListenerGroupConstUPtr = std::unique_ptr<const ListenerGroup>;
 
 class Listener {
 public:
@@ -18,13 +41,13 @@ public:
 
 class CallbackListener : public Listener {
 public:
-  CallbackListener(function<void()> callback);
+  CallbackListener(std::function<void()> callback);
 
 protected:
   virtual void trigger() override;
 
 private:
-  function<void()> callback;
+  std::function<void()> callback;
 };
 
 class TrackerListener : public Listener {
@@ -37,7 +60,7 @@ protected:
   virtual void trigger() override;
 
 private:
-  atomic<bool> triggered;
+  std::atomic<bool> triggered;
 };
 
 class ListenerGroup {

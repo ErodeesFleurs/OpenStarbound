@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -64,7 +64,7 @@ void Entity::uninit() {
   m_entityId = NullEntityId;
 }
 
-pair<ByteArray, uint64_t> Entity::writeNetState(uint64_t, NetCompatibilityRules) {
+std::pair<ByteArray, std::uint64_t> Entity::writeNetState(std::uint64_t, NetCompatibilityRules) {
   return {ByteArray(), 0};
 }
 
@@ -136,7 +136,7 @@ Maybe<ChainableJsonMessageResponse> Entity::receiveMessage(ConnectionId, String 
   return {};
 }
 
-void Entity::update(float, uint64_t) {}
+void Entity::update(float, std::uint64_t) {}
 
 void Entity::render(RenderCallback*) {}
 
@@ -152,10 +152,14 @@ EntityDamageTeam Entity::getTeam() const {
 
 bool Entity::inWorld() const {
   if (m_world) {
-    starAssert(m_world && m_entityId != NullEntityId && m_entityMode);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((m_world && m_entityId != NullEntityId && m_entityMode));
+    }
     return true;
   } else {
-    starAssert(!m_world && m_entityId == NullEntityId && !m_entityMode);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((!m_world && m_entityId == NullEntityId && !m_entityMode));
+    }
     return false;
   }
 }

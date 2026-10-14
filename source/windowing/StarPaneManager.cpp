@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.game_types;
@@ -18,7 +19,6 @@ import star.bi_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -205,7 +205,7 @@ void PaneManager::setBackgroundWidget(WidgetPtr bg) {
   m_backgroundWidget = bg;
 }
 
-void PaneManager::dismissWhere(function<bool(PanePtr const&)> func) {
+void PaneManager::dismissWhere(std::function<bool(PanePtr const&)> func) {
   if (!func)
     return;
 

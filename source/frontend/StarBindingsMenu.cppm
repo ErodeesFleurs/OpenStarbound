@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -45,7 +45,13 @@ import star.base_script_pane;
 
 namespace Star {
 
-STAR_CLASS(BindingsMenu);
+class BindingsMenu;
+using BindingsMenuPtr = std::shared_ptr<BindingsMenu>;
+using BindingsMenuConstPtr = std::shared_ptr<BindingsMenu const>;
+using BindingsMenuWeakPtr = std::weak_ptr<BindingsMenu>;
+using BindingsMenuConstWeakPtr = std::weak_ptr<BindingsMenu const>;
+using BindingsMenuUPtr = std::unique_ptr<BindingsMenu>;
+using BindingsMenuConstUPtr = std::unique_ptr<BindingsMenu const>;
 
 class BindingsMenu : public BaseScriptPane {
 public:

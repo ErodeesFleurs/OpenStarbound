@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -65,7 +65,7 @@ private:
   Json m_caveFloorVariationPerlinConfig;
 
   int m_worldWidth;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
 
   mutable HashLruCache<int, LayerPerlins> m_layerPerlinsCache;
   mutable HashLruCache<Vec2I, Sector> m_sectorCache;
@@ -132,14 +132,14 @@ KarstCaveSelector::Sector::Sector(KarstCaveSelector const* parent, Vec2I sector)
           int baseY = y + layerPerlins.layerHeightVariation.get(noiseX, noiseY);
           int ceilingY = baseY + layerPerlins.caveHeightVariation.get(noiseX, noiseY) * taperFactor;
           int floorY = baseY + layerPerlins.caveFloorVariation.get(noiseX, noiseY) * taperFactor;
-          float halfHeight = abs(ceilingY - floorY + 1) / 2.0f;
+          float halfHeight = std::abs(ceilingY - floorY + 1) / 2.0f;
           float midpointY = (floorY + ceilingY) / 2.0f;
 
-          m_maxValue = max(m_maxValue, halfHeight);
+          m_maxValue = std::max(m_maxValue, halfHeight);
 
           for (int pointY = floorY; pointY < ceilingY; pointY++)
             if (inside(x, pointY))
-              set(x, pointY, max(get(x, pointY), halfHeight - abs(midpointY - pointY)));
+              set(x, pointY, std::max(get(x, pointY), halfHeight - std::abs(midpointY - pointY)));
         }
       }
     }

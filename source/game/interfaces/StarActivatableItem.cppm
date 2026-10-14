@@ -1,10 +1,16 @@
 module;
-#include "StarConfig.hpp"
+import std;
 
 
 namespace Star {
 
-STAR_CLASS(ActivatableItem);
+class ActivatableItem;
+using ActivatableItemPtr = std::shared_ptr<ActivatableItem>;
+using ActivatableItemConstPtr = std::shared_ptr<const ActivatableItem>;
+using ActivatableItemWeakPtr = std::weak_ptr<ActivatableItem>;
+using ActivatableItemConstWeakPtr = std::weak_ptr<const ActivatableItem>;
+using ActivatableItemUPtr = std::unique_ptr<ActivatableItem>;
+using ActivatableItemConstUPtr = std::unique_ptr<const ActivatableItem>;
 
 class ActivatableItem {
 public:

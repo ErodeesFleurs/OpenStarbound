@@ -1,25 +1,30 @@
 module;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-#define NOMINMAX
 #include <windows.h>
-#endif
-
-#include "StarConfig.hpp"
-import star.string;
-
-#ifdef STAR_SYSTEM_FAMILY_WINDOWS
-import star.format;
-import star.string_windows;
 #else
 #include <dlfcn.h>
+#include <stddef.h>
+#endif
+import std;
+import star.string;
+import star.format;
+
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+import star.string_windows;
 #endif
 
 export module star.dynamic_lib;
 
 export namespace Star {
 
-STAR_CLASS(DynamicLib);
+class DynamicLib;
+using DynamicLibPtr = std::shared_ptr<DynamicLib>;
+using DynamicLibConstPtr = std::shared_ptr<const DynamicLib>;
+using DynamicLibWeakPtr = std::weak_ptr<DynamicLib>;
+using DynamicLibConstWeakPtr = std::weak_ptr<const DynamicLib>;
+using DynamicLibUPtr = std::unique_ptr<DynamicLib>;
+using DynamicLibConstUPtr = std::unique_ptr<const DynamicLib>;
 
 class DynamicLib {
 public:
@@ -78,13 +83,15 @@ DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = LoadLibraryW(stringToUtf16(libraryName).get());
   if (handle == NULL)
     return {};
-  return make_unique<PrivateDynLib>(handle);
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
 DynamicLibUPtr DynamicLib::currentExecutable() {
   void* handle = GetModuleHandle(0);
-  starAssert(handle);
-  return make_unique<PrivateDynLib>(handle);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((handle));
+  }
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
 #else
@@ -116,13 +123,15 @@ DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
   if (handle == NULL)
     return {};
-  return make_unique<PrivateDynLib>(handle);
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
 DynamicLibUPtr DynamicLib::currentExecutable() {
   void* handle = dlopen(NULL, 0);
-  starAssert(handle);
-  return make_unique<PrivateDynLib>(handle);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((handle));
+  }
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
 #endif

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -44,7 +44,7 @@ public:
   float* data();
 
 private:
-  size_t len() const;
+  std::size_t len() const;
 
   std::unique_ptr<float[]> m_data;
   unsigned m_width;
@@ -112,7 +112,7 @@ inline float* Lightmap::data() {
   return m_data.get();
 }
 
-inline size_t Lightmap::len() const {
+inline std::size_t Lightmap::len() const {
   return m_width * m_height * 3;
 }
 
@@ -138,9 +138,9 @@ public:
   // for the given calculation region before calling 'calculate'.
   RectI calculationRegion() const;
 
-  size_t baseIndexFor(Vec2I const& position);
+  std::size_t baseIndexFor(Vec2I const& position);
 
-  void setCellIndex(size_t cellIndex, Vec3F const& light, bool obstacle);
+  void setCellIndex(std::size_t cellIndex, Vec3F const& light, bool obstacle);
 
   void addSpreadLight(Vec2F const& position, Vec3F const& light);
   void addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread = false);
@@ -175,7 +175,7 @@ public:
   RectI calculationRegion() const;
 
   void setCell(Vec2I const& position, Cell const& cell);
-  void setCellColumn(Vec2I const& position, Cell const* cells, size_t count);
+  void setCellColumn(Vec2I const& position, Cell const* cells, std::size_t count);
 
   void addSpreadLight(Vec2F const& position, float light);
   void addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience);
@@ -189,11 +189,11 @@ private:
   RectI m_calculationRegion;
 };
 
-inline size_t CellularLightingCalculator::baseIndexFor(Vec2I const& position) {
+inline std::size_t CellularLightingCalculator::baseIndexFor(Vec2I const& position) {
   return (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
 }
 
-inline void CellularLightingCalculator::setCellIndex(size_t cellIndex, Vec3F const& light, bool obstacle) {
+inline void CellularLightingCalculator::setCellIndex(std::size_t cellIndex, Vec3F const& light, bool obstacle) {
   if (m_monochrome)
     m_lightArray.right().cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{light.sum() / 3, obstacle};
   else

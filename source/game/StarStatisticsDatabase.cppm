@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -9,9 +9,27 @@ import star.lru_cache;
 
 namespace Star {
 
-STAR_STRUCT(StatEvent);
-STAR_STRUCT(Achievement);
-STAR_CLASS(StatisticsDatabase);
+struct StatEvent;
+using StatEventPtr = std::shared_ptr<StatEvent>;
+using StatEventConstPtr = std::shared_ptr<const StatEvent>;
+using StatEventWeakPtr = std::weak_ptr<StatEvent>;
+using StatEventConstWeakPtr = std::weak_ptr<const StatEvent>;
+using StatEventUPtr = std::unique_ptr<StatEvent>;
+using StatEventConstUPtr = std::unique_ptr<const StatEvent>;
+struct Achievement;
+using AchievementPtr = std::shared_ptr<Achievement>;
+using AchievementConstPtr = std::shared_ptr<const Achievement>;
+using AchievementWeakPtr = std::weak_ptr<Achievement>;
+using AchievementConstWeakPtr = std::weak_ptr<const Achievement>;
+using AchievementUPtr = std::unique_ptr<Achievement>;
+using AchievementConstUPtr = std::unique_ptr<const Achievement>;
+class StatisticsDatabase;
+using StatisticsDatabasePtr = std::shared_ptr<StatisticsDatabase>;
+using StatisticsDatabaseConstPtr = std::shared_ptr<const StatisticsDatabase>;
+using StatisticsDatabaseWeakPtr = std::weak_ptr<StatisticsDatabase>;
+using StatisticsDatabaseConstWeakPtr = std::weak_ptr<const StatisticsDatabase>;
+using StatisticsDatabaseUPtr = std::unique_ptr<StatisticsDatabase>;
+using StatisticsDatabaseConstUPtr = std::unique_ptr<const StatisticsDatabase>;
 
 struct StatEvent {
   String eventName;

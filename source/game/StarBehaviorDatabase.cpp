@@ -15,7 +15,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -308,13 +308,13 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
     for (auto& p : output)
       p.second.second.first = replaceOutputBehaviorTag(outputConfig.optString(p.first).orMaybe(p.second.second.first), treeParameters);
 
-    return make_shared<BehaviorNode>(ActionNode(name, parameters, output));
+    return std::make_shared<BehaviorNode>(ActionNode(name, parameters, output));
   } else if (type == BehaviorNodeType::Decorator) {
     tree.functions.add(name);
     BehaviorNodeConstPtr child = behaviorNode(json.get("child"), treeParameters, tree);
-    return make_shared<BehaviorNode>(DecoratorNode(name, parameters, child));
+    return std::make_shared<BehaviorNode>(DecoratorNode(name, parameters, child));
   } else if (type == BehaviorNodeType::Composite) {
-    return make_shared<BehaviorNode>(compositeNode(json, parameters, treeParameters, tree));
+    return std::make_shared<BehaviorNode>(compositeNode(json, parameters, treeParameters, tree));
   }
 
   // above statement must be exhaustive

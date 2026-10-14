@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 import std;
 
 namespace Star {

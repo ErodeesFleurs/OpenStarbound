@@ -14,7 +14,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.file;
@@ -158,10 +157,10 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   m_clientWindowSize = clientWindowSize;
 
   m_storagePath = File::temporaryDirectory();
-  auto playerStorage = make_shared<PlayerStorage>(File::relativeTo(m_storagePath, "player"));
-  auto statistics = make_shared<Statistics>(File::relativeTo(m_storagePath, "statistics"));
-  m_server = make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"));
-  m_client = make_shared<UniverseClient>(playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
+  auto playerStorage = std::make_shared<PlayerStorage>(File::relativeTo(m_storagePath, "player"));
+  auto statistics = std::make_shared<Statistics>(File::relativeTo(m_storagePath, "statistics"));
+  m_server = std::make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"));
+  m_client = std::make_shared<UniverseClient>(playerStorage, statistics, File::relativeTo(m_storagePath, "universeclient"));
 
   m_server->start();
 
@@ -222,7 +221,7 @@ void TestUniverse::warpPlayer(WorldId worldId) {
   // The client context only exists once the server has answered the connect
   // handshake, and both the warp call and the caller's expectations read it, so
   // let the client settle first.
-  int64_t connectStart = Time::monotonicMilliseconds();
+  std::int64_t connectStart = Time::monotonicMilliseconds();
   while (!m_client->clientContext() && Time::monotonicMilliseconds() - connectStart < 60000) {
     m_client->update(0.016f);
     Thread::sleep(16);
@@ -235,7 +234,7 @@ void TestUniverse::warpPlayer(WorldId worldId) {
   // to a celestial world legitimately takes tens of seconds, and a sanitizer
   // build several times that, so the runner's per-case timeout
   // (OPENSTARBOUND_TEST_TIMEOUT) is the practical limit.
-  int64_t startTime = Time::monotonicMilliseconds();
+  std::int64_t startTime = Time::monotonicMilliseconds();
   while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
     m_client->update(0.016f);
     Thread::sleep(16);

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -132,7 +132,7 @@ struct Particle {
 DataStream& operator<<(DataStream& ds, Particle const& particle);
 DataStream& operator>>(DataStream& ds, Particle& particle);
 
-typedef function<Particle()> ParticleVariantCreator;
+typedef std::function<Particle()> ParticleVariantCreator;
 ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
 
 }

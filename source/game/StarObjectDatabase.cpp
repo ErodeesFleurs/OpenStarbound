@@ -1,3 +1,4 @@
+import star.memory;
 #include "StarJsonExtra.hpp"
 import star.json;
 import star.id_map;
@@ -38,7 +39,7 @@ import star.maybe;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.weighted_pool;
@@ -168,11 +169,11 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
   return anyValid;
 }
 
-size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity) const {
+std::size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity) const {
   // If we are given a direction affinity, try and find an orientation with a
   // matching affinity *first*
   if (directionAffinity) {
-    for (size_t i = 0; i < orientations.size(); ++i) {
+    for (std::size_t i = 0; i < orientations.size(); ++i) {
       if (!orientations[i]->directionAffinity || *directionAffinity != *orientations[i]->directionAffinity)
         continue;
 
@@ -182,7 +183,7 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
   }
 
   // Then, fallback and try and find any valid affinity
-  for (size_t i = 0; i < orientations.size(); ++i) {
+  for (std::size_t i = 0; i < orientations.size(); ++i) {
     if (orientations[i]->placementValid(world, position) && orientations[i]->anchorsValid(world, position))
       return i;
   }
@@ -242,7 +243,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   }
 
   for (auto const& orientationSettings : configs) {
-    auto orientation = make_shared<ObjectOrientation>();
+    auto orientation = std::make_shared<ObjectOrientation>();
     orientation->config = orientationSettings;
 
     if (orientationSettings.contains("imageLayers")) {
@@ -402,7 +403,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
   return res;
 }
 
-ObjectDatabase::ObjectDatabase() : m_rebuilder(make_shared<Rebuilder>("object")) {
+ObjectDatabase::ObjectDatabase() : m_rebuilder(std::make_shared<Rebuilder>("object")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("object");
@@ -453,17 +454,17 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
   auto config = getConfig(objectName);
 
   if (config->type == "object") {
-    return make_shared<Object>(config, parameters);
+    return std::make_shared<Object>(config, parameters);
   } else if (config->type == "loungeable") {
-    return make_shared<LoungeableObject>(config, parameters);
+    return std::make_shared<LoungeableObject>(config, parameters);
   } else if (config->type == "container") {
-    return make_shared<ContainerObject>(config, parameters);
+    return std::make_shared<ContainerObject>(config, parameters);
   } else if (config->type == "farmable") {
-    return make_shared<FarmableObject>(config, parameters);
+    return std::make_shared<FarmableObject>(config, parameters);
   } else if (config->type == "teleporter") {
-    return make_shared<TeleporterObject>(config, parameters);
+    return std::make_shared<TeleporterObject>(config, parameters);
   } else if (config->type == "physics") {
-    return make_shared<PhysicsObject>(config, parameters);
+    return std::make_shared<PhysicsObject>(config, parameters);
   } else {
     throw ObjectException(strf("Unknown objectType '{}' constructing object '{}'", config->type, objectName));
   }
@@ -543,7 +544,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
 
     Json config = assets->json(path);
 
-    auto objectConfig = make_shared<ObjectConfig>();
+    auto objectConfig = std::make_shared<ObjectConfig>();
     objectConfig->path = path;
     objectConfig->config = config;
 
@@ -553,8 +554,8 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     objectConfig->category = config.getString("category", "other");
     objectConfig->colonyTags = jsonToStringList(config.get("colonyTags", JsonArray()));
 
-    objectConfig->scripts = jsonToStringList(config.get("scripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
-    objectConfig->animationScripts = jsonToStringList(config.get("animationScripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
+    objectConfig->scripts = jsonToStringList(config.get("scripts", JsonArray())).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
+    objectConfig->animationScripts = jsonToStringList(config.get("animationScripts", JsonArray())).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
 
     objectConfig->price = config.getInt("price", 0);
     if (objectConfig->price == 0)
@@ -575,7 +576,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         List<ItemDescriptor> group;
         for (auto dropChoiceEntry : dropChoiceGroups.iterateArray())
           group.append(
-              {dropChoiceEntry.getString(0), (size_t)dropChoiceEntry.getUInt(1), dropChoiceEntry.getObject(2)});
+              {dropChoiceEntry.getString(0), (std::size_t)dropChoiceEntry.getUInt(1), dropChoiceEntry.getObject(2)});
         objectConfig->breakDropOptions.append(group);
       }
       // If breakDropOptions is set but empty, then the object should always
@@ -699,14 +700,14 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
     drawables = {Drawable::makeImage(AssetPath::relativeTo(config->path, *placementImage),
                                      1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels)};
   } else {
-    size_t orientationIndex = config->findValidOrientation(world, position, direction);
+    std::size_t orientationIndex = config->findValidOrientation(world, position, direction);
     if (orientationIndex == NPos) {
       // If we aren't in a valid orientation, still need to draw something at
       // the cursor.  Draw the first orientation whose direction affinity
       // matches our current direction, or if that fails just the first
       // orientation.
       List<Drawable> result;
-      for (size_t i = 0; i < config->orientations.size(); ++i) {
+      for (std::size_t i = 0; i < config->orientations.size(); ++i) {
         if (config->orientations[i]->directionAffinity == direction)
           orientationIndex = i;
       }

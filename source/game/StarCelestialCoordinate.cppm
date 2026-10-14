@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.data_stream;
 import star.format;
@@ -10,7 +10,13 @@ import star.vector;
 
 namespace Star {
 
-STAR_CLASS(CelestialCoordinate);
+class CelestialCoordinate;
+using CelestialCoordinatePtr = std::shared_ptr<CelestialCoordinate>;
+using CelestialCoordinateConstPtr = std::shared_ptr<const CelestialCoordinate>;
+using CelestialCoordinateWeakPtr = std::weak_ptr<CelestialCoordinate>;
+using CelestialCoordinateConstWeakPtr = std::weak_ptr<const CelestialCoordinate>;
+using CelestialCoordinateUPtr = std::unique_ptr<CelestialCoordinate>;
+using CelestialCoordinateConstUPtr = std::unique_ptr<const CelestialCoordinate>;
 
 struct CelestialExceptionTag {
   static constexpr char const* name() { return "CelestialException"; }

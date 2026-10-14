@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -46,9 +46,27 @@ import star.base_script_pane;
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(ScriptPane);
-STAR_CLASS(UniverseClient);
+class CanvasWidget;
+using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
+using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
+using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
+using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
+using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
+using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
+class ScriptPane;
+using ScriptPanePtr = std::shared_ptr<ScriptPane>;
+using ScriptPaneConstPtr = std::shared_ptr<ScriptPane const>;
+using ScriptPaneWeakPtr = std::weak_ptr<ScriptPane>;
+using ScriptPaneConstWeakPtr = std::weak_ptr<ScriptPane const>;
+using ScriptPaneUPtr = std::unique_ptr<ScriptPane>;
+using ScriptPaneConstUPtr = std::unique_ptr<ScriptPane const>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 
 class ScriptPane : public BaseScriptPane {
 public:

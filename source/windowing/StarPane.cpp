@@ -1,4 +1,5 @@
 #include "StarJsonExtra.hpp"
+import std;
 import star.json;
 #include "StarStrongTypedef.hpp"
 import star.data_stream;
@@ -19,7 +20,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -269,7 +269,7 @@ void Pane::update(float dt) {
 }
 
 void Pane::tick(float) {
-  m_playingSounds.filter([](pair<String, AudioInstancePtr> const& p) {
+  m_playingSounds.filter([](std::pair<String, AudioInstancePtr> const& p) {
     return p.second->finished() == false;
   });
 }
@@ -430,7 +430,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
     [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
       auto assets = Root::singleton().assets();
       auto config = Root::singleton().configuration();
-      auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
+      auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(audio));
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));
       auto& guiContext = GuiContext::singleton();
@@ -439,7 +439,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
     });
 
   callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
-      m_playingSounds.filter([audio](pair<String, AudioInstancePtr> const& p) {
+      m_playingSounds.filter([audio](std::pair<String, AudioInstancePtr> const& p) {
         if (!audio || p.first == *audio) {
           p.second->stop();
           return false;
@@ -569,7 +569,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
 }
 
 GuiReaderPtr Pane::reader() {
-  return make_shared<GuiReader>();
+  return std::make_shared<GuiReader>();
 }
 
 void Pane::renderImpl() {

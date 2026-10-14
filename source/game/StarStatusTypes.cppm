@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.variant;
@@ -67,7 +67,7 @@ typedef MVariant<StatValueModifier, StatBaseMultiplier, StatEffectiveMultiplier>
 StatModifier jsonToStatModifier(Json const& config);
 Json jsonFromStatModifier(StatModifier const& modifier);
 
-typedef uint32_t StatModifierGroupId;
+typedef std::uint32_t StatModifierGroupId;
 typedef IdMap<StatModifierGroupId, List<StatModifier>> StatModifierGroupMap;
 
 // Unique stat effects are identified uniquely by name.
@@ -75,7 +75,7 @@ typedef String UniqueStatusEffect;
 
 // Second element here is *percentage* of duration remaining, based on the
 // highest duration that the effect has had
-typedef List<pair<UniqueStatusEffect, Maybe<float>>> ActiveUniqueStatusEffectSummary;
+typedef List<std::pair<UniqueStatusEffect, Maybe<float>>> ActiveUniqueStatusEffectSummary;
 
 // Persistent status effects can either be a modifier effect or unique effect
 typedef MVariant<StatModifier, UniqueStatusEffect> PersistentStatusEffect;

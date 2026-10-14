@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 import star.lua;
@@ -81,7 +81,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
 
   callbacks.registerCallback("setImage", [=](LuaValue const& imgOrPath) -> bool {
     if (appController->isFocused()) {
-      auto buffer = make_shared<Buffer>();
+      auto buffer = std::make_shared<Buffer>();
       if (imgOrPath.is<LuaUserData>() && imgOrPath.get<LuaUserData>().is<Image>()) {
         auto& image = imgOrPath.get<LuaUserData>().get<Image>();
         image.writePng(buffer);

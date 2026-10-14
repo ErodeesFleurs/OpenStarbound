@@ -1,5 +1,5 @@
+import std;
 import star.audio;
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.thread;
@@ -83,7 +83,9 @@ void AudioInstance::setRangeMultiplier(float rangeMultiplier) {
 }
 
 void AudioInstance::setVolume(float targetValue, float rampTime) {
-  starAssert(targetValue >= 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((targetValue >= 0));
+  }
   MutexLocker locker(m_mutex);
 
   if (m_stopping)
@@ -100,7 +102,9 @@ void AudioInstance::setVolume(float targetValue, float rampTime) {
 }
 
 void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
-  starAssert(targetValue >= 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((targetValue >= 0));
+  }
   MutexLocker locker(m_mutex);
 
   if (m_stopping)
@@ -151,12 +155,12 @@ void AudioInstance::setMixerGroup(MixerGroup mixerGroup) {
   m_mixerGroup = mixerGroup;
 }
 
-void AudioInstance::setClockStart(Maybe<int64_t> clockStartTime) {
+void AudioInstance::setClockStart(Maybe<std::int64_t> clockStartTime) {
   MutexLocker locker(m_mutex);
   m_clockStart = clockStartTime;
 }
 
-void AudioInstance::setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime) {
+void AudioInstance::setClockStop(Maybe<std::int64_t> clockStopTime, std::int64_t fadeOutTime) {
   MutexLocker locker(m_mutex);
   m_clockStop = clockStopTime;
   m_clockStopFadeOut = fadeOutTime;
@@ -208,7 +212,7 @@ unsigned Mixer::channels() const {
 
 void Mixer::addEffect(String const& effectName, EffectFunction effectFunction, float rampTime) {
   MutexLocker locker(m_effectsMutex);
-  m_effects[effectName] = make_shared<EffectInfo>(EffectInfo{effectFunction, 0.0f, rateOfChangeFromRampTime(rampTime), false});
+  m_effects[effectName] = std::make_shared<EffectInfo>(EffectInfo{effectFunction, 0.0f, rateOfChangeFromRampTime(rampTime), false});
 }
 
 void Mixer::removeEffect(String const& effectName, float rampTime) {
@@ -249,7 +253,7 @@ void Mixer::stopAll(float rampTime) {
     p.first->stop(vel);
 }
 
-void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMixFunction) {
+void Mixer::read(std::int16_t* outBuffer, std::size_t frameCount, ExtraMixFunction extraMixFunction) {
   // Make this method as least locky as possible by copying all the needed
   // member data before the expensive audio / effect stuff.
   float speed;
@@ -271,7 +275,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
     groupVolumes = m_groupVolumes;
   }
 
-  size_t bufferSize = frameCount * m_channels;
+  std::size_t bufferSize = frameCount * m_channels;
   m_mixBuffer.resize(bufferSize, 0);
 
   float time = (float)frameCount / sampleRate;
@@ -286,7 +290,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   unsigned millisecondsInBuffer = (bufferSize * 1000) / (channels * sampleRate);
   auto sampleEndTime = sampleStartTime + millisecondsInBuffer;
 
-  for (size_t i = 0; i < bufferSize; ++i)
+  for (std::size_t i = 0; i < bufferSize; ++i)
     outBuffer[i] = 0;
 
   {
@@ -324,7 +328,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
       if (audioStopVolEnd == 0.0f && audioInstance->m_stopping)
         finished = true;
 
-      size_t ramt = 0;
+      std::size_t ramt = 0;
       if (audioInstance->m_clockStart && *audioInstance->m_clockStart > sampleStartTime) {
         int silentSamples = (*audioInstance->m_clockStart - sampleStartTime) * sampleRate / 1000;
         for (unsigned i = 0; i < silentSamples * channels; ++i)
@@ -347,7 +351,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
           }
         }
         if (audioInstance->m_clockStop && *audioInstance->m_clockStop < sampleEndTime) {
-          for (size_t s = 0; s < ramt / channels; ++s) {
+          for (std::size_t s = 0; s < ramt / channels; ++s) {
             unsigned millisecondsInBuffer = (s * 1000) / sampleRate;
             auto sampleTime = sampleStartTime + millisecondsInBuffer;
             if (sampleTime > *audioInstance->m_clockStop) {
@@ -356,10 +360,10 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
                 volume = 1.0f - (float)(sampleTime - *audioInstance->m_clockStop) / (float)audioInstance->m_clockStopFadeOut;
 
               if (volume <= 0) {
-                for (size_t c = 0; c < channels; ++c)
+                for (std::size_t c = 0; c < channels; ++c)
                   m_mixBuffer[s * channels + c] = 0;
               } else {
-                for (size_t c = 0; c < channels; ++c)
+                for (std::size_t c = 0; c < channels; ++c)
                   m_mixBuffer[s * channels + c] *= volume;
               }
             }
@@ -368,11 +372,11 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
             finished = true;
         }
 
-        for (size_t s = 0; s < ramt / channels; ++s) {
+        for (std::size_t s = 0; s < ramt / channels; ++s) {
           float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
-          for (size_t c = 0; c < channels; ++c) {
+          for (std::size_t c = 0; c < channels; ++c) {
             float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
-            int16_t& outSample = outBuffer[s * channels + c];
+            std::int16_t& outSample = outBuffer[s * channels + c];
             outSample = clamp(sample + outSample, -32767.0f, 32767.0f);
           }
         }
@@ -407,10 +411,10 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
       std::copy(outBuffer, outBuffer + bufferSize, m_mixBuffer.begin());
       effectInfo->effectFunction(m_mixBuffer.ptr(), frameCount, channels);
 
-      for (size_t s = 0; s < frameCount; ++s) {
+      for (std::size_t s = 0; s < frameCount; ++s) {
         float amt = lerp((float)s / frameCount, effectBegin, effectEnd);
-        for (size_t c = 0; c < channels; ++c) {
-          int16_t prev = outBuffer[s * channels + c];
+        for (std::size_t c = 0; c < channels; ++c) {
+          std::int16_t prev = outBuffer[s * channels + c];
           outBuffer[s * channels + c] = lerp(amt, prev, m_mixBuffer[s * channels + c]);
         }
       }
@@ -430,17 +434,17 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   }
 }
 
-Mixer::EffectFunction Mixer::lowpass(size_t avgSize) const {
+Mixer::EffectFunction Mixer::lowpass(std::size_t avgSize) const {
   struct LowPass {
-    LowPass(size_t avgSize) : avgSize(avgSize) {}
+    LowPass(std::size_t avgSize) : avgSize(avgSize) {}
 
-    size_t avgSize;
+    std::size_t avgSize;
     List<Deque<float>> filter;
 
-    void operator()(int16_t* buffer, size_t frames, unsigned channels) {
+    void operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
       filter.resize(channels);
-      for (size_t f = 0; f < frames; ++f) {
-        for (size_t c = 0; c < channels; ++c) {
+      for (std::size_t f = 0; f < frames; ++f) {
+        for (std::size_t c = 0; c < channels; ++c) {
           auto& filterChannel = filter[c];
           filterChannel.append(buffer[f * channels + c] / 32767.0f);
           while (filterChannel.size() > avgSize)
@@ -461,19 +465,19 @@ Mixer::EffectFunction Mixer::echo(float time, float dry, float wet) const {
     float wet;
     List<Deque<float>> filter;
 
-    void operator()(int16_t* buffer, size_t frames, unsigned channels) {
+    void operator()(std::int16_t* buffer, std::size_t frames, unsigned channels) {
       if (echoLength == 0)
         return;
 
       filter.resize(channels);
-      for (size_t c = 0; c < channels; ++c) {
+      for (std::size_t c = 0; c < channels; ++c) {
         auto& filterChannel = filter[c];
         if (filterChannel.empty())
           filterChannel.resize(echoLength, 0);
       }
 
-      for (size_t f = 0; f < frames; ++f) {
-        for (size_t c = 0; c < channels; ++c) {
+      for (std::size_t f = 0; f < frames; ++f) {
+        for (std::size_t c = 0; c < channels; ++c) {
           auto& filterChannel = filter[c];
           buffer[f * channels + c] = buffer[f * channels + c] * dry + filter[c][0] * wet;
           filterChannel.append(buffer[f * channels + c]);

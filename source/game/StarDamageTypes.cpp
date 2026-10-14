@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.data_stream;
 import star.bi_map;
@@ -83,7 +83,7 @@ bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) con
 }
 
 bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
-  return tie(type, team) == tie(rhs.type, rhs.team);
+  return std::tie(type, team) == std::tie(rhs.type, rhs.team);
 }
 
 DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team) {

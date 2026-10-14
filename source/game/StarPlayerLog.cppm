@@ -1,13 +1,19 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.set;
 import star.json;
 
 namespace Star {
 
-STAR_CLASS(PlayerLog);
+class PlayerLog;
+using PlayerLogPtr = std::shared_ptr<PlayerLog>;
+using PlayerLogConstPtr = std::shared_ptr<const PlayerLog>;
+using PlayerLogWeakPtr = std::weak_ptr<PlayerLog>;
+using PlayerLogConstWeakPtr = std::weak_ptr<const PlayerLog>;
+using PlayerLogUPtr = std::unique_ptr<PlayerLog>;
+using PlayerLogConstUPtr = std::unique_ptr<const PlayerLog>;
 
 class PlayerLog {
 public:

@@ -1,3 +1,4 @@
+import star.memory;
 import star.io_device;
 import star.json;
 import star.asset_source;
@@ -10,7 +11,7 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.version_option_parser;

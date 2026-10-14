@@ -7,7 +7,6 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -135,7 +134,7 @@ int main(int argc, char** argv) {
     rootLoader.addSwitch("unsafe", "enables unsafe lua libraries");
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();
@@ -143,10 +142,10 @@ int main(int argc, char** argv) {
 
     String dungeon = options.arguments.first();
     VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeon);
-    uint64_t worldSeed = Random::randu64();
+    std::uint64_t worldSeed = Random::randu64();
     if (options.parameters.contains("seed"))
-      worldSeed = lexicalCast<uint64_t>(options.parameters.get("seed").first());
-    auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), worldSeed);
+      worldSeed = lexicalCast<std::uint64_t>(options.parameters.get("seed").first());
+    auto worldTemplate = std::make_shared<WorldTemplate>(worldParameters, SkyParameters(), worldSeed);
 
     auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
     root->configuration()->set("serverFidelity", fidelity.value("high"));
@@ -158,31 +157,31 @@ int main(int argc, char** argv) {
       root->configuration()->set("scriptInstructionMeasureInterval", 100);
     }
 
-    uint64_t times = 1;
+    std::uint64_t times = 1;
     if (options.parameters.contains("times"))
-      times = lexicalCast<uint64_t>(options.parameters.get("times").first());
+      times = lexicalCast<std::uint64_t>(options.parameters.get("times").first());
 
-    uint64_t steps = 5000;
+    std::uint64_t steps = 5000;
     if (options.parameters.contains("steps"))
-      steps = lexicalCast<uint64_t>(options.parameters.get("steps").first());
+      steps = lexicalCast<std::uint64_t>(options.parameters.get("steps").first());
 
-    uint64_t signalEvery = 120;
+    std::uint64_t signalEvery = 120;
     if (options.parameters.contains("signalevery"))
-      signalEvery = lexicalCast<uint64_t>(options.parameters.get("signalevery").first());
+      signalEvery = lexicalCast<std::uint64_t>(options.parameters.get("signalevery").first());
 
-    uint64_t reportEvery = 0;
+    std::uint64_t reportEvery = 0;
     if (options.parameters.contains("reportevery"))
-      reportEvery = lexicalCast<uint64_t>(options.parameters.get("reportevery").first());
+      reportEvery = lexicalCast<std::uint64_t>(options.parameters.get("reportevery").first());
 
     double sumTime = 0.0;
-    for (uint64_t i = 0; i < times; ++i) {
+    for (std::uint64_t i = 0; i < times; ++i) {
       WorldServer worldServer(worldTemplate, File::ephemeralFile());
 
       coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();
       double lastReport = Time::monotonicTime();
-      uint64_t entityCount = 0;
-      for (uint64_t j = 0; j < steps; ++j) {
+      std::uint64_t entityCount = 0;
+      for (std::uint64_t j = 0; j < steps; ++j) {
         if (j % signalEvery == 0) {
           entityCount = 0;
           worldServer.forEachEntity(RectF(Vec2F(), Vec2F(worldServer.geometry().size())), [&](auto const& entity) {

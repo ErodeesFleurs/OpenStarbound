@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 
 import star.net_element;
@@ -6,11 +6,11 @@ import star.net_element;
 
 namespace Star {
 
-uint64_t NetElementVersion::current() const {
+std::uint64_t NetElementVersion::current() const {
   return m_version;
 }
 
-uint64_t NetElementVersion::increment() {
+std::uint64_t NetElementVersion::increment() {
   return ++m_version;
 }
 

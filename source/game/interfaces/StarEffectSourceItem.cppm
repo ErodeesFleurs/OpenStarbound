@@ -1,11 +1,17 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 
 
 namespace Star {
 
-STAR_CLASS(EffectSourceItem);
+class EffectSourceItem;
+using EffectSourceItemPtr = std::shared_ptr<EffectSourceItem>;
+using EffectSourceItemConstPtr = std::shared_ptr<const EffectSourceItem>;
+using EffectSourceItemWeakPtr = std::weak_ptr<EffectSourceItem>;
+using EffectSourceItemConstWeakPtr = std::weak_ptr<const EffectSourceItem>;
+using EffectSourceItemUPtr = std::unique_ptr<EffectSourceItem>;
+using EffectSourceItemConstUPtr = std::unique_ptr<const EffectSourceItem>;
 
 class EffectSourceItem {
 public:

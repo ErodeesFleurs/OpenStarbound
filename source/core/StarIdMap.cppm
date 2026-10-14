@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.output_proxy;
 import star.format;
 import star.map;
@@ -89,7 +88,9 @@ IdMapWrapper<BaseMap>::IdMapWrapper()
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
   : m_min(min), m_max(max), m_nextId(m_min) {
-  starAssert(m_max > m_min);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_max > m_min));
+  }
 }
 
 template <typename BaseMap>
@@ -106,7 +107,7 @@ auto IdMapWrapper<BaseMap>::nextId() -> IdType {
 
 template <typename BaseMap>
 void IdMapWrapper<BaseMap>::add(IdType id, MappedType mappedType) {
-  if (!BaseMap::insert(make_pair(std::move(id), std::move(mappedType))).second)
+  if (!BaseMap::insert(std::make_pair(std::move(id), std::move(mappedType))).second)
     throw IdMapException::format("IdMapWrapper::add(id, value) called with pre-existing id '{}'", outputAny(id));
 }
 
@@ -125,7 +126,7 @@ void IdMapWrapper<BaseMap>::clear() {
 
 template <typename BaseMap>
 bool IdMapWrapper<BaseMap>::operator==(IdMapWrapper const& rhs) const {
-  return tie(m_min, m_max) == tie(rhs.m_min, rhs.m_max) && BaseMap::operator==(rhs);
+  return std::tie(m_min, m_max) == std::tie(rhs.m_min, rhs.m_max) && BaseMap::operator==(rhs);
 }
 
 template <typename BaseMap>

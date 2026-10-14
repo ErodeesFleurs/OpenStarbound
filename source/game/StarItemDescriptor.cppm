@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.stream_formatter;
@@ -11,9 +11,27 @@ import star.bi_map;
 
 namespace Star {
 
-STAR_CLASS(ItemDescriptor);
-STAR_CLASS(Item);
-STAR_STRUCT(VersionedJson);
+class ItemDescriptor;
+using ItemDescriptorPtr = std::shared_ptr<ItemDescriptor>;
+using ItemDescriptorConstPtr = std::shared_ptr<const ItemDescriptor>;
+using ItemDescriptorWeakPtr = std::weak_ptr<ItemDescriptor>;
+using ItemDescriptorConstWeakPtr = std::weak_ptr<const ItemDescriptor>;
+using ItemDescriptorUPtr = std::unique_ptr<ItemDescriptor>;
+using ItemDescriptorConstUPtr = std::unique_ptr<const ItemDescriptor>;
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+struct VersionedJson;
+using VersionedJsonPtr = std::shared_ptr<VersionedJson>;
+using VersionedJsonConstPtr = std::shared_ptr<const VersionedJson>;
+using VersionedJsonWeakPtr = std::weak_ptr<VersionedJson>;
+using VersionedJsonConstWeakPtr = std::weak_ptr<const VersionedJson>;
+using VersionedJsonUPtr = std::unique_ptr<VersionedJson>;
+using VersionedJsonConstUPtr = std::unique_ptr<const VersionedJson>;
 
 class ItemDescriptor {
 public:
@@ -21,7 +39,7 @@ public:
   static ItemDescriptor loadStore(Json const& store);
 
   ItemDescriptor();
-  ItemDescriptor(String name, uint64_t count, Json parameters = Json());
+  ItemDescriptor(String name, std::uint64_t count, Json parameters = Json());
 
   // Populate from a configuration JsonArray containing up to 3 elements, the
   // name, count, and then any item parameters.  If the json is a map, looks
@@ -29,12 +47,12 @@ public:
   explicit ItemDescriptor(Json const& spec);
 
   String const& name() const;
-  uint64_t count() const;
+  std::uint64_t count() const;
   Json const& parameters() const;
 
   ItemDescriptor singular() const;
-  ItemDescriptor withCount(uint64_t count) const;
-  ItemDescriptor multiply(uint64_t count) const;
+  ItemDescriptor withCount(std::uint64_t count) const;
+  ItemDescriptor multiply(std::uint64_t count) const;
   ItemDescriptor applyParameters(JsonObject const& parameters) const;
 
   // Descriptor is the default constructed ItemDescriptor()
@@ -66,19 +84,19 @@ public:
   friend struct hash<ItemDescriptor>;
 
 private:
-  ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash);
+  ItemDescriptor(String name, std::uint64_t count, Json parameters, Maybe<std::size_t> parametersHash);
 
-  size_t parametersHash() const;
+  std::size_t parametersHash() const;
 
   String m_name;
-  uint64_t m_count;
+  std::uint64_t m_count;
   Json m_parameters;
-  mutable Maybe<size_t> m_parametersHash;
+  mutable Maybe<std::size_t> m_parametersHash;
 };
 
 template <>
 struct hash<ItemDescriptor> {
-  size_t operator()(ItemDescriptor const& v) const;
+  std::size_t operator()(ItemDescriptor const& v) const;
 };
 
 }

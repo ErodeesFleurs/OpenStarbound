@@ -1,7 +1,5 @@
 module;
 import std;
-
-#include "StarConfig.hpp"
 import star.xx_hash;
 import star.string;
 import star.format;
@@ -20,7 +18,7 @@ void staticRandomHash32Iter(XXHash32& hash, T const& v, TL const&... rest) {
 }
 
 template <typename T, typename... TL>
-uint32_t staticRandomHash32(T const& v, TL const&... rest) {
+std::uint32_t staticRandomHash32(T const& v, TL const&... rest) {
   XXHash32 hash(2938728349u);
   staticRandomHash32Iter(hash, v, rest...);
   return hash.digest();
@@ -35,42 +33,42 @@ void staticRandomHash64Iter(XXHash64& hash, T const& v, TL const&... rest) {
 }
 
 template <typename T, typename... TL>
-uint64_t staticRandomHash64(T const& v, TL const&... rest) {
+std::uint64_t staticRandomHash64(T const& v, TL const&... rest) {
   XXHash64 hash(1997293021376312589);
   staticRandomHash64Iter(hash, v, rest...);
   return hash.digest();
 }
 
 template <typename T, typename... TL>
-uint32_t staticRandomU32(T const& d, TL const&... rest) {
+std::uint32_t staticRandomU32(T const& d, TL const&... rest) {
   return staticRandomHash32(d, rest...);
 }
 
 template <typename T, typename... TL>
-uint64_t staticRandomU64(T const& d, TL const&... rest) {
+std::uint64_t staticRandomU64(T const& d, TL const&... rest) {
   return staticRandomHash64(d, rest...);
 }
 
 template <typename T, typename... TL>
-int32_t staticRandomI32(T const& d, TL const&... rest) {
-  return (int32_t)staticRandomU32(d, rest...);
+std::int32_t staticRandomI32(T const& d, TL const&... rest) {
+  return (std::int32_t)staticRandomU32(d, rest...);
 }
 
 template <typename T, typename... TL>
-int32_t staticRandomI32Range(int32_t min, int32_t max, T const& d, TL const&... rest) {
-  uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
-  return (int32_t)(staticRandomU64(d, rest...) / denom + min);
+std::int32_t staticRandomI32Range(std::int32_t min, std::int32_t max, T const& d, TL const&... rest) {
+  std::uint64_t denom = (std::uint64_t)(-1) / ((std::uint64_t)(max - min) + 1);
+  return (std::int32_t)(staticRandomU64(d, rest...) / denom + min);
 }
 
 template <typename T, typename... TL>
-uint32_t staticRandomU32Range(uint32_t min, uint32_t max, T const& d, TL const&... rest) {
-  uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
+std::uint32_t staticRandomU32Range(std::uint32_t min, std::uint32_t max, T const& d, TL const&... rest) {
+  std::uint64_t denom = (std::uint64_t)(-1) / ((std::uint64_t)(max - min) + 1);
   return staticRandomU64(d, rest...) / denom + min;
 }
 
 template <typename T, typename... TL>
-int64_t staticRandomI64(T const& d, TL const&... rest) {
-  return (int64_t)staticRandomU64(d, rest...);
+std::int64_t staticRandomI64(T const& d, TL const&... rest) {
+  return (std::int64_t)staticRandomU64(d, rest...);
 }
 
 // Generates values in the range [0.0, 1.0]
@@ -100,7 +98,7 @@ typename Container::value_type& staticRandomFrom(Container& container, T const& 
   if (container.empty())
     throw StarException::format("staticRandomFrom called on an empty container");
   auto i = container.begin();
-  std::advance(i, staticRandomI32Range(0, (int32_t)(container.size() - 1), d, rest...));
+  std::advance(i, staticRandomI32Range(0, (std::int32_t)(container.size() - 1), d, rest...));
   return *i;
 }
 
@@ -109,7 +107,7 @@ typename Container::value_type const& staticRandomFrom(Container const& containe
   if (container.empty())
     throw StarException::format("staticRandomFrom called on an empty container");
   auto i = container.begin();
-  std::advance(i, staticRandomI32Range(0, (int32_t)(container.size() - 1), d, rest...));
+  std::advance(i, staticRandomI32Range(0, (std::int32_t)(container.size() - 1), d, rest...));
   return *i;
 }
 
@@ -127,7 +125,7 @@ typename Container::value_type staticRandomValueFrom(Container const& container,
 template <typename T>
 class URBG {
 public:
-  typedef function <T()> Function;
+  typedef std::function <T()> Function;
 
   URBG(Function func) : m_func(func) {};
 

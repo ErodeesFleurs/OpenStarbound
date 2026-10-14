@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -15,7 +15,13 @@ struct TechDatabaseExceptionTag {
 };
 using TechDatabaseException = StarError<TechDatabaseExceptionTag, StarException>;
 
-STAR_CLASS(TechDatabase);
+class TechDatabase;
+using TechDatabasePtr = std::shared_ptr<TechDatabase>;
+using TechDatabaseConstPtr = std::shared_ptr<const TechDatabase>;
+using TechDatabaseWeakPtr = std::weak_ptr<TechDatabase>;
+using TechDatabaseConstWeakPtr = std::weak_ptr<const TechDatabase>;
+using TechDatabaseUPtr = std::unique_ptr<TechDatabase>;
+using TechDatabaseConstUPtr = std::unique_ptr<const TechDatabase>;
 
 enum class TechType {
   Head,

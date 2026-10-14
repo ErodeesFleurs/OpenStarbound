@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.file;
 import star.json;

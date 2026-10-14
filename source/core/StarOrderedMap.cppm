@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.stream_formatter;
 
 import star.map;
@@ -20,12 +20,12 @@ class OrderedMapWrapper {
 public:
   typedef Key key_type;
   typedef Value mapped_type;
-  typedef pair<key_type const, mapped_type> value_type;
+  typedef std::pair<key_type const, mapped_type> value_type;
 
   typedef LinkedList<value_type, Allocator> OrderType;
   typedef Map<
       std::reference_wrapper<key_type const>, typename OrderType::iterator, MapArgs...,
-      typename std::allocator_traits<Allocator>::template rebind_alloc<pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>
+      typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>
     > MapType;
 
   typedef typename OrderType::iterator iterator;
@@ -47,11 +47,11 @@ public:
   template <typename InputIterator>
   OrderedMapWrapper(InputIterator beg, InputIterator end);
 
-  OrderedMapWrapper(initializer_list<value_type> list);
+  OrderedMapWrapper(std::initializer_list<value_type> list);
 
   List<key_type> keys() const;
   List<mapped_type> values() const;
-  List<pair<key_type, mapped_type>> pairs() const;
+  List<std::pair<key_type, mapped_type>> pairs() const;
 
   bool contains(key_type const& k) const;
 
@@ -80,11 +80,11 @@ public:
   // Finds all of the values matching the given value and returns their keys.
   List<key_type> keysOf(mapped_type const& v) const;
 
-  pair<iterator, bool> insert(value_type const& v);
-  pair<iterator, bool> insert(key_type k, mapped_type v);
+  std::pair<iterator, bool> insert(value_type const& v);
+  std::pair<iterator, bool> insert(key_type k, mapped_type v);
 
-  pair<iterator, bool> insertFront(value_type const& v);
-  pair<iterator, bool> insertFront(key_type k, mapped_type v);
+  std::pair<iterator, bool> insertFront(value_type const& v);
+  std::pair<iterator, bool> insertFront(key_type k, mapped_type v);
 
   // Add a key / value pair, throw if the key already exists
   mapped_type& add(key_type k, mapped_type v);
@@ -118,19 +118,19 @@ public:
   reverse_iterator rbegin();
   reverse_iterator rend();
 
-  size_t size() const;
+  std::size_t size() const;
 
   iterator erase(iterator i);
-  size_t erase(key_type const& k);
+  std::size_t erase(key_type const& k);
 
   iterator find(key_type const& k);
   const_iterator find(key_type const& k) const;
 
-  Maybe<size_t> indexOf(key_type const& k) const;
+  Maybe<std::size_t> indexOf(key_type const& k) const;
 
-  key_type const& keyAt(size_t i) const;
-  mapped_type const& valueAt(size_t i) const;
-  mapped_type& valueAt(size_t i);
+  key_type const& keyAt(std::size_t i) const;
+  mapped_type const& valueAt(std::size_t i) const;
+  mapped_type& valueAt(std::size_t i);
 
   value_type takeFirst();
   void removeFirst();
@@ -167,10 +167,10 @@ private:
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...> const& m);
 
-template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<pair<Key const, Value>>>
+template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using OrderedMap = OrderedMapWrapper<std::map, Key, Value, Allocator, Compare>;
 
-template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<pair<Key const, Value>>>
+template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using OrderedHashMap = OrderedMapWrapper<FlatHashMap, Key, Value, Allocator, Hash, Equals>;
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -198,7 +198,7 @@ OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(Inp
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(initializer_list<value_type> list) {
+OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(std::initializer_list<value_type> list) {
   for (value_type v : list)
     insert(std::move(v));
 }
@@ -220,8 +220,8 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::values() const -
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::pairs() const -> List<pair<key_type, mapped_type>> {
-  List<pair<key_type, mapped_type>> plist;
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::pairs() const -> List<std::pair<key_type, mapped_type>> {
+  List<std::pair<key_type, mapped_type>> plist;
   for (auto const& p : *this)
     plist.append(p.second);
   return plist;
@@ -330,7 +330,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keysOf(mapped_ty
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(value_type const& v) -> pair<iterator, bool> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(value_type const& v) -> std::pair<iterator, bool> {
   auto i = m_map.find(v.first);
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.end(), v);
@@ -342,12 +342,12 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(value_typ
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(key_type k, mapped_type v) -> pair<iterator, bool> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(key_type k, mapped_type v) -> std::pair<iterator, bool> {
   return insert(value_type(std::move(k), std::move(v)));
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(value_type const& v) -> pair<iterator, bool> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(value_type const& v) -> std::pair<iterator, bool> {
   auto i = m_map.find(v.first);
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.begin(), v);
@@ -359,7 +359,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(valu
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(key_type k, mapped_type v) -> pair<iterator, bool> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(key_type k, mapped_type v) -> std::pair<iterator, bool> {
   return insertFront(value_type(std::move(k), std::move(v)));
 }
 
@@ -470,7 +470,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::rend() -> revers
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::size() const -> size_t {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::size() const -> std::size_t {
   return m_map.size();
 }
 
@@ -481,7 +481,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::erase(iterator i
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::erase(key_type const& k) -> size_t {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::erase(key_type const& k) -> std::size_t {
   if (remove(k))
     return 1;
   return 0;
@@ -506,7 +506,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::find(key_type co
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> Maybe<size_t> {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type const& k) const -> Maybe<std::size_t> {
   typename MapType::const_iterator i = m_map.find(k);
   if (i == m_map.end())
     return {};
@@ -515,7 +515,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::indexOf(key_type
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(size_t i) const -> key_type const& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(std::size_t i) const -> key_type const& {
   if (i >= size())
     throw MapException(strf("index {} out of range in OrderedMap::at()", i));
 
@@ -525,12 +525,12 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::keyAt(size_t i) 
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(size_t i) const -> mapped_type const& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) const -> mapped_type const& {
   return const_cast<OrderedMapWrapper*>(this)->valueAt(i);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(size_t i) -> mapped_type& {
+auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::valueAt(std::size_t i) -> mapped_type& {
   if (i >= size())
     throw MapException(strf("index {} out of range in OrderedMap::valueAt()", i));
 
@@ -607,7 +607,7 @@ bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::empty() const {
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::toBack(iterator i) -> iterator {
   m_order.splice(m_order.end(), m_order, i);
-  return prev(m_order.end());
+  return std::prev(m_order.end());
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

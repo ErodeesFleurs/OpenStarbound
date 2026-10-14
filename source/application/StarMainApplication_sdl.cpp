@@ -1,4 +1,20 @@
-#include "StarConfig.hpp"
+#include "GL/glew.h"
+#include "SDL3/SDL.h"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+#ifdef STAR_SYSTEM_WINDOWS
+#include <dwmapi.h>
+#include <objidl.h>
+#include <shlobj.h>
+#endif
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3.h"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -25,7 +41,6 @@ import star.logging;
 #include "StarCasting.hpp"
 import star.texture_atlas;
 
-#include "GL/glew.h"
 import star.renderer_opengl;
 import star.ordered_map;
 import star.lru_cache;
@@ -36,26 +51,11 @@ import star.ttl_cache;
 import star.list;
 import star.image_processing;
 
-#include "SDL3/SDL.h"
 
-#ifdef STAR_ENABLE_STEAM_INTEGRATION
-#include "steam/steam_api.h"
-#endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 
-#ifdef STAR_SYSTEM_WINDOWS
-#include <dwmapi.h>
-#include <objidl.h>
-#include <shlobj.h>
-#endif
 
-#include "imgui.h"
-#include "imgui_impl_sdl3.h"
-#include "imgui_impl_opengl3.h"
 
 import star.signal_handler;
 import star.tick_rate_monitor;
@@ -66,8 +66,8 @@ import star.algorithm;
 namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
-static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned int height) {
-  size_t size = (size_t)(width * height * 4u);
+static bool copyDibToClipboard(const std::uint8_t* buf, unsigned int width, unsigned int height) {
+  std::size_t size = (std::size_t)(width * height * 4u);
 
   BITMAPV5HEADER hV5{};
   hV5.bV5Size = sizeof(hV5);
@@ -85,7 +85,7 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
   hV5.bV5Intent = LCS_GM_GRAPHICS;
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
     if (auto dst = (char*)GlobalLock(handle)) {
-      memcpy(dst, &hV5, sizeof(hV5));
+      std::memcpy(dst, &hV5, sizeof(hV5));
       unsigned int sizeI = width * height;
       unsigned int* data = (unsigned int*)buf;
       unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
@@ -106,10 +106,10 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
   return false;
 }
 
-static bool copyPngToClipboard(void* buf, size_t size) {
+static bool copyPngToClipboard(void* buf, std::size_t size) {
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, size)) {
     if (auto dst = (char*)GlobalLock(handle)) {
-      memcpy(dst, buf, size);
+      std::memcpy(dst, buf, size);
       GlobalUnlock(handle);
     }
     SetClipboardData(RegisterClipboardFormatA("PNG"), handle);
@@ -138,11 +138,11 @@ static bool copyFileToClipboard(String const& path) {
   auto wide = path.wstring();
   wide.push_back(0);
   wide.push_back(0);
-  size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
+  std::size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
     if (auto dst = (char*)GlobalLock(handle)) {
-      memcpy(dst, &drop, sizeof(drop));
-      memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
+      std::memcpy(dst, &drop, sizeof(drop));
+      std::memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
       GlobalUnlock(handle);
     }
     SetClipboardData(CF_HDROP, handle);
@@ -428,11 +428,11 @@ Maybe<Key> keyFromSdlScancode(SDL_Scancode scancode) {
   return ScanCodeMap.maybe(scancode);
 }
 
-KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
+KeyMod keyModsFromSdlKeyMods(std::uint16_t mod) {
   return static_cast<KeyMod>(mod);
 }
 
-MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
+MouseButton mouseButtonFromSdlMouseButton(std::uint8_t button) {
   switch (button) {
     case SDL_BUTTON_LEFT: return MouseButton::Left;
     case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
@@ -442,7 +442,7 @@ MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
   }
 }
 
-ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
+ControllerAxis controllerAxisFromSdlControllerAxis(std::uint8_t axis) {
   switch (axis) {
     case SDL_GAMEPAD_AXIS_LEFTX : return ControllerAxis::LeftX;
     case SDL_GAMEPAD_AXIS_LEFTY : return ControllerAxis::LeftY;
@@ -454,7 +454,7 @@ ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
   }
 }
 
-ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
+ControllerButton controllerButtonFromSdlControllerButton(std::uint8_t button) {
   switch (button) {
     case SDL_GAMEPAD_BUTTON_SOUTH : return ControllerButton::A;
     case SDL_GAMEPAD_BUTTON_EAST : return ControllerButton::B;
@@ -599,8 +599,8 @@ public:
 
       // Get XDG Icons Directory following XDG Base Directory Specification
       String XdgIconsPath;
-      const char* XdgDataHome = getenv("XDG_DATA_HOME");
-      const char* Home = getenv("HOME");
+      const char* XdgDataHome = std::getenv("XDG_DATA_HOME");
+      const char* Home = std::getenv("HOME");
 
       if (XdgDataHome && XdgDataHome[0] != '\0') {
         XdgIconsPath = String::joinWith("", XdgDataHome, "/icons");
@@ -666,7 +666,7 @@ public:
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     }
 
-    m_renderer = make_shared<OpenGlRenderer>();
+    m_renderer = std::make_shared<OpenGlRenderer>();
     m_renderer->setScreenSize(m_windowSize);
 
     m_cursorCache.setTimeToLive(30000);
@@ -706,7 +706,7 @@ public:
     SDL_Quit();
   }
 
-  typedef std::function<void(uint8_t*, int)> AudioCallback;
+  typedef std::function<void(std::uint8_t*, int)> AudioCallback;
   bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
     m_audioInputCallback = std::move(callback);
@@ -749,7 +749,7 @@ public:
   void run() {
     try {
       Logger::info("Application: initialization...");
-      m_application->applicationInit(make_shared<Controller>(this));
+      m_application->applicationInit(std::make_shared<Controller>(this));
 
       Logger::info("Application: renderer initialization...");
       m_application->renderInit(m_renderer);
@@ -779,8 +779,8 @@ public:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
 
-        int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
-        updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
+        int updatesBehind = std::max<int>(std::round(m_updateTicker.ticksBehind()), 1);
+        updatesBehind = std::min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
           //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
           if (i != 0)
@@ -814,7 +814,7 @@ public:
           break;
         }
 
-        int64_t spareMilliseconds = round(m_updateTicker.spareTime() * 1000);
+        std::int64_t spareMilliseconds = std::round(m_updateTicker.spareTime() * 1000);
         if (spareMilliseconds > 0)
           Thread::sleepPrecise(spareMilliseconds);
       }
@@ -1036,7 +1036,7 @@ private:
       }
     }
 
-    void setTextArea(Maybe<pair<RectI, int>> area) override {
+    void setTextArea(Maybe<std::pair<RectI, int>> area) override {
       if (parent->m_textInputArea == area)
         return;
       parent->m_textInputArea = area;
@@ -1063,7 +1063,7 @@ private:
       SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
     }
 
-    bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
+    bool openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
       return parent->openAudioInputDevice(deviceId, freq, channels, callback);
     };
 
@@ -1210,7 +1210,7 @@ private:
 
   void getAudioData(Uint8* stream, int len) {
     if (m_audioEnabled) {
-      m_application->getAudioData((int16_t*)stream, len / 4);
+      m_application->getAudioData((std::int16_t*)stream, len / 4);
     } else {
       for (int i = 0; i < len; ++i)
         stream[i] = 0;
@@ -1232,7 +1232,7 @@ private:
     }
   }
 
-  inline static const size_t MaxCursorSize = 128;
+  inline static const std::size_t MaxCursorSize = 128;
   bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
     auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
     if (!m_cursorHardware || !scale || imageSize.max() > MaxCursorSize || imageSize.product() > square(MaxCursorSize)) {
@@ -1251,7 +1251,7 @@ private:
           FlipImageOperation{ FlipImageOperation::Mode::FlipY }, // SDL wants an Australian cursor.
           BorderImageOperation{ 1, Vec4B(), Vec4B(), false, false }, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
           ScaleImageOperation{ ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale) },
-          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize)) }
+          CropImageOperation{ RectI::withSize(Vec2I::filled(std::ceilf((float)scale / 2)), Vec2I(imageSize)) }
         };
       else
         operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
@@ -1301,7 +1301,7 @@ private:
     std::vector<const char*> types;
     for (auto& entry : *heldData)
       types.push_back(entry.first.utf8Ptr());
-    auto request = [](void* userdata, const char* mime_type, size_t* size) -> const void* {
+    auto request = [](void* userdata, const char* mime_type, std::size_t* size) -> const void* {
       if (auto entry = ((StringMap<ByteArray>*)userdata)->ptr(mime_type)) {
         *size = entry->size();
         return entry->ptr();
@@ -1327,8 +1327,8 @@ private:
       copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
     #else
-    _unused(image);
-    _unused(path);
+    ((void)(image));
+    ((void)(path));
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
@@ -1343,7 +1343,7 @@ private:
       return copyFileToClipboard(path);
     });
     #else
-    _unused(path);
+    ((void)(path));
     return false;
     #endif
   }
@@ -1360,9 +1360,9 @@ private:
   SDL_AudioStream* m_sdlAudioOutputStream = 0;
   SDL_AudioStream* m_sdlAudioInputStream = 0;
   AudioCallback m_audioInputCallback;
-  std::vector<uint8_t> m_audioInputData;
-  std::vector<uint8_t> m_audioOutputData;
-  Maybe<pair<RectI, int>> m_textInputArea;
+  std::vector<std::uint8_t> m_audioInputData;
+  std::vector<std::uint8_t> m_audioOutputData;
+  Maybe<std::pair<RectI, int>> m_textInputArea;
 
   typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
@@ -1377,7 +1377,7 @@ private:
     CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
   };
 
-  typedef tuple<unsigned, Vec2I, String> CursorDescriptor;
+  typedef std::tuple<unsigned, Vec2I, String> CursorDescriptor;
 
   HashTtlCache<CursorDescriptor, std::shared_ptr<CursorEntry>> m_cursorCache;
   CursorDescriptor m_currentCursor;

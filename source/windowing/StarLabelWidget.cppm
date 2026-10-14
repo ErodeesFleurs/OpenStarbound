@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -48,7 +48,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
 class LabelWidget : public Widget {
 public:
   LabelWidget();

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.id_map;
@@ -50,8 +50,20 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(PlantDrop);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+class PlantDrop;
+using PlantDropPtr = std::shared_ptr<PlantDrop>;
+using PlantDropConstPtr = std::shared_ptr<const PlantDrop>;
+using PlantDropWeakPtr = std::weak_ptr<PlantDrop>;
+using PlantDropConstWeakPtr = std::weak_ptr<const PlantDrop>;
+using PlantDropUPtr = std::unique_ptr<PlantDrop>;
+using PlantDropConstUPtr = std::unique_ptr<const PlantDrop>;
 
 class PlantDrop : public virtual MobileEntity {
 public:
@@ -69,7 +81,7 @@ public:
 
   String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -86,7 +98,7 @@ public:
 
   RectF collisionRect() const;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
   

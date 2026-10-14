@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.id_map;
@@ -29,10 +29,34 @@ import star.interaction_types;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(ActorMovementController);
-STAR_CLASS(StatusController);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class ToolUserEntity;
+using ToolUserEntityPtr = std::shared_ptr<ToolUserEntity>;
+using ToolUserEntityConstPtr = std::shared_ptr<const ToolUserEntity>;
+using ToolUserEntityWeakPtr = std::weak_ptr<ToolUserEntity>;
+using ToolUserEntityConstWeakPtr = std::weak_ptr<const ToolUserEntity>;
+using ToolUserEntityUPtr = std::unique_ptr<ToolUserEntity>;
+using ToolUserEntityConstUPtr = std::unique_ptr<const ToolUserEntity>;
+class ActorMovementController;
+using ActorMovementControllerPtr = std::shared_ptr<ActorMovementController>;
+using ActorMovementControllerConstPtr = std::shared_ptr<const ActorMovementController>;
+using ActorMovementControllerWeakPtr = std::weak_ptr<ActorMovementController>;
+using ActorMovementControllerConstWeakPtr = std::weak_ptr<const ActorMovementController>;
+using ActorMovementControllerUPtr = std::unique_ptr<ActorMovementController>;
+using ActorMovementControllerConstUPtr = std::unique_ptr<const ActorMovementController>;
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 // FIXME: This interface is a complete mess.
 class ToolUserEntity : public virtual ActorEntity {

@@ -1,6 +1,6 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.list;
 import star.hash;
 import star.ordered_map;
@@ -19,23 +19,23 @@ public:
   typedef typename LruCacheType::Key Key;
   typedef typename LruCacheType::Value::second_type Value;
 
-  typedef function<Value(Key const&)> ProducerFunction;
+  typedef std::function<Value(Key const&)> ProducerFunction;
 
   TtlCacheBase();
-  TtlCacheBase(int64_t timeToLive, int timeSmear = 1000, size_t maxSize = NPos, bool ttlUpdateEnabled = true);
+  TtlCacheBase(std::int64_t timeToLive, int timeSmear = 1000, std::size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 
-  int64_t timeToLive() const;
-  void setTimeToLive(int64_t timeToLive);
+  std::int64_t timeToLive() const;
+  void setTimeToLive(std::int64_t timeToLive);
 
   int timeSmear() const;
   void setTimeSmear(int timeSmear);
 
   // If a max size is set, this cache also acts as an LRU cache with the given
   // maximum size.
-  size_t maxSize() const;
-  void setMaxSize(size_t maxSize = NPos);
+  std::size_t maxSize() const;
+  void setMaxSize(std::size_t maxSize = NPos);
 
-  size_t currentSize() const;
+  std::size_t currentSize() const;
 
   List<Key> keys() const;
   List<Value> values() const;
@@ -56,7 +56,7 @@ public:
   bool remove(Key const& key);
 
   // Remove all key / value pairs matching a filter.
-  void removeWhere(function<bool(Key const&, Value&)> filter);
+  void removeWhere(std::function<bool(Key const&, Value&)> filter);
 
   // If the value for the key is not found in the cache, produce it with the
   // given producer.  Producer should take the key as an argument and return
@@ -69,27 +69,27 @@ public:
   // Cleanup any cached entries that are older than their time to live, if the
   // refreshFilter is given, things that match the refreshFilter instead have
   // their ttl refreshed rather than being removed.
-  void cleanup(function<bool(Key const&, Value const&)> refreshFilter = {});
+  void cleanup(std::function<bool(Key const&, Value const&)> refreshFilter = {});
 
 private:
   LruCacheType m_cache;
-  int64_t m_timeToLive;
+  std::int64_t m_timeToLive;
   int m_timeSmear;
   bool m_ttlUpdateEnabled;
 };
 
-template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = BlockAllocator<pair<Key const, pair<int64_t, Value>>, 1024>>
-using TtlCache = TtlCacheBase<LruCache<Key, pair<int64_t, Value>, Compare, Allocator>>;
+template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = BlockAllocator<std::pair<Key const, std::pair<std::int64_t, Value>>, 1024>>
+using TtlCache = TtlCacheBase<LruCache<Key, std::pair<std::int64_t, Value>, Compare, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<pair<Key const, pair<int64_t, Value>>, 1024>>
-using HashTtlCache = TtlCacheBase<HashLruCache<Key, pair<int64_t, Value>, Hash, Equals, Allocator>>;
+template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<std::pair<Key const, std::pair<std::int64_t, Value>>, 1024>>
+using HashTtlCache = TtlCacheBase<HashLruCache<Key, std::pair<std::int64_t, Value>, Hash, Equals, Allocator>>;
 
 template <typename LruCacheType>
 TtlCacheBase<LruCacheType>::TtlCacheBase()
   : TtlCacheBase(10000, 1000, NPos, true) {}
 
 template <typename LruCacheType>
-TtlCacheBase<LruCacheType>::TtlCacheBase(int64_t timeToLive, int timeSmear, size_t maxSize, bool ttlUpdateEnabled) {
+TtlCacheBase<LruCacheType>::TtlCacheBase(std::int64_t timeToLive, int timeSmear, std::size_t maxSize, bool ttlUpdateEnabled) {
   m_cache.setMaxSize(maxSize);
   m_timeToLive = timeToLive;
   m_timeSmear = timeSmear;
@@ -97,12 +97,12 @@ TtlCacheBase<LruCacheType>::TtlCacheBase(int64_t timeToLive, int timeSmear, size
 }
 
 template <typename LruCacheType>
-int64_t TtlCacheBase<LruCacheType>::timeToLive() const {
+std::int64_t TtlCacheBase<LruCacheType>::timeToLive() const {
   return m_timeToLive;
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::setTimeToLive(int64_t timeToLive) {
+void TtlCacheBase<LruCacheType>::setTimeToLive(std::int64_t timeToLive) {
   m_timeToLive = timeToLive;
 }
 
@@ -122,17 +122,17 @@ bool TtlCacheBase<LruCacheType>::ttlUpdateEnabled() const {
 }
 
 template <typename LruCacheType>
-size_t TtlCacheBase<LruCacheType>::maxSize() const {
+std::size_t TtlCacheBase<LruCacheType>::maxSize() const {
   return m_cache.maxSize();
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::setMaxSize(size_t maxSize) {
+void TtlCacheBase<LruCacheType>::setMaxSize(std::size_t maxSize) {
   m_cache.setMaxSize(maxSize);
 }
 
 template <typename LruCacheType>
-size_t TtlCacheBase<LruCacheType>::currentSize() const {
+std::size_t TtlCacheBase<LruCacheType>::currentSize() const {
   return m_cache.currentSize();
 }
 
@@ -166,7 +166,7 @@ auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
 
 template <typename LruCacheType>
 void TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
-  m_cache.set(key, make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
+  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
 }
 
 template <typename LruCacheType>
@@ -175,7 +175,7 @@ bool TtlCacheBase<LruCacheType>::remove(Key const& key) {
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::removeWhere(function<bool(Key const&, Value&)> filter) {
+void TtlCacheBase<LruCacheType>::removeWhere(std::function<bool(Key const&, Value&)> filter) {
   m_cache.removeWhere([&filter](auto const& key, auto& value) { return filter(key, value.second); });
 }
 
@@ -183,7 +183,7 @@ template <typename LruCacheType>
 template <typename Producer>
 auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer producer) -> Value & {
   auto& value = m_cache.get(key, [producer](Key const& key) {
-      return pair<int64_t, Value>(0, producer(key));
+      return std::pair<std::int64_t, Value>(0, producer(key));
     });
   if (value.first == 0 || m_ttlUpdateEnabled)
     value.first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
@@ -196,8 +196,8 @@ void TtlCacheBase<LruCacheType>::clear() {
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::cleanup(function<bool(Key const&, Value const&)> refreshFilter) {
-  int64_t currentTime = Time::monotonicMilliseconds();
+void TtlCacheBase<LruCacheType>::cleanup(std::function<bool(Key const&, Value const&)> refreshFilter) {
+  std::int64_t currentTime = Time::monotonicMilliseconds();
   m_cache.removeWhere([&](auto const& key, auto& value) {
       if (refreshFilter && refreshFilter(key, value.second)) {
         value.first = currentTime;

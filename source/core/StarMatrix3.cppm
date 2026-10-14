@@ -1,7 +1,7 @@
 module;
 
+import std;
 import star.stream_formatter;
-#include "StarConfig.hpp"
 
 import star.array;
 import star.math_common;
@@ -44,8 +44,8 @@ public:
   Matrix3& operator=(Matrix3<T2> const& m);
 
   // Row-major indexing
-  Vec3& operator[](size_t const i);
-  Vec3 const& operator[](size_t const i) const;
+  Vec3& operator[](std::size_t const i);
+  Vec3 const& operator[](std::size_t const i) const;
 
   // Gives pointer to row major storage
   EnableIfContiguousStorage<T*> ptr();
@@ -54,13 +54,13 @@ public:
   // Copy to an existing array
   void copy(T* loc) const;
 
-  Vec3 row(size_t i) const;
+  Vec3 row(std::size_t i) const;
   template <typename T2>
-  void setRow(size_t i, Vector<T2, 3> const& v);
+  void setRow(std::size_t i, Vector<T2, 3> const& v);
 
-  Vec3 col(size_t i);
+  Vec3 col(std::size_t i);
   template <typename T2>
-  void setCol(size_t i, Vector<T2, 3> const& v);
+  void setCol(std::size_t i, Vector<T2, 3> const& v);
 
   T determinant() const;
   Vec3 trace() const;
@@ -131,8 +131,8 @@ Matrix3<T> Matrix3<T>::identity() {
 
 template <typename T>
 Matrix3<T> Matrix3<T>::rotation(T angle, Vec2 const& point) {
-  T s = sin(angle);
-  T c = cos(angle);
+  T s = std::sin(angle);
+  T c = std::cos(angle);
   return Matrix3(c, -s, point[0] - c * point[0] + s * point[1], s, c, point[1] - s * point[0] - c * point[1], 0, 0, 1);
 }
 
@@ -180,12 +180,12 @@ Matrix3<T>& Matrix3<T>::operator=(const Matrix3<T2>& m) {
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const size_t i) -> Vec3 & {
+auto Matrix3<T>::operator[](const std::size_t i) -> Vec3 & {
   return m_rows[i];
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const size_t i) const -> Vec3 const & {
+auto Matrix3<T>::operator[](const std::size_t i) const -> Vec3 const & {
   return m_rows[i];
 }
 
@@ -207,24 +207,24 @@ void Matrix3<T>::copy(T* loc) const {
 }
 
 template <typename T>
-auto Matrix3<T>::row(size_t i) const -> Vec3 {
+auto Matrix3<T>::row(std::size_t i) const -> Vec3 {
   return operator[](i);
 }
 
 template <typename T>
 template <typename T2>
-void Matrix3<T>::setRow(size_t i, const Vector<T2, 3>& v) {
+void Matrix3<T>::setRow(std::size_t i, const Vector<T2, 3>& v) {
   operator[](i) = Vec3(v);
 }
 
 template <typename T>
-auto Matrix3<T>::col(size_t i) -> Vec3 {
+auto Matrix3<T>::col(std::size_t i) -> Vec3 {
   return Vec3(m_rows[0][i], m_rows[1][i], m_rows[2][i]);
 }
 
 template <typename T>
 template <typename T2>
-void Matrix3<T>::setCol(size_t i, const Vector<T2, 3>& v) {
+void Matrix3<T>::setCol(std::size_t i, const Vector<T2, 3>& v) {
   m_rows[0][i] = T(v[0]);
   m_rows[1][i] = T(v[1]);
   m_rows[2][i] = T(v[2]);
@@ -325,12 +325,12 @@ float Matrix3<T>::transformAngle(float angle) const {
 
 template <typename T>
 bool Matrix3<T>::operator==(Matrix3 const& m2) const {
-  return tie(m_rows[0], m_rows[1], m_rows[2]) == tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
+  return std::tie(m_rows[0], m_rows[1], m_rows[2]) == std::tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
 }
 
 template <typename T>
 bool Matrix3<T>::operator!=(Matrix3 const& m2) const {
-  return tie(m_rows[0], m_rows[1], m_rows[2]) != tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
+  return std::tie(m_rows[0], m_rows[1], m_rows[2]) != std::tie(m2.m_rows[0], m2.m_rows[1], m2.m_rows[2]);
 }
 
 template <typename T>

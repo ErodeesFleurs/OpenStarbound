@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -17,7 +19,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -73,11 +74,11 @@ namespace Star {
 TabSetWidget::TabSetWidget(TabSetConfig const& tabSetConfig) {
   m_tabSetConfig = tabSetConfig;
 
-  m_tabBar = make_shared<FlowLayout>();
+  m_tabBar = std::make_shared<FlowLayout>();
   m_tabBar->setSpacing(m_tabSetConfig.tabButtonSpacing);
   Widget::addChild("tabBar", m_tabBar);
 
-  m_stack = make_shared<StackWidget>();
+  m_stack = std::make_shared<StackWidget>();
   addChild("tabs", m_stack);
 
   markAsContainer();
@@ -85,14 +86,14 @@ TabSetWidget::TabSetWidget(TabSetConfig const& tabSetConfig) {
 
 void TabSetWidget::setSize(Vec2I const& size) {
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  auto tabHeight = max({imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImage).y(),
+  auto tabHeight = std::max({imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImage).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonBaseImageSelected).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonHoverImageSelected).y(),
       imgMetadata->imageSize(m_tabSetConfig.tabButtonPressedImageSelected).y()});
 
-  Widget::setSize(Vec2I(size.x(), max<int>(size.y(), tabHeight)));
+  Widget::setSize(Vec2I(size.x(), std::max<int>(size.y(), tabHeight)));
 
   m_tabBar->setSize({size.x(), tabHeight});
   m_tabBar->setPosition({0, size.y() - tabHeight});
@@ -100,7 +101,7 @@ void TabSetWidget::setSize(Vec2I const& size) {
 }
 
 void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String const& title) {
-  auto newButton = make_shared<ButtonWidget>();
+  auto newButton = std::make_shared<ButtonWidget>();
   newButton->setImages(
       m_tabSetConfig.tabButtonBaseImage, m_tabSetConfig.tabButtonHoverImage, m_tabSetConfig.tabButtonPressedImage);
   newButton->setCheckedImages(m_tabSetConfig.tabButtonBaseImageSelected,
@@ -111,7 +112,7 @@ void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String con
   newButton->setTextOffset(m_tabSetConfig.tabButtonTextOffset);
   newButton->setPressedOffset(m_tabSetConfig.tabButtonPressedOffset);
 
-  size_t pageForButton = m_tabBar->numChildren();
+  std::size_t pageForButton = m_tabBar->numChildren();
   newButton->setCallback([this, pageForButton](Widget*) { tabSelect(pageForButton); });
 
   m_tabBar->addChild(toString(pageForButton), newButton);
@@ -121,15 +122,15 @@ void TabSetWidget::addTab(String const& widgetName, WidgetPtr widget, String con
     tabSelect(0);
 }
 
-size_t TabSetWidget::tabCount() const {
+std::size_t TabSetWidget::tabCount() const {
   return m_tabBar->numChildren();
 }
 
-void TabSetWidget::tabSelect(size_t page) {
+void TabSetWidget::tabSelect(std::size_t page) {
   if (m_lastSelected != page) {
     m_lastSelected = page;
     m_stack->showPage(page);
-    for (size_t i = 0; i < m_tabBar->numChildren(); ++i) {
+    for (std::size_t i = 0; i < m_tabBar->numChildren(); ++i) {
       if (i == page)
         m_tabBar->getChildNum<ButtonWidget>(i)->setChecked(true);
       else
@@ -142,7 +143,7 @@ void TabSetWidget::tabSelect(size_t page) {
   }
 }
 
-size_t TabSetWidget::selectedTab() const {
+std::size_t TabSetWidget::selectedTab() const {
   return m_lastSelected.value(NPos);
 }
 

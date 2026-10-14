@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 
 namespace Star {
 
@@ -9,7 +8,7 @@ extern char const* const StarVersionString;
 extern char const* const StarSourceIdentifierString;
 extern char const* const StarArchitectureString;
 
-typedef uint32_t VersionNumber;
+typedef std::uint32_t VersionNumber;
 
 }
 

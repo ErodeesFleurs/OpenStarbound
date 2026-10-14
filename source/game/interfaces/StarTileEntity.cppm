@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.id_map;
@@ -33,7 +33,13 @@ import star.collision_block;
 
 namespace Star {
 
-STAR_CLASS(TileEntity);
+class TileEntity;
+using TileEntityPtr = std::shared_ptr<TileEntity>;
+using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
+using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
+using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
+using TileEntityUPtr = std::unique_ptr<TileEntity>;
+using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
 
 struct MaterialSpace {
   friend DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);

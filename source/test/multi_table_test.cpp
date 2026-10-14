@@ -1,3 +1,4 @@
+import std;
 import star.multi_array;
 import star.interpolation;
 import star.multi_array_interpolator;
@@ -54,13 +55,13 @@ TEST(MultiTableTest, All) {
       return index[0] * index[1];
     });
 
-  EXPECT_LT(fabs(table.interpolate({1.0f, 1.0f}) - 1.0f), 0.001f);
-  EXPECT_LT(fabs(table.interpolate({9.0f, 9.0f}) - 81.0f), 0.001f);
-  EXPECT_LT(fabs(table.interpolate({6.0f, 10.0f}) - 60.0f), 0.001f);
-  EXPECT_LT(fabs(table.interpolate({6.0f, 11.0f}) - 60.0f), 0.001f);
-  EXPECT_LT(fabs(table.get({1, 1}) - 10.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({1.0f, 1.0f}) - 1.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({9.0f, 9.0f}) - 81.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({6.0f, 10.0f}) - 60.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({6.0f, 11.0f}) - 60.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.get({1, 1}) - 10.0f), 0.001f);
 
   table.setInterpolationMode(InterpolationMode::HalfStep);
-  EXPECT_LT(fabs(table.interpolate({0.5f, 0.5f}) - 0.0f), 0.001f);
-  EXPECT_LT(fabs(table.interpolate({4.0, 4.0}) - 20.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({0.5f, 0.5f}) - 0.0f), 0.001f);
+  EXPECT_LT(std::fabs(table.interpolate({4.0, 4.0}) - 20.0f), 0.001f);
 }

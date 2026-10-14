@@ -31,7 +31,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -88,7 +88,13 @@ import star.material_database;
 
 export namespace Star {
 
-STAR_CLASS(TillingTool);
+class TillingTool;
+using TillingToolPtr = std::shared_ptr<TillingTool>;
+using TillingToolConstPtr = std::shared_ptr<const TillingTool>;
+using TillingToolWeakPtr = std::weak_ptr<TillingTool>;
+using TillingToolConstWeakPtr = std::weak_ptr<const TillingTool>;
+using TillingToolUPtr = std::unique_ptr<TillingTool>;
+using TillingToolConstUPtr = std::unique_ptr<const TillingTool>;
 
 class TillingTool : public Item, public SwingableItem {
 public:
@@ -129,7 +135,7 @@ TillingTool::TillingTool(Json const& config, String const& directory, Json const
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (std::size_t i = 0; i < (std::size_t)m_frames; i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
@@ -140,7 +146,7 @@ TillingTool::TillingTool(Json const& config, String const& directory, Json const
 }
 
 ItemPtr TillingTool::clone() const {
-  return make_shared<TillingTool>(*this);
+  return std::make_shared<TillingTool>(*this);
 }
 
 List<Drawable> TillingTool::drawables() const {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.thread;
@@ -10,7 +10,13 @@ import star.listener;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(LuaRoot);
+class LuaRoot;
+using LuaRootPtr = std::shared_ptr<LuaRoot>;
+using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
+using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
+using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
+using LuaRootUPtr = std::unique_ptr<LuaRoot>;
+using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
 
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
@@ -40,9 +46,9 @@ public:
   void collectGarbage(Maybe<unsigned> steps = {});
   void setAutoGarbageCollection(bool autoGarbageColleciton);
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
-  size_t luaMemoryUsage() const;
+  std::size_t luaMemoryUsage() const;
 
-  size_t scriptCacheMemoryUsage() const;
+  std::size_t scriptCacheMemoryUsage() const;
   void clearScriptCache() const;
 
   void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
@@ -56,7 +62,7 @@ private:
     void unloadScript(String const& assetPath);
     void clear();
     void loadContextScript(LuaContext& context, String const& assetPath);
-    size_t memoryUsage() const;
+    std::size_t memoryUsage() const;
 
   private:
     mutable RecursiveMutex mutex;
@@ -65,7 +71,7 @@ private:
 
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
-  shared_ptr<ScriptCache> m_scriptCache;
+  std::shared_ptr<ScriptCache> m_scriptCache;
 
   ListenerPtr m_rootReloadListener;
 

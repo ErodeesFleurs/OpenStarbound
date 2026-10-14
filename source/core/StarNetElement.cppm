@@ -1,8 +1,7 @@
 module;
+import std;
 import star.net_compatibility;
 import star.version;
-
-#include "StarConfig.hpp"
 import star.data_stream;
 
 namespace Star {
@@ -11,11 +10,11 @@ namespace Star {
 // a network.
 class NetElementVersion {
 public:
-  uint64_t current() const;
-  uint64_t increment();
+  std::uint64_t current() const;
+  std::uint64_t increment();
 
 private:
-  uint64_t m_version = 0;
+  std::uint64_t m_version = 0;
 };
 
 // Primary interface for the composable network synchronizable element system.
@@ -49,7 +48,7 @@ public:
   // the version at the time of the *last* call to writeDelta, + 1.  If
   // fromVersion is 0, this will always write the full state.  Should return
   // true if a delta was needed and was written to DataStream, false otherwise.
-  virtual bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
+  virtual bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
   // Read a delta written by writeNetDelta.  'interpolationTime' is the time in
   // the future that data from this delta should be delayed and smoothed into,
   // if interpolation is enabled.

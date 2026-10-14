@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -29,11 +29,41 @@ import star.tileset_database;
 export namespace Star {
 
 namespace Dungeon {
-  STAR_CLASS(TMXTilesets);
-  STAR_CLASS(TMXTileLayer);
-  STAR_CLASS(TMXObject);
-  STAR_CLASS(TMXObjectGroup);
-  STAR_CLASS(TMXMap);
+  class TMXTilesets;
+  using TMXTilesetsPtr = std::shared_ptr<TMXTilesets>;
+  using TMXTilesetsConstPtr = std::shared_ptr<const TMXTilesets>;
+  using TMXTilesetsWeakPtr = std::weak_ptr<TMXTilesets>;
+  using TMXTilesetsConstWeakPtr = std::weak_ptr<const TMXTilesets>;
+  using TMXTilesetsUPtr = std::unique_ptr<TMXTilesets>;
+  using TMXTilesetsConstUPtr = std::unique_ptr<const TMXTilesets>;
+  class TMXTileLayer;
+  using TMXTileLayerPtr = std::shared_ptr<TMXTileLayer>;
+  using TMXTileLayerConstPtr = std::shared_ptr<const TMXTileLayer>;
+  using TMXTileLayerWeakPtr = std::weak_ptr<TMXTileLayer>;
+  using TMXTileLayerConstWeakPtr = std::weak_ptr<const TMXTileLayer>;
+  using TMXTileLayerUPtr = std::unique_ptr<TMXTileLayer>;
+  using TMXTileLayerConstUPtr = std::unique_ptr<const TMXTileLayer>;
+  class TMXObject;
+  using TMXObjectPtr = std::shared_ptr<TMXObject>;
+  using TMXObjectConstPtr = std::shared_ptr<const TMXObject>;
+  using TMXObjectWeakPtr = std::weak_ptr<TMXObject>;
+  using TMXObjectConstWeakPtr = std::weak_ptr<const TMXObject>;
+  using TMXObjectUPtr = std::unique_ptr<TMXObject>;
+  using TMXObjectConstUPtr = std::unique_ptr<const TMXObject>;
+  class TMXObjectGroup;
+  using TMXObjectGroupPtr = std::shared_ptr<TMXObjectGroup>;
+  using TMXObjectGroupConstPtr = std::shared_ptr<const TMXObjectGroup>;
+  using TMXObjectGroupWeakPtr = std::weak_ptr<TMXObjectGroup>;
+  using TMXObjectGroupConstWeakPtr = std::weak_ptr<const TMXObjectGroup>;
+  using TMXObjectGroupUPtr = std::unique_ptr<TMXObjectGroup>;
+  using TMXObjectGroupConstUPtr = std::unique_ptr<const TMXObjectGroup>;
+  class TMXMap;
+  using TMXMapPtr = std::shared_ptr<TMXMap>;
+  using TMXMapConstPtr = std::shared_ptr<const TMXMap>;
+  using TMXMapWeakPtr = std::weak_ptr<TMXMap>;
+  using TMXMapConstWeakPtr = std::weak_ptr<const TMXMap>;
+  using TMXMapUPtr = std::unique_ptr<TMXMap>;
+  using TMXMapConstUPtr = std::unique_ptr<const TMXMap>;
 
   class TMXTilesets {
   public:
@@ -48,8 +78,8 @@ namespace Dungeon {
   private:
     struct TilesetInfo {
       Tiled::Tileset const* tileset;
-      size_t firstGid;
-      size_t lastGid;
+      std::size_t firstGid;
+      std::size_t lastGid;
     };
 
     static bool tilesetComparator(TilesetInfo const& a, TilesetInfo const& b);
@@ -224,9 +254,9 @@ namespace Dungeon {
 
   private:
     // Return true in the callback to exit early without processing later maps
-    void forEachMap(function<bool(TMXMapConstPtr const&)> func) const;
+    void forEachMap(std::function<bool(TMXMapConstPtr const&)> func) const;
 
-    List<pair<String, TMXMapConstPtr>> m_maps;
+    List<std::pair<String, TMXMapConstPtr>> m_maps;
   };
 }
 

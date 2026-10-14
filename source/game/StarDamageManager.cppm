@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -19,9 +19,27 @@ import star.damage_types;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Entity);
-STAR_CLASS(DamageManager);
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class Entity;
+using EntityPtr = std::shared_ptr<Entity>;
+using EntityConstPtr = std::shared_ptr<const Entity>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
+using EntityConstWeakPtr = std::weak_ptr<const Entity>;
+using EntityUPtr = std::unique_ptr<Entity>;
+using EntityConstUPtr = std::unique_ptr<const Entity>;
+class DamageManager;
+using DamageManagerPtr = std::shared_ptr<DamageManager>;
+using DamageManagerConstPtr = std::shared_ptr<const DamageManager>;
+using DamageManagerWeakPtr = std::weak_ptr<DamageManager>;
+using DamageManagerConstWeakPtr = std::weak_ptr<const DamageManager>;
+using DamageManagerUPtr = std::unique_ptr<DamageManager>;
+using DamageManagerConstUPtr = std::unique_ptr<const DamageManager>;
 
 struct RemoteHitRequest {
   friend DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
@@ -95,7 +113,7 @@ private:
 
   // Searches for and queries for hit to any entity within range of the
   // damage source.  Skips over source.sourceEntityId, if set.
-  SmallList<pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
+  SmallList<std::pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
 
   bool isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity);
 

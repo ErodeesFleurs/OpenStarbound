@@ -5,7 +5,10 @@
 #include <ws2tcpip.h>
 #include <stdio.h>
 
+import std;
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
 import star.string_windows;
+#endif
 #else
 #ifdef STAR_SYSTEM_FREEBSD
 #include <sys/types.h>
@@ -22,8 +25,6 @@ import star.string_windows;
 #include <fcntl.h>
 #include <poll.h>
 #endif
-
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.either;
@@ -67,7 +68,7 @@ inline String netErrorString() {
 
   return result;
 #else
-  return strf("{} - {}", errno, strerror(errno));
+  return strf("{} - {}", errno, std::strerror(errno));
 #endif
 }
 
@@ -91,12 +92,12 @@ inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMo
   switch (mode) {
     case NetworkMode::IPv4: {
       struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (uint8_t*)&(addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
+      addressWithPort = HostAddressWithPort(mode, (std::uint8_t*)&(addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
       break;
     }
     case NetworkMode::IPv6: {
       struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (uint8_t*)&addr6->sin6_addr.s6_addr, ntohs(addr6->sin6_port));
+      addressWithPort = HostAddressWithPort(mode, (std::uint8_t*)&addr6->sin6_addr.s6_addr, ntohs(addr6->sin6_port));
       break;
     }
     default:
@@ -110,10 +111,10 @@ inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, str
       struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
       *sockAddrLen = sizeof(*addr4);
 
-      memset(addr4, 0, *sockAddrLen);
+      std::memset(addr4, 0, *sockAddrLen);
       addr4->sin_family = AF_INET;
       addr4->sin_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
 
       break;
     }
@@ -121,10 +122,10 @@ inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, str
       struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
       *sockAddrLen = sizeof(*addr6);
 
-      memset(addr6, 0, *sockAddrLen);
+      std::memset(addr6, 0, *sockAddrLen);
       addr6->sin6_family = AF_INET6;
       addr6->sin6_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
       break;
     }
     default:

@@ -1,7 +1,6 @@
 module;
 
 import std;
-#include "StarConfig.hpp"
 import star.list;
 import star.maybe;
 
@@ -36,7 +35,7 @@ public:
     DataType along;
     // Side that the line first intersected, if the line starts inside the
     // polygon, this will not be set.
-    Maybe<size_t> intersectedSide;
+    Maybe<std::size_t> intersectedSide;
   };
 
   typedef List<Vertex> VertexList;
@@ -75,16 +74,16 @@ public:
   void deduplicateVertexes(float maxDistance);
 
   void add(Vertex const& a);
-  void remove(size_t i);
+  void remove(std::size_t i);
 
   void clear();
 
   VertexList const& vertexes() const;
   VertexList& vertexes();
 
-  size_t sides() const;
+  std::size_t sides() const;
 
-  Line side(size_t i) const;
+  Line side(std::size_t i) const;
 
   DataType distance(Vertex const& c) const;
 
@@ -103,8 +102,8 @@ public:
   template <typename DataType2>
   void transform(Matrix3<DataType2> const& transMat);
 
-  Vertex const& operator[](size_t i) const;
-  Vertex& operator[](size_t i);
+  Vertex const& operator[](std::size_t i) const;
+  Vertex& operator[](std::size_t i);
 
   bool operator==(Polygon const& rhs) const;
 
@@ -118,8 +117,8 @@ public:
   const_iterator end() const;
 
   // vertex and normal wrap around so that i can never be out of range.
-  Vertex const& vertex(size_t i) const;
-  Vertex normal(size_t i) const;
+  Vertex const& vertex(std::size_t i) const;
+  Vertex normal(std::size_t i) const;
 
   Vertex center() const;
 
@@ -154,7 +153,7 @@ public:
 
 private:
   // i must be between 0 and m_vertexes.size() - 1
-  Line sideAt(size_t i) const;
+  Line sideAt(std::size_t i) const;
 
   VertexList m_vertexes;
 };
@@ -206,7 +205,7 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
   };
 
   VertexList outputVertexes = take(inputPoly.m_vertexes);
-  for (size_t i = 0; i < convexClipPoly.sides(); ++i) {
+  for (std::size_t i = 0; i < convexClipPoly.sides(); ++i) {
     if (outputVertexes.empty())
       break;
 
@@ -287,7 +286,7 @@ bool Polygon<DataType>::isConvex() const {
 template <typename DataType>
 float Polygon<DataType>::convexArea() const {
   float area = 0.0f;
-  for (size_t i = 0; i < m_vertexes.size(); ++i) {
+  for (std::size_t i = 0; i < m_vertexes.size(); ++i) {
     Vertex const& v1 = m_vertexes[i];
     Vertex const& v2 = i == m_vertexes.size() - 1 ? m_vertexes[0] : m_vertexes[i + 1];
     area += 0.5f * (v1[0] * v2[1] - v1[1] * v2[0]);
@@ -302,7 +301,7 @@ void Polygon<DataType>::deduplicateVertexes(float maxDistance) {
 
   float distSquared = square(maxDistance);
   VertexList newVertexes = {m_vertexes[0]};
-  for (size_t i = 1; i < m_vertexes.size(); ++i) {
+  for (std::size_t i = 1; i < m_vertexes.size(); ++i) {
     if (vmagSquared(m_vertexes[i] - newVertexes.last()) > distSquared)
       newVertexes.append(m_vertexes[i]);
   }
@@ -319,7 +318,7 @@ void Polygon<DataType>::add(Vertex const& a) {
 }
 
 template <typename DataType>
-void Polygon<DataType>::remove(size_t i) {
+void Polygon<DataType>::remove(std::size_t i) {
   auto it = begin() + i % sides();
   m_vertexes.erase(it);
 }
@@ -340,12 +339,12 @@ typename Polygon<DataType>::VertexList& Polygon<DataType>::vertexes() {
 }
 
 template <typename DataType>
-size_t Polygon<DataType>::sides() const {
+std::size_t Polygon<DataType>::sides() const {
   return m_vertexes.size();
 }
 
 template <typename DataType>
-typename Polygon<DataType>::Line Polygon<DataType>::side(size_t i) const {
+typename Polygon<DataType>::Line Polygon<DataType>::side(std::size_t i) const {
   return sideAt(i % m_vertexes.size());
 }
 
@@ -355,8 +354,8 @@ DataType Polygon<DataType>::distance(Vertex const& c) const {
     return 0;
 
   DataType dist = highest<DataType>();
-  for (size_t i = 0; i < m_vertexes.size(); ++i)
-    dist = min(dist, sideAt(i).distanceTo(c));
+  for (std::size_t i = 0; i < m_vertexes.size(); ++i)
+    dist = std::min(dist, sideAt(i).distanceTo(c));
 
   return dist;
 }
@@ -411,12 +410,12 @@ void Polygon<DataType>::transform(Matrix3<DataType2> const& transMat) {
 }
 
 template <typename DataType>
-typename Polygon<DataType>::Vertex const& Polygon<DataType>::operator[](size_t i) const {
+typename Polygon<DataType>::Vertex const& Polygon<DataType>::operator[](std::size_t i) const {
   return m_vertexes[i];
 }
 
 template <typename DataType>
-typename Polygon<DataType>::Vertex& Polygon<DataType>::operator[](size_t i) {
+typename Polygon<DataType>::Vertex& Polygon<DataType>::operator[](std::size_t i) {
   return m_vertexes[i];
 }
 
@@ -458,12 +457,12 @@ typename Polygon<DataType>::const_iterator Polygon<DataType>::end() const {
 }
 
 template <typename DataType>
-typename Polygon<DataType>::Vertex const& Polygon<DataType>::vertex(size_t i) const {
+typename Polygon<DataType>::Vertex const& Polygon<DataType>::vertex(std::size_t i) const {
   return m_vertexes[i % m_vertexes.size()];
 }
 
 template <typename DataType>
-typename Polygon<DataType>::Vertex Polygon<DataType>::normal(size_t i) const {
+typename Polygon<DataType>::Vertex Polygon<DataType>::normal(std::size_t i) const {
   Vertex diff = side(i).diff();
 
   if (diff == Vertex())
@@ -509,7 +508,7 @@ int Polygon<DataType>::windingNumber(Vertex const& p) const {
   int wn = 0;
 
   // loop through all edges of the polygon
-  for (size_t i = 0; i < m_vertexes.size(); ++i) {
+  for (std::size_t i = 0; i < m_vertexes.size(); ++i) {
     auto const& first = m_vertexes[i];
     auto const& second = i == m_vertexes.size() - 1 ? m_vertexes[0] : m_vertexes[i + 1];
 
@@ -704,7 +703,7 @@ auto Polygon<DataType>::lineIntersection(Line const& l) const -> Maybe<LineInter
     return LineIntersectResult{l.min(), DataType(0), {}};
 
   Maybe<LineIntersectResult> nearestIntersection;
-  for (size_t i = 0; i < m_vertexes.size(); ++i) {
+  for (std::size_t i = 0; i < m_vertexes.size(); ++i) {
     auto intersection = l.intersection(sideAt(i));
     if (intersection.intersects) {
       if (!nearestIntersection || intersection.t < nearestIntersection->along)
@@ -724,7 +723,7 @@ bool Polygon<DataType>::intersects(Line const& l) const {
   if (contains(l.min()) || contains(l.max()))
     return true;
 
-  for (size_t i = 0; i < m_vertexes.size(); ++i) {
+  for (std::size_t i = 0; i < m_vertexes.size(); ++i) {
     if (l.intersects(sideAt(i)))
       return true;
   }
@@ -733,7 +732,7 @@ bool Polygon<DataType>::intersects(Line const& l) const {
 }
 
 template <typename DataType>
-auto Polygon<DataType>::sideAt(size_t i) const -> Line {
+auto Polygon<DataType>::sideAt(std::size_t i) const -> Line {
   if (i == m_vertexes.size() - 1)
     return Line(m_vertexes[i], m_vertexes[0]);
   else

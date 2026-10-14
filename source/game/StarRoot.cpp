@@ -26,7 +26,7 @@ import star.file;
 import star.string;
 import star.byte_array;
 import star.encode;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.parametric_function;
@@ -204,7 +204,7 @@ Root::Root(Settings settings) : RootBase() {
       File::makeDirectory(oldLogDirectory);
 
     File::backupFileInSequence(logFile, File::relativeTo(oldLogDirectory, *m_settings.logFile), m_settings.logFileBackups);
-    Logger::addSink(make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
+    Logger::addSink(std::make_shared<FileLogSink>(logFile, m_settings.logLevel, true));
   }
   Logger::stdoutSink()->setLevel(m_settings.logLevel);
 
@@ -437,46 +437,46 @@ void Root::fullyLoad() {
 
   loaders.reserve(40);
 
-  loaders.append(workerPool.addWork(swallow(bind(&Root::assets, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::configuration, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::codexDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::behaviorDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::techDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::aiDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::questTemplateDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::emoteProcessor, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::terrainDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::particleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::versioningDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::functionDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::imageMetadataDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::tenantDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::nameGenerator, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::danceDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::spawnTypeDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::radioMessageDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::collectionDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::statisticsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::speciesDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::projectileDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::stagehandDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::damageDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::effectSourceDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::statusEffectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::treasureDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::materialDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::objectDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::npcDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::plantDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::itemDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::monsterDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::vehicleDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::playerFactory, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::entityFactory, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::biomeDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::liquidsDatabase, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::dungeonDefinitions, this))));
-  loaders.append(workerPool.addWork(swallow(bind(&Root::tilesetDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::assets, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::configuration, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::codexDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::behaviorDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::techDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::aiDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::questTemplateDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::emoteProcessor, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::terrainDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::particleDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::versioningDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::functionDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::imageMetadataDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::tenantDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::nameGenerator, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::danceDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::spawnTypeDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::radioMessageDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::collectionDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::statisticsDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::speciesDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::projectileDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::stagehandDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::damageDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::effectSourceDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::statusEffectDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::treasureDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::materialDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::objectDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::npcDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::plantDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::itemDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::monsterDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::vehicleDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::playerFactory, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::entityFactory, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::biomeDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::liquidsDatabase, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::dungeonDefinitions, this))));
+  loaders.append(workerPool.addWork(swallow(std::bind(&Root::tilesetDatabase, this))));
 
   auto startSeconds = Time::monotonicTime();
   for (auto& loader : loaders)
@@ -509,7 +509,7 @@ AssetsConstPtr Root::assets() {
       assetDirectories.appendAll(m_modDirectories);
       StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
 
-      auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
+      auto assets = std::make_shared<Assets>(m_settings.assetsSettings, assetSources);
       Logger::info("Assets digest is {}", hexEncode(assets->digest()));
       return assets;
     });
@@ -549,7 +549,7 @@ ConfigurationPtr Root::configuration() {
         currentConfig = m_settings.defaultConfiguration;
       }
 
-      return make_shared<Configuration>(m_settings.defaultConfiguration, currentConfig);
+      return std::make_shared<Configuration>(m_settings.defaultConfiguration, currentConfig);
     });
 }
 
@@ -718,8 +718,8 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     StringList requires_;
     StringList includes;
   };
-  List<shared_ptr<AssetSource>> assetSources;
-  StringMap<shared_ptr<AssetSource>> namedSources;
+  List<std::shared_ptr<AssetSource>> assetSources;
+  StringMap<std::shared_ptr<AssetSource>> namedSources;
 
   auto processEntry = [&](String const& sourcePath, bool isDirectory) -> bool {
     AssetSourcePtr source;
@@ -727,9 +727,9 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
     if (name.beginsWith(".") || name.beginsWith("_"))
       Logger::info("Root: Skipping hidden '{}' in asset directory", name);
     else if (isDirectory)
-      source = make_shared<DirectoryAssetSource>(sourcePath);
+      source = std::make_shared<DirectoryAssetSource>(sourcePath);
     else if (sourcePath.endsWith(".pak"))
-      source = make_shared<PackedAssetSource>(sourcePath);
+      source = std::make_shared<PackedAssetSource>(sourcePath);
     else
       Logger::warn("Root: Unrecognized file in asset directory '{}', skipping", name);
 
@@ -738,10 +738,10 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
     auto metadata = source->metadata();
 
-    auto assetSource = make_shared<AssetSource>();
+    auto assetSource = std::make_shared<AssetSource>();
     assetSource->path = sourcePath;
-    assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
-    assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::printString));
+    assetSource->name = metadata.maybe("name").apply(std::mem_fn(&Json::toString));
+    assetSource->version = metadata.maybe("version").apply(std::mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
@@ -805,11 +805,11 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   // Finally, sort asset sources so that sources that have dependencies come
   // after their dependencies.
 
-  HashSet<shared_ptr<AssetSource>> workingSet;
-  OrderedHashSet<shared_ptr<AssetSource>> dependencySortedSources;
+  HashSet<std::shared_ptr<AssetSource>> workingSet;
+  OrderedHashSet<std::shared_ptr<AssetSource>> dependencySortedSources;
 
-  function<void(shared_ptr<AssetSource>)> dependencySortVisit;
-  dependencySortVisit = [&](shared_ptr<AssetSource> source) {
+  std::function<void(std::shared_ptr<AssetSource>)> dependencySortVisit;
+  dependencySortVisit = [&](std::shared_ptr<AssetSource> source) {
     if (workingSet.contains(source))
       throw AssetSourceException("Asset dependencies form a cycle");
 
@@ -868,14 +868,14 @@ void Root::writeConfig() {
 }
 
 template <typename T, typename... Params>
-shared_ptr<T> Root::loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
+std::shared_ptr<T> Root::loadMember(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
-      return make_shared<T>(forward<Params>(params)...);
+      return std::make_shared<T>(std::forward<Params>(params)...);
     });
 }
 
 template <typename T>
-shared_ptr<T> Root::loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char const* name, function<shared_ptr<T>()> loadFunction) {
+std::shared_ptr<T> Root::loadMemberFunction(std::shared_ptr<T>& ptr, Mutex& mutex, char const* name, std::function<std::shared_ptr<T>()> loadFunction) {
   MutexLocker locker(mutex);
   if (!ptr) {
     auto startSeconds = Time::monotonicTime();

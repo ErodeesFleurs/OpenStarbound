@@ -1,23 +1,21 @@
-#include "StarConfig.hpp"
+#include <time.h>
+#include <windows.h>
 import star.format;
 import star.thread;
 import star.time;
 import star.lexical_cast;
 
 import std;
-#include <time.h>
-#define NOMINMAX
-#include <windows.h>
 import star.string;
 
 namespace Star {
 namespace Time {
 
-String printDateAndTime(int64_t epochTicks, String format) {
+String printDateAndTime(std::int64_t epochTicks, String format) {
   // playing fast and loose with the standard here...
-  time_t requestedTime = epochTicks / epochTickFrequency();
-  struct tm* ptm;
-  ptm = localtime(&requestedTime);
+  std::time_t requestedTime = epochTicks / epochTickFrequency();
+  struct std::tm* ptm;
+  ptm = std::localtime(&requestedTime);
 
   return format.replaceTags(StringMap<String>{
       {"year", strf("{:04d}", ptm->tm_year + 1900)},
@@ -30,7 +28,7 @@ String printDateAndTime(int64_t epochTicks, String format) {
     });
 }
 
-int64_t epochTicks() {
+std::int64_t epochTicks() {
   FILETIME ft_now;
   GetSystemTimeAsFileTime(&ft_now);
   LONGLONG now = (LONGLONG)ft_now.dwLowDateTime + ((LONGLONG)(ft_now.dwHighDateTime) << 32LL);
@@ -38,7 +36,7 @@ int64_t epochTicks() {
   return now;
 }
 
-int64_t epochTickFrequency() {
+std::int64_t epochTickFrequency() {
   return 10000000LL;
 }
 
@@ -49,13 +47,13 @@ struct MonotonicClock {
     QueryPerformanceFrequency(&freq);
   };
 
-  int64_t ticks() const {
+  std::int64_t ticks() const {
     LARGE_INTEGER ticks;
     QueryPerformanceCounter(&ticks);
     return ticks.QuadPart;
   }
 
-  int64_t frequency() const {
+  std::int64_t frequency() const {
     return freq.QuadPart;
   }
 
@@ -66,11 +64,11 @@ static MonotonicClock g_monotonicClock;
 
 namespace Time {
 
-int64_t monotonicTicks() {
+std::int64_t monotonicTicks() {
   return g_monotonicClock.ticks();
 }
 
-int64_t monotonicTickFrequency() {
+std::int64_t monotonicTickFrequency() {
   return g_monotonicClock.frequency();
 }
 

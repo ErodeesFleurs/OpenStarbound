@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 import star.id_map;
@@ -82,11 +82,11 @@ private:
   float m_controlRotation;
   Vec2F m_controlAcceleration;
   Vec2F m_controlForce;
-  Maybe<tuple<Vec2F, float>> m_controlApproachVelocity;
-  Maybe<tuple<float, float, float, bool>> m_controlApproachVelocityAlongAngle;
+  Maybe<std::tuple<Vec2F, float>> m_controlApproachVelocity;
+  Maybe<std::tuple<float, float, float, bool>> m_controlApproachVelocityAlongAngle;
   Maybe<ActorMovementParameters> m_controlParameters;
   Maybe<ActorMovementModifiers> m_controlModifiers;
-  Maybe<tuple<Direction, bool>> m_controlMove;
+  Maybe<std::tuple<Direction, bool>> m_controlMove;
   Maybe<Direction> m_controlFace;
   bool m_controlDown = false;
   bool m_controlCrouch = false;
@@ -95,8 +95,8 @@ private:
   Maybe<Vec2F> m_controlFly;
 
   bool m_resetPathMove = false;
-  Maybe<pair<Vec2F, bool>> m_controlPathMove;
-  Maybe<pair<Vec2F, bool>> m_pathMoveResult;
+  Maybe<std::pair<Vec2F, bool>> m_controlPathMove;
+  Maybe<std::pair<Vec2F, bool>> m_pathMoveResult;
 };
 
 template <typename Base>
@@ -149,7 +149,7 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
       });
 
     // The actual actor specific callbacks
-    callbacks.registerCallback("setAnchorState", [this](EntityId anchorableEntity, size_t anchorPosition) {
+    callbacks.registerCallback("setAnchorState", [this](EntityId anchorableEntity, std::size_t anchorPosition) {
         m_movementController->setAnchorState({anchorableEntity, anchorPosition});
       });
 
@@ -224,20 +224,20 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
       });
 
     callbacks.registerCallback("controlApproachVelocity", [this](Vec2F const& arg1, float arg2) {
-        m_controlApproachVelocity.set(make_tuple(arg1, arg2));
+        m_controlApproachVelocity.set(std::make_tuple(arg1, arg2));
       });
 
     callbacks.registerCallback("controlApproachVelocityAlongAngle", [this](float angle, float targetVelocity, float maxControlForce, bool positiveOnly) {
-        m_controlApproachVelocityAlongAngle.set(make_tuple(angle, targetVelocity, maxControlForce, positiveOnly));
+        m_controlApproachVelocityAlongAngle.set(std::make_tuple(angle, targetVelocity, maxControlForce, positiveOnly));
       });
 
     callbacks.registerCallback("controlApproachXVelocity", [this](float targetXVelocity, float maxControlForce) {
-        m_controlApproachVelocityAlongAngle.set(make_tuple(0.0f, targetXVelocity, maxControlForce, false));
+        m_controlApproachVelocityAlongAngle.set(std::make_tuple(0.0f, targetXVelocity, maxControlForce, false));
       });
 
     callbacks.registerCallback("controlApproachYVelocity", [this](float targetYVelocity, float maxControlForce) {
         m_controlApproachVelocityAlongAngle.set(
-            make_tuple(Constants::pi / 2.0f, targetYVelocity, maxControlForce, false));
+            std::make_tuple(Constants::pi / 2.0f, targetYVelocity, maxControlForce, false));
       });
 
     callbacks.registerCallback("controlParameters", [this](ActorMovementParameters const& arg1) {
@@ -250,7 +250,7 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
 
     callbacks.registerCallback("controlMove", [this](Maybe<float> const& arg1, Maybe<bool> const& arg2) {
         if (auto direction = directionOf(arg1.value()))
-          m_controlMove.set(make_tuple(*direction, arg2.value(true)));
+          m_controlMove.set(std::make_tuple(*direction, arg2.value(true)));
       });
 
     callbacks.registerCallback("controlFace", [this](Maybe<float> const& arg1) {
@@ -280,13 +280,13 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
 
     callbacks.registerCallback("controlPathMove", [this](Vec2F const& position, Maybe<bool> run, Maybe<PlatformerAStar::Parameters> parameters) -> Maybe<bool> {
         if (m_pathMoveResult && m_pathMoveResult->first == position) {
-          return take(m_pathMoveResult).apply([](pair<Vec2F, bool> const& p) { return p.second; });
+          return take(m_pathMoveResult).apply([](std::pair<Vec2F, bool> const& p) { return p.second; });
         } else {
           m_pathMoveResult.reset();
           auto result = m_movementController->pathMove(position, run.value(false), parameters);
           if (result.isNothing())
-            m_controlPathMove = pair<Vec2F, bool>(position, run.value(false));
-          return result.apply([](pair<Vec2F, bool> const& p) { return p.second; });
+            m_controlPathMove = std::pair<Vec2F, bool>(position, run.value(false));
+          return result.apply([](std::pair<Vec2F, bool> const& p) { return p.second; });
         }
       });
 
@@ -294,9 +294,9 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
         return m_movementController->pathfinding();
       });
 
-    callbacks.registerCallbackWithSignature<bool>("autoClearControls", bind(&LuaActorMovementComponent::autoClearControls, this));
-    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", bind(&LuaActorMovementComponent::setAutoClearControls, this, _1));
-    callbacks.registerCallbackWithSignature<void>("clearControls", bind(&LuaActorMovementComponent::clearControls, this));
+    callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind(&LuaActorMovementComponent::autoClearControls, this));
+    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind(&LuaActorMovementComponent::setAutoClearControls, this, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<void>("clearControls", std::bind(&LuaActorMovementComponent::clearControls, this));
 
     Base::addCallbacks("mcontroller", callbacks);
 
@@ -339,15 +339,15 @@ void LuaActorMovementComponent<Base>::performControls() {
     m_movementController->controlAcceleration(m_controlAcceleration);
     m_movementController->controlForce(m_controlForce);
     if (m_controlApproachVelocity)
-      tupleUnpackFunction(bind(&ActorMovementController::controlApproachVelocity, m_movementController, _1, _2), *m_controlApproachVelocity);
+      tupleUnpackFunction(std::bind(&ActorMovementController::controlApproachVelocity, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlApproachVelocity);
     if (m_controlApproachVelocityAlongAngle)
-      tupleUnpackFunction(bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, _1, _2, _3, _4), *m_controlApproachVelocityAlongAngle);
+      tupleUnpackFunction(std::bind(&ActorMovementController::controlApproachVelocityAlongAngle, m_movementController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *m_controlApproachVelocityAlongAngle);
     if (m_controlParameters)
       m_movementController->controlParameters(*m_controlParameters);
     if (m_controlModifiers)
       m_movementController->controlModifiers(*m_controlModifiers);
     if (m_controlMove)
-      tupleUnpackFunction(bind(&ActorMovementController::controlMove, m_movementController, _1, _2), *m_controlMove);
+      tupleUnpackFunction(std::bind(&ActorMovementController::controlMove, m_movementController, std::placeholders::_1, std::placeholders::_2), *m_controlMove);
     if (m_controlFace)
       m_movementController->controlFace(*m_controlFace);
     if (m_controlDown)

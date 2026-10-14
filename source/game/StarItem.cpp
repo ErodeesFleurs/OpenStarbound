@@ -19,7 +19,7 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.version;
 import star.random;
@@ -104,11 +104,11 @@ String Item::name() const {
   return m_name;
 }
 
-uint64_t Item::count() const {
+std::uint64_t Item::count() const {
   return m_count;
 }
 
-uint64_t Item::setCount(uint64_t count, bool overfill) {
+std::uint64_t Item::setCount(std::uint64_t count, bool overfill) {
   if (overfill)
     m_count = count;
   else
@@ -120,13 +120,13 @@ bool Item::stackableWith(ItemConstPtr const& item) const {
   return item && name() == item->name() && parameters() == item->parameters();
 }
 
-uint64_t Item::maxStack() const {
+std::uint64_t Item::maxStack() const {
   return m_maxStack;
 }
 
-uint64_t Item::couldStack(ItemConstPtr const& item) const {
+std::uint64_t Item::couldStack(ItemConstPtr const& item) const {
   if (stackableWith(item) && m_count < m_maxStack) {
-    uint64_t take = m_maxStack - m_count;
+    std::uint64_t take = m_maxStack - m_count;
     return std::min(take, item->count());
   } else {
     return 0;
@@ -134,7 +134,7 @@ uint64_t Item::couldStack(ItemConstPtr const& item) const {
 }
 
 bool Item::stackWith(ItemPtr const& item) {
-  uint64_t take = couldStack(item);
+  std::uint64_t take = couldStack(item);
 
   if (take > 0 && item->consume(take)) {
     m_count += take;
@@ -152,7 +152,7 @@ bool Item::matches(ItemConstPtr const& other, bool exactMatch) const {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-bool Item::consume(uint64_t count) {
+bool Item::consume(std::uint64_t count) {
   if (m_count >= count) {
     m_count -= count;
     return true;
@@ -161,8 +161,8 @@ bool Item::consume(uint64_t count) {
   }
 }
 
-ItemPtr Item::take(uint64_t max) {
-  uint64_t takeCount = std::min(m_count, max);
+ItemPtr Item::take(std::uint64_t max) {
+  std::uint64_t takeCount = std::min(m_count, max);
   if (takeCount != 0) {
     if (auto newItems = clone()) {
       m_count -= takeCount;
@@ -222,7 +222,7 @@ float Item::timeToLive() const {
   return m_timeToLive;
 }
 
-uint64_t Item::price() const {
+std::uint64_t Item::price() const {
   return m_price * count();
 }
 
@@ -242,7 +242,7 @@ String Item::pickupSound() const {
   return Random::randFrom(m_pickupSounds);
 }
 
-void Item::setMaxStack(uint64_t maxStack) {
+void Item::setMaxStack(std::uint64_t maxStack) {
   m_maxStack = maxStack;
 }
 
@@ -258,7 +258,7 @@ void Item::setRarity(Rarity rarity) {
   m_rarity = rarity;
 }
 
-void Item::setPrice(uint64_t price) {
+void Item::setPrice(std::uint64_t price) {
   m_price = price;
 }
 
@@ -361,7 +361,7 @@ GenericItem::GenericItem(Json const& config, String const& directory, Json const
   : Item(config, directory, parameters) {}
 
 ItemPtr GenericItem::clone() const {
-  return make_shared<GenericItem>(*this);
+  return std::make_shared<GenericItem>(*this);
 }
 
 bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {

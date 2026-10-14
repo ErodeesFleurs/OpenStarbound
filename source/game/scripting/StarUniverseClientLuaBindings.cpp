@@ -35,7 +35,7 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.id_map;
 import star.version;
@@ -157,7 +157,7 @@ LuaCallbacks LuaBindings::makeUniverseClientThreadCallbacks(UniverseClient* univ
   });
   
   callbacks.registerCallback("createClientCustomWorldFromConfig", [universe](String name, Json worldConfig) {
-    uint64_t worldSeed;
+    std::uint64_t worldSeed;
     if (worldConfig.contains("seed"))
       worldSeed = worldConfig.getUInt("seed");
     else

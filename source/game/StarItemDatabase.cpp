@@ -24,7 +24,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.id_map;
@@ -91,8 +91,20 @@ import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 import star.entity_rendering;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.effect_source_item;
@@ -154,12 +166,12 @@ EnumMap<ItemType> ItemTypeNames{
   {ItemType::AugmentItem, "augmentitem"}
 };
 
-uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
+std::uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
   auto normalizedBag = normalizeBag(bag);
   return getCountOfItem(normalizedBag, item, exactMatch);
 }
 
-uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch) {
+std::uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, std::uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch) {
   ItemDescriptor matchItem = exactMatch ? item.singular() : ItemDescriptor(item.name(), 1);
   if (!bag.contains(matchItem)) {
     return 0;
@@ -168,8 +180,8 @@ uint64_t ItemDatabase::getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& b
   }
 }
 
-HashMap<ItemDescriptor, uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const& bag) {
-  HashMap<ItemDescriptor, uint64_t> normalizedBag;
+HashMap<ItemDescriptor, std::uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const& bag) {
+  HashMap<ItemDescriptor, std::uint64_t> normalizedBag;
   for (auto const& item : bag) {
     if (!item)
       continue;
@@ -183,7 +195,7 @@ HashMap<ItemDescriptor, uint64_t> ItemDatabase::normalizeBag(List<ItemPtr> const
   return normalizedBag;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset) {
+HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
     // add this recipe if we can make it.
@@ -194,7 +206,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint
   return res;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies,
+HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies,
     HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
@@ -214,7 +226,7 @@ String ItemDatabase::guiFilterString(ItemPtr const& item) {
   return (item->name() + item->friendlyName() + item->description()).toLower().splitAny(" ,.?*\\+/|\t").join("");
 }
 
-bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies) {
+bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& availableIngredients, StringMap<std::uint64_t> const& availableCurrencies) {
   for (auto const& p : recipe.currencyInputs) {
     if (availableCurrencies.value(p.first, 0) < p.second)
       return false;
@@ -230,7 +242,7 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
 }
 
 ItemDatabase::ItemDatabase()
-  : m_luaRoot(make_shared<LuaRoot>()), m_rebuilder(make_shared<Rebuilder>("item")) {
+  : m_luaRoot(std::make_shared<LuaRoot>()), m_rebuilder(std::make_shared<Rebuilder>("item")) {
   scanItems();
   addObjectItems();
   addCodexes();
@@ -289,7 +301,7 @@ StringSet ItemDatabase::itemTags(String const& itemName) const {
   return itemData(itemName).itemTags;
 }
 
-ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<std::uint64_t> seed) const {
   auto const& data = itemData(itemName);
 
   ItemConfig itemConfig;
@@ -319,7 +331,7 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   return data.directory + data.filename;
 }
 
-ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed) const {
   if (!descriptor)
     return {};
 
@@ -331,14 +343,14 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
     locker.unlock();
 
     ItemPtr item = tryCreateItem(descriptor, level, seed);
-    get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
+    std::get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
 
     locker.lock();
     return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return std::move(item); });
   }
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
@@ -371,52 +383,52 @@ HashSet<ItemRecipe> ItemDatabase::recipesForOutputItem(String itemName) const {
   return result;
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
   return recipesFromSubset(bag, availableCurrencies, m_recipes);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
   auto normalizedBag = normalizeBag(bag);
   return recipesFromBagContents(normalizedBag, availableCurrencies, allowedTypes);
 }
 
-HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
+HashSet<ItemRecipe> ItemDatabase::recipesFromBagContents(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const {
   return recipesFromSubset(bag, availableCurrencies, m_recipes, allowedTypes);
 }
 
-uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
+std::uint64_t ItemDatabase::maxCraftableInBag(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
   auto normalizedBag = normalizeBag(bag);
 
   return maxCraftableInBag(normalizedBag, availableCurrencies, recipe);
 }
 
-uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
-  uint64_t res = highest<uint64_t>();
+std::uint64_t ItemDatabase::maxCraftableInBag(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const {
+  std::uint64_t res = highest<std::uint64_t>();
 
   for (auto const& p : recipe.currencyInputs) {
-    uint64_t available = availableCurrencies.value(p.first, 0);
+    std::uint64_t available = availableCurrencies.value(p.first, 0);
     if (available == 0)
       return 0;
     else if (p.second > 0)
-      res = min(available / p.second, res);
+      res = std::min(available / p.second, res);
   }
 
   for (auto const& input : recipe.inputs) {
     if (!bag.contains(input.singular()))
       return 0;
     else if (input.count() > 0)
-      res = min(bag.get(input.singular()) / input.count(), res);
+      res = std::min(bag.get(input.singular()) / input.count(), res);
   }
 
   return res;
 }
 
-ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const {
+ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const {
   // picks the recipe that:
   // * can be crafted (duh)
   // * uses all the input material types
@@ -451,7 +463,7 @@ ItemRecipe ItemDatabase::getPreciseRecipeForMaterials(String const& group, List<
 ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
   ItemRecipe res;
   try {
-    res.currencyInputs = jsonToMapV<StringMap<uint64_t>>(config.get("currencyInputs", JsonObject()), mem_fn(&Json::toUInt));
+    res.currencyInputs = jsonToMapV<StringMap<std::uint64_t>>(config.get("currencyInputs", JsonObject()), std::mem_fn(&Json::toUInt));
 
     // parse currency items into currency inputs
     for (auto input : config.getArray("input")) {
@@ -471,7 +483,7 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
       res.outputRarity = item->rarity();
       res.guiFilterString = guiFilterString(item);
     }
-    res.collectables = jsonToMapV<StringMap<String>>(config.get("collectables", JsonObject()), mem_fn(&Json::toString));
+    res.collectables = jsonToMapV<StringMap<String>>(config.get("collectables", JsonObject()), std::mem_fn(&Json::toString));
     res.matchInputParameters = config.getBool("matchInputParameters", false);
 
   } catch (JsonException const& e) {
@@ -501,16 +513,16 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
     script.setLuaRoot(m_luaRoot);
     script.setScripts(augment->augmentScripts());
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
-    script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, augment, _1, _2)));
+    script.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, augment, std::placeholders::_1, std::placeholders::_2)));
     script.init();
-    auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<uint64_t>>>("apply", item->descriptor().toJson());
+    auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<std::uint64_t>>>("apply", item->descriptor().toJson());
     script.uninit();
     locker.unlock();
 
     if (luaResult) {
-      if (!get<0>(*luaResult).isNull()) {
-        augment->take(get<1>(*luaResult).value(1));
-        return ItemDatabase::item(ItemDescriptor(get<0>(*luaResult)), {}, {}, false);
+      if (!std::get<0>(*luaResult).isNull()) {
+        augment->take(std::get<1>(*luaResult).value(1));
+        return ItemDatabase::item(ItemDescriptor(std::get<0>(*luaResult)), {}, {}, false);
       }
     }
   }
@@ -551,61 +563,61 @@ List<String> ItemDatabase::allItems() const {
 
 ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
-    return make_shared<GenericItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<GenericItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
-    return make_shared<LiquidItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<LiquidItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::MaterialItem) {
-    return make_shared<MaterialItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<MaterialItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::ObjectItem) {
-    return make_shared<ObjectItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ObjectItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::CurrencyItem) {
-    return make_shared<CurrencyItem>(config.config, config.directory);
+    return std::make_shared<CurrencyItem>(config.config, config.directory);
   } else if (type == ItemType::MiningTool) {
-    return make_shared<MiningTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<MiningTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::Flashlight) {
-    return make_shared<Flashlight>(config.config, config.directory, config.parameters);
+    return std::make_shared<Flashlight>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::WireTool) {
-    return make_shared<WireTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<WireTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::BeamMiningTool) {
-    return make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<BeamMiningTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::PaintingBeamTool) {
-    return make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<PaintingBeamTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::TillingTool) {
-    return make_shared<TillingTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<TillingTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::HarvestingTool) {
-    return make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<HarvestingTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::HeadArmor) {
-    return make_shared<HeadArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<HeadArmor>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::ChestArmor) {
-    return make_shared<ChestArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<ChestArmor>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::LegsArmor) {
-    return make_shared<LegsArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<LegsArmor>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::BackArmor) {
-    return make_shared<BackArmor>(config.config, config.directory, config.parameters);
+    return std::make_shared<BackArmor>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::Consumable) {
-    return make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ConsumableItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::Blueprint) {
-    return make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<BlueprintItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::Codex) {
-    return make_shared<CodexItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<CodexItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::InspectionTool) {
-    return make_shared<InspectionTool>(config.config, config.directory, config.parameters);
+    return std::make_shared<InspectionTool>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::InstrumentItem) {
-    return make_shared<InstrumentItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<InstrumentItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::ThrownItem) {
-    return make_shared<ThrownItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ThrownItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::UnlockItem) {
-    return make_shared<UnlockItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<UnlockItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::ActiveItem) {
-    return make_shared<ActiveItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<ActiveItem>(config.config, config.directory, config.parameters);
   } else if (type == ItemType::AugmentItem) {
-    return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
+    return std::make_shared<AugmentItem>(config.config, config.directory, config.parameters);
   } else {
     throw ItemException(strf("Unknown item type {}", (int)type));
   }
 }
 
-ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<std::uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
   ItemDescriptor newDescriptor = descriptor;
 
@@ -683,7 +695,7 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.directory = AssetPath::directory(file);
       data.filename = AssetPath::filename(file);
 
-      data.agingScripts = data.agingScripts.transformed(bind(&AssetPath::relativeTo, data.directory, _1));
+      data.agingScripts = data.agingScripts.transformed(std::bind(&AssetPath::relativeTo, data.directory, std::placeholders::_1));
     } catch (std::exception const& e) {
       throw ItemException(strf("Could not load item asset {}", file), e);
     }
@@ -736,7 +748,7 @@ void ItemDatabase::scanItems() {
 
   List<std::pair<ItemType, String>> itemSets;
   auto scanItemType = [&itemSets, assets](ItemType type, String const& extension) {
-    itemSets.append(make_pair(type, extension));
+    itemSets.append(std::make_pair(type, extension));
     assets->queueJsons(assets->scanExtension(extension));
   };
 

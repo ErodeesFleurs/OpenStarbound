@@ -27,7 +27,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.lexical_cast;
@@ -102,7 +102,7 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
   for (auto& p : independentSounds)
     eraseWhere(p.second, [](AudioInstancePtr const& audio) { return audio->finished(); });
 
-  eraseWhere(currentAudioBasePositions, [](pair<AudioInstancePtr, Vec2F> const& pair) {
+  eraseWhere(currentAudioBasePositions, [](std::pair<AudioInstancePtr, Vec2F> const& pair) {
       return pair.first->finished();
     });
 }
@@ -231,7 +231,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     Sound& sound = m_sounds[std::move(soundName)];
     if (soundConfig.isType(Json::Type::Array)) {
       sound.rangeMultiplier = 1.0f;
-      sound.soundPool.set(jsonToStringList(soundConfig).transformed(bind(&AssetPath::relativeTo, m_relativePath, _1)));
+      sound.soundPool.set(jsonToStringList(soundConfig).transformed(std::bind(&AssetPath::relativeTo, m_relativePath, std::placeholders::_1)));
       sound.volumeTarget.set(1.0f);
       sound.volumeRampTime.set(0.0f);
       sound.pitchMultiplierTarget.set(1.0f);
@@ -249,7 +249,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
       sound.pitchMultiplierTarget.set(soundConfig.getFloat("pitchMultiplier", 1.0f));
       sound.pitchMultiplierRampTime.set(soundConfig.getFloat("pitchMultiplierRampTime", 0.0f));
 
-      sound.soundPool.set(jsonToStringList(soundConfig.get("pool", JsonArray())).transformed(bind(&AssetPath::relativeTo, m_relativePath, _1)));
+      sound.soundPool.set(jsonToStringList(soundConfig.get("pool", JsonArray())).transformed(std::bind(&AssetPath::relativeTo, m_relativePath, std::placeholders::_1)));
     }
   }
 
@@ -819,8 +819,8 @@ List<Drawable> NetworkedAnimator::drawables(Vec2F const& position) const {
   return drawables;
 }
 
-List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& position) const {
-  size_t partCount = m_animatedParts.constParts().size();
+List<std::pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& position) const {
+  std::size_t partCount = m_animatedParts.constParts().size();
   if (!partCount)
     return {};
 
@@ -868,7 +868,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     }
   }
 
-  List<tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
+  List<std::tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>> parts;
   parts.reserve(partCount);
   int drawableCount = 0;
   m_animatedParts.forEachActivePart([&](String const& partName, AnimatedPartSet::ActivePartInformation const& activePart) {
@@ -882,16 +882,16 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
     if (m_partDrawables.contains(partName))
       drawableCount += m_partDrawables.get(partName).size();
-    parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
+    parts.append(std::make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
   });
 
-  sort(parts, [](auto const& a, auto const& b) { return get<2>(a) < get<2>(b); });
+  sort(parts, [](auto const& a, auto const& b) { return std::get<2>(a) < std::get<2>(b); });
 
-  List<pair<Drawable, float>> drawables;
+  List<std::pair<Drawable, float>> drawables;
   drawables.reserve(partCount + drawableCount);
   for (auto& entry : parts) {
-    auto& activePart = *get<0>(entry);
-    auto& partName = *get<1>(entry);
+    auto& activePart = *std::get<0>(entry);
+    auto& partName = *std::get<1>(entry);
     // Make sure we don't copy the original image
     String fallback = "";
     Json jImage = activePart.properties.value("image", {});
@@ -905,7 +905,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     bool centered = activePart.properties.value("centered").optBool().value(true);
     bool fullbright = activePart.properties.value("fullbright").optBool().value(false);
 
-    size_t originalDirectivesSize = baseProcessingDirectives.size();
+    std::size_t originalDirectivesSize = baseProcessingDirectives.size();
 
     auto const& partTags = m_partTags.get(partName);
 
@@ -974,7 +974,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     transformation.translate(position);
 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
-      size_t hash = hashOf(usedImage);
+      std::size_t hash = hashOf(usedImage);
       auto find = m_cachedPartDrawables.find(partName);
       if (find == m_cachedPartDrawables.end() || find->second.first != hash) {
         String relativeImage;
@@ -996,14 +996,14 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         imagePart.addDirectives(directives, centered);
       drawable.fullbright = fullbright;
       drawable.transform(transformation);
-      drawables.append({std::move(drawable), get<2>(entry)});
+      drawables.append({std::move(drawable), std::get<2>(entry)});
     }
 
     if (m_partDrawables.contains(partName)) {
       auto partDrawables = m_partDrawables.get(partName);
       Drawable::transformAll(partDrawables, transformation);
       for (auto drawable : partDrawables) {
-      drawables.append({drawable, get<2>(entry)});
+      drawables.append({drawable, std::get<2>(entry)});
       }
     }
 
@@ -1086,7 +1086,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
             activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
 
           if (!persistentSoundFile.empty()) {
-            activePersistentSound.audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(persistentSoundFile));
+            activePersistentSound.audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(persistentSoundFile));
             activePersistentSound.audio->setRangeMultiplier(activeState.properties.value("persistentSoundRangeMultiplier", 1.0f).toFloat());
             activePersistentSound.audio->setLoops(-1);
             activePersistentSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
@@ -1114,7 +1114,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         if (changedImmediateSound) {
           activeImmediateSound.sound = std::move(immediateSound);
           if (!immediateSoundFile.empty()) {
-            activeImmediateSound.audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(immediateSoundFile));
+            activeImmediateSound.audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(immediateSoundFile));
             activeImmediateSound.audio->setRangeMultiplier(activeState.properties.value("immediateSoundRangeMultiplier", 1.0f).toFloat());
             activeImmediateSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
             dynamicTarget->pendingAudios.append(activeImmediateSound.audio);
@@ -1238,7 +1238,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       unsigned numEmissionCycles = 0;
 
       if (pair.second.active.get()) {
-        pair.second.timer = min(pair.second.timer, 1.0f / (pair.second.emissionRate.get() + pair.second.emissionRateVariance));
+        pair.second.timer = std::min(pair.second.timer, 1.0f / (pair.second.emissionRate.get() + pair.second.emissionRateVariance));
         if (pair.second.timer <= 0.0f) {
           // timer causes us to emit one set
           ++numEmissionCycles;
@@ -1249,7 +1249,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
       }
 
       auto bursts = pair.second.burstEvent.pullOccurrences();
-      for (uint64_t i = 0; i < bursts; ++i)
+      for (std::uint64_t i = 0; i < bursts; ++i)
         numEmissionCycles += pair.second.burstCount.get();
 
       if (numEmissionCycles > 0) {
@@ -1282,7 +1282,7 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         } else if (signal == SoundSignal::Play) {
           String soundFile = Random::randValueFrom(soundEntry.soundPool.get());
           if (!soundFile.empty()) {
-            auto sound = make_shared<AudioInstance>(*Root::singleton().assets()->audio(soundFile));
+            auto sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(soundFile));
             sound->setRangeMultiplier(soundEntry.rangeMultiplier);
             sound->setLoops(soundEntry.loops.get());
             sound->setPosition(globalTransformation().transformVec2(Vec2F(soundEntry.xPosition.get(), soundEntry.yPosition.get())));
@@ -1326,8 +1326,8 @@ void NetworkedAnimator::finishAnimations() {
 
 Mat3F NetworkedAnimator::TransformationGroup::affineTransform() const {
   return Mat3F(
-      xScale.get() * cos(xShear.get()), xScale.get() * sin(xShear.get()), xTranslation.get(),
-      yScale.get() * sin(yShear.get()), yScale.get() * cos(yShear.get()), yTranslation.get(),
+      xScale.get() * std::cos(xShear.get()), xScale.get() * std::sin(xShear.get()), xTranslation.get(),
+      yScale.get() * std::sin(yShear.get()), yScale.get() * std::cos(yShear.get()), yTranslation.get(),
       0, 0, 1
     );
 }
@@ -1335,10 +1335,10 @@ Mat3F NetworkedAnimator::TransformationGroup::affineTransform() const {
 void NetworkedAnimator::TransformationGroup::setAffineTransform(Mat3F const& matrix) {
   xTranslation.set(matrix[0][2]);
   yTranslation.set(matrix[1][2]);
-  xScale.set(sqrt(square(matrix[0][0]) + square(matrix[0][1])));
-  yScale.set(sqrt(square(matrix[1][0]) + square(matrix[1][1])));
-  xShear.set(atan2(matrix[0][1], matrix[0][0]));
-  yShear.set(atan2(matrix[1][0], matrix[1][1]));
+  xScale.set(std::sqrt(square(matrix[0][0]) + square(matrix[0][1])));
+  yScale.set(std::sqrt(square(matrix[1][0]) + square(matrix[1][1])));
+  xShear.set(std::atan2(matrix[0][1], matrix[0][0]));
+  yShear.set(std::atan2(matrix[1][0], matrix[1][1]));
 }
 
 void NetworkedAnimator::TransformationGroup::setLocalAffineTransform(Mat3F const& matrix) {
@@ -1352,24 +1352,24 @@ Mat3F NetworkedAnimator::TransformationGroup::localAffineTransform() const {
 void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& matrix) {
   xTranslationAnimation = matrix[0][2];
   yTranslationAnimation = matrix[1][2];
-  xScaleAnimation = sqrt(square(matrix[0][0]) + square(matrix[0][1]));
-  yScaleAnimation = sqrt(square(matrix[1][0]) + square(matrix[1][1]));
-  xShearAnimation = atan2(matrix[0][1], matrix[0][0]);
-  yShearAnimation = atan2(matrix[1][0], matrix[1][1]);
+  xScaleAnimation = std::sqrt(square(matrix[0][0]) + square(matrix[0][1]));
+  yScaleAnimation = std::sqrt(square(matrix[1][0]) + square(matrix[1][1]));
+  xShearAnimation = std::atan2(matrix[0][1], matrix[0][0]);
+  yShearAnimation = std::atan2(matrix[1][0], matrix[1][1]);
 }
 void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress) {
   xTranslationAnimation = lerp(progress, mat1[0][2], mat2[0][2]);
   yTranslationAnimation = lerp(progress, mat1[1][2], mat2[1][2]);
-  xScaleAnimation = lerp(progress, sqrt(square(mat1[0][0]) + square(mat1[0][1])), sqrt(square(mat2[0][0]) + square(mat2[0][1])));
-  yScaleAnimation = lerp(progress, sqrt(square(mat1[1][0]) + square(mat1[1][1])), sqrt(square(mat2[1][0]) + square(mat2[1][1])));
-  xShearAnimation = angleLerp(progress, atan2(mat1[0][1], mat1[0][0]), atan2(mat2[0][1], mat2[0][0]));
-  yShearAnimation = angleLerp(progress, atan2(mat1[1][0], mat1[1][1]), atan2(mat2[1][0], mat2[1][1]));
+  xScaleAnimation = lerp(progress, std::sqrt(square(mat1[0][0]) + square(mat1[0][1])), std::sqrt(square(mat2[0][0]) + square(mat2[0][1])));
+  yScaleAnimation = lerp(progress, std::sqrt(square(mat1[1][0]) + square(mat1[1][1])), std::sqrt(square(mat2[1][0]) + square(mat2[1][1])));
+  xShearAnimation = angleLerp(progress, std::atan2(mat1[0][1], mat1[0][0]), std::atan2(mat2[0][1], mat2[0][0]));
+  yShearAnimation = angleLerp(progress, std::atan2(mat1[1][0], mat1[1][1]), std::atan2(mat2[1][0], mat2[1][1]));
 }
 
 Mat3F NetworkedAnimator::TransformationGroup::animationAffineTransform() const {
   return Mat3F(
-      xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
-      yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
+      xScaleAnimation * std::cos(xShearAnimation), xScaleAnimation * std::sin(xShearAnimation), xTranslationAnimation,
+      yScaleAnimation * std::sin(yShearAnimation), yScaleAnimation * std::cos(yShearAnimation), yTranslationAnimation,
       0, 0, 1
     );
 }
@@ -1492,7 +1492,7 @@ void NetworkedAnimator::netElementsNeedStore() {
   }
 }
 
-uint8_t NetworkedAnimator::version() const {
+std::uint8_t NetworkedAnimator::version() const {
   return m_animatorVersion;
 }
 

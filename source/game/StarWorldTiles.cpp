@@ -23,7 +23,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 

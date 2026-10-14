@@ -21,7 +21,7 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.version;
@@ -55,10 +55,10 @@ MicroDungeonFactory::MicroDungeonFactory() {
     m_placementshifts.push_back(-i);
 }
 
-Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
+Maybe<std::pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
     String const& dungeonName,
     Vec2I const& position,
-    uint64_t seed,
+    std::uint64_t seed,
     float threatLevel,
     DungeonGeneratorWorldFacadePtr facade,
     bool forcePlacement) {

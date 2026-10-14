@@ -35,7 +35,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 
@@ -90,7 +90,13 @@ import star.material_database;
 
 export namespace Star {
 
-STAR_CLASS(InspectionTool);
+class InspectionTool;
+using InspectionToolPtr = std::shared_ptr<InspectionTool>;
+using InspectionToolConstPtr = std::shared_ptr<const InspectionTool>;
+using InspectionToolWeakPtr = std::weak_ptr<InspectionTool>;
+using InspectionToolConstWeakPtr = std::weak_ptr<const InspectionTool>;
+using InspectionToolUPtr = std::unique_ptr<InspectionTool>;
+using InspectionToolConstUPtr = std::unique_ptr<const InspectionTool>;
 
 class InspectionTool
   : public Item,
@@ -144,7 +150,7 @@ private:
   Vec2F m_inspectionAngles;
   Vec2F m_inspectionRanges;
   float m_ambientInspectionRadius;
-  size_t m_fullInspectionSpaces;
+  std::size_t m_fullInspectionSpaces;
   float m_minimumInspectionLevel;
   Maybe<HashSet<EntityType>> m_inspectableTypeFilter;
 
@@ -187,7 +193,7 @@ InspectionTool::InspectionTool(Json const& config, String const& directory, Json
 }
 
 ItemPtr InspectionTool::clone() const {
-  return make_shared<InspectionTool>(*this);
+  return std::make_shared<InspectionTool>(*this);
 }
 
 void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
@@ -252,7 +258,7 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
       if (pointLevel > 0 && hasLineOfSight(space, spaceSet))
         totalLevel += pointLevel;
     }
-    return clamp(totalLevel / min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
+    return clamp(totalLevel / std::min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
   }
   else
     return pointInspectionLevel(inspectable->position());
@@ -261,10 +267,10 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
 float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
   Vec2F gdiff = world()->geometry().diff(position, m_currentPosition);
   float gdist = gdiff.magnitude();
-  float angleFactor = (abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
+  float angleFactor = (std::abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
   float distFactor = (gdist - m_inspectionRanges[0]) / (m_inspectionRanges[1] - m_inspectionRanges[0]);
   float ambientFactor = gdist / m_ambientInspectionRadius;
-  return 1 - clamp(max(distFactor, min(ambientFactor, angleFactor)), 0.0f, 1.0f);
+  return 1 - clamp(std::max(distFactor, std::min(ambientFactor, angleFactor)), 0.0f, 1.0f);
 }
 
 bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {

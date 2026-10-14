@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -49,10 +49,28 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(PortraitEntity);
+class PortraitEntity;
+using PortraitEntityPtr = std::shared_ptr<PortraitEntity>;
+using PortraitEntityConstPtr = std::shared_ptr<PortraitEntity const>;
+using PortraitEntityWeakPtr = std::weak_ptr<PortraitEntity>;
+using PortraitEntityConstWeakPtr = std::weak_ptr<PortraitEntity const>;
+using PortraitEntityUPtr = std::unique_ptr<PortraitEntity>;
+using PortraitEntityConstUPtr = std::unique_ptr<PortraitEntity const>;
 
-STAR_CLASS(Player);
-STAR_CLASS(PortraitWidget);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class PortraitWidget;
+using PortraitWidgetPtr = std::shared_ptr<PortraitWidget>;
+using PortraitWidgetConstPtr = std::shared_ptr<PortraitWidget const>;
+using PortraitWidgetWeakPtr = std::weak_ptr<PortraitWidget>;
+using PortraitWidgetConstWeakPtr = std::weak_ptr<PortraitWidget const>;
+using PortraitWidgetUPtr = std::unique_ptr<PortraitWidget>;
+using PortraitWidgetConstUPtr = std::unique_ptr<PortraitWidget const>;
 
 class PortraitWidget : public Widget {
 public:

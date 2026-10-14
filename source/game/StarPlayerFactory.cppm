@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.net_compatibility;
@@ -41,10 +41,34 @@ import star.entity_splash;
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Player);
-STAR_STRUCT(PlayerConfig);
-STAR_CLASS(PlayerFactory);
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+struct PlayerConfig;
+using PlayerConfigPtr = std::shared_ptr<PlayerConfig>;
+using PlayerConfigConstPtr = std::shared_ptr<const PlayerConfig>;
+using PlayerConfigWeakPtr = std::weak_ptr<PlayerConfig>;
+using PlayerConfigConstWeakPtr = std::weak_ptr<const PlayerConfig>;
+using PlayerConfigUPtr = std::unique_ptr<PlayerConfig>;
+using PlayerConfigConstUPtr = std::unique_ptr<const PlayerConfig>;
+class PlayerFactory;
+using PlayerFactoryPtr = std::shared_ptr<PlayerFactory>;
+using PlayerFactoryConstPtr = std::shared_ptr<const PlayerFactory>;
+using PlayerFactoryWeakPtr = std::weak_ptr<PlayerFactory>;
+using PlayerFactoryConstWeakPtr = std::weak_ptr<const PlayerFactory>;
+using PlayerFactoryUPtr = std::unique_ptr<PlayerFactory>;
+using PlayerFactoryConstUPtr = std::unique_ptr<const PlayerFactory>;
 
 struct PlayerExceptionTag {
   static constexpr char const* name() { return "PlayerException"; }

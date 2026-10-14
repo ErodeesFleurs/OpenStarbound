@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.byte_array;
 import star.set;
@@ -21,8 +21,8 @@ PlayerBlueprints::PlayerBlueprints(Json const& variant) {
 }
 
 Json PlayerBlueprints::toJson() const {
-  return JsonObject{{"knownBlueprints", transform<JsonArray>(m_knownBlueprints, mem_fn(&ItemDescriptor::toJson))},
-      {"newBlueprints", transform<JsonArray>(m_newBlueprints, mem_fn(&ItemDescriptor::toJson))}};
+  return JsonObject{{"knownBlueprints", transform<JsonArray>(m_knownBlueprints, std::mem_fn(&ItemDescriptor::toJson))},
+      {"newBlueprints", transform<JsonArray>(m_newBlueprints, std::mem_fn(&ItemDescriptor::toJson))}};
 }
 
 bool PlayerBlueprints::isKnown(ItemDescriptor const& itemDescriptor) const {

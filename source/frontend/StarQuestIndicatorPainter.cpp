@@ -1,9 +1,9 @@
+import std;
 import star.xx_hash;
 import star.json;
 import star.game_types;
 import star.id_map;
 import star.image;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.random;
@@ -14,7 +14,6 @@ import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;
-import std;
 import star.set;
 import star.vector;
 import star.thread;
@@ -165,7 +164,7 @@ QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client) {
 
 AnimationPtr indicatorAnimation(String indicatorPath) {
   auto assets = Root::singleton().assets();
-  return make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
+  return std::make_shared<Animation>(assets->json(indicatorPath), indicatorPath);
 }
 
 void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {
@@ -197,7 +196,7 @@ void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldC
     }
   }
 
-  m_indicators = Map<EntityId, Indicator>::from(m_indicators.pairs().filtered([&foundIndicators](pair<EntityId, Indicator> indicator) {
+  m_indicators = Map<EntityId, Indicator>::from(m_indicators.pairs().filtered([&foundIndicators](std::pair<EntityId, Indicator> indicator) {
       return foundIndicators.contains(indicator.first);
     }));
 }

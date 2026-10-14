@@ -1,4 +1,5 @@
 #include "StarJsonExtra.hpp"
+import std;
 import star.json;
 import star.xx_hash;
 import star.ordered_map;
@@ -40,7 +41,6 @@ import star.map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.variant;
@@ -48,7 +48,6 @@ import star.weighted_pool;
 #include "StarDataStreamDevices.hpp"
 
 import star.lexical_cast;
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -224,42 +223,42 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager), m_macroCommands(std::move(macroCommands)) {
   m_builtinCommands = {
-    {"reload", bind(&ClientCommandProcessor::reload, this)},
-    {"hotReload", bind(&ClientCommandProcessor::hotReload, this)},
-    {"whoami", bind(&ClientCommandProcessor::whoami, this)},
-    {"gravity", bind(&ClientCommandProcessor::gravity, this)},
-    {"debug", bind(&ClientCommandProcessor::debug, this, _1)},
-    {"boxes", bind(&ClientCommandProcessor::boxes, this)},
-    {"fullbright", bind(&ClientCommandProcessor::fullbright, this)},
-    {"asyncLighting", bind(&ClientCommandProcessor::asyncLighting, this)},
-    {"setGravity", bind(&ClientCommandProcessor::setGravity, this, _1)},
-    {"resetGravity", bind(&ClientCommandProcessor::resetGravity, this)},
-    {"fixedCamera", bind(&ClientCommandProcessor::fixedCamera, this)},
-    {"monochromeLighting", bind(&ClientCommandProcessor::monochromeLighting, this)},
-    {"radioMessage", bind(&ClientCommandProcessor::radioMessage, this, _1)},
-    {"clearRadioMessages", bind(&ClientCommandProcessor::clearRadioMessages, this)},
-    {"clearCinematics", bind(&ClientCommandProcessor::clearCinematics, this)},
-    {"startQuest", bind(&ClientCommandProcessor::startQuest, this, _1)},
-    {"completeQuest", bind(&ClientCommandProcessor::completeQuest, this, _1)},
-    {"failQuest", bind(&ClientCommandProcessor::failQuest, this, _1)},
-    {"previewNewQuest", bind(&ClientCommandProcessor::previewNewQuest, this, _1)},
-    {"previewQuestComplete", bind(&ClientCommandProcessor::previewQuestComplete, this, _1)},
-    {"previewQuestFailed", bind(&ClientCommandProcessor::previewQuestFailed, this, _1)},
-    {"clearScannedObjects", bind(&ClientCommandProcessor::clearScannedObjects, this)},
-    {"played", bind(&ClientCommandProcessor::playTime, this)},
-    {"deaths", bind(&ClientCommandProcessor::deathCount, this)},
-    {"cinema", bind(&ClientCommandProcessor::cinema, this, _1)},
-    {"suicide", bind(&ClientCommandProcessor::suicide, this)},
-    {"naked", bind(&ClientCommandProcessor::naked, this)},
-    {"resetAchievements", bind(&ClientCommandProcessor::resetAchievements, this)},
-    {"statistic", bind(&ClientCommandProcessor::statistic, this, _1)},
-    {"giveessentialitem", bind(&ClientCommandProcessor::giveEssentialItem, this, _1)},
-    {"maketechavailable", bind(&ClientCommandProcessor::makeTechAvailable, this, _1)},
-    {"enabletech", bind(&ClientCommandProcessor::enableTech, this, _1)},
-    {"upgradeship", bind(&ClientCommandProcessor::upgradeShip, this, _1)},
-    {"swap", bind(&ClientCommandProcessor::swap, this, _1)},
-    {"respawnInWorld", bind(&ClientCommandProcessor::respawnInWorld, this, _1)},
-    {"render", bind(&ClientCommandProcessor::render, this, _1)}
+    {"reload", std::bind(&ClientCommandProcessor::reload, this)},
+    {"hotReload", std::bind(&ClientCommandProcessor::hotReload, this)},
+    {"whoami", std::bind(&ClientCommandProcessor::whoami, this)},
+    {"gravity", std::bind(&ClientCommandProcessor::gravity, this)},
+    {"debug", std::bind(&ClientCommandProcessor::debug, this, std::placeholders::_1)},
+    {"boxes", std::bind(&ClientCommandProcessor::boxes, this)},
+    {"fullbright", std::bind(&ClientCommandProcessor::fullbright, this)},
+    {"asyncLighting", std::bind(&ClientCommandProcessor::asyncLighting, this)},
+    {"setGravity", std::bind(&ClientCommandProcessor::setGravity, this, std::placeholders::_1)},
+    {"resetGravity", std::bind(&ClientCommandProcessor::resetGravity, this)},
+    {"fixedCamera", std::bind(&ClientCommandProcessor::fixedCamera, this)},
+    {"monochromeLighting", std::bind(&ClientCommandProcessor::monochromeLighting, this)},
+    {"radioMessage", std::bind(&ClientCommandProcessor::radioMessage, this, std::placeholders::_1)},
+    {"clearRadioMessages", std::bind(&ClientCommandProcessor::clearRadioMessages, this)},
+    {"clearCinematics", std::bind(&ClientCommandProcessor::clearCinematics, this)},
+    {"startQuest", std::bind(&ClientCommandProcessor::startQuest, this, std::placeholders::_1)},
+    {"completeQuest", std::bind(&ClientCommandProcessor::completeQuest, this, std::placeholders::_1)},
+    {"failQuest", std::bind(&ClientCommandProcessor::failQuest, this, std::placeholders::_1)},
+    {"previewNewQuest", std::bind(&ClientCommandProcessor::previewNewQuest, this, std::placeholders::_1)},
+    {"previewQuestComplete", std::bind(&ClientCommandProcessor::previewQuestComplete, this, std::placeholders::_1)},
+    {"previewQuestFailed", std::bind(&ClientCommandProcessor::previewQuestFailed, this, std::placeholders::_1)},
+    {"clearScannedObjects", std::bind(&ClientCommandProcessor::clearScannedObjects, this)},
+    {"played", std::bind(&ClientCommandProcessor::playTime, this)},
+    {"deaths", std::bind(&ClientCommandProcessor::deathCount, this)},
+    {"cinema", std::bind(&ClientCommandProcessor::cinema, this, std::placeholders::_1)},
+    {"suicide", std::bind(&ClientCommandProcessor::suicide, this)},
+    {"naked", std::bind(&ClientCommandProcessor::naked, this)},
+    {"resetAchievements", std::bind(&ClientCommandProcessor::resetAchievements, this)},
+    {"statistic", std::bind(&ClientCommandProcessor::statistic, this, std::placeholders::_1)},
+    {"giveessentialitem", std::bind(&ClientCommandProcessor::giveEssentialItem, this, std::placeholders::_1)},
+    {"maketechavailable", std::bind(&ClientCommandProcessor::makeTechAvailable, this, std::placeholders::_1)},
+    {"enabletech", std::bind(&ClientCommandProcessor::enableTech, this, std::placeholders::_1)},
+    {"upgradeship", std::bind(&ClientCommandProcessor::upgradeShip, this, std::placeholders::_1)},
+    {"swap", std::bind(&ClientCommandProcessor::swap, this, std::placeholders::_1)},
+    {"respawnInWorld", std::bind(&ClientCommandProcessor::respawnInWorld, this, std::placeholders::_1)},
+    {"render", std::bind(&ClientCommandProcessor::render, this, std::placeholders::_1)}
   };
 }
 
@@ -268,7 +267,7 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
     m_universeClient->mainPlayer()->isAdmin();
 }
 
-String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane) {
+String ClientCommandProcessor::previewQuestPane(StringList const& arguments, std::function<PanePtr(QuestPtr)> createPane) {
   Maybe<String> templateId = {};
   templateId = arguments[0];
   if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
@@ -475,7 +474,7 @@ String ClientCommandProcessor::startQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   auto questArc = QuestArcDescriptor::fromJson(Json::parseSequence(arguments.at(0)).get(0));
-  m_universeClient->questManager()->offer(make_shared<Quest>(questArc, 0, m_universeClient->mainPlayer().get()));
+  m_universeClient->questManager()->offer(std::make_shared<Quest>(questArc, 0, m_universeClient->mainPlayer().get()));
   return "Quest started";
 }
 
@@ -503,7 +502,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
+    return std::make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer());
   });
 }
 
@@ -513,7 +512,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
+    return std::make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{});
   });
 }
 
@@ -523,7 +522,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
+    return std::make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer());
   });
 }
 
@@ -769,14 +768,14 @@ String ClientCommandProcessor::render(String const& path) {
   auto assets = Root::singleton().assets();
   ImageConstPtr image;
   if (outputSheet) {
-    auto sheet = make_shared<Image>(*assets->image(assetPath.basePath));
+    auto sheet = std::make_shared<Image>(*assets->image(assetPath.basePath));
     sheet->convert(PixelFormat::RGBA32);
     AssetPath framePath = assetPath;
 
-    StringMap<pair<RectU, ImageConstPtr>> frames;
+    StringMap<std::pair<RectU, ImageConstPtr>> frames;
     if (auto imageFrames = assets->imageFrames(assetPath.basePath))
       for (auto& pair : imageFrames->frames)
-        frames[pair.first] = make_pair(pair.second, ImageConstPtr());
+        frames[pair.first] = std::make_pair(pair.second, ImageConstPtr());
 
     if (frames.empty())
       return "^red;Failed to save image^reset;";
@@ -819,7 +818,7 @@ String ClientCommandProcessor::render(String const& path) {
   if (!File::isDirectory(outputDirectory))
     File::makeDirectory(outputDirectory);
 
-  auto buffer = make_shared<Buffer>();
+  auto buffer = std::make_shared<Buffer>();
   image->writePng(buffer);
   auto file = File::open(outputPath, IOMode::Write | IOMode::Truncate);
   file->writeFull(buffer->ptr(), buffer->size());

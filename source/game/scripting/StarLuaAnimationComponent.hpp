@@ -23,7 +23,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.format;
 import star.version;
@@ -62,7 +62,7 @@ class LuaAnimationComponent : public Base {
 public:
   LuaAnimationComponent();
 
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
+  List<std::pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
 
   List<Particle> pullNewParticles();
@@ -77,7 +77,7 @@ private:
   List<AudioInstancePtr> m_pendingAudios;
   List<AudioInstancePtr> m_activeAudio;
 
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> m_drawables;
+  List<std::pair<Drawable, Maybe<EntityRenderLayer>>> m_drawables;
   List<LightSource> m_lightSources;
 };
 
@@ -85,7 +85,7 @@ template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent() {
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) -> AudioInstancePtr {
-      auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
+      auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
       audio->setLoops(loops.value(0));
       audio->setVolume(volume.value(1.0f));
       m_pendingAudios.append(audio);
@@ -139,7 +139,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
 }
 
 template <typename Base>
-List<pair<Drawable, Maybe<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
+List<std::pair<Drawable, Maybe<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
   return m_drawables;
 }
 

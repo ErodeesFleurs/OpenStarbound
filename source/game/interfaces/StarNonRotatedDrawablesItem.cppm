@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.data_stream;
@@ -16,7 +16,13 @@ import star.drawable;
 
 namespace Star {
 
-STAR_CLASS(NonRotatedDrawablesItem);
+class NonRotatedDrawablesItem;
+using NonRotatedDrawablesItemPtr = std::shared_ptr<NonRotatedDrawablesItem>;
+using NonRotatedDrawablesItemConstPtr = std::shared_ptr<const NonRotatedDrawablesItem>;
+using NonRotatedDrawablesItemWeakPtr = std::weak_ptr<NonRotatedDrawablesItem>;
+using NonRotatedDrawablesItemConstWeakPtr = std::weak_ptr<const NonRotatedDrawablesItem>;
+using NonRotatedDrawablesItemUPtr = std::unique_ptr<NonRotatedDrawablesItem>;
+using NonRotatedDrawablesItemConstUPtr = std::unique_ptr<const NonRotatedDrawablesItem>;
 
 class NonRotatedDrawablesItem {
 public:

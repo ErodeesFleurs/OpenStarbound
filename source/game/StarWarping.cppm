@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.variant;
 import star.maybe;
@@ -22,7 +22,7 @@ template <typename BaseType> struct ClientShipWorldIdWrapper;
 template <typename BaseType> struct CustomWorldIdWrapper;
 struct ClientCustomWorldId;
 
-enum class WarpMode : uint8_t {
+enum class WarpMode : std::uint8_t {
   None,
   BeamOnly,
   DeployOnly,
@@ -51,7 +51,7 @@ struct InstanceWorldId {
 
 template <>
 struct hash<InstanceWorldId> {
-  size_t operator()(InstanceWorldId const& id) const;
+  std::size_t operator()(InstanceWorldId const& id) const;
 };
 
 DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
@@ -74,7 +74,7 @@ struct ClientCustomWorldId {
 
 template <>
 struct hash<ClientCustomWorldId> {
-  size_t operator()(ClientCustomWorldId const& id) const;
+  std::size_t operator()(ClientCustomWorldId const& id) const;
 };
 
 DataStream& operator>>(DataStream& ds, ClientCustomWorldId& clientWorldId);

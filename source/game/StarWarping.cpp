@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -31,14 +31,14 @@ InstanceWorldId::InstanceWorldId(String instance, Maybe<Uuid> uuid, Maybe<float>
   : instance(std::move(instance)), uuid(std::move(uuid)), level(std::move(level)) {}
 
 bool InstanceWorldId::operator==(InstanceWorldId const& rhs) const {
-  return tie(instance, uuid, level) == tie(rhs.instance, rhs.uuid, rhs.level);
+  return std::tie(instance, uuid, level) == std::tie(rhs.instance, rhs.uuid, rhs.level);
 }
 
 bool InstanceWorldId::operator<(InstanceWorldId const& rhs) const {
-  return tie(instance, uuid, rhs.level) < tie(rhs.instance, rhs.uuid, rhs.level);
+  return std::tie(instance, uuid, rhs.level) < std::tie(rhs.instance, rhs.uuid, rhs.level);
 }
 
-size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {
+std::size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {
   return hashOf(id.instance, id.uuid, id.level);
 }
 
@@ -62,14 +62,14 @@ ClientCustomWorldId::ClientCustomWorldId(Uuid uuid, String name)
   : uuid(std::move(uuid)), name(std::move(name)) {}
 
 bool ClientCustomWorldId::operator==(ClientCustomWorldId const& rhs) const {
-  return tie(uuid, name) == tie(rhs.uuid, rhs.name);
+  return std::tie(uuid, name) == std::tie(rhs.uuid, rhs.name);
 }
 
 bool ClientCustomWorldId::operator<(ClientCustomWorldId const& rhs) const {
-  return tie(uuid, name) < tie(rhs.uuid, rhs.name);
+  return std::tie(uuid, name) < std::tie(rhs.uuid, rhs.name);
 }
 
-size_t hash<ClientCustomWorldId>::operator()(ClientCustomWorldId const& id) const {
+std::size_t hash<ClientCustomWorldId>::operator()(ClientCustomWorldId const& id) const {
   return hashOf(id.uuid, id.name);
 }
 
@@ -232,7 +232,7 @@ WarpToWorld::WarpToWorld(Json v) {
 }
 
 bool WarpToWorld::operator==(WarpToWorld const& rhs) const {
-  return tie(world, target) == tie(rhs.world, rhs.target);
+  return std::tie(world, target) == std::tie(rhs.world, rhs.target);
 }
 
 WarpToWorld::operator bool() const {

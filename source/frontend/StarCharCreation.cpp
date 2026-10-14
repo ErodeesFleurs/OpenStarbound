@@ -1,4 +1,5 @@
 #include "StarJsonExtra.hpp"
+import std;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -36,7 +37,6 @@ import star.map;
 import star.logging;
 import star.io_device;
 import star.ref_ptr;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.periodic_function;
@@ -45,7 +45,6 @@ import star.math_common;
 import star.either;
 import star.weighted_pool;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -304,7 +303,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
   guiReader.registerCallback("name", [this](Widget* object) { nameBoxCallback(object); });
 
   guiReader.registerCallback("species", [this](Widget* button) {
-      size_t speciesChoice = convert<ButtonWidget>(button)->buttonGroupId();
+      std::size_t speciesChoice = convert<ButtonWidget>(button)->buttonGroupId();
       if (speciesChoice < m_speciesList.size() && speciesChoice != m_speciesChoice) {
         m_speciesChoice = speciesChoice;
         randomize();
@@ -425,7 +424,7 @@ void CharCreationPane::changed() {
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_speciesList[m_speciesChoice]);
   auto species = speciesDefinition->options();
   auto genderOptions = species.genderOptions.wrap(m_genderChoice);
-  int genderIdx = pmod<int64_t>(m_genderChoice, species.genderOptions.size());
+  int genderIdx = pmod<std::int64_t>(m_genderChoice, species.genderOptions.size());
 
   auto labels = speciesDefinition->charGenTextLabels();
 
@@ -457,7 +456,7 @@ void CharCreationPane::changed() {
   setLabel("labelMode", modeButton->data().getString("description", "fail"));
 
   // Update the gender images for the new species
-  for (size_t i = 0; i < species.genderOptions.size(); i++)
+  for (std::size_t i = 0; i < species.genderOptions.size(); i++)
     if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", i)))
       button->setOverlayImage(species.genderOptions[i].image);
 
@@ -525,7 +524,7 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
     // is it a species button ?
     if (child->parent()->name() == "species") {
       // which species is it ?
-      size_t speciesIndex = convert<ButtonWidget>(child)->buttonGroupId();
+      std::size_t speciesIndex = convert<ButtonWidget>(child)->buttonGroupId();
 
       // no tooltips for unassigned button indices
       if (speciesIndex >= m_speciesList.size())
@@ -535,7 +534,7 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       Star::SpeciesDefinitionPtr speciesDefinition = Root::singleton().speciesDatabase()->species(speciesName);
 
       // make a tooltip from the config file
-      PanePtr tooltip = make_shared<Pane>();
+      PanePtr tooltip = std::make_shared<Pane>();
       tooltip->removeAllChildren();
       GuiReader reader;
       auto& root = Root::singleton();
@@ -545,7 +544,7 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
       // makes an icon out of the default gendered character image
-      WidgetPtr titleIcon = make_shared<ImageWidget>(genderOption.characterImage);
+      WidgetPtr titleIcon = std::make_shared<ImageWidget>(genderOption.characterImage);
 
       // read the description out of the already loaded species database.
       String title = speciesDefinition->tooltip().title;

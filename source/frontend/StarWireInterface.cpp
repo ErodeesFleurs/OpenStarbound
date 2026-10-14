@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -27,7 +28,6 @@ import star.map;
 #include "StarStrongTypedef.hpp"
 import star.image;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.random;
@@ -46,7 +46,6 @@ import star.rpc_promise;
 import star.net_compatibility;
 import star.worker_pool;
 
-import std;
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -186,8 +185,20 @@ import star.fireable_item;
 import star.swingable_item;
 import star.durability_item;
 import star.pointable_item;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<PreviewTile const>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<PreviewTile const>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<PreviewTile const>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<PreviewTileTool const>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<PreviewTileTool const>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<PreviewTileTool const>;
 import star.preview_tile_tool;
 import star.tools;
 
@@ -279,13 +290,13 @@ void WirePane::renderImpl() {
   auto region = RectF(m_worldClient->clientWindow());
 
   auto const& camera = m_worldPainter->camera();
-  auto badWire = Color::rgbf(0.6f + (float)sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
+  auto badWire = Color::rgbf(0.6f + (float)std::sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
   auto white = Color::White.toRgba();
   float phase = 0.5f + 0.5f * std::sin((double)Time::monotonicMilliseconds() / 100.0);
   auto drawLineColor = Color::Red.mix(Color::White, phase);
 
   for (auto entity : m_worldClient->query<WireEntity>(region)) {
-    for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
+    for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Input, i});
       if (!m_worldClient->isTileProtected(position)) {
         auto icon = entity->nodeIcon({WireDirection::Input, i});
@@ -295,7 +306,7 @@ void WirePane::renderImpl() {
       }
     }
 
-    for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
+    for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Output, i});
       if (!m_worldClient->isTileProtected(position)) {
         auto icon = entity->nodeIcon({WireDirection::Output, i});
@@ -306,9 +317,9 @@ void WirePane::renderImpl() {
     }
   }
 
-  HashSet<pair<WireConnection, WireConnection>> visitedConnections;
+  HashSet<std::pair<WireConnection, WireConnection>> visitedConnections;
   for (auto entity : m_worldClient->query<WireEntity>(region)) {
-    for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
+    for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
       Vec2I tilePosition = entity->tilePosition();
       Vec2I inPosition = tilePosition + entity->nodePosition({WireDirection::Input, i});
 
@@ -332,7 +343,7 @@ void WirePane::renderImpl() {
       }
     }
 
-    for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
+    for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
       Vec2I tilePosition = entity->tilePosition();
       Vec2I outPosition = tilePosition + entity->nodePosition({WireDirection::Output, i});
 
@@ -398,7 +409,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
     WireDirection matchDirection = WireDirection::Output;
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(inbounds, pos)) {
           if (!matchNode) {
@@ -416,7 +427,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
         }
       }
 
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
         RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(outbounds, pos)) {
           if (!matchNode) {
@@ -462,7 +473,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
     Maybe<Vec2I> matchPosition;
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(inbounds, pos) && entity->connectionsForNode({WireDirection::Input, i}).size() > 0) {
           if (!matchNode) {
@@ -480,7 +491,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
         }
       }
 
-      for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
+      for (std::size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
         RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodeSize / 2.0f), m_nodeSize);
         if (geometry.rectContains(outbounds, pos) && entity->connectionsForNode({WireDirection::Output, i}).size() > 0) {
           if (!matchNode) {

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -162,7 +162,7 @@ namespace PlatformerAStar {
     // as we get one that looks feasible, so we deliberately overestimate here.
     Vec2F diff = m_world->geometry().diff(fromPosition, toPosition);
     // Manhattan distance * 2:
-    return 2.0f * (abs(diff[0]) + abs(diff[1]));
+    return 2.0f * (std::abs(diff[0]) + std::abs(diff[1]));
   }
 
   Edge PathFinder::defaultCostEdge(Action action, Node const& source, Node const& target) const {
@@ -207,7 +207,7 @@ namespace PlatformerAStar {
     if (!onSolidGround(dropPosition)) {
       float dropCost = m_searchParams.dropCost.value(DefaultDropCost);
       float acc = acceleration(node.position)[1];
-      float dropSpeed = acc * sqrt(2.0 / abs(acc));
+      float dropSpeed = acc * std::sqrt(2.0 / std::abs(acc));
       neighbors.append(Edge{dropCost, Action::Drop, Vec2F(0, 0), node, Node{dropPosition, Vec2F(0, dropSpeed)}});
     }
   }
@@ -229,17 +229,17 @@ namespace PlatformerAStar {
     Vec2F backGroundPos = direction < 0 ? Vec2F(bounds.xMax(), bounds.yMin()) : Vec2F(bounds.xMin(), bounds.yMin());
     m_world->forEachCollisionBlock(groundCollisionRect(node.position, BoundBoxKind::Full).padded(1), [&](CollisionBlock const& block) {
       if (slopeUp || slopeDown) return;
-      for (size_t i = 0; i < block.poly.sides(); ++i) {
+      for (std::size_t i = 0; i < block.poly.sides(); ++i) {
         auto side = block.poly.side(i);
         auto sideDir = side.direction();
 
         auto lower = side.min()[1] < side.max()[1] ? side.min() : side.max();
         auto upper = side.min()[1] > side.max()[1] ? side.min() : side.max();
-        if (sideDir[0] != 0 && sideDir[1] != 0 && (lower[1] == round(forwardGroundPos[1]) || upper[1] == round(forwardGroundPos[1]))) {
+        if (sideDir[0] != 0 && sideDir[1] != 0 && (lower[1] == std::round(forwardGroundPos[1]) || upper[1] == std::round(forwardGroundPos[1]))) {
           float yDir = (sideDir[1] / sideDir[0]) * direction;
-          if (abs(m_world->geometry().diff(forwardGroundPos, lower)[0]) < 0.5 && yDir > 0)
+          if (std::abs(m_world->geometry().diff(forwardGroundPos, lower)[0]) < 0.5 && yDir > 0)
             slopeUp = true;
-          else if (abs(m_world->geometry().diff(backGroundPos, upper)[0]) < 0.5 && yDir < 0)
+          else if (std::abs(m_world->geometry().diff(backGroundPos, upper)[0]) < 0.5 && yDir < 0)
             slopeDown = true;
 
           if (slopeUp || slopeDown) break;
@@ -264,11 +264,11 @@ namespace PlatformerAStar {
       // Fall off a ledge
       bounds = m_movementParams.standingPoly->boundBox();
       float back = direction > 0 ? bounds.xMin() : bounds.xMax();
-      forward[0] -= (1 - fmod(abs(back), 1.0f)) * direction;
+      forward[0] -= (1 - std::fmod(std::abs(back), 1.0f)) * direction;
       if (walkSpeed.isValid())
-        addNode(Node{forward, Vec2F{copysign(*walkSpeed, direction), 0.0f}});
+        addNode(Node{forward, Vec2F{std::copysign(*walkSpeed, direction), 0.0f}});
       if (runSpeed.isValid())
-        addNode(Node{forward, Vec2F{copysign(*runSpeed, direction), 0.0f}});
+        addNode(Node{forward, Vec2F{std::copysign(*runSpeed, direction), 0.0f}});
     }
   }
 
@@ -348,7 +348,7 @@ namespace PlatformerAStar {
     simulateArc(node, addNode);
   }
 
-  void PathFinder::forEachArcVelocity(float yVelocity, function<void(Vec2F)> func) const {
+  void PathFinder::forEachArcVelocity(float yVelocity, std::function<void(Vec2F)> func) const {
     Maybe<float> walkSpeed = m_movementParams.walkSpeed;
     Maybe<float> runSpeed = m_movementParams.runSpeed;
 
@@ -363,7 +363,7 @@ namespace PlatformerAStar {
     }
   }
 
-  void PathFinder::forEachArcNeighbor(Node const& node, float yVelocity, function<void(Node, bool)> func) const {
+  void PathFinder::forEachArcNeighbor(Node const& node, float yVelocity, std::function<void(Node, bool)> func) const {
     Vec2F position = roundToNode(node.position);
     forEachArcVelocity(yVelocity,
         [this, &position, &func](Vec2F const& vel) {
@@ -404,7 +404,7 @@ namespace PlatformerAStar {
     return position;
   }
 
-  void PathFinder::simulateArc(Node const& node, function<void(Node, bool)> func) const {
+  void PathFinder::simulateArc(Node const& node, std::function<void(Node, bool)> func) const {
     Vec2F position = node.position;
     Vec2F velocity = *node.velocity;
     bool jumping = velocity[1] > 0.0f;
@@ -420,7 +420,7 @@ namespace PlatformerAStar {
     Vec2F rounded = start;
     while (rounded == start) {
       float speed = velocity.magnitude();
-      float dt = fmin(0.2f, speed != 0.0f ? SimulateArcGranularity / speed : sqrt(SimulateArcGranularity * 2.0 * abs(acc[1])));
+      float dt = std::fmin(0.2f, speed != 0.0f ? SimulateArcGranularity / speed : std::sqrt(SimulateArcGranularity * 2.0 * std::abs(acc[1])));
 
       bool collidedX = false, collidedY = false;
       position = simulateArcCollision(position, velocity, dt, collidedX, collidedY);
@@ -464,10 +464,10 @@ namespace PlatformerAStar {
 
         if ((*node.velocity)[0] != 0.0f || m_searchParams.enableVerticalJumpAirControl) {
           if (runSpeed.isValid())
-            func(Node{position, Vec2F{copysign(*runSpeed, velocity[0]), 0.0f}}, false);
+            func(Node{position, Vec2F{std::copysign(*runSpeed, velocity[0]), 0.0f}}, false);
           if (m_searchParams.enableWalkSpeedJumps && walkSpeed.isValid()) {
-            func(Node{position, Vec2F{copysign(*walkSpeed, velocity[0]), 0.0f}}, false);
-            func(Node{position, Vec2F{copysign(*walkSpeed * crawlMultiplier, velocity[0]), 0.0f}}, false);
+            func(Node{position, Vec2F{std::copysign(*walkSpeed, velocity[0]), 0.0f}}, false);
+            func(Node{position, Vec2F{std::copysign(*walkSpeed * crawlMultiplier, velocity[0]), 0.0f}}, false);
           }
         }
         // Only fall straight down if we were going straight up originally.
@@ -489,7 +489,9 @@ namespace PlatformerAStar {
       }
     }
 
-    starAssert(velocity[1] != 0.0f);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((velocity[1] != 0.0f));
+    }
     func(Node{position, velocity}, false);
     return;
   }
@@ -551,7 +553,7 @@ namespace PlatformerAStar {
   Vec2I PathFinder::groundNodePosition(Vec2F pos) const {
     RectI bounds = RectI::integral(boundBox(pos, BoundBoxKind::Full));
 
-    return Vec2I(floor(pos[0]), bounds.yMin() - 1);
+    return Vec2I(std::floor(pos[0]), bounds.yMin() - 1);
   }
 
   Vec2F PathFinder::roundToNode(Vec2F pos) const {
@@ -570,8 +572,8 @@ namespace PlatformerAStar {
     }
     float bottom = boundBox.yMin();
 
-    float x = round(pos[0] / NodeGranularity) * NodeGranularity;
-    float y = round((pos[1] + bottom) / NodeGranularity) * NodeGranularity - bottom;
+    float x = std::round(pos[0] / NodeGranularity) * NodeGranularity;
+    float y = std::round((pos[1] + bottom) / NodeGranularity) * NodeGranularity - bottom;
     return {x, y};
   }
 

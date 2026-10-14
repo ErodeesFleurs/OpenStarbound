@@ -18,7 +18,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -171,7 +171,7 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
 }
 
 Parallax::Parallax(String const& assetFile,
-    uint64_t seed,
+    std::uint64_t seed,
     float verticalOrigin,
     float hueShift,
     Maybe<TreeVariant> parallaxTreeVariant) {
@@ -221,7 +221,7 @@ Json Parallax::store() const {
       {"parallaxTreeVariant", m_parallaxTreeVariant ? m_parallaxTreeVariant->toJson() : Json()},
       {"hueShift", m_hueShift},
       {"imageDirectory", m_imageDirectory},
-      {"layers", m_layers.transformed(mem_fn(&ParallaxLayer::store))}};
+      {"layers", m_layers.transformed(std::mem_fn(&ParallaxLayer::store))}};
 }
 
 void Parallax::fadeToSkyColor(Color const& skyColor) {
@@ -231,7 +231,7 @@ void Parallax::fadeToSkyColor(Color const& skyColor) {
 }
 
 ParallaxPtr Parallax::createOverlay(String const& assetFile) const {
-  return make_shared<Parallax>(assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
+  return std::make_shared<Parallax>(assetFile, m_seed, m_verticalOrigin, m_hueShift, m_parallaxTreeVariant);
 }
 
 ParallaxLayers const& Parallax::layers() const {

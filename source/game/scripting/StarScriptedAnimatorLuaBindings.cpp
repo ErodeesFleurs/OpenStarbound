@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.lua;
@@ -41,14 +41,14 @@ module star.scripted_animator_lua_bindings;
 import star.math_common;
 namespace Star {
 
-LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* networkedAnimator, function<Json(String const&, Json const&)> getParameter) {
+LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* networkedAnimator, std::function<Json(String const&, Json const&)> getParameter) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("animationParameter", getParameter);
-  callbacks.registerCallbackWithSignature<Maybe<Vec2F>, String, String>("partPoint", bind(&NetworkedAnimator::partPoint, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<Maybe<PolyF>, String, String>("partPoly", bind(&NetworkedAnimator::partPoly, networkedAnimator, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<String>, Maybe<int>>("partProperty", bind(&NetworkedAnimator::partProperty, networkedAnimator, _1, _2, _3, _4, _5));
-  callbacks.registerCallbackWithSignature<Json, String, String>("partNextProperty", bind(&NetworkedAnimator::partNextProperty, networkedAnimator, _1, _2));
+  callbacks.registerCallbackWithSignature<Maybe<Vec2F>, String, String>("partPoint", std::bind(&NetworkedAnimator::partPoint, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Maybe<PolyF>, String, String>("partPoly", std::bind(&NetworkedAnimator::partPoly, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<String>, Maybe<int>>("partProperty", std::bind(&NetworkedAnimator::partProperty, networkedAnimator, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+  callbacks.registerCallbackWithSignature<Json, String, String>("partNextProperty", std::bind(&NetworkedAnimator::partNextProperty, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallback("transformPoint", [networkedAnimator] (Vec2F point, String const& part) -> Vec2F {
       return networkedAnimator->partTransformation(part).transformVec2(point);
@@ -59,37 +59,37 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
     });
 
   callbacks.registerCallbackWithSignature<bool, String, String, bool, bool>(
-      "setLocalAnimationState", bind(&NetworkedAnimator::setLocalState, networkedAnimator, _1, _2, _3, _4));
+      "setLocalAnimationState", std::bind(&NetworkedAnimator::setLocalState, networkedAnimator, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   callbacks.registerCallbackWithSignature<Json, String, String, Maybe<String>, Maybe<int>>(
-      "animationStateProperty", bind(&NetworkedAnimator::stateProperty, networkedAnimator, _1, _2, _3, _4));
+      "animationStateProperty", std::bind(&NetworkedAnimator::stateProperty, networkedAnimator, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
   callbacks.registerCallbackWithSignature<Json, String, String>(
-      "animationStateNextProperty", bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, _1, _2));
+      "animationStateNextProperty", std::bind(&NetworkedAnimator::stateNextProperty, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<String, String>(
-      "animationState", bind(&NetworkedAnimator::state, networkedAnimator, _1));
+      "animationState", std::bind(&NetworkedAnimator::state, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<int, String>(
-      "animationStateFrame", bind(&NetworkedAnimator::stateFrame, networkedAnimator, _1));
+      "animationStateFrame", std::bind(&NetworkedAnimator::stateFrame, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<int, String>(
-      "animationStateNextFrame", bind(&NetworkedAnimator::stateNextFrame, networkedAnimator, _1));
+      "animationStateNextFrame", std::bind(&NetworkedAnimator::stateNextFrame, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<float, String>(
-      "animationStateFrameProgress", bind(&NetworkedAnimator::stateFrameProgress, networkedAnimator, _1));
+      "animationStateFrameProgress", std::bind(&NetworkedAnimator::stateFrameProgress, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<float, String>(
-      "animationStateTimer", bind(&NetworkedAnimator::stateTimer, networkedAnimator, _1));
+      "animationStateTimer", std::bind(&NetworkedAnimator::stateTimer, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<bool, String>(
-      "animationStateReverse", bind(&NetworkedAnimator::stateReverse, networkedAnimator, _1));
+      "animationStateReverse", std::bind(&NetworkedAnimator::stateReverse, networkedAnimator, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<float, String, Maybe<String>>(
-      "stateCycle", bind(&NetworkedAnimator::stateCycle, networkedAnimator, _1, _2));
+      "stateCycle", std::bind(&NetworkedAnimator::stateCycle, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<int, String, Maybe<String>>(
-      "stateFrames", bind(&NetworkedAnimator::stateFrames, networkedAnimator, _1, _2));
+      "stateFrames", std::bind(&NetworkedAnimator::stateFrames, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallbackWithSignature<bool, String, Maybe<String>>(
-      "hasState", bind(&NetworkedAnimator::hasState, networkedAnimator, _1, _2));
+      "hasState", std::bind(&NetworkedAnimator::hasState, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallbackWithSignature<bool, String>(
-      "hasTransformationGroup", bind(&NetworkedAnimator::hasTransformationGroup, networkedAnimator, _1));
+      "hasTransformationGroup", std::bind(&NetworkedAnimator::hasTransformationGroup, networkedAnimator, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<void, String, Vec2F>("translateLocalTransformationGroup",
-      bind(&NetworkedAnimator::translateLocalTransformationGroup, networkedAnimator, _1, _2));
+      std::bind(&NetworkedAnimator::translateLocalTransformationGroup, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallback("rotateLocalTransformationGroup",
       [networkedAnimator](String const& transformationGroup, float rotation, Maybe<Vec2F> const& rotationCenter) {
         networkedAnimator->rotateLocalTransformationGroup(transformationGroup, rotation, rotationCenter.value());
@@ -107,18 +107,18 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
       });
   callbacks.registerCallbackWithSignature<void, String, float, float, float, float, float, float>(
       "transformLocalTransformationGroup",
-      bind(&NetworkedAnimator::transformLocalTransformationGroup, networkedAnimator, _1, _2, _3, _4, _5, _6, _7));
+      std::bind(&NetworkedAnimator::transformLocalTransformationGroup, networkedAnimator, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6, std::placeholders::_7));
   callbacks.registerCallbackWithSignature<void, String>(
-      "resetLocalTransformationGroup", bind(&NetworkedAnimator::resetLocalTransformationGroup, networkedAnimator, _1));
+      "resetLocalTransformationGroup", std::bind(&NetworkedAnimator::resetLocalTransformationGroup, networkedAnimator, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, String, Mat3F>(
-      "setLocalTransformationGroup", bind(&NetworkedAnimator::setLocalTransformationGroup, networkedAnimator, _1, _2));
+      "setLocalTransformationGroup", std::bind(&NetworkedAnimator::setLocalTransformationGroup, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<Mat3F, String>(
-      "getLocalTransformationGroup", bind(&NetworkedAnimator::getLocalTransformationGroup, networkedAnimator, _1));
+      "getLocalTransformationGroup", std::bind(&NetworkedAnimator::getLocalTransformationGroup, networkedAnimator, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
-      "addPartDrawables", bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, _1, _2));
+      "addPartDrawables", std::bind(&NetworkedAnimator::addPartDrawables, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void, String, List<Drawable>>(
-      "setPartDrawables", bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, _1, _2));
+      "setPartDrawables", std::bind(&NetworkedAnimator::setPartDrawables, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallback("addPartJsonDrawables",
     [networkedAnimator](String const& part, JsonArray drawablesConfig) {
       networkedAnimator->addPartDrawables(part, drawablesConfig.transformed([](Json config) -> Drawable {
@@ -134,9 +134,9 @@ LuaCallbacks LuaBindings::makeScriptedAnimatorCallbacks(NetworkedAnimator* netwo
 
 
   callbacks.registerCallbackWithSignature<String, String, String>(
-      "applyPartTags", bind(&NetworkedAnimator::applyPartTags, networkedAnimator, _1, _2));
+      "applyPartTags", std::bind(&NetworkedAnimator::applyPartTags, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
   callbacks.registerCallbackWithSignature<void, String, Maybe<String>>(
-      "setLocalTag", bind(&NetworkedAnimator::setLocalTag, networkedAnimator, _1, _2));
+      "setLocalTag", std::bind(&NetworkedAnimator::setLocalTag, networkedAnimator, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallback("flipped", [networkedAnimator]() -> bool {
         return networkedAnimator->flipped();

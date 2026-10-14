@@ -1,12 +1,18 @@
 module;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.lua;
 
 namespace Star {
-STAR_CLASS(NetworkedAnimator);
+class NetworkedAnimator;
+using NetworkedAnimatorPtr = std::shared_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstPtr = std::shared_ptr<const NetworkedAnimator>;
+using NetworkedAnimatorWeakPtr = std::weak_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstWeakPtr = std::weak_ptr<const NetworkedAnimator>;
+using NetworkedAnimatorUPtr = std::unique_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstUPtr = std::unique_ptr<const NetworkedAnimator>;
 }
 
 export module star.networked_animator_lua_bindings;

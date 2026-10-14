@@ -1,4 +1,6 @@
 #define STEAM_API_EXPORTS
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
 #include "../application/StarSteamDispatch.hpp"
 
 import std;
@@ -124,7 +126,7 @@ S_API bool S_CALLTYPE SteamAPI_ManualDispatch_GetAPICallResult(HSteamPipe, Steam
                                                                void* out, int size, int callback, bool* failed) {
   auto found = api->results.find(call);
   if (found == api->results.end() || found->second.packet.callback != callback
-      || found->second.packet.payload.size() != static_cast<size_t>(size))
+      || found->second.packet.payload.size() != static_cast<std::size_t>(size))
     return false;
   std::memcpy(out, found->second.packet.payload.data(), size);
   *failed = found->second.failed;

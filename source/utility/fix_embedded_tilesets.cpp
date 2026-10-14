@@ -6,7 +6,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.bi_map;
@@ -64,7 +64,7 @@ String createRelativePath(String fromFile, String toFile) {
 Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
   if (tileset.contains("source"))
     return {};
-  size_t firstGid = tileset.getUInt("firstgid");
+  std::size_t firstGid = tileset.getUInt("firstgid");
   String tilesetName = tileset.getString("name");
   String tilesetFileName = File::relativeTo(tilesetPath, tilesetName + ".json");
   if (!File::exists(tilesetFileName))
@@ -75,7 +75,7 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
 Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
   JsonArray tilesets = mapJson.getArray("tilesets");
   bool changed = false;
-  for (size_t i = 0; i < tilesets.size(); ++i) {
+  for (std::size_t i = 0; i < tilesets.size(); ++i) {
     if (Maybe<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
       tilesets[i] = *tileset;
       changed = true;
@@ -86,8 +86,8 @@ Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPat
   return mapJson.set("tilesets", tilesets);
 }
 
-void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, function<void(String)> func) {
-  for (pair<String, bool> entry : File::dirList(dirName)) {
+void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, std::function<void(String)> func) {
+  for (std::pair<String, bool> entry : File::dirList(dirName)) {
     String entryPath = File::relativeTo(dirName, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree (and
     // this walk writes to the files it finds), or at one of its own parents.
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     String searchRoot = options.arguments[0];
     String tilesetPath = options.arguments[1];

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -42,8 +42,20 @@ struct ActorMovementControllerExceptionTag {
 };
 using ActorMovementControllerException = StarError<ActorMovementControllerExceptionTag, MovementControllerException>;
 
-STAR_CLASS(ActorMovementController);
-STAR_CLASS(PathController);
+class ActorMovementController;
+using ActorMovementControllerPtr = std::shared_ptr<ActorMovementController>;
+using ActorMovementControllerConstPtr = std::shared_ptr<const ActorMovementController>;
+using ActorMovementControllerWeakPtr = std::weak_ptr<ActorMovementController>;
+using ActorMovementControllerConstWeakPtr = std::weak_ptr<const ActorMovementController>;
+using ActorMovementControllerUPtr = std::unique_ptr<ActorMovementController>;
+using ActorMovementControllerConstUPtr = std::unique_ptr<const ActorMovementController>;
+class PathController;
+using PathControllerPtr = std::shared_ptr<PathController>;
+using PathControllerConstPtr = std::shared_ptr<const PathController>;
+using PathControllerWeakPtr = std::weak_ptr<PathController>;
+using PathControllerConstWeakPtr = std::weak_ptr<const PathController>;
+using PathControllerUPtr = std::unique_ptr<PathController>;
+using PathControllerConstUPtr = std::unique_ptr<const PathController>;
 
 struct ActorJumpProfile {
   friend DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
@@ -275,8 +287,8 @@ public:
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
 
-  Maybe<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
-  Maybe<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
+  Maybe<std::pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
+  Maybe<std::pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, Maybe<PlatformerAStar::Parameters> const& parameters = {});
 
   // Used for user controller input.
   void setMoveSpeedMultiplier(float multiplier = 1.0f);
@@ -344,8 +356,8 @@ private:
 
   Maybe<Vec2F> m_controlFly;
 
-  Maybe<pair<Vec2F, bool>> m_controlPathMove;
-  Maybe<pair<Vec2F, bool>> m_pathMoveResult;
+  Maybe<std::pair<Vec2F, bool>> m_controlPathMove;
+  Maybe<std::pair<Vec2F, bool>> m_pathMoveResult;
   PathControllerPtr m_pathController;
 
   ActorMovementParameters m_controlParameters;
@@ -397,7 +409,7 @@ private:
 
   Maybe<Direction> m_controlFace;
 
-  size_t m_edgeIndex;
+  std::size_t m_edgeIndex;
   float m_edgeTimer;
   Maybe<PlatformerAStar::Path> m_path;
 };

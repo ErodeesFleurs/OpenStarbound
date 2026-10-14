@@ -16,7 +16,6 @@ import star.btree_database;
 #include "StarCasting.hpp"
 import star.ordered_set;
 import star.list;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 import star.rpc_promise;
@@ -128,7 +127,7 @@ CelestialCoordinate ClientContext::shipCoordinate() const {
   return m_shipCoordinate.get();
 }
 
-Maybe<pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
+Maybe<std::pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
   return m_orbitWarpActionNetState.get();
 }
 

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.json;
@@ -19,7 +19,13 @@ import star.animation;
 
 namespace Star {
 
-STAR_CLASS(AiDatabase);
+class AiDatabase;
+using AiDatabasePtr = std::shared_ptr<AiDatabase>;
+using AiDatabaseConstPtr = std::shared_ptr<const AiDatabase>;
+using AiDatabaseWeakPtr = std::weak_ptr<AiDatabase>;
+using AiDatabaseConstWeakPtr = std::weak_ptr<const AiDatabase>;
+using AiDatabaseUPtr = std::unique_ptr<AiDatabase>;
+using AiDatabaseConstUPtr = std::unique_ptr<const AiDatabase>;
 
 class AiDatabase {
 public:

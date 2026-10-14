@@ -20,7 +20,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -47,7 +47,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
   MaterialRenderMatchList matchList;
 
   for (auto const& matchConfig : matchSpec.toArray()) {
-    MaterialRenderMatchPtr match = make_shared<MaterialRenderMatch>();
+    MaterialRenderMatchPtr match = std::make_shared<MaterialRenderMatch>();
 
     Json matchPointList = JsonArray();
     if (auto matchAllPoints = matchConfig.opt("matchAllPoints")) {
@@ -61,7 +61,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
     for (auto const& matchPointConfig : matchPointList.iterateArray()) {
       MaterialMatchPoint matchPoint;
       matchPoint.position = jsonToVec2I(matchPointConfig.get(0));
-      if (abs(matchPoint.position[0]) > MaterialRenderProfileMaxNeighborDistance || abs(matchPoint.position[1]) > MaterialRenderProfileMaxNeighborDistance)
+      if (std::abs(matchPoint.position[0]) > MaterialRenderProfileMaxNeighborDistance || std::abs(matchPoint.position[1]) > MaterialRenderProfileMaxNeighborDistance)
         throw MaterialRenderProfileException(strf("Match position {} outside of maximum rule distance {}",
             matchPoint.position, MaterialRenderProfileMaxNeighborDistance));
       matchPoint.rule = ruleMap.get(matchPointConfig.getString(1));
@@ -77,7 +77,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
     else if (!subMatches.isNull())
       match->subMatches = parseMaterialRenderMatchList(subMatches, ruleMap, pieceMap, matchMap);
 
-    match->requiredLayer = matchConfig.optString("requiredLayer").apply(bind(&EnumMap<TileLayer>::getLeft, &TileLayerNames, _1));
+    match->requiredLayer = matchConfig.optString("requiredLayer").apply(std::bind(&EnumMap<TileLayer>::getLeft, &TileLayerNames, std::placeholders::_1));
     match->haltOnMatch = matchConfig.getBool("haltOnMatch", false);
     match->haltOnSubMatch = matchConfig.getBool("haltOnSubMatch", false);
 
@@ -100,7 +100,7 @@ String MaterialRenderProfile::pieceImage(String const& pieceName, unsigned varia
   return strf("{}?crop={};{};{};{}", texture, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
 }
 
-pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {
+std::pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {
   if (damageType == TileDamageType::Protected)
     return protectedFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
   return crackingFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
@@ -112,7 +112,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   bool lightTransparent = spec.getBool("lightTransparent", false);
   profile.foregroundLightTransparent = spec.getBool("foregroundLightTransparent", lightTransparent);
   profile.backgroundLightTransparent = spec.getBool("backgroundLightTransparent", lightTransparent);
-  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", (uint64_t)MaxMaterialColorVariant + 1) : 0;
+  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", (std::uint64_t)MaxMaterialColorVariant + 1) : 0;
   for (auto& entry : spec.getArray("colorDirectives", JsonArray()))
     profile.colorDirectives.append(entry.toString());
   profile.occludesBehind = spec.getBool("occludesBelow", true);
@@ -122,7 +122,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   profile.representativePiece = spec.getString("representativePiece");
 
   for (auto const& pair : spec.get("rules").iterateObject()) {
-    auto rule = make_shared<MaterialRule>();
+    auto rule = std::make_shared<MaterialRule>();
     rule->join = MaterialJoinTypeNames.getLeft(pair.second.getString("join", "all"));
     for (auto const& ruleEntry : pair.second.getArray("entries", {})) {
       bool inverse = ruleEntry.getBool("inverse", false);
@@ -134,7 +134,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
       } else if (type.equalsIgnoreCase("EqualsSelf")) {
         rule->entries.append({MaterialRule::RuleEqualsSelf{ruleEntry.getBool("matchHue", false)}, inverse});
       } else if (type.equalsIgnoreCase("EqualsId")) {
-        rule->entries.append({MaterialRule::RuleEqualsId{(uint16_t)ruleEntry.getUInt("id")}, inverse});
+        rule->entries.append({MaterialRule::RuleEqualsId{(std::uint16_t)ruleEntry.getUInt("id")}, inverse});
       } else if (type.equalsIgnoreCase("PropertyEquals")) {
         rule->entries.append({MaterialRule::RulePropertyEquals{ruleEntry.getString("propertyName"), ruleEntry.get("propertyValue")}, inverse});
       }
@@ -143,7 +143,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   }
 
   for (auto const& pair : spec.get("pieces").iterateObject()) {
-    auto renderPiece = make_shared<MaterialRenderPiece>();
+    auto renderPiece = std::make_shared<MaterialRenderPiece>();
     renderPiece->pieceId = profile.pieces.size();
 
     renderPiece->texture = AssetPath::relativeTo(relativePath, pair.second.getString("texture", spec.getString("texture")));

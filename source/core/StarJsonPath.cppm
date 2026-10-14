@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -16,7 +16,7 @@ namespace JsonPath {
     Object
   };
 
-  typedef function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)> PathParser;
+  typedef std::function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)> PathParser;
 
   struct ParsingExceptionTag {
     static constexpr char const* name() { return "ParsingException"; }
@@ -44,7 +44,7 @@ namespace JsonPath {
   Maybe<Jsonlike> pathFind(Jsonlike base, PathParser parser, String const& path);
 
   template <typename Jsonlike>
-  using JsonOp = function<Jsonlike(Jsonlike const&, Maybe<String> const&)>;
+  using JsonOp = std::function<Jsonlike(Jsonlike const&, Maybe<String> const&)>;
 
   // Applies a function to the portion of the Json document referred to by the
   // given path, returning the resulting new document.  If the end of the path
@@ -71,18 +71,36 @@ namespace JsonPath {
   Jsonlike pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
 
   template <typename Jsonlike>
-  using EmptyPathOp = function<Jsonlike(Jsonlike const&)>;
+  using EmptyPathOp = std::function<Jsonlike(Jsonlike const&)>;
   template <typename Jsonlike>
-  using ObjectOp = function<Jsonlike(Jsonlike const&, String const&)>;
+  using ObjectOp = std::function<Jsonlike(Jsonlike const&, String const&)>;
   template <typename Jsonlike>
-  using ArrayOp = function<Jsonlike(Jsonlike const&, Maybe<size_t>)>;
+  using ArrayOp = std::function<Jsonlike(Jsonlike const&, Maybe<std::size_t>)>;
 
   template <typename Jsonlike>
   JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
 
-  STAR_CLASS(Path);
-  STAR_CLASS(Pointer);
-  STAR_CLASS(QueryPath);
+  class Path;
+  using PathPtr = std::shared_ptr<Path>;
+  using PathConstPtr = std::shared_ptr<const Path>;
+  using PathWeakPtr = std::weak_ptr<Path>;
+  using PathConstWeakPtr = std::weak_ptr<const Path>;
+  using PathUPtr = std::unique_ptr<Path>;
+  using PathConstUPtr = std::unique_ptr<const Path>;
+  class Pointer;
+  using PointerPtr = std::shared_ptr<Pointer>;
+  using PointerConstPtr = std::shared_ptr<const Pointer>;
+  using PointerWeakPtr = std::weak_ptr<Pointer>;
+  using PointerConstWeakPtr = std::weak_ptr<const Pointer>;
+  using PointerUPtr = std::unique_ptr<Pointer>;
+  using PointerConstUPtr = std::unique_ptr<const Pointer>;
+  class QueryPath;
+  using QueryPathPtr = std::shared_ptr<QueryPath>;
+  using QueryPathConstPtr = std::shared_ptr<const QueryPath>;
+  using QueryPathWeakPtr = std::weak_ptr<QueryPath>;
+  using QueryPathConstWeakPtr = std::weak_ptr<const QueryPath>;
+  using QueryPathUPtr = std::unique_ptr<QueryPath>;
+  using QueryPathConstUPtr = std::unique_ptr<const QueryPath>;
 
   class Path {
   public:
@@ -154,7 +172,7 @@ namespace JsonPath {
       if (value.type() == Json::Type::Array) {
         if (buffer == "-")
           throw TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path);
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        Maybe<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in pathGet(\"{}\")", buffer, path);
 
@@ -190,7 +208,7 @@ namespace JsonPath {
         if (buffer == "-")
           return {};
 
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        Maybe<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
         if (i && *i < value.size())
           value = value.get(*i);
         else
@@ -226,7 +244,7 @@ namespace JsonPath {
       if (iterator == path.end()) {
         return op(value, buffer);
       } else {
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        Maybe<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in pathApply(\"{}\")", buffer, path);
 
@@ -270,7 +288,7 @@ namespace JsonPath {
       if (parent.type() == Json::Type::Array) {
         if (*key == "-")
           return arrayOp(parent, {});
-        Maybe<size_t> i = maybeLexicalCast<size_t>(*key);
+        Maybe<std::size_t> i = maybeLexicalCast<std::size_t>(*key);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in Json path \"{}\"", *key, path);
         if (i && *i > parent.size())
@@ -294,7 +312,7 @@ namespace JsonPath {
     ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) {
       return object.set(key, value);
     };
-    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<size_t> i) {
+    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<std::size_t> i) {
       if (i.isValid())
         return array.set(*i, value);
       return array.append(value);
@@ -310,7 +328,7 @@ namespace JsonPath {
         throw TraversalException::format("Could not find \"{}\" to remove", key);
       return object.eraseKey(key);
     };
-    ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, Maybe<size_t> i) {
+    ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, Maybe<std::size_t> i) {
       if (i.isValid())
         return array.eraseIndex(*i);
       throw TraversalException("Could not remove element after end of array");
@@ -328,7 +346,7 @@ namespace JsonPath {
     ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) {
       return object.set(key, value);
     };
-    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<size_t> i) {
+    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<std::size_t> i) {
       if (i.isValid())
         return array.insert(*i, value);
       return array.append(value);

@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.time;
 import star.string;
 import star.file;
@@ -34,11 +34,11 @@ namespace Star {
 
 LuaRoot::LuaRoot() {
   auto& root = Root::singleton();
-  m_scriptCache = make_shared<ScriptCache>();
+  m_scriptCache = std::make_shared<ScriptCache>();
 
   restart();
 
-  m_rootReloadListener = make_shared<CallbackListener>([cache = m_scriptCache]() {
+  m_rootReloadListener = std::make_shared<CallbackListener>([cache = m_scriptCache]() {
       cache->clear();
     });
   root.registerReloadListener(m_rootReloadListener);
@@ -165,11 +165,11 @@ void LuaRoot::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
     m_luaEngine->tuneAutoGarbageCollection(pause, stepMultiplier);
 }
 
-size_t LuaRoot::luaMemoryUsage() const {
+std::size_t LuaRoot::luaMemoryUsage() const {
   return m_luaEngine ? m_luaEngine->memoryUsage() : 0;
 }
 
-size_t LuaRoot::scriptCacheMemoryUsage() const {
+std::size_t LuaRoot::scriptCacheMemoryUsage() const {
   return m_luaEngine ? m_scriptCache->memoryUsage() : 0;
 }
 
@@ -213,9 +213,9 @@ void LuaRoot::ScriptCache::loadContextScript(LuaContext& context, String const& 
   context.load(scripts.get(assetPath));
 }
 
-size_t LuaRoot::ScriptCache::memoryUsage() const {
+std::size_t LuaRoot::ScriptCache::memoryUsage() const {
   RecursiveMutexLocker locker(mutex);
-  size_t total = 0;
+  std::size_t total = 0;
   for (auto const& p : scripts)
     total += p.second.size();
   return total;

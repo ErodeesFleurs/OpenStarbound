@@ -16,7 +16,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -47,7 +47,7 @@ EffectSourceDatabase::EffectSourceDatabase() {
   auto& files = assets->scanExtension("effectsource");
   assets->queueJsons(files);
   for (auto const& file : files) {
-    auto sourceConfig = make_shared<EffectSourceConfig>(assets->json(file));
+    auto sourceConfig = std::make_shared<EffectSourceConfig>(assets->json(file));
     if (m_sourceConfigs.contains(sourceConfig->kind()))
       throw StarException(
           strf("Duplicate effect source asset kind Name {}. configfile {}", sourceConfig->kind(), file));
@@ -73,7 +73,7 @@ String const& EffectSourceConfig::kind() {
 }
 
 EffectSourcePtr EffectSourceConfig::instance(String const& suggestedSpawnLocation) {
-  return make_shared<EffectSource>(kind(), suggestedSpawnLocation, m_config.getObject("definition"));
+  return std::make_shared<EffectSource>(kind(), suggestedSpawnLocation, m_config.getObject("definition"));
 }
 
 EffectSource::EffectSource(String const& kind, String suggestedSpawnLocation, Json const& definition) {
@@ -208,7 +208,7 @@ List<AudioInstancePtr> soundsFromDefinition(Json const& config, Vec2F const& pos
         entry = t;
       }
 
-      auto sample = make_shared<AudioInstance>(*assets->audio(entry.getString("resource")));
+      auto sample = std::make_shared<AudioInstance>(*assets->audio(entry.getString("resource")));
       sample->setLoops(entry.getInt("loops", 0));
       sample->setVolume(entry.getFloat("volume", 1.0f));
       sample->setPitchMultiplier(entry.getFloat("pitch", 1.0f) + Random::randf(-1, 1) * entry.getFloat("pitchVariability", 0.0f));

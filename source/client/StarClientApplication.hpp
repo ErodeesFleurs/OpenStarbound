@@ -1,9 +1,9 @@
 #pragma once
+import std;
 import star.json;
 import star.xx_hash;
 import star.id_map;
 import star.image;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.list;
@@ -43,7 +43,6 @@ import star.io_device;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -202,8 +201,20 @@ import star.main_application;
 
 namespace Star {
 
-STAR_CLASS(Input);
-STAR_CLASS(Voice);
+class Input;
+using InputPtr = std::shared_ptr<Input>;
+using InputConstPtr = std::shared_ptr<Input const>;
+using InputWeakPtr = std::weak_ptr<Input>;
+using InputConstWeakPtr = std::weak_ptr<Input const>;
+using InputUPtr = std::unique_ptr<Input>;
+using InputConstUPtr = std::unique_ptr<Input const>;
+class Voice;
+using VoicePtr = std::shared_ptr<Voice>;
+using VoiceConstPtr = std::shared_ptr<Voice const>;
+using VoiceWeakPtr = std::weak_ptr<Voice>;
+using VoiceConstWeakPtr = std::weak_ptr<Voice const>;
+using VoiceUPtr = std::unique_ptr<Voice>;
+using VoiceConstUPtr = std::unique_ptr<Voice const>;
 
 class ClientApplication : public Application {
 public:
@@ -227,7 +238,7 @@ protected:
   virtual void update() override;
   virtual void render() override;
 
-  virtual void getAudioData(int16_t* stream, size_t len) override;
+  virtual void getAudioData(std::int16_t* stream, std::size_t len) override;
 
 private:
   enum class MainAppState {
@@ -310,7 +321,7 @@ private:
   
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;
-  StringMap<size_t> m_labelledPostProcessLayers;
+  StringMap<std::size_t> m_labelledPostProcessLayers;
 
   // Valid if main app state == SinglePlayer
   UniverseServerPtr m_universeServer;
@@ -336,7 +347,7 @@ private:
 
   Maybe<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
   Maybe<HostAddressWithPort> m_currentRemoteJoin;
-  int64_t m_timeSinceJoin = 0;
+  std::int64_t m_timeSinceJoin = 0;
 
   ByteArray m_immediateFont;
 

@@ -1,5 +1,6 @@
 module;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.json;
 import star.id_map;
 import star.random;
@@ -68,7 +69,13 @@ import star.net_element_float_fields;
 
 namespace Star {
 
-STAR_CLASS(ContainerObject);
+class ContainerObject;
+using ContainerObjectPtr = std::shared_ptr<ContainerObject>;
+using ContainerObjectConstPtr = std::shared_ptr<const ContainerObject>;
+using ContainerObjectWeakPtr = std::weak_ptr<ContainerObject>;
+using ContainerObjectConstWeakPtr = std::weak_ptr<const ContainerObject>;
+using ContainerObjectUPtr = std::unique_ptr<ContainerObject>;
+using ContainerObjectConstUPtr = std::unique_ptr<const ContainerObject>;
 
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
@@ -76,7 +83,7 @@ public:
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
 
   void destroy(RenderCallback* renderCallback) override;
@@ -102,12 +109,12 @@ public:
   void burnContainerContents() override;
 
   RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
-  RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) override;
-  RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) override;
-  RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) override;
-  RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) override;
+  RpcPromise<ItemPtr> putItems(std::size_t slot, ItemPtr const& items) override;
+  RpcPromise<ItemPtr> takeItems(std::size_t slot, std::size_t count = NPos) override;
+  RpcPromise<ItemPtr> swapItems(std::size_t slot, ItemPtr const& items, bool tryCombine = true) override;
+  RpcPromise<ItemPtr> applyAugment(std::size_t slot, ItemPtr const& augment) override;
   RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
-  RpcPromise<bool> consumeItems(size_t slot, size_t count) override;
+  RpcPromise<bool> consumeItems(std::size_t slot, std::size_t count) override;
   RpcPromise<List<ItemPtr>> clearContainer() override;
 
 protected:
@@ -125,16 +132,16 @@ private:
 
   ItemPtr doAddItems(ItemPtr const& items);
   ItemPtr doStackItems(ItemPtr const& items);
-  ItemPtr doPutItems(size_t slot, ItemPtr const& items);
-  ItemPtr doTakeItems(size_t slot, size_t count = NPos);
-  ItemPtr doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine = true);
-  ItemPtr doApplyAugment(size_t slot, ItemPtr const& augment);
+  ItemPtr doPutItems(std::size_t slot, ItemPtr const& items);
+  ItemPtr doTakeItems(std::size_t slot, std::size_t count = NPos);
+  ItemPtr doSwapItems(std::size_t slot, ItemPtr const& items, bool tryCombine = true);
+  ItemPtr doApplyAugment(std::size_t slot, ItemPtr const& augment);
   bool doConsumeItems(ItemDescriptor const& descriptor);
-  bool doConsumeItems(size_t slot, size_t count);
+  bool doConsumeItems(std::size_t slot, std::size_t count);
   List<ItemPtr> doClearContainer();
 
   template<typename T>
-  RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, function<T(Json)> converter);
+  RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, std::function<T(Json)> converter);
 
   void itemsUpdated();
 
@@ -151,8 +158,8 @@ private:
   bool m_initialized;
   int m_count;
   int m_currentState;
-  int64_t m_animationFrameCooldown;
-  int64_t m_autoCloseCooldown;
+  std::int64_t m_animationFrameCooldown;
+  std::int64_t m_autoCloseCooldown;
 
   ItemRecipe m_goalRecipe;
 

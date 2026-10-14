@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.maybe;
 import star.format;
@@ -37,27 +37,27 @@ struct LuaUserDataMethods<RandomSource> {
   static LuaMethods<RandomSource> make() {
     LuaMethods<RandomSource> methods;
 
-    methods.registerMethod("init", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+    methods.registerMethod("init", [](RandomSource& randomSource, Maybe<std::uint64_t> seed)
       { seed ? randomSource.init(*seed) : randomSource.init(); });
-    methods.registerMethod("addEntropy", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+    methods.registerMethod("addEntropy", [](RandomSource& randomSource, Maybe<std::uint64_t> seed)
       { seed ? randomSource.addEntropy(*seed) : randomSource.addEntropy(); });
 
-    methods.registerMethodWithSignature<uint32_t, RandomSource&>("randu32", mem_fn(&RandomSource::randu32));
-    methods.registerMethodWithSignature<uint64_t, RandomSource&>("randu64", mem_fn(&RandomSource::randu64));
-    methods.registerMethodWithSignature<int32_t, RandomSource&>("randi32", mem_fn(&RandomSource::randi32));
-    methods.registerMethodWithSignature<int64_t, RandomSource&>("randi64", mem_fn(&RandomSource::randi64));
+    methods.registerMethodWithSignature<std::uint32_t, RandomSource&>("randu32", std::mem_fn(&RandomSource::randu32));
+    methods.registerMethodWithSignature<std::uint64_t, RandomSource&>("randu64", std::mem_fn(&RandomSource::randu64));
+    methods.registerMethodWithSignature<std::int32_t, RandomSource&>("randi32", std::mem_fn(&RandomSource::randi32));
+    methods.registerMethodWithSignature<std::int64_t, RandomSource&>("randi64", std::mem_fn(&RandomSource::randi64));
 
     methods.registerMethod("randf", [](RandomSource& randomSource, Maybe<float> arg1, Maybe<float> arg2)
       { return (arg1 && arg2) ? randomSource.randf(*arg1, *arg2) : randomSource.randf(); });
     methods.registerMethod("randd", [](RandomSource& randomSource, Maybe<double> arg1, Maybe<double> arg2)
       { return (arg1 && arg2) ? randomSource.randd(*arg1, *arg2) : randomSource.randd(); });
 
-    methods.registerMethodWithSignature<bool, RandomSource&>("randb", mem_fn(&RandomSource::randb));
+    methods.registerMethodWithSignature<bool, RandomSource&>("randb", std::mem_fn(&RandomSource::randb));
 
-    methods.registerMethod("randInt", [](RandomSource& randomSource, int64_t arg1, Maybe<int64_t> arg2)
+    methods.registerMethod("randInt", [](RandomSource& randomSource, std::int64_t arg1, Maybe<std::int64_t> arg2)
       { return arg2 ? randomSource.randInt(arg1, *arg2) : randomSource.randInt(arg1); });
 
-    methods.registerMethod("randUInt", [](RandomSource& randomSource, uint64_t arg1, Maybe<uint64_t> arg2)
+    methods.registerMethod("randUInt", [](RandomSource& randomSource, std::uint64_t arg1, Maybe<std::uint64_t> arg2)
       { return arg2 ? randomSource.randUInt(arg1, *arg2) : randomSource.randUInt(arg1); });
 
     return methods;
@@ -142,12 +142,12 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) { return a == b; });
   callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
-  callbacks.registerCallback("makeRandomSource", [](Maybe<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
+  callbacks.registerCallback("makeRandomSource", [](Maybe<std::uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
   callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
 
   callbacks.copyCallback("parseJson", "jsonFromString"); // SE compat
 
-  auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> uint64_t {
+  auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> std::uint64_t {
     XXHash64 hash;
 
     for (auto const& value : values) {
@@ -167,14 +167,14 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   };
 
   callbacks.registerCallback("staticRandomI32",
-      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) { return (int32_t)hash64LuaValues(hashValues); });
+      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) { return (std::int32_t)hash64LuaValues(hashValues); });
 
   callbacks.registerCallback("staticRandomI32Range",
-      [hash64LuaValues](int32_t min, int32_t max, LuaVariadic<LuaValue> const& hashValues) {
+      [hash64LuaValues](std::int32_t min, std::int32_t max, LuaVariadic<LuaValue> const& hashValues) {
         if (max < min)
           throw LuaException("Maximum bound in staticRandomI32Range must be >= minimum bound!");
-        uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
-        return (int32_t)(hash64LuaValues(hashValues) / denom + min);
+        std::uint64_t denom = (std::uint64_t)(-1) / ((std::uint64_t)(max - min) + 1);
+        return (std::int32_t)(hash64LuaValues(hashValues) / denom + min);
       });
 
   callbacks.registerCallback("staticRandomDouble",
@@ -190,14 +190,14 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
       });
   
   callbacks.registerCallback("millisecondsSinceEpoch",
-      []() -> int64_t {
+      []() -> std::int64_t {
         return Time::millisecondsSinceEpoch();
       });
   
   callbacks.registerCallback("makePromise",
-      []() -> pair<RpcPromise<Json>,AutoFailRpcPromiseKeeperPtr<Json>> {
+      []() -> std::pair<RpcPromise<Json>,AutoFailRpcPromiseKeeperPtr<Json>> {
         auto pair = RpcPromise<Json>::createPair();
-        return make_pair(pair.first,make_shared<AutoFailRpcPromiseKeeper<Json>>(pair.second));
+        return std::make_pair(pair.first,std::make_shared<AutoFailRpcPromiseKeeper<Json>>(pair.second));
       });
 
   return callbacks;

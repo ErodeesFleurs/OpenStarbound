@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -40,21 +40,81 @@ import star.pane;
 import star.game_timers;
 
 namespace Star {
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 }
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(TextBoxWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(TabSetWidget);
+class WorldClient;
+using WorldClientPtr = std::shared_ptr<WorldClient>;
+using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
+using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
+using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
+using WorldClientUPtr = std::unique_ptr<WorldClient>;
+using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<ItemBag const>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<ItemBag const>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<ItemBag const>;
+class ItemGridWidget;
+using ItemGridWidgetPtr = std::shared_ptr<ItemGridWidget>;
+using ItemGridWidgetConstPtr = std::shared_ptr<ItemGridWidget const>;
+using ItemGridWidgetWeakPtr = std::weak_ptr<ItemGridWidget>;
+using ItemGridWidgetConstWeakPtr = std::weak_ptr<ItemGridWidget const>;
+using ItemGridWidgetUPtr = std::unique_ptr<ItemGridWidget>;
+using ItemGridWidgetConstUPtr = std::unique_ptr<ItemGridWidget const>;
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
+class TextBoxWidget;
+using TextBoxWidgetPtr = std::shared_ptr<TextBoxWidget>;
+using TextBoxWidgetConstPtr = std::shared_ptr<TextBoxWidget const>;
+using TextBoxWidgetWeakPtr = std::weak_ptr<TextBoxWidget>;
+using TextBoxWidgetConstWeakPtr = std::weak_ptr<TextBoxWidget const>;
+using TextBoxWidgetUPtr = std::unique_ptr<TextBoxWidget>;
+using TextBoxWidgetConstUPtr = std::unique_ptr<TextBoxWidget const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class TabSetWidget;
+using TabSetWidgetPtr = std::shared_ptr<TabSetWidget>;
+using TabSetWidgetConstPtr = std::shared_ptr<TabSetWidget const>;
+using TabSetWidgetWeakPtr = std::weak_ptr<TabSetWidget>;
+using TabSetWidgetConstWeakPtr = std::weak_ptr<TabSetWidget const>;
+using TabSetWidgetUPtr = std::unique_ptr<TabSetWidget>;
+using TabSetWidgetConstUPtr = std::unique_ptr<TabSetWidget const>;
 
-STAR_CLASS(MerchantPane);
+class MerchantPane;
+using MerchantPanePtr = std::shared_ptr<MerchantPane>;
+using MerchantPaneConstPtr = std::shared_ptr<MerchantPane const>;
+using MerchantPaneWeakPtr = std::weak_ptr<MerchantPane>;
+using MerchantPaneConstWeakPtr = std::weak_ptr<MerchantPane const>;
+using MerchantPaneUPtr = std::unique_ptr<MerchantPane>;
+using MerchantPaneConstUPtr = std::unique_ptr<MerchantPane const>;
 
 class MerchantPane : public Pane {
 public:
@@ -96,7 +156,7 @@ private:
   GameTimer m_refreshTimer;
 
   JsonArray m_itemList;
-  size_t m_selectedIndex;
+  std::size_t m_selectedIndex;
   ItemPtr m_selectedItem;
 
   float m_buyFactor;

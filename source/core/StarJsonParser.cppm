@@ -1,6 +1,4 @@
 module;
-
-#include "StarConfig.hpp"
 import star.format;
 import std;
 
@@ -14,24 +12,24 @@ struct JsonStream {
   virtual ~JsonStream() {}
 
   virtual void beginObject() = 0;
-  virtual void objectKey(char32_t const*, size_t) = 0;
+  virtual void objectKey(char32_t const*, std::size_t) = 0;
   virtual void endObject() = 0;
 
   virtual void beginArray() = 0;
   virtual void endArray() = 0;
 
-  virtual void putString(char32_t const*, size_t) = 0;
-  virtual void putDouble(char32_t const*, size_t) = 0;
-  virtual void putInteger(char32_t const*, size_t) = 0;
+  virtual void putString(char32_t const*, std::size_t) = 0;
+  virtual void putDouble(char32_t const*, std::size_t) = 0;
+  virtual void putInteger(char32_t const*, std::size_t) = 0;
   virtual void putBoolean(bool) = 0;
   virtual void putNull() = 0;
 
-  virtual void putWhitespace(char32_t const*, size_t) = 0;
+  virtual void putWhitespace(char32_t const*, std::size_t) = 0;
   virtual void putColon() = 0;
   virtual void putComma() = 0;
 };
 
-enum class JsonParseType : uint8_t {
+enum class JsonParseType : std::uint8_t {
   Top, // Top-level Object or Array
   Value, // Any singular Json value
   Sequence // Like an array, but without needing the [] or commas.
@@ -72,11 +70,11 @@ public:
     return m_error;
   }
 
-  size_t line() const {
+  std::size_t line() const {
     return m_line + 1;
   }
 
-  size_t column() const {
+  std::size_t column() const {
     return m_column + 1;
   }
 
@@ -554,8 +552,8 @@ private:
   char32_t m_char;
   InputIterator m_current;
   InputIterator m_end;
-  size_t m_line;
-  size_t m_column;
+  std::size_t m_line;
+  std::size_t m_column;
   const char* m_error;
   JsonStream& m_stream;
 };
@@ -573,7 +571,7 @@ public:
     write('{');
   }
 
-  void objectKey(char32_t const* s, size_t len) {
+  void objectKey(char32_t const* s, std::size_t len) {
     if (currentState() == ObjectElement) {
       if (m_pretty)
         write('\n');
@@ -619,7 +617,7 @@ public:
     write(']');
   }
 
-  void putString(char32_t const* s, size_t len) {
+  void putString(char32_t const* s, std::size_t len) {
     startValue();
 
     write('"');
@@ -688,15 +686,15 @@ public:
     write('"');
   }
 
-  void putDouble(char32_t const* s, size_t len) {
+  void putDouble(char32_t const* s, std::size_t len) {
     startValue();
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
-  void putInteger(char32_t const* s, size_t len) {
+  void putInteger(char32_t const* s, std::size_t len) {
     startValue();
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
@@ -724,9 +722,9 @@ public:
     write('l');
   }
 
-  void putWhitespace(char32_t const* s, size_t len) {
+  void putWhitespace(char32_t const* s, std::size_t len) {
     // If m_pretty is true, extra spurious whitespace will be inserted.
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
@@ -789,7 +787,7 @@ private:
     if (m_state.empty())
       return Top;
     else
-      return *prev(m_state.end());
+      return *std::prev(m_state.end());
   }
 
   void write(char32_t c) {

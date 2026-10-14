@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.list;
@@ -17,7 +18,6 @@ import star.font;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -100,7 +100,7 @@ MainInterfaceConfigPtr MainInterfaceConfig::loadFromAssets() {
   auto assets = root.assets();
   auto imageMetadata = root.imageMetadataDatabase();
 
-  auto config = make_shared<MainInterfaceConfig>();
+  auto config = std::make_shared<MainInterfaceConfig>();
 
   config->textStyle = assets->json("/interface.config:textStyle");
   config->inventoryImage = assets->json("/interface.config:mainBar.inventory.base").toString();

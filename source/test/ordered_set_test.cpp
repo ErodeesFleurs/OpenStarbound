@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.ordered_set;
 import star.list;
 

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -267,7 +267,7 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
       response = res.get<String>();
     } else {
       Uuid uuid;
-      m_commandPromises[uuid] = make_pair(message.fromConnection,res.get<RpcPromise<String>>());
+      m_commandPromises[uuid] = std::make_pair(message.fromConnection,res.get<RpcPromise<String>>());
     }
   } else {
     response = strf("No such command {}", command);

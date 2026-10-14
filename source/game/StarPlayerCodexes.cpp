@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -38,7 +38,7 @@ PlayerCodexes::PlayerCodexes() : PlayerCodexes(Json{}) {}
 PlayerCodexes::PlayerCodexes(Json const& variant) {
   if (variant) {
     auto assets = Root::singleton().assets();
-    auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
+    auto codexData = jsonToMapV<StringMap<bool>>(variant, std::mem_fn(&Json::toBool));
     for (auto pair : codexData) {
       if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
         m_codexes[pair.first] = CodexEntry{codex, pair.second};
@@ -59,7 +59,7 @@ List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
     result.append(pair.second);
   sort(result,
       [](CodexEntry const& left, CodexEntry const& right) -> bool {
-        return make_tuple(left.second, left.first->title()) < make_tuple(right.second, right.first->title());
+        return std::make_tuple(left.second, left.first->title()) < std::make_tuple(right.second, right.first->title());
       });
   return result;
 }

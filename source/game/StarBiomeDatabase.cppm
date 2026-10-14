@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -25,10 +25,22 @@ import star.sky_types;
 
 namespace Star {
 
-STAR_STRUCT(Biome);
+struct Biome;
+using BiomePtr = std::shared_ptr<Biome>;
+using BiomeConstPtr = std::shared_ptr<const Biome>;
+using BiomeWeakPtr = std::weak_ptr<Biome>;
+using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
+using BiomeUPtr = std::unique_ptr<Biome>;
+using BiomeConstUPtr = std::unique_ptr<const Biome>;
 struct BiomePlaceables;
 
-STAR_CLASS(BiomeDatabase);
+class BiomeDatabase;
+using BiomeDatabasePtr = std::shared_ptr<BiomeDatabase>;
+using BiomeDatabaseConstPtr = std::shared_ptr<const BiomeDatabase>;
+using BiomeDatabaseWeakPtr = std::weak_ptr<BiomeDatabase>;
+using BiomeDatabaseConstWeakPtr = std::weak_ptr<const BiomeDatabase>;
+using BiomeDatabaseUPtr = std::unique_ptr<BiomeDatabase>;
+using BiomeDatabaseConstUPtr = std::unique_ptr<const BiomeDatabase>;
 
 class BiomeDatabase {
 public:
@@ -36,11 +48,11 @@ public:
 
   StringList biomeNames() const;
 
-  float biomeHueShift(String const& biomeName, uint64_t seed) const;
+  float biomeHueShift(String const& biomeName, std::uint64_t seed) const;
   bool biomeHasWeather(String const& biomeName) const;
-  WeatherPool biomeWeathers(String const& biomeName, uint64_t seed, float threatLevel) const;
+  WeatherPool biomeWeathers(String const& biomeName, std::uint64_t seed, float threatLevel) const;
   bool biomeIsAirless(String const& biomeName) const;
-  SkyColoring biomeSkyColoring(String const& biomeName, uint64_t seed) const;
+  SkyColoring biomeSkyColoring(String const& biomeName, std::uint64_t seed) const;
   String biomeFriendlyName(String const& biomeName) const;
   StringList biomeStatusEffects(String const& biomeName) const;
   StringList biomeOres(String const& biomeName, float threatLevel) const;
@@ -48,7 +60,7 @@ public:
   StringList weatherNames() const;
   WeatherType weatherType(String const& weatherName) const;
 
-  BiomePtr createBiome(String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) const;
+  BiomePtr createBiome(String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) const;
 
   Json biomeConfig(String const& biomeName) const;
 
@@ -61,10 +73,10 @@ private:
   };
   typedef StringMap<Config> ConfigMap;
 
-  static float pickHueShiftFromJson(Json source, uint64_t seed, String const& key);
+  static float pickHueShiftFromJson(Json source, std::uint64_t seed, String const& key);
 
-  BiomePlaceables readBiomePlaceables(Json const& config, uint64_t seed, float biomeHueShift) const;
-  List<pair<ModId, float>> readOres(Json const& oreDistribution, float threatLevel) const;
+  BiomePlaceables readBiomePlaceables(Json const& config, std::uint64_t seed, float biomeHueShift) const;
+  List<std::pair<ModId, float>> readOres(Json const& oreDistribution, float threatLevel) const;
 
   ConfigMap m_biomes;
   ConfigMap m_weathers;

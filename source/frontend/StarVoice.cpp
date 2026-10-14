@@ -1,3 +1,5 @@
+#include "opus/opus.h"
+#include "SDL3/SDL.h"
 import std;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -24,7 +26,6 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
 import star.version;
 
 import star.byte_array;
@@ -48,16 +49,14 @@ import star.assets;
 import star.root_base;
 import star.configuration;
 import star.root;
-#include "opus/opus.h"
 
-#include "SDL3/SDL.h"
 
 constexpr int VOICE_SAMPLE_RATE = 48000;
 constexpr int VOICE_FRAME_SIZE = 960;
 
 constexpr int VOICE_MAX_PACKET_SIZE = 3 * 1276;
 
-constexpr uint16_t VOICE_VERSION = 1;
+constexpr std::uint16_t VOICE_VERSION = 1;
 
 import star.math_common;
 namespace Star {
@@ -72,30 +71,30 @@ extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames{
   {VoiceChannelMode::Stereo, "Stereo"}
 };
 
-inline float getAudioChunkLoudness(int16_t* data, size_t samples, float volume) {
+inline float getAudioChunkLoudness(std::int16_t* data, std::size_t samples, float volume) {
   if (!samples)
     return 0.f;
 
   double rms = 0.;
-  for (size_t i = 0; i != samples; ++i) {
+  for (std::size_t i = 0; i != samples; ++i) {
     float sample = ((float)data[i] / 32767.f) * volume;
     rms += (double)(sample * sample);
   }
 
-  float fRms = sqrtf((float)(rms / samples));
+  float fRms = std::sqrtf((float)(rms / samples));
 
   if (fRms > 0)
-    return std::clamp<float>(20.f * log10f(fRms), -127.f, 0.f);
+    return std::clamp<float>(20.f * std::log10f(fRms), -127.f, 0.f);
   else
     return -127.f;
 }
 
-float getAudioLoudness(int16_t* data, size_t samples, float volume = 1.0f) {
-  constexpr size_t CHUNK_SIZE = 50;
+float getAudioLoudness(std::int16_t* data, std::size_t samples, float volume = 1.0f) {
+  constexpr std::size_t CHUNK_SIZE = 50;
 
   float highest = -127.f;
-  for (size_t i = 0; i < samples; i += CHUNK_SIZE) {
-    float level = getAudioChunkLoudness(data + i, std::min<size_t>(i + CHUNK_SIZE, samples) - i, volume);
+  for (std::size_t i = 0; i < samples; i += CHUNK_SIZE) {
+    float level = getAudioChunkLoudness(data + i, std::min<std::size_t>(i + CHUNK_SIZE, samples) - i, volume);
     if (level > highest)
       highest = level;
   }
@@ -106,7 +105,7 @@ float getAudioLoudness(int16_t* data, size_t samples, float volume = 1.0f) {
 class VoiceAudioStream {
 public:
   // TODO: This should really be a ring buffer instead.
-  std::queue<int16_t> samples;
+  std::queue<std::int16_t> samples;
   SDL_AudioStream* sdlAudioStreamMono;
   SDL_AudioStream* sdlAudioStreamStereo;
   Mutex mutex;
@@ -123,8 +122,8 @@ public:
     SDL_DestroyAudioStream(sdlAudioStreamStereo);
   }
 
-  inline int16_t take() {
-    int16_t sample = 0;
+  inline std::int16_t take() {
+    std::int16_t sample = 0;
     if (!samples.empty()) {
       sample = samples.front();
       samples.pop();
@@ -132,9 +131,9 @@ public:
     return sample;
   }
 
-  size_t resample(int16_t* in, size_t inSamples, std::vector<int16_t>& out, bool mono) {
+  std::size_t resample(std::int16_t* in, std::size_t inSamples, std::vector<std::int16_t>& out, bool mono) {
     SDL_AudioStream* stream = mono ? sdlAudioStreamMono : sdlAudioStreamStereo;
-    SDL_PutAudioStreamData(stream, in, inSamples * sizeof(int16_t));
+    SDL_PutAudioStreamData(stream, in, inSamples * sizeof(std::int16_t));
     if (int available = SDL_GetAudioStreamAvailable(stream)) {
       out.resize(available / 2);
       SDL_GetAudioStreamData(stream, out.data(), available);
@@ -148,7 +147,7 @@ Voice::Speaker::Speaker(SpeakerId id)
   : decoderMono  (createDecoder(1), opus_decoder_destroy)
   , decoderStereo(createDecoder(2), opus_decoder_destroy) {
   speakerId = id;
-  audioStream = make_shared<VoiceAudioStream>();
+  audioStream = std::make_shared<VoiceAudioStream>();
 }
 
 Json Voice::Speaker::toJson() const {
@@ -181,13 +180,13 @@ Voice::Voice(ApplicationControllerPtr appController) : m_encoder(nullptr, opus_e
   if (s_singleton)
     throw VoiceException("Singleton Voice has been constructed twice");
 
-  m_clientSpeaker = make_shared<Speaker>(m_speakerId);
+  m_clientSpeaker = std::make_shared<Speaker>(m_speakerId);
   m_inputMode = VoiceInputMode::PushToTalk;
   m_channelMode = VoiceChannelMode::Mono;
   m_applicationController = appController;
 
   m_stopThread = false;
-  m_thread = Thread::invoke("Voice::thread", mem_fn(&Voice::thread), this);
+  m_thread = Thread::invoke("Voice::thread", std::mem_fn(&Voice::thread), this);
 
   s_singleton = this;
 }
@@ -331,7 +330,7 @@ Voice::SpeakerPtr Voice::speaker(SpeakerId speakerId) {
     if (SpeakerPtr const* ptr = m_speakers.ptr(speakerId))
       return *ptr;
     else
-      return m_speakers.emplace(speakerId, make_shared<Speaker>(speakerId)).first->second;
+      return m_speakers.emplace(speakerId, std::make_shared<Speaker>(speakerId)).first->second;
   }
 }
 
@@ -367,15 +366,15 @@ void Voice::clearSpeakers() {
   }
 }
 
-void Voice::readAudioData(uint8_t* stream, int len) {
+void Voice::readAudioData(std::uint8_t* stream, int len) {
   auto now = Time::monotonicMilliseconds();
   bool active = m_encoder && m_encodedChunksLength < 2048
        && (m_inputMode == VoiceInputMode::VoiceActivity || now < m_lastInputTime);
 
-  size_t sampleCount = len / 2;
+  std::size_t sampleCount = len / 2;
 
   if (active) {
-    float decibels = getAudioLoudness((int16_t*)stream, sampleCount);
+    float decibels = getAudioLoudness((std::int16_t*)stream, sampleCount);
 
     if (m_inputMode == VoiceInputMode::VoiceActivity) {
       if (decibels > m_threshold)
@@ -384,7 +383,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
     }
   }
 
-  m_clientSpeaker->decibelLevel = getAudioLoudness((int16_t*)stream, sampleCount, m_inputAmplitude);
+  m_clientSpeaker->decibelLevel = getAudioLoudness((std::int16_t*)stream, sampleCount, m_inputAmplitude);
 
   if (!m_loopback) {
     if (active && !m_clientSpeaker->playing)
@@ -397,7 +396,7 @@ void Voice::readAudioData(uint8_t* stream, int len) {
   if (active) {
     m_capturedChunksFrames += sampleCount / m_deviceChannels;
     auto data = (opus_int16*)malloc(len);
-    memcpy(data, stream, len);
+    std::memcpy(data, stream, len);
     m_capturedChunks.emplace(data, sampleCount); // takes ownership
     m_threadCond.signal();
   }
@@ -409,10 +408,10 @@ void Voice::readAudioData(uint8_t* stream, int len) {
   }
 }
 
-void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
-  size_t samples = frameCount * channels;
-  static std::vector<int16_t> finalBuffer, speakerBuffer;
-  static std::vector<int32_t> sharedBuffer; //int32 to reduce clipping
+void Voice::mix(std::int16_t* buffer, std::size_t frameCount, unsigned channels) {
+  std::size_t samples = frameCount * channels;
+  static std::vector<std::int16_t> finalBuffer, speakerBuffer;
+  static std::vector<std::int32_t> sharedBuffer; //int32 to reduce clipping
   speakerBuffer.resize(samples);
   sharedBuffer.resize(samples);
 
@@ -425,7 +424,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
       VoiceAudioStream* audio = speaker->audioStream.get();
       MutexLocker audioLock(audio->mutex);
       if (speaker->playing && !audio->samples.empty()) {
-        for (size_t i = 0; i != samples; ++i)
+        for (std::size_t i = 0; i != samples; ++i)
           speakerBuffer[i] = audio->take();
 
         if (speaker != m_clientSpeaker)
@@ -440,8 +439,8 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
             MutexLocker locker(speaker->mutex);
             levels = speaker->channelVolumes;
           }
-          for (size_t i = 0; i != samples; ++i)
-            sharedBuffer[i] += (int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
+          for (std::size_t i = 0; i != samples; ++i)
+            sharedBuffer[i] += (std::int32_t)(speakerBuffer[i]) * levels[i % 2] * volume;
           //Blends the weaker channel into the stronger one,
           /* unused, is a bit too strong on stereo music.
           float maxLevel = max(levels[0], levels[1]);
@@ -479,11 +478,11 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
     finalBuffer.resize(sharedBuffer.size(), 0);
 
     float vol = m_outputAmplitude;
-    for (size_t i = 0; i != sharedBuffer.size(); ++i)
-      finalBuffer[i] = (int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
+    for (std::size_t i = 0; i != sharedBuffer.size(); ++i)
+      finalBuffer[i] = (std::int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
 
-    SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(int16_t), 1.0f);
-    memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(int32_t));
+    SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(std::int16_t), 1.0f);
+    std::memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(std::int32_t));
   }
 }
 
@@ -499,7 +498,7 @@ void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFun
         speaker->channelVolumes = newChannelVolumes;
       }
       auto& dbHistory = speaker->dbHistory;
-      memmove(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
+      std::memmove(&dbHistory[1], &dbHistory[0], (dbHistory.size() - 1) * sizeof(float));
       dbHistory[0] = speaker->decibelLevel;
       float smoothDb = 0.0f;
       for (float dB : dbHistory)
@@ -538,9 +537,9 @@ StringList Voice::availableDevices() {
   return list;
 }
 
-int Voice::send(DataStreamBuffer& out, size_t budget) {
+int Voice::send(DataStreamBuffer& out, std::size_t budget) {
   out.setByteOrder(ByteOrder::LittleEndian);
-  out.write<uint16_t>(VOICE_VERSION);
+  out.write<std::uint16_t>(VOICE_VERSION);
 
   MutexLocker encodeLock(m_encodeMutex);
 
@@ -553,9 +552,9 @@ int Voice::send(DataStreamBuffer& out, size_t budget) {
   encodeLock.unlock();
 
   for (auto& chunk : encodedChunks) {
-    out.write<uint32_t>(chunk.size());
+    out.write<std::uint32_t>(chunk.size());
     out.writeBytes(chunk);
-    if (budget && (budget -= min<size_t>(budget, chunk.size())) == 0)
+    if (budget && (budget -= std::min<std::size_t>(budget, chunk.size())) == 0)
       break;
   }
 
@@ -573,14 +572,14 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
     DataStreamExternalBuffer reader(view.data(), view.size());
     reader.setByteOrder(ByteOrder::LittleEndian);
 
-    if (reader.read<uint16_t>() > VOICE_VERSION)
+    if (reader.read<std::uint16_t>() > VOICE_VERSION)
       return false;
 
-    uint32_t opusLength = 0;
+    std::uint32_t opusLength = 0;
     while (!reader.atEnd()) {
       reader >> opusLength;
       if (reader.pos() + opusLength > reader.size())
-        throw VoiceException("Opus packet length goes past end of buffer"s, false);
+        throw VoiceException(std::string("Opus packet length goes past end of buffer", sizeof("Opus packet length goes past end of buffer") - 1), false);
       auto opusData = (unsigned char*)reader.ptr() + reader.pos();
       reader.seek(opusLength, IOSeek::Relative);
 
@@ -594,9 +593,9 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
       if (samples < 0)
         throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
 
-      m_decodeBuffer.resize(samples * (size_t)channels);
+      m_decodeBuffer.resize(samples * (std::size_t)channels);
 
-      int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(int16_t), 0);
+      int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(std::int16_t), 0);
       if (decodedSamples <= 0) {
         if (decodedSamples < 0)
           throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
@@ -605,7 +604,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
       //Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples * channels);
 
-      speaker->audioStream->resample(m_decodeBuffer.data(), (size_t)decodedSamples * channels, m_resampleBuffer, mono);
+      speaker->audioStream->resample(m_decodeBuffer.data(), (std::size_t)decodedSamples * channels, m_resampleBuffer, mono);
 
       {
         MutexLocker lock(speaker->audioStream->mutex);
@@ -613,25 +612,25 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
         auto now = Time::monotonicMilliseconds();
         if (now - speaker->lastReceiveTime < 1000) {
-          auto limit = (size_t)speaker->minimumPlaySamples + 22050;
+          auto limit = (std::size_t)speaker->minimumPlaySamples + 22050;
           if (samples.size() > limit) { // skip ahead if we're getting too far
-            for (size_t i = samples.size(); i >= limit; --i)
+            for (std::size_t i = samples.size(); i >= limit; --i)
               samples.pop();
           }
         }
         else
-          samples = std::queue<int16_t>();
+          samples = std::queue<std::int16_t>();
 
         speaker->lastReceiveTime = now;
 
         if (mono) {
-          for (int16_t sample : m_resampleBuffer) {
+          for (std::int16_t sample : m_resampleBuffer) {
             samples.push(sample);
             samples.push(sample);
           }
         }
         else {
-          for (int16_t sample : m_resampleBuffer)
+          for (std::int16_t sample : m_resampleBuffer)
             samples.push(sample);
         }
       }
@@ -686,7 +685,7 @@ void Voice::openDevice() {
     return;
   closeDevice();
 
-  uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;
+  std::uint32_t deviceId = SDL_AUDIO_DEVICE_DEFAULT_RECORDING;
   if (m_deviceName) {
     int i, num_devices;
     if (SDL_AudioDeviceID* devices = SDL_GetAudioRecordingDevices(&num_devices)) {
@@ -703,7 +702,7 @@ void Voice::openDevice() {
     deviceId,
     VOICE_SAMPLE_RATE,
     m_deviceChannels = encoderChannels(),
-    [this](uint8_t* stream, int len) {
+    [this](std::uint8_t* stream, int len) {
       readAudioData(stream, len);
     }
   );
@@ -745,11 +744,11 @@ void Voice::thread() {
     {
       MutexLocker locker(m_captureMutex);
       ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
-      size_t frameSamples = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
+      std::size_t frameSamples = VOICE_FRAME_SIZE * (std::size_t)m_deviceChannels;
       while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
         std::vector<opus_int16> samples;
         samples.reserve(frameSamples);
-        size_t samplesLeft = frameSamples;
+        std::size_t samplesLeft = frameSamples;
         while (samplesLeft && !m_capturedChunks.empty()) {
           auto& front = m_capturedChunks.front();
           if (front.exhausted())
@@ -760,7 +759,7 @@ void Voice::thread() {
         m_capturedChunksFrames -= VOICE_FRAME_SIZE;
 
         if (m_inputAmplitude != 1.0f) {
-          for (size_t i = 0; i != samples.size(); ++i)
+          for (std::size_t i = 0; i != samples.size(); ++i)
             samples[i] *= m_inputAmplitude;
         }
 

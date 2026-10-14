@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -11,15 +10,27 @@ import star.rpc_promise;
 
 namespace Star {
 
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(JsonRpc);
+class JsonRpcInterface;
+using JsonRpcInterfacePtr = std::shared_ptr<JsonRpcInterface>;
+using JsonRpcInterfaceConstPtr = std::shared_ptr<const JsonRpcInterface>;
+using JsonRpcInterfaceWeakPtr = std::weak_ptr<JsonRpcInterface>;
+using JsonRpcInterfaceConstWeakPtr = std::weak_ptr<const JsonRpcInterface>;
+using JsonRpcInterfaceUPtr = std::unique_ptr<JsonRpcInterface>;
+using JsonRpcInterfaceConstUPtr = std::unique_ptr<const JsonRpcInterface>;
+class JsonRpc;
+using JsonRpcPtr = std::shared_ptr<JsonRpc>;
+using JsonRpcConstPtr = std::shared_ptr<const JsonRpc>;
+using JsonRpcWeakPtr = std::weak_ptr<JsonRpc>;
+using JsonRpcConstWeakPtr = std::weak_ptr<const JsonRpc>;
+using JsonRpcUPtr = std::unique_ptr<JsonRpc>;
+using JsonRpcConstUPtr = std::unique_ptr<const JsonRpc>;
 
 struct JsonRpcExceptionTag {
   static constexpr char const* name() { return "JsonRpcException"; }
 };
 using JsonRpcException = StarError<JsonRpcExceptionTag, StarException>;
 
-typedef function<Json(Json const&)> JsonRpcRemoteFunction;
+typedef std::function<Json(Json const&)> JsonRpcRemoteFunction;
 
 typedef StringMap<JsonRpcRemoteFunction> JsonRpcHandlers;
 
@@ -51,9 +62,9 @@ public:
 
 private:
   JsonRpcHandlers m_handlers;
-  Map<uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
+  Map<std::uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
   List<Json> m_pending;
-  uint64_t m_requestId;
+  std::uint64_t m_requestId;
 };
 
 }

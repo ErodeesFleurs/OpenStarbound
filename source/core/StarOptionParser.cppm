@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.format;
 import star.string;
@@ -50,7 +49,7 @@ public:
 
   // Parse the given arguments into an options set, returns the options parsed
   // and a list of all the errors encountered while parsing.
-  pair<Options, StringList> parseOptions(StringList const& arguments) const;
+  std::pair<Options, StringList> parseOptions(StringList const& arguments) const;
 
   // Print help text to the given std::ostream
   void printHelp(std::ostream& os) const;

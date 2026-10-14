@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -13,7 +13,7 @@ namespace Star {
 
 AnimatedPartSet::AnimatedPartSet() {}
 
-AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
+AnimatedPartSet::AnimatedPartSet(Json config, std::uint8_t animatorVersion) {
   m_animatorVersion = animatorVersion;
   for (auto const& stateTypePair : config.get("stateTypes", JsonObject()).iterateObject()) {
     auto const& stateTypeName = stateTypePair.first;
@@ -33,7 +33,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
       if ((version() > 0) && !stateConfig.isType(Json::Type::Object)) // guard just incase any merges use false to override and remove entries from inherited configs
         continue;
 
-      auto newState = make_shared<State>();
+      auto newState = std::make_shared<State>();
       newState->frames = stateConfig.getInt("frames", 1);
       newState->cycle = stateConfig.getFloat("cycle", 1.0f);
       newState->animationMode = stringToAnimationMode(stateConfig.getString("mode", "end"));
@@ -56,7 +56,7 @@ AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   }
 
   // Sort state types by decreasing priority.
-  m_stateTypes.sort([](pair<String, StateType> const& a, pair<String, StateType> const& b) {
+  m_stateTypes.sort([](std::pair<String, StateType> const& a, std::pair<String, StateType> const& b) {
       return b.second.priority < a.second.priority;
     });
 
@@ -184,21 +184,21 @@ StringMap<AnimatedPartSet::Part>& AnimatedPartSet::parts() {
   return m_parts;
 }
 
-void AnimatedPartSet::forEachActiveState(function<void(String const&, ActiveStateInformation const&)> callback) const {
+void AnimatedPartSet::forEachActiveState(std::function<void(String const&, ActiveStateInformation const&)> callback) const {
   for (auto const& p : m_stateTypes) {
     const_cast<AnimatedPartSet*>(this)->freshenActiveState(const_cast<StateType&>(p.second));
     callback(p.first, p.second.activeState);
   }
 }
 
-void AnimatedPartSet::forEachActivePart(function<void(String const&, ActivePartInformation const&)> callback) const {
+void AnimatedPartSet::forEachActivePart(std::function<void(String const&, ActivePartInformation const&)> callback) const {
   for (auto const& p : m_parts) {
     const_cast<AnimatedPartSet*>(this)->freshenActivePart(const_cast<Part&>(p.second));
     callback(p.first, p.second.activePart);
   }
 }
 
-size_t AnimatedPartSet::activeStateIndex(String const& stateTypeName) const {
+std::size_t AnimatedPartSet::activeStateIndex(String const& stateTypeName) const {
   auto const& stateType = m_stateTypes.get(stateTypeName);
   return *stateType.states.indexOf(stateType.activeState.stateName);
 }
@@ -207,7 +207,7 @@ bool AnimatedPartSet::activeStateReverse(String const& stateTypeName) const {
   return stateType.activeState.reverse;
 }
 
-bool AnimatedPartSet::setActiveStateIndex(String const& stateTypeName, size_t stateIndex, bool alwaysStart, bool reverse) {
+bool AnimatedPartSet::setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex, bool alwaysStart, bool reverse) {
   auto const& stateType = m_stateTypes.get(stateTypeName);
   String const& stateName = stateType.states.keyAt(stateIndex);
   return setActiveState(stateTypeName, stateName, alwaysStart, reverse);
@@ -409,29 +409,29 @@ void AnimatedPartSet::freshenActivePart(Part& part) {
 void AnimatedPartSet::ActivePartInformation::setAnimationAffineTransform(Mat3F const& matrix) {
   xTranslationAnimation = matrix[0][2];
   yTranslationAnimation = matrix[1][2];
-  xScaleAnimation = sqrt(square(matrix[0][0]) + square(matrix[0][1]));
-  yScaleAnimation = sqrt(square(matrix[1][0]) + square(matrix[1][1]));
-  xShearAnimation = atan2(matrix[0][1], matrix[0][0]);
-  yShearAnimation = atan2(matrix[1][0], matrix[1][1]);
+  xScaleAnimation = std::sqrt(square(matrix[0][0]) + square(matrix[0][1]));
+  yScaleAnimation = std::sqrt(square(matrix[1][0]) + square(matrix[1][1]));
+  xShearAnimation = std::atan2(matrix[0][1], matrix[0][0]);
+  yShearAnimation = std::atan2(matrix[1][0], matrix[1][1]);
 }
 void AnimatedPartSet::ActivePartInformation::setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress) {
   xTranslationAnimation = lerp(progress, mat1[0][2], mat2[0][2]);
   yTranslationAnimation = lerp(progress, mat1[1][2], mat2[1][2]);
-  xScaleAnimation = lerp(progress, sqrt(square(mat1[0][0]) + square(mat1[0][1])), sqrt(square(mat2[0][0]) + square(mat2[0][1])));
-  yScaleAnimation = lerp(progress, sqrt(square(mat1[1][0]) + square(mat1[1][1])), sqrt(square(mat2[1][0]) + square(mat2[1][1])));
-  xShearAnimation = angleLerp(progress, atan2(mat1[0][1], mat1[0][0]), atan2(mat2[0][1], mat2[0][0]));
-  yShearAnimation = angleLerp(progress, atan2(mat1[1][0], mat1[1][1]), atan2(mat2[1][0], mat2[1][1]));
+  xScaleAnimation = lerp(progress, std::sqrt(square(mat1[0][0]) + square(mat1[0][1])), std::sqrt(square(mat2[0][0]) + square(mat2[0][1])));
+  yScaleAnimation = lerp(progress, std::sqrt(square(mat1[1][0]) + square(mat1[1][1])), std::sqrt(square(mat2[1][0]) + square(mat2[1][1])));
+  xShearAnimation = angleLerp(progress, std::atan2(mat1[0][1], mat1[0][0]), std::atan2(mat2[0][1], mat2[0][0]));
+  yShearAnimation = angleLerp(progress, std::atan2(mat1[1][0], mat1[1][1]), std::atan2(mat2[1][0], mat2[1][1]));
 }
 
 Mat3F AnimatedPartSet::ActivePartInformation::animationAffineTransform() const {
   return Mat3F(
-      xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
-      yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
+      xScaleAnimation * std::cos(xShearAnimation), xScaleAnimation * std::sin(xShearAnimation), xTranslationAnimation,
+      yScaleAnimation * std::sin(yShearAnimation), yScaleAnimation * std::cos(yShearAnimation), yTranslationAnimation,
       0, 0, 1
     );
 }
 
-uint8_t AnimatedPartSet::version() const {
+std::uint8_t AnimatedPartSet::version() const {
   return m_animatorVersion;
 }
 
@@ -439,7 +439,7 @@ Json AnimatedPartSet::getStateFrameProperty(String const & stateTypeName, String
   auto stateType = m_stateTypes.get(stateTypeName);
   auto state = stateType.states.get(stateName);
   if (auto frameProperty = state->stateFrameProperties.maybe(propertyName))
-    if (frame >= 0 && static_cast<size_t>(frame) < frameProperty.value().size())
+    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value().size())
       return frameProperty.value().get(frame);
   return state->stateProperties.maybe(propertyName).value(stateType.stateTypeProperties.maybe(propertyName).value(Json()));
 }
@@ -448,7 +448,7 @@ Json AnimatedPartSet::getPartStateFrameProperty(String const & partName, String 
   auto part = m_parts.get(partName);
   auto state = part.partStates.get(stateTypeName).get(stateName);
   if (auto frameProperty = state.partStateFrameProperties.maybe(propertyName))
-    if (frame >= 0 && static_cast<size_t>(frame) < frameProperty.value().size())
+    if (frame >= 0 && static_cast<std::size_t>(frame) < frameProperty.value().size())
       return frameProperty.value().get(frame);
   return state.partStateProperties.maybe(propertyName).value(part.partProperties.maybe(propertyName).value(Json()));
 }

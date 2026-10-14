@@ -1,6 +1,13 @@
 module;
 
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.maybe;
 import star.thread;
 import star.json;
@@ -16,14 +23,17 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 
 namespace Star {
 
-STAR_CLASS(SteamStatisticsService);
+class SteamStatisticsService;
+using SteamStatisticsServicePtr = std::shared_ptr<SteamStatisticsService>;
+using SteamStatisticsServiceConstPtr = std::shared_ptr<SteamStatisticsService const>;
+using SteamStatisticsServiceWeakPtr = std::weak_ptr<SteamStatisticsService>;
+using SteamStatisticsServiceConstWeakPtr = std::weak_ptr<SteamStatisticsService const>;
+using SteamStatisticsServiceUPtr = std::unique_ptr<SteamStatisticsService>;
+using SteamStatisticsServiceConstUPtr = std::unique_ptr<SteamStatisticsService const>;
 
 class SteamStatisticsService : public StatisticsService {
 public:
@@ -54,7 +64,7 @@ private:
   SteamCallback<SteamStatisticsService, UserStatsStored_t> m_callbackUserStatsStored;
   SteamCallback<SteamStatisticsService, UserAchievementStored_t> m_callbackAchievementStored;
 
-  uint64_t m_appId;
+  std::uint64_t m_appId;
   bool m_initialized = false;
   Maybe<String> m_error;
 };

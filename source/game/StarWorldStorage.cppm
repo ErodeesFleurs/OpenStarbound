@@ -1,4 +1,5 @@
 module;
+import star.memory;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -16,7 +17,6 @@ import star.list;
 import star.bi_map;
 import star.game_types;
 import star.vector;
-#include "StarConfig.hpp"
 import star.string;
 import star.map;
 import star.io_device;
@@ -82,13 +82,31 @@ struct WorldStorageExceptionTag {
 };
 using WorldStorageException = StarError<WorldStorageExceptionTag, StarException>;
 
-STAR_CLASS(EntityMap);
-STAR_STRUCT(WorldGeneratorFacade);
-STAR_CLASS(WorldStorage);
+class EntityMap;
+using EntityMapPtr = std::shared_ptr<EntityMap>;
+using EntityMapConstPtr = std::shared_ptr<const EntityMap>;
+using EntityMapWeakPtr = std::weak_ptr<EntityMap>;
+using EntityMapConstWeakPtr = std::weak_ptr<const EntityMap>;
+using EntityMapUPtr = std::unique_ptr<EntityMap>;
+using EntityMapConstUPtr = std::unique_ptr<const EntityMap>;
+struct WorldGeneratorFacade;
+using WorldGeneratorFacadePtr = std::shared_ptr<WorldGeneratorFacade>;
+using WorldGeneratorFacadeConstPtr = std::shared_ptr<const WorldGeneratorFacade>;
+using WorldGeneratorFacadeWeakPtr = std::weak_ptr<WorldGeneratorFacade>;
+using WorldGeneratorFacadeConstWeakPtr = std::weak_ptr<const WorldGeneratorFacade>;
+using WorldGeneratorFacadeUPtr = std::unique_ptr<WorldGeneratorFacade>;
+using WorldGeneratorFacadeConstUPtr = std::unique_ptr<const WorldGeneratorFacade>;
+class WorldStorage;
+using WorldStoragePtr = std::shared_ptr<WorldStorage>;
+using WorldStorageConstPtr = std::shared_ptr<const WorldStorage>;
+using WorldStorageWeakPtr = std::weak_ptr<WorldStorage>;
+using WorldStorageConstWeakPtr = std::weak_ptr<const WorldStorage>;
+using WorldStorageUPtr = std::unique_ptr<WorldStorage>;
+using WorldStorageConstUPtr = std::unique_ptr<const WorldStorage>;
 
 typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
 
-enum class SectorLoadLevel : uint8_t {
+enum class SectorLoadLevel : std::uint8_t {
   None = 0,
   Tiles = 1,
   Entities = 2,
@@ -96,7 +114,7 @@ enum class SectorLoadLevel : uint8_t {
   Loaded = 2
 };
 
-enum class SectorGenerationLevel : uint8_t {
+enum class SectorGenerationLevel : std::uint8_t {
   None = 0,
   BaseTiles = 1,
   MicroDungeons = 2,
@@ -227,7 +245,7 @@ public:
   // increases of SectorGenerationLevel by the sectorGenerationLevelLimit, if
   // given.  If sectorOrdering is given, then it will be used to prioritize the
   // queued sectors.
-  void generateQueue(Maybe<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering = {});
+  void generateQueue(Maybe<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering = {});
   // Ticks down the TTL on sectors and generation queue entries, stores old
   // sectors, expires old generation queue entries, and unloads any zombie
   // entities.
@@ -251,7 +269,7 @@ public:
   void setFloatingDungeonWorld(bool floatingDungeonWorld);
 
 private:
-  enum class StoreType : uint8_t {
+  enum class StoreType : std::uint8_t {
     Metadata = 0,
     TileSector = 1,
     EntitySector = 2,
@@ -259,7 +277,7 @@ private:
     SectorUniques = 4
   };
 
-  typedef pair<Sector, Vec2F> SectorAndPosition;
+  typedef std::pair<Sector, Vec2F> SectorAndPosition;
 
   struct WorldMetadataStore {
     Vec2U worldSize;
@@ -326,7 +344,7 @@ private:
   // given sector was fully generated, and the total number of generation
   // levels increased.  If any sector's generation level is brought up at all,
   // it will also reset the TTL for that sector.
-  pair<bool, size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit = NPos);
+  std::pair<bool, std::size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, std::size_t sectorGenerationLevelLimit = NPos);
 
   // Bring the sector up to the given load level, and all surrounding sectors
   // as appropriate.  If the load level is brought up, also resets the TTL.

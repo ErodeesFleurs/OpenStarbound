@@ -1,5 +1,5 @@
-#include "StarConfig.hpp"
 #include <lua.hpp>
+import std;
 import star.lua;
 import star.json;
 import star.string;
@@ -106,7 +106,7 @@ bool LuaContext::containsPath(String path) const {
   return engine().contextGetPath(handleIndex(), std::move(path)) != LuaNil;
 }
 
-void LuaContext::load(char const* contents, size_t size, char const* name) {
+void LuaContext::load(char const* contents, std::size_t size, char const* name) {
   engine().contextLoad(handleIndex(), contents, size, name);
 }
 
@@ -280,7 +280,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   lua_newtable(self->m_state);
   lua_pushcfunction(self->m_state, [](lua_State* state) {
       auto func = (LuaDetail::LuaWrappedFunction*)lua_touserdata(state, 1);
-      func->~function();
+      std::destroy_at(func);
       return 0;
     });
   LuaDetail::rawSetField(self->m_state, -2, "__gc");
@@ -411,18 +411,20 @@ LuaEnginePtr LuaEngine::create(bool safe) {
 
 LuaEngine::~LuaEngine() {
   // If we've had a stack space leak, this will not be zero
-  starAssert(lua_gettop(m_state) == 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((lua_gettop(m_state) == 0));
+  }
   lua_close(m_state);
 }
 
-void LuaEngine::setInstructionLimit(uint64_t instructionLimit) {
+void LuaEngine::setInstructionLimit(std::uint64_t instructionLimit) {
   if (instructionLimit != m_instructionLimit) {
     m_instructionLimit = instructionLimit;
     updateCountHook();
   }
 }
 
-uint64_t LuaEngine::instructionLimit() const {
+std::uint64_t LuaEngine::instructionLimit() const {
   return m_instructionLimit;
 }
 
@@ -466,13 +468,13 @@ unsigned LuaEngine::recursionLimit() const {
   return m_recursionLimit;
 }
 
-ByteArray LuaEngine::compile(char const* contents, size_t size, char const* name) {
+ByteArray LuaEngine::compile(char const* contents, std::size_t size, char const* name) {
   lua_checkstack(m_state, 1);
 
   handleError(m_state, luaL_loadbuffer(m_state, contents, size, name));
 
   ByteArray compiledScript;
-  lua_Writer writer = [](lua_State*, void const* data, size_t size, void* byteArrayPtr) -> int {
+  lua_Writer writer = [](lua_State*, void const* data, std::size_t size, void* byteArrayPtr) -> int {
     ((ByteArray*)byteArrayPtr)->append((char const*)data, size);
     return 0;
   };
@@ -595,12 +597,12 @@ void LuaEngine::setAutoGarbageCollection(bool autoGarbageColleciton) {
 }
 
 void LuaEngine::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
-  lua_gc(m_state, LUA_GCSETPAUSE, round(pause * 100));
-  lua_gc(m_state, LUA_GCSETSTEPMUL, round(stepMultiplier * 100));
+  lua_gc(m_state, LUA_GCSETPAUSE, std::round(pause * 100));
+  lua_gc(m_state, LUA_GCSETSTEPMUL, std::round(stepMultiplier * 100));
 }
 
-size_t LuaEngine::memoryUsage() const {
-  return (size_t)lua_gc(m_state, LUA_GCCOUNT, 0) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
+std::size_t LuaEngine::memoryUsage() const {
+  return (std::size_t)lua_gc(m_state, LUA_GCCOUNT, 0) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
 }
 
 LuaNullEnforcer LuaEngine::nullTerminate() {
@@ -608,7 +610,7 @@ LuaNullEnforcer LuaEngine::nullTerminate() {
 }
 
 void LuaEngine::setNullTerminated(bool nullTerminated) {
-  m_nullTerminated = nullTerminated ? 0 : INT_MIN;
+  m_nullTerminated = nullTerminated ? 0 : std::numeric_limits<int>::min();
 }
 
 void LuaEngine::addImGui() {
@@ -626,7 +628,9 @@ LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {
 }
 
 void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
-  starAssert(ar->event == LUA_HOOKCOUNT);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((ar->event == LUA_HOOKCOUNT));
+  }
   lua_checkstack(state, 4);
 
   auto self = luaEnginePtr(state);
@@ -653,16 +657,16 @@ void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
     while (lua_getstack(state, stackLevel + 1, ar) == 1)
       stackLevel++;
 
-    shared_ptr<LuaProfileEntry> parentEntry = nullptr;
+    std::shared_ptr<LuaProfileEntry> parentEntry = nullptr;
     while (true) {
       // Get the 'n' name info and 'S' source info
       if (lua_getinfo(state, "nS", ar) == 0)
         break;
 
-      auto key = make_tuple(String(ar->short_src), (unsigned)ar->linedefined);
+      auto key = std::make_tuple(String(ar->short_src), (unsigned)ar->linedefined);
       auto& entryMap = parentEntry ? parentEntry->calls : self->m_profileEntries;
       if (!entryMap.contains(key)) {
-        auto e = make_shared<LuaProfileEntry>();
+        auto e = std::make_shared<LuaProfileEntry>();
         e->source = ar->short_src;
         e->sourceLine = ar->linedefined;
         entryMap.set(key, e);
@@ -691,7 +695,7 @@ void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
   }
 }
 
-void* LuaEngine::allocate(void*, void* ptr, size_t oldSize, size_t newSize) {
+void* LuaEngine::allocate(void*, void* ptr, std::size_t oldSize, std::size_t newSize) {
   if (newSize == 0) {
     Star::free(ptr, oldSize);
     return nullptr;
@@ -787,11 +791,11 @@ char const* LuaEngine::stringPtr(int handleIndex) {
   return lua_tostring(m_handleThread, handleIndex);
 }
 
-size_t LuaEngine::stringLength(int handleIndex) {
+std::size_t LuaEngine::stringLength(int handleIndex) {
   if (m_nullTerminated > 0)
-    return strlen(lua_tostring(m_handleThread, handleIndex));
+    return std::strlen(lua_tostring(m_handleThread, handleIndex));
   else {
-    size_t len = 0;
+    std::size_t len = 0;
     lua_tolstring(m_handleThread, handleIndex, &len);
     return len;
   }
@@ -801,7 +805,7 @@ String LuaEngine::string(int handleIndex) {
   if (m_nullTerminated > 0)
     return String(lua_tostring(m_handleThread, handleIndex));
   else {
-    size_t len = 0;
+    std::size_t len = 0;
     const char* data = lua_tolstring(m_handleThread, handleIndex, &len);
     return String(data, len);
   }
@@ -811,7 +815,7 @@ StringView LuaEngine::stringView(int handleIndex) {
   if (m_nullTerminated > 0)
     return StringView(lua_tostring(m_handleThread, handleIndex));
   else {
-    size_t len = 0;
+    std::size_t len = 0;
     const char* data = lua_tolstring(m_handleThread, handleIndex, &len);
     return StringView(data, len);
   }
@@ -886,7 +890,7 @@ LuaInt LuaEngine::tableLength(bool raw, int handleIndex) {
   }
 }
 
-void LuaEngine::tableIterate(int handleIndex, function<bool(LuaValue key, LuaValue value)> iterator) {
+void LuaEngine::tableIterate(int handleIndex, std::function<bool(LuaValue key, LuaValue value)> iterator) {
   lua_checkstack(m_state, 4);
 
   pushHandle(m_state, handleIndex);
@@ -980,7 +984,7 @@ void LuaEngine::setContextRequire(int handleIndex, LuaContext::RequireFunction r
   lua_pop(m_state, 1);
 }
 
-void LuaEngine::contextLoad(int handleIndex, char const* contents, size_t size, char const* name) {
+void LuaEngine::contextLoad(int handleIndex, char const* contents, std::size_t size, char const* name) {
   lua_checkstack(m_state, 2);
 
   // First load the script...
@@ -1037,10 +1041,10 @@ LuaValue LuaEngine::contextGetPath(int handleIndex, String path) {
 
   std::string utf8Path = path.takeUtf8();
   char* utf8Ptr = &utf8Path[0];
-  size_t utf8Size = utf8Path.size();
+  std::size_t utf8Size = utf8Path.size();
 
-  size_t subPathStart = 0;
-  for (size_t i = 0; i < utf8Size; ++i) {
+  std::size_t subPathStart = 0;
+  for (std::size_t i = 0; i < utf8Size; ++i) {
     if (utf8Path[i] == '.') {
       utf8Path[i] = '\0';
 
@@ -1068,10 +1072,10 @@ void LuaEngine::contextSetPath(int handleIndex, String path, LuaValue const& val
 
   std::string utf8Path = path.takeUtf8();
   char* utf8Ptr = &utf8Path[0];
-  size_t utf8Size = utf8Path.size();
+  std::size_t utf8Size = utf8Path.size();
 
-  size_t subPathStart = 0;
-  for (size_t i = 0; i < utf8Size; ++i) {
+  std::size_t subPathStart = 0;
+  for (std::size_t i = 0; i < utf8Size; ++i) {
     if (utf8Path[i] == '.') {
       utf8Path[i] = '\0';
 
@@ -1197,7 +1201,7 @@ LuaFunction LuaEngine::createRawFunction(lua_CFunction function) {
   return LuaFunction(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
 }
 
-LuaFunction LuaEngine::createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name) {
+LuaFunction LuaEngine::createFunctionFromSource(int handleIndex, char const* contents, std::size_t size, char const* name) {
   lua_checkstack(m_state, 2);
 
   handleError(m_state, luaL_loadbufferx(m_state, contents, size, name, "t"));
@@ -1245,7 +1249,9 @@ LuaValue LuaEngine::popLuaValue(lua_State* state) {
   lua_checkstack(state, 1);
 
   LuaValue result;
-  starAssert(!lua_isnone(state, -1));
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((!lua_isnone(state, -1)));
+  }
   switch (lua_type(state, -1)) {
     case LUA_TNIL: {
       lua_pop(state, 1);
@@ -1314,7 +1320,9 @@ void LuaEngine::incrementRecursionLevel() {
 }
 
 void LuaEngine::decrementRecursionLevel() {
-  starAssert(m_recursionLevel != 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_recursionLevel != 0));
+  }
   --m_recursionLevel;
 }
 
@@ -1399,7 +1407,7 @@ LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& containe
 
   if (container.isType(Json::Type::Array)) {
     auto vlist = container.arrayPtr();
-    for (size_t i = 0; i < vlist->size(); ++i) {
+    for (std::size_t i = 0; i < vlist->size(); ++i) {
       auto const& val = (*vlist)[i];
       if (val)
         table.rawSet(i + 1, val);
@@ -1475,7 +1483,7 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
     return {};
 
   bool interpretAsList = stringEntries.empty()
-      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && prev(intEntries.end())->first == intEntries.size()));
+      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && std::prev(intEntries.end())->first == intEntries.size()));
   if (interpretAsList) {
     JsonArray list;
     for (auto& p : intEntries)
@@ -1524,9 +1532,9 @@ void LuaDetail::jcontRemove(LuaTable const& table, LuaValue const& key) {
   table.rawSet(key, LuaNil);
 }
 
-size_t LuaDetail::jcontSize(LuaTable const& table) {
-  size_t elemCount = 0;
-  size_t highestIndex = 0;
+std::size_t LuaDetail::jcontSize(LuaTable const& table) {
+  std::size_t elemCount = 0;
+  std::size_t highestIndex = 0;
   bool hintList = false;
 
   if (auto mt = table.getMetatable()) {
@@ -1537,7 +1545,7 @@ size_t LuaDetail::jcontSize(LuaTable const& table) {
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
         auto i = asInteger(key);
         if (i && *i >= 0)
-          highestIndex = max<int>(*i, highestIndex);
+          highestIndex = std::max<int>(*i, highestIndex);
         else
           hintList = false;
         ++elemCount;
@@ -1548,7 +1556,7 @@ size_t LuaDetail::jcontSize(LuaTable const& table) {
   table.iterate([&](LuaValue const& key, LuaValue const&) {
     auto i = asInteger(key);
     if (i && *i >= 0)
-      highestIndex = max<int>(*i, highestIndex);
+      highestIndex = std::max<int>(*i, highestIndex);
     else
       hintList = false;
     ++elemCount;
@@ -1560,12 +1568,12 @@ size_t LuaDetail::jcontSize(LuaTable const& table) {
     return elemCount;
 }
 
-void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
+void LuaDetail::jcontResize(LuaTable const& table, std::size_t targetSize) {
   if (auto mt = table.getMetatable()) {
     if (auto nils = mt->rawGet<Maybe<LuaTable>>("__nils")) {
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
         auto i = asInteger(key);
-        if (i && *i > 0 && (size_t)*i > targetSize)
+        if (i && *i > 0 && (std::size_t)*i > targetSize)
           nils->rawSet(key, LuaNil);
       });
     }
@@ -1573,7 +1581,7 @@ void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
 
   table.iterate([&](LuaValue const& key, LuaValue const&) {
     auto i = asInteger(key);
-    if (i && *i > 0 && (size_t)*i > targetSize)
+    if (i && *i > 0 && (std::size_t)*i > targetSize)
       table.rawSet(key, LuaNil);
   });
 

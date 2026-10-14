@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.byte_array;
@@ -55,13 +55,31 @@ import star.registered_pane_manager;
 import star.main_interface_types;
 
 namespace Star {
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Cinematic);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class Cinematic;
+using CinematicPtr = std::shared_ptr<Cinematic>;
+using CinematicConstPtr = std::shared_ptr<Cinematic const>;
+using CinematicWeakPtr = std::weak_ptr<Cinematic>;
+using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
+using CinematicUPtr = std::unique_ptr<Cinematic>;
+using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
 }
 
 namespace Star {
 
-STAR_CLASS(Quest);
+class Quest;
+using QuestPtr = std::shared_ptr<Quest>;
+using QuestConstPtr = std::shared_ptr<Quest const>;
+using QuestWeakPtr = std::weak_ptr<Quest>;
+using QuestConstWeakPtr = std::weak_ptr<Quest const>;
+using QuestUPtr = std::unique_ptr<Quest>;
+using QuestConstUPtr = std::unique_ptr<Quest const>;
 
 class ClientCommandProcessor {
 public:
@@ -77,7 +95,7 @@ public:
 
 private:
   bool adminCommandAllowed() const;
-  String previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane);
+  String previewQuestPane(StringList const& arguments, std::function<PanePtr(QuestPtr)> createPane);
 
   String reload();
   String hotReload();
@@ -119,7 +137,7 @@ private:
   UniverseClientPtr m_universeClient;
   CinematicPtr m_cinematicOverlay;
   MainInterfacePaneManager* m_paneManager;
-  CaseInsensitiveStringMap<function<String(String const&)>> m_builtinCommands;
+  CaseInsensitiveStringMap<std::function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
   HashMap<Uuid,RpcPromise<Json>> m_commandPromises;
   ShellParser m_parser;

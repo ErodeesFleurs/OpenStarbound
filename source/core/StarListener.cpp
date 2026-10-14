@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 import star.listener;
 
@@ -7,7 +7,7 @@ namespace Star {
 
 Listener::~Listener() {}
 
-CallbackListener::CallbackListener(function<void()> callback)
+CallbackListener::CallbackListener(std::function<void()> callback)
   : callback(std::move(callback)) {}
 
 void CallbackListener::trigger() {
@@ -29,7 +29,7 @@ void ListenerGroup::removeListener(ListenerWeakPtr listener) {
 
 void ListenerGroup::clearExpiredListeners() {
   MutexLocker locker(m_mutex);
-  eraseWhere(m_listeners, mem_fn(&ListenerWeakPtr::expired));
+  eraseWhere(m_listeners, std::mem_fn(&ListenerWeakPtr::expired));
 };
 
 void ListenerGroup::clearAllListeners() {

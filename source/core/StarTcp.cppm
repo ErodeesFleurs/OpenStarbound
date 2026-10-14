@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.io_device;
 import star.string;
 import star.either;
@@ -10,8 +9,20 @@ import star.socket;
 
 namespace Star {
 
-STAR_CLASS(TcpSocket);
-STAR_CLASS(TcpServer);
+class TcpSocket;
+using TcpSocketPtr = std::shared_ptr<TcpSocket>;
+using TcpSocketConstPtr = std::shared_ptr<const TcpSocket>;
+using TcpSocketWeakPtr = std::weak_ptr<TcpSocket>;
+using TcpSocketConstWeakPtr = std::weak_ptr<const TcpSocket>;
+using TcpSocketUPtr = std::unique_ptr<TcpSocket>;
+using TcpSocketConstUPtr = std::unique_ptr<const TcpSocket>;
+class TcpServer;
+using TcpServerPtr = std::shared_ptr<TcpServer>;
+using TcpServerConstPtr = std::shared_ptr<const TcpServer>;
+using TcpServerWeakPtr = std::weak_ptr<TcpServer>;
+using TcpServerConstWeakPtr = std::weak_ptr<const TcpServer>;
+using TcpServerUPtr = std::unique_ptr<TcpServer>;
+using TcpServerConstUPtr = std::unique_ptr<const TcpServer>;
 
 class TcpSocket : public Socket {
 public:
@@ -23,8 +34,8 @@ public:
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
 
-  size_t receive(char* data, size_t len);
-  size_t send(char const* data, size_t len);
+  std::size_t receive(char* data, std::size_t len);
+  std::size_t send(char const* data, std::size_t len);
 
   HostAddressWithPort localAddress() const;
   HostAddressWithPort remoteAddress() const;
@@ -41,11 +52,11 @@ private:
 // Simple class to listen for and open TcpSocket instances.
 class TcpServer {
 public:
-  typedef function<void(TcpSocketPtr socket)> AcceptCallback;
+  typedef std::function<void(TcpSocketPtr socket)> AcceptCallback;
 
   TcpServer(HostAddressWithPort const& address);
   // Listens to all interfaces.
-  TcpServer(uint16_t port);
+  TcpServer(std::uint16_t port);
   ~TcpServer();
 
   void stop();

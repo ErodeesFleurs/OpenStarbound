@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -14,7 +13,13 @@ struct WorkerPoolExceptionTag {
 };
 using WorkerPoolException = StarError<WorkerPoolExceptionTag, StarException>;
 
-STAR_CLASS(WorkerPool);
+class WorkerPool;
+using WorkerPoolPtr = std::shared_ptr<WorkerPool>;
+using WorkerPoolConstPtr = std::shared_ptr<const WorkerPool>;
+using WorkerPoolWeakPtr = std::weak_ptr<WorkerPool>;
+using WorkerPoolConstWeakPtr = std::weak_ptr<const WorkerPool>;
+using WorkerPoolUPtr = std::unique_ptr<WorkerPool>;
+using WorkerPoolConstUPtr = std::unique_ptr<const WorkerPool>;
 
 // Shareable handle for a WorkerPool computation that does not produce any
 // value.
@@ -45,13 +50,13 @@ private:
 
     Mutex mutex;
     ConditionVariable condition;
-    atomic<bool> done;
+    std::atomic<bool> done;
     std::exception_ptr exception;
   };
 
-  WorkerPoolHandle(shared_ptr<Impl> impl);
+  WorkerPoolHandle(std::shared_ptr<Impl> impl);
 
-  shared_ptr<Impl> m_impl;
+  std::shared_ptr<Impl> m_impl;
 };
 
 // Shareable handle for a WorkerPool computation that produces a value.
@@ -87,9 +92,9 @@ private:
     std::exception_ptr exception;
   };
 
-  WorkerPoolPromise(shared_ptr<Impl> impl);
+  WorkerPoolPromise(std::shared_ptr<Impl> impl);
 
-  shared_ptr<Impl> m_impl;
+  std::shared_ptr<Impl> m_impl;
 };
 
 class WorkerPool {
@@ -121,16 +126,16 @@ public:
   // required that the caller of this method hold on to the worker handle, the
   // work will be managed and completed regardless of the WorkerPoolHandle
   // lifetime.
-  WorkerPoolHandle addWork(function<void()> work);
+  WorkerPoolHandle addWork(std::function<void()> work);
 
   // Like addWork, but the worker is expected to produce some result.  The
   // returned promise can be used to get this return value once the producer is
   // complete.
   template <typename ResultType>
-  WorkerPoolPromise<ResultType> addProducer(function<ResultType()> producer);
+  WorkerPoolPromise<ResultType> addProducer(std::function<ResultType()> producer);
 
   // Returns the current number of worker threads.
-  size_t getWorkerCount() const;
+  std::size_t getWorkerCount() const;
 
 private:
   class WorkerThread : public Thread {
@@ -142,19 +147,19 @@ private:
     void run() override;
 
     WorkerPool* parent;
-    atomic<bool> shouldStop;
-    atomic<bool> waiting;
+    std::atomic<bool> shouldStop;
+    std::atomic<bool> waiting;
   };
 
-  void queueWork(function<void()> work);
+  void queueWork(std::function<void()> work);
 
   String m_name;
   Mutex m_threadMutex;
-  List<unique_ptr<WorkerThread>> m_workerThreads;
+  List<std::unique_ptr<WorkerThread>> m_workerThreads;
 
   Mutex m_workMutex;
   ConditionVariable m_workCondition;
-  Deque<function<void()>> m_pendingWork;
+  Deque<std::function<void()>> m_pendingWork;
 };
 
 template <typename ResultType>
@@ -203,14 +208,14 @@ ResultType const& WorkerPoolPromise<ResultType>::get() const {
 }
 
 template <typename ResultType>
-WorkerPoolPromise<ResultType>::WorkerPoolPromise(shared_ptr<Impl> impl)
+WorkerPoolPromise<ResultType>::WorkerPoolPromise(std::shared_ptr<Impl> impl)
   : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
-WorkerPoolPromise<ResultType> WorkerPool::addProducer(function<ResultType()> producer) {
+WorkerPoolPromise<ResultType> WorkerPool::addProducer(std::function<ResultType()> producer) {
   // Construct a worker pool promise and wrap the producer to signal the
   // promise when finished.
-  auto workerPoolPromiseImpl = make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
+  auto workerPoolPromiseImpl = std::make_shared<typename WorkerPoolPromise<ResultType>::Impl>();
   queueWork([workerPoolPromiseImpl, producer]() {
     try {
       auto result = producer();

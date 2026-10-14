@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.set;
@@ -21,12 +21,30 @@ import star.rpc_promise;
 
 namespace Star {
 
-STAR_CLASS(WorldServer);
-STAR_STRUCT(Packet);
+class WorldServer;
+using WorldServerPtr = std::shared_ptr<WorldServer>;
+using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
+using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
+using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
+using WorldServerUPtr = std::unique_ptr<WorldServer>;
+using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
+struct Packet;
+using PacketPtr = std::shared_ptr<Packet>;
+using PacketConstPtr = std::shared_ptr<const Packet>;
+using PacketWeakPtr = std::weak_ptr<Packet>;
+using PacketConstWeakPtr = std::weak_ptr<const Packet>;
+using PacketUPtr = std::unique_ptr<Packet>;
+using PacketConstUPtr = std::unique_ptr<const Packet>;
 enum class WorldServerFidelity;
 typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
 
-STAR_CLASS(WorldServerThread);
+class WorldServerThread;
+using WorldServerThreadPtr = std::shared_ptr<WorldServerThread>;
+using WorldServerThreadConstPtr = std::shared_ptr<const WorldServerThread>;
+using WorldServerThreadWeakPtr = std::weak_ptr<WorldServerThread>;
+using WorldServerThreadConstWeakPtr = std::weak_ptr<const WorldServerThread>;
+using WorldServerThreadUPtr = std::unique_ptr<WorldServerThread>;
+using WorldServerThreadConstUPtr = std::unique_ptr<const WorldServerThread>;
 
 // Runs a WorldServer in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -39,7 +57,7 @@ public:
     RpcPromiseKeeper<Json> promise;
   };
 
-  typedef function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
+  typedef std::function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
 
   WorldServerThread(WorldServerPtr server, WorldId worldId);
   ~WorldServerThread();
@@ -49,7 +67,7 @@ public:
   void start();
   // Signals the WorldServerThread to stop and then joins it
   void stop();
-  void setPause(shared_ptr<const atomic<bool>> pause);
+  void setPause(std::shared_ptr<const std::atomic<bool>> pause);
 
   // An exception occurred from the actual WorldServer itself and the
   // WorldServerThread has stopped running.
@@ -79,7 +97,7 @@ public:
   Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  Maybe<pair<String, String>> pullNewPlanetType();
+  Maybe<std::pair<String, String>> pullNewPlanetType();
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the server error
@@ -121,10 +139,10 @@ private:
   mutable RecursiveMutex m_messageMutex;
   List<Message> m_messages;
 
-  atomic<bool> m_stop;
-  shared_ptr<const atomic<bool>> m_pause;
-  mutable atomic<bool> m_errorOccurred;
-  mutable atomic<bool> m_shouldExpire;
+  std::atomic<bool> m_stop;
+  std::shared_ptr<const std::atomic<bool>> m_pause;
+  mutable std::atomic<bool> m_errorOccurred;
+  mutable std::atomic<bool> m_shouldExpire;
 };
 
 }

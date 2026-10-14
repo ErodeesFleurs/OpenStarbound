@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.hash;
 
@@ -90,7 +89,7 @@ RefPtr<T> make_ref(Args&&... args);
 
 template <typename T>
 struct hash<RefPtr<T>> {
-  size_t operator()(RefPtr<T> const& a) const;
+  std::size_t operator()(RefPtr<T> const& a) const;
 
   hash<T*> hasher;
 };
@@ -107,7 +106,7 @@ protected:
   virtual ~RefCounter() = default;
 
 private:
-  size_t m_refCounter;
+  std::size_t m_refCounter;
 };
 
 template <typename T>
@@ -282,7 +281,7 @@ RefPtr<T> make_ref(Args&&... args) {
 }
 
 template <typename T>
-size_t hash<RefPtr<T>>::operator()(RefPtr<T> const& a) const {
+std::size_t hash<RefPtr<T>>::operator()(RefPtr<T> const& a) const {
   return hasher(a.get());
 }
 

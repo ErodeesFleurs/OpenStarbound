@@ -1,3 +1,7 @@
+#if defined STAR_SYSTEM_WINDOWS
+#include <windows.h>
+#endif
+
 import star.xx_hash;
 import star.json;
 import star.file;
@@ -5,7 +9,6 @@ import star.random;
 import star.lexical_cast;
 import star.logging;
 import star.id_map;
-#include "StarConfig.hpp"
 import star.format;
 import star.maybe;
 import star.string;
@@ -136,9 +139,6 @@ import star.configuration;
 import star.option_parser;
 import star.version_option_parser;
 
-#if defined STAR_SYSTEM_WINDOWS
-#include <windows.h>
-#endif
 
 import star.signal_handler;
 import star.server_query;
@@ -193,19 +193,19 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniverseServerUPtr server = make_unique<UniverseServer>(root->toStoragePath("universe"));
+      UniverseServerUPtr server = std::make_unique<UniverseServer>(root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
 
       ServerQueryThreadUPtr queryServer;
       if (configuration->get("runQueryServer").toBool()) {
-        queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
+        queryServer = std::make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
         queryServer->start();
       }
 
       ServerRconThreadUPtr rconServer;
       if (configuration->get("runRconServer").toBool()) {
-        rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
+        rconServer = std::make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
         rconServer->start();
       }
 

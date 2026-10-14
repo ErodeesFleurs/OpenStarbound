@@ -1,7 +1,6 @@
 module;
+import std;
 import star.byte_array;
-
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.io_device;
@@ -18,9 +17,27 @@ float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
 float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
   float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
 
-STAR_CLASS(CompressedAudioImpl);
-STAR_CLASS(UncompressedAudioImpl);
-STAR_CLASS(Audio);
+class CompressedAudioImpl;
+using CompressedAudioImplPtr = std::shared_ptr<CompressedAudioImpl>;
+using CompressedAudioImplConstPtr = std::shared_ptr<const CompressedAudioImpl>;
+using CompressedAudioImplWeakPtr = std::weak_ptr<CompressedAudioImpl>;
+using CompressedAudioImplConstWeakPtr = std::weak_ptr<const CompressedAudioImpl>;
+using CompressedAudioImplUPtr = std::unique_ptr<CompressedAudioImpl>;
+using CompressedAudioImplConstUPtr = std::unique_ptr<const CompressedAudioImpl>;
+class UncompressedAudioImpl;
+using UncompressedAudioImplPtr = std::shared_ptr<UncompressedAudioImpl>;
+using UncompressedAudioImplConstPtr = std::shared_ptr<const UncompressedAudioImpl>;
+using UncompressedAudioImplWeakPtr = std::weak_ptr<UncompressedAudioImpl>;
+using UncompressedAudioImplConstWeakPtr = std::weak_ptr<const UncompressedAudioImpl>;
+using UncompressedAudioImplUPtr = std::unique_ptr<UncompressedAudioImpl>;
+using UncompressedAudioImplConstUPtr = std::unique_ptr<const UncompressedAudioImpl>;
+class Audio;
+using AudioPtr = std::shared_ptr<Audio>;
+using AudioConstPtr = std::shared_ptr<const Audio>;
+using AudioWeakPtr = std::weak_ptr<Audio>;
+using AudioConstWeakPtr = std::weak_ptr<const Audio>;
+using AudioUPtr = std::unique_ptr<Audio>;
+using AudioConstUPtr = std::unique_ptr<const Audio>;
 
 struct AudioExceptionTag {
   static constexpr char const* name() { return "AudioException"; }
@@ -53,7 +70,7 @@ public:
   double totalTime() const;
 
   // This function returns total number of samples in this file.
-  uint64_t totalSamples() const;
+  std::uint64_t totalSamples() const;
 
   // This function returns true when the datastream or file being read from is
   // a vorbis compressed file.  False otherwise.
@@ -68,7 +85,7 @@ public:
   void seekTime(double time);
 
   // This function seeks the data stream to the given sample number
-  void seekSample(uint64_t sample);
+  void seekSample(std::uint64_t sample);
 
   // This function converts the current offset of the file to the time value of
   // that offset in seconds.
@@ -76,16 +93,16 @@ public:
 
   // This function converts the current offset of the file to the current
   // sample number.
-  uint64_t currentSample() const;
+  std::uint64_t currentSample() const;
 
   // Reads into 16 bit signed buffer with channels interleaved.  Returns total
   // number of samples read (counting each channel individually).  0 indicates
   // end of stream.
-  size_t readPartial(int16_t* buffer, size_t bufferSize);
+  std::size_t readPartial(std::int16_t* buffer, std::size_t bufferSize);
 
   // Same as readPartial, but repeats read attempting to fill buffer as much as
   // possible
-  size_t read(int16_t* buffer, size_t bufferSize);
+  std::size_t read(std::int16_t* buffer, std::size_t bufferSize);
 
   // Read into a given buffer, while also converting into the given number of
   // channels at the given sample rate and playback velocity.  If the number of
@@ -94,8 +111,8 @@ public:
   // fill the buffer as much as possible up to end of stream.  May fail to fill
   // an entire buffer depending on the destinationSampleRate / velocity /
   // available samples.
-  size_t resample(unsigned destinationChannels, unsigned destinationSampleRate,
-      int16_t* destinationBuffer, size_t destinationBufferSize,
+  std::size_t resample(unsigned destinationChannels, unsigned destinationSampleRate,
+      std::int16_t* destinationBuffer, std::size_t destinationBufferSize,
       double velocity = 1.0);
 
   String const& name() const;

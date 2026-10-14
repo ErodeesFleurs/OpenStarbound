@@ -1,5 +1,4 @@
 import std;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.json;
@@ -142,7 +141,7 @@ ImageOperation imageOperationFromString(StringView string) {
 
     List<StringView> bits;
 
-    string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) {
+    string.forEachSplitAnyView("=;", [&](StringView split, std::size_t, std::size_t) {
       if (!split.empty())
         bits.emplace_back(split);
     });
@@ -171,7 +170,7 @@ ImageOperation imageOperationFromString(StringView string) {
 
     } else if (type == "replace") {
       ColorReplaceImageOperation operation;
-      for (size_t i = 0; i < (bits.size() - 1) / 2; ++i)
+      for (std::size_t i = 0; i < (bits.size() - 1) / 2; ++i)
         operation.colorReplaceMap[Color::hexToVec4B(bits[i * 2 + 1])] = Color::hexToVec4B(bits[i * 2 + 2]);
 
       return operation;
@@ -329,8 +328,8 @@ String imageOperationToString(ImageOperation const& operation) {
   return "";
 }
 
-void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter) {
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
+void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter) {
+  params.forEachSplitView("?", [&](StringView op, std::size_t, std::size_t) {
     if (!op.empty())
       outputter(imageOperationFromString(op));
   });
@@ -338,7 +337,7 @@ void parseImageOperations(StringView params, function<void(ImageOperation&&)> ou
 
 List<ImageOperation> parseImageOperations(StringView params) {
   List<ImageOperation> operations;
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
+  params.forEachSplitView("?", [&](StringView op, std::size_t, std::size_t) {
     if (!op.empty())
       operations.append(imageOperationFromString(op));
     });
@@ -438,7 +437,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       maskImages.append(refCallback(reference));
 
     image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
-      uint8_t maskAlpha = 0;
+      std::uint8_t maskAlpha = 0;
       Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
       for (auto mask : maskImages) {
         if (pos[0] < mask->width() && pos[1] < mask->height()) {
@@ -486,8 +485,8 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
-          return (uint8_t)(((int)a * (int)b) / 255);
+      pixel = pixel.combine(op->color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
+          return (std::uint8_t)(((int)a * (int)b) / 255);
         });
     });
 
@@ -506,7 +505,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             if (i + x >= pixels && j + y >= pixels && i + x < borderImageSize[0] - pixels && j + y < borderImageSize[1] - pixels) {
               Vec4B remotePixel = image.get(i + x - pixels, j + y - pixels);
               if (remotePixel[3] != 0) {
-                dist = std::min(dist, abs(i) + abs(j));
+                dist = std::min(dist, std::abs(i) + std::abs(j));
                 if (dist == 1) // Early out, if dist is 1 it ain't getting shorter
                   break;
               }
@@ -520,7 +519,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
             if (op->outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
-              color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
+              color.setAlphaF((1.0f - pixelA) * std::fminf(pixelA, 0.5f) * 2.0f);
             }
             else {
               Color pixelF = Color::rgba(pixel);
@@ -562,9 +561,9 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
   } else if (auto op = operation.ptr<FlipImageOperation>()) {
     if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
-      for (size_t y = 0; y < image.height(); ++y) {
-        for (size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
-          size_t xRight = image.width() - 1 - xLeft;
+      for (std::size_t y = 0; y < image.height(); ++y) {
+        for (std::size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
+          std::size_t xRight = image.width() - 1 - xLeft;
 
           auto left = image.get(xLeft, y);
           auto right = image.get(xRight, y);
@@ -576,9 +575,9 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     }
 
     if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
-      for (size_t x = 0; x < image.width(); ++x) {
-        for (size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
-          size_t yBottom = image.height() - 1 - yTop;
+      for (std::size_t x = 0; x < image.width(); ++x) {
+        for (std::size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
+          std::size_t yBottom = image.height() - 1 - yTop;
 
           auto top = image.get(x, yTop);
           auto bottom = image.get(x, yBottom);

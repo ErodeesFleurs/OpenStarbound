@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.variant;
 import star.stream_formatter;
@@ -11,7 +11,7 @@ import star.bi_map;
 import star.algorithm;
 namespace Star {
 
-enum class EquipmentSlot : uint8_t {
+enum class EquipmentSlot : std::uint8_t {
   Head = 0,
   Chest = 1,
   Legs = 2,
@@ -35,7 +35,7 @@ enum class EquipmentSlot : uint8_t {
 };
 extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
-typedef pair<String, uint8_t> BagSlot;
+typedef std::pair<String, std::uint8_t> BagSlot;
 
 // Preserve the original strong_typedef expansion so its native wrapper can declare precise stream ADL.
 template <typename BaseType> struct TrashSlotWrapper;
@@ -89,7 +89,7 @@ Json jsonFromInventorySlot(InventorySlot const& slot);
 std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot);
 
 // Special items in the player inventory that are not generally manageable
-enum class EssentialItem : uint8_t {
+enum class EssentialItem : std::uint8_t {
   BeamAxe = 0,
   WireTool = 1,
   PaintTool = 2,
@@ -101,14 +101,14 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 // hard coded shortcuts to the essential items.  There is one location selected
 // at a time, which is either an entry on the custom bar, or one of the
 // essential items, or nothing.
-typedef uint8_t CustomBarIndex;
+typedef std::uint8_t CustomBarIndex;
 typedef MVariant<CustomBarIndex, EssentialItem> SelectedActionBarLocation;
 
 SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
 
-inline constexpr uint8_t EquipmentSize = 8;
-inline constexpr uint8_t EssentialItemCount = 4;
+inline constexpr std::uint8_t EquipmentSize = 8;
+inline constexpr std::uint8_t EssentialItemCount = 4;
 
 }
 

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.json;
@@ -42,16 +42,70 @@ import star.net_element_system;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(Celestial);
-STAR_CLASS(Clock);
-STAR_CLASS(ClientContext);
-STAR_CLASS(SystemWorld);
-STAR_CLASS(SystemWorldServer);
-STAR_CLASS(SystemClientShip);
-STAR_CLASS(SystemObject);
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
+class Celestial;
+using CelestialPtr = std::shared_ptr<Celestial>;
+using CelestialConstPtr = std::shared_ptr<const Celestial>;
+using CelestialWeakPtr = std::weak_ptr<Celestial>;
+using CelestialConstWeakPtr = std::weak_ptr<const Celestial>;
+using CelestialUPtr = std::unique_ptr<Celestial>;
+using CelestialConstUPtr = std::unique_ptr<const Celestial>;
+class Clock;
+using ClockPtr = std::shared_ptr<Clock>;
+using ClockConstPtr = std::shared_ptr<const Clock>;
+using ClockWeakPtr = std::weak_ptr<Clock>;
+using ClockConstWeakPtr = std::weak_ptr<const Clock>;
+using ClockUPtr = std::unique_ptr<Clock>;
+using ClockConstUPtr = std::unique_ptr<const Clock>;
+class ClientContext;
+using ClientContextPtr = std::shared_ptr<ClientContext>;
+using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
+using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
+using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
+using ClientContextUPtr = std::unique_ptr<ClientContext>;
+using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
+class SystemWorld;
+using SystemWorldPtr = std::shared_ptr<SystemWorld>;
+using SystemWorldConstPtr = std::shared_ptr<const SystemWorld>;
+using SystemWorldWeakPtr = std::weak_ptr<SystemWorld>;
+using SystemWorldConstWeakPtr = std::weak_ptr<const SystemWorld>;
+using SystemWorldUPtr = std::unique_ptr<SystemWorld>;
+using SystemWorldConstUPtr = std::unique_ptr<const SystemWorld>;
+class SystemWorldServer;
+using SystemWorldServerPtr = std::shared_ptr<SystemWorldServer>;
+using SystemWorldServerConstPtr = std::shared_ptr<const SystemWorldServer>;
+using SystemWorldServerWeakPtr = std::weak_ptr<SystemWorldServer>;
+using SystemWorldServerConstWeakPtr = std::weak_ptr<const SystemWorldServer>;
+using SystemWorldServerUPtr = std::unique_ptr<SystemWorldServer>;
+using SystemWorldServerConstUPtr = std::unique_ptr<const SystemWorldServer>;
+class SystemClientShip;
+using SystemClientShipPtr = std::shared_ptr<SystemClientShip>;
+using SystemClientShipConstPtr = std::shared_ptr<const SystemClientShip>;
+using SystemClientShipWeakPtr = std::weak_ptr<SystemClientShip>;
+using SystemClientShipConstWeakPtr = std::weak_ptr<const SystemClientShip>;
+using SystemClientShipUPtr = std::unique_ptr<SystemClientShip>;
+using SystemClientShipConstUPtr = std::unique_ptr<const SystemClientShip>;
+class SystemObject;
+using SystemObjectPtr = std::shared_ptr<SystemObject>;
+using SystemObjectConstPtr = std::shared_ptr<const SystemObject>;
+using SystemObjectWeakPtr = std::weak_ptr<SystemObject>;
+using SystemObjectConstWeakPtr = std::weak_ptr<const SystemObject>;
+using SystemObjectUPtr = std::unique_ptr<SystemObject>;
+using SystemObjectConstUPtr = std::unique_ptr<const SystemObject>;
 
-STAR_STRUCT(SystemObjectConfig);
+struct SystemObjectConfig;
+using SystemObjectConfigPtr = std::shared_ptr<SystemObjectConfig>;
+using SystemObjectConfigConstPtr = std::shared_ptr<const SystemObjectConfig>;
+using SystemObjectConfigWeakPtr = std::weak_ptr<SystemObjectConfig>;
+using SystemObjectConfigConstWeakPtr = std::weak_ptr<const SystemObjectConfig>;
+using SystemObjectConfigUPtr = std::unique_ptr<SystemObjectConfig>;
+using SystemObjectConfigConstUPtr = std::unique_ptr<const SystemObjectConfig>;
 
 struct CelestialOrbit {
   friend DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit);
@@ -116,7 +170,7 @@ public:
   Vec3I location() const;
   List<CelestialCoordinate> planets() const;
 
-  uint64_t coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
+  std::uint64_t coordinateSeed(CelestialCoordinate const& coord, String const& seedMix) const;
   float planetOrbitDistance(CelestialCoordinate const& coord) const;
   // assumes circular orbit
   float orbitInterval(float distance, bool isMoon) const;
@@ -189,7 +243,7 @@ public:
   void clientUpdate(float dt);
   void serverUpdate(SystemWorldServer* system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
   ByteArray netStore() const;
@@ -232,7 +286,7 @@ public:
   void clientUpdate(float dt);
   void serverUpdate(SystemWorld* system, float dt);
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
 
   ByteArray netStore() const;

@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.maybe;
 import star.format;
@@ -18,8 +17,20 @@ struct SocketClosedExceptionTag {
 };
 using SocketClosedException = StarError<SocketClosedExceptionTag, NetworkException>;
 
-STAR_STRUCT(SocketImpl);
-STAR_CLASS(Socket);
+struct SocketImpl;
+using SocketImplPtr = std::shared_ptr<SocketImpl>;
+using SocketImplConstPtr = std::shared_ptr<const SocketImpl>;
+using SocketImplWeakPtr = std::weak_ptr<SocketImpl>;
+using SocketImplConstWeakPtr = std::weak_ptr<const SocketImpl>;
+using SocketImplUPtr = std::unique_ptr<SocketImpl>;
+using SocketImplConstUPtr = std::unique_ptr<const SocketImpl>;
+class Socket;
+using SocketPtr = std::shared_ptr<Socket>;
+using SocketConstPtr = std::shared_ptr<const Socket>;
+using SocketWeakPtr = std::weak_ptr<Socket>;
+using SocketConstWeakPtr = std::weak_ptr<const Socket>;
+using SocketUPtr = std::unique_ptr<Socket>;
+using SocketConstUPtr = std::unique_ptr<const Socket>;
 
 enum class SocketMode {
   Closed,
@@ -97,7 +108,7 @@ protected:
   mutable ReadersWriterMutex m_mutex;
   NetworkMode m_networkMode;
   SocketImplPtr m_impl;
-  atomic<SocketMode> m_socketMode;
+  std::atomic<SocketMode> m_socketMode;
   HostAddressWithPort m_localAddress;
 };
 

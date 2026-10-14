@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.game_types;
 import star.id_map;
@@ -69,7 +69,7 @@ class FarmableObject : public Object {
 public:
   FarmableObject(ObjectConfigConstPtr config, Json const& parameters);
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
   InteractAction interact(InteractRequest const& request) override;

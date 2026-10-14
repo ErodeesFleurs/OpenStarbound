@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.math_common;
 import star.liquid_types;
@@ -8,7 +8,7 @@ namespace Star {
 LiquidLevel LiquidLevel::take(float amount) {
   if (liquid == EmptyLiquidId)
     return LiquidLevel();
-  amount = min(amount, level);
+  amount = std::min(amount, level);
 
   LiquidLevel taken = {liquid, amount};
 
@@ -44,8 +44,8 @@ Maybe<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float p
   if (source) {
     if (this->liquid != liquid)
       return {};
-    level = max(level, this->level);
-    pressure = max(pressure, this->pressure);
+    level = std::max(level, this->level);
+    pressure = std::max(pressure, this->pressure);
   }
 
   if (level <= 0.0f) {

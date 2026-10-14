@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.list;
@@ -101,7 +101,13 @@ Json inputDescriptorToJson(KeyChord const& chord);
 
 String printInputDescriptor(KeyChord chord);
 
-STAR_CLASS(KeyBindings);
+class KeyBindings;
+using KeyBindingsPtr = std::shared_ptr<KeyBindings>;
+using KeyBindingsConstPtr = std::shared_ptr<KeyBindings const>;
+using KeyBindingsWeakPtr = std::weak_ptr<KeyBindings>;
+using KeyBindingsConstWeakPtr = std::weak_ptr<KeyBindings const>;
+using KeyBindingsUPtr = std::unique_ptr<KeyBindings>;
+using KeyBindingsConstUPtr = std::unique_ptr<KeyBindings const>;
 
 class KeyBindings {
 public:
@@ -116,7 +122,7 @@ public:
 private:
   // Maps the primary key to a list of InterfaceActions, and any mods that they
   // require to be held.
-  Map<Key, List<pair<KeyMod, InterfaceAction>>> m_actions;
+  Map<Key, List<std::pair<KeyMod, InterfaceAction>>> m_actions;
 };
 
 }

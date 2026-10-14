@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.net_compatibility;
 import star.byte_array;
 
@@ -20,7 +20,7 @@ public:
   // code that should be passed to the next call to writeState.  If
   // 'fromVersion' is 0, then this is a full write for an initial read of a
   // slave NetElementTop.
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Reads a state produced by a call to writeState, optionally with the
   // interpolation delay time for the data contained in this state update.  If
   // the state is a full update rather than a delta, the interoplation delay
@@ -48,7 +48,7 @@ NetElementTop<BaseNetElement>::NetElementTop() {
 }
 
 template <typename BaseNetElement>
-pair<ByteArray, uint64_t> NetElementTop<BaseNetElement>::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> NetElementTop<BaseNetElement>::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
   if (fromVersion == 0) {

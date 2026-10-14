@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.stream_formatter;
@@ -12,7 +12,13 @@ import star.a_star;
 namespace Star {
 namespace PlatformerAStar {
 
-STAR_CLASS(PathFinder);
+class PathFinder;
+using PathFinderPtr = std::shared_ptr<PathFinder>;
+using PathFinderConstPtr = std::shared_ptr<const PathFinder>;
+using PathFinderWeakPtr = std::weak_ptr<PathFinder>;
+using PathFinderConstWeakPtr = std::weak_ptr<const PathFinder>;
+using PathFinderUPtr = std::unique_ptr<PathFinder>;
+using PathFinderConstUPtr = std::unique_ptr<const PathFinder>;
 
 struct Node {
   friend bool operator==(Node const& a, Node const& b);

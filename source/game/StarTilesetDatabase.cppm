@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -23,11 +23,29 @@ import star.dungeon_generator;
 
 namespace Star {
 
-STAR_CLASS(TilesetDatabase);
+class TilesetDatabase;
+using TilesetDatabasePtr = std::shared_ptr<TilesetDatabase>;
+using TilesetDatabaseConstPtr = std::shared_ptr<const TilesetDatabase>;
+using TilesetDatabaseWeakPtr = std::weak_ptr<TilesetDatabase>;
+using TilesetDatabaseConstWeakPtr = std::weak_ptr<const TilesetDatabase>;
+using TilesetDatabaseUPtr = std::unique_ptr<TilesetDatabase>;
+using TilesetDatabaseConstUPtr = std::unique_ptr<const TilesetDatabase>;
 
 namespace Tiled {
-  STAR_CLASS(Tile);
-  STAR_CLASS(Tileset);
+  class Tile;
+  using TilePtr = std::shared_ptr<Tile>;
+  using TileConstPtr = std::shared_ptr<const Tile>;
+  using TileWeakPtr = std::weak_ptr<Tile>;
+  using TileConstWeakPtr = std::weak_ptr<const Tile>;
+  using TileUPtr = std::unique_ptr<Tile>;
+  using TileConstUPtr = std::unique_ptr<const Tile>;
+  class Tileset;
+  using TilesetPtr = std::shared_ptr<Tileset>;
+  using TilesetConstPtr = std::shared_ptr<const Tileset>;
+  using TilesetWeakPtr = std::weak_ptr<Tileset>;
+  using TilesetConstWeakPtr = std::weak_ptr<const Tileset>;
+  using TilesetUPtr = std::unique_ptr<Tileset>;
+  using TilesetConstUPtr = std::unique_ptr<const Tileset>;
 
   extern EnumMap<TileLayer> const LayerNames;
 
@@ -72,8 +90,8 @@ namespace Tiled {
   public:
     Tileset(Json const& json);
 
-    TileConstPtr const& getTile(size_t id, TileLayer layer) const;
-    size_t size() const;
+    TileConstPtr const& getTile(std::size_t id, TileLayer layer) const;
+    std::size_t size() const;
 
   private:
     List<TileConstPtr> const& tiles(TileLayer layer) const;

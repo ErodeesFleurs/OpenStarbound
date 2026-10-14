@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -18,8 +18,20 @@ import star.ttl_cache;
 
 namespace Star {
 
-STAR_STRUCT(Tenant);
-STAR_CLASS(TenantDatabase);
+struct Tenant;
+using TenantPtr = std::shared_ptr<Tenant>;
+using TenantConstPtr = std::shared_ptr<const Tenant>;
+using TenantWeakPtr = std::weak_ptr<Tenant>;
+using TenantConstWeakPtr = std::weak_ptr<const Tenant>;
+using TenantUPtr = std::unique_ptr<Tenant>;
+using TenantConstUPtr = std::unique_ptr<const Tenant>;
+class TenantDatabase;
+using TenantDatabasePtr = std::shared_ptr<TenantDatabase>;
+using TenantDatabaseConstPtr = std::shared_ptr<const TenantDatabase>;
+using TenantDatabaseWeakPtr = std::weak_ptr<TenantDatabase>;
+using TenantDatabaseConstWeakPtr = std::weak_ptr<const TenantDatabase>;
+using TenantDatabaseUPtr = std::unique_ptr<TenantDatabase>;
+using TenantDatabaseConstUPtr = std::unique_ptr<const TenantDatabase>;
 
 struct TenantExceptionTag {
   static constexpr char const* name() { return "TenantException"; }

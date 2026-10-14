@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -145,7 +145,7 @@ void PlayerCompanions::diskLoad(Json const& diskStore) {
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
   m_companions = jsonToMapV<StringMap<List<CompanionPtr>>>(diskStore.getObject("companions", JsonObject{}),
       [](Json const& companions) {
-        return companions.toArray().transformed([](Json const& json) { return make_shared<Companion>(json); });
+        return companions.toArray().transformed([](Json const& json) { return std::make_shared<Companion>(json); });
       });
 }
 
@@ -153,7 +153,7 @@ Json PlayerCompanions::diskStore() const {
   JsonObject result;
   result["scriptStorage"] = m_scriptComponent.getScriptStorage();
   result["companions"] = jsonFromMapV(m_companions,
-      [](List<CompanionPtr> const& companions) { return companions.transformed(mem_fn(&Companion::toJson)); });
+      [](List<CompanionPtr> const& companions) { return companions.transformed(std::mem_fn(&Companion::toJson)); });
   return result;
 }
 
@@ -213,7 +213,7 @@ LuaCallbacks PlayerCompanions::makeCompanionsCallbacks() {
       });
   callbacks.registerCallback("setCompanions",
       [this](String const& category, JsonArray const& companions) {
-        m_companions[category] = companions.transformed([](Json const& json) { return make_shared<Companion>(json); });
+        m_companions[category] = companions.transformed([](Json const& json) { return std::make_shared<Companion>(json); });
       });
 
   return callbacks;

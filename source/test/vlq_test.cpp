@@ -1,12 +1,13 @@
 #include "gtest/gtest.h"
 
+import std;
 import star.vlq;
 
 using namespace Star;
 
 TEST(VlqTest, All) {
   char buffer[10];
-  int64_t result;
+  std::int64_t result;
 
   EXPECT_EQ(writeVlqI(-1, buffer), 1u);
   EXPECT_EQ(readVlqI(result, buffer), 1u);
@@ -20,9 +21,9 @@ TEST(VlqTest, All) {
   EXPECT_EQ(readVlqI(result, buffer), 1u);
   EXPECT_EQ(result, -64);
 
-  EXPECT_EQ(writeVlqI((int64_t)1 << 63, buffer), 10u);
+  EXPECT_EQ(writeVlqI((std::int64_t)1 << 63, buffer), 10u);
   EXPECT_EQ(readVlqI(result, buffer), 10u);
-  EXPECT_EQ(result, (int64_t)1 << 63);
+  EXPECT_EQ(result, (std::int64_t)1 << 63);
 
   EXPECT_EQ(writeVlqI(0, buffer), 1u);
   EXPECT_EQ(readVlqI(result, buffer), 1u);

@@ -15,7 +15,6 @@ import star.btree_database;
 import star.ordered_set;
 import star.list;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 import star.rpc_promise;
@@ -74,16 +73,22 @@ import star.world_storage;
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
 
 class PlayerStorage {
 public:
   PlayerStorage(String const& storageDir);
   ~PlayerStorage();
 
-  size_t playerCount() const;
+  std::size_t playerCount() const;
   // Returns nothing if index is out of bounds.
-  Maybe<Uuid> playerUuidAt(size_t index);
+  Maybe<Uuid> playerUuidAt(std::size_t index);
   // Returns nothing if name doesn't match a player.
   Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
   // Returns nothing if name doesn't match a player.

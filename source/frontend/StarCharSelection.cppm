@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -40,14 +40,26 @@ import star.uuid;
 
 namespace Star {
 
-STAR_CLASS(PlayerStorage);
-STAR_CLASS(Player);
+class PlayerStorage;
+using PlayerStoragePtr = std::shared_ptr<PlayerStorage>;
+using PlayerStorageConstPtr = std::shared_ptr<PlayerStorage const>;
+using PlayerStorageWeakPtr = std::weak_ptr<PlayerStorage>;
+using PlayerStorageConstWeakPtr = std::weak_ptr<PlayerStorage const>;
+using PlayerStorageUPtr = std::unique_ptr<PlayerStorage>;
+using PlayerStorageConstUPtr = std::unique_ptr<PlayerStorage const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 
 class CharSelectionPane : public Pane {
 public:
-  typedef function<void()> CreateCharCallback;
-  typedef function<void(PlayerPtr const&)> SelectCharacterCallback;
-  typedef function<void(Uuid)> DeleteCharacterCallback;
+  typedef std::function<void()> CreateCharCallback;
+  typedef std::function<void(PlayerPtr const&)> SelectCharacterCallback;
+  typedef std::function<void(Uuid)> DeleteCharacterCallback;
 
   CharSelectionPane(PlayerStoragePtr playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
@@ -71,7 +83,7 @@ private:
   SelectCharacterCallback m_selectCallback;
   DeleteCharacterCallback m_deleteCallback;
 };
-typedef shared_ptr<CharSelectionPane> CharSelectionPanePtr;
+typedef std::shared_ptr<CharSelectionPane> CharSelectionPanePtr;
 }
 
 export module star.char_selection;

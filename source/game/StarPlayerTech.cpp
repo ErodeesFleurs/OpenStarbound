@@ -15,7 +15,7 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.version;

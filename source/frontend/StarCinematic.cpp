@@ -30,7 +30,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.id_map;
@@ -199,7 +198,7 @@ void Cinematic::load(Json const& definition) {
   }
 
   for (auto panelDefinition : definition.getArray("panels")) {
-    PanelPtr panel = make_shared<Panel>();
+    PanelPtr panel = std::make_shared<Panel>();
     panel->useCamera = panelDefinition.getBool("useCamera", true);
     panel->drawables = panelDefinition.getArray("drawables", {});
     panel->animationFrames = panelDefinition.getInt("animationFrames", std::numeric_limits<int>::max());
@@ -272,7 +271,7 @@ void Cinematic::update(float) {
 }
 
 bool Cinematic::completed() const {
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
+  for (std::size_t i = 0; i < m_audioCues.size(); ++i) {
     if (m_activeAudio[i] && !m_activeAudio[i]->finished())
       return false;
   }
@@ -306,7 +305,7 @@ void Cinematic::render() {
     if (m_timer.time() < m_backgroundFadeTime)
       fadeFactor = m_timer.time() / m_backgroundFadeTime;
     else if (m_completionTime - m_timer.time() < m_backgroundFadeTime)
-      fadeFactor = max<float>(0.0f, m_completionTime - m_timer.time()) / m_backgroundFadeTime;
+      fadeFactor = std::max<float>(0.0f, m_completionTime - m_timer.time()) / m_backgroundFadeTime;
   }
 
   if (m_backgroundColor) {
@@ -370,16 +369,16 @@ void Cinematic::render() {
     }
     if (!panel->text.empty()) {
       textPainter->setTextStyle(panel->textStyle);
-      textPainter->setFontSize(floor(panel->textStyle.fontSize * drawableScale));
+      textPainter->setFontSize(std::floor(panel->textStyle.fontSize * drawableScale));
       auto fontColor = panel->textStyle.color;
       fontColor[3] *= values.alpha;
       textPainter->setFontColor(fontColor);
       Vec2F position = (m_offset + values.position + Vec2F(panel->textPosition.pos)) * drawableScale + drawableTranslation;
       TextPositioning tp = TextPositioning(position, panel->textPosition.hAnchor, panel->textPosition.vAnchor, {}, {});
       if (panel->textPosition.wrapWidth)
-        tp.wrapWidth = floor(panel->textPosition.wrapWidth.get() * drawableScale);
+        tp.wrapWidth = std::floor(panel->textPosition.wrapWidth.get() * drawableScale);
       if (values.textPercentage < 1.0)
-        tp.charLimit = floor(panel->text.length() * values.textPercentage);
+        tp.charLimit = std::floor(panel->text.length() * values.textPercentage);
       textPainter->renderText(panel->text, tp);
     }
   }
@@ -387,7 +386,7 @@ void Cinematic::render() {
   if (m_scissor)
     renderer->setScissorRect({});
 
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
+  for (std::size_t i = 0; i < m_audioCues.size(); ++i) {
     if (m_audioCues[i].endTimecode > 0 && m_audioCues[i].endTimecode <= currentTimecode()) {
       if (!m_activeAudio[i])
         continue;
@@ -395,7 +394,7 @@ void Cinematic::render() {
     } else if (m_audioCues[i].timecode <= currentTimecode()) {
       if (m_activeAudio[i])
         continue;
-      AudioInstancePtr audioInstance = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
+      AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_audioCues[i].resource));
       audioInstance->setLoops(m_audioCues[i].loops);
       audioInstance->setMixerGroup(MixerGroup::Cinematic);
       mixer->play(audioInstance);
@@ -442,7 +441,9 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
         upperLeft,  Vec2F{0, size[1]},
         drawableColor, 0.0f);
   } else {
-    starAssert(drawable.part.empty());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((drawable.part.empty()));
+    }
   }
 }
 
@@ -520,7 +521,7 @@ Cinematic::PanelValues Cinematic::determinePanelValues(PanelPtr panel, float tim
   }
 
   if (panel->loopTime != 0) {
-    timecode = fmod(timecode, panel->loopTime);
+    timecode = std::fmod(timecode, panel->loopTime);
   }
 
   float startZoom = 0;
@@ -684,7 +685,7 @@ void Cinematic::stop() {
   m_completionTime = 0;
   m_timer.stop();
   m_timer.reset();
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
+  for (std::size_t i = 0; i < m_audioCues.size(); ++i) {
     if (m_activeAudio[i])
       m_activeAudio[i]->stop();
   }

@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.variant;
 import star.data_stream;
@@ -39,8 +38,8 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules = {}) const;
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool shouldWriteNetDelta(std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   mapped_type const& get(key_type const& key) const;
@@ -58,8 +57,8 @@ public:
   using BaseMap::maybe;
   using BaseMap::value;
 
-  pair<const_iterator, bool> insert(value_type v);
-  pair<const_iterator, bool> insert(key_type k, mapped_type v);
+  std::pair<const_iterator, bool> insert(value_type v);
+  std::pair<const_iterator, bool> insert(key_type k, mapped_type v);
 
   void add(key_type k, mapped_type v);
   // Calling set with a matching key and value does not cause a delta to be
@@ -88,12 +87,12 @@ public:
   template <typename MapType>
   void setContents(MapType const& values);
 
-  uint64_t changeDataLastVersion() const;
+  std::uint64_t changeDataLastVersion() const;
 
 private:
   // If a delta is written from further back than this many steps, the delta
   // will fall back to a full serialization of the entire state.
-  static int64_t const MaxChangeDataVersions = 100;
+  static std::int64_t const MaxChangeDataVersions = 100;
 
   struct SetChange {
     key_type key;
@@ -114,10 +113,10 @@ private:
   void addPendingChangeData(ElementChange change, float interpolationTime);
   void applyChange(ElementChange change);
 
-  Deque<pair<uint64_t, ElementChange>> m_changeData;
-  Deque<pair<float, ElementChange>> m_pendingChangeData;
+  Deque<std::pair<std::uint64_t, ElementChange>> m_changeData;
+  Deque<std::pair<float, ElementChange>> m_pendingChangeData;
   NetElementVersion const* m_netVersion = nullptr;
-  uint64_t m_changeDataLastVersion = 0;
+  std::uint64_t m_changeDataLastVersion = 0;
   bool m_updated = false;
   bool m_interpolationEnabled = false;
 };
@@ -185,8 +184,8 @@ void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds, NetCompatibilityRule
 
   addChangeData(ClearChange());
 
-  uint64_t count = ds.readVlqU();
-  for (uint64_t i = 0; i < count; ++i) {
+  std::uint64_t count = ds.readVlqU();
+  for (std::uint64_t i = 0; i < count; ++i) {
     auto change = readChange(ds);
     addChangeData(change);
     applyChange(std::move(change));
@@ -196,7 +195,7 @@ void NetElementMapWrapper<BaseMap>::netLoad(DataStream& ds, NetCompatibilityRule
 }
 
 template <typename BaseMap>
-bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   if (fromVersion < m_changeDataLastVersion)
     return true;
@@ -209,7 +208,7 @@ bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, Ne
 }
 
 template <typename BaseMap>
-bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   bool deltaWritten = false;
 
@@ -238,7 +237,7 @@ template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   while (true) {
-    uint64_t code = ds.readVlqU();
+    std::uint64_t code = ds.readVlqU();
     if (code == 0) {
       break;
     } else if (code == 1) {
@@ -278,7 +277,7 @@ auto NetElementMapWrapper<BaseMap>::end() const -> const_iterator {
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::insert(value_type v) -> pair<const_iterator, bool> {
+auto NetElementMapWrapper<BaseMap>::insert(value_type v) -> std::pair<const_iterator, bool> {
   auto res = BaseMap::insert(v);
   if (res.second) {
     addChangeData(SetChange{std::move(v.first), std::move(v.second)});
@@ -288,7 +287,7 @@ auto NetElementMapWrapper<BaseMap>::insert(value_type v) -> pair<const_iterator,
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::insert(key_type k, mapped_type v) -> pair<const_iterator, bool> {
+auto NetElementMapWrapper<BaseMap>::insert(key_type k, mapped_type v) -> std::pair<const_iterator, bool> {
   return insert(value_type(std::move(k), std::move(v)));
 }
 
@@ -412,27 +411,27 @@ void NetElementMapWrapper<BaseMap>::setContents(MapType const& values) {
 }
 
 template <typename BaseMap>
-uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
+std::uint64_t NetElementMapWrapper<BaseMap>::changeDataLastVersion() const {
   return m_changeDataLastVersion;
 }
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::writeChange(DataStream& ds, ElementChange const& change) {
   if (auto sc = change.template ptr<SetChange>()) {
-    ds.write<uint8_t>(0);
+    ds.write<std::uint8_t>(0);
     ds.write(sc->key);
     ds.write(sc->value);
   } else if (auto rc = change.template ptr<RemoveChange>()) {
-    ds.write<uint8_t>(1);
+    ds.write<std::uint8_t>(1);
     ds.write(rc->key);
   } else {
-    ds.write<uint8_t>(2);
+    ds.write<std::uint8_t>(2);
   }
 }
 
 template <typename BaseMap>
 auto NetElementMapWrapper<BaseMap>::readChange(DataStream& ds) -> ElementChange {
-  uint8_t t = ds.read<uint8_t>();
+  std::uint8_t t = ds.read<std::uint8_t>();
   if (t == 0) {
     SetChange sc;
     ds.read(sc.key);
@@ -451,12 +450,14 @@ auto NetElementMapWrapper<BaseMap>::readChange(DataStream& ds) -> ElementChange 
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
-  uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
+  std::uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_changeData.empty() || m_changeData.last().first <= currentVersion));
+  }
 
   m_changeData.append({currentVersion, std::move(change)});
 
-  m_changeDataLastVersion = max<int64_t>((int64_t)currentVersion - MaxChangeDataVersions, 0);
+  m_changeDataLastVersion = std::max<std::int64_t>((std::int64_t)currentVersion - MaxChangeDataVersions, 0);
   while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)
     m_changeData.removeFirst();
 }

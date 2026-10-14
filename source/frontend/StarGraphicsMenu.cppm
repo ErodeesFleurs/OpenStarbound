@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -47,13 +47,31 @@ import star.registered_pane_manager;
 import star.main_interface_types;
 
 namespace Star {
-STAR_CLASS(UniverseClient);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 }
 
 namespace Star {
 
-STAR_CLASS(GraphicsMenu);
-STAR_CLASS(ShadersMenu);
+class GraphicsMenu;
+using GraphicsMenuPtr = std::shared_ptr<GraphicsMenu>;
+using GraphicsMenuConstPtr = std::shared_ptr<GraphicsMenu const>;
+using GraphicsMenuWeakPtr = std::weak_ptr<GraphicsMenu>;
+using GraphicsMenuConstWeakPtr = std::weak_ptr<GraphicsMenu const>;
+using GraphicsMenuUPtr = std::unique_ptr<GraphicsMenu>;
+using GraphicsMenuConstUPtr = std::unique_ptr<GraphicsMenu const>;
+class ShadersMenu;
+using ShadersMenuPtr = std::shared_ptr<ShadersMenu>;
+using ShadersMenuConstPtr = std::shared_ptr<ShadersMenu const>;
+using ShadersMenuWeakPtr = std::weak_ptr<ShadersMenu>;
+using ShadersMenuConstWeakPtr = std::weak_ptr<ShadersMenu const>;
+using ShadersMenuUPtr = std::unique_ptr<ShadersMenu>;
+using ShadersMenuConstUPtr = std::unique_ptr<ShadersMenu const>;
 
 class GraphicsMenu : public Pane {
 public:

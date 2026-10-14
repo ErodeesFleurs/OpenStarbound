@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.map;
@@ -22,17 +22,23 @@ import star.directives;
 import star.vector;
 namespace Star {
 
-STAR_CLASS(FontTextureGroup);
+class FontTextureGroup;
+using FontTextureGroupPtr = std::shared_ptr<FontTextureGroup>;
+using FontTextureGroupConstPtr = std::shared_ptr<FontTextureGroup const>;
+using FontTextureGroupWeakPtr = std::weak_ptr<FontTextureGroup>;
+using FontTextureGroupConstWeakPtr = std::weak_ptr<FontTextureGroup const>;
+using FontTextureGroupUPtr = std::unique_ptr<FontTextureGroup>;
+using FontTextureGroupConstUPtr = std::unique_ptr<FontTextureGroup const>;
 
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced
-  typedef tuple<String::Char, unsigned, size_t, Font*> GlyphDescriptor;
+  typedef std::tuple<String::Char, unsigned, std::size_t, Font*> GlyphDescriptor;
 
   struct GlyphTexture {
     TexturePtr texture;
     bool colored = false;
-    int64_t time = 0;
+    std::int64_t time = 0;
     Vec2F offset;
   };
 
@@ -47,7 +53,7 @@ public:
 
   // Removes glyphs that haven't been used in more than the given time in
   // milliseconds
-  void cleanup(int64_t timeout);
+  void cleanup(std::int64_t timeout);
   // Switches the current font
   void switchFont(String const& font);
   String const& activeFont();

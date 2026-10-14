@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.lua;
 import star.maybe;
@@ -49,7 +49,13 @@ struct LuaComponentExceptionTag {
 };
 using LuaComponentException = StarError<LuaComponentExceptionTag, LuaException>;
 
-STAR_CLASS(ScriptableThread);
+class ScriptableThread;
+using ScriptableThreadPtr = std::shared_ptr<ScriptableThread>;
+using ScriptableThreadConstPtr = std::shared_ptr<const ScriptableThread>;
+using ScriptableThreadWeakPtr = std::weak_ptr<ScriptableThread>;
+using ScriptableThreadConstWeakPtr = std::weak_ptr<const ScriptableThread>;
+using ScriptableThreadUPtr = std::unique_ptr<ScriptableThread>;
+using ScriptableThreadConstUPtr = std::unique_ptr<const ScriptableThread>;
 
 // Basic lua component that can be initialized (takes and then owns a script
 // context, calls the script context's init function) and uninitialized

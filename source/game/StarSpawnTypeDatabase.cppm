@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.set;
 import star.variant;
@@ -18,10 +18,16 @@ struct SpawnTypeDatabaseExceptionTag {
 };
 using SpawnTypeDatabaseException = StarError<SpawnTypeDatabaseExceptionTag, StarException>;
 
-STAR_CLASS(SpawnTypeDatabase);
+class SpawnTypeDatabase;
+using SpawnTypeDatabasePtr = std::shared_ptr<SpawnTypeDatabase>;
+using SpawnTypeDatabaseConstPtr = std::shared_ptr<const SpawnTypeDatabase>;
+using SpawnTypeDatabaseWeakPtr = std::weak_ptr<SpawnTypeDatabase>;
+using SpawnTypeDatabaseConstWeakPtr = std::weak_ptr<const SpawnTypeDatabase>;
+using SpawnTypeDatabaseUPtr = std::unique_ptr<SpawnTypeDatabase>;
+using SpawnTypeDatabaseConstUPtr = std::unique_ptr<const SpawnTypeDatabase>;
 
 struct SpawnParameters {
-  enum class Area : uint8_t {
+  enum class Area : std::uint8_t {
     Surface,
     Ceiling,
     Air,
@@ -29,13 +35,13 @@ struct SpawnParameters {
     Solid
   };
 
-  enum class Region : uint8_t {
+  enum class Region : std::uint8_t {
     All,
     Enclosed,
     Exposed
   };
 
-  enum class Time : uint8_t {
+  enum class Time : std::uint8_t {
     All,
     Day,
     Night
@@ -70,7 +76,7 @@ struct SpawnType {
   float spawnChance;
 
   SpawnParameters spawnParameters;
-  uint64_t seedMix;
+  std::uint64_t seedMix;
 };
 
 SpawnType spawnTypeFromJson(Json const& config);
@@ -86,7 +92,7 @@ struct SpawnProfile {
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed);
+SpawnProfile constructSpawnProfile(Json const& config, std::uint64_t seed);
 
 class SpawnTypeDatabase {
 public:

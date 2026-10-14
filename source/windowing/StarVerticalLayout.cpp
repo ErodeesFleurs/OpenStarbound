@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.vector;
 #include "StarCasting.hpp"
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -78,7 +78,7 @@ void VerticalLayout::update(float) {
   for (auto const& child : m_members) {
     auto childSize = child->size();
     m_size[1] += childSize[1];
-    m_size[0] = max(m_size[0], childSize[0]);
+    m_size[0] = std::max(m_size[0], childSize[0]);
   }
   m_size[1] += (m_members.size() - 1) * m_verticalSpacing;
 

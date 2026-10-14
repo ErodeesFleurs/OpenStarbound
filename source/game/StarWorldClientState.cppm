@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.maybe;
 
@@ -14,7 +14,13 @@ import star.net_element_system;
 
 namespace Star {
 
-STAR_CLASS(WorldClientState);
+class WorldClientState;
+using WorldClientStatePtr = std::shared_ptr<WorldClientState>;
+using WorldClientStateConstPtr = std::shared_ptr<const WorldClientState>;
+using WorldClientStateWeakPtr = std::weak_ptr<WorldClientState>;
+using WorldClientStateConstWeakPtr = std::weak_ptr<const WorldClientState>;
+using WorldClientStateUPtr = std::unique_ptr<WorldClientState>;
+using WorldClientStateConstUPtr = std::unique_ptr<const WorldClientState>;
 
 // Class to aid in network syncronization of client state such as viewing area
 // and player entity id.
@@ -39,7 +45,7 @@ public:
 
   // All areas of the server monitored by the client, takes a function to
   // resolve an entity id to its bound box.
-  List<RectI> monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const;
+  List<RectI> monitoringRegions(std::function<Maybe<RectI>(EntityId)> entityBounds) const;
 
   ByteArray writeDelta();
   void readDelta(ByteArray delta);
@@ -54,7 +60,7 @@ private:
   int m_presenceEntityMonitoringBorder;
 
   NetElementTopGroup m_netGroup;
-  uint64_t m_netVersion;
+  std::uint64_t m_netVersion;
 
   NetElementInt m_windowXMin;
   NetElementInt m_windowYMin;

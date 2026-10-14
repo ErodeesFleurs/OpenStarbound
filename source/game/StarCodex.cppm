@@ -1,13 +1,19 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
 
 namespace Star {
 
-STAR_CLASS(Codex);
+class Codex;
+using CodexPtr = std::shared_ptr<Codex>;
+using CodexConstPtr = std::shared_ptr<const Codex>;
+using CodexWeakPtr = std::weak_ptr<Codex>;
+using CodexConstWeakPtr = std::weak_ptr<const Codex>;
+using CodexUPtr = std::unique_ptr<Codex>;
+using CodexConstUPtr = std::unique_ptr<const Codex>;
 
 class Codex {
 public:
@@ -19,9 +25,9 @@ public:
   String title() const;
   String description() const;
   String icon() const;
-  String page(size_t pageNum) const;
+  String page(std::size_t pageNum) const;
   List<String> pages() const;
-  size_t pageCount() const;
+  std::size_t pageCount() const;
   Json itemConfig() const;
   String directory() const;
   String filename() const;

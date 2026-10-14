@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.bi_map;
@@ -45,7 +45,13 @@ import star.actor_movement_controller;
 namespace Star {
 namespace PlatformerAStar {
 
-  STAR_CLASS(PathFinder);
+  class PathFinder;
+  using PathFinderPtr = std::shared_ptr<PathFinder>;
+  using PathFinderConstPtr = std::shared_ptr<const PathFinder>;
+  using PathFinderWeakPtr = std::weak_ptr<PathFinder>;
+  using PathFinderConstWeakPtr = std::weak_ptr<const PathFinder>;
+  using PathFinderUPtr = std::unique_ptr<PathFinder>;
+  using PathFinderConstUPtr = std::unique_ptr<const PathFinder>;
 
   class PathFinder {
   public:
@@ -80,11 +86,11 @@ namespace PlatformerAStar {
     void getSwimmingNeighbors(Node const& node, List<Edge>& neighbors) const;
     void getFlyingNeighbors(Node const& node, List<Edge>& neighbors) const;
 
-    void forEachArcVelocity(float yVelocity, function<void(Vec2F)> func) const;
-    void forEachArcNeighbor(Node const& node, float yVelocity, function<void(Node, bool)> func) const;
+    void forEachArcVelocity(float yVelocity, std::function<void(Vec2F)> func) const;
+    void forEachArcNeighbor(Node const& node, float yVelocity, std::function<void(Node, bool)> func) const;
     Vec2F acceleration(Vec2F pos) const;
     Vec2F simulateArcCollision(Vec2F position, Vec2F velocity, float dt, bool& collidedX, bool& collidedY) const;
-    void simulateArc(Node const& node, function<void(Node, bool)> func) const;
+    void simulateArc(Node const& node, std::function<void(Node, bool)> func) const;
 
     bool validPosition(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const;
     bool onGround(Vec2F pos, BoundBoxKind boundKind = BoundBoxKind::Full) const; // Includes non-solids: platforms, objects, etc.

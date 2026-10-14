@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.byte_array;
 import star.set;
@@ -10,7 +10,13 @@ import star.item_descriptor;
 
 namespace Star {
 
-STAR_CLASS(PlayerBlueprints);
+class PlayerBlueprints;
+using PlayerBlueprintsPtr = std::shared_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstPtr = std::shared_ptr<const PlayerBlueprints>;
+using PlayerBlueprintsWeakPtr = std::weak_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstWeakPtr = std::weak_ptr<const PlayerBlueprints>;
+using PlayerBlueprintsUPtr = std::unique_ptr<PlayerBlueprints>;
+using PlayerBlueprintsConstUPtr = std::unique_ptr<const PlayerBlueprints>;
 
 class PlayerBlueprints {
 public:

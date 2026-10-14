@@ -1,6 +1,5 @@
 module;
 
-#include "StarConfig.hpp"
 import star.list;
 import star.maybe;
 import star.io_device;
@@ -26,19 +25,49 @@ import star.net_compatibility;
 
 namespace Star {
 
-STAR_STRUCT(Packet);
-enum class PacketType : uint8_t;
+struct Packet;
+using PacketPtr = std::shared_ptr<Packet>;
+using PacketConstPtr = std::shared_ptr<const Packet>;
+using PacketWeakPtr = std::weak_ptr<Packet>;
+using PacketConstWeakPtr = std::weak_ptr<const Packet>;
+using PacketUPtr = std::unique_ptr<Packet>;
+using PacketConstUPtr = std::unique_ptr<const Packet>;
+enum class PacketType : std::uint8_t;
 
-STAR_CLASS(PacketSocket);
-STAR_CLASS(LocalPacketSocket);
-STAR_CLASS(TcpPacketSocket);
-STAR_CLASS(P2PPacketSocket);
+class PacketSocket;
+using PacketSocketPtr = std::shared_ptr<PacketSocket>;
+using PacketSocketConstPtr = std::shared_ptr<const PacketSocket>;
+using PacketSocketWeakPtr = std::weak_ptr<PacketSocket>;
+using PacketSocketConstWeakPtr = std::weak_ptr<const PacketSocket>;
+using PacketSocketUPtr = std::unique_ptr<PacketSocket>;
+using PacketSocketConstUPtr = std::unique_ptr<const PacketSocket>;
+class LocalPacketSocket;
+using LocalPacketSocketPtr = std::shared_ptr<LocalPacketSocket>;
+using LocalPacketSocketConstPtr = std::shared_ptr<const LocalPacketSocket>;
+using LocalPacketSocketWeakPtr = std::weak_ptr<LocalPacketSocket>;
+using LocalPacketSocketConstWeakPtr = std::weak_ptr<const LocalPacketSocket>;
+using LocalPacketSocketUPtr = std::unique_ptr<LocalPacketSocket>;
+using LocalPacketSocketConstUPtr = std::unique_ptr<const LocalPacketSocket>;
+class TcpPacketSocket;
+using TcpPacketSocketPtr = std::shared_ptr<TcpPacketSocket>;
+using TcpPacketSocketConstPtr = std::shared_ptr<const TcpPacketSocket>;
+using TcpPacketSocketWeakPtr = std::weak_ptr<TcpPacketSocket>;
+using TcpPacketSocketConstWeakPtr = std::weak_ptr<const TcpPacketSocket>;
+using TcpPacketSocketUPtr = std::unique_ptr<TcpPacketSocket>;
+using TcpPacketSocketConstUPtr = std::unique_ptr<const TcpPacketSocket>;
+class P2PPacketSocket;
+using P2PPacketSocketPtr = std::shared_ptr<P2PPacketSocket>;
+using P2PPacketSocketConstPtr = std::shared_ptr<const P2PPacketSocket>;
+using P2PPacketSocketWeakPtr = std::weak_ptr<P2PPacketSocket>;
+using P2PPacketSocketConstWeakPtr = std::weak_ptr<const P2PPacketSocket>;
+using P2PPacketSocketUPtr = std::unique_ptr<P2PPacketSocket>;
+using P2PPacketSocketConstUPtr = std::unique_ptr<const P2PPacketSocket>;
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;
   float bytesPerSecond;
   PacketType worstPacketType;
-  size_t worstPacketSize;
+  std::size_t worstPacketSize;
 };
 
 // Collects PacketStats over a given window of time.
@@ -47,9 +76,9 @@ public:
   PacketStatCollector();
   PacketStatCollector(float calculationWindow);
 
-  void mix(size_t size);
-  void mix(PacketType type, size_t size, bool addToTotal = true);
-  void mix(HashMap<PacketType, size_t> const& sizes, bool addToTotal = true);
+  void mix(std::size_t size);
+  void mix(PacketType type, std::size_t size, bool addToTotal = true);
+  void mix(HashMap<PacketType, std::size_t> const& sizes, bool addToTotal = true);
 
   // Should always return packet statistics for the most recent completed
   // window of time
@@ -61,8 +90,8 @@ private:
   float m_calculationWindow;
   PacketStats m_stats;
   Map<PacketType, float> m_unmixed;
-  size_t m_totalBytes;
-  int64_t m_lastMixTime;
+  std::size_t m_totalBytes;
+  std::int64_t m_lastMixTime;
 };
 
 // Interface for bidirectional communication using NetPackets, based around a
@@ -120,7 +149,7 @@ protected:
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
 public:
-  static pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> openPair();
+  static std::pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> openPair();
 
   bool isOpen() const override;
   void close() override;
@@ -141,11 +170,11 @@ private:
     Deque<PacketPtr> queue;
   };
 
-  LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
+  LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe);
 
   // Ubuntu 22.04's libstdc++ lacks std::atomic<shared_ptr<T>>.
-  shared_ptr<Pipe> m_incomingPipe;
-  weak_ptr<Pipe> m_outgoingPipe;
+  std::shared_ptr<Pipe> m_incomingPipe;
+  std::weak_ptr<Pipe> m_outgoingPipe;
 };
 
 // Wraps a TCP socket into a PacketSocket.

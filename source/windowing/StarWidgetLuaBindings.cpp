@@ -1,4 +1,6 @@
 #include "StarJsonExtra.hpp"
+import std;
+import star.memory;
 import star.json;
 import star.id_map;
 import star.ordered_map;
@@ -38,7 +40,6 @@ import star.map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 
@@ -125,10 +126,10 @@ namespace Star {
 LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   LuaMethods<CanvasWidgetPtr> methods;
 
-  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("size", mem_fn(&CanvasWidget::size));
-  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("mousePosition", mem_fn(&CanvasWidget::mousePosition));
+  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("size", std::mem_fn(&CanvasWidget::size));
+  methods.registerMethodWithSignature<Vec2I, CanvasWidgetPtr>("mousePosition", std::mem_fn(&CanvasWidget::mousePosition));
 
-  methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", mem_fn(&CanvasWidget::clear));
+  methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", std::mem_fn(&CanvasWidget::clear));
 
   methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable, Maybe<Vec2F> screenPos) {
     canvasWidget->drawDrawable(std::move(drawable), screenPos.value(Vec2F()));
@@ -193,7 +194,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
         auto tris = triangles.transformed([](PolyF const& poly) {
             if (poly.sides() != 3)
               throw StarException("Triangle must have exactly 3 sides");
-            return tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
+            return std::tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
           });
         canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
       });
@@ -209,7 +210,7 @@ namespace LuaBindings {
 
 LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
   if (!reader)
-    reader = make_shared<GuiReader>();
+    reader = std::make_shared<GuiReader>();
 
   LuaCallbacks callbacks;
 
@@ -509,7 +510,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
       return {};
     });
 
-  callbacks.registerCallback("removeListItem", [parentWidget](String const& widgetName, size_t at) {
+  callbacks.registerCallback("removeListItem", [parentWidget](String const& widgetName, std::size_t at) {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
         list->removeItem(at);
     });
@@ -569,7 +570,7 @@ LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
 
   callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& childName, String const& image) {
       if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
-        WidgetPtr newChild = make_shared<ImageWidget>(image);
+        WidgetPtr newChild = std::make_shared<ImageWidget>(image);
         flow->addChild(childName, newChild);
       }
     });

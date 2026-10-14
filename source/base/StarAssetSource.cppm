@@ -1,7 +1,7 @@
 module;
+import std;
 import star.byte_array;
 
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.json;
@@ -9,7 +9,13 @@ import star.io_device;
 
 namespace Star {
 
-STAR_CLASS(AssetSource);
+class AssetSource;
+using AssetSourcePtr = std::shared_ptr<AssetSource>;
+using AssetSourceConstPtr = std::shared_ptr<AssetSource const>;
+using AssetSourceWeakPtr = std::weak_ptr<AssetSource>;
+using AssetSourceConstWeakPtr = std::weak_ptr<AssetSource const>;
+using AssetSourceUPtr = std::unique_ptr<AssetSource>;
+using AssetSourceConstUPtr = std::unique_ptr<AssetSource const>;
 
 struct AssetSourceExceptionTag {
   static constexpr char const* name() { return "AssetSourceException"; }

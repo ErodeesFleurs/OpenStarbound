@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.net_compatibility;
@@ -62,11 +62,35 @@ import star.net_element_system;
 import star.line;
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(RenderCallback);
-STAR_STRUCT(ProjectileConfig);
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+struct ProjectileConfig;
+using ProjectileConfigPtr = std::shared_ptr<ProjectileConfig>;
+using ProjectileConfigConstPtr = std::shared_ptr<const ProjectileConfig>;
+using ProjectileConfigWeakPtr = std::weak_ptr<ProjectileConfig>;
+using ProjectileConfigConstWeakPtr = std::weak_ptr<const ProjectileConfig>;
+using ProjectileConfigUPtr = std::unique_ptr<ProjectileConfig>;
+using ProjectileConfigConstUPtr = std::unique_ptr<const ProjectileConfig>;
 
-STAR_CLASS(Projectile);
+class Projectile;
+using ProjectilePtr = std::shared_ptr<Projectile>;
+using ProjectileConstPtr = std::shared_ptr<const Projectile>;
+using ProjectileWeakPtr = std::weak_ptr<Projectile>;
+using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
+using ProjectileUPtr = std::unique_ptr<Projectile>;
+using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
 
 class Projectile : public virtual MobileEntity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
@@ -93,7 +117,7 @@ public:
   ClientEntityMode clientEntityMode() const override;
   bool masterOnly() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -107,7 +131,7 @@ public:
   List<DamageSource> damageSources() const override;
   void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
@@ -147,8 +171,8 @@ public:
   PolyF statusEffectArea() const override;
 
   List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::size_t movingCollisionCount() const override;
+  Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
 
   using Entity::setTeam;
   
@@ -209,7 +233,7 @@ private:
   String m_persistentAudioFile;
   AudioInstancePtr m_persistentAudio;
 
-  List<tuple<GameTimer, bool, Json>> m_periodicActions;
+  List<std::tuple<GameTimer, bool, Json>> m_periodicActions;
 
   NetElementTopGroup m_netGroup;
   MovementControllerPtr m_movementController;

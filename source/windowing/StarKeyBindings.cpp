@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.input_event;
@@ -17,11 +18,9 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.logging;
-import std;
 
 import star.key_bindings;
 import star.asset_source;
@@ -167,7 +166,7 @@ String printInputDescriptor(KeyChord chord) {
 KeyBindings::KeyBindings() {}
 
 KeyBindings::KeyBindings(Json const& json) {
-  Map<Key, List<pair<KeyMod, InterfaceAction>>> actions;
+  Map<Key, List<std::pair<KeyMod, InterfaceAction>>> actions;
   try {
     for (auto const& kvpair : json.iterateObject()) {
       InterfaceAction action = InterfaceActionNames.getLeft(kvpair.first);
@@ -201,13 +200,13 @@ Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
 }
 
 Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
-  size_t mostMatchedMods = 0;
+  std::size_t mostMatchedMods = 0;
   Set<InterfaceAction> matching;
   for (auto const& pair : m_actions.value(chord.key)) {
     // first make sure that all required mods for the binding are held
     if ((pair.first & chord.mods) == pair.first) {
       // now count the number of mods in the binding
-      size_t matchedMods = 0;
+      std::size_t matchedMods = 0;
       for (auto modPair : KeyChordMods) {
         if ((modPair.second & pair.first) == modPair.second)
           ++matchedMods;

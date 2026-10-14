@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -56,13 +57,13 @@ namespace Text {
 
   bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc, bool includeCommandSides) {
     std::string_view str = text.utf8();
-    size_t start = 0;
+    std::size_t start = 0;
     while (true) {
-      size_t escape = str.find_first_of(AllEsc, start);
+      std::size_t escape = str.find_first_of(AllEsc, start);
       start = 0;
       if (escape != NPos) {
         escape = str.find_first_not_of(AllEsc, escape) - 1; // jump to the last ^
-        size_t end = str.find_first_of(AllEscEnd, escape + 1);
+        std::size_t end = str.find_first_of(AllEscEnd, escape + 1);
         if (end != NPos) {
           if (str.at(end) != EndEsc) {
             start = end;

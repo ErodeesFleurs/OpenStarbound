@@ -24,7 +24,6 @@ import star.perlin;
 import star.maybe;
 import star.weighted_pool;
 import star.variant;
-#include "StarConfig.hpp"
 import star.version;
 
 
@@ -48,7 +47,13 @@ import star.world_tiles;
 import star.algorithm;
 namespace Star {
 
-STAR_CLASS(ParticleManager);
+class ParticleManager;
+using ParticleManagerPtr = std::shared_ptr<ParticleManager>;
+using ParticleManagerConstPtr = std::shared_ptr<const ParticleManager>;
+using ParticleManagerWeakPtr = std::weak_ptr<ParticleManager>;
+using ParticleManagerConstWeakPtr = std::weak_ptr<const ParticleManager>;
+using ParticleManagerUPtr = std::unique_ptr<ParticleManager>;
+using ParticleManagerConstUPtr = std::unique_ptr<const ParticleManager>;
 
 class ParticleManager {
 public:
@@ -57,7 +62,7 @@ public:
   void add(Particle particle);
   void addParticles(List<Particle> particles);
 
-  size_t count() const;
+  std::size_t count() const;
   void clear();
 
   void setUndergroundLevel(float undergroundLevel);
@@ -66,7 +71,7 @@ public:
   void update(float dt, RectF const& cullRegion, float wind);
 
   List<Particle> const& particles() const;
-  List<pair<Vec2F, Vec3F>> lightSources() const;
+  List<std::pair<Vec2F, Vec3F>> lightSources() const;
 
 private:
   enum class TileType { Colliding, Water, Empty };

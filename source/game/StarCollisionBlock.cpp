@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.bi_map;
 import star.collision_block;

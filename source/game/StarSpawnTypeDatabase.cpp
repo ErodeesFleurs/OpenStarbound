@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.time;
 import star.string;
 import star.set;
@@ -120,7 +120,7 @@ Json SpawnProfile::toJson() const {
   };
 }
 
-SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed) {
+SpawnProfile constructSpawnProfile(Json const& config, std::uint64_t seed) {
   SpawnProfile spawnProfile;
   auto commonGroups = Root::singleton().assets()->json("/spawning.config:spawnGroups");
   for (auto group : config.get("groups", JsonArray()).iterateArray()) {
@@ -143,7 +143,7 @@ SpawnTypeDatabase::SpawnTypeDatabase() {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("spawntypes");
   assets->queueJsons(files);
-  uint64_t seedMix = 0;
+  std::uint64_t seedMix = 0;
   for (auto const& file : files) {
     try {
       auto spawnTypes = assets->json(file);

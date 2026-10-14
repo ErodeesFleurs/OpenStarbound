@@ -1,15 +1,14 @@
 module;
-#include "StarConfig.hpp"
 
-#define NOMINMAX
 #include <windows.h>
 
+import std;
 import star.string;
 
 namespace Star {
 
 String utf16ToString(WCHAR const* s);
-unique_ptr<WCHAR[]> stringToUtf16(String const& s);
+std::unique_ptr<WCHAR[]> stringToUtf16(String const& s);
 
 }
 

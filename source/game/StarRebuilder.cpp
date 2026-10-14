@@ -13,7 +13,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 import star.lua;
@@ -32,9 +32,9 @@ import star.rebuilder;
 namespace Star {
 
 Rebuilder::Rebuilder(String const& id) {
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>();
   auto assets = Root::singleton().assets();
-  m_contexts = make_shared<List<LuaContext>>();
+  m_contexts = std::make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);

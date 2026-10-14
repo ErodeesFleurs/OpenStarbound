@@ -30,7 +30,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.audio;
@@ -217,7 +217,7 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
 
   } else if (detail.is<QuestItemList>()) {
     List<ItemDescriptor> itemList = detail.get<QuestItemList>();
-    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(mem_fn(&ItemDescriptor::toJson))}};
+    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(std::mem_fn(&ItemDescriptor::toJson))}};
 
   } else if (detail.is<QuestEntity>()) {
     QuestEntity entity = detail.get<QuestEntity>();
@@ -261,7 +261,9 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
     return detail.get<QuestJson>().set("type", "json");
 
   } else {
-    starAssert(detail.empty());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((detail.empty()));
+    }
     return JsonObject{{"type", "noDetail"}};
   }
 }
@@ -280,7 +282,7 @@ Json questParamDetailDiskStore(QuestParamDetail const& detail) {
 
   } else if (detail.is<QuestItemList>()) {
     List<ItemDescriptor> itemList = detail.get<QuestItemList>();
-    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(mem_fn(&ItemDescriptor::diskStore))}};
+    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(std::mem_fn(&ItemDescriptor::diskStore))}};
   } else {
     return questParamDetailToJson(detail);
   }
@@ -352,13 +354,13 @@ QuestArcDescriptor QuestArcDescriptor::diskLoad(Json const& spec) {
 }
 
 Json QuestArcDescriptor::toJson() const {
-  return JsonObject{{"quests", quests.transformed(mem_fn(&QuestDescriptor::toJson))},
+  return JsonObject{{"quests", quests.transformed(std::mem_fn(&QuestDescriptor::toJson))},
       {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
 }
 
 Json QuestArcDescriptor::diskStore() const {
   auto versioningDatabase = Root::singleton().versioningDatabase();
-  auto res = JsonObject{{"quests", quests.transformed(mem_fn(&QuestDescriptor::diskStore))},
+  auto res = JsonObject{{"quests", quests.transformed(std::mem_fn(&QuestDescriptor::diskStore))},
       {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
 
   return versioningDatabase->makeCurrentVersionedJson("QuestArcDescriptor", res).toJson();
@@ -395,7 +397,7 @@ template <typename Fun,
     typename RetType = typename FunctionTraits<Fun>::Return>
 StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) {
   return StringMap<RetType>::from(map.pairs().transformed(
-      [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
+      [fun](std::pair<String, ArgType> entry) { return std::make_pair(entry.first, fun(entry.second)); }));
 }
 
 StringMap<String> questParamTags(StringMap<QuestParam> const& parameters) {

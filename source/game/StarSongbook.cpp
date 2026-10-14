@@ -29,7 +29,7 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -72,7 +72,7 @@ import star.algorithm;
 namespace Star {
 
 Mutex Songbook::s_timeSourcesMutex;
-StringMap<shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
+StringMap<std::shared_ptr<Songbook::TimeSource>> Songbook::s_timeSources;
 
 Songbook::Songbook(String const& species) {
   m_activeCooldown = 0;
@@ -145,7 +145,7 @@ void Songbook::update(EntityMode mode, World* world) {
         {
           MutexLocker lock(s_timeSourcesMutex);
           if (!s_timeSources.contains(m_timeSource)) {
-            m_timeSourceInstance = make_shared<TimeSource>();
+            m_timeSourceInstance = std::make_shared<TimeSource>();
             s_timeSources[m_timeSource] = m_timeSourceInstance;
             m_timeSourceInstance->epoch = m_timeSourceEpoch;
             m_timeSourceInstance->keepalive = m_timeSourceEpoch;
@@ -191,20 +191,20 @@ void Songbook::playback() {
     if (!m_uncompressedSamples.contains(note.file)) {
       auto sample = Root::singleton().assets()->audio(note.file);
       if (sample->compressed()) {
-        auto copy = make_shared<Audio>(*sample);
+        auto copy = std::make_shared<Audio>(*sample);
         copy->uncompress();
         m_uncompressedSamples[note.file] = copy;
       } else
         m_uncompressedSamples[note.file] = sample;
     }
 
-    AudioInstancePtr audioInstance = make_shared<AudioInstance>(*m_uncompressedSamples[note.file]);
+    AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*m_uncompressedSamples[note.file]);
     audioInstance->setMixerGroup(MixerGroup::Instruments);
     audioInstance->setPitchMultiplier(note.velocity);
 
-    auto start = m_timeSourceInstance->epoch + (int64_t)(note.timecode * 1000.0);
+    auto start = m_timeSourceInstance->epoch + (std::int64_t)(note.timecode * 1000.0);
     audioInstance->setClockStart(start);
-    audioInstance->setClockStop(start + (int64_t)(note.duration * 1000.0), (int64_t)(note.fadeout * 1000.0));
+    audioInstance->setClockStop(start + (std::int64_t)(note.duration * 1000.0), (std::int64_t)(note.fadeout * 1000.0));
 
     audioInstance->setPosition(m_position);
 
@@ -308,7 +308,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
   double fullNoteDuration = 0;
   double noteDuration = 0;
   double barDuration = 0;
-  Map<int, size_t> pendingTies;
+  Map<int, std::size_t> pendingTies;
   int groupStartIndex = 0;
 
   int tupleCount = 0;
@@ -723,7 +723,7 @@ void Songbook::play(Json const& song, String const& timeSource) {
     m_timeSourceEpoch = Time::millisecondsSinceEpoch();
     MutexLocker lock(s_timeSourcesMutex);
     if (!s_timeSources.contains(m_timeSource)) {
-      m_timeSourceInstance = make_shared<TimeSource>();
+      m_timeSourceInstance = std::make_shared<TimeSource>();
       s_timeSources[m_timeSource] = m_timeSourceInstance;
       m_timeSourceInstance->epoch = m_timeSourceEpoch;
       m_timeSourceInstance->keepalive = m_timeSourceEpoch;
@@ -772,7 +772,7 @@ Json Songbook::song() const {
 }
 
 double Songbook::fundamentalFrequency(double p) {
-  return 55.0 * pow(2.0, (p - 69.0) / 12.0 + 3.0);
+  return 55.0 * std::pow(2.0, (p - 69.0) / 12.0 + 3.0);
 }
 
 double Songbook::fundamentalPitch(double f) {

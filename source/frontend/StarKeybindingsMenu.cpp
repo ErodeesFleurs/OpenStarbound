@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 #include "StarCasting.hpp"
@@ -25,7 +26,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.ordered_set;

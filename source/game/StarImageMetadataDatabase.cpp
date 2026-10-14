@@ -25,7 +25,7 @@ import star.bi_map;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 import star.asset_source;
@@ -42,7 +42,7 @@ namespace Star {
 ImageMetadataDatabase::ImageMetadataDatabase() {
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;
-  int64_t timeToLive = 60000;
+  std::int64_t timeToLive = 60000;
   m_sizeCache.setTimeSmear(timeSmear);
   m_spacesCache.setTimeSmear(timeSmear);
   m_regionCache.setTimeSmear(timeSmear);
@@ -65,7 +65,7 @@ Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
 }
 
 List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
-  SpacesEntry key = make_tuple(path, Vec2I::round(position), fillLimit, flip);
+  SpacesEntry key = std::make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   MutexLocker locker(m_mutex);
   if (auto cached = m_spacesCache.ptr(key)) {
@@ -73,7 +73,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   }
 
   auto filteredPath = filterProcessing(path);
-  SpacesEntry filteredKey = make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
+  SpacesEntry filteredKey = std::make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
 
   if (auto cached = m_spacesCache.ptr(filteredKey)) {
     m_spacesCache.set(key, *cached);
@@ -96,12 +96,12 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
       float fillRatio = 0.0f;
 
       for (int y = 0; y < (int)TilePixels; ++y) {
-        int ypixel = round(yspace * (int)TilePixels + y - position[1]);
+        int ypixel = std::round(yspace * (int)TilePixels + y - position[1]);
         if (ypixel < 0 || ypixel >= imageHeight)
           continue;
 
         for (int x = 0; x < (int)TilePixels; ++x) {
-          int xpixel = round(xspace * (int)TilePixels + x - position[0]);
+          int xpixel = std::round(xspace * (int)TilePixels + x - position[0]);
           if (flip)
             xpixel = imageWidth - 1 - xpixel;
 
@@ -220,7 +220,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       locker.unlock();
       auto file = assets->openFile(path.basePath);
       if (Image::isPng(file))
-        imageSize = get<0>(Image::readPngMetadata(file));
+        imageSize = std::get<0>(Image::readPngMetadata(file));
       else
         imageSize = fallback();
       locker.lock();

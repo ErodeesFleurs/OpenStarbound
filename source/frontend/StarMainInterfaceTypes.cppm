@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.poly;
@@ -45,7 +45,13 @@ import star.registered_pane_manager;
 
 namespace Star {
 
-STAR_STRUCT(MainInterfaceConfig);
+struct MainInterfaceConfig;
+using MainInterfaceConfigPtr = std::shared_ptr<MainInterfaceConfig>;
+using MainInterfaceConfigConstPtr = std::shared_ptr<MainInterfaceConfig const>;
+using MainInterfaceConfigWeakPtr = std::weak_ptr<MainInterfaceConfig>;
+using MainInterfaceConfigConstWeakPtr = std::weak_ptr<MainInterfaceConfig const>;
+using MainInterfaceConfigUPtr = std::unique_ptr<MainInterfaceConfig>;
+using MainInterfaceConfigConstUPtr = std::unique_ptr<MainInterfaceConfig const>;
 
 enum class MainInterfacePanes {
   EscapeDialog,

@@ -1,4 +1,7 @@
-#include "StarConfig.hpp"
+#include <stddef.h>
+#include "GL/glew.h"
+import std;
+import star.memory;
 import star.maybe;
 import star.format;
 import star.json;
@@ -14,7 +17,6 @@ import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 
-#include "GL/glew.h"
 import star.renderer_opengl;
 import star.logging;
 
@@ -24,7 +26,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-size_t const MultiTextureCount = 4;
+std::size_t const MultiTextureCount = 4;
 
 char const* DefaultVertexShader = R"SHADER(
 #version 140
@@ -741,7 +743,7 @@ void OpenGlRenderer::setMainHDR(bool enabled) {
 TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) {
   int maxTextureSize;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-  maxTextureSize = min(maxTextureSize, (2 << 14));
+  maxTextureSize = std::min(maxTextureSize, (2 << 14));
   // Large texture sizes are not always supported
   if (textureSize == TextureGroupSize::Large && (m_limitTextureGroupSize || maxTextureSize < 4096))
     textureSize = TextureGroupSize::Medium;
@@ -756,7 +758,7 @@ TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize,
 
   Logger::info("detected supported OpenGL texture size {}, using atlasNumCells {}", maxTextureSize, atlasNumCells);
 
-  auto glTextureGroup = make_shared<GlTextureGroup>(atlasNumCells);
+  auto glTextureGroup = std::make_shared<GlTextureGroup>(atlasNumCells);
   glTextureGroup->textureAtlasSet.textureFiltering = filtering;
   m_liveTextureGroups.append(glTextureGroup);
   return glTextureGroup;
@@ -983,7 +985,9 @@ void OpenGlRenderer::GlGroupedTexture::incrementBufferUseCount() {
 }
 
 void OpenGlRenderer::GlGroupedTexture::decrementBufferUseCount() {
-  starAssert(bufferUseCount != 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((bufferUseCount != 0));
+  }
   if (bufferUseCount == 1)
     parentAtlasTexture->setLocked(false);
   --bufferUseCount;
@@ -1043,12 +1047,12 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
   List<GLuint> currentTextures;
   List<Vec2U> currentTextureSizes;
-  size_t currentVertexCount = 0;
+  std::size_t currentVertexCount = 0;
   glBindVertexArray(vertexArray);
   auto finishCurrentBuffer = [&]() {
     if (currentVertexCount > 0) {
       GlVertexBuffer vb;
-      for (size_t i = 0; i < currentTextures.size(); ++i) {
+      for (std::size_t i = 0; i < currentTextures.size(); ++i) {
         vb.textures.append(GlVertexBufferTexture{currentTextures[i], currentTextureSizes[i]});
       }
       vb.vertexCount = currentVertexCount;
@@ -1076,7 +1080,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   };
 
   auto textureCount = useMultiTexturing ? MultiTextureCount : 1;
-  auto addCurrentTexture = [&](TexturePtr texture) -> pair<uint8_t, Vec2F> {
+  auto addCurrentTexture = [&](TexturePtr texture) -> std::pair<std::uint8_t, Vec2F> {
     if (!texture)
       texture = whiteTexture;
 
@@ -1100,8 +1104,8 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     return {float(textureIndex), Vec2F(glTexture->glTextureCoordinateOffset())};
   };
 
-  auto appendBufferVertex = [&](RenderVertex const& v, uint8_t textureIndex, Vec2F textureCoordinateOffset, RenderVertex const& prev, RenderVertex const& next) {
-    size_t off = accumulationBuffer.size();
+  auto appendBufferVertex = [&](RenderVertex const& v, std::uint8_t textureIndex, Vec2F textureCoordinateOffset, RenderVertex const& prev, RenderVertex const& next) {
+    std::size_t off = accumulationBuffer.size();
     accumulationBuffer.resize(accumulationBuffer.size() + sizeof(GlRenderVertex));
     GlRenderVertex& glv = *(GlRenderVertex*)(accumulationBuffer.ptr() + off);
     glv.pos = v.screenCoordinate;
@@ -1112,25 +1116,25 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     // Tell the vertex shader to round to the nearest pixel if the vertices form a straight
     // edge, to ensure sharpness with supersampling. If we rounded *all* vertex positions,
     // it'd cause slight visual issues with sprites rotating around a point.
-    glv.pack.vars.rX = min(abs(glv.pos.x() - prev.screenCoordinate.x()), abs(glv.pos.x() - next.screenCoordinate.x())) < 0.001f;
-    glv.pack.vars.rY = min(abs(glv.pos.y() - prev.screenCoordinate.y()), abs(glv.pos.y() - next.screenCoordinate.y())) < 0.001f;
+    glv.pack.vars.rX = std::min(std::abs(glv.pos.x() - prev.screenCoordinate.x()), std::abs(glv.pos.x() - next.screenCoordinate.x())) < 0.001f;
+    glv.pack.vars.rY = std::min(std::abs(glv.pos.y() - prev.screenCoordinate.y()), std::abs(glv.pos.y() - next.screenCoordinate.y())) < 0.001f;
     glv.pack.vars.unused = 0;
     ++currentVertexCount;
     return glv;
   };
 
-  uint8_t textureIndex = 0;
+  std::uint8_t textureIndex = 0;
   Vec2F textureOffset = {};
   for (auto& primitive : primitives) {
     if (auto tri = primitive.ptr<RenderTriangle>()) {
-      tie(textureIndex, textureOffset) = addCurrentTexture(std::move(tri->texture));
+      std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(tri->texture));
 
       appendBufferVertex(tri->a, textureIndex, textureOffset, tri->c, tri->b);
       appendBufferVertex(tri->b, textureIndex, textureOffset, tri->a, tri->c);
       appendBufferVertex(tri->c, textureIndex, textureOffset, tri->b, tri->a);
 
     } else if (auto quad = primitive.ptr<RenderQuad>()) {
-      tie(textureIndex, textureOffset) = addCurrentTexture(std::move(quad->texture));
+      std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(quad->texture));
 
       // = prev and next are altered - the diagonal across the quad is bad for the rounding check
       appendBufferVertex(quad->a, textureIndex, textureOffset, quad->d, quad->b);
@@ -1143,9 +1147,9 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
     } else if (auto poly = primitive.ptr<RenderPoly>()) {
       if (poly->vertexes.size() > 2) {
-        tie(textureIndex, textureOffset) = addCurrentTexture(std::move(poly->texture));
+        std::tie(textureIndex, textureOffset) = addCurrentTexture(std::move(poly->texture));
 
-        for (size_t i = 1; i < poly->vertexes.size() - 1; ++i) {
+        for (std::size_t i = 1; i < poly->vertexes.size() - 1; ++i) {
             RenderVertex const& a = poly->vertexes[0],
                                 b = poly->vertexes[i],
                                 c = poly->vertexes[i + 1];
@@ -1191,7 +1195,7 @@ bool OpenGlRenderer::logGlErrorSummary(String prefix) {
   return false;
 }
 
-void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data) {
+void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
   Maybe<GLenum> internalFormat;
@@ -1265,8 +1269,8 @@ auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing a
   return glLoneTexture;
 }
 
-auto OpenGlRenderer::createGlRenderBuffer() -> shared_ptr<GlRenderBuffer> {
-  auto glrb = make_shared<GlRenderBuffer>();
+auto OpenGlRenderer::createGlRenderBuffer() -> std::shared_ptr<GlRenderBuffer> {
+  auto glrb = std::make_shared<GlRenderBuffer>();
   glrb->whiteTexture = m_whiteTexture;
   glrb->useMultiTexturing = m_useMultiTexturing;
   return glrb;
@@ -1277,7 +1281,7 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
     glUniformMatrix3fv(m_vertexTransformUniform, 1, GL_TRUE, transformation.ptr());
 
     if (m_currentEffect->includeVBTextures) {
-      for (size_t i = 0; i < vb.textures.size(); ++i) {
+      for (std::size_t i = 0; i < vb.textures.size(); ++i) {
         glUniform2f(m_textureSizeUniforms[i], vb.textures[i].size[0], vb.textures[i].size[1]);
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, vb.textures[i].texture);
@@ -1322,7 +1326,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   m_textureUniforms.clear();
   m_textureSizeUniforms.clear();
   if (effect.includeVBTextures) {
-    for (size_t i = 0; i < MultiTextureCount; ++i) {
+    for (std::size_t i = 0; i < MultiTextureCount; ++i) {
       m_textureUniforms.append(effect.getUniform(strf("texture{}", i).c_str()));
       m_textureSizeUniforms.append(effect.getUniform(strf("textureSize{}", i).c_str()));
     }
@@ -1331,7 +1335,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   m_vertexTransformUniform = effect.getUniform("vertexTransform");
 
   if (effect.includeVBTextures) {
-    for (size_t i = 0; i < MultiTextureCount; ++i)
+    for (std::size_t i = 0; i < MultiTextureCount; ++i)
       glUniform1i(m_textureUniforms[i], i);
   }
 

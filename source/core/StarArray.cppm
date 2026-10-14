@@ -1,20 +1,20 @@
 module;
 
+import star.memory;
 import std;
-#include "StarConfig.hpp"
 import star.hash;
 
 namespace Star {
 
 // Somewhat nicer form of std::array, always initializes values, uses nicer
 // constructor pattern.
-template <typename ElementT, size_t SizeN>
+template <typename ElementT, std::size_t SizeN>
 class Array : public std::array<ElementT, SizeN> {
 public:
   typedef std::array<ElementT, SizeN> Base;
 
   typedef ElementT Element;
-  static size_t const ArraySize = SizeN;
+  static std::size_t const ArraySize = SizeN;
 
   typedef Element* iterator;
   typedef Element const* const_iterator;
@@ -27,7 +27,7 @@ public:
   static Array filled(Element const& e);
 
   template <typename Iterator>
-  static Array copyFrom(Iterator p, size_t n = NPos);
+  static Array copyFrom(Iterator p, std::size_t n = NPos);
 
   Array();
 
@@ -39,10 +39,10 @@ public:
   template <typename Element2>
   explicit Array(Array<Element2, SizeN> const& a);
 
-  template <size_t i>
+  template <std::size_t i>
   reference get();
 
-  template <size_t i>
+  template <std::size_t i>
   const_reference get() const;
 
   template <typename T2>
@@ -57,7 +57,7 @@ public:
   // (floats with NaN).
   std::weak_ordering operator<=>(Array const& a) const;
 
-  template <size_t Size2>
+  template <std::size_t Size2>
   Array<ElementT, Size2> toSize() const;
 
 private:
@@ -68,111 +68,111 @@ private:
   void set();
 };
 
-template <typename DataT, size_t SizeT>
+template <typename DataT, std::size_t SizeT>
 struct hash<Array<DataT, SizeT>> {
-  size_t operator()(Array<DataT, SizeT> const& a) const;
+  std::size_t operator()(Array<DataT, SizeT> const& a) const;
   Star::hash<DataT> dataHasher;
 };
 
 typedef Array<int, 2> Array2I;
-typedef Array<size_t, 2> Array2S;
+typedef Array<std::size_t, 2> Array2S;
 typedef Array<unsigned, 2> Array2U;
 typedef Array<float, 2> Array2F;
 typedef Array<double, 2> Array2D;
 
 typedef Array<int, 3> Array3I;
-typedef Array<size_t, 3> Array3S;
+typedef Array<std::size_t, 3> Array3S;
 typedef Array<unsigned, 3> Array3U;
 typedef Array<float, 3> Array3F;
 typedef Array<double, 3> Array3D;
 
 typedef Array<int, 4> Array4I;
-typedef Array<size_t, 4> Array4S;
+typedef Array<std::size_t, 4> Array4S;
 typedef Array<unsigned, 4> Array4U;
 typedef Array<float, 4> Array4F;
 typedef Array<double, 4> Array4D;
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
   Array a;
   a.fill(e);
   return a;
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 template <typename Iterator>
-Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, size_t n) {
+Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, std::size_t n) {
   Array a;
-  for (size_t i = 0; i < n && i < Size; ++i)
+  for (std::size_t i = 0; i < n && i < Size; ++i)
     a[i] = *(p++);
   return a;
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 Array<Element, Size>::Array()
   : Base() {}
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 Array<Element, Size>::Array(Element const& e1) {
   static_assert(Size == 1, "Incorrect size in Array constructor");
   set(e1);
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 template <typename... T>
 Array<Element, Size>::Array(Element const& e1, T const&... rest) {
   static_assert(sizeof...(rest) == Size - 1, "Incorrect size in Array constructor");
   set(e1, rest...);
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 template <typename Element2>
 Array<Element, Size>::Array(Array<Element2, Size> const& a) {
   std::copy(a.begin(), a.end(), Base::begin());
 }
 
-template <typename Element, size_t Size>
-template <size_t i>
+template <typename Element, std::size_t Size>
+template <std::size_t i>
 auto Array<Element, Size>::get() -> reference {
   static_assert(i < Size, "Incorrect size in Array::at");
   return Base::operator[](i);
 }
 
-template <typename Element, size_t Size>
-template <size_t i>
+template <typename Element, std::size_t Size>
+template <std::size_t i>
 auto Array<Element, Size>::get() const -> const_reference {
   static_assert(i < Size, "Incorrect size in Array::at");
   return Base::operator[](i);
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 template <typename T2>
 Array<Element, Size>& Array<Element, Size>::operator=(Array<T2, Size> const& array) {
   std::copy(array.begin(), array.end(), Base::begin());
   return *this;
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 Element* Array<Element, Size>::ptr() {
   return Base::data();
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 Element const* Array<Element, Size>::ptr() const {
   return Base::data();
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 bool Array<Element, Size>::operator==(Array const& a) const {
-  for (size_t i = 0; i < Size; ++i)
+  for (std::size_t i = 0; i < Size; ++i)
     if ((*this)[i] != a[i])
       return false;
   return true;
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 std::weak_ordering Array<Element, Size>::operator<=>(Array const& a) const {
-  for (size_t i = 0; i < Size; ++i) {
+  for (std::size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
       return std::weak_ordering::less;
     if (a[i] < (*this)[i])
@@ -181,30 +181,30 @@ std::weak_ordering Array<Element, Size>::operator<=>(Array const& a) const {
   return std::weak_ordering::equivalent;
 }
 
-template <typename Element, size_t Size>
-template <size_t Size2>
+template <typename Element, std::size_t Size>
+template <std::size_t Size2>
 Array<Element, Size2> Array<Element, Size>::toSize() const {
   Array<Element, Size2> r;
-  size_t ns = std::min(Size2, Size);
-  for (size_t i = 0; i < ns; ++i)
+  std::size_t ns = std::min(Size2, Size);
+  for (std::size_t i = 0; i < ns; ++i)
     r[i] = (*this)[i];
   return r;
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 void Array<Element, Size>::set() {}
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 template <typename T, typename... TL>
 void Array<Element, Size>::set(T const& e, TL const&... rest) {
   Base::operator[](Size - 1 - sizeof...(rest)) = e;
   set(rest...);
 }
 
-template <typename Element, size_t Size>
+template <typename Element, std::size_t Size>
 std::ostream& operator<<(std::ostream& os, Array<Element, Size> const& a) {
   os << '[';
-  for (size_t i = 0; i < Size; ++i) {
+  for (std::size_t i = 0; i < Size; ++i) {
     os << a[i];
     if (i != Size - 1)
       os << ", ";
@@ -213,10 +213,10 @@ std::ostream& operator<<(std::ostream& os, Array<Element, Size> const& a) {
   return os;
 }
 
-template <typename DataT, size_t SizeT>
-size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const {
-  size_t hashval = 0;
-  for (size_t i = 0; i < SizeT; ++i)
+template <typename DataT, std::size_t SizeT>
+std::size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const {
+  std::size_t hashval = 0;
+  for (std::size_t i = 0; i < SizeT; ++i)
     hashCombine(hashval, dataHasher(a[i]));
   return hashval;
 }
@@ -226,7 +226,7 @@ size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const
 export module star.array;
 
 export namespace Star {
-  template <typename DataT, size_t SizeT>
+  template <typename DataT, std::size_t SizeT>
   struct hash<Array<DataT, SizeT>>;
 }
 

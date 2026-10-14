@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 import star.id_map;
@@ -21,7 +21,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_STRUCT(EntityAnchor);
+struct EntityAnchor;
+using EntityAnchorPtr = std::shared_ptr<EntityAnchor>;
+using EntityAnchorConstPtr = std::shared_ptr<const EntityAnchor>;
+using EntityAnchorWeakPtr = std::weak_ptr<EntityAnchor>;
+using EntityAnchorConstWeakPtr = std::weak_ptr<const EntityAnchor>;
+using EntityAnchorUPtr = std::unique_ptr<EntityAnchor>;
+using EntityAnchorConstUPtr = std::unique_ptr<const EntityAnchor>;
 
 struct EntityAnchor {
   virtual ~EntityAnchor() = default;
@@ -38,7 +44,7 @@ struct EntityAnchorState {
   friend DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState);
   friend DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
   EntityId entityId;
-  size_t positionIndex;
+  std::size_t positionIndex;
 
   bool operator==(EntityAnchorState const& eas) const;
 };
@@ -48,8 +54,8 @@ DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
 
 class AnchorableEntity : public virtual Entity {
 public:
-  virtual size_t anchorCount() const = 0;
-  virtual EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const = 0;
+  virtual std::size_t anchorCount() const = 0;
+  virtual EntityAnchorConstPtr anchor(std::size_t anchorPositionIndex) const = 0;
 };
 
 }

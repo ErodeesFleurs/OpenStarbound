@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 import star.data_stream;
 #include "StarCasting.hpp"
@@ -15,7 +17,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;

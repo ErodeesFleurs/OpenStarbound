@@ -34,7 +34,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.parametric_function;
@@ -117,7 +117,7 @@ import star.entity_splash;
 import star.net_compatibility;
 namespace Star {
 
-NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
+NpcDatabase::NpcDatabase() : m_rebuilder(std::make_shared<Rebuilder>("npc")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("npctype");
@@ -143,7 +143,7 @@ NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& 
 }
 
 NpcVariant NpcDatabase::generateNpcVariant(
-    String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const {
+    String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const {
   NpcVariant variant;
   variant.species = species;
   variant.typeName = typeName;
@@ -157,7 +157,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.description = config.optString("description");
 
   auto levelVariance = jsonToVec2F(config.getArray("levelVariance", {0, 0}));
-  variant.level = max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
+  variant.level = std::max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.initialScriptDelta = config.getUInt("initialScriptDelta", 5);
@@ -381,7 +381,7 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"overrides", variant.overrides},
     {"initialScriptDelta", variant.initialScriptDelta},
     {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, std::mem_fn(&ItemDescriptor::diskStore))},
     {"persistent", variant.persistent},
     {"keepAlive", variant.keepAlive},
     {"damageTeam", variant.damageTeam},
@@ -459,20 +459,20 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 }
 
 NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return make_shared<Npc>(npcVariant);
+  return std::make_shared<Npc>(npcVariant);
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   NpcPtr npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = make_shared<Npc>(npcVariant, diskStore);
+    npc = std::make_shared<Npc>(npcVariant, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = make_shared<Npc>(npcVariant, store);
+        npc = std::make_shared<Npc>(npcVariant, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -487,7 +487,7 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Npc>(readNpcVariant(netStore, rules));
+  return std::make_shared<Npc>(readNpcVariant(netStore, rules));
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
@@ -503,7 +503,7 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   ArmorWearer armor;
   for (auto item : npcVariant.items) {
     if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
-      armor.setItem((uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+      armor.setItem((std::uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
     }
   }
 

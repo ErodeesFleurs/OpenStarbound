@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.color;
@@ -17,7 +19,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.vector;
@@ -77,7 +78,7 @@ TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
     m_renderSettings(),
     m_savedRenderSettings() {
   reloadFonts();
-  m_reloadTracker = make_shared<TrackerListener>();
+  m_reloadTracker = std::make_shared<TrackerListener>();
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
@@ -135,7 +136,7 @@ int TextPainter::stringWidth(StringView s, unsigned charLimit) {
   m_fontTextureGroup.switchFont(font);
 
   Text::CommandsCallback commandsCallback = [&](StringView commands) {
-    commands.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+    commands.forEachSplitView(",", [&](StringView command, std::size_t, std::size_t) {
       if (command == "reset") {
         m_fontTextureGroup.switchFont(font = setFont);
       } else if (command == "set") {
@@ -170,7 +171,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   unsigned lines = 0;
   auto lineStartIterator = iterator, splitIterator = end;
   unsigned linePixelWidth = 0, splitPixelWidth = 0;
-  size_t commandStart = NPos, commandEnd = NPos;
+  std::size_t commandStart = NPos, commandEnd = NPos;
   bool finished = true;
 
   auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
@@ -182,9 +183,9 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
     finished = false; // assume at least one character if we get here
     bool noMoreCommands = commandStart != NPos && commandEnd == NPos;
     if (!noMoreCommands && Text::isEscapeCode(character)) {
-      size_t index = &*iterator.base() - text.utf8Ptr();
+      std::size_t index = &*iterator.base() - text.utf8Ptr();
       if (commandStart == NPos) {
-        for (size_t escOrEnd = commandStart = index;
+        for (std::size_t escOrEnd = commandStart = index;
         (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != NPos;) {
           if (text.utf8().at(escOrEnd) != Text::EndEsc)
             commandStart = escOrEnd;
@@ -197,7 +198,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
       if (commandStart == index && commandEnd != NPos) {
         const char* commandStr = text.utf8Ptr() + ++commandStart;
         StringView inner(commandStr, commandEnd - commandStart);
-        inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+        inner.forEachSplitView(",", [&](StringView command, std::size_t, std::size_t) {
           if (command == "reset") {
             m_fontTextureGroup.switchFont(font = setFont);
           } else if (command == "set") {
@@ -370,12 +371,12 @@ void TextPainter::reloadFonts() {
     assets->json("/interface.config:font.emojiFont").toString());
 }
 
-void TextPainter::cleanup(int64_t timeout) {
+void TextPainter::cleanup(std::int64_t timeout) {
   m_fontTextureGroup.cleanup(timeout);
 }
 
 void TextPainter::applyCommands(StringView unsplitCommands) {
-  unsplitCommands.forEachSplitView(",", [&](StringView command, size_t, size_t) {
+  unsplitCommands.forEachSplitView(",", [&](StringView command, std::size_t, std::size_t) {
     try {
       if (command == "reset") {
         m_renderSettings = m_savedRenderSettings;
@@ -458,7 +459,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   } else if (pos.hAnchor == HorizontalAnchor::HMidAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
-    pos.pos[0] -= floor((float)stringWidth(trimmedString, 0) / 2);
+    pos.pos[0] -= std::floor((float)stringWidth(trimmedString, 0) / 2);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 
@@ -500,11 +501,11 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   if (position.hAnchor == HorizontalAnchor::RightAnchor)
     hOffset = -width;
   else if (position.hAnchor == HorizontalAnchor::HMidAnchor)
-    hOffset = -floor((float)width / 2);
+    hOffset = -std::floor((float)width / 2);
 
   float vOffset = 0;
   if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    vOffset = -floor((float)m_renderSettings.fontSize / 2);
+    vOffset = -std::floor((float)m_renderSettings.fontSize / 2);
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
     vOffset = -(float)m_renderSettings.fontSize;
 
@@ -517,7 +518,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     if (hasShadow) {
       //Kae: unlike vanilla we draw only one shadow glyph instead of two, so i'm tweaking the alpha here
       Vec4B shadow = m_renderSettings.shadow;
-      uint8_t alphaU = m_renderSettings.color[3] * byteToFloat(shadow[3]);
+      std::uint8_t alphaU = m_renderSettings.color[3] * byteToFloat(shadow[3]);
       if (alphaU != 255) {
         float alpha = byteToFloat(alphaU);
         shadow[3] = floatToByte(alpha * (1.5f - 0.5f * alpha));

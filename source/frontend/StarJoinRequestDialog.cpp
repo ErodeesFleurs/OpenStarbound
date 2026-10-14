@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +16,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -70,7 +70,7 @@ namespace Star {
 
 JoinRequestDialog::JoinRequestDialog() : m_confirmed(false) {}
 
-void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {
+void JoinRequestDialog::displayRequest(String const& userName, std::function<void(P2PJoinRequestReply)> callback) {
   auto assets = Root::singleton().assets();
 
   removeAllChildren();

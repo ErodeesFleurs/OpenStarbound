@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.vector;
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -143,7 +143,7 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
   String switchText = m_config.getString("switchText");
   String createText = m_config.getString("createText");
 
-  m_portrait = make_shared<PortraitWidget>();
+  m_portrait = std::make_shared<PortraitWidget>();
   m_portrait->setScale(m_portraitScale);
   m_portrait->setPosition(m_portraitOffset);
   m_portrait->setRenderHumanoid(true);
@@ -158,14 +158,14 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
 
   auto modeNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeNameHAnchor", "mid"));
   auto modeNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeNameVAnchor", "bottom"));
-  m_modeName = make_shared<LabelWidget>(modeLabelText, Color::White, modeNameHAnchor);
+  m_modeName = std::make_shared<LabelWidget>(modeLabelText, Color::White, modeNameHAnchor);
   addChild("modeName", m_modeName);
   m_modeName->setPosition(m_modeNameOffset);
   m_modeName->setAnchor(modeNameHAnchor, modeNameVAnchor);
 
   auto modeHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeHAnchor", "left"));
   auto modeVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeVAnchor", "bottom"));
-  m_mode = make_shared<LabelWidget>();
+  m_mode = std::make_shared<LabelWidget>();
   addChild("mode", m_mode);
   m_mode->setPosition(m_modeOffset);
   m_mode->setAnchor(modeHAnchor, modeVAnchor);
@@ -176,7 +176,7 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
 
   auto playerNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("playerNameHAnchor", "mid"));
   auto playerNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("playerNameVAnchor", "bottom"));
-  m_playerName = make_shared<LabelWidget>();
+  m_playerName = std::make_shared<LabelWidget>();
   m_playerName->setColor(m_createCharTextColor);
   m_playerName->setPosition(m_playerNameOffset);
   m_playerName->setAnchor(playerNameHAnchor, playerNameVAnchor);
@@ -251,7 +251,7 @@ void LargeCharPlateWidget::enableDelete(WidgetCallbackFunc const& callback) {
   auto disabledImage = trashButton.getString("disabledImage");
   auto offset = jsonToVec2I(trashButton.get("offset"));
 
-  m_delete = make_shared<ButtonWidget>(callback, baseImage, hoverImage, pressedImage, disabledImage);
+  m_delete = std::make_shared<ButtonWidget>(callback, baseImage, hoverImage, pressedImage, disabledImage);
   addChild("trashButton", m_delete);
   m_delete->setPosition(offset);
   m_deleteOffset = offset;

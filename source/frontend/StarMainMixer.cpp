@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -11,7 +12,6 @@ import star.vector;
 import star.maybe;
 import star.bi_map;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.version;
 import star.interpolation;
 import star.image;
@@ -47,7 +47,6 @@ import star.variant;
 import star.ordered_set;
 import star.byte_array;
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -195,7 +194,7 @@ import star.voice;
 namespace Star {
 
 MainMixer::MainMixer(unsigned sampleRate, unsigned channels) {
-  m_mixer = make_shared<Mixer>(sampleRate, channels);
+  m_mixer = std::make_shared<Mixer>(sampleRate, channels);
 }
 
 void MainMixer::setUniverseClient(UniverseClientPtr universeClient) {
@@ -275,11 +274,11 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
       float diffMagnitude;
       if (playerMagSq < cameraMagSq) {
         diff = playerDiff;
-        diffMagnitude = sqrt(playerMagSq);
+        diffMagnitude = std::sqrt(playerMagSq);
       }
       else {
         diff = cameraDiff;
-        diffMagnitude = sqrt(cameraMagSq);
+        diffMagnitude = std::sqrt(cameraMagSq);
       }
 
       if (diffMagnitude == 0.0f)
@@ -291,7 +290,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
 
       float maxDistance = baseMaxDistance * rangeMultiplier * lerp((stereoIncidence + 1.0f) / 2.0f, stereoAdjustmentRange[0], stereoAdjustmentRange[1]);
 
-      return pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
+      return std::pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
     };
 
     if (Voice* voice = Voice::singletonPtr())
@@ -317,14 +316,14 @@ MixerPtr MainMixer::mixer() const {
 }
 
 void MainMixer::setSpeed(float speed) {
-  m_mixer->setSpeed(max(speed, 0.0f));
+  m_mixer->setSpeed(std::max(speed, 0.0f));
 }
 
 void MainMixer::setVolume(float volume, float rampTime) {
   m_mixer->setVolume(volume, rampTime);
 }
 
-void MainMixer::read(int16_t* sampleData, size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
+void MainMixer::read(std::int16_t* sampleData, std::size_t frameCount, Mixer::ExtraMixFunction extraMixFunction) {
   m_mixer->read(sampleData, frameCount, extraMixFunction);
 }
 

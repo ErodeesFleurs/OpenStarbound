@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.game_types;
@@ -51,9 +51,27 @@ import star.game_timers;
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(AudioInstance);
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class ImageWidget;
+using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
+using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
+using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
+using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
+using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
+using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 
 class RadioMessagePopup : public Pane {
 public:

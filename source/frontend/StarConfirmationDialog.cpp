@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +16,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -92,9 +92,9 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   m_okCallback = std::move(okCallback);
   m_cancelCallback = std::move(cancelCallback);
 
-  reader.registerCallback("close", bind(&ConfirmationDialog::dismiss, this));
-  reader.registerCallback("cancel", bind(&ConfirmationDialog::dismiss, this));
-  reader.registerCallback("ok", bind(&ConfirmationDialog::ok, this));
+  reader.registerCallback("close", std::bind(&ConfirmationDialog::dismiss, this));
+  reader.registerCallback("cancel", std::bind(&ConfirmationDialog::dismiss, this));
+  reader.registerCallback("ok", std::bind(&ConfirmationDialog::ok, this));
 
   m_confirmed = false;
 
@@ -104,7 +104,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   ImageWidgetPtr titleIcon = {};
   if (config.contains("icon"))
-    titleIcon = make_shared<ImageWidget>(config.getString("icon"));
+    titleIcon = std::make_shared<ImageWidget>(config.getString("icon"));
 
   setTitle(titleIcon, config.getString("title", ""), config.getString("subtitle", ""));
   fetchChild<LabelWidget>("message")->setText(config.getString("message"));

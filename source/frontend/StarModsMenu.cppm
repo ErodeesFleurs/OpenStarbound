@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -39,9 +39,27 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ListWidget);
+class LabelWidget;
+using LabelWidgetPtr = std::shared_ptr<LabelWidget>;
+using LabelWidgetConstPtr = std::shared_ptr<LabelWidget const>;
+using LabelWidgetWeakPtr = std::weak_ptr<LabelWidget>;
+using LabelWidgetConstWeakPtr = std::weak_ptr<LabelWidget const>;
+using LabelWidgetUPtr = std::unique_ptr<LabelWidget>;
+using LabelWidgetConstUPtr = std::unique_ptr<LabelWidget const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class ListWidget;
+using ListWidgetPtr = std::shared_ptr<ListWidget>;
+using ListWidgetConstPtr = std::shared_ptr<ListWidget const>;
+using ListWidgetWeakPtr = std::weak_ptr<ListWidget>;
+using ListWidgetConstWeakPtr = std::weak_ptr<ListWidget const>;
+using ListWidgetUPtr = std::unique_ptr<ListWidget>;
+using ListWidgetConstUPtr = std::unique_ptr<ListWidget const>;
 
 class ModsMenu : public Pane {
 public:

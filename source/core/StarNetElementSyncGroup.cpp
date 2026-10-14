@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 
 import star.net_element_group;
@@ -43,7 +43,7 @@ void NetElementSyncGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   netElementsNeedLoad(true);
 }
 
-bool NetElementSyncGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementSyncGroup::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore();
   return NetElementGroup::writeNetDelta(ds, fromVersion, rules);
@@ -76,11 +76,11 @@ void NetElementSyncGroup::netElementsNeedLoad(bool) {}
 
 void NetElementSyncGroup::netElementsNeedStore() {}
 
-void NetElementCallbackGroup::setNeedsLoadCallback(function<void(bool)> needsLoadCallback) {
+void NetElementCallbackGroup::setNeedsLoadCallback(std::function<void(bool)> needsLoadCallback) {
   m_netElementsNeedLoad = std::move(needsLoadCallback);
 }
 
-void NetElementCallbackGroup::setNeedsStoreCallback(function<void()> needsStoreCallback) {
+void NetElementCallbackGroup::setNeedsStoreCallback(std::function<void()> needsStoreCallback) {
   m_netElementsNeedStore = std::move(needsStoreCallback);
 }
 

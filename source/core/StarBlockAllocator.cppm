@@ -1,7 +1,6 @@
 module;
 
 import std;
-#include "StarConfig.hpp"
 import star.format;
 
 namespace Star {
@@ -10,7 +9,7 @@ namespace Star {
 // than general purpose allocators, but not thread safe.  Useful as the
 // allocator for containers that mostly allocate one element at a time, such as
 // std::list, std::map, std::set etc.
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 class BlockAllocator {
 public:
   typedef T value_type;
@@ -45,8 +44,8 @@ public:
   BlockAllocator& operator=(BlockAllocator&& rhs) = default;
 
   // If n is != 1, will fall back on std::allocator<T>
-  T* allocate(size_t n);
-  void deallocate(T* p, size_t n);
+  T* allocate(std::size_t n);
+  void deallocate(T* p, std::size_t n);
 
   template <typename... Args>
   void construct(pointer p, Args&&... args) const;
@@ -59,14 +58,14 @@ public:
   bool operator!=(BlockAllocator<U, BlockSize> const& rhs) const;
 
 private:
-  template <typename OtherT, size_t OtherBlockSize>
+  template <typename OtherT, std::size_t OtherBlockSize>
   friend class BlockAllocator;
 
   using ChunkIndex =
-    std::conditional_t<BlockSize <= std::numeric_limits<uint8_t>::max(), uint8_t,
-      std::conditional_t<BlockSize <= std::numeric_limits<uint16_t>::max(), uint16_t,
-        std::conditional_t<BlockSize <= std::numeric_limits<uint32_t>::max(), uint32_t,
-          std::conditional_t<BlockSize <= std::numeric_limits<uint64_t>::max(), uint64_t, uintmax_t>>>>;
+    std::conditional_t<BlockSize <= std::numeric_limits<std::uint8_t>::max(), std::uint8_t,
+      std::conditional_t<BlockSize <= std::numeric_limits<std::uint16_t>::max(), std::uint16_t,
+        std::conditional_t<BlockSize <= std::numeric_limits<std::uint32_t>::max(), std::uint32_t,
+          std::conditional_t<BlockSize <= std::numeric_limits<std::uint64_t>::max(), std::uint64_t, std::uintmax_t>>>>;
 
   static ChunkIndex const NullChunkIndex = std::numeric_limits<ChunkIndex>::max();
 
@@ -92,36 +91,36 @@ private:
   };
 
   struct Data {
-    std::vector<unique_ptr<Block>> blocks;
+    std::vector<std::unique_ptr<Block>> blocks;
     Block* unfilledBlock;
     std::allocator<T> multiAllocator;
   };
 
-  typedef std::unordered_map<std::type_index, shared_ptr<void>> BlockAllocatorFamily;
+  typedef std::unordered_map<std::type_index, std::shared_ptr<void>> BlockAllocatorFamily;
 
   static Data* getAllocatorData(BlockAllocatorFamily& family);
 
-  shared_ptr<BlockAllocatorFamily> m_family;
+  std::shared_ptr<BlockAllocatorFamily> m_family;
   Data* m_data;
 };
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 BlockAllocator<T, BlockSize>::BlockAllocator() {
-  m_family = make_shared<BlockAllocatorFamily>();
+  m_family = std::make_shared<BlockAllocatorFamily>();
   m_data = getAllocatorData(*m_family);
   m_data->blocks.reserve(32);
   m_data->unfilledBlock = nullptr;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 template <class U>
 BlockAllocator<T, BlockSize>::BlockAllocator(BlockAllocator<U, BlockSize> const& other)
   : m_family(other.m_family) {
   m_data = getAllocatorData(*m_family);
 }
 
-template <typename T, size_t BlockSize>
-T* BlockAllocator<T, BlockSize>::allocate(size_t n) {
+template <typename T, std::size_t BlockSize>
+T* BlockAllocator<T, BlockSize>::allocate(std::size_t n) {
   if (n == 1) {
     if (m_data->unfilledBlock == nullptr) {
       for (auto const& p : m_data->blocks) {
@@ -132,7 +131,7 @@ T* BlockAllocator<T, BlockSize>::allocate(size_t n) {
       }
 
       if (!m_data->unfilledBlock) {
-        auto block = make_unique<Block>();
+        auto block = std::make_unique<Block>();
         m_data->unfilledBlock = block.get();
         auto sortedPosition = std::lower_bound(m_data->blocks.begin(), m_data->blocks.end(), block.get(), [](std::unique_ptr<Block> const& a, Block* b) {
             return a.get() < b;
@@ -150,16 +149,20 @@ T* BlockAllocator<T, BlockSize>::allocate(size_t n) {
   }
 }
 
-template <typename T, size_t BlockSize>
-void BlockAllocator<T, BlockSize>::deallocate(T* p, size_t n) {
+template <typename T, std::size_t BlockSize>
+void BlockAllocator<T, BlockSize>::deallocate(T* p, std::size_t n) {
   if (n == 1) {
-    starAssert(p);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((p));
+    }
 
     auto i = std::upper_bound(m_data->blocks.begin(), m_data->blocks.end(), p, [](T* a, std::unique_ptr<Block> const& b) {
         return a < (T*)b->chunkPointer(0);
       });
 
-    starAssert(i != m_data->blocks.begin());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((i != m_data->blocks.begin()));
+    }
     --i;
 
     (*i)->deallocate(p);
@@ -175,39 +178,43 @@ void BlockAllocator<T, BlockSize>::deallocate(T* p, size_t n) {
   }
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 template <typename... Args>
 void BlockAllocator<T, BlockSize>::construct(pointer p, Args&&... args) const {
   new (p) T(std::forward<Args>(args)...);
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 void BlockAllocator<T, BlockSize>::destroy(pointer p) const {
   p->~T();
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 template <class U>
 bool BlockAllocator<T, BlockSize>::operator==(BlockAllocator<U, BlockSize> const& rhs) const {
   return m_family == rhs.m_family;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 template <class U>
 bool BlockAllocator<T, BlockSize>::operator!=(BlockAllocator<U, BlockSize> const& rhs) const {
   return m_family != rhs.m_family;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 T* BlockAllocator<T, BlockSize>::Block::allocate() {
-  starAssert(allocationCount < BlockSize);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((allocationCount < BlockSize));
+  }
 
   T* allocated;
   if (firstUnallocated == NullChunkIndex) {
     allocated = (T*)chunkPointer(allocationCount);
   } else {
     void* chunk = chunkPointer(firstUnallocated);
-    starAssert(((Unallocated*)chunk)->prev == NullChunkIndex);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((((Unallocated*)chunk)->prev == NullChunkIndex));
+    }
     firstUnallocated = ((Unallocated*)chunk)->next;
     if (firstUnallocated != NullChunkIndex)
       ((Unallocated*)chunkPointer(firstUnallocated))->prev = NullChunkIndex;
@@ -218,12 +225,16 @@ T* BlockAllocator<T, BlockSize>::Block::allocate() {
   return allocated;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 void BlockAllocator<T, BlockSize>::Block::deallocate(T* ptr) {
-  starAssert(allocationCount > 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((allocationCount > 0));
+  }
 
   ChunkIndex chunkIndex = ptr - (T*)chunkPointer(0);
-  starAssert((T*)chunkPointer(chunkIndex) == ptr);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed(((T*)chunkPointer(chunkIndex) == ptr));
+  }
 
   auto c = (Unallocated*)chunkPointer(chunkIndex);
   c->prev = NullChunkIndex;
@@ -234,27 +245,29 @@ void BlockAllocator<T, BlockSize>::Block::deallocate(T* ptr) {
   --allocationCount;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 bool BlockAllocator<T, BlockSize>::Block::full() const {
   return allocationCount == BlockSize;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 bool BlockAllocator<T, BlockSize>::Block::empty() const {
   return allocationCount == 0;
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 auto BlockAllocator<T, BlockSize>::Block::chunkPointer(ChunkIndex chunkIndex) -> Chunk* {
-  starAssert(chunkIndex < BlockSize);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((chunkIndex < BlockSize));
+  }
   return &chunks[chunkIndex];
 }
 
-template <typename T, size_t BlockSize>
+template <typename T, std::size_t BlockSize>
 typename BlockAllocator<T, BlockSize>::Data* BlockAllocator<T, BlockSize>::getAllocatorData(BlockAllocatorFamily& family) {
   auto& dataptr = family[typeid(Data)];
   if (!dataptr)
-    dataptr = make_shared<Data>();
+    dataptr = std::make_shared<Data>();
   return (Data*)dataptr.get();
 }
 

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.list;
@@ -122,7 +122,7 @@ bool JsonEditor::saveChanges() {
 void JsonEditor::displayCurrentFile() {
   String file = m_files.get(m_fileIndex);
 
-  size_t progress = (m_fileIndex + 1) * 100 / m_files.size();
+  std::size_t progress = (m_fileIndex + 1) * 100 / m_files.size();
   String status = strf("Editing file {}/{} ({}%):    {}", m_fileIndex + 1, m_files.size(), progress, file);
   m_statusLabel->setText(status.utf8Ptr());
 

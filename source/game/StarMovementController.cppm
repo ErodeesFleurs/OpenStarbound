@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.set;
 import star.format;
@@ -41,7 +41,13 @@ struct MovementControllerExceptionTag {
 };
 using MovementControllerException = StarError<MovementControllerExceptionTag, StarException>;
 
-STAR_CLASS(MovementController);
+class MovementController;
+using MovementControllerPtr = std::shared_ptr<MovementController>;
+using MovementControllerConstPtr = std::shared_ptr<const MovementController>;
+using MovementControllerWeakPtr = std::weak_ptr<MovementController>;
+using MovementControllerConstWeakPtr = std::weak_ptr<const MovementController>;
+using MovementControllerUPtr = std::unique_ptr<MovementController>;
+using MovementControllerConstUPtr = std::unique_ptr<const MovementController>;
 
 // List of all movement parameters that define a specific sort of movable
 // object.  Each parameter is optional so that this structure can be used to
@@ -228,7 +234,7 @@ public:
 
   void setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEntities);
   // iterate over all physics entity collision polys in the region, iteration stops if the callback returns false
-  void forEachMovingCollision(RectF const& region, function<bool(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
+  void forEachMovingCollision(RectF const& region, std::function<bool(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
 
 protected:
   // forces the movement controller onGround status, used when manually controlling movement outside the movement controller

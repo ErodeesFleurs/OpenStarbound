@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.vector;
 #include "StarCasting.hpp"
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -86,19 +86,19 @@ void CanvasWidget::clear() {
 }
 
 void CanvasWidget::drawImage(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, false));
+  m_renderOps.append(std::make_tuple(std::move(texName), position, scale, color, false));
 }
 
 void CanvasWidget::drawImageCentered(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, true));
+  m_renderOps.append(std::make_tuple(std::move(texName), position, scale, color, true));
 }
 
 void CanvasWidget::drawImageRect(String texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), texCoords, screenCoords, color));
+  m_renderOps.append(std::make_tuple(std::move(texName), texCoords, screenCoords, color));
 }
 
 void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos) {
-  m_renderOps.append(make_tuple(std::move(drawable), screenPos));
+  m_renderOps.append(std::make_tuple(std::move(drawable), screenPos));
 }
 
 void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPos) {
@@ -107,23 +107,23 @@ void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPo
 }
 
 void CanvasWidget::drawTiledImage(String texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), textureScale, offset, screenCoords, color));
+  m_renderOps.append(std::make_tuple(std::move(texName), textureScale, offset, screenCoords, color));
 }
 
 void CanvasWidget::drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
-  m_renderOps.append(make_tuple(begin, end, color, lineWidth));
+  m_renderOps.append(std::make_tuple(begin, end, color, lineWidth));
 }
 
 void CanvasWidget::drawRect(RectF const& coords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(coords, color));
+  m_renderOps.append(std::make_tuple(coords, color));
 }
 
 void CanvasWidget::drawPoly(PolyF const& poly, Vec4B const& color, float lineWidth) {
-  m_renderOps.append(make_tuple(poly, color, lineWidth));
+  m_renderOps.append(std::make_tuple(poly, color, lineWidth));
 }
 
-void CanvasWidget::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  m_renderOps.append(make_tuple(triangles, color));
+void CanvasWidget::drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
+  m_renderOps.append(std::make_tuple(triangles, color));
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String font, String processingDirectives) {
@@ -134,11 +134,11 @@ void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSiz
   style.lineSpacing = lineSpacing;
   style.font = font;
   style.directives = processingDirectives;
-  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
+  m_renderOps.append(std::make_tuple(std::move(s), std::move(position), std::move(style)));
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, TextStyle style) {
-  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
+  m_renderOps.append(std::make_tuple(std::move(s), std::move(position), std::move(style)));
 }
 
 Vec2I CanvasWidget::mousePosition() const {
@@ -199,23 +199,23 @@ void CanvasWidget::renderImpl() {
 
   for (auto const& op : m_renderOps) {
     if (auto args = op.ptr<ImageOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderImage, this, renderingOffset, _1, _2, _3, _4, _5), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
     if (auto args = op.ptr<ImageRectOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderImageRect, this, renderingOffset, _1, _2, _3, _4), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderImageRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
     if (auto args = op.ptr<DrawableOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderDrawable, this, renderingOffset, _1, _2), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderDrawable, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<TiledImageOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderTiledImage, this, renderingOffset, _1, _2, _3, _4, _5), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderTiledImage, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5), *args);
     if (auto args = op.ptr<LineOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderLine, this, renderingOffset, _1, _2, _3, _4), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderLine, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4), *args);
     if (auto args = op.ptr<RectOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderRect, this, renderingOffset, _1, _2), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderRect, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<PolyOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderPoly, this, renderingOffset, _1, _2, _3), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderPoly, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
     if (auto args = op.ptr<TrianglesOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderTriangles, this, renderingOffset, _1, _2), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderTriangles, this, renderingOffset, std::placeholders::_1, std::placeholders::_2), *args);
     if (auto args = op.ptr<TextOp>())
-      tupleUnpackFunction(bind(&CanvasWidget::renderText, this, renderingOffset, _1, _2, _3), *args);
+      tupleUnpackFunction(std::bind(&CanvasWidget::renderText, this, renderingOffset, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3), *args);
   }
 }
 
@@ -265,10 +265,10 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
       RectF screenRect = RectF::withSize(screenPos, texScaledSize);
 
       RectF limitedScreenRect;
-      limitedScreenRect.setXMin(max(screenRect.xMin(), screenCoords.xMin()));
-      limitedScreenRect.setYMin(max(screenRect.yMin(), screenCoords.yMin()));
-      limitedScreenRect.setXMax(min(screenRect.xMax(), screenCoords.xMax()));
-      limitedScreenRect.setYMax(min(screenRect.yMax(), screenCoords.yMax()));
+      limitedScreenRect.setXMin(std::max(screenRect.xMin(), screenCoords.xMin()));
+      limitedScreenRect.setYMin(std::max(screenRect.yMin(), screenCoords.yMin()));
+      limitedScreenRect.setXMax(std::min(screenRect.xMax(), screenCoords.xMax()));
+      limitedScreenRect.setYMax(std::min(screenRect.yMax(), screenCoords.yMax()));
 
       RectF limitedTexRect = limitedScreenRect.translated(-screenPos).scaled(1 / textureScale);
 
@@ -313,12 +313,12 @@ void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B co
     context.drawInterfacePolyLines(poly, color, lineWidth);
 }
 
-void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
+void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
   auto& context = GuiContext::singleton();
-  auto translated = triangles.transformed([&renderingOffset](tuple<Vec2F, Vec2F, Vec2F> const& poly) {
-      return tuple<Vec2F, Vec2F, Vec2F>(get<0>(poly) + renderingOffset,
-        get<1>(poly) + renderingOffset,
-        get<2>(poly) + renderingOffset);
+  auto translated = triangles.transformed([&renderingOffset](std::tuple<Vec2F, Vec2F, Vec2F> const& poly) {
+      return std::tuple<Vec2F, Vec2F, Vec2F>(std::get<0>(poly) + renderingOffset,
+        std::get<1>(poly) + renderingOffset,
+        std::get<2>(poly) + renderingOffset);
     });
   if (m_ignoreInterfaceScale)
     context.drawTriangles(translated, color);

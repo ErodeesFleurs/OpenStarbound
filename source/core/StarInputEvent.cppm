@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.bi_map;
 import star.variant;
@@ -8,7 +7,7 @@ import star.vector;
 
 namespace Star {
 
-enum class Key : uint16_t {
+enum class Key : std::uint16_t {
   Backspace,
   Tab,
   Clear,
@@ -153,7 +152,7 @@ enum class Key : uint16_t {
 };
 extern EnumMap<Key> const KeyNames;
 
-enum class KeyMod : uint16_t {
+enum class KeyMod : std::uint16_t {
   NoMod = 0x0000,
   LShift = 0x0001,
   RShift = 0x0002,
@@ -176,7 +175,7 @@ KeyMod operator~(KeyMod a);
 KeyMod& operator|=(KeyMod& a, KeyMod b);
 KeyMod& operator&=(KeyMod& a, KeyMod b);
 
-enum class MouseButton : uint8_t {
+enum class MouseButton : std::uint8_t {
   Left,
   Middle,
   Right,
@@ -185,15 +184,15 @@ enum class MouseButton : uint8_t {
 };
 extern EnumMap<MouseButton> const MouseButtonNames;
 
-enum class MouseWheel : uint8_t {
+enum class MouseWheel : std::uint8_t {
   Up,
   Down
 };
 extern EnumMap<MouseWheel> const MouseWheelNames;
 
-typedef uint32_t ControllerId;
+typedef std::uint32_t ControllerId;
 
-enum class ControllerAxis : uint8_t {
+enum class ControllerAxis : std::uint8_t {
   LeftX,
   LeftY,
   RightX,
@@ -204,7 +203,7 @@ enum class ControllerAxis : uint8_t {
 };
 extern EnumMap<ControllerAxis> const ControllerAxisNames;
 
-enum class ControllerButton : uint8_t {
+enum class ControllerButton : std::uint8_t {
   A,
   B,
   X,
@@ -293,27 +292,27 @@ typedef Variant<
     InputEvent;
 
 inline KeyMod operator|(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a | (uint16_t)b);
+  return (KeyMod)((std::uint16_t)a | (std::uint16_t)b);
 }
 
 inline KeyMod operator&(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a & (uint16_t)b);
+  return (KeyMod)((std::uint16_t)a & (std::uint16_t)b);
 }
 
 inline KeyMod operator~(KeyMod a) {
-  return (KeyMod) ~(uint16_t)a;
+  return (KeyMod) ~(std::uint16_t)a;
 }
 
 inline KeyMod& operator|=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast |= (uint16_t)b;
+  std::uint16_t a_cast = (std::uint16_t)a;
+  a_cast |= (std::uint16_t)b;
   a = (KeyMod)a_cast;
   return a;
 }
 
 inline KeyMod& operator&=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast &= (uint16_t)b;
+  std::uint16_t a_cast = (std::uint16_t)a;
+  a_cast &= (std::uint16_t)b;
   a = (KeyMod)a_cast;
   return a;
 }

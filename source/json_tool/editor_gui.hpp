@@ -8,6 +8,7 @@
 #include <QTextEdit>
 
 #include "json_tool.hpp"
+import std;
 import star.string;
 import star.list;
 
@@ -46,7 +47,7 @@ private:
   JsonInputFormatPtr m_editFormat;
   Options m_options;
   List<String> m_files;
-  size_t m_fileIndex;
+  std::size_t m_fileIndex;
   FormattedJson m_currentJson;
 };
 

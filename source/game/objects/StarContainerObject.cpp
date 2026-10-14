@@ -39,7 +39,7 @@ import star.lua;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -127,7 +127,7 @@ ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parame
   m_itemsUpdated = true;
   m_runUpdatedCallback = true;
 
-  m_items = make_shared<ItemBag>(configValue("slotCount").toInt());
+  m_items = std::make_shared<ItemBag>(configValue("slotCount").toInt());
 
   m_netGroup.addNetElement(&m_opened);
   m_netGroup.addNetElement(&m_crafting);
@@ -146,7 +146,7 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
     if (!m_initialized) {
       m_initialized = true;
       float level = world->threatLevel();
-      uint64_t seed = configValue("treasureSeed", Random::randu64()).toUInt();
+      std::uint64_t seed = configValue("treasureSeed", Random::randu64()).toUInt();
       level = configValue("level", level).toFloat();
       level += configValue("levelAdjustment", 0).toFloat();
       if (!configValue("initialItems").isNull()) {
@@ -163,7 +163,7 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
   }
 }
 
-void ContainerObject::update(float dt, uint64_t currentStep) {
+void ContainerObject::update(float dt, std::uint64_t currentStep) {
   Object::update(dt, currentStep);
 
   if (isMaster()) {
@@ -215,7 +215,7 @@ void ContainerObject::render(RenderCallback* renderCallback) {
       if (m_currentState == 0) {
         // opening, or flipping to the other side
         if (!configValue("openSounds").isNull()) {
-          auto audio = make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("openSounds").toArray()).toString()));
+          auto audio = std::make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("openSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
           renderCallback->addAudio(std::move(audio));
@@ -224,7 +224,7 @@ void ContainerObject::render(RenderCallback* renderCallback) {
       if (m_currentState == configValue("openFrameIndex", 2).toInt()) {
         // closing
         if (!configValue("closeSounds").isNull()) {
-          auto audio = make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("closeSounds").toArray()).toString()));
+          auto audio = std::make_shared<AudioInstance>(*assets->audio(Random::randValueFrom(configValue("closeSounds").toArray()).toString()));
           audio->setPosition(position());
           audio->setRangeMultiplier(config()->soundEffectRangeMultiplier);
           renderCallback->addAudio(std::move(audio));
@@ -349,7 +349,7 @@ RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) {
+RpcPromise<ItemPtr> ContainerObject::putItems(std::size_t pos, ItemPtr const& items) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
@@ -359,7 +359,7 @@ RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) 
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
+RpcPromise<ItemPtr> ContainerObject::takeItems(std::size_t slot, std::size_t count) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
@@ -369,7 +369,7 @@ RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items, bool tryCombine) {
+RpcPromise<ItemPtr> ContainerObject::swapItems(std::size_t slot, ItemPtr const& items, bool tryCombine) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
@@ -379,7 +379,7 @@ RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items
   }
 }
 
-RpcPromise<ItemPtr> ContainerObject::applyAugment(size_t slot, ItemPtr const& augment) {
+RpcPromise<ItemPtr> ContainerObject::applyAugment(std::size_t slot, ItemPtr const& augment) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([](Json res) {
         return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
@@ -399,7 +399,7 @@ RpcPromise<bool> ContainerObject::consumeItems(ItemDescriptor const& descriptor)
   }
 }
 
-RpcPromise<bool> ContainerObject::consumeItems(size_t pos, size_t count) {
+RpcPromise<bool> ContainerObject::consumeItems(std::size_t pos, std::size_t count) {
   if (isSlave()) {
     return world()->sendEntityMessage(entityId(), "consumeItemsAt", {pos, count}).wrap([](Json res) {
         return res.toBool();
@@ -477,11 +477,13 @@ void ContainerObject::burnContainerContents() {
       if (item) {
         auto fuelSingle = item->instanceValue("fuelAmount", 0).toUInt();
         if (fuelSingle > 0) {
-          auto itemsToConsume = min<uint64_t>((leftToFill + fuelSingle - 1) / fuelSingle, item->count());
-          level = min(maxLevel, level + fuelSingle * itemsToConsume);
+          auto itemsToConsume = std::min<std::uint64_t>((leftToFill + fuelSingle - 1) / fuelSingle, item->count());
+          level = std::min(maxLevel, level + fuelSingle * itemsToConsume);
           auto consumed = item->consume(itemsToConsume);
-          starAssert(consumed);
-          _unused(consumed);
+          if constexpr (Star::DebugEnabled) {
+            Star::starAssertFailed((consumed));
+          }
+          ((void)(consumed));
         }
       }
     }
@@ -516,7 +518,7 @@ void ContainerObject::readStoredData(Json const& diskStore) {
   m_crafting.set(diskStore.getBool("crafting"));
   m_craftingProgress.set(diskStore.getFloat("craftingProgress"));
   m_initialized = diskStore.getBool("initialized");
-  m_items = make_shared<ItemBag>(ItemBag::loadStore(diskStore.get("items")));
+  m_items = std::make_shared<ItemBag>(ItemBag::loadStore(diskStore.get("items")));
   m_ageItemsTimer = EpochTimer(diskStore.get("ageItemsTimer"));
 
   m_lostItems.appendAll(m_items->resize(configValue("slotCount").toUInt()));
@@ -583,8 +585,10 @@ void ContainerObject::tickCrafting(float dt) {
     m_craftingProgress.set(0);
     for (auto const& input : m_goalRecipe.inputs) {
       bool consumed = m_items->consumeItems(input);
-      _unused(consumed);
-      starAssert(consumed);
+      ((void)(consumed));
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((consumed));
+      }
     }
     ItemPtr overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
@@ -599,22 +603,22 @@ ItemPtr ContainerObject::doAddItems(ItemPtr const& items) {
   return m_items->addItems(items);
 }
 
-ItemPtr ContainerObject::doPutItems(size_t slot, ItemPtr const& items) {
+ItemPtr ContainerObject::doPutItems(std::size_t slot, ItemPtr const& items) {
   itemsUpdated();
   return m_items->putItems(slot, items);
 }
 
-ItemPtr ContainerObject::doTakeItems(size_t slot, size_t count) {
+ItemPtr ContainerObject::doTakeItems(std::size_t slot, std::size_t count) {
   itemsUpdated();
   return m_items->takeItems(slot, count);
 }
 
-ItemPtr ContainerObject::doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine) {
+ItemPtr ContainerObject::doSwapItems(std::size_t slot, ItemPtr const& items, bool tryCombine) {
   itemsUpdated();
   return m_items->swapItems(slot, items, tryCombine);
 }
 
-ItemPtr ContainerObject::doApplyAugment(size_t slot, ItemPtr const& item) {
+ItemPtr ContainerObject::doApplyAugment(std::size_t slot, ItemPtr const& item) {
   itemsUpdated();
   if (auto augment = as<AugmentItem>(item))
     if (auto slotItem = m_items->at(slot))
@@ -631,7 +635,7 @@ bool ContainerObject::doConsumeItems(ItemDescriptor const& descriptor) {
   return false;
 }
 
-bool ContainerObject::doConsumeItems(size_t slot, size_t count) {
+bool ContainerObject::doConsumeItems(std::size_t slot, std::size_t count) {
   if (m_items->consumeItems(slot, count)) {
     itemsUpdated();
     return true;

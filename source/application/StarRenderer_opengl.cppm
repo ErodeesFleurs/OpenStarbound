@@ -1,5 +1,6 @@
 module;
-#include "StarConfig.hpp"
+#include "GL/glew.h"
+import std;
 import star.maybe;
 import star.json;
 import star.byte_array;
@@ -16,15 +17,20 @@ import star.bi_map;
 import star.ref_ptr;
 import star.renderer;
 
-#include "GL/glew.h"
 
 import star.vector;
 import star.matrix3;
 namespace Star {
 
-STAR_CLASS(OpenGlRenderer);
+class OpenGlRenderer;
+using OpenGlRendererPtr = std::shared_ptr<OpenGlRenderer>;
+using OpenGlRendererConstPtr = std::shared_ptr<OpenGlRenderer const>;
+using OpenGlRendererWeakPtr = std::weak_ptr<OpenGlRenderer>;
+using OpenGlRendererConstWeakPtr = std::weak_ptr<OpenGlRenderer const>;
+using OpenGlRendererUPtr = std::unique_ptr<OpenGlRenderer>;
+using OpenGlRendererConstUPtr = std::unique_ptr<OpenGlRenderer const>;
 
-inline constexpr size_t FrameBufferCount = 1;
+inline constexpr std::size_t FrameBufferCount = 1;
 
 // TODO: Bott - This isn't really rendering-specific. Don't really like it either. It's nicer than having redundant bool options, though.
 enum class BoolSettingMode {
@@ -90,7 +96,7 @@ private:
     TextureFiltering textureFiltering;
   };
 
-  struct GlTextureGroup : enable_shared_from_this<GlTextureGroup>, public TextureGroup {
+  struct GlTextureGroup : std::enable_shared_from_this<GlTextureGroup>, public TextureGroup {
     GlTextureGroup(unsigned atlasNumCells);
     ~GlTextureGroup();
 
@@ -121,7 +127,7 @@ private:
     void decrementBufferUseCount();
 
     unsigned bufferUseCount = 0;
-    shared_ptr<GlTextureGroup> parentGroup;
+    std::shared_ptr<GlTextureGroup> parentGroup;
     GlTextureAtlasSet::TextureHandle parentAtlasTexture = nullptr;
   };
 
@@ -143,11 +149,11 @@ private:
   };
 
   struct GlPackedVertexData {
-    uint32_t textureIndex : 2;
-    uint32_t fullbright : 1;
-    uint32_t rX : 1;
-    uint32_t rY : 1;
-    uint32_t unused : 27;
+    std::uint32_t textureIndex : 2;
+    std::uint32_t fullbright : 1;
+    std::uint32_t rX : 1;
+    std::uint32_t rY : 1;
+    std::uint32_t unused : 27;
   };
 
   struct GlRenderVertex {
@@ -155,7 +161,7 @@ private:
     Vec2F uv;
     Vec4B color;
     union Packed {
-      uint32_t packed;
+      std::uint32_t packed;
       GlPackedVertexData vars;
     } pack;
   };
@@ -169,7 +175,7 @@ private:
     struct GlVertexBuffer {
       List<GlVertexBufferTexture> textures;
       GLuint vertexBuffer = 0;
-      size_t vertexCount = 0;
+      std::size_t vertexCount = 0;
     };
 
     GlRenderBuffer();
@@ -246,12 +252,12 @@ private:
   };
 
   static bool logGlErrorSummary(String prefix);
-  static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data);
+  static void uploadTextureImage(PixelFormat pixelFormat, Vec2U size, std::uint8_t const* data);
 
   
   static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
-  shared_ptr<GlRenderBuffer> createGlRenderBuffer();
+  std::shared_ptr<GlRenderBuffer> createGlRenderBuffer();
 
   void flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
 
@@ -292,10 +298,10 @@ private:
   bool m_useMultiTexturing;
   unsigned m_multiSampling; // if non-zero, is enabled and acts as sample count
   bool m_hdrSetting;
-  List<shared_ptr<GlTextureGroup>> m_liveTextureGroups;
+  List<std::shared_ptr<GlTextureGroup>> m_liveTextureGroups;
 
   List<RenderPrimitive> m_immediatePrimitives;
-  shared_ptr<GlRenderBuffer> m_immediateRenderBuffer;
+  std::shared_ptr<GlRenderBuffer> m_immediateRenderBuffer;
 };
 
 }

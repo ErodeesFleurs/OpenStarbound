@@ -1,20 +1,20 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string;
 import star.byte_array;
 
 namespace Star {
 
-size_t hexEncode(char const* data, size_t len, char* output, size_t outLen = NPos);
-size_t hexDecode(char const* src, size_t len, char* output, size_t outLen = NPos);
-size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen = NPos);
+std::size_t hexEncode(char const* data, std::size_t len, char* output, std::size_t outLen = NPos);
+std::size_t hexDecode(char const* src, std::size_t len, char* output, std::size_t outLen = NPos);
+std::size_t nibbleDecode(char const* src, std::size_t len, char* output, std::size_t outLen = NPos);
 
-size_t base64Encode(char const* data, size_t len, char* output, size_t outLen = NPos);
-size_t base64Decode(char const* src, size_t len, char* output, size_t outLen = NPos);
+std::size_t base64Encode(char const* data, std::size_t len, char* output, std::size_t outLen = NPos);
+std::size_t base64Decode(char const* src, std::size_t len, char* output, std::size_t outLen = NPos);
 
-String hexEncode(char const* data, size_t len);
-String base64Encode(char const* data, size_t len);
+String hexEncode(char const* data, std::size_t len);
+String base64Encode(char const* data, std::size_t len);
 
 String hexEncode(ByteArray const& data);
 ByteArray hexDecode(String const& encodedData);

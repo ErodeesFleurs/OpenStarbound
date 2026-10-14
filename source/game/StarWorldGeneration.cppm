@@ -25,7 +25,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 import star.image;
@@ -82,10 +81,34 @@ import star.biome_placement;
 import star.falling_blocks_agent;
 
 namespace Star {
-STAR_CLASS(WorldServer);
-STAR_CLASS(Plant);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(LiquidsDatabase);
+class WorldServer;
+using WorldServerPtr = std::shared_ptr<WorldServer>;
+using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
+using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
+using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
+using WorldServerUPtr = std::unique_ptr<WorldServer>;
+using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
+class Plant;
+using PlantPtr = std::shared_ptr<Plant>;
+using PlantConstPtr = std::shared_ptr<const Plant>;
+using PlantWeakPtr = std::weak_ptr<Plant>;
+using PlantConstWeakPtr = std::weak_ptr<const Plant>;
+using PlantUPtr = std::unique_ptr<Plant>;
+using PlantConstUPtr = std::unique_ptr<const Plant>;
+class MaterialDatabase;
+using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
+using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
+using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
+using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
+using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
+class LiquidsDatabase;
+using LiquidsDatabasePtr = std::shared_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstPtr = std::shared_ptr<const LiquidsDatabase>;
+using LiquidsDatabaseWeakPtr = std::weak_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstWeakPtr = std::weak_ptr<const LiquidsDatabase>;
+using LiquidsDatabaseUPtr = std::unique_ptr<LiquidsDatabase>;
+using LiquidsDatabaseConstUPtr = std::unique_ptr<const LiquidsDatabase>;
 }
 
 import star.micro_dungeon;
@@ -94,10 +117,34 @@ import star.spawner;
 
 namespace Star {
 
-STAR_CLASS(FallingBlocksWorld);
-STAR_CLASS(DungeonGeneratorWorld);
-STAR_CLASS(SpawnerWorld);
-STAR_CLASS(WorldGenerator);
+class FallingBlocksWorld;
+using FallingBlocksWorldPtr = std::shared_ptr<FallingBlocksWorld>;
+using FallingBlocksWorldConstPtr = std::shared_ptr<const FallingBlocksWorld>;
+using FallingBlocksWorldWeakPtr = std::weak_ptr<FallingBlocksWorld>;
+using FallingBlocksWorldConstWeakPtr = std::weak_ptr<const FallingBlocksWorld>;
+using FallingBlocksWorldUPtr = std::unique_ptr<FallingBlocksWorld>;
+using FallingBlocksWorldConstUPtr = std::unique_ptr<const FallingBlocksWorld>;
+class DungeonGeneratorWorld;
+using DungeonGeneratorWorldPtr = std::shared_ptr<DungeonGeneratorWorld>;
+using DungeonGeneratorWorldConstPtr = std::shared_ptr<const DungeonGeneratorWorld>;
+using DungeonGeneratorWorldWeakPtr = std::weak_ptr<DungeonGeneratorWorld>;
+using DungeonGeneratorWorldConstWeakPtr = std::weak_ptr<const DungeonGeneratorWorld>;
+using DungeonGeneratorWorldUPtr = std::unique_ptr<DungeonGeneratorWorld>;
+using DungeonGeneratorWorldConstUPtr = std::unique_ptr<const DungeonGeneratorWorld>;
+class SpawnerWorld;
+using SpawnerWorldPtr = std::shared_ptr<SpawnerWorld>;
+using SpawnerWorldConstPtr = std::shared_ptr<const SpawnerWorld>;
+using SpawnerWorldWeakPtr = std::weak_ptr<SpawnerWorld>;
+using SpawnerWorldConstWeakPtr = std::weak_ptr<const SpawnerWorld>;
+using SpawnerWorldUPtr = std::unique_ptr<SpawnerWorld>;
+using SpawnerWorldConstUPtr = std::unique_ptr<const SpawnerWorld>;
+class WorldGenerator;
+using WorldGeneratorPtr = std::shared_ptr<WorldGenerator>;
+using WorldGeneratorConstPtr = std::shared_ptr<const WorldGenerator>;
+using WorldGeneratorWeakPtr = std::weak_ptr<WorldGenerator>;
+using WorldGeneratorConstWeakPtr = std::weak_ptr<const WorldGenerator>;
+using WorldGeneratorUPtr = std::unique_ptr<WorldGenerator>;
+using WorldGeneratorConstUPtr = std::unique_ptr<const WorldGenerator>;
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
@@ -181,7 +228,7 @@ public:
   bool isBackgroundEmpty(Vec2I const& position) const override;
   LiquidLevel liquidLevel(Vec2I const& position) const override;
   bool spawningProhibited(RectF const& area) const override;
-  uint64_t spawnSeed() const override;
+  std::uint64_t spawnSeed() const override;
   SpawnProfile spawnProfile(Vec2F const& position) const override;
   float dayLevel() const override;
   float threatLevel() const override;

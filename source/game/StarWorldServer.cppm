@@ -14,7 +14,6 @@ import star.vector;
 import star.thread;
 import star.game_types;
 import star.material_types;
-#include "StarConfig.hpp"
 import star.io_device;
 import star.lua;
 import star.format;
@@ -109,21 +108,111 @@ import star.spawner;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(Sky);
-STAR_CLASS(ServerWeather);
-STAR_STRUCT(SkyParameters);
-STAR_CLASS(DamageManager);
-STAR_CLASS(WireProcessor);
-STAR_CLASS(EntityMap);
-STAR_CLASS(WorldStorage);
-STAR_CLASS(FallingBlocksAgent);
-STAR_CLASS(DungeonDefinition);
-STAR_CLASS(WorldServer);
-STAR_CLASS(TileEntity);
-STAR_CLASS(UniverseSettings);
-STAR_CLASS(UniverseServer);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class WorldTemplate;
+using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
+using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
+using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
+using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
+using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
+using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
+class Sky;
+using SkyPtr = std::shared_ptr<Sky>;
+using SkyConstPtr = std::shared_ptr<const Sky>;
+using SkyWeakPtr = std::weak_ptr<Sky>;
+using SkyConstWeakPtr = std::weak_ptr<const Sky>;
+using SkyUPtr = std::unique_ptr<Sky>;
+using SkyConstUPtr = std::unique_ptr<const Sky>;
+class ServerWeather;
+using ServerWeatherPtr = std::shared_ptr<ServerWeather>;
+using ServerWeatherConstPtr = std::shared_ptr<const ServerWeather>;
+using ServerWeatherWeakPtr = std::weak_ptr<ServerWeather>;
+using ServerWeatherConstWeakPtr = std::weak_ptr<const ServerWeather>;
+using ServerWeatherUPtr = std::unique_ptr<ServerWeather>;
+using ServerWeatherConstUPtr = std::unique_ptr<const ServerWeather>;
+struct SkyParameters;
+using SkyParametersPtr = std::shared_ptr<SkyParameters>;
+using SkyParametersConstPtr = std::shared_ptr<const SkyParameters>;
+using SkyParametersWeakPtr = std::weak_ptr<SkyParameters>;
+using SkyParametersConstWeakPtr = std::weak_ptr<const SkyParameters>;
+using SkyParametersUPtr = std::unique_ptr<SkyParameters>;
+using SkyParametersConstUPtr = std::unique_ptr<const SkyParameters>;
+class DamageManager;
+using DamageManagerPtr = std::shared_ptr<DamageManager>;
+using DamageManagerConstPtr = std::shared_ptr<const DamageManager>;
+using DamageManagerWeakPtr = std::weak_ptr<DamageManager>;
+using DamageManagerConstWeakPtr = std::weak_ptr<const DamageManager>;
+using DamageManagerUPtr = std::unique_ptr<DamageManager>;
+using DamageManagerConstUPtr = std::unique_ptr<const DamageManager>;
+class WireProcessor;
+using WireProcessorPtr = std::shared_ptr<WireProcessor>;
+using WireProcessorConstPtr = std::shared_ptr<const WireProcessor>;
+using WireProcessorWeakPtr = std::weak_ptr<WireProcessor>;
+using WireProcessorConstWeakPtr = std::weak_ptr<const WireProcessor>;
+using WireProcessorUPtr = std::unique_ptr<WireProcessor>;
+using WireProcessorConstUPtr = std::unique_ptr<const WireProcessor>;
+class EntityMap;
+using EntityMapPtr = std::shared_ptr<EntityMap>;
+using EntityMapConstPtr = std::shared_ptr<const EntityMap>;
+using EntityMapWeakPtr = std::weak_ptr<EntityMap>;
+using EntityMapConstWeakPtr = std::weak_ptr<const EntityMap>;
+using EntityMapUPtr = std::unique_ptr<EntityMap>;
+using EntityMapConstUPtr = std::unique_ptr<const EntityMap>;
+class WorldStorage;
+using WorldStoragePtr = std::shared_ptr<WorldStorage>;
+using WorldStorageConstPtr = std::shared_ptr<const WorldStorage>;
+using WorldStorageWeakPtr = std::weak_ptr<WorldStorage>;
+using WorldStorageConstWeakPtr = std::weak_ptr<const WorldStorage>;
+using WorldStorageUPtr = std::unique_ptr<WorldStorage>;
+using WorldStorageConstUPtr = std::unique_ptr<const WorldStorage>;
+class FallingBlocksAgent;
+using FallingBlocksAgentPtr = std::shared_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstPtr = std::shared_ptr<const FallingBlocksAgent>;
+using FallingBlocksAgentWeakPtr = std::weak_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstWeakPtr = std::weak_ptr<const FallingBlocksAgent>;
+using FallingBlocksAgentUPtr = std::unique_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstUPtr = std::unique_ptr<const FallingBlocksAgent>;
+class DungeonDefinition;
+using DungeonDefinitionPtr = std::shared_ptr<DungeonDefinition>;
+using DungeonDefinitionConstPtr = std::shared_ptr<const DungeonDefinition>;
+using DungeonDefinitionWeakPtr = std::weak_ptr<DungeonDefinition>;
+using DungeonDefinitionConstWeakPtr = std::weak_ptr<const DungeonDefinition>;
+using DungeonDefinitionUPtr = std::unique_ptr<DungeonDefinition>;
+using DungeonDefinitionConstUPtr = std::unique_ptr<const DungeonDefinition>;
+class WorldServer;
+using WorldServerPtr = std::shared_ptr<WorldServer>;
+using WorldServerConstPtr = std::shared_ptr<const WorldServer>;
+using WorldServerWeakPtr = std::weak_ptr<WorldServer>;
+using WorldServerConstWeakPtr = std::weak_ptr<const WorldServer>;
+using WorldServerUPtr = std::unique_ptr<WorldServer>;
+using WorldServerConstUPtr = std::unique_ptr<const WorldServer>;
+class TileEntity;
+using TileEntityPtr = std::shared_ptr<TileEntity>;
+using TileEntityConstPtr = std::shared_ptr<const TileEntity>;
+using TileEntityWeakPtr = std::weak_ptr<TileEntity>;
+using TileEntityConstWeakPtr = std::weak_ptr<const TileEntity>;
+using TileEntityUPtr = std::unique_ptr<TileEntity>;
+using TileEntityConstUPtr = std::unique_ptr<const TileEntity>;
+class UniverseSettings;
+using UniverseSettingsPtr = std::shared_ptr<UniverseSettings>;
+using UniverseSettingsConstPtr = std::shared_ptr<const UniverseSettings>;
+using UniverseSettingsWeakPtr = std::weak_ptr<UniverseSettings>;
+using UniverseSettingsConstWeakPtr = std::weak_ptr<const UniverseSettings>;
+using UniverseSettingsUPtr = std::unique_ptr<UniverseSettings>;
+using UniverseSettingsConstUPtr = std::unique_ptr<const UniverseSettings>;
+class UniverseServer;
+using UniverseServerPtr = std::shared_ptr<UniverseServer>;
+using UniverseServerConstPtr = std::shared_ptr<const UniverseServer>;
+using UniverseServerWeakPtr = std::weak_ptr<UniverseServer>;
+using UniverseServerConstWeakPtr = std::weak_ptr<const UniverseServer>;
+using UniverseServerUPtr = std::unique_ptr<UniverseServer>;
+using UniverseServerConstUPtr = std::unique_ptr<const UniverseServer>;
 
 struct WorldServerExceptionTag {
   static constexpr char const* name() { return "WorldServerException"; }
@@ -144,8 +233,8 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 class WorldServer : public World {
 public:
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
-  typedef function<void(Json const&)> WorldPropertyListener;
+  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
+  typedef std::function<void(Json const&)> WorldPropertyListener;
 
   // Create a new world with the given template, writing new storage file.
   WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage);
@@ -223,7 +312,7 @@ public:
 
   ConnectionId connection() const override;
   WorldGeometry geometry() const override;
-  uint64_t currentStep() const override;
+  std::uint64_t currentStep() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
   ModId mod(Vec2I const& position, TileLayer layer) const override;
@@ -249,11 +338,11 @@ public:
   EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const override;
   bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const override;
   CollisionKind tileCollisionKind(Vec2I const& pos) const override;
-  void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const override;
+  void forEachCollisionBlock(RectI const& region, std::function<void(CollisionBlock const&)> const& iterator) const override;
   bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  Maybe<std::pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
   bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
@@ -276,7 +365,7 @@ public:
   void setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
   double epochTime() const override;
-  uint32_t day() const override;
+  std::uint32_t day() const override;
   float dayLength() const override;
   float timeOfDay() const override;
   LuaRootPtr luaRoot() override;
@@ -286,12 +375,12 @@ public:
   
   StringMap<LuaCallbacks> luaThreadCallbacks() const override;
   
-  void wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex);
+  void wire(Vec2I const& outputPosition, std::size_t outputIndex, Vec2I const& inputPosition, std::size_t inputIndex);
 
   bool getTileProtection(DungeonId dungeonId) const;
   void setTileProtection(DungeonId dungeonId, bool isProtected);
   // sets a provided list of DungeonIds all at once and returns how many were changed
-  size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
+  std::size_t setTileProtection(List<DungeonId> const& dungeonIds, bool isProtected);
   // used to globally, temporarily disable protection for certain operations
   void setTileProtectionEnabled(bool enabled);
 
@@ -378,7 +467,7 @@ public:
   void setPlanetType(String const& planetType, String const& primaryBiomeName);
 
   // Force the current weather to a specific index from the world's weather pool
-  void setWeatherIndex(size_t weatherIndex, bool force = false);
+  void setWeatherIndex(std::size_t weatherIndex, bool force = false);
   // Force the current weather to a specific weather type by name
   void setWeather(String const& weatherName, bool force = false);
   void setWeather(Vec2F const& position, String const& weatherName, bool force = false);
@@ -388,7 +477,7 @@ public:
   StringList weatherList(Vec2F const& position) const;
 
   // used to notify the universe server that the celestial planet type has changed
-  Maybe<pair<String, String>> pullNewPlanetType();
+  Maybe<std::pair<String, String>> pullNewPlanetType();
 
 private:
   struct ClientInfo {
@@ -400,8 +489,8 @@ private:
 
     ConnectionId clientId;
     ClientSubWorldId subWorldId;
-    uint64_t skyNetVersion;
-    uint64_t weatherNetVersion;
+    std::uint64_t skyNetVersion;
+    std::uint64_t weatherNetVersion;
     Maybe<String> weatherDomain;
     WorldClientState clientState;
     bool pendingForward;
@@ -412,12 +501,12 @@ private:
     List<PacketPtr> outgoingPackets;
 
     // All slave entities for which the player should be knowledgable about.
-    HashMap<EntityId, uint64_t> clientSlavesNetVersion;
+    HashMap<EntityId, std::uint64_t> clientSlavesNetVersion;
 
     // Batch send tile updates
     HashSet<Vec2I> pendingTileUpdates;
     HashSet<Vec2I> pendingLiquidUpdates;
-    HashSet<pair<Vec2I, TileLayer>> pendingTileDamageUpdates;
+    HashSet<std::pair<Vec2I, TileLayer>> pendingTileDamageUpdates;
     HashSet<ServerTileSectorArray::Sector> pendingSectors;
     HashSet<ServerTileSectorArray::Sector> activeSectors;
 
@@ -429,7 +518,7 @@ private:
     List<Vec2I> roots;
   };
 
-  typedef function<ServerTile const& (Vec2I)> ServerTileGetter;
+  typedef std::function<ServerTile const& (Vec2I)> ServerTileGetter;
 
   void init(bool firstTime);
 
@@ -480,7 +569,7 @@ private:
   JsonObject m_worldProperties;
   StringMap<WorldPropertyListener> m_worldPropertyListeners;
 
-  Maybe<pair<String, String>> m_newPlanetType;
+  Maybe<std::pair<String, String>> m_newPlanetType;
 
   UniverseSettingsPtr m_universeSettings;
 
@@ -500,7 +589,7 @@ private:
 
   WorldGeometry m_geometry;
   double m_currentTime;
-  uint64_t m_currentStep;
+  std::uint64_t m_currentStep;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   SkyPtr m_sky;
 
@@ -512,13 +601,13 @@ private:
   CollisionGenerator m_collisionGenerator;
   List<CollisionBlock> m_workingCollisionBlocks;
 
-  HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
-  OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
+  HashMap<NetCompatibilityRules, HashMap<std::pair<EntityId, std::uint64_t>, std::pair<ByteArray, std::uint64_t>>> m_netStateCache;
+  OrderedHashMap<ConnectionId, std::shared_ptr<ClientInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
 
-  shared_ptr<LiquidCellEngine<LiquidId>> m_liquidEngine;
+  std::shared_ptr<LiquidCellEngine<LiquidId>> m_liquidEngine;
   FallingBlocksAgentPtr m_fallingBlocksAgent;
   Spawner m_spawner;
 
@@ -527,7 +616,7 @@ private:
   // is removed / uninitialized
   HashMap<EntityId, TileEntitySpaces> m_tileEntitySpaces;
 
-  List<pair<float, WorldAction>> m_timers;
+  List<std::pair<float, WorldAction>> m_timers;
 
   bool m_needsGlobalBreakCheck = false;
 
@@ -537,8 +626,8 @@ private:
   StableHashSet<DungeonId> m_protectedDungeonIds;
   bool m_tileProtectionEnabled = true;
 
-  HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
-  HashMap<Uuid, pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;
+  HashMap<Uuid, std::pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
+  HashMap<Uuid, std::pair<ConnectionId, RpcPromise<Json>>> m_entityMessagePromises;
 
   List<PhysicsForceRegion> m_forceRegions;
 

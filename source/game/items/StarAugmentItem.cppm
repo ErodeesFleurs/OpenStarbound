@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.set;
 import star.string;
@@ -24,7 +24,13 @@ import star.item;
 
 namespace Star {
 
-STAR_CLASS(AugmentItem);
+class AugmentItem;
+using AugmentItemPtr = std::shared_ptr<AugmentItem>;
+using AugmentItemConstPtr = std::shared_ptr<const AugmentItem>;
+using AugmentItemWeakPtr = std::weak_ptr<AugmentItem>;
+using AugmentItemConstWeakPtr = std::weak_ptr<const AugmentItem>;
+using AugmentItemUPtr = std::unique_ptr<AugmentItem>;
+using AugmentItemConstUPtr = std::unique_ptr<const AugmentItem>;
 
 class AugmentItem : public Item {
 public:

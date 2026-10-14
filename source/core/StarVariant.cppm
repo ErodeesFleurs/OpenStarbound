@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 import star.stream_formatter;
 
 import std;
@@ -19,7 +18,7 @@ struct BadVariantTypeTag {
 };
 using BadVariantType = StarError<BadVariantTypeTag, StarException>;
 
-typedef uint8_t VariantTypeIndex;
+typedef std::uint8_t VariantTypeIndex;
 inline constexpr VariantTypeIndex InvalidVariantType = 255;
 
 namespace detail {

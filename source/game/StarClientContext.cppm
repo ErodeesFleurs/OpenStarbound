@@ -16,7 +16,6 @@ import star.btree_database;
 #include "StarCasting.hpp"
 import star.ordered_set;
 import star.list;
-#include "StarConfig.hpp"
 import star.string;
 import star.version;
 import star.rpc_promise;
@@ -83,8 +82,20 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(CelestialLog);
-STAR_CLASS(ClientContext);
+class CelestialLog;
+using CelestialLogPtr = std::shared_ptr<CelestialLog>;
+using CelestialLogConstPtr = std::shared_ptr<const CelestialLog>;
+using CelestialLogWeakPtr = std::weak_ptr<CelestialLog>;
+using CelestialLogConstWeakPtr = std::weak_ptr<const CelestialLog>;
+using CelestialLogUPtr = std::unique_ptr<CelestialLog>;
+using CelestialLogConstUPtr = std::unique_ptr<const CelestialLog>;
+class ClientContext;
+using ClientContextPtr = std::shared_ptr<ClientContext>;
+using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
+using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
+using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
+using ClientContextUPtr = std::unique_ptr<ClientContext>;
+using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 
 class ClientContext {
 public:
@@ -99,7 +110,7 @@ public:
   // orbiting.
   CelestialCoordinate shipCoordinate() const;
 
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  Maybe<std::pair<WarpAction, WarpMode>> orbitWarpAction() const;
 
   // The current world id of the player
   WorldId playerWorldId() const;
@@ -132,7 +143,7 @@ private:
   JsonRpcPtr m_rpc;
 
   NetElementTopGroup m_netGroup;
-  NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<Maybe<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

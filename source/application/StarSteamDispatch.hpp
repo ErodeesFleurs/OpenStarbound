@@ -1,9 +1,9 @@
 #pragma once
 
-import std;
-
 #include "steam/steam_api.h"
 #include "steam/steam_api_flat.h"
+import std;
+
 
 namespace Star {
 // The flat ReadP2PPacket export writes this SDK-defined eight-byte data record

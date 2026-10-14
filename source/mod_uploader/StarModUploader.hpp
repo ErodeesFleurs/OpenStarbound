@@ -8,9 +8,11 @@
 #include <QPushButton>
 #include <QCheckBox>
 
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
 #include "../application/StarSteamDispatch.hpp"
 
-#include "StarConfig.hpp"
+import std;
 import star.io_device;
 import star.json;
 import star.map;
@@ -60,8 +62,8 @@ private:
   SteamDispatch m_steamDispatch;
   bool m_closing = false;
 
-  Maybe<pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
-  Maybe<pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
+  Maybe<std::pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
+  Maybe<std::pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
 };
 
 }

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import star.memory;
 import std;
 import star.format;
 import star.maybe;
@@ -22,12 +22,12 @@ void throwInvalidUtf32CodePoint(Utf32Type val);
 
 // If passed NPos as a size, assumes modified UTF-8 and stops on NULL byte.
 // Otherwise, ignores NULL.
-size_t utf8Length(Utf8Type const* utf8, size_t size = NPos);
+std::size_t utf8Length(Utf8Type const* utf8, std::size_t size = NPos);
 // Encode up to six utf8 bytes into a utf32 character.  If passed NPos as len,
 // assumes modified UTF-8 and stops on NULL, otherwise ignores.
-size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, size_t len = NPos);
+std::size_t utf8DecodeChar(Utf8Type const* utf8, Utf32Type* utf32, std::size_t len = NPos);
 // Encode single utf32 char into up to 6 utf8 characters.
-size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len = 6);
+std::size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len = 6);
 
 Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint = {});
 std::string hexStringFromUtf32(Utf32Type character);
@@ -36,13 +36,13 @@ bool isUtf16LeadSurrogate(Utf32Type codepoint);
 bool isUtf16TrailSurrogate(Utf32Type codepoint);
 
 Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail);
-pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
+std::pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint);
 
 // Bidirectional iterator that can make utf8 appear as utf32
 template <class BaseIterator, class U32Type = Utf32Type>
 class U8ToU32Iterator {
 public:
-  typedef ptrdiff_t difference_type;
+  typedef std::ptrdiff_t difference_type;
   typedef U32Type value_type;
   typedef U32Type* pointer;
   typedef U32Type& reference;
@@ -103,7 +103,7 @@ private:
   static unsigned utf8_byte_count(Utf8Type c) {
     // if the most significant bit with a zero in it is in position
     // 8-N then there are N bytes in this UTF-8 sequence:
-    uint8_t mask = 0x80u;
+    std::uint8_t mask = 0x80u;
     unsigned result = 0;
     while (c & mask) {
       ++result;
@@ -126,7 +126,7 @@ private:
   void decrement() {
     // Keep backtracking until we don't have a trailing character:
     unsigned count = 0;
-    while (((uint8_t) * --m_position & 0xC0u) == 0x80u)
+    while (((std::uint8_t) * --m_position & 0xC0u) == 0x80u)
       ++count;
     // now check that the sequence was valid:
     if (count != utf8_trailing_byte_count(*m_position))
@@ -141,7 +141,7 @@ private:
   void extract_current() const {
     m_value = static_cast<Utf8Type>(*m_position);
     // we must not have a continuation character:
-    if (((uint8_t)m_value & 0xC0u) == 0x80u)
+    if (((std::uint8_t)m_value & 0xC0u) == 0x80u)
       invalid_sequence();
     // see how many extra byts we have:
     unsigned extra = utf8_trailing_byte_count(*m_position);
@@ -150,7 +150,7 @@ private:
     for (unsigned c = 0; c < extra; ++c) {
       ++next;
       m_value <<= 6;
-      auto entry = static_cast<uint8_t>(*next);
+      auto entry = static_cast<std::uint8_t>(*next);
       if ((c > 0) && ((entry & 0xC0u) != 0x80u))
         invalid_sequence();
       m_value += entry & 0x3Fu;
@@ -162,7 +162,7 @@ private:
     };
     m_value &= masks[extra];
     // check the result:
-    if ((uint32_t)m_value > (uint32_t)0x10FFFFu)
+    if ((std::uint32_t)m_value > (std::uint32_t)0x10FFFFu)
       invalid_sequence();
   }
 
@@ -211,20 +211,20 @@ private:
     if (c > 0x10FFFFu)
       invalid_utf32_code_point(c);
 
-    if ((uint32_t)c < 0x80u) {
-      *m_position++ = static_cast<Utf8Type>((uint32_t)c);
-    } else if ((uint32_t)c < 0x800u) {
-      *m_position++ = static_cast<Utf8Type>(0xC0u + ((uint32_t)c >> 6));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
-    } else if ((uint32_t)c < 0x10000u) {
-      *m_position++ = static_cast<Utf8Type>(0xE0u + ((uint32_t)c >> 12));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
+    if ((std::uint32_t)c < 0x80u) {
+      *m_position++ = static_cast<Utf8Type>((std::uint32_t)c);
+    } else if ((std::uint32_t)c < 0x800u) {
+      *m_position++ = static_cast<Utf8Type>(0xC0u + ((std::uint32_t)c >> 6));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
+    } else if ((std::uint32_t)c < 0x10000u) {
+      *m_position++ = static_cast<Utf8Type>(0xE0u + ((std::uint32_t)c >> 12));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 6) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
     } else {
-      *m_position++ = static_cast<Utf8Type>(0xF0u + ((uint32_t)c >> 18));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 12) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0xF0u + ((std::uint32_t)c >> 18));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 12) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (((std::uint32_t)c >> 6) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((std::uint32_t)c & 0x3Fu));
     }
   }
 

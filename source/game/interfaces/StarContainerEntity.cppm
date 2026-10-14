@@ -1,5 +1,6 @@
 module;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string;
 import star.json;
 import star.id_map;
@@ -35,14 +36,32 @@ import star.tile_entity;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerEntity);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<const ItemBag>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<const ItemBag>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<const ItemBag>;
+class ContainerEntity;
+using ContainerEntityPtr = std::shared_ptr<ContainerEntity>;
+using ContainerEntityConstPtr = std::shared_ptr<const ContainerEntity>;
+using ContainerEntityWeakPtr = std::weak_ptr<ContainerEntity>;
+using ContainerEntityConstWeakPtr = std::weak_ptr<const ContainerEntity>;
+using ContainerEntityUPtr = std::unique_ptr<ContainerEntity>;
+using ContainerEntityConstUPtr = std::unique_ptr<const ContainerEntity>;
 
 // All container methods may be called on both master and slave entities.
 class ContainerEntity : public virtual TileEntity {
 public:
-  size_t containerSize() const;
+  std::size_t containerSize() const;
   List<ItemPtr> containerItems() const;
 
   virtual Json containerGuiConfig() const = 0;
@@ -63,12 +82,12 @@ public:
   virtual void burnContainerContents() = 0;
 
   virtual RpcPromise<ItemPtr> addItems(ItemPtr const& items) = 0;
-  virtual RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) = 0;
-  virtual RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) = 0;
-  virtual RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) = 0;
-  virtual RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) = 0;
+  virtual RpcPromise<ItemPtr> putItems(std::size_t slot, ItemPtr const& items) = 0;
+  virtual RpcPromise<ItemPtr> takeItems(std::size_t slot, std::size_t count = NPos) = 0;
+  virtual RpcPromise<ItemPtr> swapItems(std::size_t slot, ItemPtr const& items, bool tryCombine = true) = 0;
+  virtual RpcPromise<ItemPtr> applyAugment(std::size_t slot, ItemPtr const& augment) = 0;
   virtual RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) = 0;
-  virtual RpcPromise<bool> consumeItems(size_t slot, size_t count) = 0;
+  virtual RpcPromise<bool> consumeItems(std::size_t slot, std::size_t count) = 0;
   virtual RpcPromise<List<ItemPtr>> clearContainer() = 0;
 };
 

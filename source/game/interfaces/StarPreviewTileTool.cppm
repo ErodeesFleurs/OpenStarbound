@@ -1,11 +1,23 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 
 
-STAR_STRUCT(PreviewTile);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
 
-STAR_CLASS(PreviewTileTool);
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 
 import star.entity_rendering_types;
 

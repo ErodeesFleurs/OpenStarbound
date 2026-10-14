@@ -1,4 +1,6 @@
 #include "StarJsonExtra.hpp"
+import std;
+import star.memory;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -38,7 +40,6 @@ import star.audio;
 import star.map;
 import star.lexical_cast;
 import star.rpc_promise;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.lua;
@@ -49,7 +50,6 @@ import star.variant;
 import star.net_compatibility;
 import star.worker_pool;
 
-import std;
 import star.sector_array_2d;
 #include "StarBTree.hpp"
 #include "StarDataStreamDevices.hpp"
@@ -309,7 +309,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
       if (container->iconItem()) {
         auto itemDatabase = Root::singleton().itemDatabase();
         auto iconItem = itemDatabase->itemShared(container->iconItem());
-        auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+        auto icon = std::make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
         String title = this->title();
         if (title.empty())
           title = container->containerDescription();
@@ -321,7 +321,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
       }
     }
     if (auto portaitEntity = as<PortraitEntity>(entity)) {
-      auto portrait = make_shared<PortraitWidget>(portaitEntity, PortraitMode::Bust);
+      auto portrait = std::make_shared<PortraitWidget>(portaitEntity, PortraitMode::Bust);
       portrait->setIconMode();
       String title = this->title();
       if (title.empty())
@@ -356,7 +356,7 @@ void CraftingPane::dismissed() {
 }
 
 PanePtr CraftingPane::createTooltip(Vec2I const& screenPosition) {
-  for (size_t i = 0; i < m_guiList->numChildren(); ++i) {
+  for (std::size_t i = 0; i < m_guiList->numChildren(); ++i) {
     auto entry = m_guiList->itemAt(i);
     if (entry->getChildAt(screenPosition)) {
       auto& recipe = m_recipesWidgetMap.getLeft(entry);
@@ -402,7 +402,7 @@ void CraftingPane::upgradeTable() {
   }
 }
 
-size_t CraftingPane::itemCount(List<ItemPtr> const& store, ItemDescriptor const& item) {
+std::size_t CraftingPane::itemCount(List<ItemPtr> const& store, ItemDescriptor const& item) {
   auto itemDb = Root::singleton().itemDatabase();
   return itemDb->getCountOfItem(store, item);
 }
@@ -447,7 +447,7 @@ void CraftingPane::update(float dt) {
 
   // crafters gonna craft
   while (m_crafting && m_craftTimer.wrapTick()) {
-    craft(min(m_count, (int)m_settings.getInt("craftCount", 1)));
+    craft(std::min(m_count, (int)m_settings.getInt("craftCount", 1)));
   }
 
   // update crafting icon, progress and buttons
@@ -529,13 +529,13 @@ void CraftingPane::updateAvailableRecipes() {
 
   m_recipes = determineRecipes();
 
-  size_t currentOffset = 0;
+  std::size_t currentOffset = 0;
 
   ItemRecipe selectedRecipe;
   if (m_guiList->selectedWidget())
     selectedRecipe = m_recipesWidgetMap.getLeft(m_guiList->selectedWidget());
 
-  HashMap<ItemDescriptor, uint64_t> normalizedBag = m_player->inventory()->availableItems();
+  HashMap<ItemDescriptor, std::uint64_t> normalizedBag = m_player->inventory()->availableItems();
 
   m_guiList->clear();
 
@@ -558,7 +558,7 @@ void CraftingPane::updateAvailableRecipes() {
   }
 }
 
-void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& normalizedBag) {
+void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag) {
   auto& root = Root::singleton();
 
   auto single = recipe.output.singular();
@@ -569,7 +569,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
   }
 
   bool unavailable = false;
-  size_t price = recipe.currencyInputs.value("money", 0);
+  std::size_t price = recipe.currencyInputs.value("money", 0);
 
   if (!m_player->isAdmin()) {
     for (auto const& p : recipe.currencyInputs) {
@@ -629,7 +629,7 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
 PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
   auto& root = Root::singleton();
 
-  auto tooltip = make_shared<Pane>();
+  auto tooltip = std::make_shared<Pane>();
   GuiReader reader;
   reader.construct(root.assets()->json("/interface/craftingtooltip/craftingtooltip.config"), tooltip.get());
 
@@ -640,7 +640,7 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
 
   auto itemDb = root.itemDatabase();
 
-  auto addIngredient = [guiList](ItemPtr const& item, size_t availableCount, size_t requiredCount) {
+  auto addIngredient = [guiList](ItemPtr const& item, std::size_t availableCount, std::size_t requiredCount) {
       auto widget = guiList->addItem();
       widget->fetchChild<LabelWidget>("itemName")->setText(item->friendlyName());
       auto countWidget = widget->fetchChild<LabelWidget>("count");
@@ -663,7 +663,7 @@ PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
 
   for (auto const& input : recipe.inputs) {
     auto item = root.itemDatabase()->itemShared(input.singular());
-    size_t itemCount = itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters);
+    std::size_t itemCount = itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters);
     addIngredient(item, itemCount, input.count());
   }
 
@@ -686,14 +686,14 @@ bool CraftingPane::consumeIngredients(ItemRecipe& recipe, int count) {
 
   // make sure we still have the currencies and items avaialable
   for (auto const& p : recipe.currencyInputs) {
-    uint64_t countRequired = p.second * count;
+    std::uint64_t countRequired = p.second * count;
     if (availableCurrencies.value(p.first) < countRequired) {
       updateAvailableRecipes();
       return false;
     }
   }
   for (auto input : recipe.inputs) {
-    size_t countRequired = input.count() * count;
+    std::size_t countRequired = input.count() * count;
     if (itemDb->getCountOfItem(normalizedBag, input, recipe.matchInputParameters) < countRequired) {
       updateAvailableRecipes();
       return false;
@@ -729,7 +729,7 @@ void CraftingPane::toggleCraft() {
 
       if (auto craftingSound = m_settings.optString("craftingSound")) {
         auto assets = Root::singleton().assets();
-        m_craftingSound = make_shared<AudioInstance>(*assets->audio(*craftingSound));
+        m_craftingSound = std::make_shared<AudioInstance>(*assets->audio(*craftingSound));
         m_craftingSound->setLoops(-1);
         GuiContext::singleton().playAudio(m_craftingSound);
       }
@@ -923,7 +923,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
   List<ItemRecipe> sortedRecipes = recipes.values();
   auto itemDatabase = Root::singleton().itemDatabase();
   sortByComputedValue(sortedRecipes, [itemDatabase](ItemRecipe const& recipe) {
-      return make_tuple(itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name());
+      return std::make_tuple(itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name());
     });
 
   return sortedRecipes;
@@ -935,7 +935,7 @@ int CraftingPane::maxCraft() {
   auto itemDb = Root::singleton().itemDatabase();
   int res = 0;
   if (m_guiList->selectedItem() != NPos && m_guiList->selectedItem() < m_recipes.size()) {
-    HashMap<ItemDescriptor, uint64_t> normalizedBag = m_player->inventory()->availableItems();
+    HashMap<ItemDescriptor, std::uint64_t> normalizedBag = m_player->inventory()->availableItems();
     auto selectedRecipe = recipeFromSelectedWidget();
     res = itemDb->maxCraftableInBag(normalizedBag, m_player->inventory()->availableCurrencies(), selectedRecipe);
     res = std::min(res, m_maxSpinCount);

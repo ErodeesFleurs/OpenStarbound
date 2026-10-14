@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.world_geometry;
 import star.vector;
 import star.game_types;
@@ -126,8 +126,8 @@ inline Vec2F WorldCamera::tileMinScreen() const {
 }
 
 inline void WorldCamera::update(float dt) {
-  float newPixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
-  if (abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
+  float newPixelRatio = lerp(std::exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  if (std::abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
     newPixelRatio = m_targetPixelRatio;
   if (m_pixelRatio != newPixelRatio) {
     m_pixelRatio = newPixelRatio;

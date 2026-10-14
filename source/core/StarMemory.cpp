@@ -1,8 +1,4 @@
-import std;
 
-#include "StarConfig.hpp"
-
-import star.memory;
 
 #ifdef STAR_USE_JEMALLOC
 #include "jemalloc/jemalloc.h"
@@ -20,15 +16,18 @@ static bool _rpm_linker_ref = rpm_linker_ref();
 
 #endif
 
+import std;
+import star.memory;
+
 namespace Star {
 
 #ifdef STAR_USE_JEMALLOC
 #ifdef STAR_JEMALLOC_IS_PREFIXED
-  void* malloc(size_t size) {
+  void* malloc(std::size_t size) {
     return je_malloc(size);
   }
 
-  void* realloc(void* ptr, size_t size) {
+  void* realloc(void* ptr, std::size_t size) {
     return je_realloc(ptr, size);
   }
 
@@ -36,33 +35,33 @@ namespace Star {
     je_free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, std::size_t size) {
     if (ptr)
       je_sdallocx(ptr, size, 0);
   }
 #else
-  void* malloc(size_t size) {
-    return ::malloc(size);
+  void* malloc(std::size_t size) {
+    return std::malloc(size);
   }
 
-  void* realloc(void* ptr, size_t size) {
-    return ::realloc(ptr, size);
+  void* realloc(void* ptr, std::size_t size) {
+    return std::realloc(ptr, size);
   }
 
   void free(void* ptr) {
-    ::free(ptr);
+    std::free(ptr);
   }
 
-  void free(void* ptr, size_t) {
-    ::free(ptr);
+  void free(void* ptr, std::size_t) {
+    std::free(ptr);
   }
 #endif
 #elif STAR_USE_MIMALLOC
-  void* malloc(size_t size) {
+  void* malloc(std::size_t size) {
   return mi_malloc(size);
   }
 
-  void* realloc(void* ptr, size_t size) {
+  void* realloc(void* ptr, std::size_t size) {
     return mi_realloc(ptr, size);
   }
 
@@ -70,15 +69,15 @@ namespace Star {
     return mi_free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
+  void free(void* ptr, std::size_t size) {
     return mi_free_size(ptr, size);
   }
 #elif STAR_USE_RPMALLOC
-  void* malloc(size_t size) {
+  void* malloc(std::size_t size) {
     return rpmalloc(size);
   }
 
-  void* realloc(void* ptr, size_t size) {
+  void* realloc(void* ptr, std::size_t size) {
     return rprealloc(ptr, size);
   }
 
@@ -86,24 +85,24 @@ namespace Star {
     return rpfree(ptr);
   }
 
-  void free(void* ptr, size_t) {
+  void free(void* ptr, std::size_t) {
     return rpfree(ptr);
   }
 #else
-  void* malloc(size_t size) {
-    return ::malloc(size);
+  void* malloc(std::size_t size) {
+    return std::malloc(size);
   }
 
-  void* realloc(void* ptr, size_t size) {
-    return ::realloc(ptr, size);
+  void* realloc(void* ptr, std::size_t size) {
+    return std::realloc(ptr, size);
   }
 
   void free(void* ptr) {
-    return ::free(ptr);
+    return std::free(ptr);
   }
 
-  void free(void* ptr, size_t) {
-    return ::free(ptr);
+  void free(void* ptr, std::size_t) {
+    return std::free(ptr);
   }
 #endif
 

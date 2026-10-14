@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.random;
 
 namespace Star {
@@ -68,7 +68,7 @@ void PeriodicFunction<Float>::update(Float delta) {
     m_target = (m_targetMode ? m_max : m_min) + Random::randf(-1, 1) * m_magnitudeVariance;
     m_targetMode = !m_targetMode;
     m_timerMax = m_halfPeriod + Random::randf(-1, 1) * m_halfPeriodVariance;
-    m_timer = max(0.0f, m_timer + m_timerMax);
+    m_timer = std::max(0.0f, m_timer + m_timerMax);
   }
 }
 

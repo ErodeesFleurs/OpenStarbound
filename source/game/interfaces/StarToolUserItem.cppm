@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.set;
 import star.format;
 import star.json;
@@ -75,7 +75,13 @@ struct ToolUserItemExceptionTag {
 };
 using ToolUserItemException = StarError<ToolUserItemExceptionTag, StarException>;
 
-STAR_CLASS(ToolUserItem);
+class ToolUserItem;
+using ToolUserItemPtr = std::shared_ptr<ToolUserItem>;
+using ToolUserItemConstPtr = std::shared_ptr<const ToolUserItem>;
+using ToolUserItemWeakPtr = std::weak_ptr<ToolUserItem>;
+using ToolUserItemConstWeakPtr = std::weak_ptr<const ToolUserItem>;
+using ToolUserItemUPtr = std::unique_ptr<ToolUserItem>;
+using ToolUserItemConstUPtr = std::unique_ptr<const ToolUserItem>;
 
 // FIXME: You know what another name for an item that a tool user uses is?  A
 // Tool.  Three words when one will do, rename.

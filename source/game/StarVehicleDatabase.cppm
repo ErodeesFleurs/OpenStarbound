@@ -1,7 +1,7 @@
 module;
 import star.byte_array;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -10,9 +10,27 @@ import star.net_compatibility;
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Vehicle);
-STAR_CLASS(VehicleDatabase);
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
+class Vehicle;
+using VehiclePtr = std::shared_ptr<Vehicle>;
+using VehicleConstPtr = std::shared_ptr<const Vehicle>;
+using VehicleWeakPtr = std::weak_ptr<Vehicle>;
+using VehicleConstWeakPtr = std::weak_ptr<const Vehicle>;
+using VehicleUPtr = std::unique_ptr<Vehicle>;
+using VehicleConstUPtr = std::unique_ptr<const Vehicle>;
+class VehicleDatabase;
+using VehicleDatabasePtr = std::shared_ptr<VehicleDatabase>;
+using VehicleDatabaseConstPtr = std::shared_ptr<const VehicleDatabase>;
+using VehicleDatabaseWeakPtr = std::weak_ptr<VehicleDatabase>;
+using VehicleDatabaseConstWeakPtr = std::weak_ptr<const VehicleDatabase>;
+using VehicleDatabaseUPtr = std::unique_ptr<VehicleDatabase>;
+using VehicleDatabaseConstUPtr = std::unique_ptr<const VehicleDatabase>;
 
 struct VehicleDatabaseExceptionTag {
   static constexpr char const* name() { return "VehicleDatabaseException"; }
@@ -32,7 +50,7 @@ public:
   VehiclePtr diskLoad(Json const& diskStore) const;
 
 private:
-  StringMap<pair<String, Json>> m_vehicles;
+  StringMap<std::pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;
   RebuilderPtr m_rebuilder;

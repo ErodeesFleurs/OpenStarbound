@@ -1,7 +1,7 @@
 module;
 
+import std;
 import star.rect;
-#include "StarConfig.hpp"
 import star.list;
 
 import star.vector;
@@ -50,9 +50,9 @@ public:
 
   void addBubble(Vec2F position, RectF boundBox, T contents, unsigned margin = 0);
 
-  void filter(function<bool(Bubble const&, T&)> func);
-  List<Bubble> filtered(function<bool(Bubble const&, T const&)> func);
-  void forEach(function<void(Bubble&, T&)> func);
+  void filter(std::function<bool(Bubble const&, T&)> func);
+  List<Bubble> filtered(std::function<bool(Bubble const&, T const&)> func);
+  void forEach(std::function<void(Bubble&, T&)> func);
 
   void update(float dt);
   void clear();
@@ -121,7 +121,7 @@ void BubbleSeparator<T>::addBubble(Vec2F position, RectF boundBox, T contents, u
 }
 
 template <typename T>
-void BubbleSeparator<T>::filter(function<bool(Bubble const&, T&)> func) {
+void BubbleSeparator<T>::filter(std::function<bool(Bubble const&, T&)> func) {
   m_bubbles.filter([this, func](Bubble& bubble) {
     if (!func(bubble, bubble.contents)) {
       m_sortedLeftEdges.remove(bubble.separatedBox);
@@ -133,12 +133,12 @@ void BubbleSeparator<T>::filter(function<bool(Bubble const&, T&)> func) {
 }
 
 template <typename T>
-List<BubbleState<T>> BubbleSeparator<T>::filtered(function<bool(Bubble const&, T const&)> func) {
+List<BubbleState<T>> BubbleSeparator<T>::filtered(std::function<bool(Bubble const&, T const&)> func) {
   return m_bubbles.filtered([func](Bubble const& bubble) { return func(bubble, bubble.contents); });
 }
 
 template <typename T>
-void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
+void BubbleSeparator<T>::forEach(std::function<void(Bubble&, T&)> func) {
   bool anyMoved = false;
   
   List<Box<float, 2>> leftEdges = std::move(m_sortedLeftEdges);

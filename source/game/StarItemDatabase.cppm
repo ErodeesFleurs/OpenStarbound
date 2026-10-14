@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.maybe;
 import star.format;
@@ -36,12 +36,42 @@ import star.item;
 import star.either;
 namespace Star {
 
-STAR_CLASS(RecipeDatabase);
-STAR_CLASS(AugmentItem);
+class RecipeDatabase;
+using RecipeDatabasePtr = std::shared_ptr<RecipeDatabase>;
+using RecipeDatabaseConstPtr = std::shared_ptr<const RecipeDatabase>;
+using RecipeDatabaseWeakPtr = std::weak_ptr<RecipeDatabase>;
+using RecipeDatabaseConstWeakPtr = std::weak_ptr<const RecipeDatabase>;
+using RecipeDatabaseUPtr = std::unique_ptr<RecipeDatabase>;
+using RecipeDatabaseConstUPtr = std::unique_ptr<const RecipeDatabase>;
+class AugmentItem;
+using AugmentItemPtr = std::shared_ptr<AugmentItem>;
+using AugmentItemConstPtr = std::shared_ptr<const AugmentItem>;
+using AugmentItemWeakPtr = std::weak_ptr<AugmentItem>;
+using AugmentItemConstWeakPtr = std::weak_ptr<const AugmentItem>;
+using AugmentItemUPtr = std::unique_ptr<AugmentItem>;
+using AugmentItemConstUPtr = std::unique_ptr<const AugmentItem>;
 
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(Rebuilder);
-STAR_CLASS(LuaRoot);
+class ItemDatabase;
+using ItemDatabasePtr = std::shared_ptr<ItemDatabase>;
+using ItemDatabaseConstPtr = std::shared_ptr<const ItemDatabase>;
+using ItemDatabaseWeakPtr = std::weak_ptr<ItemDatabase>;
+using ItemDatabaseConstWeakPtr = std::weak_ptr<const ItemDatabase>;
+using ItemDatabaseUPtr = std::unique_ptr<ItemDatabase>;
+using ItemDatabaseConstUPtr = std::unique_ptr<const ItemDatabase>;
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
+class LuaRoot;
+using LuaRootPtr = std::shared_ptr<LuaRoot>;
+using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
+using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
+using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
+using LuaRootUPtr = std::unique_ptr<LuaRoot>;
+using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
 
 struct ItemDatabaseExceptionTag {
   static constexpr char const* name() { return "ItemDatabaseException"; }
@@ -97,12 +127,12 @@ public:
     Json parameters;
   };
 
-  static uint64_t getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch = false);
-  static uint64_t getCountOfItem(HashMap<ItemDescriptor, uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch = false);
-  static HashMap<ItemDescriptor, uint64_t> normalizeBag(List<ItemPtr> const& bag);
-  static bool canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, uint64_t> const& availableIngredients, StringMap<uint64_t> const& availableCurrencies);
-  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset);
-  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
+  static std::uint64_t getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch = false);
+  static std::uint64_t getCountOfItem(HashMap<ItemDescriptor, std::uint64_t> const& bag, ItemDescriptor const& item, bool exactMatch = false);
+  static HashMap<ItemDescriptor, std::uint64_t> normalizeBag(List<ItemPtr> const& bag);
+  static bool canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescriptor, std::uint64_t> const& availableIngredients, StringMap<std::uint64_t> const& availableCurrencies);
+  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset);
+  static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, std::uint64_t> const& normalizedBag, StringMap<std::uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
   static String guiFilterString(ItemPtr const& item);
 
   ItemDatabase();
@@ -117,11 +147,11 @@ public:
   // spawning the new item, it will be logged and the itemPtr will be set to a
   // default item.
   template <typename ItemT>
-  bool loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>& itemPtr) const;
+  bool loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
-  bool diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) const;
+  bool diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const;
 
   ItemPtr diskLoad(Json const& diskStore) const;
   ItemPtr fromJson(Json const& spec) const;
@@ -140,7 +170,7 @@ public:
   // Generate an item config for the given itemName, parameters, level and seed.
   // Level and seed are used by generation in some item types, and may be stored as part
   // of the unique item data or may be ignored.
-  ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<std::uint64_t> seed = {}) const;
 
   // Returns the path to the item's json file in the assets.
   Maybe<String> itemFile(String const& itemName) const;
@@ -150,9 +180,9 @@ public:
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<std::uint64_t> seed = {}) const;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
@@ -160,16 +190,16 @@ public:
 
   HashSet<ItemRecipe> recipesForOutputItem(String itemName) const;
 
-  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
-  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
+  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const;
+  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const;
 
-  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
-  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
+  HashSet<ItemRecipe> recipesFromBagContents(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
+  HashSet<ItemRecipe> recipesFromBagContents(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies, StringSet const& allowedTypes) const;
 
-  uint64_t maxCraftableInBag(List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
-  uint64_t maxCraftableInBag(HashMap<ItemDescriptor, uint64_t> const& bag, StringMap<uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
+  std::uint64_t maxCraftableInBag(List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
+  std::uint64_t maxCraftableInBag(HashMap<ItemDescriptor, std::uint64_t> const& bag, StringMap<std::uint64_t> const& availableCurrencies, ItemRecipe const& recipe) const;
 
-  ItemRecipe getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<uint64_t> const& availableCurrencies) const;
+  ItemRecipe getPreciseRecipeForMaterials(String const& group, List<ItemPtr> const& bag, StringMap<std::uint64_t> const& availableCurrencies) const;
 
   ItemRecipe parseRecipe(Json const& config) const;
 
@@ -195,7 +225,7 @@ private:
   };
 
   static ItemPtr createItem(ItemType type, ItemConfig const& config);
-  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<std::uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
   ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
@@ -216,14 +246,14 @@ private:
   LuaRootPtr m_luaRoot;
   RebuilderPtr m_rebuilder;
 
-  typedef tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>> ItemCacheEntry;
+  typedef std::tuple<ItemDescriptor, Maybe<float>, Maybe<std::uint64_t>> ItemCacheEntry;
 
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;
 };
 
 template <typename ItemT>
-bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>& itemPtr) const {
+bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, std::shared_ptr<ItemT>& itemPtr) const {
   if (descriptor.isNull()) {
     if (itemPtr) {
       itemPtr.reset();
@@ -242,7 +272,7 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, shared_ptr<ItemT>&
 }
 
 template <typename ItemT>
-bool ItemDatabase::diskLoad(Json const& diskStore, shared_ptr<ItemT>& itemPtr) const {
+bool ItemDatabase::diskLoad(Json const& diskStore, std::shared_ptr<ItemT>& itemPtr) const {
   try {
     return loadItem(ItemDescriptor::loadStore(diskStore), itemPtr);
   } catch (StarException const&) {

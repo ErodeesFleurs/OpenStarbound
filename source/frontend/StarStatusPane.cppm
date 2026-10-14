@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -49,9 +49,27 @@ import star.main_interface_types;
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(StatusPane);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class StatusPane;
+using StatusPanePtr = std::shared_ptr<StatusPane>;
+using StatusPaneConstPtr = std::shared_ptr<StatusPane const>;
+using StatusPaneWeakPtr = std::weak_ptr<StatusPane>;
+using StatusPaneConstWeakPtr = std::weak_ptr<StatusPane const>;
+using StatusPaneUPtr = std::unique_ptr<StatusPane>;
+using StatusPaneConstUPtr = std::unique_ptr<StatusPane const>;
 
 class StatusPane : public Pane {
 public:

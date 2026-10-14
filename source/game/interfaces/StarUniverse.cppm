@@ -1,6 +1,6 @@
 module;
 import star.json;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.variant;
 import star.maybe;
@@ -12,8 +12,20 @@ import star.uuid;
 
 namespace Star {
 
-STAR_CLASS(Universe);
-STAR_CLASS(CelestialDatabase);
+class Universe;
+using UniversePtr = std::shared_ptr<Universe>;
+using UniverseConstPtr = std::shared_ptr<const Universe>;
+using UniverseWeakPtr = std::weak_ptr<Universe>;
+using UniverseConstWeakPtr = std::weak_ptr<const Universe>;
+using UniverseUPtr = std::unique_ptr<Universe>;
+using UniverseConstUPtr = std::unique_ptr<const Universe>;
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
 
 // Shared base class for UniverseClient and UniverseServer
 class Universe {
@@ -21,7 +33,7 @@ public:
   struct Message {
     String message;
     JsonArray args;
-    Variant<pair<Uuid,ConnectionId>,RpcPromiseKeeper<Json>> keeper;
+    Variant<std::pair<Uuid,ConnectionId>,RpcPromiseKeeper<Json>> keeper;
   };
 
   virtual ~Universe() = default;

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -39,7 +39,13 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(PopupInterface);
+class PopupInterface;
+using PopupInterfacePtr = std::shared_ptr<PopupInterface>;
+using PopupInterfaceConstPtr = std::shared_ptr<PopupInterface const>;
+using PopupInterfaceWeakPtr = std::weak_ptr<PopupInterface>;
+using PopupInterfaceConstWeakPtr = std::weak_ptr<PopupInterface const>;
+using PopupInterfaceUPtr = std::unique_ptr<PopupInterface>;
+using PopupInterfaceConstUPtr = std::unique_ptr<PopupInterface const>;
 class PopupInterface : public Pane {
 public:
   PopupInterface();

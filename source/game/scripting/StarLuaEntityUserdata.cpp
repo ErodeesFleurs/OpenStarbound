@@ -41,7 +41,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -391,7 +391,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
     methods.registerMethod("activeUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
         if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
+            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](std::pair<UniqueStatusEffect, Maybe<float>> effect) {
             JsonArray effectJson = {effect.first};
             if (effect.second)
                 effectJson.append(*effect.second);
@@ -467,7 +467,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             return mobile->movementController()->liquidPercentage();
         return {};
     });
-    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<uint8_t> {
+    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<std::uint8_t> {
         if (auto mobile = as<MobileEntity>(entity))
             return mobile->movementController()->liquidId();
         return {};
@@ -636,7 +636,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // player methods
     methods.registerMethod("currency",
-    [&](EntityPtr const& entity, String const& currencyType) -> Maybe<uint64_t> {
+    [&](EntityPtr const& entity, String const& currencyType) -> Maybe<std::uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->currency(currencyType);
         }
@@ -644,7 +644,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("hasCountOfItem",
-    [&](EntityPtr const& entity, Json descriptor, Maybe<bool> exactMatch) -> Maybe<uint64_t> {
+    [&](EntityPtr const& entity, Json descriptor, Maybe<bool> exactMatch) -> Maybe<std::uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value(false));
         }
@@ -653,7 +653,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // loungeable entity methods
     methods.registerMethod("loungingEntities",
-    [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<List<EntityId>> {
+    [&](EntityPtr const& entity, Maybe<std::size_t> anchorIndex) -> Maybe<List<EntityId>> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
@@ -662,18 +662,18 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("loungeableOccupied",
-    [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<bool> {
+    [&](EntityPtr const& entity, Maybe<std::size_t> anchorIndex) -> Maybe<bool> {
         if (!entity->inWorld())
             return {};
         auto loungeable = as<LoungeableEntity>(entity);
-        size_t anchor = anchorIndex.value();
+        std::size_t anchor = anchorIndex.value();
         if (loungeable && loungeable->anchorCount() > anchor)
             return !loungeable->entitiesLoungingIn(anchor).empty();
         return {};
     });
 
     methods.registerMethod("loungeableAnchorCount",
-    [&](EntityPtr const& entity) -> Maybe<size_t> {
+    [&](EntityPtr const& entity) -> Maybe<std::size_t> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
@@ -742,7 +742,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerItemAt",
-    [&](EntityPtr const& entity, size_t offset) -> Json {
+    [&](EntityPtr const& entity, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto items = container->itemBag()->items();
@@ -765,7 +765,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerConsumeAt",
-    [&](EntityPtr const& entity, size_t offset, int count) -> Maybe<bool> {
+    [&](EntityPtr const& entity, std::size_t offset, int count) -> Maybe<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             if (offset < container->containerSize()) {
                 return container->consumeItems(offset, count).result();
@@ -776,7 +776,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerAvailable",
-    [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
+    [&](EntityPtr const& entity, Json const& items) -> Maybe<std::size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemBag = container->itemBag();
             auto toCheck = ItemDescriptor(items);
@@ -802,7 +802,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerTakeAt",
-    [&](EntityPtr const& entity, size_t offset) -> Json {
+    [&](EntityPtr const& entity, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             if (offset < container->containerSize()) {
@@ -815,7 +815,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerTakeNumItemsAt",
-    [&](EntityPtr const& entity, size_t offset, int const& count) -> Json {
+    [&](EntityPtr const& entity, std::size_t offset, int const& count) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             if (offset < container->containerSize()) {
@@ -828,7 +828,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerItemsCanFit",
-    [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
+    [&](EntityPtr const& entity, Json const& items) -> Maybe<std::size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto itemBag = container->itemBag();
@@ -848,7 +848,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             auto res = itemBag->itemsFitWhere(toSearch);
             return JsonObject{
                 {"leftover", res.leftover},
-                {"slots", jsonFromList<size_t>(res.slots)}
+                {"slots", jsonFromList<std::size_t>(res.slots)}
             };
         }
 
@@ -880,7 +880,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerPutItemsAt",
-    [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
+    [&](EntityPtr const& entity, Json const& items, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto toInsert = itemDb->fromJson(items);
@@ -894,7 +894,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerSwapItems",
-    [&](EntityPtr const& entity, Json const& items, size_t offset, bool noCombine) -> Json {
+    [&](EntityPtr const& entity, Json const& items, std::size_t offset, bool noCombine) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto toSwap = itemDb->fromJson(items);
@@ -908,7 +908,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerItemApply",
-    [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
+    [&](EntityPtr const& entity, Json const& items, std::size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto toSwap = itemDb->fromJson(items);
@@ -922,7 +922,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("movingCollisionCount",
-    [&](EntityPtr const& entity) -> size_t {
+    [&](EntityPtr const& entity) -> std::size_t {
         if (auto phys = as<PhysicsEntity>(entity)) {
             return phys->movingCollisionCount();
         }
@@ -931,7 +931,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("movingCollision",
-    [&](EntityPtr const& entity, size_t index) -> Maybe<PhysicsMovingCollision> {
+    [&](EntityPtr const& entity, std::size_t index) -> Maybe<PhysicsMovingCollision> {
         if (auto phys = as<PhysicsEntity>(entity)) {
             return phys->movingCollision(index);
         }

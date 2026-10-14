@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.vector;
@@ -18,7 +19,6 @@ import star.bi_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.text;
 import star.maybe;
@@ -74,7 +74,7 @@ import star.label_widget;
 namespace Star {
 
 ErrorScreen::ErrorScreen() {
-  m_paneManager = make_shared<PaneManager>();
+  m_paneManager = std::make_shared<PaneManager>();
 
   m_accepted = true;
 
@@ -82,7 +82,7 @@ ErrorScreen::ErrorScreen() {
 
   m_guiContext = GuiContext::singletonPtr();
 
-  m_errorPane = make_shared<Pane>();
+  m_errorPane = std::make_shared<Pane>();
   GuiReader reader;
   reader.registerCallback("btnOk", [this](Widget*) {
       m_accepted = true;

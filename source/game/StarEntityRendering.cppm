@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.audio;
@@ -31,7 +31,13 @@ import star.light_source;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
 
 // Callback interface for entities to produce light sources, particles,
 // drawables, and sounds on render.  Everything added is expected to already be

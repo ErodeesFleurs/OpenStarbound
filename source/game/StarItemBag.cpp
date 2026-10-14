@@ -1,3 +1,4 @@
+import star.memory;
 #include "StarJsonExtra.hpp"
 import star.json;
 import star.set;
@@ -19,7 +20,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -44,7 +45,7 @@ namespace Star {
 
 ItemBag::ItemBag() {}
 
-ItemBag::ItemBag(size_t size) {
+ItemBag::ItemBag(std::size_t size) {
   m_items.resize(size);
 }
 
@@ -74,11 +75,11 @@ Json ItemBag::diskStore() const {
   return m_items.transformed([itemDatabase](ItemConstPtr const& item) { return itemDatabase->diskStore(item); });
 }
 
-size_t ItemBag::size() const {
+std::size_t ItemBag::size() const {
   return m_items.size();
 }
 
-List<ItemPtr> ItemBag::resize(size_t size) {
+List<ItemPtr> ItemBag::resize(std::size_t size) {
   List<ItemPtr> lost;
   while (m_items.size() > size) {
     auto lastItem = m_items.takeLast();
@@ -93,7 +94,7 @@ List<ItemPtr> ItemBag::resize(size_t size) {
 }
 
 void ItemBag::clearItems() {
-  size_t oldSize = m_items.size();
+  std::size_t oldSize = m_items.size();
   m_items.clear();
   m_items.resize(oldSize);
 }
@@ -122,11 +123,11 @@ List<ItemPtr> const& ItemBag::items() const {
   return const_cast<ItemBag*>(this)->items();
 }
 
-ItemPtr const& ItemBag::at(size_t i) const {
+ItemPtr const& ItemBag::at(std::size_t i) const {
   return const_cast<ItemBag*>(this)->at(i);
 }
 
-ItemPtr& ItemBag::at(size_t i) {
+ItemPtr& ItemBag::at(std::size_t i) {
   auto& item = m_items.at(i);
   if (item && item->empty())
     item = {};
@@ -135,20 +136,20 @@ ItemPtr& ItemBag::at(size_t i) {
 
 List<ItemPtr> ItemBag::takeAll() {
   List<ItemPtr> taken;
-  for (size_t i = 0; i < size(); ++i) {
+  for (std::size_t i = 0; i < size(); ++i) {
     if (auto& item = at(i))
       taken.append(std::move(item));
   }
   return taken;
 }
 
-void ItemBag::setItem(size_t pos, ItemPtr item) {
+void ItemBag::setItem(std::size_t pos, ItemPtr item) {
   auto& storedItem = at(pos);
 
   storedItem = item;
 }
 
-ItemPtr ItemBag::putItems(size_t pos, ItemPtr items) {
+ItemPtr ItemBag::putItems(std::size_t pos, ItemPtr items) {
   if (!items || items->empty())
     return {};
 
@@ -169,7 +170,7 @@ ItemPtr ItemBag::putItems(size_t pos, ItemPtr items) {
   }
 }
 
-ItemPtr ItemBag::takeItems(size_t pos, uint64_t count) {
+ItemPtr ItemBag::takeItems(std::size_t pos, std::uint64_t count) {
   if (auto& storedItem = at(pos)) {
     auto taken = storedItem->take(count);
     if (storedItem->empty())
@@ -181,7 +182,7 @@ ItemPtr ItemBag::takeItems(size_t pos, uint64_t count) {
   }
 }
 
-ItemPtr ItemBag::swapItems(size_t pos, ItemPtr items, bool tryCombine) {
+ItemPtr ItemBag::swapItems(std::size_t pos, ItemPtr items, bool tryCombine) {
   auto& storedItem = at(pos);
 
   auto swapItems = items;
@@ -203,7 +204,7 @@ ItemPtr ItemBag::swapItems(size_t pos, ItemPtr items, bool tryCombine) {
   return swapItems;
 }
 
-bool ItemBag::consumeItems(size_t pos, uint64_t count) {
+bool ItemBag::consumeItems(std::size_t pos, std::uint64_t count) {
   bool consumed = false;
   if (auto& storedItem = at(pos)) {
     consumed = storedItem->consume(count);
@@ -215,13 +216,13 @@ bool ItemBag::consumeItems(size_t pos, uint64_t count) {
 }
 
 bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
-  uint64_t countLeft = descriptor.count();
-  List<std::pair<size_t, uint64_t>> consumeLocations;
-  for (size_t i = 0; i < m_items.size(); ++i) {
+  std::uint64_t countLeft = descriptor.count();
+  List<std::pair<std::size_t, std::uint64_t>> consumeLocations;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
     auto& storedItem = at(i);
     if (storedItem && storedItem->matches(descriptor, exactMatch)) {
-      uint64_t count = storedItem->count();
-      uint64_t take = std::min(count, countLeft);
+      std::uint64_t count = storedItem->count();
+      std::uint64_t take = std::min(count, countLeft);
       consumeLocations.append({i, take});
       countLeft -= take;
       if (countLeft == 0)
@@ -235,15 +236,17 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
 
   for (auto loc : consumeLocations) {
     bool res = consumeItems(loc.first, loc.second);
-    _unused(res);
-    starAssert(res);
+    ((void)(res));
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((res));
+    }
   }
 
   return true;
 }
 
-uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const {
-  uint64_t count = 0;
+std::uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const {
+  std::uint64_t count = 0;
   for (auto const& items : m_items) {
     if (items && items->matches(descriptor, exactMatch))
       count += items->count();
@@ -252,33 +255,33 @@ uint64_t ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) c
   return count / descriptor.count();
 }
 
-uint64_t ItemBag::itemsCanFit(ItemConstPtr const& items) const {
+std::uint64_t ItemBag::itemsCanFit(ItemConstPtr const& items) const {
   auto itemsFit = itemsFitWhere(items);
   return items->count() - itemsFit.leftover;
 }
 
-uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
+std::uint64_t ItemBag::itemsCanStack(ItemConstPtr const& items) const {
   auto itemsFit = itemsFitWhere(items);
-  uint64_t stackable = 0;
+  std::uint64_t stackable = 0;
   for (auto slot : itemsFit.slots)
     if (m_items[slot])
       stackable += stackTransfer(at(slot), items);
   return stackable;
 }
 
-auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> ItemsFitWhereResult {
+auto ItemBag::itemsFitWhere(ItemConstPtr const& items, std::uint64_t max) const -> ItemsFitWhereResult {
   if (!items || items->empty())
     return ItemsFitWhereResult();
 
-  List<size_t> slots;
-  StableHashSet<size_t> taken;
-  uint64_t count = std::min(items->count(), max);
+  List<std::size_t> slots;
+  StableHashSet<std::size_t> taken;
+  std::uint64_t count = std::min(items->count(), max);
 
   while (true) {
     if (count == 0)
       break;
 
-    size_t slot = bestSlotAvailable(items, false, [&](size_t i) {
+    std::size_t slot = bestSlotAvailable(items, false, [&](std::size_t i) {
       return !taken.contains(i);
     });
     if (slot == NPos)
@@ -288,7 +291,7 @@ auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> It
       taken.insert(slot);
     }
 
-    uint64_t available = stackTransfer(at(slot), items);
+    std::uint64_t available = stackTransfer(at(slot), items);
     if (available != 0)
       count -= std::min(available, count);
     else
@@ -303,7 +306,7 @@ ItemPtr ItemBag::addItems(ItemPtr items) {
     return {};
 
   while (true) {
-    size_t slot = bestSlotAvailable(items, false);
+    std::size_t slot = bestSlotAvailable(items, false);
     if (slot == NPos)
       return items;
 
@@ -324,7 +327,7 @@ ItemPtr ItemBag::stackItems(ItemPtr items) {
     return {};
 
   while (true) {
-    size_t slot = bestSlotAvailable(items, true);
+    std::size_t slot = bestSlotAvailable(items, true);
     if (slot == NPos)
       return items;
 
@@ -341,9 +344,9 @@ ItemPtr ItemBag::stackItems(ItemPtr items) {
 }
 
 void ItemBag::condenseStacks() {
-  for (size_t i = size() - 1; i > 0; --i) {
+  for (std::size_t i = size() - 1; i > 0; --i) {
     if (auto& item = at(i)) {
-      for (size_t j = 0; j < i; j++) {
+      for (std::size_t j = 0; j < i; j++) {
         if (auto& stackWithItem = at(j))
           item->stackWith(stackWithItem);
         if (item->empty())
@@ -359,8 +362,8 @@ void ItemBag::read(DataStream& ds) {
   m_items.clear();
   m_items.resize(ds.readVlqU());
 
-  size_t setItemsSize = ds.readVlqU();
-  for (size_t i = 0; i < setItemsSize; ++i)
+  std::size_t setItemsSize = ds.readVlqU();
+  for (std::size_t i = 0; i < setItemsSize; ++i)
     itemDatabase->loadItem(ds.read<ItemDescriptor>(), at(i));
 }
 
@@ -370,18 +373,18 @@ void ItemBag::write(DataStream& ds) const {
 
   ds.writeVlqU(m_items.size());
 
-  size_t setItemsSize = 0;
-  for (size_t i = 0; i < m_items.size(); ++i) {
+  std::size_t setItemsSize = 0;
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
     if (at(i))
       setItemsSize = i + 1;
   }
 
   ds.writeVlqU(setItemsSize);
-  for (size_t i = 0; i < setItemsSize; ++i)
+  for (std::size_t i = 0; i < setItemsSize; ++i)
     ds.write(itemSafeDescriptor(at(i)));
 }
 
-uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from) {
+std::uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from) {
   if (!from)
     return 0;
   else if (!to)
@@ -392,9 +395,9 @@ uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from
     return std::min(to->maxStack() - to->count(), from->count());
 }
 
-size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
+std::size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
-  for (size_t i = 0; i < m_items.size(); ++i) {
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
     if (!test(i))
       continue;
     auto const& storedItem = at(i);
@@ -404,7 +407,7 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std
 
   if (!stacksOnly) {
     // Then, look for any empty slots.
-    for (size_t i = 0; i < m_items.size(); ++i) {
+    for (std::size_t i = 0; i < m_items.size(); ++i) {
       if (!at(i))
         return i;
     }
@@ -413,8 +416,8 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std
   return NPos;
 }
 
-size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
-  return bestSlotAvailable(item, stacksOnly, [](size_t) { return true; });
+std::size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {
+  return bestSlotAvailable(item, stacksOnly, [](std::size_t) { return true; });
 }
 
 }

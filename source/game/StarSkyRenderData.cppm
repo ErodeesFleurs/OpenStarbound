@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.data_stream;
@@ -35,7 +35,7 @@ struct SkyRenderData {
   float worldRotation;
   float orbitAngle;
 
-  size_t starFrames;
+  std::size_t starFrames;
   StringList starList;
   StringList hyperStarList;
 

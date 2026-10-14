@@ -1,10 +1,10 @@
-#include "StarConfig.hpp"
+#include "steam/steam_api.h"
+import std;
 import star.format;
 
 #include <QApplication>
 #include <QMessageBox>
 
-#include "steam/steam_api.h"
 
 #include "StarModUploader.hpp"
 #include "StarStringConversion.hpp"

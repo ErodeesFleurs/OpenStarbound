@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -18,7 +19,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -38,7 +38,6 @@ import star.weighted_pool;
 import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -243,7 +242,7 @@ PanePtr ScriptPane::createTooltip(Vec2I const& screenPosition) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
-      PanePtr tooltip = make_shared<Pane>();
+      PanePtr tooltip = std::make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }

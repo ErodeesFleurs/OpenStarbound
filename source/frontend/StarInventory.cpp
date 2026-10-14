@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.xx_hash;
@@ -30,7 +31,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.either;
@@ -41,7 +41,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -264,9 +263,9 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     if (ItemPtr slotItem = inventory->itemsAt(slot)) {
       auto swapItem = inventory->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
-        uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
+        std::uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
         if (context()->shiftHeld())
-          count = max<uint64_t>(1, min<uint64_t>(count, slotItem->count() / 2));
+          count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
         else
           count = 1;
 
@@ -326,9 +325,9 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   });
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
-    invWindowReader.registerCallback(itemGrid, bind(leftClickCallback, name, _1));
-    invWindowReader.registerCallback(itemGrid + ".right", bind(bagGridCallback, name, _1));
-    invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid, std::bind(leftClickCallback, name, std::placeholders::_1));
+    invWindowReader.registerCallback(itemGrid + ".right", std::bind(bagGridCallback, name, std::placeholders::_1));
+    invWindowReader.registerCallback(itemGrid + ".middle", std::bind(middleClickCallback, name, std::placeholders::_1));
   }
 
   invWindowReader.registerCallback("close", [this](Widget*) {
@@ -405,7 +404,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   auto centralPortrait = fetchChild<PortraitWidget>("portrait");
   centralPortrait->setEntity(m_player);
 
-  auto portrait = make_shared<PortraitWidget>(m_player, PortraitMode::Bust);
+  auto portrait = std::make_shared<PortraitWidget>(m_player, PortraitMode::Bust);
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), config.getString("subtitle"));
 
@@ -541,7 +540,7 @@ void InventoryPane::update(float dt) {
   auto context = Widget::context();
 
   HashSet<ItemPtr> customBarItems;
-  for (uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
+  for (std::uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
     if (auto primarySlot = inventory->customBarPrimarySlot(i)) {
       if (auto primaryItem = inventory->itemsAt(*primarySlot))
         customBarItems.add(primaryItem);
@@ -603,7 +602,7 @@ void InventoryPane::update(float dt) {
 
   for (auto p : m_itemGrids) {
     p.second->updateItemState();
-    for (size_t i = 0; i < p.second->itemSlots(); ++i) {
+    for (std::size_t i = 0; i < p.second->itemSlots(); ++i) {
       if (auto itemWidget = p.second->itemWidgetAt(i))
         itemWidget->showLinkIndicator(customBarItems.contains(itemWidget->item()));
       else

@@ -1,3 +1,4 @@
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.xx_hash;
@@ -23,7 +24,6 @@ import star.lru_cache;
 import star.thread;
 import star.btree_database;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.string;
 import star.format;
 import star.version;
@@ -134,8 +134,8 @@ WorldChunks WorldStorage::getWorldChunksFromFile(String const& file) {
 
 WorldStorage::WorldStorage(Vec2U const& worldSize, IODevicePtr const& device, WorldGeneratorFacadePtr const& generatorFacade)
   : WorldStorage() {
-  m_tileArray = make_shared<ServerTileSectorArray>(worldSize);
-  m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
+  m_tileArray = std::make_shared<ServerTileSectorArray>(worldSize);
+  m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
   m_generatorFacade = generatorFacade;
   m_floatingDungeonWorld = false;
 
@@ -155,8 +155,8 @@ WorldStorage::WorldStorage(IODevicePtr const& device, WorldGeneratorFacadePtr co
   openDatabase(m_db, device);
 
   Vec2U worldSize = readWorldMetadata(*m_db.find(metadataKey())).worldSize;
-  m_tileArray = make_shared<ServerTileSectorArray>(worldSize);
-  m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
+  m_tileArray = std::make_shared<ServerTileSectorArray>(worldSize);
+  m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
 WorldStorage::WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr const& generatorFacade) : WorldStorage() {
@@ -171,8 +171,8 @@ WorldStorage::WorldStorage(WorldChunks const& chunks, WorldGeneratorFacadePtr co
   }
 
   Vec2U worldSize = readWorldMetadata(*m_db.find(metadataKey())).worldSize;
-  m_tileArray = make_shared<ServerTileSectorArray>(worldSize);
-  m_entityMap = make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
+  m_tileArray = std::make_shared<ServerTileSectorArray>(worldSize);
+  m_entityMap = std::make_shared<EntityMap>(worldSize, MinServerEntityId, MaxServerEntityId);
 }
 
 WorldStorage::~WorldStorage() {
@@ -331,7 +331,7 @@ EntityId WorldStorage::loadUniqueEntity(String const& uniqueId) {
   return {};
 }
 
-void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering) {
+void WorldStorage::generateQueue(Maybe<std::size_t> sectorGenerationLevelLimit, std::function<bool(Sector, Sector)> sectorOrdering) {
   try {
     if (sectorOrdering) {
       m_generationQueue.sort([&sectorOrdering](auto const& a, auto const& b) {
@@ -547,8 +547,8 @@ ByteArray WorldStorage::writeWorldMetadata(WorldMetadataStore const& metadata) {
 ByteArray WorldStorage::entitySectorKey(Sector const& sector) {
   DataStreamBuffer ds(5);
   ds.write(StoreType::EntitySector);
-  ds.cwrite<uint16_t>(sector[0]);
-  ds.cwrite<uint16_t>(sector[1]);
+  ds.cwrite<std::uint16_t>(sector[0]);
+  ds.cwrite<std::uint16_t>(sector[1]);
   return ds.takeData();
 }
 
@@ -573,8 +573,8 @@ ByteArray WorldStorage::writeEntitySector(EntitySectorStore const& store) {
 ByteArray WorldStorage::tileSectorKey(Sector const& sector) {
   DataStreamBuffer ds(5);
   ds.write(StoreType::TileSector);
-  ds.cwrite<uint16_t>(sector[0]);
-  ds.cwrite<uint16_t>(sector[1]);
+  ds.cwrite<std::uint16_t>(sector[0]);
+  ds.cwrite<std::uint16_t>(sector[1]);
   return ds.takeData();
 }
 
@@ -590,8 +590,8 @@ WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data
   ds.vuread(store.tileSerializationVersion);
 
   store.tiles.reset(new TileArray());
-  for (size_t y = 0; y < WorldSectorSize; ++y) {
-    for (size_t x = 0; x < WorldSectorSize; ++x) {
+  for (std::size_t y = 0; y < WorldSectorSize; ++y) {
+    for (std::size_t x = 0; x < WorldSectorSize; ++x) {
       ServerTile tile;
       tile.read(ds, store.tileSerializationVersion);
 
@@ -622,9 +622,11 @@ ByteArray WorldStorage::writeTileSector(TileSectorStore const& store) {
   DataStreamBuffer ds;
   ds.vuwrite(store.generationLevel);
   ds.vuwrite(store.tileSerializationVersion);
-  starAssert(store.tiles);
-  for (size_t y = 0; y < WorldSectorSize; ++y) {
-    for (size_t x = 0; x < WorldSectorSize; ++x)
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((store.tiles));
+  }
+  for (std::size_t y = 0; y < WorldSectorSize; ++y) {
+    for (std::size_t x = 0; x < WorldSectorSize; ++x)
       (*store.tiles)(x, y).write(ds);
   }
   return compressData(ds.takeData());
@@ -641,8 +643,8 @@ WorldStorage::UniqueIndexStore WorldStorage::readUniqueIndexStore(ByteArray cons
   return DataStreamBuffer::deserializeMapContainer<UniqueIndexStore>(uncompressData(data),
       [](DataStream& ds, String& key, SectorAndPosition& value) {
         ds.read(key);
-        ds.cread<uint16_t>(value.first[0]);
-        ds.cread<uint16_t>(value.first[1]);
+        ds.cread<std::uint16_t>(value.first[0]);
+        ds.cread<std::uint16_t>(value.first[1]);
         ds.read(value.second);
       });
 }
@@ -651,8 +653,8 @@ ByteArray WorldStorage::writeUniqueIndexStore(UniqueIndexStore const& store) {
   return compressData(DataStreamBuffer::serializeMapContainer(store,
       [](DataStream& ds, String const& key, SectorAndPosition const& value) {
         ds.write(key);
-        ds.cwrite<uint16_t>(value.first[0]);
-        ds.cwrite<uint16_t>(value.first[1]);
+        ds.cwrite<std::uint16_t>(value.first[0]);
+        ds.cwrite<std::uint16_t>(value.first[1]);
         ds.write(value.second);
       }));
 }
@@ -660,8 +662,8 @@ ByteArray WorldStorage::writeUniqueIndexStore(UniqueIndexStore const& store) {
 ByteArray WorldStorage::sectorUniqueKey(Sector const& sector) {
   DataStreamBuffer ds(5);
   ds.write(StoreType::SectorUniques);
-  ds.cwrite<uint16_t>(sector[0]);
-  ds.cwrite<uint16_t>(sector[1]);
+  ds.cwrite<std::uint16_t>(sector[0]);
+  ds.cwrite<std::uint16_t>(sector[1]);
   return ds.takeData();
 }
 
@@ -700,7 +702,7 @@ float WorldStorage::randomizedSectorTTL() const {
   return Random::randf(m_sectorTimeToLive[0], m_sectorTimeToLive[1]);
 }
 
-pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit) {
+std::pair<bool, std::size_t> WorldStorage::generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, std::size_t sectorGenerationLevelLimit) {
   if (!m_tileArray->sectorValid(sector))
     return {false, 0};
 
@@ -720,8 +722,8 @@ pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, Sec
 
   metadata.timeToLive = randomizedSectorTTL();
 
-  size_t totalGeneratedLevels = 0;
-  for (uint8_t i = (uint8_t)metadata.generationLevel + 1; i <= (uint8_t)targetGenerationLevel; ++i) {
+  std::size_t totalGeneratedLevels = 0;
+  for (std::uint8_t i = (std::uint8_t)metadata.generationLevel + 1; i <= (std::uint8_t)targetGenerationLevel; ++i) {
     SectorGenerationLevel currentGeneration = (SectorGenerationLevel)i;
     SectorGenerationLevel stepDownGeneration = (SectorGenerationLevel)(i - 1);
 
@@ -757,7 +759,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
 
   metadata.timeToLive = randomizedSectorTTL();
 
-  for (uint8_t i = (uint8_t)metadata.loadLevel + 1; i <= (uint8_t)targetLoadLevel; ++i) {
+  for (std::uint8_t i = (std::uint8_t)metadata.loadLevel + 1; i <= (std::uint8_t)targetLoadLevel; ++i) {
     SectorLoadLevel currentLoad = (SectorLoadLevel)i;
     SectorLoadLevel stepDownLoad = (SectorLoadLevel)(i - 1);
 

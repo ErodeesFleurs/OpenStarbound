@@ -6,7 +6,6 @@ import star.image;
 import star.list;
 import star.bi_map;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.color;
@@ -157,7 +156,7 @@ WorldClientThread::WorldClientThread(ClientSubWorldId subWorldId, UniverseClient
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(false) {
-    m_worldClient = make_shared<WorldClient>(subWorldId,universe);
+    m_worldClient = std::make_shared<WorldClient>(subWorldId,universe);
 }
 
 WorldClientThread::~WorldClientThread() {
@@ -182,7 +181,7 @@ void WorldClientThread::stop() {
   Thread::join();
 }
 
-void WorldClientThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void WorldClientThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
   m_pause = pause;
 }
 
@@ -246,7 +245,7 @@ void WorldClientThread::run() {
 
       double spareTime = tickApproacher.spareTime();
 
-      int64_t spareMilliseconds = floor(spareTime * 1000);
+      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }
@@ -266,7 +265,7 @@ void WorldClientThread::update() {
   } catch (std::exception const& e) {
     Logger::error("WorldClientThread exception caught handling incoming packets: {}", outputException(e, true));
     queueLocker.lock();
-    m_outgoingPacketQueue.append({make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId())});
+    m_outgoingPacketQueue.append({std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId())});
     queueLocker.unlock();
     m_errorOccurred = true;
   }
@@ -296,10 +295,10 @@ void WorldClientThread::update() {
   auto outgoingPackets = m_worldClient->getOutgoingPackets();
   auto shouldDestroy = m_worldClient->pullRequestedDestroy();
   queueLocker.lock();
-  m_outgoingPacketQueue.append(make_shared<ClientSubWorldPackets>(m_subWorldId,std::move(outgoingPackets)));
+  m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldPackets>(m_subWorldId,std::move(outgoingPackets)));
   if (shouldDestroy) {
     Logger::info("WorldClientThread requesting destroy");
-    m_outgoingPacketQueue.append(make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
+    m_outgoingPacketQueue.append(std::make_shared<ClientSubWorldRequest>(m_subWorldId, WorldId()));
   }
   queueLocker.unlock();
 

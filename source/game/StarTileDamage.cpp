@@ -17,7 +17,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -141,8 +141,8 @@ TileDamageParameters TileDamageParameters::sum(TileDamageParameters const& other
   result.m_damageRecoveryPerSecond = m_damageRecoveryPerSecond + other.m_damageRecoveryPerSecond;
   result.m_totalHealth = m_totalHealth + other.m_totalHealth;
 
-  result.m_requiredHarvestLevel = max(m_requiredHarvestLevel, other.m_requiredHarvestLevel);
-  result.m_maximumEffectTime = max(m_maximumEffectTime, other.m_maximumEffectTime);
+  result.m_requiredHarvestLevel = std::max(m_requiredHarvestLevel, other.m_requiredHarvestLevel);
+  result.m_maximumEffectTime = std::max(m_maximumEffectTime, other.m_maximumEffectTime);
 
   for (auto key : m_damages.keys()) {
     if (other.m_damages.contains(key))
@@ -206,7 +206,7 @@ void TileDamageStatus::reset() {
 
 void TileDamageStatus::damage(TileDamageParameters const& damageParameters, Vec2F const& sourcePosition, TileDamage const& damage) {
   auto percentageDelta = damageParameters.damageDone(damage) / damageParameters.totalHealth();
-  m_damagePercentage = min(1.0f, m_damagePercentage + percentageDelta);
+  m_damagePercentage = std::min(1.0f, m_damagePercentage + percentageDelta);
   m_harvested = damage.harvestLevel >= damageParameters.requiredHarvestLevel();
   m_damageSourcePosition = sourcePosition;
   m_damageType = damage.type;
@@ -312,7 +312,7 @@ void EntityTileDamageStatus::reset() {
 
 void EntityTileDamageStatus::damage(TileDamageParameters const& damageParameters, TileDamage const& damage) {
   auto percentageDelta = damageParameters.damageDone(damage) / damageParameters.totalHealth();
-  m_damagePercentage.set(min(1.0f, m_damagePercentage.get() + percentageDelta));
+  m_damagePercentage.set(std::min(1.0f, m_damagePercentage.get() + percentageDelta));
   m_damageHarvested.set(damage.harvestLevel >= damageParameters.requiredHarvestLevel());
   m_damageType.set(damage.type);
 

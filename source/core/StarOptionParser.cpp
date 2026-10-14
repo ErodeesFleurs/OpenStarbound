@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.string;
 import star.variant;
@@ -35,7 +36,7 @@ void OptionParser::addArgument(String argument, RequirementMode requirementMode,
   m_arguments.append(Argument{std::move(argument), requirementMode, std::move(description)});
 }
 
-pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList const& arguments) const {
+std::pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList const& arguments) const {
   Options result;
   StringList errors;
   bool endOfFlags = false;
@@ -85,8 +86,8 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
     }
   }
 
-  size_t minimumArguments = 0;
-  size_t maximumArguments = 0;
+  std::size_t minimumArguments = 0;
+  std::size_t maximumArguments = 0;
   for (auto const& argument : m_arguments) {
     if ((argument.requirementMode == Optional || argument.requirementMode == Required) && maximumArguments != NPos)
       ++maximumArguments;

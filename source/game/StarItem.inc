@@ -1,5 +1,6 @@
+import star.memory;
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -19,8 +20,20 @@ import star.game_types;
 #include "StarStrongTypedef.hpp"
 
 namespace Star {
-STAR_CLASS(Item);
-STAR_CLASS(GenericItem);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class GenericItem;
+using GenericItemPtr = std::shared_ptr<GenericItem>;
+using GenericItemConstPtr = std::shared_ptr<const GenericItem>;
+using GenericItemWeakPtr = std::weak_ptr<GenericItem>;
+using GenericItemConstWeakPtr = std::weak_ptr<const GenericItem>;
+using GenericItemUPtr = std::unique_ptr<GenericItem>;
+using GenericItemConstUPtr = std::unique_ptr<const GenericItem>;
 }
 
 import star.drawable;
@@ -54,22 +67,22 @@ public:
   String name() const;
 
   // Number of this item that is available.
-  uint64_t count() const;
+  std::uint64_t count() const;
   // Sets the new item count, up to a max of the maximum stack size.  If this
   // value is over stack size, returns the overflow.  If 'overfill' is set to
   // true, then will fill past max stack level.
-  uint64_t setCount(uint64_t count, bool overfill = false);
+  std::uint64_t setCount(std::uint64_t count, bool overfill = false);
 
   // Is this item type stackable with the given item type at all?  Base class
   // implementation compares name(), and m_parameters fields and returns true
   // if they are both the same, similarly to matches.
   virtual bool stackableWith(ItemConstPtr const& item) const;
-  uint64_t maxStack() const;
+  std::uint64_t maxStack() const;
 
   // Return how many of the given item could be shifted into this item, taking
   // into acount whether the item is stackable at all, as well as maxStack and
   // the count available.
-  uint64_t couldStack(ItemConstPtr const& item) const;
+  std::uint64_t couldStack(ItemConstPtr const& item) const;
 
   // If the given item is stackable with this one, takes as many from the given
   // item as possible and shifts it into this item's count.  Returns true if
@@ -87,11 +100,11 @@ public:
 
   // If the given number of this item is available, consumes that number and
   // returns true, otherwise returns false.
-  bool consume(uint64_t count);
+  bool consume(std::uint64_t count);
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  ItemPtr take(uint64_t max = NPos);
+  ItemPtr take(std::uint64_t max = NPos);
 
   // count() is 0
   bool empty() const;
@@ -103,7 +116,7 @@ public:
   String friendlyName() const;
 
   Rarity rarity() const;
-  uint64_t price() const;
+  std::uint64_t price() const;
 
   virtual List<Drawable> iconDrawables() const;
   virtual Maybe<List<Drawable>> secondaryDrawables() const;
@@ -144,12 +157,12 @@ public:
   static bool itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b);
 
 protected:
-  void setMaxStack(uint64_t maxStack);
+  void setMaxStack(std::uint64_t maxStack);
   void setDescription(String const& description);
   void setShortDescription(String const& description);
 
   void setRarity(Rarity rarity);
-  void setPrice(uint64_t price);
+  void setPrice(std::uint64_t price);
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
   void setSecondaryIconDrawables(Maybe<List<Drawable>> drawables);
@@ -165,10 +178,10 @@ private:
   String m_directory;
 
   String m_name;
-  uint64_t m_count;
+  std::uint64_t m_count;
   Json m_parameters;
 
-  uint64_t m_maxStack;
+  std::uint64_t m_maxStack;
   String m_shortDescription;
   String m_description;
   Rarity m_rarity;
@@ -176,7 +189,7 @@ private:
   Maybe<List<Drawable>> m_secondaryIconDrawables;
   bool m_twoHanded;
   float m_timeToLive;
-  uint64_t m_price;
+  std::uint64_t m_price;
   String m_tooltipKind;
   String m_largeImage;
   String m_category;
@@ -193,7 +206,7 @@ public:
   virtual ItemPtr clone() const;
 };
 
-inline uint64_t itemSafeCount(ItemPtr const& item) {
+inline std::uint64_t itemSafeCount(ItemPtr const& item) {
   return item ? item->count() : 0;
 }
 

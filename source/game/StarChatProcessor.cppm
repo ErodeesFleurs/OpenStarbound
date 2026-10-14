@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -16,7 +16,13 @@ import star.uuid;
 
 namespace Star {
 
-STAR_CLASS(ChatProcessor);
+class ChatProcessor;
+using ChatProcessorPtr = std::shared_ptr<ChatProcessor>;
+using ChatProcessorConstPtr = std::shared_ptr<const ChatProcessor>;
+using ChatProcessorWeakPtr = std::weak_ptr<ChatProcessor>;
+using ChatProcessorConstWeakPtr = std::weak_ptr<const ChatProcessor>;
+using ChatProcessorUPtr = std::unique_ptr<ChatProcessor>;
+using ChatProcessorConstUPtr = std::unique_ptr<const ChatProcessor>;
 
 // Handles all chat routing and command parsing for client / server chat.
 // Thread safe.
@@ -26,7 +32,7 @@ public:
 
   // CommandHandler is passed the origin connection, the command portion
   // excluding the '/' character, and the remaining command line in full.
-  typedef function<ServerCommandResult(ConnectionId, String, String)> CommandHandler;
+  typedef std::function<ServerCommandResult(ConnectionId, String, String)> CommandHandler;
 
   String connectClient(ConnectionId clientId, String nick = "");
   // Returns any pending messages.
@@ -91,7 +97,7 @@ private:
 
   CommandHandler m_commandHandler;
   
-  HashMap<Uuid,pair<ConnectionId,RpcPromise<String>>> m_commandPromises;
+  HashMap<Uuid,std::pair<ConnectionId,RpcPromise<String>>> m_commandPromises;
 };
 
 }

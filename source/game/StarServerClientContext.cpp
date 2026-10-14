@@ -32,7 +32,6 @@ import star.asset_path;
 #include "StarDataStreamDevices.hpp"
 import star.btree_database;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.perlin;
@@ -179,7 +178,7 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
           }
         });
       }
-      return overflow.transformed(mem_fn(&ItemDescriptor::toJson));
+      return overflow.transformed(std::mem_fn(&ItemDescriptor::toJson));
     });
 
   m_rpc.registerHandler("universe.setFlag", [this](Json const& args) -> Json {
@@ -265,12 +264,12 @@ void ServerClientContext::setShipLocation(SystemLocation location) {
   m_shipSystemLocation = location;
 }
 
-Maybe<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
+Maybe<std::pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_orbitWarpActionNetState.get();
 }
 
-void ServerClientContext::setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> warpAction) {
+void ServerClientContext::setOrbitWarpAction(Maybe<std::pair<WarpAction, WarpMode>> warpAction) {
   RecursiveMutexLocker locker(m_mutex);
   m_orbitWarpActionNetState.set(warpAction);
 }
@@ -345,7 +344,7 @@ ByteArray ServerClientContext::writeUpdate() {
     shipChunksUpdate = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
 
   ByteArray netGroupUpdate;
-  tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
+  std::tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
   
   StringMap<ByteArray> customWorldChunksUpdate;
   for (auto& p : m_customWorlds) {
@@ -553,7 +552,7 @@ Json ServerClientContext::storeServerData() {
   return store;
 }
 
-int64_t ServerClientContext::creationTime() const {
+std::int64_t ServerClientContext::creationTime() const {
   return m_creationTime;
 }
 

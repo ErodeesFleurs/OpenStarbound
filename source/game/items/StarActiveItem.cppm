@@ -21,7 +21,7 @@ import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 #include "StarDataStreamExtra.hpp"
 import star.set;
@@ -110,7 +110,13 @@ import star.net_element_group;
 
 namespace Star {
 
-STAR_CLASS(ActiveItem);
+class ActiveItem;
+using ActiveItemPtr = std::shared_ptr<ActiveItem>;
+using ActiveItemConstPtr = std::shared_ptr<const ActiveItem>;
+using ActiveItemWeakPtr = std::weak_ptr<ActiveItem>;
+using ActiveItemConstWeakPtr = std::weak_ptr<const ActiveItem>;
+using ActiveItemUPtr = std::unique_ptr<ActiveItem>;
+using ActiveItemConstUPtr = std::unique_ptr<const ActiveItem>;
 
 class ActiveItem :
   public Item,
@@ -145,7 +151,7 @@ public:
 
   // Hand drawables are in hand-space, everything else is in world space.
   List<Drawable> handDrawables() const;
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
+  List<std::pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
   List<LightSource> lights() const;
   List<AudioInstancePtr> pullNewAudios();
   List<Particle> pullNewParticles();

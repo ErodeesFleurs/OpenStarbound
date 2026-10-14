@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string_view;
 import star.string;
 import star.unicode;
@@ -26,14 +27,14 @@ StringView::StringView(StringView const& s) : m_view(s.m_view) {}
 StringView::StringView(StringView&& s) noexcept : m_view(std::move(s.m_view)) {};
 StringView::StringView(String const& s) : m_view(s.utf8()) {};
 StringView::StringView(char const* s) : m_view(s) {};
-StringView::StringView(char const* s, size_t n) : m_view(s, n) {};
+StringView::StringView(char const* s, std::size_t n) : m_view(s, n) {};
 
 StringView::StringView(std::string_view const& s) : m_view(s) {};
 StringView::StringView(std::string_view&& s) noexcept : m_view(std::move(s)) {};
 StringView::StringView(std::string const& s) : m_view(s) {}
 
 StringView::StringView(Char const* s) : m_view((char const*)s, sizeof(*s)) {}
-StringView::StringView(Char const* s, size_t n) : m_view((char const*)s, n * sizeof(*s)) {};
+StringView::StringView(Char const* s, std::size_t n) : m_view((char const*)s, n * sizeof(*s)) {};
 
 std::string_view const& StringView::utf8() const {
   return m_view;
@@ -51,7 +52,7 @@ char const* StringView::utf8Ptr() const {
   return m_view.data();
 }
 
-size_t StringView::utf8Size() const {
+std::size_t StringView::utf8Size() const {
   return m_view.size();
 }
 
@@ -63,11 +64,11 @@ StringView::const_iterator StringView::end() const {
   return const_iterator(m_view.end());
 }
 
-size_t StringView::size() const {
+std::size_t StringView::size() const {
   return utf8Length(m_view.data(), m_view.size());
 }
 
-size_t StringView::length() const {
+std::size_t StringView::length() const {
   return size();
 }
 
@@ -75,17 +76,17 @@ bool StringView::empty() const {
   return m_view.empty();
 }
 
-StringView::Char StringView::operator[](size_t index) const {
+StringView::Char StringView::operator[](std::size_t index) const {
   auto it = begin();
-  for (size_t i = 0; i < index; ++i)
+  for (std::size_t i = 0; i < index; ++i)
     ++it;
   return *it;
 }
 
-StringView::Char StringView::at(size_t index) const {
+StringView::Char StringView::at(std::size_t index) const {
   auto it = begin();
   auto itEnd = end();
-  for (size_t i = 0; i < index; ++i) {
+  for (std::size_t i = 0; i < index; ++i) {
     ++it;
     if (it == itEnd)
       throw OutOfRangeException(strf("Out of range in StringView::at({})", i));
@@ -115,10 +116,10 @@ bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
   if (beg.m_view.empty())
     return true;
 
-  size_t begSize = beg.size();
+  std::size_t begSize = beg.size();
   auto it = begin();
   auto itEnd = end();
-  for (size_t i = 0; i != begSize; ++i)
+  for (std::size_t i = 0; i != begSize; ++i)
   {
     if (it == itEnd)
       return false;
@@ -139,9 +140,9 @@ void StringView::forEachSplitAnyView(StringView chars, SplitCallback callback) c
   if (chars.empty())
     return;
 
-  size_t beg = 0;
+  std::size_t beg = 0;
   while (true) {
-    size_t end = m_view.find_first_of(chars.m_view, beg);
+    std::size_t end = m_view.find_first_of(chars.m_view, beg);
     if (end == NPos) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
@@ -155,9 +156,9 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
   if (pattern.empty())
     return;
 
-  size_t beg = 0;
+  std::size_t beg = 0;
   while (true) {
-    size_t end = m_view.find(pattern.m_view, beg);
+    std::size_t end = m_view.find(pattern.m_view, beg);
     if (end == NPos) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
@@ -178,9 +179,9 @@ bool StringView::hasCharOrWhitespace(Char c) const {
   return empty() ? String::isSpace(c) : hasChar(c);
 }
 
-size_t StringView::find(Char c, size_t pos, CaseSensitivity cs) const {
+std::size_t StringView::find(Char c, std::size_t pos, CaseSensitivity cs) const {
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -196,12 +197,12 @@ size_t StringView::find(Char c, size_t pos, CaseSensitivity cs) const {
   return NPos;
 }
 
-size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
+std::size_t StringView::find(StringView str, std::size_t pos, CaseSensitivity cs) const {
   if (str.empty())
     return 0;
 
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -228,11 +229,11 @@ size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
   return NPos;
 }
 
-size_t StringView::findLast(Char c, CaseSensitivity cs) const {
+std::size_t StringView::findLast(Char c, CaseSensitivity cs) const {
   auto it = begin();
 
-  size_t found = NPos;
-  size_t pos = 0;
+  std::size_t found = NPos;
+  std::size_t pos = 0;
   while (it != end()) {
     if (String::charEqual(c, *it, cs))
       found = pos;
@@ -243,13 +244,13 @@ size_t StringView::findLast(Char c, CaseSensitivity cs) const {
   return found;
 }
 
-size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
+std::size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
   if (str.empty())
     return 0;
 
-  size_t pos = 0;
+  std::size_t pos = 0;
   auto it = begin();
-  size_t result = NPos;
+  std::size_t result = NPos;
   const_iterator sit = str.begin();
   const_iterator mit = it;
   while (it != end()) {
@@ -273,9 +274,9 @@ size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
   return result;
 }
 
-size_t StringView::findFirstOf(StringView pattern, size_t beg) const {
+std::size_t StringView::findFirstOf(StringView pattern, std::size_t beg) const {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -288,9 +289,9 @@ size_t StringView::findFirstOf(StringView pattern, size_t beg) const {
   return NPos;
 }
 
-size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
+std::size_t StringView::findFirstNotOf(StringView pattern, std::size_t beg) const {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -303,10 +304,12 @@ size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
   return NPos;
 }
 
-size_t StringView::findNextBoundary(size_t index, bool backwards) const {
+std::size_t StringView::findNextBoundary(std::size_t index, bool backwards) const {
   //TODO: Make this faster.
-  size_t mySize = size();
-  starAssert(index <= mySize);
+  std::size_t mySize = size();
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((index <= mySize));
+  }
   if (!backwards && (index == mySize))
     return index;
   if (backwards) {
@@ -355,12 +358,12 @@ bool StringView::equalsIgnoreCase(StringView s) const {
   return compare(s, CaseSensitivity::CaseInsensitive) == 0;
 }
 
-StringView StringView::substr(size_t position, size_t n) const {
+StringView StringView::substr(std::size_t position, std::size_t n) const {
   StringView ret;
   auto itEnd = end();
   auto it = begin();
 
-  for (size_t i = 0; i != position; ++i) {
+  for (std::size_t i = 0; i != position; ++i) {
     if (it == itEnd)
       throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
     it++;
@@ -368,7 +371,7 @@ StringView StringView::substr(size_t position, size_t n) const {
 
   const auto itStart = it;
 
-  for (size_t i = 0; i != n; ++i) {
+  for (std::size_t i = 0; i != n; ++i) {
     if (it == itEnd)
       break;
     ++it;
@@ -377,8 +380,8 @@ StringView StringView::substr(size_t position, size_t n) const {
   return StringView(&*itStart.base(), it.base() - itStart.base());
 }
 
-int StringView::compare(size_t selfOffset, size_t selfLen, StringView other,
-    size_t otherOffset, size_t otherLen, CaseSensitivity cs) const {
+int StringView::compare(std::size_t selfOffset, std::size_t selfLen, StringView other,
+    std::size_t otherOffset, std::size_t otherLen, CaseSensitivity cs) const {
   auto selfIt = begin();
   auto otherIt = other.begin();
 

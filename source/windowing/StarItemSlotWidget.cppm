@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -51,8 +51,20 @@ import star.animation;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemSlotWidget);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<Item const>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<Item const>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<Item const>;
+class ItemSlotWidget;
+using ItemSlotWidgetPtr = std::shared_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstPtr = std::shared_ptr<ItemSlotWidget const>;
+using ItemSlotWidgetWeakPtr = std::weak_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstWeakPtr = std::weak_ptr<ItemSlotWidget const>;
+using ItemSlotWidgetUPtr = std::unique_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstUPtr = std::unique_ptr<ItemSlotWidget const>;
 
 inline constexpr float ItemIndicateNewTime = 1.5f;
 

@@ -1,5 +1,5 @@
 #include "StarBTree.hpp"
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.format;
 import star.maybe;
@@ -12,32 +12,31 @@ import star.random;
 #include "gtest/gtest.h"
 
 using namespace Star;
-using namespace std;
 
 template <typename Key, typename Pointer>
 struct SimpleBTreeIndex {
-  size_t pointerCount() const;
-  Pointer pointer(size_t i) const;
-  void updatePointer(size_t i, Pointer p);
+  std::size_t pointerCount() const;
+  Pointer pointer(std::size_t i) const;
+  void updatePointer(std::size_t i, Pointer p);
 
-  Key const& keyBefore(size_t i) const;
-  void updateKeyBefore(size_t i, Key k);
+  Key const& keyBefore(std::size_t i) const;
+  void updateKeyBefore(std::size_t i, Key k);
 
-  void removeBefore(size_t i);
-  void insertAfter(size_t i, Key k, Pointer p);
+  void removeBefore(std::size_t i);
+  void insertAfter(std::size_t i, Key k, Pointer p);
 
-  size_t indexLevel() const;
-  void setIndexLevel(size_t indexLevel);
+  std::size_t indexLevel() const;
+  void setIndexLevel(std::size_t indexLevel);
 
   // count is number of elements to shift left *including* right's beginPointer
-  void shiftLeft(Key const& mid, SimpleBTreeIndex& right, size_t count);
+  void shiftLeft(Key const& mid, SimpleBTreeIndex& right, std::size_t count);
 
   // count is number of elements to shift right
-  void shiftRight(Key const& mid, SimpleBTreeIndex& left, size_t count);
+  void shiftRight(Key const& mid, SimpleBTreeIndex& left, std::size_t count);
 
   // i should be index of pointer that will be the new beginPointer of right
   // node (cannot be 0).
-  Key split(SimpleBTreeIndex& right, size_t i);
+  Key split(SimpleBTreeIndex& right, std::size_t i);
 
   struct Element {
     Key key;
@@ -46,32 +45,32 @@ struct SimpleBTreeIndex {
   typedef List<Element> ElementList;
 
   Pointer self;
-  size_t level;
+  std::size_t level;
   Maybe<Pointer> beginPointer;
   ElementList pointers;
 };
 
 template <typename Key, typename Data, typename Pointer>
 struct SimpleBTreeLeaf {
-  size_t count() const;
-  Key const& key(size_t i) const;
-  Data const& data(size_t i) const;
+  std::size_t count() const;
+  Key const& key(std::size_t i) const;
+  Data const& data(std::size_t i) const;
 
-  void insert(size_t i, Key k, Data d);
-  void remove(size_t i);
+  void insert(std::size_t i, Key k, Data d);
+  void remove(std::size_t i);
 
   Maybe<Pointer> nextLeaf() const;
   void setNextLeaf(Maybe<Pointer> n);
 
   // count is number of elements to shift left
-  void shiftLeft(SimpleBTreeLeaf& right, size_t count);
+  void shiftLeft(SimpleBTreeLeaf& right, std::size_t count);
 
   // count is number of elements to shift right
-  void shiftRight(SimpleBTreeLeaf& left, size_t count);
+  void shiftRight(SimpleBTreeLeaf& left, std::size_t count);
 
   // i should be index of element that will be the new start of right node.
   // Returns right index node.
-  void split(SimpleBTreeLeaf& right, size_t i);
+  void split(SimpleBTreeLeaf& right, std::size_t i);
 
   struct Element {
     Key key;
@@ -85,7 +84,7 @@ struct SimpleBTreeLeaf {
 };
 
 template <typename Key, typename Pointer>
-size_t SimpleBTreeIndex<Key, Pointer>::pointerCount() const {
+std::size_t SimpleBTreeIndex<Key, Pointer>::pointerCount() const {
   // If no begin pointer is set then the index is simply uninitialized.
   if (!beginPointer)
     return 0;
@@ -94,7 +93,7 @@ size_t SimpleBTreeIndex<Key, Pointer>::pointerCount() const {
 }
 
 template <typename Key, typename Pointer>
-Pointer SimpleBTreeIndex<Key, Pointer>::pointer(size_t i) const {
+Pointer SimpleBTreeIndex<Key, Pointer>::pointer(std::size_t i) const {
   if (i == 0)
     return *beginPointer;
   else
@@ -102,7 +101,7 @@ Pointer SimpleBTreeIndex<Key, Pointer>::pointer(size_t i) const {
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::updatePointer(size_t i, Pointer p) {
+void SimpleBTreeIndex<Key, Pointer>::updatePointer(std::size_t i, Pointer p) {
   if (i == 0)
     *beginPointer = p;
   else
@@ -110,17 +109,17 @@ void SimpleBTreeIndex<Key, Pointer>::updatePointer(size_t i, Pointer p) {
 }
 
 template <typename Key, typename Pointer>
-Key const& SimpleBTreeIndex<Key, Pointer>::keyBefore(size_t i) const {
+Key const& SimpleBTreeIndex<Key, Pointer>::keyBefore(std::size_t i) const {
   return pointers.at(i - 1).key;
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::updateKeyBefore(size_t i, Key k) {
+void SimpleBTreeIndex<Key, Pointer>::updateKeyBefore(std::size_t i, Key k) {
   pointers.at(i - 1).key = k;
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::removeBefore(size_t i) {
+void SimpleBTreeIndex<Key, Pointer>::removeBefore(std::size_t i) {
   if (i == 0) {
     beginPointer = pointers.at(0).pointer;
     pointers.eraseAt(0);
@@ -130,22 +129,22 @@ void SimpleBTreeIndex<Key, Pointer>::removeBefore(size_t i) {
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::insertAfter(size_t i, Key k, Pointer p) {
+void SimpleBTreeIndex<Key, Pointer>::insertAfter(std::size_t i, Key k, Pointer p) {
   pointers.insertAt(i, Element{k, p});
 }
 
 template <typename Key, typename Pointer>
-size_t SimpleBTreeIndex<Key, Pointer>::indexLevel() const {
+std::size_t SimpleBTreeIndex<Key, Pointer>::indexLevel() const {
   return level;
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::setIndexLevel(size_t indexLevel) {
+void SimpleBTreeIndex<Key, Pointer>::setIndexLevel(std::size_t indexLevel) {
   level = indexLevel;
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::shiftLeft(Key const& mid, SimpleBTreeIndex& right, size_t count) {
+void SimpleBTreeIndex<Key, Pointer>::shiftLeft(Key const& mid, SimpleBTreeIndex& right, std::size_t count) {
   count = std::min(right.pointerCount(), count);
 
   if (count == 0)
@@ -167,7 +166,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftLeft(Key const& mid, SimpleBTreeIndex&
 }
 
 template <typename Key, typename Pointer>
-void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex& left, size_t count) {
+void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex& left, std::size_t count) {
   count = std::min(left.pointerCount(), count);
 
   if (count == 0)
@@ -190,7 +189,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex
 }
 
 template <typename Key, typename Pointer>
-Key SimpleBTreeIndex<Key, Pointer>::split(SimpleBTreeIndex& right, size_t i) {
+Key SimpleBTreeIndex<Key, Pointer>::split(SimpleBTreeIndex& right, std::size_t i) {
   typename ElementList::iterator s = pointers.begin();
   std::advance(s, i - 1);
 
@@ -208,32 +207,32 @@ Key SimpleBTreeIndex<Key, Pointer>::split(SimpleBTreeIndex& right, size_t i) {
 }
 
 template <typename Key, typename Data, typename Pointer>
-size_t SimpleBTreeLeaf<Key, Data, Pointer>::count() const {
+std::size_t SimpleBTreeLeaf<Key, Data, Pointer>::count() const {
   return elements.size();
 }
 
 template <typename Key, typename Data, typename Pointer>
-Key const& SimpleBTreeLeaf<Key, Data, Pointer>::key(size_t i) const {
+Key const& SimpleBTreeLeaf<Key, Data, Pointer>::key(std::size_t i) const {
   return elements.at(i).key;
 }
 
 template <typename Key, typename Data, typename Pointer>
-Data const& SimpleBTreeLeaf<Key, Data, Pointer>::data(size_t i) const {
+Data const& SimpleBTreeLeaf<Key, Data, Pointer>::data(std::size_t i) const {
   return elements.at(i).data;
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::insert(size_t i, Key k, Data d) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::insert(std::size_t i, Key k, Data d) {
   elements.insertAt(i, Element{std::move(k), std::move(d)});
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::remove(size_t i) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::remove(std::size_t i) {
   elements.eraseAt(i);
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::shiftLeft(SimpleBTreeLeaf& right, size_t count) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::shiftLeft(SimpleBTreeLeaf& right, std::size_t count) {
   count = std::min(right.count(), count);
 
   if (count == 0)
@@ -247,7 +246,7 @@ void SimpleBTreeLeaf<Key, Data, Pointer>::shiftLeft(SimpleBTreeLeaf& right, size
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::shiftRight(SimpleBTreeLeaf& left, size_t count) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::shiftRight(SimpleBTreeLeaf& left, std::size_t count) {
   count = std::min(left.count(), count);
 
   if (count == 0)
@@ -261,7 +260,7 @@ void SimpleBTreeLeaf<Key, Data, Pointer>::shiftRight(SimpleBTreeLeaf& left, size
 }
 
 template <typename Key, typename Data, typename Pointer>
-void SimpleBTreeLeaf<Key, Data, Pointer>::split(SimpleBTreeLeaf& right, size_t i) {
+void SimpleBTreeLeaf<Key, Data, Pointer>::split(SimpleBTreeLeaf& right, std::size_t i) {
   typename ElementList::iterator s = elements.begin();
   std::advance(s, i);
 
@@ -414,7 +413,7 @@ struct SimpleBTreeBase {
     }
   }
 
-  Maybe<pair<Key, Index>> indexSplit(Index& index) {
+  Maybe<std::pair<Key, Index>> indexSplit(Index& index) {
     if (index.pointerCount() <= maxIndexSize) {
       return {};
     } else {
@@ -423,7 +422,7 @@ struct SimpleBTreeBase {
 
       Key mid = index.split(right, (index.pointerCount() + 1) / 2);
 
-      return make_pair(mid, right);
+      return std::make_pair(mid, right);
     }
   }
 
@@ -444,59 +443,59 @@ struct SimpleBTreeBase {
     deletedIndexes.append(index.self);
   }
 
-  size_t indexPointerCount(Index const& index) {
+  std::size_t indexPointerCount(Index const& index) {
     return index.pointerCount();
   }
 
-  Pointer indexPointer(Index const& index, size_t i) {
+  Pointer indexPointer(Index const& index, std::size_t i) {
     return index.pointer(i);
   }
 
-  void indexUpdatePointer(Index& index, size_t i, Pointer p) {
+  void indexUpdatePointer(Index& index, std::size_t i, Pointer p) {
     index.updatePointer(i, p);
   }
 
-  Key indexKeyBefore(Index const& index, size_t i) {
+  Key indexKeyBefore(Index const& index, std::size_t i) {
     return index.keyBefore(i);
   }
 
-  void indexUpdateKeyBefore(Index& index, size_t i, Key k) {
+  void indexUpdateKeyBefore(Index& index, std::size_t i, Key k) {
     index.updateKeyBefore(i, k);
   }
 
-  void indexRemoveBefore(Index& index, size_t i) {
+  void indexRemoveBefore(Index& index, std::size_t i) {
     index.removeBefore(i);
   }
 
-  void indexInsertAfter(Index& index, size_t i, Key k, Pointer p) {
+  void indexInsertAfter(Index& index, std::size_t i, Key k, Pointer p) {
     index.insertAfter(i, k, p);
   }
 
-  size_t indexLevel(Index const& index) {
+  std::size_t indexLevel(Index const& index) {
     return index.indexLevel();
   }
 
-  void setIndexLevel(Index& index, size_t indexLevel) {
+  void setIndexLevel(Index& index, std::size_t indexLevel) {
     index.setIndexLevel(indexLevel);
   }
 
-  size_t leafElementCount(Leaf const& leaf) {
+  std::size_t leafElementCount(Leaf const& leaf) {
     return leaf.count();
   }
 
-  Key leafKey(Leaf const& leaf, size_t i) {
+  Key leafKey(Leaf const& leaf, std::size_t i) {
     return leaf.key(i);
   }
 
-  Data leafData(Leaf const& leaf, size_t i) {
+  Data leafData(Leaf const& leaf, std::size_t i) {
     return leaf.data(i);
   }
 
-  void leafInsert(Leaf& leaf, size_t i, Key k, Data d) {
+  void leafInsert(Leaf& leaf, std::size_t i, Key k, Data d) {
     return leaf.insert(i, k, d);
   }
 
-  void leafRemove(Leaf& leaf, size_t i) {
+  void leafRemove(Leaf& leaf, std::size_t i) {
     return leaf.remove(i);
   }
 
@@ -511,8 +510,8 @@ struct SimpleBTreeBase {
   int root;
   bool rootleaf;
 
-  size_t maxIndexSize;
-  size_t maxLeafSize;
+  std::size_t maxIndexSize;
+  std::size_t maxLeafSize;
 
   int indexId;
   int leafId;
@@ -525,7 +524,7 @@ struct SimpleBTreeBase {
 };
 
 struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
-  SimpleBTree(size_t maxisize, size_t maxlsize) {
+  SimpleBTree(std::size_t maxisize, std::size_t maxlsize) {
     maxIndexSize = maxisize;
     maxLeafSize = maxlsize;
 
@@ -537,38 +536,38 @@ struct SimpleBTree : public BTreeMixin<SimpleBTreeBase> {
 
   void print() {
     forAllNodes(Printer());
-    cout << endl;
+    std::cout << std::endl;
   }
 
   struct Printer {
     bool operator()(Index const& index) {
-      cout << "[" << index.level << ":" << index.self << "]"
+      std::cout << "[" << index.level << ":" << index.self << "]"
            << " " << index.beginPointer << " ";
       for (Index::Element e : index.pointers) {
-        cout << "(" << e.key << ")"
+        std::cout << "(" << e.key << ")"
              << " " << e.pointer << " ";
       }
-      cout << endl;
+      std::cout << std::endl;
       return true;
     }
 
     bool operator()(Leaf const& leaf) {
-      cout << "[" << leaf.self << "]"
+      std::cout << "[" << leaf.self << "]"
            << " ";
       for (Leaf::Element e : leaf.elements) {
-        cout << "(" << e.key << ")"
+        std::cout << "(" << e.key << ")"
              << " " << e.data << " ";
       }
-      cout << endl;
+      std::cout << std::endl;
       return true;
     }
   };
 };
 
 const int RandFactor = 0xd5a2f037;
-const size_t TestCount = 500;
-const size_t WriteRepeat = 3;
-const size_t ShrinkCount = 5;
+const std::size_t TestCount = 500;
+const std::size_t WriteRepeat = 3;
+const std::size_t ShrinkCount = 5;
 
 String genValue(int k) {
   return toString(k * RandFactor);
@@ -590,8 +589,8 @@ void checkAll(SimpleBTree& db, List<int> keys) {
   }
 }
 
-size_t removeAll(SimpleBTree& db, List<int> keys) {
-  size_t totalRemoved = 0;
+std::size_t removeAll(SimpleBTree& db, List<int> keys) {
+  std::size_t totalRemoved = 0;
   Set<int> removed;
   for (int k : keys) {
     if (db.remove(k)) {
@@ -603,18 +602,18 @@ size_t removeAll(SimpleBTree& db, List<int> keys) {
   return totalRemoved;
 }
 
-void testBTree(size_t maxIndexSize, size_t maxLeafSize) {
-  srand(time(0));
+void testBTree(std::size_t maxIndexSize, std::size_t maxLeafSize) {
+  std::srand(std::time(0));
 
   SimpleBTree db(maxIndexSize, maxLeafSize);
 
   Set<int> keySet;
   while (keySet.size() < TestCount)
-    keySet.add(rand());
+    keySet.add(std::rand());
 
   List<int> keys;
   for (int k : keySet) {
-    for (size_t j = 0; j < WriteRepeat; ++j)
+    for (std::size_t j = 0; j < WriteRepeat; ++j)
       keys.append(k);
   }
 
@@ -628,7 +627,7 @@ void testBTree(size_t maxIndexSize, size_t maxLeafSize) {
   checkAll(db, keys);
 
   // Random reads/writes with ShrinkCount cycles...
-  for (size_t i = 0; i < ShrinkCount; ++i) {
+  for (std::size_t i = 0; i < ShrinkCount; ++i) {
     Random::shuffle(keys);
     List<int> keysTemp = keys.slice(0, keys.size() / 2);
 
@@ -641,7 +640,7 @@ void testBTree(size_t maxIndexSize, size_t maxLeafSize) {
     checkAll(db, keys);
   }
 
-  size_t totalRemoved = removeAll(db, keys);
+  std::size_t totalRemoved = removeAll(db, keys);
   EXPECT_EQ(totalRemoved, TestCount);
 }
 

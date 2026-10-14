@@ -30,7 +30,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -111,7 +111,7 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_windTime = 0.0f;
@@ -505,7 +505,7 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(GrassVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -544,7 +544,7 @@ Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(BushVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -663,7 +663,7 @@ void Plant::init(World* world, EntityId entityId, EntityMode mode) {
   m_tilePosition = world->geometry().xwrap(m_tilePosition);
 }
 
-pair<ByteArray, uint64_t> Plant::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Plant::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -790,12 +790,12 @@ float Plant::branchRotation(float xPos, float rotoffset) const {
   if (!inWorld() || m_windLevel == 0.0f)
     return 0.0f;
 
-  float intensity = fabs(m_windLevel);
+  float intensity = std::fabs(m_windLevel);
 
-  return copysign(0.00117f, m_windLevel) * (std::sin(m_windTime + rotoffset + xPos / 10.0f) * intensity - intensity / 300.0f);
+  return std::copysign(0.00117f, m_windLevel) * (std::sin(m_windTime + rotoffset + xPos / 10.0f) * intensity - intensity / 300.0f);
 }
 
-void Plant::update(float dt, uint64_t) {
+void Plant::update(float dt, std::uint64_t) {
   m_windTime += dt;
   m_windTime = std::fmod(m_windTime, 628.32f);
   m_windLevel = world()->windLevel(Vec2F(m_tilePosition));
@@ -864,7 +864,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto sound = Random::randFrom(damageTreeSoundOptions);
         Vec2F pos = position() + Vec2F(m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf());
         auto assets = Root::singleton().assets();
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(pos);
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));
@@ -958,8 +958,8 @@ void Plant::setupNetStates() {
   m_netGroup.addNetElement(&m_tileDamageYNetState);
   m_netGroup.addNetElement(&m_tileDamageEventNetState);
 
-  m_netGroup.setNeedsStoreCallback(bind(&Plant::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(bind(&Plant::getNetStates, this));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Plant::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Plant::getNetStates, this));
 }
 
 void Plant::getNetStates() {
@@ -1017,9 +1017,9 @@ bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePositio
 void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) {
   auto geometry = world()->geometry();
   Vec2I internalPos = geometry.diff(position, tilePosition());
-  size_t idx = highest<size_t>();
+  std::size_t idx = highest<std::size_t>();
   int segmentIdx = highest<int>();
-  for (size_t i = 0; i < m_pieces.size(); ++i) {
+  for (std::size_t i = 0; i < m_pieces.size(); ++i) {
     auto& piece = m_pieces[i];
     if (piece.structuralSegment && piece.spaces.contains(internalPos)) {
       if (piece.segmentIdx < segmentIdx) {
@@ -1031,7 +1031,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
 
   // default to highest structural piece
   if (idx >= m_pieces.size()) {
-    for (size_t i = m_pieces.size(); i > 0; --i) {
+    for (std::size_t i = m_pieces.size(); i > 0; --i) {
       auto& piece = m_pieces[i - 1];
       if (piece.structuralSegment) {
         segmentIdx = piece.segmentIdx;
@@ -1076,7 +1076,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   }
   m_piecesUpdated = true;
 
-  Vec2I breakPointI = Vec2I(round(breakPoint[0]), round(breakPoint[1]));
+  Vec2I breakPointI = Vec2I(std::round(breakPoint[0]), std::round(breakPoint[1]));
 
   // Calculate a new origin for the droppedPieces
   for (auto& piece : droppedPieces) {
@@ -1103,7 +1103,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   bool first = true;
   for (auto segmentIdx : segmentOrder) {
     auto segment = segments[segmentIdx];
-    world()->addEntity(make_shared<PlantDrop>(segment,
+    world()->addEntity(std::make_shared<PlantDrop>(segment,
         worldSpaceBreakPoint,
         fallVector,
         description(),
@@ -1122,7 +1122,9 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
 }
 
 Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
-  starAssert(positions.size());
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((positions.size()));
+  }
   auto res = positions.at(0);
 
   for (auto const& piece : m_pieces) {

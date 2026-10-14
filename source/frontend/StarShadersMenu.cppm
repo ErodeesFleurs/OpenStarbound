@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -44,12 +44,24 @@ import star.gui_reader;
 import star.base_script_pane;
 
 namespace Star {
-STAR_CLASS(UniverseClient);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
 }
 
 namespace Star {
 
-STAR_CLASS(ShadersMenu);
+class ShadersMenu;
+using ShadersMenuPtr = std::shared_ptr<ShadersMenu>;
+using ShadersMenuConstPtr = std::shared_ptr<ShadersMenu const>;
+using ShadersMenuWeakPtr = std::weak_ptr<ShadersMenu>;
+using ShadersMenuConstWeakPtr = std::weak_ptr<ShadersMenu const>;
+using ShadersMenuUPtr = std::unique_ptr<ShadersMenu>;
+using ShadersMenuConstUPtr = std::unique_ptr<ShadersMenu const>;
 
 class ShadersMenu : public BaseScriptPane {
 public:

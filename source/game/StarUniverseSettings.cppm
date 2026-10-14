@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.variant;
@@ -14,7 +14,13 @@ import star.game_types;
 
 namespace Star {
 
-STAR_CLASS(UniverseSettings);
+class UniverseSettings;
+using UniverseSettingsPtr = std::shared_ptr<UniverseSettings>;
+using UniverseSettingsConstPtr = std::shared_ptr<const UniverseSettings>;
+using UniverseSettingsWeakPtr = std::weak_ptr<UniverseSettings>;
+using UniverseSettingsConstWeakPtr = std::weak_ptr<const UniverseSettings>;
+using UniverseSettingsUPtr = std::unique_ptr<UniverseSettings>;
+using UniverseSettingsConstUPtr = std::unique_ptr<const UniverseSettings>;
 
 struct PlaceDungeonFlagAction {
   String dungeonId;

@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 import star.time;
 
@@ -102,7 +101,7 @@ double TickRateMonitor::tick(unsigned count) {
   } else if (m_lastTick < currentTime) {
     double timePast = currentTime - m_lastTick;
     double rate = m_ticks / m_window;
-    m_ticks = max(0.0, m_ticks - timePast * rate);
+    m_ticks = std::max(0.0, m_ticks - timePast * rate);
     m_lastTick = currentTime;
   }
 

@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.unicode;
 import star.string;
 import star.format;
@@ -18,12 +19,12 @@ void throwMissingUtf8End() {
 }
 
 void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (int32_t)val);
+  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
 }
 
-size_t utf8Length(const Utf8Type* utf8, size_t remain) {
+std::size_t utf8Length(const Utf8Type* utf8, std::size_t remain) {
   bool stopOnNull = remain == NPos;
-  size_t length = 0;
+  std::size_t length = 0;
 
   while (true) {
     if (remain == 0)
@@ -87,7 +88,7 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
   return length;
 }
 
-size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
+std::size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, std::size_t remain) {
   const Utf8Type* start = utf8;
   bool stopOnNull = remain == NPos;
 
@@ -143,7 +144,7 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
   return utf8 - start;
 }
 
-size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) {
+std::size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len) {
   if (utf32 > 0x10FFFFu)
     throwInvalidUtf32CodePoint(utf32);
 
@@ -199,7 +200,7 @@ Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previo
 
   auto hexBytes = hexDecode(codepoint);
   if (hexBytes.size() < sizeof(Utf32Type)) {
-    ByteArray newHexBytes{(size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
+    ByteArray newHexBytes{(std::size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
     newHexBytes.append(hexBytes);
     hexBytes = newHexBytes;
   }
@@ -221,12 +222,14 @@ std::string hexStringFromUtf32(Utf32Type character) {
     throw UnicodeException("Codepoint too big in hexStringFromUtf32");
   Utf32Type lead;
   Maybe<Utf32Type> trail;
-  tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
+  std::tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
 
   char16_t leadOut = toBigEndian((char16_t)lead);
   auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
 
-  starAssert(leadHex.size() == 4);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((leadHex.size() == 4));
+  }
 
   if (!trail)
     return leadHex;
@@ -234,7 +237,9 @@ std::string hexStringFromUtf32(Utf32Type character) {
   char16_t trailOut = toBigEndian((char16_t)*trail);
   auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
 
-  starAssert(trailHex.size() == 4);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((trailHex.size() == 4));
+  }
 
   return (leadHex + trailHex).takeUtf8();
 }
@@ -261,7 +266,7 @@ Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
   return codepoint;
 }
 
-pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
+std::pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
   if (codepoint >= MIN_PAIR) {
     codepoint -= MIN_PAIR;
     Utf32Type lead = (codepoint >> 10) + MIN_LEAD;

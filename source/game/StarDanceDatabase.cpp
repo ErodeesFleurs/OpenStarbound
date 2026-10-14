@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -91,7 +91,7 @@ DancePtr DanceDatabase::readDance(String const& path) {
     }
   });
 
-  return make_shared<Dance>(Dance{name, states, cycle, cyclic, duration, steps});
+  return std::make_shared<Dance>(Dance{name, states, cycle, cyclic, duration, steps});
 }
 
 }

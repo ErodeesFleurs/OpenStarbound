@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import star.memory;
 import star.hash;
 
 import star.format;
@@ -15,9 +15,27 @@ import star.unicode;
 import star.pythonic;
 namespace Star {
 
-STAR_CLASS(StringList);
-STAR_CLASS(String);
-STAR_CLASS(StringView);
+class StringList;
+using StringListPtr = std::shared_ptr<StringList>;
+using StringListConstPtr = std::shared_ptr<const StringList>;
+using StringListWeakPtr = std::weak_ptr<StringList>;
+using StringListConstWeakPtr = std::weak_ptr<const StringList>;
+using StringListUPtr = std::unique_ptr<StringList>;
+using StringListConstUPtr = std::unique_ptr<const StringList>;
+class String;
+using StringPtr = std::shared_ptr<String>;
+using StringConstPtr = std::shared_ptr<const String>;
+using StringWeakPtr = std::weak_ptr<String>;
+using StringConstWeakPtr = std::weak_ptr<const String>;
+using StringUPtr = std::unique_ptr<String>;
+using StringConstUPtr = std::unique_ptr<const String>;
+class StringView;
+using StringViewPtr = std::shared_ptr<StringView>;
+using StringViewConstPtr = std::shared_ptr<const StringView>;
+using StringViewWeakPtr = std::weak_ptr<StringView>;
+using StringViewConstWeakPtr = std::weak_ptr<const StringView>;
+using StringViewUPtr = std::unique_ptr<StringView>;
+using StringViewConstUPtr = std::unique_ptr<const StringView>;
 
 struct StringExceptionTag {
   static constexpr char const* name() { return "StringException"; }
@@ -78,14 +96,14 @@ public:
 
   // These assume utf8 input
   String(char const* s);
-  String(char const* s, size_t n);
+  String(char const* s, std::size_t n);
   String(std::string const& s);
   String(std::string&& s);
 
   String(std::wstring const& s);
   String(Char const* s);
-  String(Char const* s, size_t n);
-  String(Char c, size_t n);
+  String(Char const* s, std::size_t n);
+  String(Char c, std::size_t n);
 
   explicit String(Char c);
 
@@ -95,7 +113,7 @@ public:
   ByteArray utf8Bytes() const;
   // Pointer to internal utf8 data, null-terminated.
   char const* utf8Ptr() const;
-  size_t utf8Size() const;
+  std::size_t utf8Size() const;
 
   std::wstring wstring() const;
   WideString wideString() const;
@@ -103,16 +121,16 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
-  size_t size() const;
-  size_t length() const;
+  std::size_t size() const;
+  std::size_t length() const;
 
   void clear();
-  void reserve(size_t n);
+  void reserve(std::size_t n);
   bool empty() const;
 
-  Char operator[](size_t i) const;
+  Char operator[](std::size_t i) const;
   // Throws StringException if i out of range.
-  Char at(size_t i) const;
+  Char at(std::size_t i) const;
 
   String toUpper() const;
   String toLower() const;
@@ -127,23 +145,23 @@ public:
 
   String rot13() const;
 
-  StringList split(Char c, size_t maxSplit = NPos) const;
-  StringList split(String const& pattern, size_t maxSplit = NPos) const;
-  StringList rsplit(Char c, size_t maxSplit = NPos) const;
-  StringList rsplit(String const& pattern, size_t maxSplit = NPos) const;
+  StringList split(Char c, std::size_t maxSplit = NPos) const;
+  StringList split(String const& pattern, std::size_t maxSplit = NPos) const;
+  StringList rsplit(Char c, std::size_t maxSplit = NPos) const;
+  StringList rsplit(String const& pattern, std::size_t maxSplit = NPos) const;
 
   // Splits on any number of contiguous instances of any of the given
   // characters.  Behaves differently than regular split in that leading and
   // trailing instances of the characters are also ignored, and in general no
   // empty strings will be in the resulting split list.  If chars is empty,
   // then splits on any whitespace.
-  StringList splitAny(String const& chars = "", size_t maxSplit = NPos) const;
-  StringList rsplitAny(String const& chars = "", size_t maxSplit = NPos) const;
+  StringList splitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
+  StringList rsplitAny(String const& chars = "", std::size_t maxSplit = NPos) const;
 
   // Split any with '\n\r'
-  StringList splitLines(size_t maxSplit = NPos) const;
+  StringList splitLines(std::size_t maxSplit = NPos) const;
   // Shorthand for splitAny("");
-  StringList splitWhitespace(size_t maxSplit = NPos) const;
+  StringList splitWhitespace(std::size_t maxSplit = NPos) const;
 
   // Splits a string once based on the given characters (defaulting to
   // whitespace), and returns the first part.  This string is set to the
@@ -162,37 +180,37 @@ public:
   String trimBeg(String const& chars = "") const;
   String trim(String const& chars = "") const;
 
-  size_t find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  std::size_t find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  std::size_t find(String const& s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
+  std::size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
+  std::size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
 
   // If pattern is empty, finds first whitespace
-  size_t findFirstOf(String const& chars = "", size_t beg = 0) const;
+  std::size_t findFirstOf(String const& chars = "", std::size_t beg = 0) const;
 
   // If pattern is empty, finds first non-whitespace
-  size_t findFirstNotOf(String const& chars = "", size_t beg = 0) const;
+  std::size_t findFirstNotOf(String const& chars = "", std::size_t beg = 0) const;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  size_t findNextBoundary(size_t index, bool backwards = false) const;
+  std::size_t findNextBoundary(std::size_t index, bool backwards = false) const;
 
   String slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
 
   void append(String const& s);
   void append(std::string const& s);
   void append(Char const* s);
-  void append(Char const* s, size_t n);
+  void append(Char const* s, std::size_t n);
   void append(char const* s);
-  void append(char const* s, size_t n);
+  void append(char const* s, std::size_t n);
   void append(Char c);
 
   void prepend(String const& s);
   void prepend(std::string const& s);
   void prepend(Char const* s);
-  void prepend(Char const* s, size_t n);
+  void prepend(Char const* s, std::size_t n);
   void prepend(char const* s);
-  void prepend(char const* s, size_t n);
+  void prepend(char const* s, std::size_t n);
   void prepend(Char c);
 
   void push_back(Char c);
@@ -208,11 +226,11 @@ public:
   // Synonym for equals(s, String::CaseInsensitive)
   bool equalsIgnoreCase(String const& s) const;
 
-  String substr(size_t position, size_t n = NPos) const;
-  void erase(size_t pos = 0, size_t n = NPos);
+  String substr(std::size_t position, std::size_t n = NPos) const;
+  void erase(std::size_t pos = 0, std::size_t n = NPos);
 
-  String padLeft(size_t size, String const& filler) const;
-  String padRight(size_t size, String const& filler) const;
+  String padLeft(std::size_t size, String const& filler) const;
+  String padRight(std::size_t size, String const& filler) const;
 
   // Replace angle bracket tags in the string with values given by the given
   // lookup function.  Will be called as:
@@ -287,11 +305,11 @@ public:
   String& operator+=(std::string_view s);
 
 private:
-  int compare(size_t selfOffset,
-      size_t selfLen,
+  int compare(std::size_t selfOffset,
+      std::size_t selfLen,
       String const& other,
-      size_t otherOffset,
-      size_t otherLen,
+      std::size_t otherOffset,
+      std::size_t otherLen,
       CaseSensitivity cs) const;
 
   std::string m_string;
@@ -316,9 +334,9 @@ public:
   StringList(Base&& l);
   StringList(StringList const& l);
   StringList(StringList&& l);
-  StringList(size_t len, String::Char const* const* list);
-  StringList(size_t len, char const* const* list);
-  explicit StringList(size_t len, String const& s1 = String());
+  StringList(std::size_t len, String::Char const* const* list);
+  StringList(std::size_t len, char const* const* list);
+  explicit StringList(std::size_t len, String const& s1 = String());
   StringList(std::initializer_list<String> list);
 
   template <typename InputIterator>
@@ -329,7 +347,7 @@ public:
   StringList& operator=(Base&& rhs);
   StringList& operator=(StringList const& rhs);
   StringList& operator=(StringList&& rhs);
-  StringList& operator=(initializer_list<String> list);
+  StringList& operator=(std::initializer_list<String> list);
 
   bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
   StringList trimAll(String const& chars = "") const;
@@ -350,11 +368,11 @@ std::ostream& operator<<(std::ostream& os, StringList const& list);
 
 template <>
 struct hash<String> {
-  size_t operator()(String const& s) const;
+  std::size_t operator()(String const& s) const;
 };
 
 struct CaseInsensitiveStringHash {
-  size_t operator()(String const& s) const;
+  std::size_t operator()(String const& s) const;
 };
 
 struct CaseInsensitiveStringCompare {
@@ -376,7 +394,7 @@ using CaseInsensitiveStringMap = StringMap<MappedT, CaseInsensitiveStringHash, C
 
 template <>
 struct hash<StringList> {
-  size_t operator()(StringList const& s) const;
+  std::size_t operator()(StringList const& s) const;
 };
 
 template <typename... StringType>
@@ -390,7 +408,7 @@ String String::lookupTags(Lookup&& lookup) const {
   // Operates directly on the utf8 representation of the strings, rather than
   // using unicode find / replace methods
 
-  auto substrInto = [](std::string const& ref, size_t position, size_t n, std::string& result) {
+  auto substrInto = [](std::string const& ref, std::size_t position, std::size_t n, std::string& result) {
     auto len = ref.size();
     if (position > len)
       throw OutOfRangeException(strf("out of range in substrInto: {}", position));
@@ -398,7 +416,7 @@ String String::lookupTags(Lookup&& lookup) const {
     auto it = ref.begin();
     std::advance(it, position);
 
-    for (size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < n; ++i) {
       if (it == ref.end())
         break;
       result.push_back(*it);
@@ -408,8 +426,8 @@ String String::lookupTags(Lookup&& lookup) const {
 
   std::string finalString;
 
-  size_t start = 0;
-  size_t size = String::size();
+  std::size_t start = 0;
+  std::size_t size = String::size();
 
   finalString.reserve(size);
 
@@ -419,8 +437,8 @@ String String::lookupTags(Lookup&& lookup) const {
     if (start >= size)
       break;
 
-    size_t beginTag = m_string.find("<", start);
-    size_t endTag = m_string.find(">", beginTag);
+    std::size_t beginTag = m_string.find("<", start);
+    std::size_t endTag = m_string.find(">", beginTag);
     if (beginTag != NPos && endTag != NPos) {
       substrInto(m_string, beginTag + 1, endTag - beginTag - 1, key.m_string);
       substrInto(m_string, start, beginTag - start, finalString);
@@ -442,16 +460,16 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
   List<std::string_view> finalViews = {};
   std::string_view view(utf8());
 
-  size_t start = 0;
+  std::size_t start = 0;
   while (true) {
     if (start >= view.size())
       break;
 
-    size_t beginTag = view.find_first_of('<', start);
+    std::size_t beginTag = view.find_first_of('<', start);
     if (beginTag == NPos && !start)
       return Maybe<String>();
 
-    size_t endTag = view.find_first_of('>', beginTag);
+    std::size_t endTag = view.find_first_of('>', beginTag);
     if (beginTag != NPos && endTag != NPos) {
       finalViews.append(view.substr(start, beginTag - start));
       finalViews.append(lookup(view.substr(beginTag + 1, endTag - beginTag - 1)).takeUtf8());
@@ -463,7 +481,7 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
   }
 
   std::string finalString;
-  size_t finalSize = 0;
+  std::size_t finalSize = 0;
   for (auto& view : finalViews)
     finalSize += view.size();
 
@@ -496,7 +514,7 @@ String String::replaceTags(MapType const& tags, bool replaceWithDefault, String 
   });
 }
 
-inline size_t hash<String>::operator()(String const& s) const {
+inline std::size_t hash<String>::operator()(String const& s) const {
   PLHasher hash;
   for (auto c : s.utf8())
     hash.put(c);
@@ -511,14 +529,14 @@ StringList StringList::from(Container const& m) {
 template <typename Filter>
 StringList StringList::filtered(Filter&& filter) const {
   StringList l;
-  l.filter(forward<Filter>(filter));
+  l.filter(std::forward<Filter>(filter));
   return l;
 }
 
 template <typename Comparator>
 StringList StringList::sorted(Comparator&& comparator) const {
   StringList l;
-  l.sort(forward<Comparator>(comparator));
+  l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 

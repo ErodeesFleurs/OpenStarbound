@@ -1,10 +1,10 @@
-#include "StarConfig.hpp"
+#include <ft2build.h>
+#include FT_FREETYPE_H
+import std;
 import star.file;
 import star.format;
 import star.vector;
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
 import star.string;
 import star.image;
 import star.font;
@@ -39,11 +39,11 @@ struct FontImpl {
 };
 
 FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
-  return loadFont(make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
+  return loadFont(std::make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
 }
 
 FontPtr Font::loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize) {
-  FontPtr font = make_shared<Font>();
+  FontPtr font = std::make_shared<Font>();
   font->m_fontBuffer = bytes;
   font->setPixelSize(pixelSize);
 
@@ -72,7 +72,7 @@ void Font::setPixelSize(unsigned pixelSize) {
     throw FontException(strf("Cannot set font pixel size to: {}", m_pixelSize));
 }
 
-void Font::setAlphaThreshold(uint8_t alphaThreshold) {
+void Font::setAlphaThreshold(std::uint8_t alphaThreshold) {
   m_alphaThreshold = alphaThreshold;
 }
 
@@ -97,7 +97,7 @@ void Font::loadFontImpl() {
     if (!m_fontBuffer || m_fontBuffer->empty())
       throw FontException("Font buffer is null or empty");
 
-    shared_ptr<FontImpl> fontImpl = make_shared<FontImpl>();
+    std::shared_ptr<FontImpl> fontImpl = std::make_shared<FontImpl>();
     if (FT_New_Memory_Face(ftContext.library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
       throw FontException::format("Could not load font from buffer");
 
@@ -108,7 +108,7 @@ void Font::loadFontImpl() {
   }
 }
 
-tuple<Image, Vec2I, bool> Font::render(String::Char c) {
+std::tuple<Image, Vec2I, bool> Font::render(String::Char c) {
   loadFontImpl();
 
   FT_Face face = m_fontImpl->face;
@@ -131,7 +131,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     Vec4B white(255, 255, 255, 0);
     image.fill(white);
     for (unsigned y = 0; y != height; ++y) {
-      uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
+      std::uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
       for (unsigned x = 0; x != width; ++x) {
         if (x < width && y < height) {
           white[3] = m_alphaThreshold
@@ -143,9 +143,9 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     }
   } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
-    uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
-    for (size_t y = 0; y != height; ++y) {
-      memcpy(data - (y * image.width() * bpp),
+    std::uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    for (std::size_t y = 0; y != height; ++y) {
+      std::memcpy(data - (y * image.width() * bpp),
              slot->bitmap.buffer + y * slot->bitmap.pitch,
              slot->bitmap.pitch);
     }
@@ -162,7 +162,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     return {};
   }
 
-  return make_tuple(
+  return std::make_tuple(
     std::move(image),
     Vec2I(slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1),
     colored);

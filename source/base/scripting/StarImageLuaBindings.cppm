@@ -1,12 +1,18 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.lua;
 
 
 namespace Star {
 
-STAR_CLASS(Image);
+class Image;
+using ImagePtr = std::shared_ptr<Image>;
+using ImageConstPtr = std::shared_ptr<Image const>;
+using ImageWeakPtr = std::weak_ptr<Image>;
+using ImageConstWeakPtr = std::weak_ptr<Image const>;
+using ImageUPtr = std::unique_ptr<Image>;
+using ImageConstUPtr = std::unique_ptr<Image const>;
 
 template <>
 struct LuaConverter<Image> : LuaUserDataConverter<Image> {};

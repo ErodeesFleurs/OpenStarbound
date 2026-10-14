@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.maybe;
 #include "StarLuaConverters.hpp"
@@ -8,9 +8,9 @@ namespace Star {
 
 LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
   if (c.alpha() == 255)
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue()});
+    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue()});
   else
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
+    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
 }
 
 Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {

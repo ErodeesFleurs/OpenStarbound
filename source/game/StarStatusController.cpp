@@ -33,7 +33,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.version;
 
@@ -102,7 +102,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
       if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
       else m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
     },
-    [&](DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) {
+    [&](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) {
       if (rules.version() <= 1) {
         if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
           ds << m_statusProperties.baseMap();
@@ -127,7 +127,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_primaryScript.setScripts(jsonToStringList(config.get("primaryScriptSources", JsonArray())));
   m_primaryScript.setUpdateDelta(config.getUInt("primaryScriptDelta", 1));
 
-  uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
+  std::uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
   m_recentHitsGiven.setHistoryLimit(keepDamageSteps);
   m_recentDamageGiven.setHistoryLimit(keepDamageSteps);
   m_recentDamageTaken.setHistoryLimit(keepDamageSteps);
@@ -142,7 +142,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_netGroup.addNetElement(&m_toolUsageSuppressed);
 
   if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(make_shared<EffectAnimator>(*m_primaryAnimationConfig));
+    m_primaryAnimatorId = m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(*m_primaryAnimationConfig));
   else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
@@ -380,7 +380,7 @@ void StatusController::addEphemeralEffects(
           metadata->sourceEntityId.set(sourceEntityId);
           metadata->duration = newDuration;
         }
-        metadata->maxDuration.set(max(metadata->maxDuration.get(), newDuration));
+        metadata->maxDuration.set(std::max(metadata->maxDuration.get(), newDuration));
       }
     } else {
       addUniqueEffect(
@@ -470,15 +470,15 @@ void StatusController::applySelfDamageRequest(DamageRequest dr) {
   m_pendingSelfDamageNotifications.appendAll(std::move(damageNotifications));
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::damageTakenSince(uint64_t since) const {
+std::pair<List<DamageNotification>, std::uint64_t> StatusController::damageTakenSince(std::uint64_t since) const {
   return m_recentDamageTaken.query(since);
 }
 
-pair<List<pair<EntityId, DamageRequest>>, uint64_t> StatusController::inflictedHitsSince(uint64_t since) const {
+std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t> StatusController::inflictedHitsSince(std::uint64_t since) const {
   return m_recentHitsGiven.query(since);
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::inflictedDamageSince(uint64_t since) const {
+std::pair<List<DamageNotification>, std::uint64_t> StatusController::inflictedDamageSince(std::uint64_t since) const {
   return m_recentDamageGiven.query(since);
 }
 
@@ -541,7 +541,7 @@ void StatusController::tickNetInterpolation(float dt) {
   m_netGroup.tickNetInterpolation(dt);
 }
 
-bool StatusController::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool StatusController::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   return m_netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
@@ -710,7 +710,7 @@ void StatusController::EffectAnimator::tickNetInterpolation(float dt) {
   animator.tickNetInterpolation(dt);
 }
 
-bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   return animator.writeNetDelta(ds, fromVersion, rules);
 }
 
@@ -805,12 +805,12 @@ bool StatusController::addUniqueEffect(
     uniqueEffect.script.setUpdateDelta(uniqueEffect.effectConfig.scriptDelta);
 
     uniqueEffect.metadataId =
-        m_uniqueEffectMetadata.addNetElement(make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
+        m_uniqueEffectMetadata.addNetElement(std::make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
 
     uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
     if (uniqueEffect.effectConfig.animationConfig)
       uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
+          m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
 
     uniqueEffect.toolUsageSuppressed = false;
 

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.string;
@@ -75,7 +75,7 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   }
 
 #else
-  unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
+  std::unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
   int ret = 0;
   for (auto p : enumerateIterator(query)) {
     if (p.first.first->isOpen()) {
@@ -218,7 +218,7 @@ void Socket::close() {
 }
 
 Socket::Socket(SocketType type, NetworkMode networkMode)
-  : m_networkMode(networkMode), m_impl(make_shared<SocketImpl>()), m_socketMode(SocketMode::Closed) {
+  : m_networkMode(networkMode), m_impl(std::make_shared<SocketImpl>()), m_socketMode(SocketMode::Closed) {
   if (m_networkMode == NetworkMode::IPv4)
     m_impl->socketDesc = ::socket(AF_INET, type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
   else

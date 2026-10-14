@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -113,15 +113,15 @@ namespace Star {
 LuaCallbacks LuaBindings::makeEntityCallbacks(Entity const* entity) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<EntityId>("id", bind(EntityCallbacks::id, entity));
+  callbacks.registerCallbackWithSignature<EntityId>("id", std::bind(EntityCallbacks::id, entity));
   callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&>(
-      "damageTeam", bind(EntityCallbacks::damageTeam, entity, _1));
+      "damageTeam", std::bind(EntityCallbacks::damageTeam, entity, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "isValidTarget", bind(EntityCallbacks::isValidTarget, entity, _1));
+      "isValidTarget", std::bind(EntityCallbacks::isValidTarget, entity, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<Vec2F, EntityId>(
-      "distanceToEntity", bind(EntityCallbacks::distanceToEntity, entity, _1));
+      "distanceToEntity", std::bind(EntityCallbacks::distanceToEntity, entity, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "entityInSight", bind(EntityCallbacks::entityInSight, entity, _1));
+      "entityInSight", std::bind(EntityCallbacks::entityInSight, entity, std::placeholders::_1));
 
   callbacks.registerCallback("position", [entity]() { return entity->position(); });
   callbacks.registerCallback("entityType", [entity]() { return EntityTypeNames.getRight(entity->entityType()); });

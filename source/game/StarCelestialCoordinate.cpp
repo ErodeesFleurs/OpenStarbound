@@ -1,5 +1,5 @@
 #include "StarJsonExtra.hpp"
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -165,18 +165,18 @@ CelestialCoordinate::operator bool() const {
 }
 
 bool CelestialCoordinate::operator<(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      < tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
+  return std::tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
+      < std::tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
 }
 
 bool CelestialCoordinate::operator==(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      == tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
+  return std::tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
+      == std::tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
 }
 
 bool CelestialCoordinate::operator!=(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      != tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
+  return std::tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
+      != std::tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
 }
 
 std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord) {

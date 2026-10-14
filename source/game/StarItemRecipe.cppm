@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -28,7 +28,7 @@ struct ItemRecipe {
   bool operator==(ItemRecipe const& rhs) const;
   bool operator!=(ItemRecipe const& rhs) const;
 
-  StringMap<uint64_t> currencyInputs;
+  StringMap<std::uint64_t> currencyInputs;
   List<ItemDescriptor> inputs;
   ItemDescriptor output;
   float duration;
@@ -41,7 +41,7 @@ struct ItemRecipe {
 
 template <>
 struct hash<ItemRecipe> {
-  size_t operator()(ItemRecipe const& v) const;
+  std::size_t operator()(ItemRecipe const& v) const;
 };
 
 std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);

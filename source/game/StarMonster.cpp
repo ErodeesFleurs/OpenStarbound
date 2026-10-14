@@ -40,7 +40,7 @@ import star.periodic_function;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.observer_stream;
@@ -145,7 +145,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   if (!colorSwap.empty())
     m_networkedAnimator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
 
-  m_statusController = make_shared<StatusController>(m_monsterVariant.statusSettings);
+  m_statusController = std::make_shared<StatusController>(m_monsterVariant.statusSettings);
 
   m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").apply(jsonToStringList).value(m_monsterVariant.scripts));
   m_scriptComponent.setUpdateDelta(m_monsterVariant.initialScriptDelta);
@@ -162,7 +162,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   *movementParameters.mass *= monsterVariant.weightMultiplier;
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet{"monster"};
-  m_movementController = make_shared<ActorMovementController>(movementParameters);
+  m_movementController = std::make_shared<ActorMovementController>(movementParameters);
 
   setPersistent(m_monsterVariant.persistent);
 
@@ -308,7 +308,7 @@ Vec2F Monster::velocity() const {
   return m_movementController->velocity();
 }
 
-pair<ByteArray, uint64_t> Monster::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Monster::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -547,7 +547,7 @@ void Monster::damagedOther(DamageNotification const& damage) {
     m_statusController->damagedOther(damage);
 }
 
-void Monster::update(float dt, uint64_t) {
+void Monster::update(float dt, std::uint64_t) {
   if (!inWorld())
     return;
 
@@ -825,8 +825,8 @@ void Monster::setupNetStates() {
   m_netGroup.addNetElement(&m_animationDamageParts, false);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
 
-  m_netGroup.setNeedsLoadCallback(bind(&Monster::getNetStates, this, _1));
-  m_netGroup.setNeedsStoreCallback(bind(&Monster::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Monster::getNetStates, this, std::placeholders::_1));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Monster::setNetStates, this));
 }
 
 void Monster::setNetStates() {

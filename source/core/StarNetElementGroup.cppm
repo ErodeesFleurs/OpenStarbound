@@ -1,8 +1,7 @@
 module;
+import std;
 import star.net_compatibility;
 import star.version;
-
-#include "StarConfig.hpp"
 import star.list;
 import star.map;
 import star.data_stream;
@@ -38,7 +37,7 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
@@ -47,12 +46,12 @@ public:
   float netExtrapolationHint() const;
 
 private:
-  List<pair<NetElement*, bool>> m_elements;
+  List<std::pair<NetElement*, bool>> m_elements;
   NetElementVersion const* m_version = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
-  HashMap<VersionNumber, size_t> m_elementCounts;
+  HashMap<VersionNumber, std::size_t> m_elementCounts;
 
   mutable DataStreamBuffer m_buffer;
 };

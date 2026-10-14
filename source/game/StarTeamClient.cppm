@@ -20,7 +20,7 @@ import star.rpc_promise;
 import star.game_types;
 import star.warping;
 import star.json_rpc;
-#include "StarConfig.hpp"
+import std;
 import star.variant;
 import star.maybe;
 import star.version;
@@ -29,9 +29,27 @@ namespace Star {
 
 extern VersionNumber const TeamClientVersion;
   
-STAR_CLASS(Player);
-STAR_CLASS(ClientContext);
-STAR_CLASS(TeamClient);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class ClientContext;
+using ClientContextPtr = std::shared_ptr<ClientContext>;
+using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
+using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
+using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
+using ClientContextUPtr = std::unique_ptr<ClientContext>;
+using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
+class TeamClient;
+using TeamClientPtr = std::shared_ptr<TeamClient>;
+using TeamClientConstPtr = std::shared_ptr<const TeamClient>;
+using TeamClientWeakPtr = std::weak_ptr<TeamClient>;
+using TeamClientConstWeakPtr = std::weak_ptr<const TeamClient>;
+using TeamClientUPtr = std::unique_ptr<TeamClient>;
+using TeamClientConstUPtr = std::unique_ptr<const TeamClient>;
 
 class TeamClient {
 public:
@@ -62,8 +80,8 @@ public:
   bool isMemberOfTeam();
 
   bool hasInvitationPending();
-  pair<Uuid, String> pullInvitation();
-  List<Variant<pair<String, bool>, StringList>> pullInviteResults();
+  std::pair<Uuid, String> pullInvitation();
+  List<Variant<std::pair<String, bool>, StringList>> pullInviteResults();
 
   void update();
 
@@ -75,9 +93,9 @@ public:
   List<Member> members();
 
 private:
-  typedef pair<RpcPromise<Json>, function<void(Json const&)>> RpcResponseHandler;
+  typedef std::pair<RpcPromise<Json>, std::function<void(Json const&)>> RpcResponseHandler;
 
-  void invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction = {});
+  void invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction = {});
   void handleRpcResponses();
 
   void writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite = false) const;
@@ -93,9 +111,9 @@ private:
   List<Member> m_members;
 
   bool m_hasPendingInvitation;
-  pair<Uuid, String> m_pendingInvitation;
+  std::pair<Uuid, String> m_pendingInvitation;
   double m_pollInvitationsTimer;
-  List<Variant<pair<String, bool>, StringList>> m_pendingInviteResults;
+  List<Variant<std::pair<String, bool>, StringList>> m_pendingInviteResults;
 
   bool m_fullUpdateRunning;
   double m_fullUpdateTimer;

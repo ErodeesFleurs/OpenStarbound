@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -20,8 +20,20 @@ import star.plant_database;
 
 namespace Star {
 
-STAR_CLASS(Parallax);
-STAR_STRUCT(ParallaxLayer);
+class Parallax;
+using ParallaxPtr = std::shared_ptr<Parallax>;
+using ParallaxConstPtr = std::shared_ptr<const Parallax>;
+using ParallaxWeakPtr = std::weak_ptr<Parallax>;
+using ParallaxConstWeakPtr = std::weak_ptr<const Parallax>;
+using ParallaxUPtr = std::unique_ptr<Parallax>;
+using ParallaxConstUPtr = std::unique_ptr<const Parallax>;
+struct ParallaxLayer;
+using ParallaxLayerPtr = std::shared_ptr<ParallaxLayer>;
+using ParallaxLayerConstPtr = std::shared_ptr<const ParallaxLayer>;
+using ParallaxLayerWeakPtr = std::weak_ptr<ParallaxLayer>;
+using ParallaxLayerConstWeakPtr = std::weak_ptr<const ParallaxLayer>;
+using ParallaxLayerUPtr = std::unique_ptr<ParallaxLayer>;
+using ParallaxLayerConstUPtr = std::unique_ptr<const ParallaxLayer>;
 
 struct ParallaxLayer {
   friend DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
@@ -65,7 +77,7 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 class Parallax {
 public:
   Parallax(String const& assetFile,
-      uint64_t seed,
+      std::uint64_t seed,
       float verticalOrigin,
       float hueShift,
       Maybe<TreeVariant> parallaxTreeVariant = {});
@@ -81,7 +93,7 @@ public:
 private:
   void buildLayer(Json const& layerSettings, String const& kind);
 
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   float m_verticalOrigin;
   Maybe<TreeVariant> m_parallaxTreeVariant;
   float m_hueShift;

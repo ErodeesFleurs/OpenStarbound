@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -41,7 +41,7 @@ CodexDatabase::CodexDatabase() {
       codexJson = codexJson.set("icon",
           AssetPath::relativeTo(AssetPath::directory(file), codexJson.getString("icon", codexConfig.getString("defaultIcon"))));
 
-      auto codex = make_shared<Codex>(codexJson, file);
+      auto codex = std::make_shared<Codex>(codexJson, file);
 
       if (m_codexes.contains(codex->id()))
         throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);

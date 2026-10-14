@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 import star.id_map;
@@ -23,7 +23,13 @@ import star.chat_action;
 
 namespace Star {
 
-STAR_CLASS(ChattyEntity);
+class ChattyEntity;
+using ChattyEntityPtr = std::shared_ptr<ChattyEntity>;
+using ChattyEntityConstPtr = std::shared_ptr<const ChattyEntity>;
+using ChattyEntityWeakPtr = std::weak_ptr<ChattyEntity>;
+using ChattyEntityConstWeakPtr = std::weak_ptr<const ChattyEntity>;
+using ChattyEntityUPtr = std::unique_ptr<ChattyEntity>;
+using ChattyEntityConstUPtr = std::unique_ptr<const ChattyEntity>;
 
 class ChattyEntity : public virtual Entity {
 public:

@@ -4,7 +4,7 @@ import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.bi_map;
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
   RootUPtr root;
   OptionParser::Options options;
-  tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+  std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
   auto engine = LuaEngine::create(true);
   auto context = engine->createContext();

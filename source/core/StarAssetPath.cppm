@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.stream_formatter;
@@ -79,7 +79,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
 
 template <>
 struct hash<AssetPath> {
-  size_t operator()(AssetPath const& s) const;
+  std::size_t operator()(AssetPath const& s) const;
 };
 
 }

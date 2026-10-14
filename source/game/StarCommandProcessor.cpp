@@ -26,7 +26,6 @@ import star.encode;
 import star.bytes;
 import star.format;
 import star.lexical_cast;
-#include "StarConfig.hpp"
 import star.version;
 import star.weighted_pool;
 import star.parametric_function;
@@ -208,7 +207,7 @@ CommandProcessor::CommandProcessor(UniverseServer* universe)
   auto assets = Root::singleton().assets();
   auto universeConfig = assets->json("/universe_server.config");
   
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>();
   m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universe));
@@ -484,14 +483,14 @@ String CommandProcessor::setTileProtection(ConnectionId connectionId, String con
         DungeonId current = lexicalCast<DungeonId>(*it);
         dungeonIds.append(current);
         if (it++ != slices.begin() && previous != current) {
-          if (current < previous) swap(previous, current);
+          if (current < previous) std::swap(previous, current);
           for (DungeonId id = previous + 1; id != current; ++id)
             dungeonIds.append(id);
         }
         previous = current;
       }
     }
-    size_t changed = 0;
+    std::size_t changed = 0;
     if (!m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const&) {
        changed = world->setTileProtection(dungeonIds, isProtected);
       })) {
@@ -549,12 +548,12 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
   try {
     String kind = arguments.at(0);
     Json parameters = JsonObject();
-    uint64_t amount = 1;
+    std::uint64_t amount = 1;
     Maybe<float> level;
-    Maybe<uint64_t> seed;
+    Maybe<std::uint64_t> seed;
 
     if (arguments.size() >= 2)
-      amount = lexicalCast<uint64_t>(arguments.at(1));
+      amount = lexicalCast<std::uint64_t>(arguments.at(1));
 
     if (arguments.size() >= 3)
       parameters = Json::parse(arguments.at(2));
@@ -563,7 +562,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
       level = lexicalCast<float>(arguments.at(3));
 
     if (arguments.size() >= 5)
-      seed = lexicalCast<uint64_t>(arguments.at(4));
+      seed = lexicalCast<std::uint64_t>(arguments.at(4));
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto itemDatabase = Root::singleton().itemDatabase();
@@ -665,7 +664,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
   try {
     auto npcDatabase = Root::singleton().npcDatabase();
     float npcLevel = 1;
-    uint64_t seed = Random::randu64();
+    std::uint64_t seed = Random::randu64();
     Json overrides;
 
     if (arguments.size() < 2)
@@ -674,7 +673,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
     if (arguments.size() >= 3)
       npcLevel = lexicalCast<float>(arguments.at(2));
     if (arguments.size() >= 4)
-      seed = lexicalCast<uint64_t>(arguments.at(3));
+      seed = lexicalCast<std::uint64_t>(arguments.at(3));
     if (arguments.size() >= 5)
       overrides = Json::parse(arguments.at(4)).toObject();
 
@@ -841,7 +840,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
   else
     reason = arguments[1];
 
-  pair<bool, bool> type = {true, true};
+  std::pair<bool, bool> type = {true, true};
 
   if (arguments.size() >= 3) {
     if (arguments[2] == "ip") {
@@ -1160,16 +1159,16 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
   char const* const UUIDPrefix = "$$";
 
   if (player.beginsWith(UsernamePrefix)) {
-    return universe->findNick(player.substr(strlen(UsernamePrefix)));
+    return universe->findNick(player.substr(std::strlen(UsernamePrefix)));
   } else if (player.beginsWith(UUIDPrefix)) {
     try {
-      auto uuidString = player.substr(strlen(UUIDPrefix));
+      auto uuidString = player.substr(std::strlen(UUIDPrefix));
       return universe->clientForUuid(Uuid(uuidString));
     } catch (UuidException const&) {
       // pass to base case
     }
   } else if (player.beginsWith(CidPrefix)) {
-    auto cidString = player.substr(strlen(CidPrefix));
+    auto cidString = player.substr(std::strlen(CidPrefix));
     auto cid = maybeLexicalCast<ConnectionId>(cidString).value(ServerConnectionId);
     if (universe->isConnectedClient(cid))
       return cid;
@@ -1285,7 +1284,7 @@ Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String con
 LuaCallbacks CommandProcessor::makeCommandCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallbackWithSignature<Maybe<String>, ConnectionId, String>(
-      "adminCheck", bind(&CommandProcessor::adminCheck, this, _1, _2));
+      "adminCheck", std::bind(&CommandProcessor::adminCheck, this, std::placeholders::_1, std::placeholders::_2));
   return callbacks;
 }
 

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.bi_map;
@@ -18,7 +18,9 @@ GuiDirection otherDirection(GuiDirection direction) {
     case GuiDirection::Vertical:
       return GuiDirection::Horizontal;
     default:
-      starAssert(false);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((false));
+      }
       return (GuiDirection)-1;
   }
 }

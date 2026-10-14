@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -25,14 +25,56 @@ class Image;
 struct Drawable;
 struct TextStyle;
 struct TextPositioning;
-enum class FontMode : uint8_t;
-STAR_CLASS(ApplicationController);
-STAR_CLASS(Renderer);
-STAR_CLASS(Mixer);
-STAR_CLASS(TextPainter);
-STAR_CLASS(AssetTextureGroup);
-STAR_CLASS(DrawablePainter);
-STAR_CLASS(AudioInstance);
+enum class FontMode : std::uint8_t;
+class ApplicationController;
+using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
+using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
+using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
+using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
+using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
+using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
+class Renderer;
+using RendererPtr = std::shared_ptr<Renderer>;
+using RendererConstPtr = std::shared_ptr<Renderer const>;
+using RendererWeakPtr = std::weak_ptr<Renderer>;
+using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
+using RendererUPtr = std::unique_ptr<Renderer>;
+using RendererConstUPtr = std::unique_ptr<Renderer const>;
+class Mixer;
+using MixerPtr = std::shared_ptr<Mixer>;
+using MixerConstPtr = std::shared_ptr<Mixer const>;
+using MixerWeakPtr = std::weak_ptr<Mixer>;
+using MixerConstWeakPtr = std::weak_ptr<Mixer const>;
+using MixerUPtr = std::unique_ptr<Mixer>;
+using MixerConstUPtr = std::unique_ptr<Mixer const>;
+class TextPainter;
+using TextPainterPtr = std::shared_ptr<TextPainter>;
+using TextPainterConstPtr = std::shared_ptr<TextPainter const>;
+using TextPainterWeakPtr = std::weak_ptr<TextPainter>;
+using TextPainterConstWeakPtr = std::weak_ptr<TextPainter const>;
+using TextPainterUPtr = std::unique_ptr<TextPainter>;
+using TextPainterConstUPtr = std::unique_ptr<TextPainter const>;
+class AssetTextureGroup;
+using AssetTextureGroupPtr = std::shared_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstPtr = std::shared_ptr<AssetTextureGroup const>;
+using AssetTextureGroupWeakPtr = std::weak_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstWeakPtr = std::weak_ptr<AssetTextureGroup const>;
+using AssetTextureGroupUPtr = std::unique_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstUPtr = std::unique_ptr<AssetTextureGroup const>;
+class DrawablePainter;
+using DrawablePainterPtr = std::shared_ptr<DrawablePainter>;
+using DrawablePainterConstPtr = std::shared_ptr<DrawablePainter const>;
+using DrawablePainterWeakPtr = std::weak_ptr<DrawablePainter>;
+using DrawablePainterConstWeakPtr = std::weak_ptr<DrawablePainter const>;
+using DrawablePainterUPtr = std::unique_ptr<DrawablePainter>;
+using DrawablePainterConstUPtr = std::unique_ptr<DrawablePainter const>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
 }
 
 import star.gui_types;
@@ -103,14 +145,14 @@ public:
   void drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
   void drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth = 1);
 
-  void drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  void drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
 
   void drawInterfaceDrawable(Drawable drawable, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));
 
   void drawInterfaceLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth = 1);
   void drawInterfacePolyLines(PolyF poly, Vec4B const& color, float lineWidth = 1);
 
-  void drawInterfaceTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  void drawInterfaceTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
 
   void drawInterfaceQuad(RectF const& screenCoords, Vec4B const& color = Vec4B::filled(255));
   void drawInterfaceQuad(AssetPath const& texName, Vec2F const& screenPos, Vec4B const& color = Vec4B::filled(255));

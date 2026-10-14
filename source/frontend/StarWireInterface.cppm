@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -42,10 +42,34 @@ import star.wiring;
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(WorldPainter);
-STAR_CLASS(Player);
-STAR_CLASS(WirePane);
+class WorldClient;
+using WorldClientPtr = std::shared_ptr<WorldClient>;
+using WorldClientConstPtr = std::shared_ptr<WorldClient const>;
+using WorldClientWeakPtr = std::weak_ptr<WorldClient>;
+using WorldClientConstWeakPtr = std::weak_ptr<WorldClient const>;
+using WorldClientUPtr = std::unique_ptr<WorldClient>;
+using WorldClientConstUPtr = std::unique_ptr<WorldClient const>;
+class WorldPainter;
+using WorldPainterPtr = std::shared_ptr<WorldPainter>;
+using WorldPainterConstPtr = std::shared_ptr<WorldPainter const>;
+using WorldPainterWeakPtr = std::weak_ptr<WorldPainter>;
+using WorldPainterConstWeakPtr = std::weak_ptr<WorldPainter const>;
+using WorldPainterUPtr = std::unique_ptr<WorldPainter>;
+using WorldPainterConstUPtr = std::unique_ptr<WorldPainter const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class WirePane;
+using WirePanePtr = std::shared_ptr<WirePane>;
+using WirePaneConstPtr = std::shared_ptr<WirePane const>;
+using WirePaneWeakPtr = std::weak_ptr<WirePane>;
+using WirePaneConstWeakPtr = std::weak_ptr<WirePane const>;
+using WirePaneUPtr = std::unique_ptr<WirePane>;
+using WirePaneConstUPtr = std::unique_ptr<WirePane const>;
 
 class WirePane : public Pane, public WireConnector {
 public:

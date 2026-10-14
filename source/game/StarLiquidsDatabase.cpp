@@ -24,7 +24,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -82,7 +82,7 @@ LiquidsDatabase::LiquidsDatabase() {
       if (id != (LiquidId)id)
         throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, (LiquidId)id));
 
-      auto entry = make_shared<LiquidSettings>();
+      auto entry = std::make_shared<LiquidSettings>();
       entry->id = (LiquidId)id;
       entry->name = liquidConfig.getString("name");
       entry->path = file;
@@ -138,7 +138,7 @@ StringList LiquidsDatabase::liquidNames() const {
 }
 
 List<LiquidSettingsConstPtr> LiquidsDatabase::allLiquidSettings() const {
-  return filtered<List<LiquidSettingsConstPtr>>(m_settings, mem_fn(&LiquidSettingsConstPtr::operator bool));
+  return filtered<List<LiquidSettingsConstPtr>>(m_settings, std::mem_fn(&LiquidSettingsConstPtr::operator bool));
 }
 
 LiquidId LiquidsDatabase::liquidId(String const& str) const {

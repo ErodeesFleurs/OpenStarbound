@@ -1,14 +1,26 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
 
 namespace Star {
 
-STAR_STRUCT(TerrainSelector);
-STAR_CLASS(TerrainDatabase);
+struct TerrainSelector;
+using TerrainSelectorPtr = std::shared_ptr<TerrainSelector>;
+using TerrainSelectorConstPtr = std::shared_ptr<const TerrainSelector>;
+using TerrainSelectorWeakPtr = std::weak_ptr<TerrainSelector>;
+using TerrainSelectorConstWeakPtr = std::weak_ptr<const TerrainSelector>;
+using TerrainSelectorUPtr = std::unique_ptr<TerrainSelector>;
+using TerrainSelectorConstUPtr = std::unique_ptr<const TerrainSelector>;
+class TerrainDatabase;
+using TerrainDatabasePtr = std::shared_ptr<TerrainDatabase>;
+using TerrainDatabaseConstPtr = std::shared_ptr<const TerrainDatabase>;
+using TerrainDatabaseWeakPtr = std::weak_ptr<TerrainDatabase>;
+using TerrainDatabaseConstWeakPtr = std::weak_ptr<const TerrainDatabase>;
+using TerrainDatabaseUPtr = std::unique_ptr<TerrainDatabase>;
+using TerrainDatabaseConstUPtr = std::unique_ptr<const TerrainDatabase>;
 
 struct TerrainExceptionTag {
   static constexpr char const* name() { return "TerrainException"; }
@@ -21,12 +33,12 @@ struct TerrainSelectorParameters {
 
   Json toJson() const;
 
-  TerrainSelectorParameters withSeed(uint64_t seed) const;
+  TerrainSelectorParameters withSeed(std::uint64_t seed) const;
   TerrainSelectorParameters withCommonality(float commonality) const;
 
   unsigned worldWidth;
   float baseHeight;
-  uint64_t seed;
+  std::uint64_t seed;
   float commonality;
 };
 

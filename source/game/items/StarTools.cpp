@@ -14,7 +14,8 @@ import star.vector;
 import star.rpc_promise;
 import star.spline;
 import star.a_star;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.audio;
 import star.thread;
@@ -79,8 +80,20 @@ import star.entity_rendering_types;
 import star.animation;
 import star.particle;
 import star.entity_rendering;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.asset_source;
@@ -155,7 +168,7 @@ MiningTool::MiningTool(Json const& config, String const& directory, Json const& 
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
   m_frameTiming = 0;
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (std::size_t i = 0; i < (std::size_t)m_frames; i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
@@ -170,7 +183,7 @@ MiningTool::MiningTool(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr MiningTool::clone() const {
-  return make_shared<MiningTool>(*this);
+  return std::make_shared<MiningTool>(*this);
 }
 
 List<Drawable> MiningTool::drawables() const {
@@ -290,7 +303,7 @@ HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (std::size_t i = 0; i < (std::size_t)m_frames; i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
@@ -302,7 +315,7 @@ HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json
 }
 
 ItemPtr HarvestingTool::clone() const {
-  return make_shared<HarvestingTool>(*this);
+  return std::make_shared<HarvestingTool>(*this);
 }
 
 List<Drawable> HarvestingTool::drawables() const {
@@ -365,7 +378,7 @@ WireTool::WireTool(Json const& config, String const& directory, Json const& para
 }
 
 ItemPtr WireTool::clone() const {
-  return make_shared<WireTool>(*this);
+  return std::make_shared<WireTool>(*this);
 }
 
 void WireTool::init(ToolUserEntity* owner, ToolHand hand) {
@@ -454,7 +467,7 @@ BeamMiningTool::BeamMiningTool(Json const& config, String const& directory, Json
 }
 
 ItemPtr BeamMiningTool::clone() const {
-  return make_shared<BeamMiningTool>(*this);
+  return std::make_shared<BeamMiningTool>(*this);
 }
 
 List<Drawable> BeamMiningTool::drawables() const {
@@ -624,7 +637,7 @@ PaintingBeamTool::PaintingBeamTool(Json const& config, String const& directory, 
 }
 
 ItemPtr PaintingBeamTool::clone() const {
-  return make_shared<PaintingBeamTool>(*this);
+  return std::make_shared<PaintingBeamTool>(*this);
 }
 
 List<Drawable> PaintingBeamTool::drawables() const {
@@ -633,7 +646,7 @@ List<Drawable> PaintingBeamTool::drawables() const {
     if (entry.isImage()) {
       auto& image = entry.imagePart().image;
       auto& color = m_colorKeys[m_colorIndex];
-      if (size_t directives_start = color.find('?'); directives_start != NPos) {
+      if (std::size_t directives_start = color.find('?'); directives_start != NPos) {
         auto index      = color.substr(0, directives_start);
         auto directives = color.substr(directives_start);
 
@@ -648,7 +661,7 @@ List<Drawable> PaintingBeamTool::drawables() const {
 }
 
 void PaintingBeamTool::setEnd(EndType type) {
-  _unused(type);
+  ((void)(type));
   m_endType = EndType::Object;
 }
 

@@ -1,14 +1,16 @@
 #ifdef STAR_SYSTEM_WINDOWS
-#define NOMINMAX
 #include <windows.h>
 #include <stdio.h>
 #endif
 
+#include "imgui.h"
+#include "imgui_freetype.h"
+import std;
+import star.memory;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.thread;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.file;
@@ -58,7 +60,6 @@ import star.weighted_pool;
 import star.image;
 import star.math_common;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -195,8 +196,6 @@ import star.registered_pane_manager;
 
 import star.main_interface_types;
 
-#include "imgui.h"
-#include "imgui_freetype.h"
 
 import star.curve25519;
 import star.camera_lua_bindings;
@@ -419,13 +418,13 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   loadMods();
   
   AudioFormat audioFormat = appController->enableAudio();
-  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
+  m_mainMixer = std::make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
   
-  m_worldPainter = make_shared<WorldPainter>();
-  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
-  m_input = make_shared<Input>();
-  m_voice = make_shared<Voice>(appController);  
+  m_worldPainter = std::make_shared<WorldPainter>();
+  m_guiContext = std::make_shared<GuiContext>(m_mainMixer->mixer(), appController);
+  m_input = std::make_shared<Input>();
+  m_voice = std::make_shared<Voice>(appController);  
 
   auto assets = m_root->assets();
 
@@ -458,7 +457,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 void ClientApplication::renderInit(RendererPtr renderer) {
   Application::renderInit(renderer);
   renderReload();
-  m_root->registerReloadListener(m_reloadListener = make_shared<CallbackListener>([this]() { renderReload(); }));
+  m_root->registerReloadListener(m_reloadListener = std::make_shared<CallbackListener>([this]() { renderReload(); }));
 
   if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
     renderer->setSizeLimitEnabled(true);
@@ -467,8 +466,8 @@ void ClientApplication::renderInit(RendererPtr renderer) {
 
   m_guiContext->renderInit(renderer);
 
-  m_cinematicOverlay = make_shared<Cinematic>();
-  m_errorScreen = make_shared<ErrorScreen>();
+  m_cinematicOverlay = std::make_shared<Cinematic>();
+  m_errorScreen = std::make_shared<ErrorScreen>();
 
   if (m_titleScreen)
     m_titleScreen->renderInit(renderer);
@@ -677,9 +676,9 @@ void ClientApplication::render() {
     m_errorScreen->render();
 }
 
-void ClientApplication::getAudioData(int16_t* sampleData, size_t frameCount) {
+void ClientApplication::getAudioData(std::int16_t* sampleData, std::size_t frameCount) {
   if (m_mainMixer) {
-    m_mainMixer->read(sampleData, frameCount, [&](int16_t* buffer, size_t frames, unsigned channels) {
+    m_mainMixer->read(sampleData, frameCount, [&](std::int16_t* buffer, std::size_t frames, unsigned channels) {
       if (m_voice)
         m_voice->mix(buffer, frames, channels);
     });
@@ -847,9 +846,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_cinematicOverlay->stop();
 
-    m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
-    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
-    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
+    m_playerStorage = std::make_shared<PlayerStorage>(m_root->toStoragePath("player"));
+    m_statistics = std::make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
+    m_universeClient = std::make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->toStoragePath("universeclient"));
 
     m_universeClient->setLuaCallbacks("universe", LuaBindings::makeUniverseClientCallbacks(m_universeClient.get()));
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
@@ -863,7 +862,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
-    auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
+    auto heldScriptPanes = std::make_shared<List<MainInterface::ScriptPaneInfo>>();
 
     m_universeClient->playerReloadPreCallback() = [&, heldScriptPanes](bool resetInterface) {
       if (!resetInterface)
@@ -884,7 +883,7 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_mainMixer->setUniverseClient(m_universeClient);
-    m_titleScreen = make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
+    m_titleScreen = std::make_shared<TitleScreen>(m_playerStorage, m_mainMixer->mixer(), m_universeClient);
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
@@ -926,7 +925,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_mainMixer->setUniverseClient(m_universeClient);
     m_universeClient->setMainPlayer(m_player);
     m_cinematicOverlay->setPlayer(m_player);
-    m_timeSinceJoin = (int64_t)Time::millisecondsSinceEpoch() / 1000;
+    m_timeSinceJoin = (std::int64_t)Time::millisecondsSinceEpoch() / 1000;
 
     auto assets = m_root->assets();
     String loadingCinematic = assets->json("/client.config:loadingCinematic").toString();
@@ -984,7 +983,7 @@ void ClientApplication::changeState(MainAppState newState) {
     } else {
       if (!m_universeServer) {
         try {
-          m_universeServer = make_shared<UniverseServer>(m_root->toStoragePath("universe"),true);
+          m_universeServer = std::make_shared<UniverseServer>(m_root->toStoragePath("universe"),true);
           m_universeServer->start();
         } catch (StarException const& e) {
           setError("Unable to start local server", e);
@@ -1001,7 +1000,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_titleScreen->stopMusic();
 
     m_universeClient->restartLua();
-    m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
+    m_mainInterface = std::make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get()));
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));
@@ -1202,7 +1201,7 @@ void ClientApplication::updateTitle(float dt) {
       auto addressString = m_titleScreen->multiPlayerAddress().trim();
       auto portString = m_titleScreen->multiPlayerPort().trim();
       portString = portString.empty() ? toString(m_root->configuration()->get("gameServerPort").toUInt()) : portString;
-      if (auto port = maybeLexicalCast<uint16_t>(portString)) {
+      if (auto port = maybeLexicalCast<std::uint16_t>(portString)) {
         auto address = HostAddressWithPort::lookup(addressString, *port);
         if (address.isLeft()) {
           setError(address.left());
@@ -1241,7 +1240,7 @@ void ClientApplication::updateRunning(float dt) {
     auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
-    Maybe<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
+    Maybe<std::pair<std::uint16_t, std::uint16_t>> party = std::make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
 
     if (m_state == MainAppState::MultiPlayer) {
       if (p2pNetworkingService) {
@@ -1281,9 +1280,9 @@ void ClientApplication::updateRunning(float dt) {
         if (tag == "playerMaxBreath")
           return toString(m_player->maxBreath());
         if (tag == "playerXPos")
-          return toString(round(m_player->position().x()));
+          return toString(std::round(m_player->position().x()));
         if (tag == "playerYPos")
-          return toString(round(m_player->position().y()));
+          return toString(std::round(m_player->position().y()));
         if (tag == "worldName") {
           if (m_universeClient->clientContext()->playerWorldId().is<ClientShipWorldId>())
             return "Player Ship";
@@ -1377,16 +1376,16 @@ void ClientApplication::updateRunning(float dt) {
       bool goingIn = m_cameraZoomDirection == 1;
       auto config = m_root->configuration();
       float curZoom = config->get("zoomLevel").toFloat(),
-            newZoom = max(1.f, curZoom * powf(1.f + (float)m_cameraZoomDirection * 0.5f, min(1.f, dt * 5.f))),
-            intZoom = max(1.f, (goingIn ? floor(curZoom) : ceil(curZoom)) + m_cameraZoomDirection);
+            newZoom = std::max(1.f, curZoom * std::powf(1.f + (float)m_cameraZoomDirection * 0.5f, std::min(1.f, dt * 5.f))),
+            intZoom = std::max(1.f, (goingIn ? std::floor(curZoom) : std::ceil(curZoom)) + m_cameraZoomDirection);
       bool pastInt = goingIn ? newZoom + threshold > intZoom
                              : newZoom - threshold < intZoom;
       if (pastInt) {
-        float intNewZoom = goingIn ? ceil(newZoom) : floor(newZoom);
-        newZoom = lerp(clamp(abs(intZoom - newZoom) - 1.f, 0.f, 1.f), intZoom, intNewZoom);
+        float intNewZoom = goingIn ? std::ceil(newZoom) : std::floor(newZoom);
+        newZoom = lerp(clamp(std::abs(intZoom - newZoom) - 1.f, 0.f, 1.f), intZoom, intNewZoom);
         m_cameraZoomDirection = 0;
       }
-      config->set("zoomLevel", min(1000000.f, newZoom));
+      config->set("zoomLevel", std::min(1000000.f, newZoom));
     }
 
     if (m_controllerInput && m_controllerLeftStick.magnitudeSquared() > 0.01f)
@@ -1448,7 +1447,7 @@ void ClientApplication::updateRunning(float dt) {
           auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
           std::string_view signatureView((char*)signature.data(), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
-          auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
+          auto broadcast = strf(std::string("data\0voice\0{}{}", sizeof("data\0voice\0{}{}") - 1), signatureView, audioDataView);
           worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
@@ -1616,15 +1615,15 @@ int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
   Star::StringList args;
   for (int i = 0; i < nArgs; ++i) args.append(Star::String(argsList[i]));
   if (IsDebuggerPresent() && AllocConsole()) {
-    freopen("CONOUT$", "w", stdout);
-    freopen("CONOUT$", "w", stderr);
+    std::freopen("CONOUT$", "w", stdout);
+    std::freopen("CONOUT$", "w", stderr);
   }
   unsigned long exceptionStackSize = 131072;
   SetThreadStackGuarantee(&exceptionStackSize);
-  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), args);
+  return Star::runMainApplication(std::make_unique<Star::ClientApplication>(), args);
 }
 #else
 int main(int argc, char** argv) {
-  return Star::runMainApplication(Star::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
+  return Star::runMainApplication(std::make_unique<Star::ClientApplication>(), Star::StringList(argc, argv));
 }
 #endif

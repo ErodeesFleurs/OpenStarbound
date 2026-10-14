@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.variant;
 import star.maybe;
 
@@ -12,7 +12,7 @@ using namespace Star;
 
 TEST(VariantTest, All) {
   struct VariantTester {
-    shared_ptr<int> intptr;
+    std::shared_ptr<int> intptr;
   };
 
   MVariant<int, double, char, VariantTester> a, b;
@@ -26,7 +26,7 @@ TEST(VariantTest, All) {
   a = b;
   EXPECT_TRUE(a.empty());
 
-  shared_ptr<int> intptr = make_shared<int>(42);
+  std::shared_ptr<int> intptr = std::make_shared<int>(42);
   a = VariantTester{intptr};
   b = VariantTester{intptr};
   a = b;
@@ -51,14 +51,14 @@ TEST(VariantTest, All) {
 
 TEST(MaybeTest, All) {
   struct MaybeTester {
-    shared_ptr<int> intptr;
+    std::shared_ptr<int> intptr;
   };
 
   Maybe<MaybeTester> a, b;
 
   EXPECT_FALSE(a.isValid());
 
-  shared_ptr<int> intptr = make_shared<int>(42);
+  std::shared_ptr<int> intptr = std::make_shared<int>(42);
   a = MaybeTester{intptr};
   b = MaybeTester{intptr};
   EXPECT_TRUE(a.isValid());

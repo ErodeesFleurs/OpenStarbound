@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -35,14 +36,12 @@ import star.weighted_pool;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include "StarConfig.hpp"
 import star.format;
 import star.id_map;
 import star.worker_pool;
@@ -303,7 +302,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
   initConfig();
   syncGui();
   
-  m_shadersMenu = make_shared<ShadersMenu>(assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
+  m_shadersMenu = std::make_shared<ShadersMenu>(assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
 }
 
 void GraphicsMenu::show() {
@@ -363,7 +362,7 @@ void GraphicsMenu::syncGui() {
       return a[0] * a[1] < b[0] * b[1]; // sort by number of pixels
     });
   if (resIt != m_resList.end()) {
-    size_t resIndex = resIt - m_resList.begin();
+    std::size_t resIndex = resIt - m_resList.begin();
     resIndex = std::min(resIndex, m_resList.size() - 1);
     resSlider->setVal(resIndex, false);
   } else {
@@ -375,7 +374,7 @@ void GraphicsMenu::syncGui() {
   auto interfaceScale = m_localChanges.get("interfaceScale").optFloat().value();
   auto interfaceScaleIt = std::lower_bound(m_interfaceScaleList.begin(), m_interfaceScaleList.end(), interfaceScale);
   if (interfaceScaleIt != m_interfaceScaleList.end()) {
-    size_t scaleIndex = interfaceScaleIt - m_interfaceScaleList.begin();
+    std::size_t scaleIndex = interfaceScaleIt - m_interfaceScaleList.begin();
     interfaceScaleSlider->setVal(std::min(scaleIndex, m_interfaceScaleList.size() - 1), false);
   } else {
     interfaceScaleSlider->setVal(m_interfaceScaleList.size() - 1);
@@ -386,7 +385,7 @@ void GraphicsMenu::syncGui() {
   auto zoomLevel = m_localChanges.get("zoomLevel").toFloat();
   auto zoomIt = std::lower_bound(m_zoomList.begin(), m_zoomList.end(), zoomLevel);
   if (zoomIt != m_zoomList.end()) {
-    size_t zoomIndex = zoomIt - m_zoomList.begin();
+    std::size_t zoomIndex = zoomIt - m_zoomList.begin();
     zoomSlider->setVal(std::min(zoomIndex, m_zoomList.size() - 1), false);
   } else {
     zoomSlider->setVal(m_zoomList.size() - 1);
@@ -397,7 +396,7 @@ void GraphicsMenu::syncGui() {
   auto cameraSpeedFactor = m_localChanges.get("cameraSpeedFactor").toFloat();
   auto speedIt = std::lower_bound(m_cameraSpeedList.begin(), m_cameraSpeedList.end(), cameraSpeedFactor);
   if (speedIt != m_cameraSpeedList.end()) {
-    size_t speedIndex = speedIt - m_cameraSpeedList.begin();
+    std::size_t speedIndex = speedIt - m_cameraSpeedList.begin();
     cameraSpeedSlider->setVal(std::min(speedIndex, m_cameraSpeedList.size() - 1), false);
   } else {
     cameraSpeedSlider->setVal(m_cameraSpeedList.size() - 1);

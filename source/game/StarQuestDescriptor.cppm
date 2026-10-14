@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.variant;
@@ -77,7 +77,7 @@ struct QuestNpcType {
   String species;
   String typeName;
   JsonObject parameters;
-  Maybe<uint64_t> seed;
+  Maybe<std::uint64_t> seed;
 };
 
 struct QuestCoordinate {
@@ -126,7 +126,7 @@ struct QuestDescriptor {
   String questId;
   String templateId;
   StringMap<QuestParam> parameters;
-  uint64_t seed;
+  std::uint64_t seed;
 };
 
 struct QuestArcDescriptor {

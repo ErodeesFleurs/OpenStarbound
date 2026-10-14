@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.id_map;
@@ -37,13 +37,19 @@ import star.tile_entity;
 
 namespace Star {
 
-STAR_CLASS(WireEntity);
+class WireEntity;
+using WireEntityPtr = std::shared_ptr<WireEntity>;
+using WireEntityConstPtr = std::shared_ptr<const WireEntity>;
+using WireEntityWeakPtr = std::weak_ptr<WireEntity>;
+using WireEntityConstWeakPtr = std::weak_ptr<const WireEntity>;
+using WireEntityUPtr = std::unique_ptr<WireEntity>;
+using WireEntityConstUPtr = std::unique_ptr<const WireEntity>;
 
 class WireEntity : public virtual TileEntity {
 public:
   virtual ~WireEntity() {}
 
-  virtual size_t nodeCount(WireDirection direction) const = 0;
+  virtual std::size_t nodeCount(WireDirection direction) const = 0;
   virtual Vec2I nodePosition(WireNode wireNode) const = 0;
   virtual List<WireConnection> connectionsForNode(WireNode wireNode) const = 0;
   virtual bool nodeState(WireNode wireNode) const = 0;

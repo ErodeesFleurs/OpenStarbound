@@ -20,7 +20,6 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -144,7 +143,13 @@ import star.udp;
 
 export namespace Star {
 
-STAR_CLASS(ServerQueryThread);
+class ServerQueryThread;
+using ServerQueryThreadPtr = std::shared_ptr<ServerQueryThread>;
+using ServerQueryThreadConstPtr = std::shared_ptr<const ServerQueryThread>;
+using ServerQueryThreadWeakPtr = std::weak_ptr<ServerQueryThread>;
+using ServerQueryThreadConstWeakPtr = std::weak_ptr<const ServerQueryThread>;
+using ServerQueryThreadUPtr = std::unique_ptr<ServerQueryThread>;
+using ServerQueryThreadConstUPtr = std::unique_ptr<const ServerQueryThread>;
 
 class ServerQueryThread : public Thread {
 public:
@@ -158,52 +163,52 @@ protected:
   virtual void run();
 
 private:
-  static const uint8_t A2A_PING_REQUEST = 0x69;
-  static const uint8_t A2A_PING_REPLY = 0x6a;
-  static const uint8_t A2S_CHALLENGE_REQUEST = 0x57;
-  static const uint8_t A2S_CHALLENGE_RESPONSE = 0x41;
-  static const uint8_t A2S_INFO_REQUEST = 0x54;
-  static const uint8_t A2S_INFO_REPLY = 0x49;
-  static const uint8_t A2S_PLAYER_REQUEST = 0x55;
-  static const uint8_t A2S_PLAYER_REPLY = 0x44;
-  static const uint8_t A2S_RULES_REQUEST = 0x56;
-  static const uint8_t A2S_RULES_REPLY = 0x45;
-  static const uint8_t A2S_VERSION = 0x07;
-  static const uint8_t A2S_STR_TERM = 0x00;
-  static const uint8_t A2S_EDF_GID = 0x01;
-  static const uint8_t A2S_EDF_SID = 0x10;
-  static const uint8_t A2S_EDF_TAGS = 0x20;
-  static const uint8_t A2S_EDF_STV = 0x40;
-  static const uint8_t A2S_EDF_PORT = 0x80;
-  static const uint8_t A2S_ENV_WINDOWS = 'w';
-  static const uint8_t A2S_ENV_LINUX = 'l';
-  static const uint8_t A2S_ENV_MAC = 'm';
-  static const uint8_t A2S_TYPE_DEDICATED = 'd';
-  static const uint8_t A2S_TYPE_LISTEN = 'l';
-  static const uint8_t A2S_TYPE_TV = 'p';
-  static const uint8_t A2S_VAC_OFF = 0x00;
-  static const uint8_t A2S_VAC_ON = 0x01;
+  static const std::uint8_t A2A_PING_REQUEST = 0x69;
+  static const std::uint8_t A2A_PING_REPLY = 0x6a;
+  static const std::uint8_t A2S_CHALLENGE_REQUEST = 0x57;
+  static const std::uint8_t A2S_CHALLENGE_RESPONSE = 0x41;
+  static const std::uint8_t A2S_INFO_REQUEST = 0x54;
+  static const std::uint8_t A2S_INFO_REPLY = 0x49;
+  static const std::uint8_t A2S_PLAYER_REQUEST = 0x55;
+  static const std::uint8_t A2S_PLAYER_REPLY = 0x44;
+  static const std::uint8_t A2S_RULES_REQUEST = 0x56;
+  static const std::uint8_t A2S_RULES_REPLY = 0x45;
+  static const std::uint8_t A2S_VERSION = 0x07;
+  static const std::uint8_t A2S_STR_TERM = 0x00;
+  static const std::uint8_t A2S_EDF_GID = 0x01;
+  static const std::uint8_t A2S_EDF_SID = 0x10;
+  static const std::uint8_t A2S_EDF_TAGS = 0x20;
+  static const std::uint8_t A2S_EDF_STV = 0x40;
+  static const std::uint8_t A2S_EDF_PORT = 0x80;
+  static const std::uint8_t A2S_ENV_WINDOWS = 'w';
+  static const std::uint8_t A2S_ENV_LINUX = 'l';
+  static const std::uint8_t A2S_ENV_MAC = 'm';
+  static const std::uint8_t A2S_TYPE_DEDICATED = 'd';
+  static const std::uint8_t A2S_TYPE_LISTEN = 'l';
+  static const std::uint8_t A2S_TYPE_TV = 'p';
+  static const std::uint8_t A2S_VAC_OFF = 0x00;
+  static const std::uint8_t A2S_VAC_ON = 0x01;
   static constexpr const char* A2S_INFO_REQUEST_STRING = "Source Engine Query";
-  static const uint16_t A2S_APPID = (uint16_t)0xfffe;
-  static const uint16_t A2S_PACKET_SIZE = (uint16_t)0x4e0;
-  static const uint32_t A2S_HEAD_INT = 0xffffffff;
+  static const std::uint16_t A2S_APPID = (std::uint16_t)0xfffe;
+  static const std::uint16_t A2S_PACKET_SIZE = (std::uint16_t)0x4e0;
+  static const std::uint32_t A2S_HEAD_INT = 0xffffffff;
   static constexpr const char* GAME_DIR = "starbound";
   static constexpr const char* GAME_DESC = "Starbound";
   static constexpr const char* GAME_TYPE = "SMP";
-  static const int32_t challengeCheckInterval = 30000;
-  static const int32_t responseCacheTime = 5000;
+  static const std::int32_t challengeCheckInterval = 30000;
+  static const std::int32_t responseCacheTime = 5000;
 
   void sendTo(HostAddressWithPort const& address, DataStreamBuffer* ds);
-  bool processPacket(HostAddressWithPort const& address, char const* data, size_t length);
+  bool processPacket(HostAddressWithPort const& address, char const* data, std::size_t length);
   void buildPlayerResponse();
   void buildRuleResponse();
-  bool validChallenge(HostAddressWithPort const& address, char const* data, size_t length);
+  bool validChallenge(HostAddressWithPort const& address, char const* data, std::size_t length);
   void sendChallenge(HostAddressWithPort const& address);
   void pruneChallenges();
-  bool challengeRequest(HostAddressWithPort const& address, char const* data, size_t length);
+  bool challengeRequest(HostAddressWithPort const& address, char const* data, std::size_t length);
 
   // Server API
-  uint8_t serverPlayerCount();
+  std::uint8_t serverPlayerCount();
   bool serverPassworded();
   const char* serverPlugins();
   String serverWorldNames();
@@ -218,22 +223,22 @@ private:
   class RequestChallenge {
   public:
     RequestChallenge();
-    bool before(uint64_t time);
-    int32_t getChallenge();
+    bool before(std::uint64_t time);
+    std::int32_t getChallenge();
 
   private:
-    uint64_t m_time;
-    int32_t m_challenge;
+    std::uint64_t m_time;
+    std::int32_t m_challenge;
   };
 
-  uint16_t m_serverPort;
-  uint8_t m_maxPlayers;
+  std::uint16_t m_serverPort;
+  std::uint8_t m_maxPlayers;
   String m_serverName;
-  HashMap<HostAddress, shared_ptr<RequestChallenge>> m_validChallenges;
-  int64_t m_lastChallengeCheck;
-  int64_t m_lastPlayersResponse;
-  int64_t m_lastRulesResponse;
-  int64_t m_lastActiveTime;
+  HashMap<HostAddress, std::shared_ptr<RequestChallenge>> m_validChallenges;
+  std::int64_t m_lastChallengeCheck;
+  std::int64_t m_lastPlayersResponse;
+  std::int64_t m_lastRulesResponse;
+  std::int64_t m_lastActiveTime;
 };
 
 }
@@ -291,7 +296,7 @@ void ServerQueryThread::sendTo(HostAddressWithPort const& address, DataStreamBuf
   m_queryServer.send(address, ds->ptr(), ds->size());
 }
 
-uint8_t ServerQueryThread::serverPlayerCount() {
+std::uint8_t ServerQueryThread::serverPlayerCount() {
   return m_universe->numberOfClients();
 }
 
@@ -313,8 +318,8 @@ const char* ServerQueryThread::serverPlugins() {
   return "none";
 }
 
-bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, size_t length) {
-  uint8_t* buf = (uint8_t*)data;
+bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char const* data, std::size_t length) {
+  std::uint8_t* buf = (std::uint8_t*)data;
   if (length < 5 || buf[0] != 0xff || buf[1] != 0xff || buf[2] != 0xff || buf[3] != 0xff) {
     // short packet or missing header
     return false;
@@ -339,7 +344,7 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       m_generalResponse.clear();
       m_generalResponse << A2S_HEAD_INT << A2S_INFO_REPLY << A2S_VERSION << m_serverName << serverWorldNames()
                         << GAME_DIR << GAME_DESC << A2S_APPID // Should be SteamAppId but this isn't a short :(
-                        << serverPlayerCount() << m_maxPlayers << (uint8_t)0x00 // bots
+                        << serverPlayerCount() << m_maxPlayers << (std::uint8_t)0x00 // bots
                         << A2S_TYPE_DEDICATED // dedicated
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
                         << A2S_ENV_WINDOWS // os
@@ -386,19 +391,19 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
 }
 
 void ServerQueryThread::buildPlayerResponse() {
-  int64_t now = Time::monotonicMilliseconds();
+  std::int64_t now = Time::monotonicMilliseconds();
   if (now < m_lastPlayersResponse + responseCacheTime) {
     return;
   }
 
   auto clientIds = m_universe->clientIdsAndCreationTime();
-  uint8_t cnt = (uint8_t)clientIds.count();
-  int32_t kills = 0; // Not currently supported
+  std::uint8_t cnt = (std::uint8_t)clientIds.count();
+  std::int32_t kills = 0; // Not currently supported
 
   m_playersResponse.clear();
   m_playersResponse << A2S_HEAD_INT << A2S_PLAYER_REPLY << cnt;
 
-  uint8_t i = 0;
+  std::uint8_t i = 0;
   for (auto& pair : clientIds) {
     auto timeConnected = float(now - pair.second) / 1000.f;
     m_playersResponse << i++ << m_universe->clientNick(pair.first) << kills << timeConnected;
@@ -408,12 +413,12 @@ void ServerQueryThread::buildPlayerResponse() {
 }
 
 void ServerQueryThread::buildRuleResponse() {
-  int64_t now = Time::monotonicMilliseconds();
+  std::int64_t now = Time::monotonicMilliseconds();
   if (now < m_lastRulesResponse + responseCacheTime) {
     return;
   }
 
-  uint16_t cnt = 1;
+  std::uint16_t cnt = 1;
   m_rulesResponse.clear();
   m_rulesResponse << A2S_HEAD_INT << A2S_RULES_REPLY << cnt << "plugins" << serverPlugins();
 
@@ -421,7 +426,7 @@ void ServerQueryThread::buildRuleResponse() {
 }
 
 void ServerQueryThread::sendChallenge(HostAddressWithPort const& address) {
-  auto challenge = make_shared<RequestChallenge>();
+  auto challenge = std::make_shared<RequestChallenge>();
 
   m_validChallenges[address.address()] = challenge;
   m_generalResponse.clear();
@@ -431,7 +436,7 @@ void ServerQueryThread::sendChallenge(HostAddressWithPort const& address) {
 }
 
 void ServerQueryThread::pruneChallenges() {
-  int64_t now = Time::monotonicMilliseconds();
+  std::int64_t now = Time::monotonicMilliseconds();
   if (now < m_lastChallengeCheck + challengeCheckInterval) {
     return;
   }
@@ -466,7 +471,7 @@ void ServerQueryThread::run() {
 ServerQueryThread::RequestChallenge::RequestChallenge()
   : m_time(Time::monotonicMilliseconds()), m_challenge(Random::randi32()) {}
 
-bool ServerQueryThread::RequestChallenge::before(uint64_t time) {
+bool ServerQueryThread::RequestChallenge::before(std::uint64_t time) {
   return m_time < time;
 }
 
@@ -474,7 +479,7 @@ int ServerQueryThread::RequestChallenge::getChallenge() {
   return m_challenge;
 }
 
-bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char const* data, size_t len) {
+bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char const* data, std::size_t len) {
   if (len != 9) {
     // too much or too little data
     return false;
@@ -485,9 +490,9 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
     return false;
   }
 
-  uint8_t const* b = (uint8_t const*)data;
-  int32_t challenge = ((int32_t)b[8] & 0xff) << 24 | ((int32_t)b[7] & 0xff) << 16 | ((int32_t)b[6] & 0xff) << 8
-      | ((int32_t)b[5] & 0xff);
+  std::uint8_t const* b = (std::uint8_t const*)data;
+  std::int32_t challenge = ((std::int32_t)b[8] & 0xff) << 24 | ((std::int32_t)b[7] & 0xff) << 16 | ((std::int32_t)b[6] & 0xff) << 8
+      | ((std::int32_t)b[5] & 0xff);
   // Note: No byte order swapping needed as protcol performs no conversion
   if (m_validChallenges.get(address.address())->getChallenge() != challenge) {
     // Challenges didnt match ignore
@@ -498,13 +503,13 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
   return true;
 }
 
-bool ServerQueryThread::challengeRequest(HostAddressWithPort const& address, char const* data, size_t len) {
+bool ServerQueryThread::challengeRequest(HostAddressWithPort const& address, char const* data, std::size_t len) {
   if (len != 9) {
     // too much or too little data
     return false;
   }
 
-  uint8_t const* buf = (uint8_t const*)data;
+  std::uint8_t const* buf = (std::uint8_t const*)data;
   if ((buf[5] == 0xff) && (buf[6] == 0xff) && (buf[7] == 0xff) && (buf[8] == 0xff)) {
     sendChallenge(address);
     return true;

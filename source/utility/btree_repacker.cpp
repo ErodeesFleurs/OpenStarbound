@@ -12,7 +12,7 @@ import star.string;
 import star.variant;
 import star.ordered_set;
 import star.option_parser;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.version_option_parser;

@@ -24,7 +24,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.random;
@@ -199,11 +199,11 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
   return createTreasure(treasurePool, level, Random::randu64());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed) const {
+List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed) const {
   return createTreasure(treasurePool, level, seed, StringSet());
 }
 
-List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const {
+List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const {
   if (!m_treasurePools.contains(treasurePool))
     throw TreasureException(strf("Unknown treasure pool '{}'", treasurePool));
 
@@ -262,7 +262,7 @@ List<ItemPtr> TreasureDatabase::fillWithTreasure(
 }
 
 List<ItemPtr> TreasureDatabase::fillWithTreasure(
-    ItemBagPtr const& itemBag, String const& treasurePool, float level, uint64_t seed) const {
+    ItemBagPtr const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const {
   List<ItemPtr> overflowItems;
   for (auto const& treasureItem : createTreasure(treasurePool, level, seed)) {
     if (auto overflow = itemBag->addItems(treasureItem))
@@ -276,7 +276,7 @@ ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String co
   return createTreasureChest(world, treasureChestSet, position, direction, Random::randu64());
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
+ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const {
   auto objectDatabase = Root::singleton().objectDatabase();
 
   if (!m_treasureChestSets.contains(treasureChestSet))

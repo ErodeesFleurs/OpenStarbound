@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+#include <png.h>
+import std;
 import star.maybe;
 import star.format;
 import star.io_device;
@@ -6,7 +7,6 @@ import star.vector;
 import star.image;
 import star.logging;
 
-#include <png.h>
 
 import star.memory;
 import star.math_common;
@@ -116,8 +116,8 @@ Image Image::readPng(IODevicePtr device) {
   Image image(img_width, img_height, channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
 
   std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[img_height]);
-  size_t stride = img_width * channels;
-  for (size_t i = 0; i < img_height; ++i)
+  std::size_t stride = img_width * channels;
+  for (std::size_t i = 0; i < img_height; ++i)
     row_ptrs[i] = (png_bytep)image.data() + (img_height - i - 1) * stride;
 
   png_read_image(png_ptr, row_ptrs.get());
@@ -126,7 +126,7 @@ Image Image::readPng(IODevicePtr device) {
   return image;
 }
 
-tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
+std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   png_byte header[8];
   device->readFull((char*)header, sizeof(header));
 
@@ -202,7 +202,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   Vec2U imageSize{img_width, img_height};
   PixelFormat pixelFormat = channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32;
 
-  return make_tuple(imageSize, pixelFormat);
+  return std::make_tuple(imageSize, pixelFormat);
 }
 
 Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {
@@ -237,7 +237,7 @@ Image::Image(Image&& image) : Image() {
 
 Image& Image::operator=(Image const& image) {
   reset(image.m_width, image.m_height, image.m_pixelFormat);
-  memcpy(data(), image.data(), m_width * m_height * bytesPerPixel());
+  std::memcpy(data(), image.data(), m_width * m_height * bytesPerPixel());
   return *this;
 }
 
@@ -262,24 +262,24 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
   if (m_width == width && m_height == height && m_pixelFormat == *pf)
     return;
 
-  size_t imageSize = width * height * Star::bytesPerPixel(*pf);
+  std::size_t imageSize = width * height * Star::bytesPerPixel(*pf);
   if (imageSize == 0) {
     if (m_data) {
       Star::free(m_data);
       m_data = nullptr;
     }
   } else {
-    uint8_t* newData = nullptr;
+    std::uint8_t* newData = nullptr;
     if (!m_data)
-      newData = (uint8_t*)Star::malloc(imageSize);
+      newData = (std::uint8_t*)Star::malloc(imageSize);
     else
-      newData = (uint8_t*)Star::realloc(m_data, imageSize);
+      newData = (std::uint8_t*)Star::realloc(m_data, imageSize);
 
     if (!newData)
       throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
 
     m_data = newData;
-    memset(m_data, 0, imageSize);
+    std::memset(m_data, 0, imageSize);
   }
 
   m_pixelFormat = *pf;
@@ -327,13 +327,13 @@ void Image::set(Vec2U const& pos, Vec4B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
     throw ImageException(strf("{} out of range in Image::set", pos));
   } else if (bytesPerPixel() == 4) {
-    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
     m_data[offset + 3] = c[3];
   } else if (bytesPerPixel() == 3) {
-    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    std::size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
@@ -344,13 +344,13 @@ void Image::set(Vec2U const& pos, Vec3B const& c) {
   if (pos[0] >= m_width || pos[1] >= m_height) {
     throw ImageException(strf("{} out of range in Image::set", pos));
   } else if (bytesPerPixel() == 4) {
-    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
     m_data[offset + 3] = 255;
   } else if (bytesPerPixel() == 3) {
-    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    std::size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
     m_data[offset] = c[0];
     m_data[offset + 1] = c[1];
     m_data[offset + 2] = c[2];
@@ -362,13 +362,13 @@ Vec4B Image::get(Vec2U const& pos) const {
   if (pos[0] >= m_width || pos[1] >= m_height) {
     throw ImageException(strf("{} out of range in Image::get", pos));
   } else if (bytesPerPixel() == 4) {
-    size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
+    std::size_t offset = pos[1] * m_width * 4 + pos[0] * 4;
     c[0] = m_data[offset];
     c[1] = m_data[offset + 1];
     c[2] = m_data[offset + 2];
     c[3] = m_data[offset + 3];
   } else if (bytesPerPixel() == 3) {
-    size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
+    std::size_t offset = pos[1] * m_width * 3 + pos[0] * 3;
     c[0] = m_data[offset];
     c[1] = m_data[offset + 1];
     c[2] = m_data[offset + 2];
@@ -406,13 +406,13 @@ Vec4B Image::clamp(Vec2I const& pos) const {
   if (m_width == 0 || m_height == 0) {
     return {0, 0, 0, 0};
   } else if (bytesPerPixel() == 4) {
-    size_t offset = y * m_width * 4 + x * 4;
+    std::size_t offset = y * m_width * 4 + x * 4;
     c[0] = m_data[offset];
     c[1] = m_data[offset + 1];
     c[2] = m_data[offset + 2];
     c[3] = m_data[offset + 3];
   } else if (bytesPerPixel() == 3) {
-    size_t offset = y * m_width * 3 + x * 3;
+    std::size_t offset = y * m_width * 3 + x * 3;
     c[0] = m_data[offset];
     c[1] = m_data[offset + 1];
     c[2] = m_data[offset + 2];
@@ -517,10 +517,10 @@ void Image::writePng(IODevicePtr device) const {
       PNG_COMPRESSION_TYPE_DEFAULT,
       PNG_FILTER_TYPE_DEFAULT);
 
-  unique_ptr<png_bytep[]> row_ptrs(new png_bytep[m_height]);
-  size_t stride = m_width * 8 * channels / 8;
-  for (size_t i = 0; i < m_height; ++i) {
-    size_t q = (m_height - i - 1) * stride;
+  std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[m_height]);
+  std::size_t stride = m_width * 8 * channels / 8;
+  for (std::size_t i = 0; i < m_height; ++i) {
+    std::size_t q = (m_height - i - 1) * stride;
     row_ptrs[i] = (png_bytep)m_data + q;
   }
 

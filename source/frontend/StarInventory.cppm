@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -66,15 +66,69 @@ import star.game_timers;
 
 namespace Star {
 
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Player);
-STAR_CLASS(Item);
-STAR_CLASS(ItemSlotWidget);
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(Widget);
-STAR_CLASS(InventoryPane);
+class MainInterface;
+using MainInterfacePtr = std::shared_ptr<MainInterface>;
+using MainInterfaceConstPtr = std::shared_ptr<MainInterface const>;
+using MainInterfaceWeakPtr = std::weak_ptr<MainInterface>;
+using MainInterfaceConstWeakPtr = std::weak_ptr<MainInterface const>;
+using MainInterfaceUPtr = std::unique_ptr<MainInterface>;
+using MainInterfaceConstUPtr = std::unique_ptr<MainInterface const>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<Item const>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<Item const>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<Item const>;
+class ItemSlotWidget;
+using ItemSlotWidgetPtr = std::shared_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstPtr = std::shared_ptr<ItemSlotWidget const>;
+using ItemSlotWidgetWeakPtr = std::weak_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstWeakPtr = std::weak_ptr<ItemSlotWidget const>;
+using ItemSlotWidgetUPtr = std::unique_ptr<ItemSlotWidget>;
+using ItemSlotWidgetConstUPtr = std::unique_ptr<ItemSlotWidget const>;
+class ItemGridWidget;
+using ItemGridWidgetPtr = std::shared_ptr<ItemGridWidget>;
+using ItemGridWidgetConstPtr = std::shared_ptr<ItemGridWidget const>;
+using ItemGridWidgetWeakPtr = std::weak_ptr<ItemGridWidget>;
+using ItemGridWidgetConstWeakPtr = std::weak_ptr<ItemGridWidget const>;
+using ItemGridWidgetUPtr = std::unique_ptr<ItemGridWidget>;
+using ItemGridWidgetConstUPtr = std::unique_ptr<ItemGridWidget const>;
+class ImageWidget;
+using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
+using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
+using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
+using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
+using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
+using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
+class Widget;
+using WidgetPtr = std::shared_ptr<Widget>;
+using WidgetConstPtr = std::shared_ptr<Widget const>;
+using WidgetWeakPtr = std::weak_ptr<Widget>;
+using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
+using WidgetUPtr = std::unique_ptr<Widget>;
+using WidgetConstUPtr = std::unique_ptr<Widget const>;
+class InventoryPane;
+using InventoryPanePtr = std::shared_ptr<InventoryPane>;
+using InventoryPaneConstPtr = std::shared_ptr<InventoryPane const>;
+using InventoryPaneWeakPtr = std::weak_ptr<InventoryPane>;
+using InventoryPaneConstWeakPtr = std::weak_ptr<InventoryPane const>;
+using InventoryPaneUPtr = std::unique_ptr<InventoryPane>;
+using InventoryPaneConstUPtr = std::unique_ptr<InventoryPane const>;
 
 class InventoryPane : public Pane {
 public:

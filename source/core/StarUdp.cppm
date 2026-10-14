@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.either;
@@ -14,8 +13,20 @@ export module star.udp;
 
 export namespace Star {
 
-STAR_CLASS(UdpSocket);
-STAR_CLASS(UdpServer);
+class UdpSocket;
+using UdpSocketPtr = std::shared_ptr<UdpSocket>;
+using UdpSocketConstPtr = std::shared_ptr<const UdpSocket>;
+using UdpSocketWeakPtr = std::weak_ptr<UdpSocket>;
+using UdpSocketConstWeakPtr = std::weak_ptr<const UdpSocket>;
+using UdpSocketUPtr = std::unique_ptr<UdpSocket>;
+using UdpSocketConstUPtr = std::unique_ptr<const UdpSocket>;
+class UdpServer;
+using UdpServerPtr = std::shared_ptr<UdpServer>;
+using UdpServerConstPtr = std::shared_ptr<const UdpServer>;
+using UdpServerWeakPtr = std::weak_ptr<UdpServer>;
+using UdpServerConstWeakPtr = std::weak_ptr<const UdpServer>;
+using UdpServerUPtr = std::unique_ptr<UdpServer>;
+using UdpServerConstUPtr = std::unique_ptr<const UdpServer>;
 
 // A Good default assumption for a maximum size of a UDP datagram without
 // fragmentation
@@ -25,8 +36,8 @@ class UdpSocket : public Socket {
 public:
   UdpSocket(NetworkMode networkMode);
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  std::size_t receive(HostAddressWithPort* address, char* data, std::size_t size);
+  std::size_t send(HostAddressWithPort const& address, char const* data, std::size_t size);
 };
 
 class UdpServer {
@@ -37,8 +48,8 @@ public:
   void close();
   bool isListening() const;
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size, unsigned timeout);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  std::size_t receive(HostAddressWithPort* address, char* data, std::size_t size, unsigned timeout);
+  std::size_t send(HostAddressWithPort const& address, char const* data, std::size_t size);
 
 private:
   HostAddressWithPort const m_hostAddress;
@@ -51,7 +62,7 @@ namespace Star {
 
 UdpSocket::UdpSocket(NetworkMode networkMode) : Socket(SocketType::Udp, networkMode) {}
 
-size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datasize) {
+std::size_t UdpSocket::receive(HostAddressWithPort* address, char* data, std::size_t datasize) {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::receive");
 
@@ -77,7 +88,7 @@ size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datas
   return len;
 }
 
-size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, size_t size) {
+std::size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, std::size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::send");
 
@@ -99,7 +110,7 @@ size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, siz
 }
 
 UdpServer::UdpServer(HostAddressWithPort const& address)
-  : m_hostAddress(address), m_listenSocket(make_shared<UdpSocket>(m_hostAddress.address().mode())) {
+  : m_hostAddress(address), m_listenSocket(std::make_shared<UdpSocket>(m_hostAddress.address().mode())) {
   m_listenSocket->setNonBlocking(true);
   m_listenSocket->bind(m_hostAddress);
   Logger::debug("UdpServer listening on: {}", m_hostAddress);
@@ -109,12 +120,12 @@ UdpServer::~UdpServer() {
   close();
 }
 
-size_t UdpServer::receive(HostAddressWithPort* address, char* data, size_t bufsize, unsigned timeout) {
+std::size_t UdpServer::receive(HostAddressWithPort* address, char* data, std::size_t bufsize, unsigned timeout) {
   Socket::poll({{m_listenSocket, {true, false}}}, timeout);
   return m_listenSocket->receive(address, data, bufsize);
 }
 
-size_t UdpServer::send(HostAddressWithPort const& address, char const* data, size_t len) {
+std::size_t UdpServer::send(HostAddressWithPort const& address, char const* data, std::size_t len) {
   return m_listenSocket->send(address, data, len);
 }
 

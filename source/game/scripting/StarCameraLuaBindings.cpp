@@ -19,7 +19,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.version;
 
@@ -40,8 +40,8 @@ namespace Star {
 LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<Vec2F>("position", bind(&WorldCamera::centerWorldPosition, camera));
-  callbacks.registerCallbackWithSignature<float>("pixelRatio", bind(&WorldCamera::pixelRatio, camera));
+  callbacks.registerCallbackWithSignature<Vec2F>("position", std::bind(&WorldCamera::centerWorldPosition, camera));
+  callbacks.registerCallbackWithSignature<float>("pixelRatio", std::bind(&WorldCamera::pixelRatio, camera));
   callbacks.registerCallback("setPixelRatio", [camera](float pixelRatio, Maybe<bool> smooth) {
     if (smooth.value())
       camera->setTargetPixelRatio(pixelRatio);
@@ -50,12 +50,12 @@ LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera) {
     Root::singleton().configuration()->set("zoomLevel", pixelRatio);
   });
 
-  callbacks.registerCallbackWithSignature<Vec2U>("screenSize", bind(&WorldCamera::screenSize, camera));
-  callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", bind(&WorldCamera::worldScreenRect, camera));
-  callbacks.registerCallbackWithSignature<RectI>("worldTileRect", bind(&WorldCamera::worldTileRect, camera));
-  callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", bind(&WorldCamera::tileMinScreen, camera));
-  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", bind(&WorldCamera::screenToWorld, camera, _1));
-  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", bind(&WorldCamera::worldToScreen, camera, _1));
+  callbacks.registerCallbackWithSignature<Vec2U>("screenSize", std::bind(&WorldCamera::screenSize, camera));
+  callbacks.registerCallbackWithSignature<RectF>("worldScreenRect", std::bind(&WorldCamera::worldScreenRect, camera));
+  callbacks.registerCallbackWithSignature<RectI>("worldTileRect", std::bind(&WorldCamera::worldTileRect, camera));
+  callbacks.registerCallbackWithSignature<Vec2F>("tileMinScreen", std::bind(&WorldCamera::tileMinScreen, camera));
+  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("screenToWorld", std::bind(&WorldCamera::screenToWorld, camera, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Vec2F, Vec2F>("worldToScreen", std::bind(&WorldCamera::worldToScreen, camera, std::placeholders::_1));
 
   return callbacks;
 }

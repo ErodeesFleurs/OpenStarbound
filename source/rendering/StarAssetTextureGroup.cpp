@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -16,7 +17,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 
 import star.variant;
@@ -37,7 +37,7 @@ namespace Star {
 
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup)
   : m_textureGroup(std::move(textureGroup)) {
-  m_reloadTracker = make_shared<TrackerListener>();
+  m_reloadTracker = std::make_shared<TrackerListener>();
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
@@ -53,13 +53,13 @@ bool AssetTextureGroup::textureLoaded(AssetPath const& imagePath) const {
   return m_textureMap.contains(imagePath);
 }
 
-void AssetTextureGroup::cleanup(int64_t textureTimeout) {
+void AssetTextureGroup::cleanup(std::int64_t textureTimeout) {
   if (m_reloadTracker->pullTriggered()) {
     m_textureMap.clear();
     m_textureDeduplicationMap.clear();
 
   } else {
-    int64_t time = Time::monotonicMilliseconds();
+    std::int64_t time = Time::monotonicMilliseconds();
 
     List<Texture const*> liveTextures;
     filter(m_textureMap, [&](auto const& pair) {

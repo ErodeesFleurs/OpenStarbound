@@ -1,5 +1,5 @@
 #include "StarJsonExtra.hpp"
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.ordered_set;
 import star.data_stream;

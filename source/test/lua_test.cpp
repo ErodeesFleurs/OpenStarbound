@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.list;
@@ -59,7 +59,7 @@ TEST(LuaTest, TableReferences) {
 }
 
 TEST(LuaTest, FunctionCallTest) {
-  weak_ptr<int> destructionObserver;
+  std::weak_ptr<int> destructionObserver;
 
   {
     auto luaEngine = LuaEngine::create();
@@ -74,7 +74,7 @@ TEST(LuaTest, FunctionCallTest) {
         end
       )SCRIPT");
 
-    auto toDestruct = make_shared<int>();
+    auto toDestruct = std::make_shared<int>();
     destructionObserver = toDestruct;
     luaContext.set("callback", luaEngine->createFunction([toDestruct](double n) { return n * 2; }));
 
@@ -260,7 +260,7 @@ template <>
 struct LuaUserDataMethods<Vec3F> {
   static LuaMethods<Vec3F> make() {
     LuaMethods<Vec3F> methods;
-    methods.registerMethodWithSignature<float, Vec3F const&>("magnitude", mem_fn(&Vec3F::magnitude));
+    methods.registerMethodWithSignature<float, Vec3F const&>("magnitude", std::mem_fn(&Vec3F::magnitude));
     return methods;
   }
 };
@@ -279,7 +279,7 @@ TEST(LuaTest, UserMethodTest) {
     )SCRIPT");
 
   float magnitude = luaContext.invokePath<float>("testMagnitude", Vec3F(5, 5, 5));
-  EXPECT_TRUE(fabs(magnitude - (Vec3F(3, 2, 1).magnitude() + Vec3F(5, 5, 5).magnitude())) < 0.00001f);
+  EXPECT_TRUE(std::fabs(magnitude - (Vec3F(3, 2, 1).magnitude() + Vec3F(5, 5, 5).magnitude())) < 0.00001f);
 }
 
 TEST(LuaTest, GlobalTest) {
@@ -333,13 +333,13 @@ TEST(LuaTest, ArrayTest) {
   EXPECT_EQ(arrayTable.get(2), LuaInt(4));
   EXPECT_EQ(arrayTable.get(5), LuaInt(10));
 
-  List<pair<int, int>> values;
+  List<std::pair<int, int>> values;
   arrayTable.iterate([&values](LuaValue const& key, LuaValue const& value) {
     auto ikey = key.get<LuaInt>();
     auto ivalue = value.get<LuaInt>();
     values.append({ikey, ivalue});
   });
-  List<pair<int, int>> compare = {{1, 2}, {2, 4}, {3, 6}, {4, 8}, {5, 10}};
+  List<std::pair<int, int>> compare = {{1, 2}, {2, 4}, {3, 6}, {4, 8}, {5, 10}};
   EXPECT_EQ(values, compare);
 }
 
@@ -375,7 +375,7 @@ TEST(LuaTest, CallbackTest) {
   LuaCallbacks callbacks;
   callbacks.registerCallback("add", [](LuaInt a, LuaInt b) { return a + b; });
   callbacks.registerCallbackWithSignature<LuaInt, LuaInt, LuaInt>("subtract", [](int a, int b) { return a - b; });
-  callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", bind([](int a, int b) { return a * b; }, 2, _1));
+  callbacks.registerCallbackWithSignature<LuaInt, LuaInt>("multiply2", std::bind([](int a, int b) { return a * b; }, 2, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<void, LuaValue>("nothing", [](LuaValue v) { return v; });
 
   LuaContext luaContext = luaEngine->createContext();
@@ -521,14 +521,14 @@ TEST(LuaTest, MetaTable) {
   mt.set("__add",
       luaEngine->createFunction([](LuaEngine& engine, LuaTable const& a, LuaTable const& b) {
         return engine.createArrayTable(
-            initializer_list<double>{a.get<double>(1) + b.get<double>(1), a.get<double>(2) + b.get<double>(2)});
+            std::initializer_list<double>{a.get<double>(1) + b.get<double>(1), a.get<double>(2) + b.get<double>(2)});
       }));
   mt.set("test", "hello");
 
-  auto t1 = luaEngine->createArrayTable(initializer_list<double>{1, 2});
+  auto t1 = luaEngine->createArrayTable(std::initializer_list<double>{1, 2});
   t1.setMetatable(mt);
 
-  auto t2 = luaEngine->createArrayTable(initializer_list<double>{5, 6});
+  auto t2 = luaEngine->createArrayTable(std::initializer_list<double>{5, 6});
   t2.setMetatable(mt);
 
   auto tr = context.invokePath<LuaTable>("add", t1, t2);
@@ -785,7 +785,7 @@ TEST(LuaTest, GarbageCollection) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
 
-  auto ptr = make_shared<int>(5);
+  auto ptr = std::make_shared<int>(5);
   engine->setAutoGarbageCollection(false);
   context.setPath("ref", context.createUserData(ptr));
   EXPECT_EQ(ptr.use_count(), 2);
@@ -798,8 +798,8 @@ TEST(LuaTest, GarbageCollection) {
 TEST(LuaTest, IntTest) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
-  context.setPath("test", (uint64_t)-1);
-  EXPECT_EQ(context.getPath<uint64_t>("test"), (uint64_t)-1);
+  context.setPath("test", (std::uint64_t)-1);
+  EXPECT_EQ(context.getPath<std::uint64_t>("test"), (std::uint64_t)-1);
 }
 
 TEST(LuaTest, VariantTest) {

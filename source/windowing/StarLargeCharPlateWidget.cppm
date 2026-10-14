@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -52,9 +52,21 @@ import star.label_widget;
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 
-STAR_CLASS(LargeCharPlateWidget);
+class LargeCharPlateWidget;
+using LargeCharPlateWidgetPtr = std::shared_ptr<LargeCharPlateWidget>;
+using LargeCharPlateWidgetConstPtr = std::shared_ptr<LargeCharPlateWidget const>;
+using LargeCharPlateWidgetWeakPtr = std::weak_ptr<LargeCharPlateWidget>;
+using LargeCharPlateWidgetConstWeakPtr = std::weak_ptr<LargeCharPlateWidget const>;
+using LargeCharPlateWidgetUPtr = std::unique_ptr<LargeCharPlateWidget>;
+using LargeCharPlateWidgetConstUPtr = std::unique_ptr<LargeCharPlateWidget const>;
 class LargeCharPlateWidget : public ButtonWidget {
 public:
   LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player = PlayerPtr());

@@ -11,7 +11,6 @@ import star.data_stream;
 import star.list;
 import star.bi_map;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.map;
 import star.format;
 import star.version;
@@ -50,15 +49,33 @@ import star.net_compatibility;
 
 
 namespace Star {
-STAR_STRUCT(Packet);
+struct Packet;
+using PacketPtr = std::shared_ptr<Packet>;
+using PacketConstPtr = std::shared_ptr<const Packet>;
+using PacketWeakPtr = std::weak_ptr<Packet>;
+using PacketConstWeakPtr = std::weak_ptr<const Packet>;
+using PacketUPtr = std::unique_ptr<Packet>;
+using PacketConstUPtr = std::unique_ptr<const Packet>;
 }
 
 import star.net_packet_socket;
 
 namespace Star {
 
-STAR_CLASS(UniverseConnection);
-STAR_CLASS(UniverseConnectionServer);
+class UniverseConnection;
+using UniverseConnectionPtr = std::shared_ptr<UniverseConnection>;
+using UniverseConnectionConstPtr = std::shared_ptr<const UniverseConnection>;
+using UniverseConnectionWeakPtr = std::weak_ptr<UniverseConnection>;
+using UniverseConnectionConstWeakPtr = std::weak_ptr<const UniverseConnection>;
+using UniverseConnectionUPtr = std::unique_ptr<UniverseConnection>;
+using UniverseConnectionConstUPtr = std::unique_ptr<const UniverseConnection>;
+class UniverseConnectionServer;
+using UniverseConnectionServerPtr = std::shared_ptr<UniverseConnectionServer>;
+using UniverseConnectionServerConstPtr = std::shared_ptr<const UniverseConnectionServer>;
+using UniverseConnectionServerWeakPtr = std::weak_ptr<UniverseConnectionServer>;
+using UniverseConnectionServerConstWeakPtr = std::weak_ptr<const UniverseConnectionServer>;
+using UniverseConnectionServerUPtr = std::unique_ptr<UniverseConnectionServer>;
+using UniverseConnectionServerConstUPtr = std::unique_ptr<const UniverseConnectionServer>;
 
 struct UniverseConnectionExceptionTag {
   static constexpr char const* name() { return "UniverseConnectionException"; }
@@ -133,15 +150,15 @@ public:
   // method on the UniverseConnectionServer without deadlocking.  The receive
   // callback will not be called for any client until the previous callback for
   // that client is complete.
-  typedef function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
+  typedef std::function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
 
-  UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads = 0);
+  UniverseConnectionServer(PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
 
   bool hasConnection(ConnectionId clientId) const;
   List<ConnectionId> allConnections() const;
   bool connectionIsOpen(ConnectionId clientId) const;
-  int64_t lastActivityTime(ConnectionId clientId) const;
+  std::int64_t lastActivityTime(ConnectionId clientId) const;
 
   void addConnection(ConnectionId clientId, UniverseConnection connection);
   UniverseConnection removeConnection(ConnectionId clientId);
@@ -150,9 +167,9 @@ public:
   void sendPackets(ConnectionId clientId, List<PacketPtr> packets);
 
   // Get total packets processed across all worker threads
-  uint64_t totalPacketsProcessed() const;
+  std::uint64_t totalPacketsProcessed() const;
   // Get number of worker threads
-  size_t numWorkerThreads() const;
+  std::size_t numWorkerThreads() const;
 
 private:
   struct Connection {
@@ -160,15 +177,15 @@ private:
     PacketSocketUPtr packetSocket;
     List<PacketPtr> sendQueue;
     Deque<PacketPtr> receiveQueue;
-    int64_t lastActivityTime;
-    size_t workerIndex;
+    std::int64_t lastActivityTime;
+    std::size_t workerIndex;
   };
 
   struct WorkerStats {
-    atomic<uint64_t> packetsProcessed{0};
-    atomic<uint64_t> bytesReceived{0};
-    atomic<uint64_t> bytesSent{0};
-    atomic<uint64_t> connectionsHandled{0};
+    std::atomic<std::uint64_t> packetsProcessed{0};
+    std::atomic<std::uint64_t> bytesReceived{0};
+    std::atomic<std::uint64_t> bytesSent{0};
+    std::atomic<std::uint64_t> connectionsHandled{0};
 
     WorkerStats() = default;
     WorkerStats(WorkerStats&& other) noexcept : packetsProcessed(other.packetsProcessed.load()), bytesReceived(other.bytesReceived.load()), bytesSent(other.bytesSent.load()), connectionsHandled(other.connectionsHandled.load()) {
@@ -189,12 +206,12 @@ private:
   PacketReceiveCallback const m_packetReceiver;
 
   mutable RecursiveMutex m_connectionsMutex;
-  HashMap<ConnectionId, shared_ptr<Connection>> m_connections;
+  HashMap<ConnectionId, std::shared_ptr<Connection>> m_connections;
 
   List<ThreadFunction<void>> m_processingThreads;
   List<WorkerStats> m_workerStats;
-  atomic<bool> m_shutdown;
-  size_t m_numWorkerThreads;
+  std::atomic<bool> m_shutdown;
+  std::size_t m_numWorkerThreads;
 };
 
 }// namespace Star

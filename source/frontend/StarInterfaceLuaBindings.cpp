@@ -37,7 +37,6 @@ import star.time;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.variant;
@@ -192,9 +191,9 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<bool>(
-    "hudVisible", bind(mem_fn(&MainInterface::hudVisible), mainInterface));
+    "hudVisible", std::bind(std::mem_fn(&MainInterface::hudVisible), mainInterface));
   callbacks.registerCallbackWithSignature<void, bool>(
-    "setHudVisible", bind(mem_fn(&MainInterface::setHudVisible), mainInterface, _1));
+    "setHudVisible", std::bind(std::mem_fn(&MainInterface::setHudVisible), mainInterface, std::placeholders::_1));
 
   callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, Maybe<bool> ignoreInterfaceScale) -> Maybe<CanvasWidgetPtr> {
     if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value(false)))
@@ -268,8 +267,8 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
     return chat->setCurrentChat(text, moveCursor.value(false));
   });
 
-  callbacks.registerCallback("clear", [chat](Maybe<size_t> count) {
-    chat->clear(count.value(std::numeric_limits<size_t>::max()));
+  callbacks.registerCallback("clear", [chat](Maybe<std::size_t> count) {
+    chat->clear(count.value(std::numeric_limits<std::size_t>::max()));
   });
 
   return callbacks;

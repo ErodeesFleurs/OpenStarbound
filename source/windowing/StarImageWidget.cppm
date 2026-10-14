@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -49,7 +49,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(ImageWidget);
+class ImageWidget;
+using ImageWidgetPtr = std::shared_ptr<ImageWidget>;
+using ImageWidgetConstPtr = std::shared_ptr<ImageWidget const>;
+using ImageWidgetWeakPtr = std::weak_ptr<ImageWidget>;
+using ImageWidgetConstWeakPtr = std::weak_ptr<ImageWidget const>;
+using ImageWidgetUPtr = std::unique_ptr<ImageWidget>;
+using ImageWidgetConstUPtr = std::unique_ptr<ImageWidget const>;
 class ImageWidget : public Widget {
 public:
   ImageWidget();

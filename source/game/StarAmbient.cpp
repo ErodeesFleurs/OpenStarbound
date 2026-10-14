@@ -19,7 +19,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 import star.random;
@@ -117,7 +117,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
     if (!m_currentTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_currentTrackName)) {
         m_recentTracks.append(m_currentTrackName);
-        m_currentTrack = make_shared<AudioInstance>(*audio);
+        m_currentTrack = std::make_shared<AudioInstance>(*audio);
         m_currentTrack->setLoops(current ? current->trackLoops : -1);
         // Slowly fade the music track in
         m_currentTrack->setVolume(0.0f);
@@ -166,7 +166,7 @@ AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr curre
     m_weatherTrackName = Random::randValueFrom(tracks);
     if (!m_weatherTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_weatherTrackName)) {
-        m_weatherTrack = make_shared<AudioInstance>(*audio);
+        m_weatherTrack = std::make_shared<AudioInstance>(*audio);
         m_weatherTrack->setLoops(-1);
         m_weatherTrack->setVolume(0.0f);
         m_weatherTrack->setVolume(1, m_trackFadeInTime);

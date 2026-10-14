@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -32,7 +32,7 @@ namespace Star {
 
 bool Tenant::criteriaSatisfied(StringMap<unsigned> const& colonyTags) const {
   // Check whether colonyTags is a supermultiset of colonyTagCriteria
-  for (pair<String, unsigned> const& entry : colonyTagCriteria.pairs()) {
+  for (std::pair<String, unsigned> const& entry : colonyTagCriteria.pairs()) {
     if (colonyTags.value(entry.first, 0) < entry.second)
       return false;
   }
@@ -95,7 +95,7 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
     float priority = config.getFloat("priority");
 
     StringMap<unsigned> colonyTagCriteria;
-    for (pair<String, Json> const& entry : config.getObject("colonyTagCriteria").pairs()) {
+    for (std::pair<String, Json> const& entry : config.getObject("colonyTagCriteria").pairs()) {
       colonyTagCriteria[entry.first] = entry.second.toUInt();
     }
 
@@ -104,12 +104,14 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
       if (spawn == "monster") {
         return TenantMonsterSpawnable{json.getString("type"), json.optFloat("level"), json.opt("overrides")};
       } else {
-        starAssert(json.getString("spawn") == "npc");
+        if constexpr (Star::DebugEnabled) {
+          Star::starAssertFailed((json.getString("spawn") == "npc"));
+        }
 
         Json speciesJson = json.get("species");
         List<String> species;
         if (speciesJson.isType(Json::Type::Array))
-          species = speciesJson.toArray().transformed(mem_fn(&Json::toString));
+          species = speciesJson.toArray().transformed(std::mem_fn(&Json::toString));
         else
           species.append(speciesJson.toString());
 
@@ -121,7 +123,7 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
       return TenantRent{jsonToVec2F(json.get("periodRange")), json.getString("pool")};
     });
 
-    return make_shared<Tenant>(Tenant{name, priority, colonyTagCriteria, tenants, rent, config});
+    return std::make_shared<Tenant>(Tenant{name, priority, colonyTagCriteria, tenants, rent, config});
   } catch (std::exception const& e) {
     throw TenantException::format("Error loading tenant '{}': {}", path, outputException(e, false));
   }

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.stream_formatter;
 import star.hash;
 
@@ -105,7 +105,7 @@ std::ostream& operator<<(std::ostream& os, Maybe<T> const& v);
 
 template <typename T>
 struct hash<Maybe<T>> {
-  size_t operator()(Maybe<T> const& m) const;
+  std::size_t operator()(Maybe<T> const& m) const;
   hash<T> hasher;
 };
 
@@ -393,7 +393,7 @@ std::ostream& operator<<(std::ostream& os, Maybe<T> const& v) {
 }
 
 template <typename T>
-size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
+std::size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
   if (!m)
     return 0;
   else

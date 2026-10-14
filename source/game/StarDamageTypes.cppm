@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.data_stream;
@@ -8,13 +8,13 @@ import star.game_types;
 
 namespace Star {
 
-enum DamageType : uint8_t { NoDamage, Damage, IgnoresDef, Knockback, Environment, Status };
+enum DamageType : std::uint8_t { NoDamage, Damage, IgnoresDef, Knockback, Environment, Status };
 extern EnumMap<DamageType> const DamageTypeNames;
 
 enum class HitType { Hit, StrongHit, WeakHit, ShieldHit, Kill };
 extern EnumMap<HitType> const HitTypeNames;
 
-enum class TeamType : uint8_t {
+enum class TeamType : std::uint8_t {
   Null,
   // non-PvP-enabled players and player allied NPCs
   Friendly,
@@ -36,7 +36,7 @@ enum class TeamType : uint8_t {
 };
 extern EnumMap<TeamType> const TeamTypeNames;
 
-typedef uint16_t TeamNumber;
+typedef std::uint16_t TeamNumber;
 
 struct EntityDamageTeam {
   friend DataStream& operator>>(DataStream& ds, EntityDamageTeam& value);

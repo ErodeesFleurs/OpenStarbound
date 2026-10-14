@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -31,9 +31,9 @@ public:
   // Default constructed perlin noise is uninitialized and cannot be queried.
   Perlin();
 
-  Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
-  Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
-  Perlin(Json const& config, uint64_t seed);
+  Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
+  Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
+  Perlin(Json const& config, std::uint64_t seed);
   explicit Perlin(Json const& json);
 
   Perlin(Perlin const& perlin);
@@ -71,7 +71,7 @@ private:
   void normalize2(Float v[2]) const;
   void normalize3(Float v[3]) const;
 
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
   Float perlin(Float x) const;
   Float perlin(Float x, Float y) const;
@@ -86,7 +86,7 @@ private:
   Float billow(Float x, Float y, Float z) const;
 
   PerlinType m_type;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
 
   int m_octaves;
   Float m_frequency;
@@ -99,10 +99,10 @@ private:
   Float m_offset;
   Float m_gain;
 
-  unique_ptr<int[]> p;
-  unique_ptr<Float[][3]> g3;
-  unique_ptr<Float[][2]> g2;
-  unique_ptr<Float[]> g1;
+  std::unique_ptr<int[]> p;
+  std::unique_ptr<Float[][3]> g3;
+  std::unique_ptr<Float[][2]> g2;
+  std::unique_ptr<Float[]> g1;
 };
 
 typedef Perlin<float> PerlinF;
@@ -115,7 +115,7 @@ Float Perlin<Float>::s_curve(Float t) {
 
 template <typename Float>
 void Perlin<Float>::setup(Float v, int& b0, int& b1, Float& r0, Float& r1) {
-  int iv = floor(v);
+  int iv = std::floor(v);
   Float fv = v - iv;
 
   b0 = iv & (PerlinSampleSize - 1);
@@ -149,7 +149,7 @@ Perlin<Float>::Perlin() {
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {
+Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed) {
   m_type = PerlinType::Perlin;
   m_seed = seed;
 
@@ -168,7 +168,7 @@ Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {
+Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed) {
   m_type = type;
   m_seed = seed;
 
@@ -187,7 +187,7 @@ Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, 
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(Json const& config, uint64_t seed)
+Perlin<Float>::Perlin(Json const& config, std::uint64_t seed)
   : Perlin(config.set("seed", seed)) {}
 
 template <typename Float>
@@ -461,7 +461,7 @@ template <typename Float>
 void Perlin<Float>::normalize2(Float v[2]) const {
   Float s;
 
-  s = sqrt(v[0] * v[0] + v[1] * v[1]);
+  s = std::sqrt(v[0] * v[0] + v[1] * v[1]);
   if (s == 0.0f) {
     v[0] = 1.0f;
     v[1] = 0.0f;
@@ -475,7 +475,7 @@ template <typename Float>
 void Perlin<Float>::normalize3(Float v[3]) const {
   Float s;
 
-  s = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+  s = std::sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
   if (s == 0.0f) {
     v[0] = 1.0f;
     v[1] = 0.0f;
@@ -488,7 +488,7 @@ void Perlin<Float>::normalize3(Float v[3]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::init(uint64_t seed) {
+void Perlin<Float>::init(std::uint64_t seed) {
   RandomSource randomSource(seed);
 
   p.reset(new int[PerlinSampleSize + PerlinSampleSize + 2]);
@@ -592,7 +592,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x) const {
   for (int i = 0; i < m_octaves; ++i) {
     val = noise1(x);
 
-    val = m_offset - fabs(val);
+    val = m_offset - std::fabs(val);
     val *= val;
     val *= weight;
 
@@ -617,7 +617,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
   for (int i = 0; i < m_octaves; ++i) {
     val = noise2(p);
 
-    val = m_offset - fabs(val);
+    val = m_offset - std::fabs(val);
     val *= val;
     val *= weight;
 
@@ -644,7 +644,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
   for (int i = 0; i < m_octaves; ++i) {
     val = noise3(p);
 
-    val = m_offset - fabs(val);
+    val = m_offset - std::fabs(val);
     val *= val;
     val *= weight;
 
@@ -668,7 +668,7 @@ inline Float Perlin<Float>::billow(Float x) const {
   p = x * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
     val = noise1(p);
-    val = 2.0 * fabs(val) - 1.0;
+    val = 2.0 * std::fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;
@@ -686,7 +686,7 @@ inline Float Perlin<Float>::billow(Float x, Float y) const {
   p[1] = y * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
     val = noise2(p);
-    val = 2.0 * fabs(val) - 1.0;
+    val = 2.0 * std::fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;
@@ -706,7 +706,7 @@ inline Float Perlin<Float>::billow(Float x, Float y, Float z) const {
   p[2] = z * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
     val = noise3(p);
-    val = 2.0 * fabs(val) - 1.0;
+    val = 2.0 * std::fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;

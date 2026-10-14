@@ -23,7 +23,6 @@ import star.perlin;
 import star.maybe;
 import star.weighted_pool;
 import star.variant;
-#include "StarConfig.hpp"
 import star.version;
 import star.logging;
 
@@ -60,7 +59,7 @@ void ParticleManager::addParticles(List<Particle> particles) {
   m_particles.appendAll(std::move(particles));
 }
 
-size_t ParticleManager::count() const {
+std::size_t ParticleManager::count() const {
   return m_particles.size();
 }
 
@@ -141,15 +140,15 @@ void ParticleManager::update(float dt, RectF const& cullRegion, float wind) {
   }
 
   m_particles.clear();
-  swap(m_particles, m_nextParticles);
+  std::swap(m_particles, m_nextParticles);
 }
 
 List<Particle> const& ParticleManager::particles() const {
   return m_particles;
 }
 
-List<pair<Vec2F, Vec3F>> ParticleManager::lightSources() const {
-  List<pair<Vec2F, Vec3F>> lsources;
+List<std::pair<Vec2F, Vec3F>> ParticleManager::lightSources() const {
+  List<std::pair<Vec2F, Vec3F>> lsources;
   for (auto const& particle : m_particles) {
     if (particle.light != Color::Clear)
       lsources.append({particle.position, particle.light.toRgbF()});

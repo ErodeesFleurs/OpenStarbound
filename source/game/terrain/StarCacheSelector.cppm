@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -34,7 +34,7 @@ CacheSelector::CacheSelector(
   : TerrainSelector(Name, config, parameters) {
   auto sourceConfig = config.get("source");
   String sourceType = sourceConfig.getString("type");
-  uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
+  std::uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
   TerrainSelectorParameters sourceParameters = parameters;
   sourceParameters.seed += seedBias;
   m_source = database->createSelectorType(type, sourceConfig, sourceParameters);

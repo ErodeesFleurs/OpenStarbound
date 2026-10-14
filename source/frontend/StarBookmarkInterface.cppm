@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarStrongTypedef.hpp"
 import star.data_stream;
@@ -59,7 +59,13 @@ import star.player_universe_map;
 
 namespace Star {
 
-STAR_CLASS(EditBookmarkDialog);
+class EditBookmarkDialog;
+using EditBookmarkDialogPtr = std::shared_ptr<EditBookmarkDialog>;
+using EditBookmarkDialogConstPtr = std::shared_ptr<EditBookmarkDialog const>;
+using EditBookmarkDialogWeakPtr = std::weak_ptr<EditBookmarkDialog>;
+using EditBookmarkDialogConstWeakPtr = std::weak_ptr<EditBookmarkDialog const>;
+using EditBookmarkDialogUPtr = std::unique_ptr<EditBookmarkDialog>;
+using EditBookmarkDialogConstUPtr = std::unique_ptr<EditBookmarkDialog const>;
 
 class EditBookmarkDialog : public Pane {
 public:

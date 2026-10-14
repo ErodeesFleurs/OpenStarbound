@@ -22,7 +22,7 @@ import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
-#include "StarConfig.hpp"
+import std;
 import star.set;
 import star.ordered_map;
 import star.io_device;
@@ -78,7 +78,13 @@ export module star.instrument_item;
 
 export namespace Star {
 
-STAR_CLASS(InstrumentItem);
+class InstrumentItem;
+using InstrumentItemPtr = std::shared_ptr<InstrumentItem>;
+using InstrumentItemConstPtr = std::shared_ptr<const InstrumentItem>;
+using InstrumentItemWeakPtr = std::weak_ptr<InstrumentItem>;
+using InstrumentItemConstWeakPtr = std::weak_ptr<const InstrumentItem>;
+using InstrumentItemUPtr = std::unique_ptr<InstrumentItem>;
+using InstrumentItemConstUPtr = std::unique_ptr<const InstrumentItem>;
 
 class InstrumentItem : public Item,
                        public StatusEffectItem,
@@ -143,7 +149,7 @@ InstrumentItem::InstrumentItem(Json const& config, String const& directory, Json
 }
 
 ItemPtr InstrumentItem::clone() const {
-  return make_shared<InstrumentItem>(*this);
+  return std::make_shared<InstrumentItem>(*this);
 }
 
 List<PersistentStatusEffect> InstrumentItem::statusEffects() const {

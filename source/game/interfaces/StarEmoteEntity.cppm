@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 #include "StarCasting.hpp"
@@ -23,7 +23,13 @@ enum class HumanoidEmote;
 
 namespace Star {
 
-STAR_CLASS(EmoteEntity);
+class EmoteEntity;
+using EmoteEntityPtr = std::shared_ptr<EmoteEntity>;
+using EmoteEntityConstPtr = std::shared_ptr<const EmoteEntity>;
+using EmoteEntityWeakPtr = std::weak_ptr<EmoteEntity>;
+using EmoteEntityConstWeakPtr = std::weak_ptr<const EmoteEntity>;
+using EmoteEntityUPtr = std::unique_ptr<EmoteEntity>;
+using EmoteEntityConstUPtr = std::unique_ptr<const EmoteEntity>;
 
 class EmoteEntity : public virtual Entity {
 public:

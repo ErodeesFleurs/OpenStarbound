@@ -21,7 +21,7 @@ import star.vector;
 import star.game_types;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 import star.drawable;

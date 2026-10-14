@@ -17,7 +17,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.version;
 
@@ -83,7 +83,7 @@ void WorldClientState::setClientPresenceEntities(List<EntityId> entities) {
   m_clientPresenceEntities.set(std::move(entities));
 }
 
-List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const {
+List<RectI> WorldClientState::monitoringRegions(std::function<Maybe<RectI>(EntityId)> entityBounds) const {
   List<RectI> regions;
   
   auto windowRegion = window().padded(m_windowMonitoringBorder);
@@ -107,7 +107,7 @@ List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)>
 
 ByteArray WorldClientState::writeDelta() {
   ByteArray delta;
-  tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
+  std::tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
   return delta;
 }
 

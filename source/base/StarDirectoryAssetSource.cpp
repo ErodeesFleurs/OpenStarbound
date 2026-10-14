@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.format;
 import star.json;
@@ -10,7 +10,6 @@ import star.file;
 #include "StarJsonExtra.hpp"
 import star.logging;
 
-import std;
 
 import star.byte_array;
 namespace Star {
@@ -65,7 +64,7 @@ StringList DirectoryAssetSource::assetPaths() const {
 }
 
 IODevicePtr DirectoryAssetSource::open(String const& path) {
-  auto file = make_shared<File>(toFilesystem(path));
+  auto file = std::make_shared<File>(toFilesystem(path));
   file->open(IOMode::Read);
   return file;
 }

@@ -1,3 +1,4 @@
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.ordered_map;
@@ -14,7 +15,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -58,7 +59,7 @@ String PatternedNameGenerator::generateName(String const& rulesAsset) const {
   return generateName(rulesAsset, random);
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset, uint64_t seed) const {
+String PatternedNameGenerator::generateName(String const& rulesAsset, std::uint64_t seed) const {
   RandomSource random = RandomSource(seed);
   return generateName(rulesAsset, random);
 }
@@ -81,7 +82,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
   Json meta;
   String result;
   String mode = "alts";
-  size_t index = 0;
+  std::size_t index = 0;
   bool titleCase = false;
   if (rule[0].type() == Json::Type::Object) {
     meta = rule[0];
@@ -113,7 +114,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
     auto lengthRange = meta.getArray("targetLength");
     auto targetLength = random.randUInt(lengthRange[0].toUInt(), lengthRange[1].toUInt());
 
-    size_t tries = 0;
+    std::size_t tries = 0;
     String piece;
     do {
       ++tries;
@@ -149,7 +150,7 @@ bool PatternedNameGenerator::isProfane(String const& name) const {
   return false;
 }
 
-MarkovSource PatternedNameGenerator::makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames) {
+MarkovSource PatternedNameGenerator::makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames) {
   MarkovSource newSource;
   newSource.prefixSize = prefixSize;
   newSource.endSize = endSize;

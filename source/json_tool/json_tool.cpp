@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.string;
 import star.list;
@@ -33,12 +33,12 @@ FormattedJson CommaSeparatedStrings::toJson(String const& input) const {
   if (input.trim() == "")
     return FormattedJson::ofType(Json::Type::Array);
   StringList strings = input.split(',');
-  JsonArray array = strings.transformed(bind(&String::trim, _1, "")).transformed(construct<Json>());
+  JsonArray array = strings.transformed(std::bind(&String::trim, std::placeholders::_1, "")).transformed(construct<Json>());
   return Json(array);
 }
 
 String CommaSeparatedStrings::fromJson(FormattedJson const& json) const {
-  StringList strings = json.toJson().toArray().transformed(bind(&Json::toString, _1));
+  StringList strings = json.toJson().toArray().transformed(std::bind(&Json::toString, std::placeholders::_1));
   return strings.join(", ");
 }
 
@@ -108,7 +108,7 @@ FormattedJson Star::addOrSet(bool add,
       return object.insertAfter(key, value, insertLocation.get<AfterKey>().key);
     return object.set(key, value);
   };
-  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, Maybe<size_t> i) {
+  JsonPath::ArrayOp<FormattedJson> arrayOp = [&value, add](FormattedJson const& array, Maybe<std::size_t> i) {
     if (i.isValid()) {
       if (add)
         return array.insert(*i, value);
@@ -119,8 +119,8 @@ FormattedJson Star::addOrSet(bool add,
   return path->apply(input, emptyPathOp, objectOp, arrayOp);
 }
 
-void forEachFileRecursive(String const& directory, function<void(String)> func) {
-  for (pair<String, bool> entry : File::dirList(directory)) {
+void forEachFileRecursive(String const& directory, std::function<void(String)> func) {
+  for (std::pair<String, bool> entry : File::dirList(directory)) {
     String filename = File::relativeTo(directory, entry.first);
     // Never follow a symlinked directory: it can point outside of the tree, or
     // at one of its own parents (which would recurse until the OS errors out).
@@ -146,13 +146,13 @@ StringList Star::findFiles(FindInput const& findArgs) {
   return matches;
 }
 
-void forEachChild(FormattedJson const& parent, function<void(FormattedJson const&)> func) {
+void forEachChild(FormattedJson const& parent, std::function<void(FormattedJson const&)> func) {
   if (parent.isType(Json::Type::Object)) {
     for (String const& key : parent.toJson().toObject().keys()) {
       func(parent.get(key));
     }
   } else if (parent.isType(Json::Type::Array)) {
-    for (size_t i = 0; i < parent.size(); ++i) {
+    for (std::size_t i = 0; i < parent.size(); ++i) {
       func(parent.get(i));
     }
   } else {
@@ -161,7 +161,7 @@ void forEachChild(FormattedJson const& parent, function<void(FormattedJson const
   }
 }
 
-bool process(function<void(FormattedJson const&)> output,
+bool process(std::function<void(FormattedJson const&)> output,
     Command const& command,
     Options const& options,
     FormattedJson const& input) {
@@ -191,20 +191,22 @@ bool process(function<void(FormattedJson const&)> output,
     output(command.get<RemoveCommand>().path->remove(input));
 
   } else {
-    starAssert(command.empty());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((command.empty()));
+    }
     output(input);
   }
   return true;
 }
 
 bool process(
-    function<void(FormattedJson const&)> output, Command const& command, Options const& options, String const& input) {
+    std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, String const& input) {
   FormattedJson inJson = FormattedJson::parse(input);
   return process(output, command, options, inJson);
 }
 
 bool process(
-    function<void(FormattedJson const&)> output, Command const& command, Options const& options, Input const& input) {
+    std::function<void(FormattedJson const&)> output, Command const& command, Options const& options, Input const& input) {
   if (input.is<JsonLiteralInput>()) {
     return process(output, command, options, input.get<JsonLiteralInput>().json);
   }
@@ -229,11 +231,11 @@ bool process(
 
 JsonPath::PathPtr parsePath(String const& path) {
   if (path.beginsWith("/"))
-    return make_shared<JsonPath::Pointer>(path);
-  return make_shared<JsonPath::QueryPath>(path);
+    return std::make_shared<JsonPath::Pointer>(path);
+  return std::make_shared<JsonPath::QueryPath>(path);
 }
 
-pair<JsonPath::PathPtr, bool> parseGetPath(String path) {
+std::pair<JsonPath::PathPtr, bool> parseGetPath(String path) {
   // --get and --opt have a special syntax for getting the child values of
   // the value at the given path. These end with *, e.g.:
   //    /foo/bar/*
@@ -248,7 +250,7 @@ pair<JsonPath::PathPtr, bool> parseGetPath(String path) {
     path = path.substr(0, path.size() - 3);
     children = true;
   }
-  return make_pair(parsePath(path), children);
+  return std::make_pair(parsePath(path), children);
 }
 
 Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
@@ -266,7 +268,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
         return {};
       JsonPath::PathPtr path;
       bool children = false;
-      tie(path, children) = parseGetPath(args.takeFirst());
+      std::tie(path, children) = parseGetPath(args.takeFirst());
       parsed.command = GetCommand{path, arg == "--opt", children};
 
     } else if (arg == "--set") {
@@ -308,22 +310,22 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
         return {};
       String format = args.takeFirst();
       if (format == "json" || format == "generic")
-        parsed.options.editFormat = make_shared<GenericInputFormat>();
+        parsed.options.editFormat = std::make_shared<GenericInputFormat>();
       else if (format == "css" || format == "csv")
-        parsed.options.editFormat = make_shared<CommaSeparatedStrings>();
+        parsed.options.editFormat = std::make_shared<CommaSeparatedStrings>();
       else if (format == "string")
-        parsed.options.editFormat = make_shared<StringInputFormat>();
+        parsed.options.editFormat = std::make_shared<StringInputFormat>();
       else
         return {};
 
     } else if (arg == "--array") {
       // Output multiple results as a single array
-      parsed.options.output = make_shared<ArrayOutput>(false);
+      parsed.options.output = std::make_shared<ArrayOutput>(false);
 
     } else if (arg == "--array-unique") {
       // Output multiple results as a single array, with duplicate results
       // removed
-      parsed.options.output = make_shared<ArrayOutput>(true);
+      parsed.options.output = std::make_shared<ArrayOutput>(true);
 
     } else if (arg == "--help") {
       return {};
@@ -379,7 +381,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
   }
 
   if (!parsed.options.output)
-    parsed.options.output = make_shared<OutputOnSeparateLines>();
+    parsed.options.output = std::make_shared<OutputOnSeparateLines>();
 
   bool anyFileInputs = false, anyNonFileInputs = false;
   for (Input const& input : parsed.inputs) {
@@ -411,7 +413,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
     cerrf("--input can only be used with --edit.\n");
     return {};
   } else if (!parsed.options.editFormat && parsed.command.is<EditCommand>()) {
-    parsed.options.editFormat = make_shared<GenericInputFormat>();
+    parsed.options.editFormat = std::make_shared<GenericInputFormat>();
   }
 
   return parsed;
@@ -420,8 +422,8 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
 String readStdin() {
   String result;
   char buffer[1024];
-  while (!feof(stdin)) {
-    size_t readBytes = fread(buffer, 1, 1024, stdin);
+  while (!std::feof(stdin)) {
+    std::size_t readBytes = std::fread(buffer, 1, 1024, stdin);
     result.append(buffer, readBytes);
   }
   return result;

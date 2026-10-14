@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 import star.variant;
 import star.game_types;
@@ -11,7 +11,7 @@ import star.tile_modification;
 namespace Star {
 
 DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
-  uint8_t layer;
+  std::uint8_t layer;
   ds.read(layer);
   if (layer > 1) {
     tileMaterialPlacement.layer = TileLayer::Foreground;
@@ -31,7 +31,7 @@ DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
 DataStream& operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) {
   if (tileMaterialPlacement.collisionOverride != TileCollisionOverride::None
     && tileMaterialPlacement.layer == TileLayer::Foreground) {
-    uint8_t layer = (uint8_t)tileMaterialPlacement.collisionOverride;
+    std::uint8_t layer = (std::uint8_t)tileMaterialPlacement.collisionOverride;
     ds.write(++layer);
   }
   else

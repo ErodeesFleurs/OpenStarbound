@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.random;
@@ -40,7 +40,13 @@ import star.net_element_sync_group;
 
 namespace Star {
 
-STAR_CLASS(NetworkedAnimator);
+class NetworkedAnimator;
+using NetworkedAnimatorPtr = std::shared_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstPtr = std::shared_ptr<const NetworkedAnimator>;
+using NetworkedAnimatorWeakPtr = std::weak_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstWeakPtr = std::weak_ptr<const NetworkedAnimator>;
+using NetworkedAnimatorUPtr = std::unique_ptr<NetworkedAnimator>;
+using NetworkedAnimatorConstUPtr = std::unique_ptr<const NetworkedAnimator>;
 struct NetworkedAnimatorExceptionTag {
   static constexpr char const* name() { return "NetworkedAnimatorException"; }
 };
@@ -253,7 +259,7 @@ public:
   void setEffectEnabled(String const& effect, bool enabled);
 
   List<Drawable> drawables(Vec2F const& translate = Vec2F()) const;
-  List<pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
+  List<std::pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
 
   List<LightSource> lightSources(Vec2F const& translate = Vec2F()) const;
 
@@ -264,7 +270,7 @@ public:
   // Run through the current animations until the final frame, including any
   // transition animations.
   void finishAnimations();
-  uint8_t version() const;
+  std::uint8_t version() const;
 
 private:
   struct RotationGroup {
@@ -393,7 +399,7 @@ private:
   Json mergeIncludes(Json config, Json includes, String relativePath);
 
   String m_relativePath;
-  uint8_t m_animatorVersion;
+  std::uint8_t m_animatorVersion;
 
   AnimatedPartSet m_animatedParts;
   OrderedHashMap<String, StateInfo> m_stateInfo;
@@ -418,7 +424,7 @@ private:
 
   HashMap<String,List<Drawable>> m_partDrawables;
 
-  mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
+  mutable StringMap<std::pair<std::size_t, Drawable>> m_cachedPartDrawables;
 };
 
 }

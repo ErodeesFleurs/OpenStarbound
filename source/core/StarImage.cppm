@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.string;
@@ -10,7 +9,7 @@ import star.io_device;
 import star.math_common;
 namespace Star {
 
-enum class PixelFormat : uint8_t {
+enum class PixelFormat : std::uint8_t {
   RGB24,
   RGBA32,
   BGR24,
@@ -19,15 +18,21 @@ enum class PixelFormat : uint8_t {
   RGBA_F
 };
 
-uint8_t bitsPerPixel(PixelFormat pf);
-uint8_t bytesPerPixel(PixelFormat pf);
+std::uint8_t bitsPerPixel(PixelFormat pf);
+std::uint8_t bytesPerPixel(PixelFormat pf);
 
 struct ImageExceptionTag {
   static constexpr char const* name() { return "ImageException"; }
 };
 using ImageException = StarError<ImageExceptionTag, StarException>;
 
-STAR_CLASS(Image);
+class Image;
+using ImagePtr = std::shared_ptr<Image>;
+using ImageConstPtr = std::shared_ptr<const Image>;
+using ImageWeakPtr = std::weak_ptr<Image>;
+using ImageConstWeakPtr = std::weak_ptr<const Image>;
+using ImageUPtr = std::unique_ptr<Image>;
+using ImageConstUPtr = std::unique_ptr<const Image>;
 
 // Holds an image of PixelFormat in row major order, with no padding, with (0,
 // 0) defined to be the *lower left* corner.
@@ -37,7 +42,7 @@ public:
   static bool isPng(IODevicePtr device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
-  static tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
+  static std::tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
 
   static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
@@ -54,8 +59,8 @@ public:
   Image& operator=(Image const& image);
   Image& operator=(Image&& image);
 
-  uint8_t bitsPerPixel() const;
-  uint8_t bytesPerPixel() const;
+  std::uint8_t bitsPerPixel() const;
+  std::uint8_t bytesPerPixel() const;
 
   unsigned width() const;
   unsigned height() const;
@@ -66,8 +71,8 @@ public:
   PixelFormat pixelFormat() const;
 
   // If the image is empty, the data ptr will be null
-  uint8_t const* data() const;
-  uint8_t* data();
+  std::uint8_t const* data() const;
+  std::uint8_t* data();
 
   // Reallocate the image with the given width, height, and pixel format.  The
   // contents of the image are always zeroed after a call to reset.
@@ -145,13 +150,13 @@ public:
   void writePng(IODevicePtr device) const;
 
 private:
-  uint8_t* m_data;
+  std::uint8_t* m_data;
   unsigned m_width;
   unsigned m_height;
   PixelFormat m_pixelFormat;
 };
 
-inline uint8_t bitsPerPixel(PixelFormat pf) {
+inline std::uint8_t bitsPerPixel(PixelFormat pf) {
   switch (pf) {
     case PixelFormat::RGB24:
       return 24;
@@ -168,7 +173,7 @@ inline uint8_t bitsPerPixel(PixelFormat pf) {
   }
 }
 
-inline uint8_t bytesPerPixel(PixelFormat pf) {
+inline std::uint8_t bytesPerPixel(PixelFormat pf) {
   switch (pf) {
     case PixelFormat::RGB24:
       return 3;
@@ -185,11 +190,11 @@ inline uint8_t bytesPerPixel(PixelFormat pf) {
   }
 }
 
-inline uint8_t Image::bitsPerPixel() const {
+inline std::uint8_t Image::bitsPerPixel() const {
   return Star::bitsPerPixel(m_pixelFormat);
 }
 
-inline uint8_t Image::bytesPerPixel() const {
+inline std::uint8_t Image::bytesPerPixel() const {
   return Star::bytesPerPixel(m_pixelFormat);
 }
 
@@ -213,11 +218,11 @@ inline PixelFormat Image::pixelFormat() const {
   return m_pixelFormat;
 }
 
-inline const uint8_t* Image::data() const {
+inline const std::uint8_t* Image::data() const {
   return m_data;
 }
 
-inline uint8_t* Image::data() {
+inline std::uint8_t* Image::data() {
   return m_data;
 }
 
@@ -258,10 +263,14 @@ inline void Image::set32(Vec2U const& pos, Vec4B const& c) {
 }
 
 inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 4);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_data && x < m_width && y < m_height));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((bytesPerPixel() == 4));
+  }
 
-  size_t offset = y * m_width * 4 + x * 4;
+  std::size_t offset = y * m_width * 4 + x * 4;
   m_data[offset] = c[0];
   m_data[offset + 1] = c[1];
   m_data[offset + 2] = c[2];
@@ -269,11 +278,15 @@ inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
 }
 
 inline Vec4B Image::get32(unsigned x, unsigned y) const {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 4);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_data && x < m_width && y < m_height));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((bytesPerPixel() == 4));
+  }
 
   Vec4B c;
-  size_t offset = y * m_width * 4 + x * 4;
+  std::size_t offset = y * m_width * 4 + x * 4;
   c[0] = m_data[offset];
   c[1] = m_data[offset + 1];
   c[2] = m_data[offset + 2];
@@ -286,21 +299,29 @@ inline void Image::set24(Vec2U const& pos, Vec3B const& c) {
 }
 
 inline void Image::set24(unsigned x, unsigned y, Vec3B const& c) {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 3);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_data && x < m_width && y < m_height));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((bytesPerPixel() == 3));
+  }
 
-  size_t offset = y * m_width * 3 + x * 3;
+  std::size_t offset = y * m_width * 3 + x * 3;
   m_data[offset] = c[0];
   m_data[offset + 1] = c[1];
   m_data[offset + 2] = c[2];
 }
 
 inline Vec3B Image::get24(unsigned x, unsigned y) const {
-  starAssert(m_data && x < m_width && y < m_height);
-  starAssert(bytesPerPixel() == 3);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_data && x < m_width && y < m_height));
+  }
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((bytesPerPixel() == 3));
+  }
 
   Vec3B c;
-  size_t offset = y * m_width * 3 + x * 3;
+  std::size_t offset = y * m_width * 3 + x * 3;
   c[0] = m_data[offset];
   c[1] = m_data[offset + 1];
   c[2] = m_data[offset + 2];
@@ -332,7 +353,7 @@ struct ImageView {
   ImageView(Image const& image);
 
   Vec2U size{0, 0};
-  uint8_t const* data = nullptr;
+  std::uint8_t const* data = nullptr;
   PixelFormat format = PixelFormat::RGB24;
 };
 

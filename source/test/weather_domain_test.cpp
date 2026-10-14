@@ -6,7 +6,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.color;
 import star.bi_map;
@@ -74,7 +74,7 @@ using namespace Star;
 
 namespace {
 
-static WorldTemplate makeGardenWorld(TerrestrialWorldParametersPtr parameters, uint64_t seed) {
+static WorldTemplate makeGardenWorld(TerrestrialWorldParametersPtr parameters, std::uint64_t seed) {
   return WorldTemplate(parameters, SkyParameters(), seed);
 }
 
@@ -85,7 +85,7 @@ static WorldTemplate::WeatherLayer const* layerAt(WorldTemplate const& world, in
 }
 
 TEST(WeatherDomainTest, DefaultTerrestrialOwnership) {
-  uint64_t seed = 1234;
+  std::uint64_t seed = 1234;
   auto parameters = generateTerrestrialWorldParameters("garden", "small", seed);
   auto world = makeGardenWorld(parameters, seed);
 
@@ -118,7 +118,7 @@ TEST(WeatherDomainTest, DefaultTerrestrialOwnership) {
 }
 
 TEST(WeatherDomainTest, ExplicitLayerWeatherCreatesIndependentDomain) {
-  uint64_t seed = 5678;
+  std::uint64_t seed = 5678;
   auto parameters = generateTerrestrialWorldParameters("garden", "small", seed);
   parameters->atmosphereLayer.primaryRegion.biome = "garden";
   auto world = makeGardenWorld(parameters, seed);

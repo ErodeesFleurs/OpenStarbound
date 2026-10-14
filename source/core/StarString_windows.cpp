@@ -1,13 +1,12 @@
-#define NOMINMAX
 #include <windows.h>
-#include "StarConfig.hpp"
+import std;
 import star.string_windows;
 import star.string;
 
 namespace Star {
 
-size_t wcharLen(WCHAR const* s) {
-  size_t size = 0;
+std::size_t wcharLen(WCHAR const* s) {
+  std::size_t size = 0;
   while (*s) {
     ++size;
     ++s;
@@ -27,9 +26,9 @@ String utf16ToString(WCHAR const* s) {
   return result;
 }
 
-unique_ptr<WCHAR[]> stringToUtf16(String const& s) {
+std::unique_ptr<WCHAR[]> stringToUtf16(String const& s) {
   int utf16Len = MultiByteToWideChar(CP_UTF8, 0, s.utf8Ptr(), s.utf8Size() + 1, NULL, 0);
-  unique_ptr<WCHAR[]> result;
+  std::unique_ptr<WCHAR[]> result;
   result.reset(new WCHAR[utf16Len]);
   MultiByteToWideChar(CP_UTF8, 0, s.utf8Ptr(), s.utf8Size() + 1, result.get(), utf16Len);
   return result;

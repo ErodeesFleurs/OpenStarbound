@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -29,12 +29,18 @@ import star.world_parameters;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(CelestialParameters);
+class CelestialParameters;
+using CelestialParametersPtr = std::shared_ptr<CelestialParameters>;
+using CelestialParametersConstPtr = std::shared_ptr<const CelestialParameters>;
+using CelestialParametersWeakPtr = std::weak_ptr<CelestialParameters>;
+using CelestialParametersConstWeakPtr = std::weak_ptr<const CelestialParameters>;
+using CelestialParametersUPtr = std::unique_ptr<CelestialParameters>;
+using CelestialParametersConstUPtr = std::unique_ptr<const CelestialParameters>;
 
 class CelestialParameters {
 public:
   CelestialParameters();
-  CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters);
+  CelestialParameters(CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters);
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 
@@ -43,18 +49,18 @@ public:
 
   CelestialCoordinate coordinate() const;
   String name() const;
-  uint64_t seed() const;
+  std::uint64_t seed() const;
 
   Json parameters() const;
   Json getParameter(String const& name, Json def = Json()) const;
   // Predictably select from a json array, given by the named parameter.
   // Selects based on the name hash and the system seed.
-  Json randomizeParameterList(String const& name, int32_t mix = 0) const;
+  Json randomizeParameterList(String const& name, std::int32_t mix = 0) const;
   // Predictably select from a range, given by the named parameter.  Works for
   // either floating or integral ranges.
-  Json randomizeParameterRange(String const& name, int32_t mix = 0) const;
+  Json randomizeParameterRange(String const& name, std::int32_t mix = 0) const;
   // Same function, but if you want to specify the range from an external source
-  Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, Maybe<String> const& name = {}) const;
+  Json randomizeParameterRange(JsonArray const& range, std::int32_t mix = 0, Maybe<String> const& name = {}) const;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.
@@ -64,7 +70,7 @@ public:
 
 private:
   CelestialCoordinate m_coordinate;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   String m_name;
   Json m_parameters;
   VisitableWorldParametersConstPtr m_visitableParameters;

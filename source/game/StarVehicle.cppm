@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.net_compatibility;
@@ -77,7 +77,13 @@ struct VehicleExceptionTag {
   static constexpr char const* name() { return "VehicleException"; }
 };
 using VehicleException = StarError<VehicleExceptionTag, StarException>;
-STAR_CLASS(Vehicle);
+class Vehicle;
+using VehiclePtr = std::shared_ptr<Vehicle>;
+using VehicleConstPtr = std::shared_ptr<const Vehicle>;
+using VehicleWeakPtr = std::weak_ptr<Vehicle>;
+using VehicleConstWeakPtr = std::weak_ptr<const Vehicle>;
+using VehicleUPtr = std::unique_ptr<Vehicle>;
+using VehicleConstUPtr = std::unique_ptr<const Vehicle>;
 
 class Vehicle : 
   public virtual MobileEntity,
@@ -114,13 +120,13 @@ public:
   RectF collisionArea() const override;
   Vec2F velocity() const;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderer) override;
 
@@ -137,14 +143,14 @@ public:
   bool isInteractive() const override;
   InteractAction interact(InteractRequest const& request) override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
-  void loungeControl(size_t positionIndex, LoungeControl loungeControl) override;
-  void loungeAim(size_t positionIndex, Vec2F const& aimPosition) override;
+  std::size_t anchorCount() const override;
+  LoungeAnchorConstPtr loungeAnchor(std::size_t positionIndex) const override;
+  void loungeControl(std::size_t positionIndex, LoungeControl loungeControl) override;
+  void loungeAim(std::size_t positionIndex, Vec2F const& aimPosition) override;
 
   List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::size_t movingCollisionCount() const override;
+  Maybe<PhysicsMovingCollision> movingCollision(std::size_t positionIndex) const override;
 
   Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
   Maybe<LuaValue> evalScript(String const& code) override;

@@ -1,4 +1,7 @@
-#include "StarConfig.hpp"
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+
+import std;
 import star.format;
 import star.string;
 import star.list;
@@ -338,7 +341,7 @@ void ModUploader::uploadToSteam() {
   }
 
   String steamUploadDir = File::temporaryDirectory();
-  auto progressCallback = [&progress](size_t i, size_t total, String, String assetPath) {
+  auto progressCallback = [&progress](std::size_t i, std::size_t total, String, String assetPath) {
     progress.setLabelText(toQString(strf("Packing '{}'", assetPath)));
     progress.setMaximum(total);
     progress.setValue(i);
@@ -369,11 +372,11 @@ void ModUploader::uploadToSteam() {
       tagList.append(entry.first);
   }
   List<char const*> tagStrings(tagList.size(), nullptr);
-  for (size_t i = 0; i < tagList.size(); ++i) {
+  for (std::size_t i = 0; i < tagList.size(); ++i) {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
 
-  SteamParamStringArray_t itemTags = {tagStrings.ptr(), (int32_t)tagList.size()};
+  SteamParamStringArray_t itemTags = {tagStrings.ptr(), (std::int32_t)tagList.size()};
   SteamAPI_ISteamUGC_SetItemTags(SteamAPI_SteamUGC(), updateHandle, &itemTags, false);
 
   SteamCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit(m_steamDispatch,
@@ -414,11 +417,11 @@ void ModUploader::uploadToSteam() {
 }
 
 void ModUploader::onSteamCreateItem(CreateItemResult_t* result, bool ioFailure) {
-  m_steamItemCreateResult = make_pair(*result, ioFailure);
+  m_steamItemCreateResult = std::make_pair(*result, ioFailure);
 }
 
 void ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure) {
-  m_steamItemSubmitResult = make_pair(*result, ioFailure);
+  m_steamItemSubmitResult = std::make_pair(*result, ioFailure);
 }
 
 }

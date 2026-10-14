@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.set;
 import star.json;
 import star.id_map;
@@ -62,15 +62,15 @@ extern EnumMap<LoungeControl> const LoungeControlNames{{LoungeControl::Left, "Le
     {LoungeControl::Walk, "Walk"},
 };
 
-EntityAnchorConstPtr LoungeableEntity::anchor(size_t anchorPositionIndex) const {
+EntityAnchorConstPtr LoungeableEntity::anchor(std::size_t anchorPositionIndex) const {
   return loungeAnchor(anchorPositionIndex);
 }
 
-void LoungeableEntity::loungeControl(size_t, LoungeControl) {}
+void LoungeableEntity::loungeControl(std::size_t, LoungeControl) {}
 
-void LoungeableEntity::loungeAim(size_t, Vec2F const&) {}
+void LoungeableEntity::loungeAim(std::size_t, Vec2F const&) {}
 
-Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
+Set<EntityId> LoungeableEntity::entitiesLoungingIn(std::size_t positionIndex) const {
   Set<EntityId> loungingInEntities;
   for (auto const& p : entitiesLounging()) {
     if (p.second == positionIndex)
@@ -79,8 +79,8 @@ Set<EntityId> LoungeableEntity::entitiesLoungingIn(size_t positionIndex) const {
   return loungingInEntities;
 }
 
-Set<pair<EntityId, size_t>> LoungeableEntity::entitiesLounging() const {
-  Set<pair<EntityId, size_t>> loungingInEntities;
+Set<std::pair<EntityId, std::size_t>> LoungeableEntity::entitiesLounging() const {
+  Set<std::pair<EntityId, std::size_t>> loungingInEntities;
   world()->forEachEntity(metaBoundBox().translated(position()),
       [&](EntityPtr const& entity) {
         if (auto lounger = as<LoungingEntity>(entity)) {

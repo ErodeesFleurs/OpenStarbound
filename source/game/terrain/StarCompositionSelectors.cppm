@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
@@ -59,7 +59,7 @@ MaxSelector::MaxSelector(
   : TerrainSelector(Name, config, parameters) {
   for (auto const& sourceConfig : config.getArray("sources")) {
     String sourceType = sourceConfig.getString("type");
-    uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
+    std::uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
     TerrainSelectorParameters sourceParameters = parameters;
     sourceParameters.seed += seedBias;
     m_sources.append(database->createSelectorType(sourceType, sourceConfig, sourceParameters));
@@ -69,7 +69,7 @@ MaxSelector::MaxSelector(
 float MaxSelector::get(int x, int y) const {
   float value = lowest<float>();
   for (auto const& source : m_sources)
-    value = max(value, source->get(x, y));
+    value = std::max(value, source->get(x, y));
   return value;
 }
 
@@ -82,7 +82,7 @@ MinMaxSelector::MinMaxSelector(
   : TerrainSelector(Name, config, parameters) {
   for (auto const& sourceConfig : config.getArray("sources")) {
     String sourceType = sourceConfig.getString("type");
-    uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
+    std::uint64_t seedBias = sourceConfig.getUInt("seedBias", 0);
     TerrainSelectorParameters sourceParameters = parameters;
     sourceParameters.seed += seedBias;
     m_sources.append(database->createSelectorType(sourceType, sourceConfig, sourceParameters));
@@ -94,9 +94,9 @@ float MinMaxSelector::get(int x, int y) const {
   for (auto const& source : m_sources) {
     float srcVal = source->get(x, y);
     if (value > 0 || srcVal > 0)
-      value = max(value, srcVal);
+      value = std::max(value, srcVal);
     else
-      value = min(value, srcVal);
+      value = std::min(value, srcVal);
   }
   return value;
 }

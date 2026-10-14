@@ -20,7 +20,7 @@ import star.audio;
 import star.map;
 import star.set;
 import star.maybe;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.rpc_promise;
 import star.math_common;
@@ -98,8 +98,20 @@ import star.beam_item;
 import star.durability_item;
 import star.pointable_item;
 import star.net_compatibility;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.activatable_item;
@@ -778,17 +790,17 @@ void ToolUser::NetItem::tickNetInterpolation(float dt) {
   }
 }
 
-bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool ToolUser::NetItem::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   bool deltaWritten = false;
   const_cast<NetItem*>(this)->updateItemDescriptor();
   m_buffer.clear();
   if (m_itemDescriptor.writeNetDelta(m_buffer, fromVersion, rules)) {
     deltaWritten = true;
-    ds.write<uint8_t>(1);
+    ds.write<std::uint8_t>(1);
     ds.writeBytes(m_buffer.data());
     if (auto netItem = as<NetElement>(m_item.get())) {
-      ds.write<uint8_t>(2);
+      ds.write<std::uint8_t>(2);
       netItem->netStore(ds, rules);
     }
   }
@@ -797,20 +809,20 @@ bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetC
     m_buffer.clear();
     if (netItem->writeNetDelta(m_buffer, fromVersion, rules)) {
       deltaWritten = true;
-      ds.write<uint8_t>(3);
+      ds.write<std::uint8_t>(3);
       ds.writeBytes(m_buffer.data());
     }
   }
 
   if (deltaWritten)
-    ds.write<uint8_t>(0);
+    ds.write<std::uint8_t>(0);
   return deltaWritten;
 }
 
 void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   while (true) {
-    uint8_t code = ds.read<uint8_t>();
+    std::uint8_t code = ds.read<std::uint8_t>();
     if (code == 0) {
       break;
     } else if (code == 1) {
@@ -917,7 +929,7 @@ void ToolUser::netElementsNeedLoad(bool) {
   if (auto fireableItem = as<FireableItem>(m_primaryHandItem.get())) {
     auto fireTime = m_primaryFireTimerNetState.get();
     fireableItem->setCoolingDown(fireTime < 0);
-    fireableItem->setFireTimer(abs(fireTime));
+    fireableItem->setFireTimer(std::abs(fireTime));
 
     auto timeFiring = m_primaryTimeFiringNetState.get();
     fireableItem->setTimeFiring(timeFiring);
@@ -925,7 +937,7 @@ void ToolUser::netElementsNeedLoad(bool) {
   if (auto fireableItem = as<FireableItem>(m_altHandItem.get())) {
     auto fireTime = m_altFireTimerNetState.get();
     fireableItem->setCoolingDown(fireTime < 0);
-    fireableItem->setFireTimer(abs(fireTime));
+    fireableItem->setFireTimer(std::abs(fireTime));
 
     auto timeFiring = m_altTimeFiringNetState.get();
     fireableItem->setTimeFiring(timeFiring);

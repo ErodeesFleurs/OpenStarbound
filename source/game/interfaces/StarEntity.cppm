@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -27,10 +27,34 @@ import star.rect;
 import star.algorithm;
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(World);
-STAR_STRUCT(DamageNotification);
-STAR_CLASS(Entity);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+struct DamageNotification;
+using DamageNotificationPtr = std::shared_ptr<DamageNotification>;
+using DamageNotificationConstPtr = std::shared_ptr<const DamageNotification>;
+using DamageNotificationWeakPtr = std::weak_ptr<DamageNotification>;
+using DamageNotificationConstWeakPtr = std::weak_ptr<const DamageNotification>;
+using DamageNotificationUPtr = std::unique_ptr<DamageNotification>;
+using DamageNotificationConstUPtr = std::unique_ptr<const DamageNotification>;
+class Entity;
+using EntityPtr = std::shared_ptr<Entity>;
+using EntityConstPtr = std::shared_ptr<const Entity>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
+using EntityConstWeakPtr = std::weak_ptr<const Entity>;
+using EntityUPtr = std::unique_ptr<Entity>;
+using EntityConstUPtr = std::unique_ptr<const Entity>;
 
 struct EntityExceptionTag {
   static constexpr char const* name() { return "EntityException"; }
@@ -54,7 +78,7 @@ extern EnumMap<ClientEntityMode> const ClientEntityModeNames;
 
 // The top-level entity type.  The enum order is intended to be in the order in
 // which entities should be updated every tick
-enum class EntityType : uint8_t {
+enum class EntityType : std::uint8_t {
   Plant,
   Object,
   Vehicle,
@@ -87,7 +111,7 @@ public:
   // uninitalized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  virtual std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.
@@ -173,7 +197,7 @@ public:
   // This will only ever be called on master entities.
   virtual Maybe<ChainableJsonMessageResponse> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
 
-  virtual void update(float dt, uint64_t currentStep);
+  virtual void update(float dt, std::uint64_t currentStep);
 
   virtual void render(RenderCallback* renderer);
 
@@ -230,10 +254,10 @@ private:
 };
 
 template <typename EntityT>
-using EntityCallbackOf = function<void(shared_ptr<EntityT> const&)>;
+using EntityCallbackOf = std::function<void(std::shared_ptr<EntityT> const&)>;
 
 template <typename EntityT>
-using EntityFilterOf = function<bool(shared_ptr<EntityT> const&)>;
+using EntityFilterOf = std::function<bool(std::shared_ptr<EntityT> const&)>;
 
 typedef EntityCallbackOf<Entity> EntityCallback;
 typedef EntityFilterOf<Entity> EntityFilter;
@@ -241,7 +265,7 @@ typedef EntityFilterOf<Entity> EntityFilter;
 // Filters based first on dynamic casting to the given type, then optionally on
 // the given derived type filter.
 template <typename EntityT>
-EntityFilter entityTypeFilter(function<bool(shared_ptr<EntityT> const&)> filter = {}) {
+EntityFilter entityTypeFilter(std::function<bool(std::shared_ptr<EntityT> const&)> filter = {}) {
   return [filter](EntityPtr const& e) -> bool {
     if (auto entity = as<EntityT>(e)) {
       return !filter || filter(entity);

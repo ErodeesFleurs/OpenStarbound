@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -28,7 +29,6 @@ import star.audio;
 import star.map;
 import star.image;
 import star.math_common;
-#include "StarConfig.hpp"
 import star.version;
 import star.either;
 import star.random;
@@ -37,7 +37,6 @@ import star.variant;
 import star.rpc_promise;
 import star.ordered_map;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;

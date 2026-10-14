@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.hash;
@@ -15,13 +15,13 @@ import star.logging;
 
 namespace Star {
 
-Directives::Entry::Entry(ImageOperation&& newOperation, size_t strBegin, size_t strLength) {
+Directives::Entry::Entry(ImageOperation&& newOperation, std::size_t strBegin, std::size_t strLength) {
   operation = std::move(newOperation);
   begin = strBegin;
   length = strLength;
 }
 
-Directives::Entry::Entry(ImageOperation const& newOperation, size_t strBegin, size_t strLength) {
+Directives::Entry::Entry(ImageOperation const& newOperation, std::size_t strBegin, std::size_t strLength) {
   operation = newOperation;
   begin = strBegin;
   length = strLength;
@@ -140,7 +140,7 @@ void Directives::parse(String&& directives) {
 
   List<Entry> entries;
   StringView view(directives);
-  view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
+  view.forEachSplitView("?", [&](StringView split, std::size_t beg, std::size_t end) {
     if (!split.empty()) {
       ImageOperation operation = NullImageOperation();
       if (beg == 0) {
@@ -212,11 +212,11 @@ String& Directives::addToString(String& out) const {
   return out;
 }
 
-size_t Directives::hash() const {
+std::size_t Directives::hash() const {
   return m_shared ? m_shared->hash : 0;
 }
 
-size_t Directives::size() const {
+std::size_t Directives::size() const {
   return m_shared ? m_shared->entries.size() : 0;
 }
 
@@ -401,10 +401,10 @@ void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback re
   });
 }
 
-size_t DirectivesGroup::hash() const {
+std::size_t DirectivesGroup::hash() const {
   XXHash3 hasher;
   for (auto& directives : m_directives) {
-    size_t hash = directives.hash();
+    std::size_t hash = directives.hash();
     hasher.push((const char*)&hash, sizeof(hash));
   }
 
@@ -438,7 +438,7 @@ DataStream& operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
   return ds;
 }
 
-size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {
+std::size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {
   return s.hash();
 }
 

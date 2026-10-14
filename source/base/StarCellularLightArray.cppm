@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.list;
 import star.vector;
@@ -67,12 +67,12 @@ public:
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
-  size_t borderCells() const;
+  std::size_t borderCells() const;
 
   // Begin a new calculation, setting internal storage to new width and height
   // (if these are the same as last time this is cheap).  Always clears all
   // existing light and collision data.
-  void begin(size_t newWidth, size_t newHeight);
+  void begin(std::size_t newWidth, std::size_t newHeight);
 
   // Position is in index space, spread lights will have no effect if they are
   // outside of the array.  Integer points are assumed to be on the corners of
@@ -81,27 +81,27 @@ public:
   void addPointLight(PointLight const& pointLight);
 
   // Directly set the lighting values for this position.
-  void setLight(size_t x, size_t y, LightValue const& light);
+  void setLight(std::size_t x, std::size_t y, LightValue const& light);
 
   // Get current light value.  Call after calling calculate() to pull final
   // data out.
-  LightValue getLight(size_t x, size_t y) const;
+  LightValue getLight(std::size_t x, std::size_t y) const;
 
   // Set obstacle values for this position
-  void setObstacle(size_t x, size_t y, bool obstacle);
-  bool getObstacle(size_t x, size_t y) const;
+  void setObstacle(std::size_t x, std::size_t y, bool obstacle);
+  bool getObstacle(std::size_t x, std::size_t y) const;
 
-  Cell const& cell(size_t x, size_t y) const;
-  Cell& cell(size_t x, size_t y);
+  Cell const& cell(std::size_t x, std::size_t y) const;
+  Cell& cell(std::size_t x, std::size_t y);
 
-  Cell const& cellAtIndex(size_t index) const;
-  Cell& cellAtIndex(size_t index);
+  Cell const& cellAtIndex(std::size_t index) const;
+  Cell& cellAtIndex(std::size_t index);
 
   // Calculate lighting in the given sub-rect, in order to properly do spread
   // lighting, and initial lighting must be given for the ambient border this
   // given rect, and the array size must be at least that large.  xMax / yMax
   // are not inclusive, the range is [xMin, xMax) and [yMin, yMax).
-  void calculate(size_t xMin, size_t yMin, size_t xMax, size_t yMax);
+  void calculate(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax);
 
 private:
   // Set 4 points based on interpolated light position and free space
@@ -109,20 +109,20 @@ private:
   void setSpreadLightingPoints();
 
   // Spreads light out in an octagonal based cellular automata
-  void calculateLightSpread(size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  void calculateLightSpread(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax);
 
   // Loops through each light and adds light strength based on distance and
   // obstacle attenuation.  Calculates within the given sub-rect
-  void calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  void calculatePointLighting(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax);
 
   // Run Xiaolin Wu's anti-aliased line drawing algorithm from start to end,
   // summing each block that would be drawn to to produce an attenuation.  Not
   // circularized.
   float lineAttenuation(Vec2F const& start, Vec2F const& end, float perObstacleAttenuation, float maxAttenuation);
 
-  size_t m_width;
-  size_t m_height;
-  unique_ptr<Cell[]> m_cells;
+  std::size_t m_width;
+  std::size_t m_height;
+  std::unique_ptr<Cell[]> m_cells;
   List<SpreadLight> m_spreadLights;
   List<PointLight> m_pointLights;
 
@@ -180,7 +180,7 @@ inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
   if (max <= 0.0f)
     return c;
 
-  for (size_t i = 0; i < 3; ++i) {
+  for (std::size_t i = 0; i < 3; ++i) {
     float pdrop = (drop * c[i]) / max;
     if (c[i] > pdrop)
       c[i] -= pdrop;
@@ -219,15 +219,17 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
 }
 
 template <typename LightTraits>
-size_t CellularLightArray<LightTraits>::borderCells() const {
-  return (size_t)ceil(max(0.0f, max(m_spreadMaxAir, m_pointMaxAir)));
+std::size_t CellularLightArray<LightTraits>::borderCells() const {
+  return (std::size_t)std::ceil(std::max(0.0f, std::max(m_spreadMaxAir, m_pointMaxAir)));
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
+void CellularLightArray<LightTraits>::begin(std::size_t newWidth, std::size_t newHeight) {
   m_spreadLights.clear();
   m_pointLights.clear();
-  starAssert(newWidth > 0 && newHeight > 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((newWidth > 0 && newHeight > 0));
+  }
 
   if (!m_cells || newWidth != m_width || newHeight != m_height) {
     m_width = newWidth;
@@ -251,51 +253,59 @@ void CellularLightArray<LightTraits>::addPointLight(PointLight const& pointLight
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::setLight(size_t x, size_t y, LightValue const& lightValue) {
+void CellularLightArray<LightTraits>::setLight(std::size_t x, std::size_t y, LightValue const& lightValue) {
   cell(x, y).light = lightValue;
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::setObstacle(size_t x, size_t y, bool obstacle) {
+void CellularLightArray<LightTraits>::setObstacle(std::size_t x, std::size_t y, bool obstacle) {
   cell(x, y).obstacle = obstacle;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::getLight(size_t x, size_t y) const -> LightValue {
+auto CellularLightArray<LightTraits>::getLight(std::size_t x, std::size_t y) const -> LightValue {
   return cell(x, y).light;
 }
 
 template <typename LightTraits>
-bool CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const {
+bool CellularLightArray<LightTraits>::getObstacle(std::size_t x, std::size_t y) const {
   return cell(x, y).obstacle;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const & {
-  starAssert(x < m_width && y < m_height);
+auto CellularLightArray<LightTraits>::cell(std::size_t x, std::size_t y) const -> Cell const & {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((x < m_width && y < m_height));
+  }
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell & {
-  starAssert(x < m_width && y < m_height);
+auto CellularLightArray<LightTraits>::cell(std::size_t x, std::size_t y) -> Cell & {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((x < m_width && y < m_height));
+  }
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const & {
-  starAssert(index < m_width * m_height);
+auto CellularLightArray<LightTraits>::cellAtIndex(std::size_t index) const -> Cell const & {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((index < m_width * m_height));
+  }
   return m_cells[index];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell & {
-  starAssert(index < m_width * m_height);
+auto CellularLightArray<LightTraits>::cellAtIndex(std::size_t index) -> Cell & {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((index < m_width * m_height));
+  }
   return m_cells[index];
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::calculate(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
+void CellularLightArray<LightTraits>::calculate(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax) {
   setSpreadLightingPoints();
   calculateLightSpread(xMin, yMin, xMax, yMax);
   calculatePointLighting(xMin, yMin, xMax, yMax);
@@ -305,8 +315,8 @@ template <typename LightTraits>
 void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
   for (SpreadLight const& light : m_spreadLights) {
     // - 0.5f to correct for lights being on the grid corners and not center
-    int minX = floor(light.position[0] - 0.5f);
-    int minY = floor(light.position[1] - 0.5f);
+    int minX = std::floor(light.position[0] - 0.5f);
+    int minY = std::floor(light.position[1] - 0.5f);
     int maxX = minX + 1;
     int maxY = minY + 1;
 
@@ -340,8 +350,10 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
-  starAssert(m_width > 0 && m_height > 0);
+void CellularLightArray<LightTraits>::calculateLightSpread(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax) {
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_width > 0 && m_height > 0));
+  }
 
   float dropoffAir = 1.0f / m_spreadMaxAir;
   float dropoffObstacle = 1.0f / m_spreadMaxObstacle;
@@ -349,18 +361,18 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
   float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
-  xMin = xMin - min(xMin, (size_t)ceil(m_spreadMaxAir));
-  yMin = yMin - min(yMin, (size_t)ceil(m_spreadMaxAir));
-  xMax = min(m_width, xMax + (size_t)ceil(m_spreadMaxAir));
-  yMax = min(m_height, yMax + (size_t)ceil(m_spreadMaxAir));
+  xMin = xMin - std::min(xMin, (std::size_t)std::ceil(m_spreadMaxAir));
+  yMin = yMin - std::min(yMin, (std::size_t)std::ceil(m_spreadMaxAir));
+  xMax = std::min(m_width, xMax + (std::size_t)std::ceil(m_spreadMaxAir));
+  yMax = std::min(m_height, yMax + (std::size_t)std::ceil(m_spreadMaxAir));
 
   for (unsigned p = 0; p < m_spreadPasses; ++p) {
     // Spread right and up and diag up right / diag down right
-    for (size_t x = xMin + 1; x < xMax - 1; ++x) {
-      size_t xCellOffset = x * m_height;
-      size_t xRightCellOffset = (x + 1) * m_height;
+    for (std::size_t x = xMin + 1; x < xMax - 1; ++x) {
+      std::size_t xCellOffset = x * m_height;
+      std::size_t xRightCellOffset = (x + 1) * m_height;
 
-      for (size_t y = yMin + 1; y < yMax - 1; ++y) {
+      for (std::size_t y = yMin + 1; y < yMax - 1; ++y) {
         auto cell = cellAtIndex(xCellOffset + y);
         auto& cellRight = cellAtIndex(xRightCellOffset + y);
         auto& cellUp = cellAtIndex(xCellOffset + y + 1);
@@ -379,11 +391,11 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
     }
 
     // Spread left and down and diag up left / diag down left
-    for (size_t x = xMax - 2; x > xMin; --x) {
-      size_t xCellOffset = x * m_height;
-      size_t xLeftCellOffset = (x - 1) * m_height;
+    for (std::size_t x = xMax - 2; x > xMin; --x) {
+      std::size_t xCellOffset = x * m_height;
+      std::size_t xLeftCellOffset = (x - 1) * m_height;
 
-      for (size_t y = yMax - 2; y > yMin; --y) {
+      for (std::size_t y = yMax - 2; y > yMin; --y) {
         auto cell = cellAtIndex(xCellOffset + y);
         auto& cellLeft = cellAtIndex(xLeftCellOffset + y);
         auto& cellDown = cellAtIndex(xCellOffset + y - 1);
@@ -419,16 +431,16 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
   float dx = x2 - x1;
   float dy = y2 - y1;
 
-  if (fabs(dx) < fabs(dy)) {
+  if (std::fabs(dx) < std::fabs(dy)) {
     if (y2 < y1) {
-      swap(y1, y2);
-      swap(x1, x2);
+      std::swap(y1, y2);
+      std::swap(x1, x2);
     }
 
     float gradient = dx / dy;
 
     // first end point
-    float yend = round(y1);
+    float yend = std::round(y1);
     float xend = x1 + gradient * (yend - y1);
     float ygap = rfpart(y1 + 0.5);
     int ypxl1 = yend;
@@ -446,7 +458,7 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
     float interx = xend + gradient;
 
     // second end point
-    yend = round(y2);
+    yend = std::round(y2);
     xend = x2 + gradient * (yend - y2);
     ygap = fpart(y2 + 0.5);
     int ypxl2 = yend;
@@ -478,14 +490,14 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
     }
   } else {
     if (x2 < x1) {
-      swap(x1, x2);
-      swap(y1, y2);
+      std::swap(x1, x2);
+      std::swap(y1, y2);
     }
 
     float gradient = dy / dx;
 
     // first end point
-    float xend = round(x1);
+    float xend = std::round(x1);
     float yend = y1 + gradient * (xend - x1);
     float xgap = rfpart(x1 + 0.5);
     int xpxl1 = xend;
@@ -503,7 +515,7 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
     float intery = yend + gradient;
 
     // second end point
-    xend = round(x2);
+    xend = std::round(x2);
     yend = y2 + gradient * (xend - x2);
     xgap = fpart(x2 + 0.5);
     int xpxl2 = xend;
@@ -535,7 +547,7 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
     }
   }
 
-  return min(obstacleAttenuation, maxAttenuation);
+  return std::min(obstacleAttenuation, maxAttenuation);
 }
 
 }

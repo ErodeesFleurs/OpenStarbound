@@ -32,7 +32,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -146,24 +146,24 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() : m_rebuilder(make_shared<Rebuilder>("player")) {
+PlayerFactory::PlayerFactory() : m_rebuilder(std::make_shared<Rebuilder>("player")) {
   auto assets = Root::singleton().assets();
-  m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
+  m_config = std::make_shared<PlayerConfig>(assets->json("/player.config").toObject());
 }
 
 PlayerPtr PlayerFactory::create() const {
-  return make_shared<Player>(m_config);
+  return std::make_shared<Player>(m_config);
 }
 
 PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   PlayerPtr player;
   try {
-    player = make_shared<Player>(m_config, diskStore);
+    player = std::make_shared<Player>(m_config, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        player = make_shared<Player>(m_config, store);
+        player = std::make_shared<Player>(m_config, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -178,7 +178,7 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
 }
 
 PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Player>(m_config, netStore, rules);
+  return std::make_shared<Player>(m_config, netStore, rules);
 }
 
 }

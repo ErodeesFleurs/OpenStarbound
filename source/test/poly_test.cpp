@@ -1,3 +1,4 @@
+import std;
 import star.poly;
 import star.random;
 
@@ -12,7 +13,7 @@ TEST(PolyTest, ConvexHull) {
   PolyF::VertexList inputVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
     float angle = Random::randf() * 2 * Constants::pi;
-    inputVertexes.append({sin(angle), cos(angle)});
+    inputVertexes.append({std::sin(angle), std::cos(angle)});
   }
 
   PolyF convex = PolyF::convexHull(inputVertexes);
@@ -20,7 +21,7 @@ TEST(PolyTest, ConvexHull) {
   PolyF::VertexList testVertexes;
   for (unsigned i = 0; i < 1000; ++i) {
     float angle = Random::randf() * 2 * Constants::pi;
-    testVertexes.append({sin(angle) * 0.75f, cos(angle) * 0.75f});
+    testVertexes.append({std::sin(angle) * 0.75f, std::cos(angle) * 0.75f});
   }
 
   for (auto const& vertex : testVertexes)
@@ -30,7 +31,7 @@ TEST(PolyTest, ConvexHull) {
 TEST(PolyTest, Distance) {
   PolyF square = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, 1.0f}, {-1.0f, 1.0f}};
 
-  EXPECT_TRUE(fabs(square.distance({-2.0f, -2.0f}) - Constants::sqrt2) < 0.00001f);
+  EXPECT_TRUE(std::fabs(square.distance({-2.0f, -2.0f}) - Constants::sqrt2) < 0.00001f);
 }
 
 TEST(PolyTest, LineCollision) {
@@ -41,7 +42,7 @@ TEST(PolyTest, LineCollision) {
 
 TEST(PolyTest, ConvexArea) {
   PolyF triangle = {{-1.0f, -1.0f}, {1.0f, -1.0f}, {0.0f, 1.0f}};
-  EXPECT_TRUE(fabs(triangle.convexArea() - 2.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(triangle.convexArea() - 2.0f) < 0.0001f);
 }
 
 TEST(PolyTest, Clipping) {

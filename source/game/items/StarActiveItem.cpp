@@ -20,7 +20,7 @@ import star.maybe;
 import star.variant;
 import star.rpc_promise;
 import star.a_star;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 #include "StarDataStreamExtra.hpp"
 import star.set;
@@ -152,13 +152,13 @@ ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& 
 ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
 
 ItemPtr ActiveItem::clone() const {
-  return make_shared<ActiveItem>(*this);
+  return std::make_shared<ActiveItem>(*this);
 }
 
 void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   ToolUserItem::init(owner, hand);
   if (entityMode() == EntityMode::Master) {
-    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
     m_script.setUpdateDelta(instanceValue("scriptDelta", 1).toUInt());
     m_twoHandedGrip.set(twoHanded());
 
@@ -167,7 +167,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
 
     m_script.addCallbacks("activeItem", makeActiveItemCallbacks());
     m_script.addCallbacks("item", LuaBindings::makeItemCallbacks(this));
-    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)));
     m_script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_itemAnimator));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(owner->statusController()));
     m_script.addActorMovementCallbacks(owner->movementController());
@@ -179,7 +179,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   }
   if (world()->isClient()) {
     if (auto animationScripts = instanceValue("animationScripts")) {
-      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1)));
       m_scriptedAnimator.setUpdateDelta(instanceValue("animationDelta", 1).toUInt());
 
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(&m_itemAnimator,
@@ -187,7 +187,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
           return m_scriptedAnimationParameters.value(name, defaultValue);
         }));
       m_scriptedAnimator.addCallbacks("activeItemAnimation", makeScriptedAnimationCallbacks());
-      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Item::instanceValue, as<Item>(this), std::placeholders::_1, std::placeholders::_2)));
       m_scriptedAnimator.init(world());
     }
   }
@@ -245,7 +245,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
     m_itemAnimator.update(dt, nullptr);
   }
 
-  eraseWhere(m_activeAudio, [this](pair<AudioInstancePtr const, Vec2F> const& a) {
+  eraseWhere(m_activeAudio, [this](std::pair<AudioInstancePtr const, Vec2F> const& a) {
       a.first->setPosition(owner()->position() + handPosition(a.second));
       return a.first->finished();
     });
@@ -360,7 +360,7 @@ List<Drawable> ActiveItem::handDrawables() const {
   }
 }
 
-List<pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+List<std::pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
   return m_scriptedAnimator.drawables();
 }
 

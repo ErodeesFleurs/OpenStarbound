@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.list;
 import star.rect;
@@ -26,7 +27,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 
@@ -98,9 +98,9 @@ GuiContext::~GuiContext() {
 void GuiContext::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup();
-  m_textureCollection = make_shared<AssetTextureGroup>(textureGroup);
-  m_drawablePainter = make_shared<DrawablePainter>(m_renderer, m_textureCollection);
-  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
+  m_textureCollection = std::make_shared<AssetTextureGroup>(textureGroup);
+  m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, m_textureCollection);
+  m_textPainter = std::make_shared<TextPainter>(m_renderer, textureGroup);
 }
 
 MixerPtr const& GuiContext::mixer() const {
@@ -241,14 +241,14 @@ void GuiContext::drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& colo
 }
 
 void GuiContext::drawPolyLines(PolyF const& poly, Vec4B const& color, float lineWidth) {
-  for (size_t i = 0; i < poly.sides(); ++i)
+  for (std::size_t i = 0; i < poly.sides(); ++i)
     drawLine(poly.vertex(i), poly.vertex(i + 1), color, lineWidth);
 }
 
-void GuiContext::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
+void GuiContext::drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
   for (auto& poly : triangles) {
     renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderTriangle>(),
-      get<0>(poly), get<1>(poly), get<2>(poly), color, 0.0f);
+      std::get<0>(poly), std::get<1>(poly), std::get<2>(poly), color, 0.0f);
   }
 }
 
@@ -281,9 +281,9 @@ void GuiContext::drawInterfaceQuad(AssetPath const& texName, RectF const& texCoo
   drawQuad(texName, texCoords, screenCoords.scaled(interfaceScale()), color);
 }
 
-void GuiContext::drawInterfaceTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  drawTriangles(triangles.transformed([this](tuple<Vec2F, Vec2F, Vec2F> const& poly) {
-    return tuple<Vec2F, Vec2F, Vec2F>(get<0>(poly) * interfaceScale(), get<1>(poly) * interfaceScale(), get<2>(poly) * interfaceScale());
+void GuiContext::drawInterfaceTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
+  drawTriangles(triangles.transformed([this](std::tuple<Vec2F, Vec2F, Vec2F> const& poly) {
+    return std::tuple<Vec2F, Vec2F, Vec2F>(std::get<0>(poly) * interfaceScale(), std::get<1>(poly) * interfaceScale(), std::get<2>(poly) * interfaceScale());
   }), color);
 }
 
@@ -345,17 +345,21 @@ void GuiContext::drawImageStretchSet(ImageStretchSet const& imageSet, RectF cons
     int position = 0;
     auto texSize = Vec2F(textureSize(imageSet.inner));
     if (direction == GuiDirection::Horizontal) {
-      starAssert(texSize[0] > 0);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((texSize[0] > 0));
+      }
       while (position < inner.width()) {
         RectF partialImage = RectF::withSize(Vec2F(), Vec2F(std::min(inner.width() - position, texSize[0]), texSize[1]));
         drawInterfaceQuad(imageSet.inner, partialImage, RectF::withSize(inner.min() + Vec2F(position, 0), partialImage.size()), color);
         position += partialImage.size()[0];
       }
     } else {
-      starAssert(texSize[1] > 0);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((texSize[1] > 0));
+      }
       while (position < inner.height()) {
         RectF partialImage = RectF::withSize(
-            Vec2F(0, max(0.0f, texSize[1] - (inner.height() - position))),
+            Vec2F(0, std::max(0.0f, texSize[1] - (inner.height() - position))),
             Vec2F(texSize[0], std::min(inner.height() - position, texSize[1])));
         drawInterfaceQuad(imageSet.inner, partialImage, RectF::withSize(inner.min() + Vec2F(0, position), partialImage.size()), color);
         position += partialImage.size()[1];
@@ -385,7 +389,7 @@ RectF GuiContext::renderInterfaceText(String const& s, TextPositioning const& po
       position.pos * interfaceScale(),
       position.hAnchor,
       position.vAnchor,
-      position.wrapWidth.apply(bind(std::multiplies<int>(), _1, interfaceScale())),
+      position.wrapWidth.apply(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale())),
       position.charLimit
     });
   return RectF(res).scaled(1.0f / interfaceScale());
@@ -400,7 +404,7 @@ RectF GuiContext::determineInterfaceTextSize(String const& s, TextPositioning co
       positioning.pos * interfaceScale(),
       positioning.hAnchor,
       positioning.vAnchor,
-      positioning.wrapWidth.apply(bind(std::multiplies<int>(), _1, interfaceScale()))
+      positioning.wrapWidth.apply(std::bind(std::multiplies<int>(), std::placeholders::_1, interfaceScale()))
     });
   return RectF(res).scaled(1.0f / interfaceScale());
 }
@@ -494,7 +498,7 @@ void GuiContext::playAudio(AudioInstancePtr audioInstance) {
 AudioInstancePtr GuiContext::playAudio(String const& audioAsset, int loops, float volume, float pitch) {
   auto assets = Root::singleton().assets();
   auto config = Root::singleton().configuration();
-  auto audioInstance = make_shared<AudioInstance>(*assets->audio(audioAsset));
+  auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(audioAsset));
   audioInstance->setVolume(volume);
   audioInstance->setPitchMultiplier(pitch);
   audioInstance->setLoops(loops);
@@ -527,7 +531,7 @@ float GuiContext::getDisplayScale() const {
 }
 
 void GuiContext::cleanup() {
-  int64_t textureTimeout = Root::singleton().assets()->json("/rendering.config:textureTimeout").toInt();
+  std::int64_t textureTimeout = Root::singleton().assets()->json("/rendering.config:textureTimeout").toInt();
   if (m_textureCollection)
     m_textureCollection->cleanup(textureTimeout);
   if (m_textPainter)

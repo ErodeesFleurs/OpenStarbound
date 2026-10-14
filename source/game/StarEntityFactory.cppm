@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.id_map;
@@ -21,16 +21,70 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_STRUCT(VersionedJson);
-STAR_CLASS(VehicleDatabase);
-STAR_CLASS(VersioningDatabase);
-STAR_CLASS(PlayerFactory);
-STAR_CLASS(MonsterDatabase);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(ProjectileDatabase);
-STAR_CLASS(NpcDatabase);
+struct VersionedJson;
+using VersionedJsonPtr = std::shared_ptr<VersionedJson>;
+using VersionedJsonConstPtr = std::shared_ptr<const VersionedJson>;
+using VersionedJsonWeakPtr = std::weak_ptr<VersionedJson>;
+using VersionedJsonConstWeakPtr = std::weak_ptr<const VersionedJson>;
+using VersionedJsonUPtr = std::unique_ptr<VersionedJson>;
+using VersionedJsonConstUPtr = std::unique_ptr<const VersionedJson>;
+class VehicleDatabase;
+using VehicleDatabasePtr = std::shared_ptr<VehicleDatabase>;
+using VehicleDatabaseConstPtr = std::shared_ptr<const VehicleDatabase>;
+using VehicleDatabaseWeakPtr = std::weak_ptr<VehicleDatabase>;
+using VehicleDatabaseConstWeakPtr = std::weak_ptr<const VehicleDatabase>;
+using VehicleDatabaseUPtr = std::unique_ptr<VehicleDatabase>;
+using VehicleDatabaseConstUPtr = std::unique_ptr<const VehicleDatabase>;
+class VersioningDatabase;
+using VersioningDatabasePtr = std::shared_ptr<VersioningDatabase>;
+using VersioningDatabaseConstPtr = std::shared_ptr<const VersioningDatabase>;
+using VersioningDatabaseWeakPtr = std::weak_ptr<VersioningDatabase>;
+using VersioningDatabaseConstWeakPtr = std::weak_ptr<const VersioningDatabase>;
+using VersioningDatabaseUPtr = std::unique_ptr<VersioningDatabase>;
+using VersioningDatabaseConstUPtr = std::unique_ptr<const VersioningDatabase>;
+class PlayerFactory;
+using PlayerFactoryPtr = std::shared_ptr<PlayerFactory>;
+using PlayerFactoryConstPtr = std::shared_ptr<const PlayerFactory>;
+using PlayerFactoryWeakPtr = std::weak_ptr<PlayerFactory>;
+using PlayerFactoryConstWeakPtr = std::weak_ptr<const PlayerFactory>;
+using PlayerFactoryUPtr = std::unique_ptr<PlayerFactory>;
+using PlayerFactoryConstUPtr = std::unique_ptr<const PlayerFactory>;
+class MonsterDatabase;
+using MonsterDatabasePtr = std::shared_ptr<MonsterDatabase>;
+using MonsterDatabaseConstPtr = std::shared_ptr<const MonsterDatabase>;
+using MonsterDatabaseWeakPtr = std::weak_ptr<MonsterDatabase>;
+using MonsterDatabaseConstWeakPtr = std::weak_ptr<const MonsterDatabase>;
+using MonsterDatabaseUPtr = std::unique_ptr<MonsterDatabase>;
+using MonsterDatabaseConstUPtr = std::unique_ptr<const MonsterDatabase>;
+class ObjectDatabase;
+using ObjectDatabasePtr = std::shared_ptr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = std::shared_ptr<const ObjectDatabase>;
+using ObjectDatabaseWeakPtr = std::weak_ptr<ObjectDatabase>;
+using ObjectDatabaseConstWeakPtr = std::weak_ptr<const ObjectDatabase>;
+using ObjectDatabaseUPtr = std::unique_ptr<ObjectDatabase>;
+using ObjectDatabaseConstUPtr = std::unique_ptr<const ObjectDatabase>;
+class ProjectileDatabase;
+using ProjectileDatabasePtr = std::shared_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstPtr = std::shared_ptr<const ProjectileDatabase>;
+using ProjectileDatabaseWeakPtr = std::weak_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstWeakPtr = std::weak_ptr<const ProjectileDatabase>;
+using ProjectileDatabaseUPtr = std::unique_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstUPtr = std::unique_ptr<const ProjectileDatabase>;
+class NpcDatabase;
+using NpcDatabasePtr = std::shared_ptr<NpcDatabase>;
+using NpcDatabaseConstPtr = std::shared_ptr<const NpcDatabase>;
+using NpcDatabaseWeakPtr = std::weak_ptr<NpcDatabase>;
+using NpcDatabaseConstWeakPtr = std::weak_ptr<const NpcDatabase>;
+using NpcDatabaseUPtr = std::unique_ptr<NpcDatabase>;
+using NpcDatabaseConstUPtr = std::unique_ptr<const NpcDatabase>;
 
-STAR_CLASS(EntityFactory);
+class EntityFactory;
+using EntityFactoryPtr = std::shared_ptr<EntityFactory>;
+using EntityFactoryConstPtr = std::shared_ptr<const EntityFactory>;
+using EntityFactoryWeakPtr = std::weak_ptr<EntityFactory>;
+using EntityFactoryConstWeakPtr = std::weak_ptr<const EntityFactory>;
+using EntityFactoryUPtr = std::unique_ptr<EntityFactory>;
+using EntityFactoryConstUPtr = std::unique_ptr<const EntityFactory>;
 
 struct EntityFactoryExceptionTag {
   static constexpr char const* name() { return "EntityFactoryException"; }

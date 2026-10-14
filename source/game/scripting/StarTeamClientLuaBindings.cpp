@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -17,8 +17,8 @@ namespace Star {
 LuaCallbacks LuaBindings::makeTeamClientCallbacks(TeamClient* teamClient) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", bind(mem_fn(&TeamClient::isMemberOfTeam), teamClient));
-  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", bind(mem_fn(&TeamClient::invitePlayer), teamClient, _1));
+  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", std::bind(std::mem_fn(&TeamClient::isMemberOfTeam), teamClient));
+  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", std::bind(std::mem_fn(&TeamClient::invitePlayer), teamClient, std::placeholders::_1));
 
   callbacks.registerCallback("isTeamLeader", [teamClient](Maybe<String>  const& playerUuid) -> bool {
       if (playerUuid)

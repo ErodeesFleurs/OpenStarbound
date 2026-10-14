@@ -28,7 +28,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.set;
 import star.version;
 
@@ -456,7 +456,7 @@ void MovementController::rotate(float rotationRate) {
     return;
 
   m_resting = false;
-  m_rotation.set(fmod(rotation() + rotationRate * m_timeStep, 2 * Constants::pi));
+  m_rotation.set(std::fmod(rotation() + rotationRate * m_timeStep, 2 * Constants::pi));
 }
 
 void MovementController::accelerate(Vec2F const& acceleration) {
@@ -666,14 +666,14 @@ void MovementController::tickMaster(float dt) {
             // independently).
 
             if (relativeVelocity[0] < 0 && correction[0] > 0)
-              relativeVelocity[0] = min(0.0f, relativeVelocity[0] + correction[0] / dt);
+              relativeVelocity[0] = std::min(0.0f, relativeVelocity[0] + correction[0] / dt);
             else if (relativeVelocity[0] > 0 && correction[0] < 0)
-              relativeVelocity[0] = max(0.0f, relativeVelocity[0] + correction[0] / dt);
+              relativeVelocity[0] = std::max(0.0f, relativeVelocity[0] + correction[0] / dt);
 
             if (relativeVelocity[1] < 0 && correction[1] > 0)
-              relativeVelocity[1] = min(0.0f, relativeVelocity[1] + correction[1] / dt);
+              relativeVelocity[1] = std::min(0.0f, relativeVelocity[1] + correction[1] / dt);
             else if (relativeVelocity[1] > 0 && correction[1] < 0)
-              relativeVelocity[1] = max(0.0f, relativeVelocity[1] + correction[1] / dt);
+              relativeVelocity[1] = std::max(0.0f, relativeVelocity[1] + correction[1] / dt);
           }
         }
       }
@@ -724,9 +724,9 @@ void MovementController::tickMaster(float dt) {
   // entity into rest for restDuration
   if (!m_resting &&
       !stickingDirection() &&
-      abs(originalMovement[0]) < 0.0001 &&
+      std::abs(originalMovement[0]) < 0.0001 &&
       originalMovement[1] * gravity() <= 0.0 &&
-      abs(originalMovement[1] + m_collisionCorrection[1]) < 0.0001) {
+      std::abs(originalMovement[1] + m_collisionCorrection[1]) < 0.0001) {
     m_resting = true;
     m_restTicks = m_parameters.restDuration.value(0);
   }
@@ -735,7 +735,7 @@ void MovementController::tickMaster(float dt) {
     Vec2F refVel;
     float friction = liquidPercentage() * *m_parameters.liquidFriction + (1.0f - liquidPercentage()) * *m_parameters.airFriction;
     if (onGround()) {
-      friction = max(friction, *m_parameters.groundFriction);
+      friction = std::max(friction, *m_parameters.groundFriction);
       refVel = m_surfaceVelocity;
     }
 
@@ -773,12 +773,12 @@ void MovementController::setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEnt
   m_ignorePhysicsEntities = ignorePhysicsEntities;
 }
 
-void MovementController::forEachMovingCollision(RectF const& region, function<bool(MovingCollisionId id, PhysicsMovingCollision, PolyF, RectF)> callback) {
+void MovementController::forEachMovingCollision(RectF const& region, std::function<bool(MovingCollisionId id, PhysicsMovingCollision, PolyF, RectF)> callback) {
   auto geometry = world()->geometry();
   for (auto& physicsEntity : world()->query<PhysicsEntity>(region)) {
     if (m_ignorePhysicsEntities.contains(physicsEntity->entityId()))
       continue;
-    for (size_t i = 0; i < physicsEntity->movingCollisionCount(); ++i) {
+    for (std::size_t i = 0; i < physicsEntity->movingCollisionCount(); ++i) {
       if (auto mc = physicsEntity->movingCollision(i)) {
         if (mc->categoryFilter.check(m_parameters.physicsEffectCategories.value())) {
           PolyF poly = std::move(mc->collision);
@@ -829,11 +829,11 @@ void MovementController::updateForceRegions(float) {
           Vec2F direction = geometry.diff(pos, radialForceRegion->center);
           float distance = vmag(direction);
           if (distance > 0 && distance < radialForceRegion->outerRadius) {
-            float incidence = min(1.0f - (distance - radialForceRegion->innerRadius) / (radialForceRegion->outerRadius - radialForceRegion->innerRadius), distance / radialForceRegion->innerRadius);
+            float incidence = std::min(1.0f - (distance - radialForceRegion->innerRadius) / (radialForceRegion->outerRadius - radialForceRegion->innerRadius), distance / radialForceRegion->innerRadius);
             if (radialForceRegion->targetRadialVelocity < 0)
               direction = -direction;
             approachVelocityAlongAngle(direction.angle(),
-                abs(radialForceRegion->targetRadialVelocity),
+                std::abs(radialForceRegion->targetRadialVelocity),
                 radialForceRegion->controlForce * incidence,
                 true);
           }
@@ -908,7 +908,7 @@ CollisionKind MovementController::maxOrNullCollision(CollisionKind a, CollisionK
   if (a == CollisionKind::Null || b == CollisionKind::Null)
     return CollisionKind::Null;
   else
-    return max(a, b);
+    return std::max(a, b);
 }
 
 MovementController::CollisionResult MovementController::collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
@@ -959,7 +959,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   if (!separation.solutionFound) {
     checkBody = translatedBody;
     totalCorrection = Vec2F();
-    for (size_t i = 0; i < MaximumSeparationLoops; ++i) {
+    for (std::size_t i = 0; i < MaximumSeparationLoops; ++i) {
       separation = collisionSeparate(collisionPolys, checkBody, ignorePlatforms,
           maximumPlatformCorrection, sortCenter, false, separationTolerance);
       totalCorrection += separation.correction;
@@ -982,7 +982,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
     // applying movement and try one last time to correct.
     checkBody = body;
     totalCorrection = -movement;
-    for (size_t i = 0; i < MaximumSeparationLoops; ++i) {
+    for (std::size_t i = 0; i < MaximumSeparationLoops; ++i) {
       separation = collisionSeparate(collisionPolys, checkBody, true, maximumPlatformCorrection, sortCenter, false, separationTolerance);
       totalCorrection += separation.correction;
       checkBody.translate(separation.correction);
@@ -1021,7 +1021,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
         if (!cp.polyBounds.intersects(touchingBounds))
           continue;
 
-        for (size_t i = 0; i < cp.poly.sides(); ++i) {
+        for (std::size_t i = 0; i < cp.poly.sides(); ++i) {
           auto side = cp.poly.side(i);
           RectF sideBounds = RectF::boundBoxOf(side.min(), side.max());
           float thisSideHorizontalOverlap = sideBounds.overlap(touchingBounds).width();
@@ -1124,8 +1124,8 @@ void MovementController::updatePositionInterpolators() {
   if (m_world)
     m_xPosition.setInterpolator(m_world->geometry().xLerpFunction(m_parameters.discontinuityThreshold));
   else
-    m_xPosition.setInterpolator(bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, _1, _2, _3));
-  m_yPosition.setInterpolator(bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, _1, _2, _3));
+    m_xPosition.setInterpolator(std::bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  m_yPosition.setInterpolator(std::bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void MovementController::queryCollisions(RectF const& region) {

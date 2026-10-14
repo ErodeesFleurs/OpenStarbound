@@ -1,3 +1,4 @@
+import std;
 import star.line;
 
 #include "gtest/gtest.h"
@@ -35,7 +36,7 @@ TEST(LineTest, IntersectionMiddle) {
   EXPECT_FALSE(intersection1.glances);
   EXPECT_FALSE(intersection1.coincides);
   EXPECT_TRUE(vmag(intersection1.point - Vec2F(0, 0)) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection1.t - 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 0.5f) < 0.0001f);
 }
 
 TEST(LineTest, IntersectionOneEndpoint) {
@@ -49,8 +50,8 @@ TEST(LineTest, IntersectionOneEndpoint) {
   EXPECT_FALSE(intersection1.coincides);
   EXPECT_FALSE(intersection2.coincides);
 
-  EXPECT_TRUE(fabs(intersection1.t - 1.0f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t - 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 1.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t - 0.5f) < 0.0001f);
 }
 
 TEST(LineTest, IntersectionOneVertical) {
@@ -66,8 +67,8 @@ TEST(LineTest, IntersectionOneVertical) {
   EXPECT_TRUE(intersection1.intersects);
   EXPECT_TRUE(intersection2.intersects);
 
-  EXPECT_TRUE(fabs(intersection1.t - 0.5f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t - 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t - 0.5f) < 0.0001f);
 
   EXPECT_TRUE(vmag(intersection1.point - Vec2F(4, 4)) < 0.0001f);
   EXPECT_TRUE(vmag(intersection2.point - Vec2F(4, 4)) < 0.0001f);
@@ -156,8 +157,8 @@ TEST(LineTest, CoincidesVertical) {
   EXPECT_TRUE(intersection2.coincides);
   EXPECT_TRUE(intersection1inf.coincides);
 
-  EXPECT_TRUE(fabs(intersection1.t - 2.0f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t + 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 2.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t + 0.5f) < 0.0001f);
 }
 
 TEST(LineTest, CoincidesHorizontal) {
@@ -181,8 +182,8 @@ TEST(LineTest, CoincidesHorizontal) {
   EXPECT_TRUE(intersection2.coincides);
   EXPECT_TRUE(intersection1inf.coincides);
 
-  EXPECT_TRUE(fabs(intersection1.t - 2.0f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t + 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 2.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t + 0.5f) < 0.0001f);
 }
 
 TEST(LineTest, CoincidesOther) {
@@ -206,8 +207,8 @@ TEST(LineTest, CoincidesOther) {
   EXPECT_TRUE(intersection2.coincides);
   EXPECT_TRUE(intersection1inf.coincides);
 
-  EXPECT_TRUE(fabs(intersection1.t - 2.0f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t + 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 2.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t + 0.5f) < 0.0001f);
 }
 
 TEST(LineTest, IntersectCoincides) {
@@ -229,15 +230,15 @@ TEST(LineTest, IntersectCoincides) {
   EXPECT_TRUE(vmag(intersection1.point - Vec2F(4, 4)) < 0.0001f);
   EXPECT_TRUE(vmag(intersection2.point - Vec2F(4, 4)) < 0.0001f);
 
-  EXPECT_TRUE(fabs(intersection1.t - 0.5f) < 0.0001f);
-  EXPECT_TRUE(fabs(intersection2.t) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection1.t - 0.5f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(intersection2.t) < 0.0001f);
 }
 
 TEST(LineTest, Closest) {
   Line2F a({0, 0}, {10, 0});
 
-  EXPECT_TRUE(fabs(a.distanceTo(Vec2F(-1, 5), true) - 5.0f) < 0.0001f);
-  EXPECT_TRUE(fabs(a.distanceTo(Vec2F(-3, 4), false) - 5.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(a.distanceTo(Vec2F(-1, 5), true) - 5.0f) < 0.0001f);
+  EXPECT_TRUE(std::fabs(a.distanceTo(Vec2F(-3, 4), false) - 5.0f) < 0.0001f);
 }
 
 TEST(LineTest, MakePositive) {

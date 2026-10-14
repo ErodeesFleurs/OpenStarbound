@@ -1,3 +1,4 @@
+import star.memory;
 import star.json;
 import star.iterator;
 #include "StarDataStreamExtra.hpp"
@@ -8,7 +9,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.version;
 import star.time;
@@ -128,7 +129,7 @@ void ServerWeather::setClientVisibleRegions(List<RectI> regions) {
   m_clientVisibleRegions = std::move(regions);
 }
 
-pair<ByteArray, uint64_t> ServerWeather::writeUpdate(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> ServerWeather::writeUpdate(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   setNetStates();
   return m_netGroup.writeNetState(fromVersion, rules);
 }
@@ -174,7 +175,7 @@ void ServerWeather::update(double dt) {
       m_currentWind = m_currentWeatherType->maximumWind * (Random::randb() ? 1 : -1);
     }
 
-    m_currentWeatherIntensity = min(clamp((m_currentTime - m_lastWeatherChangeTime) / weatherWarmupTime, 0.0, 1.0),
+    m_currentWeatherIntensity = std::min(clamp((m_currentTime - m_lastWeatherChangeTime) / weatherWarmupTime, 0.0, 1.0),
         clamp((m_nextWeatherChangeTime - m_currentTime) / weatherCooldownTime, 0.0, 1.0));
 
   } else {
@@ -210,14 +211,14 @@ Maybe<String> ServerWeather::activeWeather() const {
 
 StringList ServerWeather::weatherList() const {
   StringList weatherList;
-  for (size_t i = 0; i < m_weatherPool.size(); ++i)
+  for (std::size_t i = 0; i < m_weatherPool.size(); ++i)
     weatherList.append(m_weatherPool.item(i));
   return weatherList;
 }
 
 void ServerWeather::setWeather(String const& weatherName, bool force) {
-  size_t index = NPos;
-  for (size_t i = 0; i < m_weatherPool.size(); ++i) {
+  std::size_t index = NPos;
+  for (std::size_t i = 0; i < m_weatherPool.size(); ++i) {
     if (m_weatherPool.item(i) == weatherName) {
       index = i;
       break;
@@ -227,7 +228,7 @@ void ServerWeather::setWeather(String const& weatherName, bool force) {
   setWeatherIndex(index, force);
 }
 
-void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
+void ServerWeather::setWeatherIndex(std::size_t weatherIndex, bool force) {
   m_forceWeather = force;
   if (weatherIndex == NPos || weatherIndex >= m_weatherPool.size()) {
     m_currentWeatherIndex = NPos;
@@ -244,7 +245,7 @@ void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
 
   m_lastWeatherChangeTime = m_currentTime;
   if (m_forceWeather)
-    m_nextWeatherChangeTime = INFINITY;
+    m_nextWeatherChangeTime = std::numeric_limits<float>::infinity();
   else
     m_nextWeatherChangeTime =
       m_currentWeatherType ? m_currentTime + Random::randd(m_currentWeatherType->duration[0], m_currentWeatherType->duration[1])
@@ -256,7 +257,7 @@ void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
 void ServerWeather::forceWeather(bool force) {
   m_forceWeather = force;
   if (force)
-    m_nextWeatherChangeTime = INFINITY;
+    m_nextWeatherChangeTime = std::numeric_limits<float>::infinity();
 }
 
 void ServerWeather::setNetStates() {
@@ -280,7 +281,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
   for (auto const& projectileConfig : m_currentWeatherType->projectiles) {
     // Gather all the tops of the client regions together with the proper
     // padding, splitting at the world wrap boundary.
-    List<pair<Vec2I, int>> baseSpawnRegions;
+    List<std::pair<Vec2I, int>> baseSpawnRegions;
     for (auto const& clientRegion : m_clientVisibleRegions) {
       Vec2I baseRegion = {clientRegion.xMin() - projectileConfig.spawnHorizontalPad, clientRegion.xMax() + projectileConfig.spawnHorizontalPad};
       int height = clientRegion.yMax();
@@ -298,7 +299,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
     }
 
     // Split every spawn region on every split point.
-    List<pair<Vec2I, int>> splitSpawnRegions;
+    List<std::pair<Vec2I, int>> splitSpawnRegions;
     for (auto const& baseSpawnRegion : baseSpawnRegions) {
       List<Vec2I> regions = {baseSpawnRegion.first};
       for (auto splitPoint : splitPoints) {
@@ -319,8 +320,8 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
     // Sort the split spawn regions by leftmost point then height, preparing to
     // remove the lower overlapping sections.
     sort(splitSpawnRegions,
-        [](pair<Vec2I, int> const& lhs, pair<Vec2I, int> rhs) {
-          return tie(lhs.first[0], lhs.second) < tie(rhs.first[0], rhs.second);
+        [](std::pair<Vec2I, int> const& lhs, std::pair<Vec2I, int> rhs) {
+          return std::tie(lhs.first[0], lhs.second) < std::tie(rhs.first[0], rhs.second);
         });
 
     // For each region, at this point, if the region to the right shares the
@@ -348,9 +349,9 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
       // sure to handle very low count values appropriately on average.
       float count = projectileConfig.ratePerX * spawnRect.width() * dt * m_currentWeatherIntensity;
       if (Random::randf() > fpart(count))
-        count = floor(count);
+        count = std::floor(count);
       else
-        count = ceil(count);
+        count = std::ceil(count);
 
       for (int i = 0; i < count; ++i) {
         Vec2F position = {Random::randf() * spawnRect.width() + spawnRect.xMin(), Random::randf() * spawnRect.height() + spawnRect.yMin()};

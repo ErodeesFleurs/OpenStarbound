@@ -28,7 +28,7 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.random;
@@ -102,7 +102,13 @@ import star.object_database;
 
 export namespace Star {
 
-STAR_CLASS(ObjectItem);
+class ObjectItem;
+using ObjectItemPtr = std::shared_ptr<ObjectItem>;
+using ObjectItemConstPtr = std::shared_ptr<const ObjectItem>;
+using ObjectItemWeakPtr = std::weak_ptr<ObjectItem>;
+using ObjectItemConstWeakPtr = std::weak_ptr<const ObjectItem>;
+using ObjectItemUPtr = std::unique_ptr<ObjectItem>;
+using ObjectItemConstUPtr = std::unique_ptr<const ObjectItem>;
 
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:
@@ -145,7 +151,7 @@ ObjectItem::ObjectItem(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr ObjectItem::clone() const {
-  return make_shared<ObjectItem>(*this);
+  return std::make_shared<ObjectItem>(*this);
 }
 
 void ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {

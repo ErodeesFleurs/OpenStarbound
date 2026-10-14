@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -30,9 +30,9 @@ namespace Star {
 LuaMethods<Image> LuaUserDataMethods<Image>::make() {
   LuaMethods<Image> methods;
 
-  methods.registerMethodWithSignature<Vec2U, Image&>("size", mem_fn(&Image::size));
-  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("drawInto", mem_fn(&Image::drawInto));
-  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("copyInto", mem_fn(&Image::copyInto));
+  methods.registerMethodWithSignature<Vec2U, Image&>("size", std::mem_fn(&Image::size));
+  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("drawInto", std::mem_fn(&Image::drawInto));
+  methods.registerMethodWithSignature<void, Image&, Vec2U, Image&>("copyInto", std::mem_fn(&Image::copyInto));
   methods.registerMethod("set", [](Image& image, unsigned x, unsigned y, Color const& color) {
     image.set(x, y, color.toRgba()); 
   });

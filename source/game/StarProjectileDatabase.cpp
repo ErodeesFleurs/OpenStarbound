@@ -25,7 +25,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -108,7 +108,7 @@ Json ProjectileDatabase::projectileConfig(String const& type) const {
 ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
-  return make_shared<Projectile>(m_configs.get(type), parameters);
+  return std::make_shared<Projectile>(m_configs.get(type), parameters);
 }
 
 String ProjectileDatabase::damageKindImage(String const& type) const {
@@ -129,7 +129,7 @@ ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, N
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
-  return make_shared<Projectile>(m_configs.get(typeName), ds, rules);
+  return std::make_shared<Projectile>(m_configs.get(typeName), ds, rules);
 }
 
 ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
@@ -137,7 +137,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
 
   Json config = assets->json(path);
 
-  auto projectileConfig = make_shared<ProjectileConfig>();
+  auto projectileConfig = std::make_shared<ProjectileConfig>();
   projectileConfig->config = config;
   projectileConfig->typeName = config.getString("projectileName");
   projectileConfig->directory = AssetPath::directory(path);
@@ -168,7 +168,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   projectileConfig->actionOnTimeout = config.getArray("actionOnTimeout", {});
 
   for (auto const& c : config.getArray("periodicActions", {}))
-    projectileConfig->periodicActions.append(make_tuple(c.getFloat("time"), c.getBool("repeat", true), c));
+    projectileConfig->periodicActions.append(std::make_tuple(c.getFloat("time"), c.getBool("repeat", true), c));
 
   projectileConfig->image = AssetPath::relativeTo(path, config.getString("image"));
   projectileConfig->frameNumber = config.getUInt("frameNumber", 1);
@@ -228,7 +228,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   projectileConfig->masterOnly = config.getBool("masterOnly", false);
 
   projectileConfig->scripts =
-      jsonToStringList(config.get("scripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
+      jsonToStringList(config.get("scripts", JsonArray())).transformed(std::bind(AssetPath::relativeTo, path, std::placeholders::_1));
 
   projectileConfig->physicsForces = config.get("physicsForces", JsonObject());
   projectileConfig->physicsCollisions = config.get("physicsCollisions", JsonObject());

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.game_types;
 import star.string;
@@ -17,7 +17,13 @@ import star.drawable;
 
 namespace Star {
 
-STAR_CLASS(PointableItem);
+class PointableItem;
+using PointableItemPtr = std::shared_ptr<PointableItem>;
+using PointableItemConstPtr = std::shared_ptr<const PointableItem>;
+using PointableItemWeakPtr = std::weak_ptr<PointableItem>;
+using PointableItemConstWeakPtr = std::weak_ptr<const PointableItem>;
+using PointableItemUPtr = std::unique_ptr<PointableItem>;
+using PointableItemConstUPtr = std::unique_ptr<const PointableItem>;
 
 class PointableItem {
 public:

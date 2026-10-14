@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -17,7 +18,6 @@ import star.bi_map;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
-#include "StarConfig.hpp"
 import star.time;
 import star.format;
 import star.version;
@@ -39,7 +39,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -419,7 +418,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     else
       lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
 
-    for (size_t i = 0; i < lines.size(); ++i) {
+    for (std::size_t i = 0; i < lines.size(); ++i) {
       m_receivedMessages.prepend({
           message.context.mode,
           message.portrait,
@@ -455,7 +454,7 @@ void Chat::addHistory(String const& chat) {
   }
 }
 
-void Chat::clear(size_t count) {
+void Chat::clear(std::size_t count) {
   if (m_scripted)
     m_script.invoke("clear", count);
   else if (count > m_receivedMessages.size())
@@ -471,7 +470,7 @@ void Chat::renderImpl() {
   if (m_textBox->hasFocus())
     m_timeChatLastActive = Time::monotonicMilliseconds();
   Vec4B fade = {255, 255, 255, 255};
-  fade[3] = (uint8_t)(visible() * 255);
+  fade[3] = (std::uint8_t)(visible() * 255);
   if (!visible()) {
     hide();
     return;
@@ -514,13 +513,13 @@ void Chat::renderImpl() {
       TextPositioning tp = {Vec2F(chatMin +  m_portraitTextOffset), HorizontalAnchor::LeftAnchor, VerticalAnchor::VMidAnchor, (wrapWidth - m_portraitTextOffset[0])};
       Vec2F textSize = guiContext.determineInterfaceTextSize(messageString, tp).size().floor();
       Vec2F portraitSize = Vec2F(guiContext.textureSize(m_portraitBackground));
-      messageHeight = max(portraitSize[1] + m_portraitVerticalMargin, textSize[1] + lineHeightMargin);
+      messageHeight = std::max(portraitSize[1] + m_portraitVerticalMargin, textSize[1] + lineHeightMargin);
 
       // Draw both image and text anchored left and centered vertically
-      auto imagePosition = chatMin + Vec2I(0, floor(messageHeight / 2)) - Vec2I(0, floor(portraitSize[1] / 2));
+      auto imagePosition = chatMin + Vec2I(0, std::floor(messageHeight / 2)) - Vec2I(0, std::floor(portraitSize[1] / 2));
       m_chatLog->drawImage(m_portraitBackground, Vec2F(imagePosition), 1.0f, fade);
       m_chatLog->drawImage(message.portrait, Vec2F(imagePosition + m_portraitImageOffset), m_portraitScale, fade);
-      tp.pos += Vec2F(0, floor(messageHeight / 2));
+      tp.pos += Vec2F(0, std::floor(messageHeight / 2));
       m_chatTextStyle.color = fade;
       m_chatLog->drawText(messageString, tp, m_chatTextStyle);
 
@@ -531,7 +530,7 @@ void Chat::renderImpl() {
       m_chatLog->drawText(messageString, tp, m_chatTextStyle);
     }
 
-    chatMin[1] += ceil(messageHeight);
+    chatMin[1] += std::ceil(messageHeight);
   }
 
   guiContext.setDefaultLineSpacing();

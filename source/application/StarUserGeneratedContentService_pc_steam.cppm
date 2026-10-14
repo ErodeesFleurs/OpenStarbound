@@ -1,6 +1,13 @@
 module;
 
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.maybe;
 import star.thread;
 import star.input_event;
@@ -16,14 +23,17 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 
 namespace Star {
 
-STAR_CLASS(SteamUserGeneratedContentService);
+class SteamUserGeneratedContentService;
+using SteamUserGeneratedContentServicePtr = std::shared_ptr<SteamUserGeneratedContentService>;
+using SteamUserGeneratedContentServiceConstPtr = std::shared_ptr<SteamUserGeneratedContentService const>;
+using SteamUserGeneratedContentServiceWeakPtr = std::weak_ptr<SteamUserGeneratedContentService>;
+using SteamUserGeneratedContentServiceConstWeakPtr = std::weak_ptr<SteamUserGeneratedContentService const>;
+using SteamUserGeneratedContentServiceUPtr = std::unique_ptr<SteamUserGeneratedContentService>;
+using SteamUserGeneratedContentServiceConstUPtr = std::unique_ptr<SteamUserGeneratedContentService const>;
 
 class SteamUserGeneratedContentService final : public UserGeneratedContentService {
 public:

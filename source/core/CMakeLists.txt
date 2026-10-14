@@ -1,7 +1,6 @@
 set (star_core_HEADERS
     StarBTree.hpp
     StarCasting.hpp
-    StarConfig.hpp
     StarDataStreamDevices.hpp
     StarDataStreamExtra.hpp
     StarJsonExtra.hpp

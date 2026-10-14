@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.format;
 import star.string;
 import star.maybe;
@@ -17,11 +18,11 @@ namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
 // up to the first directive marker.
-static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8) {
-  size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
-  size_t filenameStart = 0;
+static Maybe<std::pair<std::size_t, std::size_t>> findFilenameRange(std::string const& pathUtf8) {
+  std::size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
+  std::size_t filenameStart = 0;
   while (true) {
-    size_t find = pathUtf8.find('/', filenameStart);
+    std::size_t find = pathUtf8.find('/', filenameStart);
     if (find >= firstDirectiveOrSubPath)
       break;
     filenameStart = find + 1;
@@ -42,7 +43,7 @@ AssetPath AssetPath::split(String const& path) {
   std::string const& str = path.utf8();
 
   //base paths cannot have any ':' or '?' characters, stop at the first one.
-  size_t end = str.find_first_of(":?");
+  std::size_t end = str.find_first_of(":?");
   components.basePath = str.substr(0, end);
 
   if (end == NPos)
@@ -51,12 +52,12 @@ AssetPath AssetPath::split(String const& path) {
   // Sub-paths must immediately follow base paths and must start with a ':',
   // after this point any further ':' characters are not special.
   if (str[end] == ':') {
-    size_t beg = end + 1;
+    std::size_t beg = end + 1;
     if (beg != str.size()) {
       end = str.find_first_of('?', beg);
       if (end == NPos && beg + 1 != str.size())
         components.subPath.emplace(str.substr(beg));
-      else if (size_t len = end - beg)
+      else if (std::size_t len = end - beg)
         components.subPath.emplace(str.substr(beg, len));
     }
   }
@@ -89,7 +90,7 @@ String AssetPath::removeSubPath(String const& path) {
 }
 
 String AssetPath::getDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
+  std::size_t firstDirective = path.find('?');
   if (firstDirective == NPos)
     return {};
   return path.substr(firstDirective + 1);
@@ -100,7 +101,7 @@ String AssetPath::addDirectives(String const& path, String const& directives) {
 }
 
 String AssetPath::removeDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
+  std::size_t firstDirective = path.find('?');
   if (firstDirective == NPos)
     return path;
   return path.substr(0, firstDirective);
@@ -141,7 +142,7 @@ String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) 
 }
 
 bool AssetPath::operator==(AssetPath const& rhs) const {
-  return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
+  return std::tie(basePath, subPath, directives) == std::tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
 AssetPath::AssetPath(const char* path) {
@@ -180,7 +181,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   return os;
 }
 
-size_t hash<AssetPath>::operator()(AssetPath const& s) const {
+std::size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 

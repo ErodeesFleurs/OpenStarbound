@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.xx_hash;
 import star.json;
 import star.ordered_map;
@@ -23,7 +25,6 @@ import star.font;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -37,7 +38,6 @@ import star.id_map;
 import star.image;
 import star.rpc_promise;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -218,15 +218,15 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
 
   GuiReader reader;
 
-  reader.registerCallback("dismiss", bind(&Pane::dismiss, this));
-  reader.registerCallback("teleport", bind(&TeleportDialog::teleport, this));
-  reader.registerCallback("selectDestination", bind(&TeleportDialog::selectDestination, this));
+  reader.registerCallback("dismiss", std::bind(&Pane::dismiss, this));
+  reader.registerCallback("teleport", std::bind(&TeleportDialog::teleport, this));
+  reader.registerCallback("selectDestination", std::bind(&TeleportDialog::selectDestination, this));
 
   reader.construct(assets->json("/interface/windowconfig/teleportdialog.config:paneLayout"), this);
 
   config = assets->fetchJson(config);
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  destList->registerMemberCallback("editBookmark", bind(&TeleportDialog::editBookmark, this));
+  destList->registerMemberCallback("editBookmark", std::bind(&TeleportDialog::editBookmark, this));
 
   for (auto dest : config.getArray("destinations", JsonArray())) {
     if (auto prerequisite = dest.optString("prerequisiteQuest")) {
@@ -344,12 +344,12 @@ void TeleportDialog::teleport() {
 void TeleportDialog::editBookmark() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   if (destList->selectedItem() != NPos) {
-    size_t selectedItem = destList->selectedItem();
+    std::size_t selectedItem = destList->selectedItem();
     auto bookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
-      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
+      auto editBookmarkDialog = std::make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap());
       editBookmarkDialog->setBookmark(bookmarks[selectedItem]);
       m_paneManager->displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
     }

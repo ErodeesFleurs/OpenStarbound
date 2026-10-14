@@ -1,10 +1,15 @@
 module;
-#include "StarConfig.hpp"
 import std;
 
 import star.output_proxy;
 
 namespace Star {
+#ifndef NDEBUG
+inline constexpr bool DebugEnabled = true;
+#else
+inline constexpr bool DebugEnabled = false;
+#endif
+
 
 template <typename S>
 struct IsFormatStringType : std::false_type {};
@@ -67,7 +72,7 @@ private:
   // Takes the ostream to print to, whether to print the full stacktrace.  Must
   // not bind 'this', may outlive the exception in the case of chained
   // exception causes.
-  function<void(std::ostream&, bool)> m_printException;
+  std::function<void(std::ostream&, bool)> m_printException;
 
   // m_printException will be called without the stack-trace to print
   // m_whatBuffer, if the what() method is invoked.
@@ -87,16 +92,15 @@ void fatalException(std::exception const& e, bool showStackTrace);
 
 // The file and line of an assertion are a language construct now
 // (std::source_location) instead of __FILE__/__LINE__ stringification.
-// starAssert stays a macro only because a release build must not evaluate its
-// condition at all, which a function call cannot express; everything else lives
-// in these functions.
+// Callers guard this function with `if constexpr (Star::DebugEnabled)` so a
+// release build never evaluates the assertion operand.
 // The condition is a forwarding reference, not a bool: it has to go through the
 // same contextual conversion the old macro's `if (COND)` performed, otherwise
 // types with an explicit operator bool (std::unique_ptr, for instance) stop
 // compiling.
 template <typename T>
 inline void starAssertFailed(T&& condition, std::source_location location = std::source_location::current()) {
-#ifdef STAR_DEBUG
+#ifndef NDEBUG
   if (condition)
     return;
 
@@ -109,7 +113,7 @@ inline void starAssertFailed(T&& condition, std::source_location location = std:
 }
 
 inline void debugPrintStack(std::source_location location = std::source_location::current()) {
-#ifdef STAR_DEBUG
+#ifndef NDEBUG
   // The message outlives the call: printStack may hand it on before returning.
   std::string const message = strf("Debug: file {} line {}", location.file_name(), location.line());
   Star::printStack(message.c_str());
@@ -280,6 +284,7 @@ inline std::string toString(Type const& t) {
 export module star.format;
 
 export namespace Star {
+using ::Star::DebugEnabled;
 using ::Star::IsFormatStringType;
 using ::Star::HasUtf8Ptr;
 using ::Star::RuntimeFormatString;

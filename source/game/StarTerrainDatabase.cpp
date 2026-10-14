@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -57,7 +57,7 @@ Json TerrainSelectorParameters::toJson() const {
       {"worldWidth", worldWidth}, {"baseHeight", baseHeight}, {"seed", seed}, {"commonality", commonality}};
 }
 
-TerrainSelectorParameters TerrainSelectorParameters::withSeed(uint64_t seed) const {
+TerrainSelectorParameters TerrainSelectorParameters::withSeed(std::uint64_t seed) const {
   TerrainSelectorParameters copy = *this;
   copy.seed = seed;
   return copy;
@@ -143,31 +143,31 @@ TerrainSelectorConstPtr TerrainDatabase::loadSelector(Json const& store) const {
 
 TerrainSelectorConstPtr TerrainDatabase::createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const {
   if (type == WormCaveSelector::Name)
-    return make_shared<WormCaveSelector>(config, parameters);
+    return std::make_shared<WormCaveSelector>(config, parameters);
   else if (type == KarstCaveSelector::Name)
-    return make_shared<KarstCaveSelector>(config, parameters);
+    return std::make_shared<KarstCaveSelector>(config, parameters);
   else if (type == ConstantSelector::Name)
-    return make_shared<ConstantSelector>(config, parameters);
+    return std::make_shared<ConstantSelector>(config, parameters);
   else if (type == MaxSelector::Name)
-    return make_shared<MaxSelector>(config, parameters, this);
+    return std::make_shared<MaxSelector>(config, parameters, this);
   else if (type == MinMaxSelector::Name)
-    return make_shared<MinMaxSelector>(config, parameters, this);
+    return std::make_shared<MinMaxSelector>(config, parameters, this);
   else if (type == IslandSurfaceSelector::Name)
-    return make_shared<IslandSurfaceSelector>(config, parameters);
+    return std::make_shared<IslandSurfaceSelector>(config, parameters);
   else if (type == FlatSurfaceSelector::Name)
-    return make_shared<FlatSurfaceSelector>(config, parameters);
+    return std::make_shared<FlatSurfaceSelector>(config, parameters);
   else if (type == DisplacementSelector::Name)
-    return make_shared<DisplacementSelector>(config, parameters, this);
+    return std::make_shared<DisplacementSelector>(config, parameters, this);
   else if (type == RotateSelector::Name)
-    return make_shared<RotateSelector>(config, parameters, this);
+    return std::make_shared<RotateSelector>(config, parameters, this);
   else if (type == MixSelector::Name)
-    return make_shared<MixSelector>(config, parameters, this);
+    return std::make_shared<MixSelector>(config, parameters, this);
   else if (type == PerlinSelector::Name)
-    return make_shared<PerlinSelector>(config, parameters);
+    return std::make_shared<PerlinSelector>(config, parameters);
   else if (type == RidgeBlocksSelector::Name)
-    return make_shared<RidgeBlocksSelector>(config, parameters);
+    return std::make_shared<RidgeBlocksSelector>(config, parameters);
   else if (type == CacheSelector::Name)
-    return make_shared<CacheSelector>(config, parameters, this);
+    return std::make_shared<CacheSelector>(config, parameters, this);
   else
     throw TerrainException(strf("Unknown terrain selector type '{}'", type));
 }

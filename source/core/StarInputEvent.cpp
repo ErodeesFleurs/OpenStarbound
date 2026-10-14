@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.bi_map;
 import star.input_event;
 

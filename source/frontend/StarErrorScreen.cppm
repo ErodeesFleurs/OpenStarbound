@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -26,11 +26,35 @@ import star.interface_cursor;
 
 namespace Star {
 
-STAR_CLASS(Pane);
-STAR_CLASS(PaneManager);
-STAR_CLASS(GuiContext);
+class Pane;
+using PanePtr = std::shared_ptr<Pane>;
+using PaneConstPtr = std::shared_ptr<Pane const>;
+using PaneWeakPtr = std::weak_ptr<Pane>;
+using PaneConstWeakPtr = std::weak_ptr<Pane const>;
+using PaneUPtr = std::unique_ptr<Pane>;
+using PaneConstUPtr = std::unique_ptr<Pane const>;
+class PaneManager;
+using PaneManagerPtr = std::shared_ptr<PaneManager>;
+using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
+using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
+using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
+using PaneManagerUPtr = std::unique_ptr<PaneManager>;
+using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
+class GuiContext;
+using GuiContextPtr = std::shared_ptr<GuiContext>;
+using GuiContextConstPtr = std::shared_ptr<GuiContext const>;
+using GuiContextWeakPtr = std::weak_ptr<GuiContext>;
+using GuiContextConstWeakPtr = std::weak_ptr<GuiContext const>;
+using GuiContextUPtr = std::unique_ptr<GuiContext>;
+using GuiContextConstUPtr = std::unique_ptr<GuiContext const>;
 
-STAR_CLASS(ErrorScreen);
+class ErrorScreen;
+using ErrorScreenPtr = std::shared_ptr<ErrorScreen>;
+using ErrorScreenConstPtr = std::shared_ptr<ErrorScreen const>;
+using ErrorScreenWeakPtr = std::weak_ptr<ErrorScreen>;
+using ErrorScreenConstWeakPtr = std::weak_ptr<ErrorScreen const>;
+using ErrorScreenUPtr = std::unique_ptr<ErrorScreen>;
+using ErrorScreenConstUPtr = std::unique_ptr<ErrorScreen const>;
 
 class ErrorScreen {
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
@@ -13,7 +13,13 @@ import star.rpc_promise;
 
 namespace Star {
 
-STAR_CLASS(ScriptableThread);
+class ScriptableThread;
+using ScriptableThreadPtr = std::shared_ptr<ScriptableThread>;
+using ScriptableThreadConstPtr = std::shared_ptr<const ScriptableThread>;
+using ScriptableThreadWeakPtr = std::weak_ptr<ScriptableThread>;
+using ScriptableThreadConstWeakPtr = std::weak_ptr<const ScriptableThread>;
+using ScriptableThreadUPtr = std::unique_ptr<ScriptableThread>;
+using ScriptableThreadConstUPtr = std::unique_ptr<const ScriptableThread>;
 
 // Runs a Lua in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -27,7 +33,7 @@ public:
   };
 
   typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  typedef std::shared_ptr<ScriptComponent> ScriptComponentPtr;
 
   ScriptableThread(Json parameters, LuaBaseComponent* parent);
   ~ScriptableThread();
@@ -71,10 +77,10 @@ private:
   mutable RecursiveMutex m_messageMutex;
   List<Message> m_messages;
 
-  atomic<bool> m_stop;
-  atomic<bool> m_pause;
-  mutable atomic<bool> m_errorOccurred;
-  mutable atomic<bool> m_shouldExpire;
+  std::atomic<bool> m_stop;
+  std::atomic<bool> m_pause;
+  mutable std::atomic<bool> m_errorOccurred;
+  mutable std::atomic<bool> m_shouldExpire;
   
   LuaBaseComponent* m_parent;
   

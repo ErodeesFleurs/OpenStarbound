@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -12,10 +12,34 @@ import star.vector;
 
 namespace Star {
 
-STAR_CLASS(SpeciesTextVariants);
-STAR_CLASS(PositionalTextVariants);
-STAR_CLASS(QuestTemplate);
-STAR_CLASS(QuestTemplateDatabase);
+class SpeciesTextVariants;
+using SpeciesTextVariantsPtr = std::shared_ptr<SpeciesTextVariants>;
+using SpeciesTextVariantsConstPtr = std::shared_ptr<const SpeciesTextVariants>;
+using SpeciesTextVariantsWeakPtr = std::weak_ptr<SpeciesTextVariants>;
+using SpeciesTextVariantsConstWeakPtr = std::weak_ptr<const SpeciesTextVariants>;
+using SpeciesTextVariantsUPtr = std::unique_ptr<SpeciesTextVariants>;
+using SpeciesTextVariantsConstUPtr = std::unique_ptr<const SpeciesTextVariants>;
+class PositionalTextVariants;
+using PositionalTextVariantsPtr = std::shared_ptr<PositionalTextVariants>;
+using PositionalTextVariantsConstPtr = std::shared_ptr<const PositionalTextVariants>;
+using PositionalTextVariantsWeakPtr = std::weak_ptr<PositionalTextVariants>;
+using PositionalTextVariantsConstWeakPtr = std::weak_ptr<const PositionalTextVariants>;
+using PositionalTextVariantsUPtr = std::unique_ptr<PositionalTextVariants>;
+using PositionalTextVariantsConstUPtr = std::unique_ptr<const PositionalTextVariants>;
+class QuestTemplate;
+using QuestTemplatePtr = std::shared_ptr<QuestTemplate>;
+using QuestTemplateConstPtr = std::shared_ptr<const QuestTemplate>;
+using QuestTemplateWeakPtr = std::weak_ptr<QuestTemplate>;
+using QuestTemplateConstWeakPtr = std::weak_ptr<const QuestTemplate>;
+using QuestTemplateUPtr = std::unique_ptr<QuestTemplate>;
+using QuestTemplateConstUPtr = std::unique_ptr<const QuestTemplate>;
+class QuestTemplateDatabase;
+using QuestTemplateDatabasePtr = std::shared_ptr<QuestTemplateDatabase>;
+using QuestTemplateDatabaseConstPtr = std::shared_ptr<const QuestTemplateDatabase>;
+using QuestTemplateDatabaseWeakPtr = std::weak_ptr<QuestTemplateDatabase>;
+using QuestTemplateDatabaseConstWeakPtr = std::weak_ptr<const QuestTemplateDatabase>;
+using QuestTemplateDatabaseUPtr = std::unique_ptr<QuestTemplateDatabase>;
+using QuestTemplateDatabaseConstUPtr = std::unique_ptr<const QuestTemplateDatabase>;
 
 // A Quest Template
 // Used to check prerequisites for quest availability and by the QuestManager to

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 #include "StarStrongTypedef.hpp"
@@ -36,7 +36,13 @@ import star.tile_entity;
 
 namespace Star {
 
-STAR_CLASS(WarpTargetEntity);
+class WarpTargetEntity;
+using WarpTargetEntityPtr = std::shared_ptr<WarpTargetEntity>;
+using WarpTargetEntityConstPtr = std::shared_ptr<const WarpTargetEntity>;
+using WarpTargetEntityWeakPtr = std::weak_ptr<WarpTargetEntity>;
+using WarpTargetEntityConstWeakPtr = std::weak_ptr<const WarpTargetEntity>;
+using WarpTargetEntityUPtr = std::unique_ptr<WarpTargetEntity>;
+using WarpTargetEntityConstUPtr = std::unique_ptr<const WarpTargetEntity>;
 
 class WarpTargetEntity : public virtual TileEntity {
 public:

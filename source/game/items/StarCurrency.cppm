@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.set;
@@ -30,7 +30,13 @@ export module star.currency_item;
 
 export namespace Star {
 
-STAR_CLASS(CurrencyItem);
+class CurrencyItem;
+using CurrencyItemPtr = std::shared_ptr<CurrencyItem>;
+using CurrencyItemConstPtr = std::shared_ptr<const CurrencyItem>;
+using CurrencyItemWeakPtr = std::weak_ptr<CurrencyItem>;
+using CurrencyItemConstWeakPtr = std::weak_ptr<const CurrencyItem>;
+using CurrencyItemUPtr = std::unique_ptr<CurrencyItem>;
+using CurrencyItemConstUPtr = std::unique_ptr<const CurrencyItem>;
 
 class CurrencyItem : public Item {
 public:
@@ -43,14 +49,14 @@ public:
   String currencyType();
 
   // Value of a single instance of this currency
-  uint64_t currencyValue();
+  std::uint64_t currencyValue();
 
   // Total value of all currencies (so currencyValue * count)
-  uint64_t totalValue();
+  std::uint64_t totalValue();
 
 private:
   String m_currency;
-  uint64_t m_value;
+  std::uint64_t m_value;
 };
 
 }
@@ -63,7 +69,7 @@ CurrencyItem::CurrencyItem(Json const& config, String const& directory) : Item(c
 }
 
 ItemPtr CurrencyItem::clone() const {
-  return make_shared<CurrencyItem>(*this);
+  return std::make_shared<CurrencyItem>(*this);
 }
 
 String CurrencyItem::pickupSound() const {
@@ -84,11 +90,11 @@ String CurrencyItem::currencyType() {
   return m_currency;
 }
 
-uint64_t CurrencyItem::currencyValue() {
+std::uint64_t CurrencyItem::currencyValue() {
   return m_value;
 }
 
-uint64_t CurrencyItem::totalValue() {
+std::uint64_t CurrencyItem::totalValue() {
   return m_value * count();
 }
 

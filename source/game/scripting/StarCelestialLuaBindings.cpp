@@ -20,7 +20,7 @@ typedef ZSTD_DCtx ZSTD_DStream;
 typedef ZSTD_CCtx ZSTD_CStream;
 import star.zstd_compression;
 import star.net_compatibility;
-#include "StarConfig.hpp"
+import std;
 import star.id_map;
 import star.list;
 import star.version;
@@ -171,7 +171,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialD
         return parameters->name();
       return {};
     });
-  callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> Maybe<uint64_t> {
+  callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> Maybe<std::uint64_t> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       if (auto parameters = celestialDatabase->parameters(coordinate))
         return parameters->seed();
@@ -221,26 +221,26 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(CelestialDatabasePtr celestialD
   callbacks.registerCallback("scanSystems", [celestialDatabase](RectI const& region, Maybe<StringSet> const& includedTypes) -> List<Json> {
       return celestialDatabase->scanSystems(region, includedTypes).transformed([](CelestialCoordinate const& c) { return c.toJson(); });
     });
-  callbacks.registerCallback("scanConstellationLines", [celestialDatabase](RectI const& region) -> List<pair<Vec2I, Vec2I>> {
+  callbacks.registerCallback("scanConstellationLines", [celestialDatabase](RectI const& region) -> List<std::pair<Vec2I, Vec2I>> {
       return celestialDatabase->scanConstellationLines(region);
     });
   callbacks.registerCallback("scanRegionFullyLoaded", [celestialDatabase](RectI const& region) -> bool {
       return celestialDatabase->scanRegionFullyLoaded(region);
     });
 
-  callbacks.registerCallback("centralBodyImages", [celestialDatabase](Json const& coords) -> List<pair<String, float>> {
+  callbacks.registerCallback("centralBodyImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemCentralBody(celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("planetaryObjectImages", [celestialDatabase](Json const& coords) -> List<pair<String, float>> {
+  callbacks.registerCallback("planetaryObjectImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemPlanetaryObject(celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("worldImages", [celestialDatabase](Json const& coords) -> List<pair<String, float>> {
+  callbacks.registerCallback("worldImages", [celestialDatabase](Json const& coords) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawWorld(celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("starImages", [celestialDatabase](Json const& coords, float twinkleTime) -> List<pair<String, float>> {
+  callbacks.registerCallback("starImages", [celestialDatabase](Json const& coords, float twinkleTime) -> List<std::pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemTwinkle(celestialDatabase, coordinate, twinkleTime);
     });

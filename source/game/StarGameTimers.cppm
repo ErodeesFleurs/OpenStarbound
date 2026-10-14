@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 import star.maybe;
 import star.json;
@@ -32,21 +32,21 @@ DataStream& operator<<(DataStream& ds, GameTimer const& gt);
 
 struct SlidingWindow {
   SlidingWindow();
-  SlidingWindow(float windowSize, size_t resolution, float initialValue);
+  SlidingWindow(float windowSize, std::size_t resolution, float initialValue);
 
   GameTimer sampleTimer;
   float windowSize;
-  size_t resolution;
+  std::size_t resolution;
 
   float currentMin;
   float currentMax;
   float currentAverage;
 
-  size_t currentIndex;
+  std::size_t currentIndex;
   std::vector<float> window;
 
   void reset(float initialValue);
-  void update(function<float()> sampleFunction);
+  void update(std::function<float()> sampleFunction);
   void update(float newValue);
   void processUpdate(float newValue);
 

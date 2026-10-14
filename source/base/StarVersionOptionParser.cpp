@@ -1,9 +1,9 @@
+import std;
 import star.string;
 import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.version_option_parser;
@@ -28,7 +28,7 @@ VersionOptionParser::VersionOptionParser() {
 VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& cmdLineArguments) const {
   Options options;
   StringList errors;
-  tie(options, errors) = OptionParser::parseOptions(cmdLineArguments);
+  std::tie(options, errors) = OptionParser::parseOptions(cmdLineArguments);
 
   if (options.switches.contains("version"))
     coutf("{}\n", getVersionString());

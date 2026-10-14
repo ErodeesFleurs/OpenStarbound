@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 import star.stream_formatter;
 
 import std;
@@ -41,7 +40,7 @@ public:
 
   List<key_type> keys() const;
   List<mapped_type> values() const;
-  List<pair<key_type, mapped_type>> pairs() const;
+  List<std::pair<key_type, mapped_type>> pairs() const;
 
   bool contains(key_type const& k) const;
 
@@ -83,7 +82,7 @@ public:
   // Same as insert(value_type), returns the iterator to either the newly
   // inserted value or the existing value, and then a bool that is true if the
   // new element was inserted.
-  pair<iterator, bool> insert(key_type k, mapped_type v);
+  std::pair<iterator, bool> insert(key_type k, mapped_type v);
 
   // Add a key / value pair, throw if the key already exists
   mapped_type& add(key_type k, mapped_type v);
@@ -103,13 +102,13 @@ public:
 template <typename BaseMap>
 std::ostream& operator<<(std::ostream& os, MapMixin<BaseMap> const& m);
 
-template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<pair<Key const, Value>>>
+template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using Map = MapMixin<std::map<Key, Value, Compare, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<pair<Key const, Value>>>
+template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using HashMap = MapMixin<FlatHashMap<Key, Value, Hash, Equals, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<pair<Key const, Value>>>
+template <typename Key, typename Value, typename Hash = hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = std::allocator<std::pair<Key const, Value>>>
 using StableHashMap = MapMixin<std::unordered_map<Key, Value, Hash, Equals, Allocator>>;
 
 template <typename BaseMap>
@@ -135,8 +134,8 @@ auto MapMixin<BaseMap>::values() const -> List<mapped_type> {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::pairs() const -> List<pair<key_type, mapped_type>> {
-  List<pair<key_type, mapped_type>> plist;
+auto MapMixin<BaseMap>::pairs() const -> List<std::pair<key_type, mapped_type>> {
+  List<std::pair<key_type, mapped_type>> plist;
   for (const_iterator i = Base::begin(); i != Base::end(); ++i)
     plist.push_back(*i);
   return plist;
@@ -267,7 +266,7 @@ auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
 }
 
 template <typename BaseMap>
-auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> pair<iterator, bool> {
+auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> std::pair<iterator, bool> {
   return Base::insert(value_type(std::move(k), std::move(v)));
 }
 

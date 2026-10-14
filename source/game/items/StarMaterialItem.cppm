@@ -34,7 +34,7 @@ import star.random;
 import star.ttl_cache;
 import star.image;
 import star.math_common;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.either;
@@ -97,8 +97,20 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.renderable_item;
 import star.previewable_item;
@@ -171,7 +183,13 @@ import star.tile_drawer;
 
 export namespace Star {
 
-STAR_CLASS(MaterialItem);
+class MaterialItem;
+using MaterialItemPtr = std::shared_ptr<MaterialItem>;
+using MaterialItemConstPtr = std::shared_ptr<const MaterialItem>;
+using MaterialItemWeakPtr = std::weak_ptr<MaterialItem>;
+using MaterialItemConstWeakPtr = std::weak_ptr<const MaterialItem>;
+using MaterialItemUPtr = std::unique_ptr<MaterialItem>;
+using MaterialItemConstUPtr = std::unique_ptr<const MaterialItem>;
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
@@ -205,7 +223,7 @@ public:
   List<PreviewTile> previewTiles(bool shifting) const override;
   List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
-  size_t blockSwap(float radius, TileLayer layer);
+  std::size_t blockSwap(float radius, TileLayer layer);
   void updatePropertiesFromPlayer(Player* player);
   float calcRadius(bool shifting) const;
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
@@ -284,7 +302,7 @@ MaterialItem::MaterialItem(Json const& config, String const& directory, Json con
 }
 
 ItemPtr MaterialItem::clone() const {
-  return make_shared<MaterialItem>(*this);
+  return std::make_shared<MaterialItem>(*this);
 }
 
 void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
@@ -315,10 +333,10 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
       Input& input = Input::singleton();
       if (auto presses = input.bindDown("opensb", "materialCollisionCycle")) {
         CollisionKind baseKind = Root::singleton().materialDatabase()->materialCollisionKind(m_material);
-        for (size_t i = 0; i != *presses; ++i) {
-          constexpr auto limit = (uint8_t)TileCollisionOverride::Block + 1;
+        for (std::size_t i = 0; i != *presses; ++i) {
+          constexpr auto limit = (std::uint8_t)TileCollisionOverride::Block + 1;
           while (true) {
-            m_collisionOverride = TileCollisionOverride(((uint8_t)m_collisionOverride + 1) % limit);
+            m_collisionOverride = TileCollisionOverride(((std::uint8_t)m_collisionOverride + 1) % limit);
             if (collisionKindFromOverride(m_collisionOverride) != baseKind)
               break;
           }
@@ -328,13 +346,13 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
       }
 
       if (auto presses = input.bindDown("opensb", "buildingRadiusGrow")) {
-        m_blockRadius = min(BlockRadiusLimit, int(m_blockRadius + *presses));
+        m_blockRadius = std::min(BlockRadiusLimit, int(m_blockRadius + *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
         owner()->addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
 
       if (auto presses = input.bindDown("opensb", "buildingRadiusShrink")) {
-        m_blockRadius = max(1, int(m_blockRadius - *presses));
+        m_blockRadius = std::max(1, int(m_blockRadius - *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
         owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
@@ -353,7 +371,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
-    float pulse = (float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
+    float pulse = (float)std::sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
     float pulseA = 0.85 - pulse * 0.15f;
     float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
@@ -419,20 +437,20 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   if (*m_lastAimPosition != aimPosition) {
     diff = geo.diff(*m_lastAimPosition, aimPosition);
     float magnitude = diff.magnitude();
-    float limit = max(4.f, 64.f / radius);
+    float limit = std::max(4.f, 64.f / radius);
     if (magnitude > limit) {
       diff = diff.normalized() * limit;
       magnitude = limit;
     }
 
-    steps = (unsigned)ceil(magnitude * (Constants::pi / 2));
+    steps = (unsigned)std::ceil(magnitude * (Constants::pi / 2));
   }
 
   CollisionKind collisionKind = m_collisionOverride != TileCollisionOverride::None
     ? collisionKindFromOverride(m_collisionOverride)
     : Root::singleton().materialDatabase()->materialCollisionKind(m_material);
 
-  size_t total = 0;
+  std::size_t total = 0;
 
   if (m_blockSwap && owner()->inToolRange(aimPosition))
     total += blockSwap(radius, layer);
@@ -448,16 +466,16 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     // Make sure not to make any more modifications than we have consumables.
     if (modifications.size() > count())
       modifications.resize(count());
-    size_t failed = world()->applyTileModifications(modifications, collisionKind <= CollisionKind::Platform).size();
+    std::size_t failed = world()->applyTileModifications(modifications, collisionKind <= CollisionKind::Platform).size();
     if (failed < modifications.size()) {
-      size_t placed = modifications.size() - failed;
+      std::size_t placed = modifications.size() - failed;
       consume(placed);
       total += placed;
     }
   }
 
   if (total) {
-    float intensity = clamp(sqrt((float)total) / 16, 0.0f, 1.0f);
+    float intensity = clamp(std::sqrt((float)total) / 16, 0.0f, 1.0f);
     owner()->addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     FireableItem::fire(mode, shifting, edgeTriggered);
   }
@@ -469,7 +487,7 @@ void MaterialItem::endFire(FireMode, bool) {
   m_lastAimPosition.reset();
 }
 
-size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
+std::size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
   Player* player = as<Player>(owner());
   if (!player)
     return 0;
@@ -509,8 +527,8 @@ size_t MaterialItem::blockSwap(float radius, TileLayer layer) {
       willDamage.append(pos);
   }
   
-  size_t success;
-  size_t failed = world()->replaceTiles(toSwap, damage, true).size();
+  std::size_t success;
+  std::size_t failed = world()->replaceTiles(toSwap, damage, true).size();
 
   if (failed < toSwap.size()) {
     success = toSwap.size() - failed;
@@ -686,7 +704,7 @@ List<PreviewTile> MaterialItem::previewTiles(bool shifting) const {
     auto material = materialId();
     auto color = DefaultMaterialColorVariant;
 
-    size_t c = 0;
+    std::size_t c = 0;
     for (auto& pos : tileArea(calcRadius(shifting), owner()->aimPosition())) {
       MaterialHue hueShift = placementHueShift(pos);
       if (c >= count())

@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -19,7 +20,6 @@ import star.bi_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -39,7 +39,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -247,7 +246,7 @@ void StatusPane::update(float dt) {
 
   auto assets = Root::singleton().assets();
   auto interfaceScale = m_guiContext->interfaceScale();
-  int roundWindowHeight = ceil(windowHeight() / interfaceScale) * interfaceScale;
+  int roundWindowHeight = std::ceil(windowHeight() / interfaceScale) * interfaceScale;
 
   auto imageMetadataDatabase = Root::singleton().imageMetadataDatabase();
   auto statusEffectDatabase = Root::singleton().statusEffectDatabase();

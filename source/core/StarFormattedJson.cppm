@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 import star.string;
 import star.list;
 import star.map;
@@ -13,7 +12,13 @@ import star.json;
 
 namespace Star {
 
-STAR_CLASS(FormattedJson);
+class FormattedJson;
+using FormattedJsonPtr = std::shared_ptr<FormattedJson>;
+using FormattedJsonConstPtr = std::shared_ptr<const FormattedJson>;
+using FormattedJsonWeakPtr = std::weak_ptr<FormattedJson>;
+using FormattedJsonConstWeakPtr = std::weak_ptr<const FormattedJson>;
+using FormattedJsonUPtr = std::unique_ptr<FormattedJson>;
+using FormattedJsonConstUPtr = std::unique_ptr<const FormattedJson>;
 
 struct ObjectElement;
 struct ObjectKeyElement;
@@ -58,7 +63,7 @@ std::ostream& operator<<(std::ostream& os, JsonElement const& elem);
 class FormattedJson {
 public:
   typedef List<JsonElement> ElementList;
-  typedef size_t ElementLocation;
+  typedef std::size_t ElementLocation;
 
   static FormattedJson parse(String const& string);
   static FormattedJson parseJson(String const& string);
@@ -71,7 +76,7 @@ public:
   Json const& toJson() const;
 
   FormattedJson get(String const& key) const;
-  FormattedJson get(size_t index) const;
+  FormattedJson get(std::size_t index) const;
 
   // Returns a new FormattedJson with the given values added or erased.
   // Prepend, insert and append update the value in-place if the key already
@@ -83,13 +88,13 @@ public:
   FormattedJson set(String const& key, FormattedJson const& value) const;
   FormattedJson eraseKey(String const& key) const;
 
-  FormattedJson insert(size_t index, FormattedJson const& value) const;
+  FormattedJson insert(std::size_t index, FormattedJson const& value) const;
   FormattedJson append(FormattedJson const& value) const;
-  FormattedJson set(size_t index, FormattedJson const& value) const;
-  FormattedJson eraseIndex(size_t index) const;
+  FormattedJson set(std::size_t index, FormattedJson const& value) const;
+  FormattedJson eraseIndex(std::size_t index) const;
 
   // Returns the number of elements in a Json array, or entries in an object.
-  size_t size() const;
+  std::size_t size() const;
 
   bool contains(String const& key) const;
 
@@ -128,7 +133,7 @@ private:
   Maybe<String> m_formatting;
 
   Maybe<ElementLocation> m_lastKey, m_lastValue;
-  Map<String, pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
+  Map<String, std::pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };
 

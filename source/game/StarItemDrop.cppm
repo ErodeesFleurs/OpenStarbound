@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -56,8 +56,20 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemDrop);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class ItemDrop;
+using ItemDropPtr = std::shared_ptr<ItemDrop>;
+using ItemDropConstPtr = std::shared_ptr<const ItemDrop>;
+using ItemDropWeakPtr = std::weak_ptr<ItemDrop>;
+using ItemDropConstWeakPtr = std::weak_ptr<const ItemDrop>;
+using ItemDropUPtr = std::unique_ptr<ItemDrop>;
+using ItemDropConstUPtr = std::unique_ptr<const ItemDrop>;
 
 class ItemDrop : public virtual MobileEntity, public virtual ScriptedEntity {
 public:
@@ -87,7 +99,7 @@ public:
   String name() const override;
   String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -100,7 +112,7 @@ public:
 
   RectF collisionArea() const override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   bool shouldDestroy() const override;
 

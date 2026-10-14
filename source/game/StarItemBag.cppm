@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 
@@ -10,8 +10,20 @@ import star.item_descriptor;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<const ItemBag>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<const ItemBag>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<const ItemBag>;
 
 // Manages a collection of items with non-zero counts, and putting them in /
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
@@ -23,12 +35,12 @@ STAR_CLASS(ItemBag);
 class ItemBag {
 public:
   struct ItemsFitWhereResult {
-    uint64_t leftover;
-    List<size_t> slots;
+    std::uint64_t leftover;
+    List<std::size_t> slots;
   };
 
   ItemBag();
-  explicit ItemBag(size_t size);
+  explicit ItemBag(std::size_t size);
 
   static ItemBag fromJson(Json const& spec);
   static ItemBag loadStore(Json const& store);
@@ -36,10 +48,10 @@ public:
   Json toJson() const;
   Json diskStore() const;
 
-  size_t size() const;
+  std::size_t size() const;
   // May reshape the container, but will try not to lose any container
   // contents.  Returns overflow.
-  List<ItemPtr> resize(size_t size);
+  List<ItemPtr> resize(std::size_t size);
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
@@ -53,26 +65,26 @@ public:
   List<ItemPtr>& items();
   List<ItemPtr> const& items() const;
 
-  ItemPtr const& at(size_t i) const;
-  ItemPtr& at(size_t i);
+  ItemPtr const& at(std::size_t i) const;
+  ItemPtr& at(std::size_t i);
 
   // Returns all non-empty items and clears container contents
   List<ItemPtr> takeAll();
 
   // Directly set the value of an item at a given slot
-  void setItem(size_t pos, ItemPtr item);
+  void setItem(std::size_t pos, ItemPtr item);
 
   // Put items into the given slot.  Returns number of items left over
-  ItemPtr putItems(size_t pos, ItemPtr items);
+  ItemPtr putItems(std::size_t pos, ItemPtr items);
   // Take a maximum number of items from the given position, defaults to all.
-  ItemPtr takeItems(size_t pos, uint64_t count = highest<uint64_t>());
+  ItemPtr takeItems(std::size_t pos, std::uint64_t count = highest<std::uint64_t>());
   // Put items in the slot by combining, or swap the current items with the
   // given items.
-  ItemPtr swapItems(size_t pos, ItemPtr items, bool tryCombine = true);
+  ItemPtr swapItems(std::size_t pos, ItemPtr items, bool tryCombine = true);
 
   // Destroys the given number of items, only if the entirety of count is
   // available, returns success.
-  bool consumeItems(size_t pos, uint64_t count);
+  bool consumeItems(std::size_t pos, std::uint64_t count);
 
   // Consume any items from any stack that matches the given item descriptor,
   // only if the entirety of the count is available.  Returns success.
@@ -80,17 +92,17 @@ public:
 
   // Returns the number of times this ItemDescriptor could be consumed using
   // the items in this container.
-  uint64_t available(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  std::uint64_t available(ItemDescriptor const& descriptor, bool exactMatch = false) const;
 
   // Returns the number of items that can fit anywhere in the bag, including
   // being split up.
-  uint64_t itemsCanFit(ItemConstPtr const& items) const;
+  std::uint64_t itemsCanFit(ItemConstPtr const& items) const;
   // Returns the number of items that can be stacked with existing items
   // anywhere in the bag.
-  uint64_t itemsCanStack(ItemConstPtr const& items) const;
+  std::uint64_t itemsCanStack(ItemConstPtr const& items) const;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, uint64_t max = highest<uint64_t>()) const;
+  ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, std::uint64_t max = highest<std::uint64_t>()) const;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
@@ -110,12 +122,12 @@ public:
 private:
   // If the from item can stack into the given to item, returns the amount that
   // would be transfered.
-  static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
+  static std::uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
 
   // Returns the slot that contains the item already and has the *highest*
   // stack count but not full, or an empty slot, or NPos for no room.
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
+  std::size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const;
+  std::size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
 
   List<ItemPtr> m_items;
 };

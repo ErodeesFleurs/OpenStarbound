@@ -1,7 +1,7 @@
 module;
+import std;
 import star.byte_array;
 
-#include "StarConfig.hpp"
 import star.list;
 import star.maybe;
 import star.json;
@@ -11,7 +11,13 @@ import star.string;
 
 namespace Star {
 
-STAR_CLASS(DirectoryAssetSource);
+class DirectoryAssetSource;
+using DirectoryAssetSourcePtr = std::shared_ptr<DirectoryAssetSource>;
+using DirectoryAssetSourceConstPtr = std::shared_ptr<DirectoryAssetSource const>;
+using DirectoryAssetSourceWeakPtr = std::weak_ptr<DirectoryAssetSource>;
+using DirectoryAssetSourceConstWeakPtr = std::weak_ptr<DirectoryAssetSource const>;
+using DirectoryAssetSourceUPtr = std::unique_ptr<DirectoryAssetSource>;
+using DirectoryAssetSourceConstUPtr = std::unique_ptr<DirectoryAssetSource const>;
 
 class DirectoryAssetSource : public AssetSource {
 public:

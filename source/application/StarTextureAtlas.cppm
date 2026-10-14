@@ -1,7 +1,8 @@
 module;
 
+import std;
+import star.memory;
 import star.rect;
-#include "StarConfig.hpp"
 import star.maybe;
 import star.format;
 import star.set;
@@ -39,7 +40,7 @@ public:
     virtual bool expired() const = 0;
   };
 
-  typedef shared_ptr<Texture> TextureHandle;
+  typedef std::shared_ptr<Texture> TextureHandle;
 
   TextureAtlasSet(unsigned cellSize, unsigned atlasNumCells);
 
@@ -72,7 +73,7 @@ public:
   // re-adds it to the AtlasSet.  It does this up to textureCount textures,
   // until it finds a texture where re-adding it to the texture atlas simply
   // moves the texture into the same atlas, at which point it stops.
-  void compressionPass(size_t textureCount = NPos);
+  void compressionPass(std::size_t textureCount = NPos);
 
   // The number of atlases that the AtlasSet will attempt to fit a texture in
   // before giving up and creating a new atlas.  Tries in order of least full
@@ -88,7 +89,7 @@ protected:
 private:
   struct TextureAtlas {
     AtlasTextureHandle atlasTexture;
-    unique_ptr<bool[]> usedCells;
+    std::unique_ptr<bool[]> usedCells;
     unsigned usedCellCount;
   };
 
@@ -128,8 +129,8 @@ private:
   unsigned m_atlasNumCells;
   unsigned m_textureFitTries;
 
-  List<shared_ptr<TextureAtlas>> m_atlases;
-  HashSet<shared_ptr<TextureEntry>> m_textures;
+  List<std::shared_ptr<TextureAtlas>> m_atlases;
+  HashSet<std::shared_ptr<TextureEntry>> m_textures;
 };
 
 template <typename AtlasTextureHandle>
@@ -181,7 +182,7 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
     if (!placement)
       return nullptr;
 
-    auto textureEntry = make_shared<TextureEntry>();
+    auto textureEntry = std::make_shared<TextureEntry>();
     textureEntry->textureImage = std::move(finalImage);
     textureEntry->atlasPlacement = *placement;
 
@@ -193,17 +194,17 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
   // Try the first 'm_textureFitTries' atlases to see if we can fit a given
   // texture in an existing atlas.  Do this from the most full to the least
   // full atlas to maximize compression.
-  size_t startAtlas = m_atlases.size() - min<size_t>(m_atlases.size(), m_textureFitTries);
-  for (size_t i = startAtlas; i < m_atlases.size(); ++i) {
+  std::size_t startAtlas = m_atlases.size() - std::min<std::size_t>(m_atlases.size(), m_textureFitTries);
+  for (std::size_t i = startAtlas; i < m_atlases.size(); ++i) {
     if (auto texturePtr = tryAtlas(m_atlases[i].get()))
       return texturePtr;
   }
 
   // If we have not found an existing atlas to put the texture, need to create
   // a new atlas
-  m_atlases.append(make_shared<TextureAtlas>(TextureAtlas{
+  m_atlases.append(std::make_shared<TextureAtlas>(TextureAtlas{
       createAtlasTexture(Vec2U::filled(m_atlasCellSize * m_atlasNumCells), PixelFormat::RGBA32),
-      unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0
+      std::unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0
     }));
 
   if (auto texturePtr = tryAtlas(m_atlases.last().get()))
@@ -248,7 +249,7 @@ float TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const {
 }
 
 template <typename AtlasTextureHandle>
-void TextureAtlasSet<AtlasTextureHandle>::compressionPass(size_t textureCount) {
+void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCount) {
   while (m_atlases.size() > 1 && textureCount > 0) {
     // Find the least full atlas, If it is empty, remove it and start at the
     // next atlas.
@@ -279,8 +280,8 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(size_t textureCount) {
       break;
 
     // Try to add the texture to any atlas that isn't the last (most empty) one
-    size_t startAtlas = m_atlases.size() - 1 - min<size_t>(m_atlases.size() - 1, m_textureFitTries);
-    for (size_t i = startAtlas; i < m_atlases.size() - 1; ++i) {
+    std::size_t startAtlas = m_atlases.size() - 1 - std::min<std::size_t>(m_atlases.size() - 1, m_textureFitTries);
+    for (std::size_t i = startAtlas; i < m_atlases.size() - 1; ++i) {
       if (auto placement = addTextureToAtlas(m_atlases[i].get(), smallestTexture->textureImage, smallestTexture->atlasPlacement.borderPixels)) {
         setAtlasRegionUsed(smallestTexture->atlasPlacement.atlas, smallestTexture->atlasPlacement.occupiedCells, false);
         smallestTexture->atlasPlacement = *placement;
@@ -345,11 +346,15 @@ void TextureAtlasSet<AtlasTextureHandle>::setAtlasRegionUsed(TextureAtlas* textu
       bool oldVal = val;
       val = used;
       if (oldVal && !val) {
-        starAssert(textureAtlas->usedCellCount != 0);
+        if constexpr (Star::DebugEnabled) {
+          Star::starAssertFailed((textureAtlas->usedCellCount != 0));
+        }
         textureAtlas->usedCellCount -= 1;
       } else if (!oldVal && used) {
         textureAtlas->usedCellCount += 1;
-        starAssert(textureAtlas->usedCellCount <= square(m_atlasNumCells));
+        if constexpr (Star::DebugEnabled) {
+          Star::starAssertFailed((textureAtlas->usedCellCount <= square(m_atlasNumCells)));
+        }
       }
     }
   }
@@ -372,18 +377,18 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   Vec2U imageSize = image.size();
 
   // Number of cells this image will take.
-  size_t numCellsX = (imageSize[0] + m_atlasCellSize - 1) / m_atlasCellSize;
-  size_t numCellsY = (imageSize[1] + m_atlasCellSize - 1) / m_atlasCellSize;
+  std::size_t numCellsX = (imageSize[0] + m_atlasCellSize - 1) / m_atlasCellSize;
+  std::size_t numCellsY = (imageSize[1] + m_atlasCellSize - 1) / m_atlasCellSize;
 
   if (numCellsX > m_atlasNumCells || numCellsY > m_atlasNumCells)
     return {};
 
-  for (size_t cellY = 0; cellY <= m_atlasNumCells - numCellsY; ++cellY) {
-    for (size_t cellX = 0; cellX <= m_atlasNumCells - numCellsX; ++cellX) {
+  for (std::size_t cellY = 0; cellY <= m_atlasNumCells - numCellsY; ++cellY) {
+    for (std::size_t cellX = 0; cellX <= m_atlasNumCells - numCellsX; ++cellX) {
       // Check this box of numCellsX x numCellsY for fit.
       found = true;
-      size_t fx;
-      size_t fy;
+      std::size_t fx;
+      std::size_t fy;
       for (fy = cellY; fy < cellY + numCellsY; ++fy) {
         for (fx = cellX; fx < cellX + numCellsX; ++fx) {
           if (atlas->usedCells[fy * m_atlasNumCells + fx]) {

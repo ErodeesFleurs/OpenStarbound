@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.maybe;
@@ -22,7 +22,13 @@ import star.asset_path;
 
 namespace Star {
 
-STAR_CLASS(AssetTextureGroup);
+class AssetTextureGroup;
+using AssetTextureGroupPtr = std::shared_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstPtr = std::shared_ptr<AssetTextureGroup const>;
+using AssetTextureGroupWeakPtr = std::weak_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstWeakPtr = std::weak_ptr<AssetTextureGroup const>;
+using AssetTextureGroupUPtr = std::unique_ptr<AssetTextureGroup>;
+using AssetTextureGroupConstUPtr = std::unique_ptr<AssetTextureGroup const>;
 
 // Creates a renderer texture group for textures loaded directly from Assets.
 class AssetTextureGroup {
@@ -44,7 +50,7 @@ public:
 
   // Frees textures that haven't been used in more than 'textureTimeout' time.
   // If Root has been reloaded, will simply clear the texture group.
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
 
 private:
   // Returns the texture parameters.  If tryTexture is true, then returns none
@@ -53,7 +59,7 @@ private:
   TexturePtr loadTexture(AssetPath const& imagePath, bool tryTexture);
 
   TextureGroupPtr m_textureGroup;
-  HashMap<AssetPath, pair<TexturePtr, int64_t>> m_textureMap;
+  HashMap<AssetPath, std::pair<TexturePtr, std::int64_t>> m_textureMap;
   HashMap<ImageConstPtr, TexturePtr> m_textureDeduplicationMap;
   TrackerListenerPtr m_reloadTracker;
 };

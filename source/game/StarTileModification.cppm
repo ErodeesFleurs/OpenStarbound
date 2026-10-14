@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.data_stream;
 import star.variant;
@@ -59,7 +59,7 @@ DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
 DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
 typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
-typedef List<pair<Vec2I, TileModification>> TileModificationList;
+typedef List<std::pair<Vec2I, TileModification>> TileModificationList;
 
 }
 

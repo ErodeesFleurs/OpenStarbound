@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 #include "StarStrongTypedef.hpp"
@@ -19,7 +20,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -97,7 +97,7 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct) : Pane(), m_rawConfi
   }
   
   m_interactive = m_config.getBool("interactive", true);
-  m_reader = make_shared<GuiReader>();
+  m_reader = std::make_shared<GuiReader>();
   m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
   for (auto const& callbackName : jsonToStringList(m_config.get("scriptWidgetCallbacks", JsonArray{}))) {
@@ -141,7 +141,7 @@ void BaseScriptPane::tick(float dt) {
 
   for (auto p : m_canvasClickCallbacks) {
     for (auto const& clickEvent : p.first->pullClickEvents())
-      m_script.invoke(p.second, jsonFromVec2I(clickEvent.position), (uint8_t)clickEvent.button, clickEvent.buttonDown);
+      m_script.invoke(p.second, jsonFromVec2I(clickEvent.position), (std::uint8_t)clickEvent.button, clickEvent.buttonDown);
   }
   for (auto p : m_canvasKeyCallbacks) {
     for (auto const& keyEvent : p.first->pullKeyEvents())
@@ -174,7 +174,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
     if (result->type() == Json::Type::String) {
       return SimpleTooltipBuilder::buildTooltip(result->toString());
     } else {
-      PanePtr tooltip = make_shared<Pane>();
+      PanePtr tooltip = std::make_shared<Pane>();
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }

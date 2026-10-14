@@ -1,3 +1,4 @@
+import std;
 import star.poly;
 import star.world_geometry;
 
@@ -44,5 +45,5 @@ TEST(WorldGeometryTest, All) {
   EXPECT_TRUE(geom.polyIntersectsPoly(shapeC2, shapeC));
   EXPECT_TRUE(geom.polyIntersectsPoly(shapeC, shapeC2));
   EXPECT_TRUE(geom.polyContains(shapeC, Vec2F(0, 0)));
-  EXPECT_TRUE(fabs(geom.polyOverlapArea(shapeC, shapeC2) - 4) < 0.0001f);
+  EXPECT_TRUE(std::fabs(geom.polyOverlapArea(shapeC, shapeC2) - 4) < 0.0001f);
 }

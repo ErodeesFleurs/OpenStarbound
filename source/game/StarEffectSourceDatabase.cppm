@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
@@ -8,10 +8,34 @@ import star.vector;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(EffectSource);
-STAR_CLASS(EffectSourceConfig);
-STAR_CLASS(EffectSourceDatabase);
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
+class EffectSource;
+using EffectSourcePtr = std::shared_ptr<EffectSource>;
+using EffectSourceConstPtr = std::shared_ptr<const EffectSource>;
+using EffectSourceWeakPtr = std::weak_ptr<EffectSource>;
+using EffectSourceConstWeakPtr = std::weak_ptr<const EffectSource>;
+using EffectSourceUPtr = std::unique_ptr<EffectSource>;
+using EffectSourceConstUPtr = std::unique_ptr<const EffectSource>;
+class EffectSourceConfig;
+using EffectSourceConfigPtr = std::shared_ptr<EffectSourceConfig>;
+using EffectSourceConfigConstPtr = std::shared_ptr<const EffectSourceConfig>;
+using EffectSourceConfigWeakPtr = std::weak_ptr<EffectSourceConfig>;
+using EffectSourceConfigConstWeakPtr = std::weak_ptr<const EffectSourceConfig>;
+using EffectSourceConfigUPtr = std::unique_ptr<EffectSourceConfig>;
+using EffectSourceConfigConstUPtr = std::unique_ptr<const EffectSourceConfig>;
+class EffectSourceDatabase;
+using EffectSourceDatabasePtr = std::shared_ptr<EffectSourceDatabase>;
+using EffectSourceDatabaseConstPtr = std::shared_ptr<const EffectSourceDatabase>;
+using EffectSourceDatabaseWeakPtr = std::weak_ptr<EffectSourceDatabase>;
+using EffectSourceDatabaseConstWeakPtr = std::weak_ptr<const EffectSourceDatabase>;
+using EffectSourceDatabaseUPtr = std::unique_ptr<EffectSourceDatabase>;
+using EffectSourceDatabaseConstUPtr = std::unique_ptr<const EffectSourceDatabase>;
 struct Particle;
 
 class EffectSource {

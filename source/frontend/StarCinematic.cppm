@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.thread;
 import star.time;
@@ -30,8 +30,20 @@ import star.mixer;
 
 namespace Star {
 
-STAR_CLASS(Cinematic);
-STAR_CLASS(Player);
+class Cinematic;
+using CinematicPtr = std::shared_ptr<Cinematic>;
+using CinematicConstPtr = std::shared_ptr<Cinematic const>;
+using CinematicWeakPtr = std::weak_ptr<Cinematic>;
+using CinematicConstWeakPtr = std::weak_ptr<Cinematic const>;
+using CinematicUPtr = std::unique_ptr<Cinematic>;
+using CinematicConstUPtr = std::unique_ptr<Cinematic const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 
 class Cinematic {
 public:
@@ -88,7 +100,7 @@ private:
     float endTime;
     float loopTime;
   };
-  typedef shared_ptr<Panel> PanelPtr;
+  typedef std::shared_ptr<Panel> PanelPtr;
 
   struct PanelValues {
     float zoom;

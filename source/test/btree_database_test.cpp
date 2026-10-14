@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.list;
 import star.io_device;
@@ -20,23 +20,23 @@ import star.algorithm;
 using namespace Star;
 
 namespace {
-  size_t const RandFactor = 0xd5a2f037;
-  size_t const MaxSize = 400;
-  uint32_t const MaxKey = 100000;
+  std::size_t const RandFactor = 0xd5a2f037;
+  std::size_t const MaxSize = 400;
+  std::uint32_t const MaxKey = 100000;
 
-  ByteArray toByteArray(uint32_t k) {
+  ByteArray toByteArray(std::uint32_t k) {
     k = toBigEndian(k);
     return ByteArray((char*)(&k), sizeof(k));
   }
 
-  ByteArray genBlock(uint32_t k) {
+  ByteArray genBlock(std::uint32_t k) {
     // Make sure not empty, because we test for existence with empty()
-    size_t size = (RandFactor * k) % (MaxSize - 1) + 1;
-    uint8_t val = (uint8_t)(k % 256);
+    std::size_t size = (RandFactor * k) % (MaxSize - 1) + 1;
+    std::uint8_t val = (std::uint8_t)(k % 256);
 
     ByteArray b(size, 0);
 
-    for (size_t i = 0; i < size; ++i) {
+    for (std::size_t i = 0; i < size; ++i) {
       b[i] = val;
       val += 1;
     }
@@ -44,12 +44,12 @@ namespace {
     return b;
   }
 
-  bool checkBlock(uint32_t k, ByteArray b) {
+  bool checkBlock(std::uint32_t k, ByteArray b) {
     return genBlock(k) == b;
   }
 
-  void putAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    for (uint32_t k : keys) {
+  void putAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
+    for (std::uint32_t k : keys) {
       ByteArray val = genBlock(k);
       db.insert(toByteArray(k), val);
 
@@ -59,8 +59,8 @@ namespace {
     }
   }
 
-  void checkAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    for (uint32_t k : keys) {
+  void checkAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
+    for (std::uint32_t k : keys) {
       auto res = db.find(toByteArray(k));
       EXPECT_TRUE((bool)res);
       EXPECT_TRUE(checkBlock(k, *res));
@@ -69,7 +69,7 @@ namespace {
     // Also check that forAll works.
 
     Set<ByteArray> keySet;
-    for (uint32_t k : keys)
+    for (std::uint32_t k : keys)
       keySet.add(toByteArray(k));
 
     db.forAll([&keySet](ByteArray const& key, ByteArray const&) { EXPECT_TRUE(keySet.remove(key)); });
@@ -77,9 +77,9 @@ namespace {
     EXPECT_TRUE(keySet.empty());
   }
 
-  size_t removeAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    size_t totalRemoved = 0;
-    for (uint32_t k : keys) {
+  std::size_t removeAll(BTreeDatabase& db, const List<std::uint32_t>& keys) {
+    std::size_t totalRemoved = 0;
+    for (std::uint32_t k : keys) {
       auto old = db.find(toByteArray(k));
       EXPECT_TRUE(!old || *old == genBlock(k));
 
@@ -91,20 +91,20 @@ namespace {
     return totalRemoved;
   }
 
-  void testBTreeDatabase(size_t testCount, size_t writeRepeat, size_t randCount, size_t rollbackCount, size_t blockSize) {
+  void testBTreeDatabase(std::size_t testCount, std::size_t writeRepeat, std::size_t randCount, std::size_t rollbackCount, std::size_t blockSize) {
     auto tmpFile = File::temporaryFile();
     auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
 
-    Set<uint32_t> keySet;
+    Set<std::uint32_t> keySet;
     BTreeDatabase db("TestDB", 4);
     db.setAutoCommit(false);
 
     while (keySet.size() < testCount)
       keySet.add(Random::randUInt(0, MaxKey));
 
-    List<uint32_t> keys;
-    for (uint32_t k : keySet) {
-      for (uint32_t j = 0; j < writeRepeat; ++j)
+    List<std::uint32_t> keys;
+    for (std::uint32_t k : keySet) {
+      for (std::uint32_t j = 0; j < writeRepeat; ++j)
         keys.append(k);
     }
 
@@ -123,8 +123,8 @@ namespace {
     checkAll(db, keys);
 
     // Random reads/writes with randCount cycles...
-    for (uint32_t i = 0; i < randCount; ++i) {
-      List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
+    for (std::uint32_t i = 0; i < randCount; ++i) {
+      List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
 
       Random::shuffle(keysTemp);
       removeAll(db, keysTemp);
@@ -139,8 +139,8 @@ namespace {
     db.commit();
 
     // Random reads/writes/rollbacks with rollbackCount cycles...
-    for (uint32_t i = 0; i < rollbackCount ; ++i) {
-      List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
+    for (std::uint32_t i = 0; i < rollbackCount ; ++i) {
+      List<std::uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
       Random::shuffle(keysTemp);
 
       removeAll(db, keysTemp);
@@ -168,7 +168,7 @@ namespace {
 
     // Removing all records...
 
-    size_t totalRemoved = removeAll(db, keys);
+    std::size_t totalRemoved = removeAll(db, keys);
 
     EXPECT_EQ(totalRemoved, testCount);
 
@@ -183,7 +183,7 @@ TEST(BTreeDatabaseTest, Consistency) {
 
   // Test a range of block sizes to make sure there are not off by one errors
   // in maximum index / leaf size calculations.
-  for (size_t i = 0; i < 16; ++i)
+  for (std::size_t i = 0; i < 16; ++i)
     testBTreeDatabase(30, 2, 2, 2, 200 + i);
 }
 
@@ -197,11 +197,11 @@ TEST(BTreeDatabaseTest, Threading) {
   db.setIODevice(tmpFile);
   db.open();
 
-  List<uint32_t> writeKeySet;
-  List<uint32_t> deleteKeySet;
+  List<std::uint32_t> writeKeySet;
+  List<std::uint32_t> deleteKeySet;
 
   while (writeKeySet.size() < 5000) {
-    uint32_t key = Random::randu32();
+    std::uint32_t key = Random::randu32();
     writeKeySet.append(key);
     if (Random::randf() > 0.3)
       deleteKeySet.append(key);
@@ -212,7 +212,7 @@ TEST(BTreeDatabaseTest, Threading) {
     auto writer = Thread::invoke("databaseTestWriter",
         [&db, &writeKeySet]() {
           try {
-            for (uint32_t k : writeKeySet) {
+            for (std::uint32_t k : writeKeySet) {
               ByteArray val = genBlock(k);
               db.insert(toByteArray(k), val);
               if (Random::randi32() % 23 == 0)
@@ -227,7 +227,7 @@ TEST(BTreeDatabaseTest, Threading) {
     auto deleter = Thread::invoke("databaseTestDeleter",
         [&db, &deleteKeySet]() {
           try {
-            for (uint32_t k : deleteKeySet) {
+            for (std::uint32_t k : deleteKeySet) {
               db.remove(toByteArray(k));
               if (Random::randi32() % 23 == 0)
                 db.commit();
@@ -248,11 +248,11 @@ TEST(BTreeDatabaseTest, Threading) {
     EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
 
     List<ThreadFunction<void>> readers;
-    for (size_t i = 0; i < 5; ++i) {
+    for (std::size_t i = 0; i < 5; ++i) {
       readers.append(Thread::invoke("databaseTestReader",
           [&db, &writeKeySet, &deleteKeySet]() {
             try {
-              for (uint32_t k : writeKeySet) {
+              for (std::uint32_t k : writeKeySet) {
                 if (auto res = db.find(toByteArray(k)))
                   EXPECT_TRUE(checkBlock(k, *res));
                 else

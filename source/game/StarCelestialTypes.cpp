@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.json;
 #include "StarJsonExtra.hpp"

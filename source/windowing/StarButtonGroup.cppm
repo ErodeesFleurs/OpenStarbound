@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -47,9 +47,27 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ButtonGroup);
-STAR_CLASS(ButtonGroupWidget);
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class ButtonGroup;
+using ButtonGroupPtr = std::shared_ptr<ButtonGroup>;
+using ButtonGroupConstPtr = std::shared_ptr<ButtonGroup const>;
+using ButtonGroupWeakPtr = std::weak_ptr<ButtonGroup>;
+using ButtonGroupConstWeakPtr = std::weak_ptr<ButtonGroup const>;
+using ButtonGroupUPtr = std::unique_ptr<ButtonGroup>;
+using ButtonGroupConstUPtr = std::unique_ptr<ButtonGroup const>;
+class ButtonGroupWidget;
+using ButtonGroupWidgetPtr = std::shared_ptr<ButtonGroupWidget>;
+using ButtonGroupWidgetConstPtr = std::shared_ptr<ButtonGroupWidget const>;
+using ButtonGroupWidgetWeakPtr = std::weak_ptr<ButtonGroupWidget>;
+using ButtonGroupWidgetConstWeakPtr = std::weak_ptr<ButtonGroupWidget const>;
+using ButtonGroupWidgetUPtr = std::unique_ptr<ButtonGroupWidget>;
+using ButtonGroupWidgetConstUPtr = std::unique_ptr<ButtonGroupWidget const>;
 
 // Manages group of buttons in which *at most* a single button can be checked
 // at any time.
@@ -65,7 +83,7 @@ public:
 
   ButtonWidget* button(int id) const;
   List<ButtonWidget*> buttons() const;
-  size_t buttonCount() const;
+  std::size_t buttonCount() const;
 
   int addButton(ButtonWidget* button, int id = NoButton);
   void removeButton(ButtonWidget* button);

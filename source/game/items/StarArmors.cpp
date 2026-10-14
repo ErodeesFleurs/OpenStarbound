@@ -29,7 +29,7 @@ import star.audio;
 import star.map;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.parametric_function;
 import star.multi_array_interpolator;
@@ -277,7 +277,7 @@ HeadArmor::HeadArmor(Json const& config, String const& directory, Json const& da
 }
 
 ItemPtr HeadArmor::clone() const {
-  return make_shared<HeadArmor>(*this);
+  return std::make_shared<HeadArmor>(*this);
 }
 
 ArmorType HeadArmor::armorType() const {
@@ -315,7 +315,7 @@ ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr ChestArmor::clone() const {
-  return make_shared<ChestArmor>(*this);
+  return std::make_shared<ChestArmor>(*this);
 }
 
 ArmorType ChestArmor::armorType() const {
@@ -356,7 +356,7 @@ LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& da
 }
 
 ItemPtr LegsArmor::clone() const {
-  return make_shared<LegsArmor>(*this);
+  return std::make_shared<LegsArmor>(*this);
 }
 
 ArmorType LegsArmor::armorType() const {
@@ -383,7 +383,7 @@ BackArmor::BackArmor(Json const& config, String const& directory, Json const& da
 }
 
 ItemPtr BackArmor::clone() const {
-  return make_shared<BackArmor>(*this);
+  return std::make_shared<BackArmor>(*this);
 }
 
 ArmorType BackArmor::armorType() const {

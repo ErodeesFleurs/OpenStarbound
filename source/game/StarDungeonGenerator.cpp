@@ -27,7 +27,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.lexical_cast;
 import star.listener;
-#include "StarConfig.hpp"
 import star.string;
 import star.map;
 import star.maybe;
@@ -54,7 +53,7 @@ import star.math_common;
 import star.algorithm;
 namespace Star {
 
-size_t const DefinitionsCacheSize = 20;
+std::size_t const DefinitionsCacheSize = 20;
 
 namespace Dungeon {
 
@@ -92,16 +91,18 @@ namespace Dungeon {
       return Biome3MaterialId;
     if (variant == 4)
       return Biome4MaterialId;
-    starAssert(variant == 5);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((variant == 5));
+    }
     return Biome5MaterialId;
   }
 
   ConnectorConstPtr chooseOption(List<ConnectorConstPtr>& options, RandomSource& rnd) {
     float distribution = 0;
-    for (size_t i = 0; i < options.size(); i++)
+    for (std::size_t i = 0; i < options.size(); i++)
       distribution += options[i]->part()->chance();
     float pick = rnd.randf() * distribution;
-    for (size_t i = 0; i < options.size(); i++) {
+    for (std::size_t i = 0; i < options.size(); i++) {
       pick -= options[i]->part()->chance();
       if (pick <= 0)
         return options.takeAt(i);
@@ -140,30 +141,30 @@ namespace Dungeon {
   Maybe<RuleConstPtr> Rule::parse(Json const& rule) {
     String key = rule.getString(0);
     if (key == "worldGenMustContainLiquid")
-      return as<Rule>(make_shared<const WorldGenMustContainLiquidRule>());
+      return as<Rule>(std::make_shared<const WorldGenMustContainLiquidRule>());
     if (key == "worldGenMustNotContainLiquid")
-      return as<Rule>(make_shared<const WorldGenMustNotContainLiquidRule>());
+      return as<Rule>(std::make_shared<const WorldGenMustNotContainLiquidRule>());
 
     if (key == "worldGenMustContainSolidForeground")
-      return as<Rule>(make_shared<const WorldGenMustContainSolidRule>(TileLayer::Foreground));
+      return as<Rule>(std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Foreground));
     if (key == "worldGenMustContainAirForeground")
-      return as<Rule>(make_shared<const WorldGenMustContainAirRule>(TileLayer::Foreground));
+      return as<Rule>(std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Foreground));
 
     if (key == "worldGenMustContainSolidBackground")
-      return as<Rule>(make_shared<const WorldGenMustContainSolidRule>(TileLayer::Background));
+      return as<Rule>(std::make_shared<const WorldGenMustContainSolidRule>(TileLayer::Background));
     if (key == "worldGenMustContainAirBackground")
-      return as<Rule>(make_shared<const WorldGenMustContainAirRule>(TileLayer::Background));
+      return as<Rule>(std::make_shared<const WorldGenMustContainAirRule>(TileLayer::Background));
 
     if (key == "allowOverdrawing")
-      return as<Rule>(make_shared<const AllowOverdrawingRule>());
+      return as<Rule>(std::make_shared<const AllowOverdrawingRule>());
     if (key == "ignorePartMaximumRule")
-      return as<Rule>(make_shared<const IgnorePartMaximumRule>());
+      return as<Rule>(std::make_shared<const IgnorePartMaximumRule>());
     if (key == "maxSpawnCount")
-      return as<Rule>(make_shared<const MaxSpawnCountRule>(rule));
+      return as<Rule>(std::make_shared<const MaxSpawnCountRule>(rule));
     if (key == "doNotConnectToPart")
-      return as<Rule>(make_shared<const DoNotConnectToPartRule>(rule));
+      return as<Rule>(std::make_shared<const DoNotConnectToPartRule>(rule));
     if (key == "doNotCombineWith")
-      return as<Rule>(make_shared<const DoNotCombineWithRule>(rule));
+      return as<Rule>(std::make_shared<const DoNotCombineWithRule>(rule));
 
     Logger::error("Unknown dungeon rule: {}", key);
     return Maybe<RuleConstPtr>();
@@ -222,7 +223,7 @@ namespace Dungeon {
       if (brush.size() > 2)
         mod = brush.getString(2);
     }
-    return make_shared<const FrontBrush>(material, mod, hueshift, modhueshift, colorVariant);
+    return std::make_shared<const FrontBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
   BrushConstPtr parseBackBrush(Json const& brush) {
@@ -242,7 +243,7 @@ namespace Dungeon {
       if (brush.size() > 2)
         mod = brush.getString(2);
     }
-    return make_shared<const BackBrush>(material, mod, hueshift, modhueshift, colorVariant);
+    return std::make_shared<const BackBrush>(material, mod, hueshift, modhueshift, colorVariant);
   }
 
   BrushConstPtr parseObjectBrush(Json const& brush) {
@@ -261,39 +262,39 @@ namespace Dungeon {
 
     if (settings.contains("parameters"))
       parameters = settings.get("parameters");
-    return make_shared<const ObjectBrush>(object, direction, parameters);
+    return std::make_shared<const ObjectBrush>(object, direction, parameters);
   }
 
   BrushConstPtr parseSurfaceBrush(Json const& brush) {
     Json settings = Json::ofType(Json::Type::Object);
     if (brush.size() > 1)
       settings = brush.get(1);
-    return make_shared<const SurfaceBrush>(settings.optInt("variant"), settings.optString("mod"));
+    return std::make_shared<const SurfaceBrush>(settings.optInt("variant"), settings.optString("mod"));
   }
 
   BrushConstPtr parseSurfaceBackgroundBrush(Json const& brush) {
     Json settings = Json::ofType(Json::Type::Object);
     if (brush.size() > 1)
       settings = brush.get(1);
-    return make_shared<const SurfaceBackgroundBrush>(settings.optInt("variant"), settings.optString("mod"));
+    return std::make_shared<const SurfaceBackgroundBrush>(settings.optInt("variant"), settings.optString("mod"));
   }
 
   BrushConstPtr parseWireBrush(Json const& brush) {
     Json settings = brush.get(1);
     String group = settings.getString("group");
     bool local = settings.getBool("local", true);
-    return make_shared<const WireBrush>(group, local);
+    return std::make_shared<const WireBrush>(group, local);
   }
 
   BrushConstPtr parseItemBrush(Json const& brush) {
     ItemDescriptor item(brush.getString(1), 1);
-    return make_shared<const ItemBrush>(item);
+    return std::make_shared<const ItemBrush>(item);
   }
 
   BrushConstPtr Brush::parse(Json const& brush) {
     String key = brush.getString(0);
     if (key == "clear")
-      return as<const Brush>(make_shared<ClearBrush>());
+      return as<const Brush>(std::make_shared<ClearBrush>());
 
     if (key == "front")
       return parseFrontBrush(brush);
@@ -302,27 +303,27 @@ namespace Dungeon {
     if (key == "object")
       return parseObjectBrush(brush);
     if (key == "biomeitems")
-      return as<Brush>(make_shared<BiomeItemsBrush>());
+      return as<Brush>(std::make_shared<BiomeItemsBrush>());
     if (key == "biometree")
-      return as<Brush>(make_shared<BiomeTreeBrush>());
+      return as<Brush>(std::make_shared<BiomeTreeBrush>());
     if (key == "item")
       return parseItemBrush(brush);
     if (key == "npc")
-      return as<Brush>(make_shared<NpcBrush>(brush.get(1)));
+      return as<Brush>(std::make_shared<NpcBrush>(brush.get(1)));
     if (key == "stagehand")
-      return as<Brush>(make_shared<StagehandBrush>(brush.get(1)));
+      return as<Brush>(std::make_shared<StagehandBrush>(brush.get(1)));
     if (key == "random")
-      return as<Brush>(make_shared<RandomBrush>(brush));
+      return as<Brush>(std::make_shared<RandomBrush>(brush));
     if (key == "surface")
       return parseSurfaceBrush(brush);
     if (key == "surfacebackground")
       return parseSurfaceBackgroundBrush(brush);
     if (key == "liquid")
-      return as<Brush>(make_shared<LiquidBrush>(brush.getString(1), 1.0f, brush.getBool(2, false)));
+      return as<Brush>(std::make_shared<LiquidBrush>(brush.getString(1), 1.0f, brush.getBool(2, false)));
     if (key == "wire")
       return parseWireBrush(brush);
     if (key == "playerstart")
-      return as<Brush>(make_shared<PlayerStartBrush>());
+      return as<Brush>(std::make_shared<PlayerStartBrush>());
     throw DungeonException::format("Unknown dungeon brush: {}", key);
   }
 
@@ -334,7 +335,7 @@ namespace Dungeon {
   }
 
   void RandomBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    size_t rnd = (size_t)staticRandomI32(m_seed, position[0], position[1]);
+    std::size_t rnd = (std::size_t)staticRandomI32(m_seed, position[0], position[1]);
     m_brushes[rnd % m_brushes.size()]->paint(position, phase, writer);
   }
 
@@ -566,14 +567,14 @@ namespace Dungeon {
       return false;
     else if (position[1] < 0)
       return false;
-    for (size_t i = 0; i < rules.size(); i++)
+    for (std::size_t i = 0; i < rules.size(); i++)
       if (!rules[i]->checkTileCanPlace(position, writer))
         return false;
     return true;
   }
 
   void Tile::place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    for (size_t i = 0; i < brushes.size(); i++) {
+    for (std::size_t i = 0; i < brushes.size(); i++) {
       brushes[i]->paint(position, phase, writer);
     }
   }
@@ -581,7 +582,7 @@ namespace Dungeon {
   bool Tile::usesPlaces() const {
     if (brushes.size() == 0)
       return false;
-    for (size_t i = 0; i < rules.size(); i++)
+    for (std::size_t i = 0; i < rules.size(); i++)
       if (rules[i]->overdrawable())
         return false;
     return true;
@@ -596,21 +597,21 @@ namespace Dungeon {
   }
 
   bool Tile::requiresOpen() const {
-    for (size_t i = 0; i < rules.size(); i++)
+    for (std::size_t i = 0; i < rules.size(); i++)
       if (rules[i]->requiresOpen())
         return true;
     return false;
   }
 
   bool Tile::requiresSolid() const {
-    for (size_t i = 0; i < rules.size(); i++)
+    for (std::size_t i = 0; i < rules.size(); i++)
       if (rules[i]->requiresSolid())
         return true;
     return false;
   }
 
   bool Tile::requiresLiquid() const {
-    for (size_t i = 0; i < rules.size(); i++)
+    for (std::size_t i = 0; i < rules.size(); i++)
       if (rules[i]->requiresLiquid())
         return true;
     return false;
@@ -621,9 +622,9 @@ namespace Dungeon {
     if (kind == "image") {
       if (tileset.isNothing())
         throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
-      return make_shared<const Part>(dungeon, definition, make_shared<ImagePartReader>(*tileset));
+      return std::make_shared<const Part>(dungeon, definition, std::make_shared<ImagePartReader>(*tileset));
     } else if (kind == "tmx")
-      return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>());
+      return std::make_shared<const Part>(dungeon, definition, std::make_shared<TMXPartReader>());
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
@@ -703,7 +704,7 @@ namespace Dungeon {
       }
       return false;
     });
-    ground[1] = max(ground[1], liquid[1]);
+    ground[1] = std::max(ground[1], liquid[1]);
     if (air.y() < ground.y())
       throw DungeonException::format(
         "Invalid ground vs air contraint! Ground {} can't be above air {}"
@@ -713,14 +714,14 @@ namespace Dungeon {
   }
 
   bool Part::ignoresPartMaximum() const {
-    for (size_t i = 0; i < m_rules.size(); i++)
+    for (std::size_t i = 0; i < m_rules.size(); i++)
       if (m_rules[i]->ignorePartMaximum())
         return true;
     return false;
   }
 
   bool Part::allowsPlacement(int currentPlacementCount) const {
-    for (size_t i = 0; i < m_rules.size(); i++)
+    for (std::size_t i = 0; i < m_rules.size(); i++)
       if (!m_rules[i]->allowSpawnCount(currentPlacementCount))
         return false;
     return true;
@@ -731,17 +732,17 @@ namespace Dungeon {
   }
 
   bool Part::doesNotConnectTo(Part* part) const {
-    for (size_t i = 0; i < m_rules.size(); i++)
+    for (std::size_t i = 0; i < m_rules.size(); i++)
       if (m_rules[i]->doesNotConnectToPart(part->name()))
         return true;
-    for (size_t i = 0; i < part->m_rules.size(); i++)
+    for (std::size_t i = 0; i < part->m_rules.size(); i++)
       if (part->m_rules[i]->doesNotConnectToPart(m_name))
         return true;
     return false;
   }
 
   bool Part::checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const {
-    for (size_t i = 0; i < m_rules.size(); i++)
+    for (std::size_t i = 0; i < m_rules.size(); i++)
       if (!m_rules[i]->checkPartCombinationsAllowed(placementCounter))
         return false;
     return true;
@@ -835,7 +836,7 @@ namespace Dungeon {
     int dya = position[1];
     int dyb = size[1] - position[1];
 
-    int m = min(min(dxa, dxb), min(dya, dyb));
+    int m = std::min(std::min(dxa, dxb), std::min(dya, dyb));
     if (dxa == m)
       return Direction::Left;
     if (dxb == m)
@@ -889,7 +890,7 @@ namespace Dungeon {
           if (d == Direction::Unknown)
             d = pickByEdge(position, m_size);
           Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
-          m_connections.append(make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
+          m_connections.append(std::make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
         }
 
         return false;
@@ -931,7 +932,7 @@ namespace Dungeon {
       throw DungeonException(strf("Exception {} in part {}", outputException(e, true), m_name));
     }
 
-    highestGound = max(highestGound, highestLiquid);
+    highestGound = std::max(highestGound, highestLiquid);
     if (highestGound == -1)
       highestGound = lowestAir - 1;
 
@@ -996,7 +997,9 @@ namespace Dungeon {
       return Vec2I(1, 0);
     if (m_direction == Direction::Up)
       return Vec2I(0, 1);
-    starAssert(m_direction == Direction::Down);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((m_direction == Direction::Down));
+    }
     return Vec2I(0, -1);
   }
 
@@ -1010,8 +1013,8 @@ namespace Dungeon {
 
   DungeonGeneratorWriter::DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends)
     : m_facade(facade), m_terrainMarkingSurfaceLevel(terrainMarkingSurfaceLevel), m_terrainSurfaceSpaceExtends(terrainSurfaceSpaceExtends) {
-    m_currentBounds.setMin(Vec2I{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
-    m_currentBounds.setMax(Vec2I{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min()});
+    m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
+    m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
   }
 
   Vec2I DungeonGeneratorWriter::wrapPosition(Vec2I const& pos) const {
@@ -1084,7 +1087,7 @@ namespace Dungeon {
   }
 
   void DungeonGeneratorWriter::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
-    m_vehicles[pos] = make_pair(vehicleName, parameters);
+    m_vehicles[pos] = std::make_pair(vehicleName, parameters);
     markPosition(pos);
   }
 
@@ -1170,8 +1173,8 @@ namespace Dungeon {
     if (m_currentBounds.xMin() > m_currentBounds.xMax())
       return;
     m_boundingBoxes.push_back(m_currentBounds);
-    m_currentBounds.setMin(Vec2I{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
-    m_currentBounds.setMax(Vec2I{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min()});
+    m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
+    m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
   }
 
   void DungeonGeneratorWriter::flushLiquid() {
@@ -1212,7 +1215,7 @@ namespace Dungeon {
         // unpressurized set.  Pressurize it based on the highest point.
         int highestPoint = lowest<int>();
         for (auto const& p : contiguousRegion)
-          highestPoint = max(highestPoint, p[1]);
+          highestPoint = std::max(highestPoint, p[1]);
         for (auto const& p : contiguousRegion)
           m_pendingLiquids[p].pressure = 1.0f + highestPoint - p[1];
       }
@@ -1239,7 +1242,7 @@ namespace Dungeon {
         // space, and the regions below the surface as needing terrain
         if (bb.yMin() < *m_terrainMarkingSurfaceLevel) {
           RectI lower = bb;
-          lower.setYMax(min(lower.yMax(), *m_terrainMarkingSurfaceLevel));
+          lower.setYMax(std::min(lower.yMax(), *m_terrainMarkingSurfaceLevel));
           terrainBlendingVertexes.append(Vec2F(lower.xMin(), lower.yMin()));
           terrainBlendingVertexes.append(Vec2F(lower.xMax(), lower.yMin()));
           terrainBlendingVertexes.append(Vec2F(lower.xMin(), lower.yMax()));
@@ -1248,7 +1251,7 @@ namespace Dungeon {
 
         if (bb.yMax() > *m_terrainMarkingSurfaceLevel) {
           RectI upper = bb;
-          upper.setYMin(max(upper.yMin(), *m_terrainMarkingSurfaceLevel));
+          upper.setYMin(std::max(upper.yMin(), *m_terrainMarkingSurfaceLevel));
           spaceBlendingVertexes.append(Vec2F(upper.xMin(), upper.yMin()));
           spaceBlendingVertexes.append(Vec2F(upper.xMax(), upper.yMin()));
           spaceBlendingVertexes.append(Vec2F(upper.xMin(), upper.yMax() + m_terrainSurfaceSpaceExtends.value(0)));
@@ -1281,7 +1284,7 @@ namespace Dungeon {
     for (auto entry : m_vehicles) {
       String vehicleName;
       Json parameters;
-      tie(vehicleName, parameters) = entry.second;
+      std::tie(vehicleName, parameters) = entry.second;
       m_facade->placeVehicle(displaceF(entry.first), vehicleName, parameters);
     }
 
@@ -1333,8 +1336,8 @@ namespace Dungeon {
   }
 
   void DungeonGeneratorWriter::reset() {
-    m_currentBounds.setMin(Vec2I{std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max()});
-    m_currentBounds.setMax(Vec2I{std::numeric_limits<int32_t>::min(), std::numeric_limits<int32_t>::min()});
+    m_currentBounds.setMin(Vec2I{std::numeric_limits<std::int32_t>::max(), std::numeric_limits<std::int32_t>::max()});
+    m_currentBounds.setMax(Vec2I{std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()});
 
     m_pendingLiquids.clear();
     m_foregroundMaterial.clear();
@@ -1382,7 +1385,7 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
 DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) {
   try {
     auto assets = Root::singleton().assets();
-    return make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
+    return std::make_shared<DungeonDefinition>(assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
@@ -1405,7 +1408,7 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
   m_anchors = jsonToStringList(m_metadata.get("anchor"));
 
   auto tileset = definition.maybe("tiles").apply([](Json const& tileset) {
-      return make_shared<const Dungeon::ImageTileset>(tileset);
+      return std::make_shared<const Dungeon::ImageTileset>(tileset);
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
@@ -1474,12 +1477,12 @@ int DungeonDefinition::extendSurfaceFreeSpace() const {
   return m_extendSurfaceFreeSpace;
 }
 
-DungeonGenerator::DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
+DungeonGenerator::DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId)
   : m_rand(seed), m_threatLevel(threatLevel), m_dungeonId(dungeonId) {
   m_def = Root::singleton().dungeonDefinitions()->get(dungeonName);
 }
 
-Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
+Maybe<std::pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) {
   String name = m_def->name();
   try {
     Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
@@ -1505,7 +1508,7 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGenerator
   }
 }
 
-pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstPtr anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
+std::pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstPtr anchor, Vec2I basePos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) {
   writer->reset();
 
   Deque<std::pair<Dungeon::Part const*, Vec2I>> openSet;
@@ -1560,7 +1563,7 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
     Vec2I parentPos = openSet.first().second;
     openSet.takeFirst();
     Logger::debug("Trying to add part {} at {} connectors: {}", parentPart->name(), parentPos, parentPart->connections().size());
-    for (size_t i = 0; i < parentPart->connections().size(); i++) {
+    for (std::size_t i = 0; i < parentPart->connections().size(); i++) {
       auto connector = parentPart->connections()[i];
       Vec2I connectorPos = parentPos + connector->offset();
       if (closedConnectors.contains(connectorPos))

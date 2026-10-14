@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "StarJsonExtra.hpp"
 import star.json;
 import star.id_map;
@@ -42,7 +43,7 @@ import star.periodic_function;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.observer_stream;
@@ -147,7 +148,7 @@ namespace Star {
 
 Npc::Npc(NpcVariant const& npcVariant) {
 
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
+  m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -182,11 +183,11 @@ Npc::Npc(NpcVariant const& npcVariant) {
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"npc"});
-  m_movementController = make_shared<ActorMovementController>(movementParameters);
+  m_movementController = std::make_shared<ActorMovementController>(movementParameters);
   m_identityUpdated = false;
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
-  m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings);
+  m_statusController = std::make_shared<StatusController>(m_npcVariant.statusControllerSettings);
   m_statusController->setPersistentEffects("innate", m_npcVariant.innateStatusEffects);
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(species());
   m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects());
@@ -194,17 +195,17 @@ Npc::Npc(NpcVariant const& npcVariant) {
   if (!m_statusController->statusProperty("effectDirectives"))
     m_statusController->setStatusProperty("effectDirectives", speciesDefinition->effectDirectives());
 
-  m_songbook = make_shared<Songbook>(species());
+  m_songbook = std::make_shared<Songbook>(species());
 
-  m_effectEmitter = make_shared<EffectEmitter>();
+  m_effectEmitter = std::make_shared<EffectEmitter>();
 
   m_hitDamageNotificationLimiter = 0;
   m_hitDamageNotificationLimit = assets->json("/npcs/npc.config:hitDamageNotificationLimit").toInt();
 
   m_blinkCooldownTimer = GameTimer();
 
-  m_armor = make_shared<ArmorWearer>();
-  m_tools = make_shared<ToolUser>();
+  m_armor = std::make_shared<ArmorWearer>();
+  m_tools = std::make_shared<ToolUser>();
 
   m_aggressive.set(false);
 
@@ -241,7 +242,7 @@ Npc::Npc(NpcVariant const& npcVariant, Json const& diskStore) : Npc(npcVariant) 
 
   m_deathParticleBurst.set(diskStore.optString("deathParticleBurst"));
 
-  m_dropPools.set(diskStore.getArray("dropPools").transformed(mem_fn(&Json::toString)));
+  m_dropPools.set(diskStore.getArray("dropPools").transformed(std::mem_fn(&Json::toString)));
 
   m_blinkCooldownTimer = GameTimer();
 
@@ -396,7 +397,7 @@ RectF Npc::collisionArea() const {
   return m_movementController->collisionPoly().boundBox();
 }
 
-pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Npc::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   // client-side npcs error nearby vanilla NPC scripts because callScriptedEntity
   // for now, scrungle the collision poly to avoid their queries. hacky :(
   if (m_npcVariant.overrides && m_npcVariant.overrides.getBool("overrideNetPoly", false)) {
@@ -516,7 +517,7 @@ void Npc::damagedOther(DamageNotification const& damage) {
     m_statusController->damagedOther(damage);
 }
 
-void Npc::update(float dt, uint64_t) {
+void Npc::update(float dt, std::uint64_t) {
   if (!inWorld())
     return;
 
@@ -575,7 +576,7 @@ void Npc::update(float dt, uint64_t) {
         else
           humanoid()->setState(Humanoid::Idle);
       } else if (m_movementController->liquidMovement()) {
-        if (abs(m_movementController->xVelocity()) > 0)
+        if (std::abs(m_movementController->xVelocity()) > 0)
           humanoid()->setState(Humanoid::Swim);
         else
           humanoid()->setState(Humanoid::SwimIdle);
@@ -934,8 +935,8 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("setInteractive", [this](bool interactive) { m_isInteractive.set(interactive); });
 
-  callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<size_t> maybeAnchorIndex) {
-      size_t anchorIndex = maybeAnchorIndex.value(0);
+  callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<std::size_t> maybeAnchorIndex) {
+      std::size_t anchorIndex = maybeAnchorIndex.value(0);
       auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
       if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
           || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
@@ -972,7 +973,7 @@ LuaCallbacks Npc::makeNpcCallbacks() {
 
   callbacks.registerCallback("getItemSlot", [this](String const& entry) -> Json {
       if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
-        return m_armor->itemDescriptor((uint8_t)*equipmentSlot).toJson();
+        return m_armor->itemDescriptor((std::uint8_t)*equipmentSlot).toJson();
       } else if (entry.equalsIgnoreCase("primary"))
         return m_tools->primaryHandItemDescriptor().toJson();
       else if (entry.equalsIgnoreCase("alt"))
@@ -1081,8 +1082,8 @@ void Npc::setupNetStates() {
   m_scriptedAnimationParameters.setCompatibilityVersion(10);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters);
 
-  m_netGroup.setNeedsStoreCallback(bind(&Npc::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(bind(&Npc::getNetStates, this, _1));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Npc::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Npc::getNetStates, this, std::placeholders::_1));
 }
 
 void Npc::setNetStates() {
@@ -1213,7 +1214,7 @@ bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
   auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
 
   if (auto equipmentSlot = EquipmentSlotNames.leftPtr(slot)) {
-    m_armor->setItem((uint8_t)*equipmentSlot, as<ArmorItem>(item));
+    m_armor->setItem((std::uint8_t)*equipmentSlot, as<ArmorItem>(item));
   } else if (slot.equalsIgnoreCase("primary"))
     m_tools->setItems(item, m_tools->altHandItem());
   else if (slot.equalsIgnoreCase("alt"))
@@ -1566,7 +1567,7 @@ void Npc::refreshHumanoidParameters() {
     m_refreshedHumanoidParameters.trigger();
     m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
+    m_netHumanoid.addNetElement(std::make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
   }else {
     m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();

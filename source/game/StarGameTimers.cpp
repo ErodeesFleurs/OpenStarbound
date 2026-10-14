@@ -1,5 +1,4 @@
 import std;
-#include "StarConfig.hpp"
 import star.data_stream;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -66,7 +65,7 @@ DataStream& operator<<(DataStream& ds, GameTimer const& gt) {
 
 SlidingWindow::SlidingWindow() : windowSize(1.0f), resolution(1) {}
 
-SlidingWindow::SlidingWindow(float windowSize, size_t resolution, float initialValue)
+SlidingWindow::SlidingWindow(float windowSize, std::size_t resolution, float initialValue)
   : windowSize(windowSize), resolution(resolution) {
   sampleTimer = GameTimer(windowSize / resolution);
   window = std::vector<float>(resolution);
@@ -82,7 +81,7 @@ void SlidingWindow::reset(float initialValue) {
   std::fill(window.begin(), window.end(), initialValue);
 }
 
-void SlidingWindow::update(function<float()> sampleFunction) {
+void SlidingWindow::update(std::function<float()> sampleFunction) {
   if (sampleTimer.wrapTick(GlobalTimestep)) {
     processUpdate(sampleFunction());
   }

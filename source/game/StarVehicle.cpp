@@ -16,7 +16,7 @@ import star.ref_ptr;
 import star.logging;
 import star.thread;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 #include "StarDataStreamExtra.hpp"
 import star.audio;
@@ -293,7 +293,7 @@ void Vehicle::init(World* world, EntityId entityId, EntityMode mode) {
   if (isMaster()) {
     m_scriptComponent.addCallbacks("vehicle", makeVehicleCallbacks());
     m_scriptComponent.addCallbacks(
-        "config", LuaBindings::makeConfigCallbacks(bind(&Vehicle::configValue, this, _1, _2)));
+        "config", LuaBindings::makeConfigCallbacks(std::bind(&Vehicle::configValue, this, std::placeholders::_1, std::placeholders::_2)));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_networkedAnimator));
@@ -350,7 +350,7 @@ Vec2F Vehicle::velocity() const {
   return m_movementController.velocity();
 }
 
-pair<ByteArray, uint64_t> Vehicle::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Vehicle::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -366,7 +366,7 @@ void Vehicle::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-void Vehicle::update(float dt, uint64_t) {
+void Vehicle::update(float dt, std::uint64_t) {
   setTeam(m_damageTeam.get());
 
   if (world()->isClient()) {
@@ -527,8 +527,8 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
   else if (!result.isNull())
     return InteractAction(result.getString(0), entityId(), result.get(1));
 
-  Maybe<size_t> index;
-  for (size_t i = 0; i < m_loungePositions.size(); ++i) {
+  Maybe<std::size_t> index;
+  for (std::size_t i = 0; i < m_loungePositions.size(); ++i) {
     if (!index) {
       index = i;
     } else {
@@ -552,11 +552,11 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
   return InteractAction();
 }
 
-size_t Vehicle::anchorCount() const {
+std::size_t Vehicle::anchorCount() const {
   return m_loungePositions.size();
 }
 
-LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
+LoungeAnchorConstPtr Vehicle::loungeAnchor(std::size_t positionIndex) const {
   auto const& positionConfig = m_loungePositions.valueAt(positionIndex);
   if (!positionConfig.enabled.get())
     return {};
@@ -564,7 +564,7 @@ LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
   Mat3F partTransformation = m_networkedAnimator.finalPartTransformation(positionConfig.part);
   Vec2F partAnchor = jsonToVec2F(m_networkedAnimator.partProperty(positionConfig.part, positionConfig.partAnchor));
 
-  auto loungePosition = make_shared<LoungeAnchor>();
+  auto loungePosition = std::make_shared<LoungeAnchor>();
   loungePosition->position = partTransformation.transformVec2(partAnchor) + position();
   if (positionConfig.exitBottomOffset)
     loungePosition->exitBottomPosition = partTransformation.transformVec2(partAnchor + positionConfig.exitBottomOffset.value()) + position();
@@ -586,7 +586,7 @@ LoungeAnchorConstPtr Vehicle::loungeAnchor(size_t positionIndex) const {
   return loungePosition;
 }
 
-void Vehicle::loungeControl(size_t index, LoungeControl loungeControl) {
+void Vehicle::loungeControl(std::size_t index, LoungeControl loungeControl) {
   auto& loungePosition = m_loungePositions.valueAt(index);
   if (isSlave())
     loungePosition.slaveNewControls.add(loungeControl);
@@ -594,7 +594,7 @@ void Vehicle::loungeControl(size_t index, LoungeControl loungeControl) {
     loungePosition.masterControlState[loungeControl].masterHeld = true;
 }
 
-void Vehicle::loungeAim(size_t index, Vec2F const& aimPosition) {
+void Vehicle::loungeAim(std::size_t index, Vec2F const& aimPosition) {
   auto& loungePosition = m_loungePositions.valueAt(index);
   if (isSlave())
     loungePosition.slaveNewAimPosition = aimPosition;
@@ -642,11 +642,11 @@ List<DamageSource> Vehicle::damageSources() const {
   return sources;
 }
 
-size_t Vehicle::movingCollisionCount() const {
+std::size_t Vehicle::movingCollisionCount() const {
   return m_movingCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) const {
+Maybe<PhysicsMovingCollision> Vehicle::movingCollision(std::size_t positionIndex) const {
   auto const& collisionConfig = m_movingCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

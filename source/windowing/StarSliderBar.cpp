@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.list;
 import star.image_processing;
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -69,7 +69,7 @@ import star.pythonic;
 namespace Star {
 
 SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
-  : m_grid(make_shared<ImageWidget>(grid)),
+  : m_grid(std::make_shared<ImageWidget>(grid)),
     m_low(0),
     m_high(1),
     m_delta(1),
@@ -81,14 +81,14 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
   auto assets = Root::singleton().assets();
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
 
-  m_jog = make_shared<ButtonWidget>();
+  m_jog = std::make_shared<ButtonWidget>();
   m_jog->setImages(assets->json("/interface.config:slider.jog").toString());
   m_jog->setPressedOffset({0, 0});
 
   if (showSpinner) {
     GuiReader guiReader;
-    guiReader.registerCallback("spinner.down", bind(&SliderBarWidget::leftCallback, this));
-    guiReader.registerCallback("spinner.up", bind(&SliderBarWidget::rightCallback, this));
+    guiReader.registerCallback("spinner.down", std::bind(&SliderBarWidget::leftCallback, this));
+    guiReader.registerCallback("spinner.up", std::bind(&SliderBarWidget::rightCallback, this));
 
     float rightButtonOffset = imgMetadata->imageSize(assets->json("/interface.config:slider.leftBase").toString())[0];
     rightButtonOffset += assets->json("/interface.config:slider.defaultPadding").toInt();

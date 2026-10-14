@@ -1,4 +1,5 @@
 module;
+import std;
 import star.json;
 import star.color;
 import star.font;
@@ -17,7 +18,6 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.maybe;
 import star.version;
 import star.string;
@@ -39,7 +39,7 @@ import star.root;
 namespace Star {
 
 // deprecated in favor of explicit shadow color
-enum class FontMode : uint8_t {
+enum class FontMode : std::uint8_t {
   Normal,
   Shadow
 };
@@ -48,7 +48,13 @@ inline Color const& fontModeToColor(FontMode mode) {
   return mode == FontMode::Shadow ? Color::Black : Color::Clear;
 }
 
-STAR_CLASS(TextPainter);
+class TextPainter;
+using TextPainterPtr = std::shared_ptr<TextPainter>;
+using TextPainterConstPtr = std::shared_ptr<TextPainter const>;
+using TextPainterWeakPtr = std::weak_ptr<TextPainter>;
+using TextPainterConstWeakPtr = std::weak_ptr<TextPainter const>;
+using TextPainterUPtr = std::unique_ptr<TextPainter>;
+using TextPainterConstUPtr = std::unique_ptr<TextPainter const>;
 
 struct TextPositioning {
   TextPositioning();
@@ -89,7 +95,7 @@ public:
   int stringWidth(StringView s, unsigned charLimit = 0);
 
     
-  typedef function<bool(StringView, unsigned)> WrapTextCallback;
+  typedef std::function<bool(StringView, unsigned)> WrapTextCallback;
   bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
   List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
@@ -107,7 +113,7 @@ public:
   void addFont(FontPtr const& font, String const& name);
   void reloadFonts();
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
   void applyCommands(StringView unsplitCommands);
 private:
   void modifyDirectives(Directives& directives);

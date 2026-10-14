@@ -1,5 +1,5 @@
 import star.small_vector;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 
 #include "gtest/gtest.h"
@@ -46,8 +46,8 @@ TEST(SmallVectorTest, Comparators) {
 }
 
 TEST(SmallVectorTest, Destructors) {
-  auto i = make_shared<int>(0);
-  SmallVector<shared_ptr<int>, 1> v;
+  auto i = std::make_shared<int>(0);
+  SmallVector<std::shared_ptr<int>, 1> v;
   v.push_back(i);
   v.push_back(i);
   v.push_back(i);

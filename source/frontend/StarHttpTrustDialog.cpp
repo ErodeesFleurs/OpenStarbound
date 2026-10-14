@@ -1,4 +1,5 @@
 module;
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -25,7 +26,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 
@@ -70,7 +70,7 @@ HttpTrustDialog::HttpTrustDialog() : m_confirmed(false) {}
 
 HttpTrustDialog::~HttpTrustDialog() = default;
 
-void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {
+void HttpTrustDialog::displayRequest(String const& domain, std::function<void(HttpTrustReply, bool)> callback) {
   const auto assets = Root::singleton().assets();
 
   removeAllChildren();

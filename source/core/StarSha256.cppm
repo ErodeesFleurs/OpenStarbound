@@ -1,6 +1,4 @@
 module;
-
-#include "StarConfig.hpp"
 import star.string;
 import star.byte_array;
 import std;
@@ -12,15 +10,15 @@ export module star.sha256;
 export namespace Star {
 
 typedef struct sha_state_struct {
-  uint32_t state[8], length, curlen;
-  uint8_t buf[64];
+  std::uint32_t state[8], length, curlen;
+  std::uint8_t buf[64];
 } sha_state;
 
 class Sha256Hasher {
 public:
   Sha256Hasher();
 
-  void push(char const* data, size_t length);
+  void push(char const* data, std::size_t length);
   void push(String const& data);
   void push(ByteArray const& data);
 
@@ -34,9 +32,9 @@ private:
 };
 
 // Sha256 must, obviously, have 32 bytes available in the destination.
-void sha256(char const* source, size_t length, char* hashDestination);
+void sha256(char const* source, std::size_t length, char* hashDestination);
 
-ByteArray sha256(char const* source, size_t length);
+ByteArray sha256(char const* source, std::size_t length);
 
 void sha256(ByteArray const& in, ByteArray& out);
 void sha256(String const& in, ByteArray& out);
@@ -60,7 +58,7 @@ namespace Star {
 // Tom St Denis
 
 // the K array
-static const uint32_t K[64] = {0x428a2f98U,
+static const std::uint32_t K[64] = {0x428a2f98U,
     0x71374491U,
     0xb5c0fbcfU,
     0xe9b5dba5U,
@@ -139,7 +137,7 @@ static const uint32_t K[64] = {0x428a2f98U,
 
 // compress 512-bits
 static void sha_compress(sha_state* md) {
-  uint32_t S[8], W[64], t0, t1;
+  std::uint32_t S[8], W[64], t0, t1;
   int i;
 
   /* copy state into S */
@@ -148,8 +146,8 @@ static void sha_compress(sha_state* md) {
 
   /* copy the state into 512-bits into W[0..15] */
   for (i = 0; i < 16; i++)
-    W[i] = (((uint32_t)md->buf[(4 * i) + 0]) << 24) | (((uint32_t)md->buf[(4 * i) + 1]) << 16)
-        | (((uint32_t)md->buf[(4 * i) + 2]) << 8) | (((uint32_t)md->buf[(4 * i) + 3]));
+    W[i] = (((std::uint32_t)md->buf[(4 * i) + 0]) << 24) | (((std::uint32_t)md->buf[(4 * i) + 1]) << 16)
+        | (((std::uint32_t)md->buf[(4 * i) + 2]) << 8) | (((std::uint32_t)md->buf[(4 * i) + 3]));
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)
@@ -187,7 +185,7 @@ static void sha_init(sha_state* md) {
   md->state[7] = 0x5BE0CD19U;
 }
 
-static void sha_process(sha_state* md, uint8_t* buf, int len) {
+static void sha_process(sha_state* md, std::uint8_t* buf, int len) {
   while (len--) {
     /* copy byte */
     md->buf[md->curlen++] = *buf++;
@@ -201,7 +199,7 @@ static void sha_process(sha_state* md, uint8_t* buf, int len) {
   }
 }
 
-static void sha_done(sha_state* md, uint8_t* hash) {
+static void sha_done(sha_state* md, std::uint8_t* hash) {
   int i;
 
   /* increase the length of the message */
@@ -243,13 +241,13 @@ Sha256Hasher::Sha256Hasher() {
   sha_init(&m_state);
 }
 
-void Sha256Hasher::push(char const* data, size_t length) {
+void Sha256Hasher::push(char const* data, std::size_t length) {
   if (m_finished) {
     sha_init(&m_state);
     m_finished = false;
   }
 
-  sha_process(&m_state, (uint8_t*)data, length);
+  sha_process(&m_state, (std::uint8_t*)data, length);
 }
 
 void Sha256Hasher::push(String const& data) {
@@ -262,24 +260,24 @@ void Sha256Hasher::push(ByteArray const& data) {
 
 ByteArray Sha256Hasher::compute() {
   ByteArray dest(32, 0);
-  sha_done(&m_state, (uint8_t*)dest.ptr());
+  sha_done(&m_state, (std::uint8_t*)dest.ptr());
   m_finished = true;
   return dest;
 }
 
 void Sha256Hasher::compute(char* hashDestination) {
-  sha_done(&m_state, (uint8_t*)hashDestination);
+  sha_done(&m_state, (std::uint8_t*)hashDestination);
   m_finished = true;
 }
 
-void sha256(char const* source, size_t length, char* hashDestination) {
+void sha256(char const* source, std::size_t length, char* hashDestination) {
   sha_state state;
   sha_init(&state);
-  sha_process(&state, (uint8_t*)source, length);
-  sha_done(&state, (uint8_t*)hashDestination);
+  sha_process(&state, (std::uint8_t*)source, length);
+  sha_done(&state, (std::uint8_t*)hashDestination);
 }
 
-ByteArray sha256(char const* source, size_t length) {
+ByteArray sha256(char const* source, std::size_t length) {
   ByteArray dest(32, 0);
   sha256(source, length, dest.ptr());
   return dest;

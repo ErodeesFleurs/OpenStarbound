@@ -2,7 +2,8 @@ module;
 import star.json;
 import star.lua;
 import star.thread;
-#include "StarConfig.hpp"
+import std;
+import star.memory;
 import star.string;
 import star.map;
 import star.maybe;
@@ -62,11 +63,11 @@ struct PendingHttpRequest {
 
 // reequest queue
 Mutex s_pendingRequestsMutex;
-List<shared_ptr<PendingHttpRequest>> s_pendingRequests;
+List<std::shared_ptr<PendingHttpRequest>> s_pendingRequests;
 
 // Structure to hold async HTTP request state
 struct AsyncHttpRequest {
-  shared_ptr<WorkerPoolPromise<HttpResponse>> workerPromise;
+  std::shared_ptr<WorkerPoolPromise<HttpResponse>> workerPromise;
   RpcPromiseKeeper<LuaHttpResponse> rpcKeeper;
   bool checked = false;
 };
@@ -74,8 +75,8 @@ struct AsyncHttpRequest {
 // Global map to track pending async requests
 // We use a simple incremental ID system
 Mutex s_asyncRequestsMutex;
-uint64_t s_nextRequestId = 1;
-HashMap<uint64_t, shared_ptr<AsyncHttpRequest>> s_asyncRequests;
+std::uint64_t s_nextRequestId = 1;
+HashMap<std::uint64_t, std::shared_ptr<AsyncHttpRequest>> s_asyncRequests;
 
 // Check if a domain is in the trusted list
 bool isTrustedDomain(String const& domain) {
@@ -110,15 +111,15 @@ bool isTrustedDomain(String const& domain) {
 // }
 
 String extractDomain(String const& url) {
-  const size_t end = url.find("://");
+  const std::size_t end = url.find("://");
   if (end == NPos)
     return url;
 
-  const size_t domainStart = end + 3;
-  const size_t pathStart = url.find('/', domainStart);
-  const size_t portStart = url.find(':', domainStart);
+  const std::size_t domainStart = end + 3;
+  const std::size_t pathStart = url.find('/', domainStart);
+  const std::size_t portStart = url.find(':', domainStart);
 
-  size_t domainEnd = NPos;
+  std::size_t domainEnd = NPos;
   if (pathStart != NPos && portStart != NPos)
     domainEnd = std::min(pathStart, portStart);
   else if (pathStart != NPos)
@@ -134,7 +135,7 @@ String extractDomain(String const& url) {
 void pollAsyncRequests() {
   MutexLocker locker(s_asyncRequestsMutex);
 
-  List<uint64_t> completedIds;
+  List<std::uint64_t> completedIds;
 
   for (auto& [fst, snd] : s_asyncRequests) {
 
@@ -166,15 +167,15 @@ void pollAsyncRequests() {
 
 void executeHttpRequest(HttpRequest const& httpReq, RpcPromiseKeeper<LuaHttpResponse> rpcKeeper) {
   try {
-    const auto workerPromise = make_shared<WorkerPoolPromise<HttpResponse>>(HttpClient::requestAsync(httpReq));
+    const auto workerPromise = std::make_shared<WorkerPoolPromise<HttpResponse>>(HttpClient::requestAsync(httpReq));
 
-    const auto asyncReq = make_shared<AsyncHttpRequest>();
+    const auto asyncReq = std::make_shared<AsyncHttpRequest>();
     asyncReq->workerPromise = workerPromise;
     asyncReq->rpcKeeper = std::move(rpcKeeper);
 
     {
       MutexLocker locker(s_asyncRequestsMutex);
-      const uint64_t requestId = s_nextRequestId++;
+      const std::uint64_t requestId = s_nextRequestId++;
       s_asyncRequests[requestId] = asyncReq;
     }
   } catch (std::exception const& e) {
@@ -186,7 +187,7 @@ void executeHttpRequest(HttpRequest const& httpReq, RpcPromiseKeeper<LuaHttpResp
 void handleTrustReply(String const& domain, bool allowed) {
   MutexLocker locker(s_pendingRequestsMutex);
 
-  List<shared_ptr<PendingHttpRequest>> remainingRequests;
+  List<std::shared_ptr<PendingHttpRequest>> remainingRequests;
 
   for (const auto& pendingReq : s_pendingRequests) {
     if (pendingReq->domain == domain) {
@@ -328,7 +329,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
         executeHttpRequest(httpReq, std::move(snd));
       } else {
         // NOT trastedadded to pending queue
-        auto pendingReq = make_shared<PendingHttpRequest>();
+        auto pendingReq = std::make_shared<PendingHttpRequest>();
         pendingReq->httpRequest = httpReq;
         pendingReq->rpcKeeper = std::move(snd);
         pendingReq->domain = domain;

@@ -28,7 +28,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.format;
 import star.version;
@@ -80,13 +80,13 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
+SpeciesDatabase::SpeciesDatabase() : m_luaRoot(std::make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto speciesDefinition = make_shared<SpeciesDefinition>(assets->json(file));
+    auto speciesDefinition = std::make_shared<SpeciesDefinition>(assets->json(file));
     if (m_species.contains(speciesDefinition->kind()))
       throw StarException(strf("Duplicate species asset with kind {}. configfile {}", speciesDefinition->kind(), file));
     auto k = speciesDefinition->kind().toLower();
@@ -128,16 +128,16 @@ Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject param
 CharacterCreationResult SpeciesDatabase::createHumanoid(
   String name,
   String speciesChoice,
-  size_t genderChoice,
-  size_t bodyColorChoice,
-  size_t alty,
-  size_t hairChoice,
-  size_t heady,
-  size_t shirtChoice,
-  size_t shirtColor,
-  size_t pantsChoice,
-  size_t pantsColor,
-  size_t personality,
+  std::size_t genderChoice,
+  std::size_t bodyColorChoice,
+  std::size_t alty,
+  std::size_t hairChoice,
+  std::size_t heady,
+  std::size_t shirtChoice,
+  std::size_t shirtColor,
+  std::size_t pantsChoice,
+  std::size_t pantsColor,
+  std::size_t personality,
   LuaVariadic<LuaValue> ext
 ) const {
   CharacterCreationResult result;
@@ -242,7 +242,7 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   return result;
 }
 
-CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, int64_t seed, Maybe<Gender> gender) const {
+CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, Maybe<Gender> gender) const {
   RandomSource randSource(seed);
   auto speciesDefinition = species(speciesChoice);
   auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);

@@ -1,3 +1,5 @@
+#include <stddef.h>
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.xx_hash;
@@ -20,7 +22,6 @@ import star.game_types;
 import star.material_types;
 import star.math_common;
 import star.vector;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.color;
@@ -37,7 +38,6 @@ import star.weighted_pool;
 import star.set;
 import star.worker_pool;
 
-import std;
 import star.sector_array_2d;
 import star.io_device;
 import star.ref_ptr;
@@ -151,14 +151,14 @@ void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) 
   //Kae: Padded by one to fix culling issues with certain tile pieces at chunk borders, such as grass.
   RectI chunkRange = RectI::integral(RectF(camera.worldTileRect().padded(1)).scaled(1.0f / RenderChunkSize));
 
-  size_t chunks = chunkRange.volume();
+  std::size_t chunks = chunkRange.volume();
   m_pendingTerrainChunks.resize(chunks);
   m_pendingLiquidChunks.resize(chunks);
 
-  size_t i = 0;
+  std::size_t i = 0;
   for (int x = chunkRange.xMin(); x < chunkRange.xMax(); ++x) {
     for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
-      size_t index = i++;
+      std::size_t index = i++;
       m_pendingTerrainChunks[index] = getTerrainChunk(renderData, {x, y});
       m_pendingLiquidChunks [index] =  getLiquidChunk(renderData, {x, y});
     }
@@ -200,7 +200,7 @@ void TilePainter::cleanup() {
   m_liquidChunkCache.cleanup();
 }
 
-size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
+std::size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
   if (key.is<MaterialPieceTextureKey>())
     return hashOf(key.typeIndex(), key.get<MaterialPieceTextureKey>());
   else
@@ -256,8 +256,8 @@ void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer te
   m_renderer->flush();
 }
 
-shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, terrainChunkHash(renderData, chunkIndex)};
+std::shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, terrainChunkHash(renderData, chunkIndex)};
   return m_terrainChunkCache.get(chunkKey, [&](auto const&) {
       HashMap<TerrainLayer, HashMap<QuadZLevel, List<RenderPrimitive>>> terrainPrimitives;
 
@@ -271,7 +271,7 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
         }
       }
 
-      auto chunk = make_shared<TerrainChunk>();
+      auto chunk = std::make_shared<TerrainChunk>();
 
       for (auto& layerPair : terrainPrimitives) {
         for (auto& zLevelPair : layerPair.second) {
@@ -285,8 +285,8 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
     });
 }
 
-shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, liquidChunkHash(renderData, chunkIndex)};
+std::shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, liquidChunkHash(renderData, chunkIndex)};
   return m_liquidChunkCache.get(chunkKey, [&](auto const&) {
       HashMap<LiquidId, List<RenderPrimitive>> liquidPrimitives;
 
@@ -296,7 +296,7 @@ shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRend
           this->produceLiquidPrimitives(liquidPrimitives, {x, y}, renderData);
       }
 
-      auto chunk = make_shared<LiquidChunk>();
+      auto chunk = std::make_shared<LiquidChunk>();
 
       for (auto& p : liquidPrimitives) {
         auto rb = m_renderer->createRenderBuffer();
@@ -369,7 +369,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
     auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "main");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "main");
     auto& quadList = primitives[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -400,7 +400,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   if (modRenderProfile) {
     auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "mod");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)terrainLayer, "mod");
     auto& quadList = primitives[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;

@@ -21,7 +21,6 @@ import star.directives;
 import star.asset_path;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.id_map;
@@ -142,11 +141,11 @@ export namespace Star {
 
 class ServerRconClient : public Thread {
 public:
-  static const uint32_t SERVERDATA_AUTH = 0x03;
-  static const uint32_t SERVERDATA_EXECCOMMAND = 0x02;
-  static const uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
-  static const uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
-  static const uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
+  static const std::uint32_t SERVERDATA_AUTH = 0x03;
+  static const std::uint32_t SERVERDATA_EXECCOMMAND = 0x02;
+  static const std::uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
+  static const std::uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
+  static const std::uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
   ServerRconClient(UniverseServer* universe, TcpSocketPtr socket);
   ~ServerRconClient();
 
@@ -157,10 +156,10 @@ protected:
   virtual void run();
 
 private:
-  static constexpr size_t MaxPacketSize = 4096;
+  static constexpr std::size_t MaxPacketSize = 4096;
   // Requests are small (a command line); anything larger is refused instead of
   // being allocated, since the length is client supplied.
-  static constexpr size_t MaxReceivePacketSize = MaxPacketSize * 4;
+  static constexpr std::size_t MaxReceivePacketSize = MaxPacketSize * 4;
   struct NoMoreRequestsTag {
     static constexpr char const* name() { return "NoMoreRequests"; }
   };
@@ -170,10 +169,10 @@ private:
   };
   using OversizedPacket = StarError<OversizedPacketTag, StarException>;
 
-  void receive(size_t size);
-  void send(uint32_t requestId, uint32_t cmd, String str = "");
+  void receive(std::size_t size);
+  void send(std::uint32_t requestId, std::uint32_t cmd, String str = "");
   void sendAuthFailure();
-  void sendCmdResponse(uint32_t requestId, String response);
+  void sendCmdResponse(std::uint32_t requestId, String response);
   void closeSocket();
   void processRequest();
   ServerCommandResult handleCommand(String commandLine);
@@ -185,11 +184,17 @@ private:
   bool m_authed;
   String m_rconPassword;
 
-  HashMap<uint32_t,RpcPromise<String>> m_commandPromises;
+  HashMap<std::uint32_t,RpcPromise<String>> m_commandPromises;
 };
-typedef shared_ptr<ServerRconClient> ServerRconClientPtr;
+typedef std::shared_ptr<ServerRconClient> ServerRconClientPtr;
 
-STAR_CLASS(ServerRconThread);
+class ServerRconThread;
+using ServerRconThreadPtr = std::shared_ptr<ServerRconThread>;
+using ServerRconThreadConstPtr = std::shared_ptr<const ServerRconThread>;
+using ServerRconThreadWeakPtr = std::weak_ptr<ServerRconThread>;
+using ServerRconThreadConstWeakPtr = std::weak_ptr<const ServerRconThread>;
+using ServerRconThreadUPtr = std::unique_ptr<ServerRconThread>;
+using ServerRconThreadConstUPtr = std::unique_ptr<const ServerRconThread>;
 
 class ServerRconThread : public Thread {
 public:
@@ -252,7 +257,7 @@ ServerCommandResult ServerRconClient::handleCommand(String commandLine) {
   }
 }
 
-void ServerRconClient::receive(size_t size) {
+void ServerRconClient::receive(std::size_t size) {
   // The size comes straight from the client and is used as an allocation size,
   // so it has to be refused before the buffer is resized for it.
   if (size > MaxReceivePacketSize)
@@ -261,7 +266,7 @@ void ServerRconClient::receive(size_t size) {
   m_packetBuffer.reset(size);
   auto ptr = m_packetBuffer.ptr();
   while (size > 0) {
-    size_t r = m_socket->receive(ptr, size);
+    std::size_t r = m_socket->receive(ptr, size);
     if (r == 0)
       throw NoMoreRequests();
     size -= r;
@@ -269,9 +274,9 @@ void ServerRconClient::receive(size_t size) {
   }
 }
 
-void ServerRconClient::send(uint32_t requestId, uint32_t cmd, String str) {
+void ServerRconClient::send(std::uint32_t requestId, std::uint32_t cmd, String str) {
   m_packetBuffer.clear();
-  m_packetBuffer << (uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (uint8_t)0x00;
+  m_packetBuffer << (std::uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (std::uint8_t)0x00;
   m_socket->send(m_packetBuffer.ptr(), m_packetBuffer.size());
 }
 
@@ -279,8 +284,8 @@ void ServerRconClient::sendAuthFailure() {
   send(SERVERDATA_AUTH_FAILURE, SERVERDATA_AUTH_RESPONSE, "");
 }
 
-void ServerRconClient::sendCmdResponse(uint32_t requestId, String response) {
-  size_t len = response.length();
+void ServerRconClient::sendCmdResponse(std::uint32_t requestId, String response) {
+  std::size_t len = response.length();
   // Always send at least one packet even if the response was blank
   do {
     auto dataLen = (len >= MaxPacketSize) ? MaxPacketSize : len;
@@ -302,13 +307,13 @@ void ServerRconClient::stop() {
 
 void ServerRconClient::processRequest() {
   receive(4);
-  uint32_t size = m_packetBuffer.read<uint32_t>();
+  std::uint32_t size = m_packetBuffer.read<std::uint32_t>();
 
   receive(size);
-  uint32_t requestId;
+  std::uint32_t requestId;
   m_packetBuffer >> requestId;
 
-  uint32_t cmd;
+  std::uint32_t cmd;
   m_packetBuffer >> cmd;
 
   switch (cmd) {
@@ -410,7 +415,7 @@ void ServerRconThread::run() {
     while (!m_stop) {
       if (auto client = m_rconServer.accept(100)) {
         client->setTimeout(timeout);
-        auto rconClient = make_shared<ServerRconClient>(m_universe, client);
+        auto rconClient = std::make_shared<ServerRconClient>(m_universe, client);
         rconClient->start();
         m_clients[client->remoteAddress().address()] = rconClient;
         clearClients();

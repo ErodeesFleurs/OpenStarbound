@@ -19,7 +19,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 #include "StarLuaComponents.hpp"
@@ -48,11 +48,11 @@ AugmentItem::AugmentItem(Json const& config, String const& directory, Json const
 AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
 
 ItemPtr AugmentItem::clone() const {
-  return make_shared<AugmentItem>(*this);
+  return std::make_shared<AugmentItem>(*this);
 }
 
 StringList AugmentItem::augmentScripts() const {
-  return jsonToStringList(instanceValue("scripts")).transformed(bind(&AssetPath::relativeTo, directory(), _1));
+  return jsonToStringList(instanceValue("scripts")).transformed(std::bind(&AssetPath::relativeTo, directory(), std::placeholders::_1));
 }
 
 ItemPtr AugmentItem::applyTo(ItemPtr const item) {

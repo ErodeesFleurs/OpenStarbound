@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.maybe;
 import star.json;
@@ -32,10 +32,34 @@ import star.warping;
 
 namespace Star {
 
-STAR_CLASS(Quest);
-STAR_CLASS(Player);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(QuestTemplate);
+class Quest;
+using QuestPtr = std::shared_ptr<Quest>;
+using QuestConstPtr = std::shared_ptr<const Quest>;
+using QuestWeakPtr = std::weak_ptr<Quest>;
+using QuestConstWeakPtr = std::weak_ptr<const Quest>;
+using QuestUPtr = std::unique_ptr<Quest>;
+using QuestConstUPtr = std::unique_ptr<const Quest>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
+class QuestTemplate;
+using QuestTemplatePtr = std::shared_ptr<QuestTemplate>;
+using QuestTemplateConstPtr = std::shared_ptr<const QuestTemplate>;
+using QuestTemplateWeakPtr = std::weak_ptr<QuestTemplate>;
+using QuestTemplateConstWeakPtr = std::weak_ptr<const QuestTemplate>;
+using QuestTemplateUPtr = std::unique_ptr<QuestTemplate>;
+using QuestTemplateConstUPtr = std::unique_ptr<const QuestTemplate>;
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)
@@ -53,7 +77,7 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player);
+  Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player);
 
   Quest(Json const& diskStore);
   Json diskStore() const;
@@ -71,7 +95,7 @@ public:
   void declineOffer();
   void cancelOffer();
   void start();
-  void complete(Maybe<size_t> followupIndex = {});
+  void complete(Maybe<std::size_t> followupIndex = {});
   void fail();
   void abandon();
 
@@ -100,13 +124,13 @@ public:
 
   QuestDescriptor questDescriptor() const;
   QuestArcDescriptor questArcDescriptor() const;
-  size_t questArcPosition() const;
+  std::size_t questArcPosition() const;
 
   Maybe<WorldId> worldId() const;
-  Maybe<pair<Vec3I, SystemLocation>> location() const;
+  Maybe<std::pair<Vec3I, SystemLocation>> location() const;
   Maybe<Uuid> serverUuid() const;
   void setWorldId(Maybe<WorldId> worldId);
-  void setLocation(Maybe<pair<Vec3I, SystemLocation>> location);
+  void setLocation(Maybe<std::pair<Vec3I, SystemLocation>> location);
   void setServerUuid(Maybe<Uuid> serverUuid);
 
   String title() const;
@@ -114,11 +138,11 @@ public:
   String completionText() const;
   String failureText() const;
 
-  size_t money() const;
+  std::size_t money() const;
   List<ItemConstPtr> rewards() const;
 
   // The time when this quest last changed state (active/completed/failed)
-  int64_t lastUpdatedOn() const;
+  std::int64_t lastUpdatedOn() const;
   bool unread() const;
   void markAsRead();
   bool canTurnIn() const;
@@ -178,15 +202,15 @@ private:
   bool m_showDialog;
 
   QuestArcDescriptor m_arc;
-  size_t m_arcPos;
+  std::size_t m_arcPos;
   StringMap<QuestParam> m_parameters;
   DisplayParameters m_displayParameters;
   Maybe<WorldId> m_worldId;
-  Maybe<pair<Vec3I, SystemLocation>> m_location;
+  Maybe<std::pair<Vec3I, SystemLocation>> m_location;
   Maybe<Uuid> m_serverUuid;
-  size_t m_money;
+  std::size_t m_money;
   List<ItemConstPtr> m_rewards;
-  int64_t m_lastUpdatedOn;
+  std::int64_t m_lastUpdatedOn;
   bool m_unread;
   bool m_canTurnIn;
   StringSet m_indicators;

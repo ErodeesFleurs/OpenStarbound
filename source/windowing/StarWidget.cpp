@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.vector;
 #include "StarCasting.hpp"
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -204,7 +204,7 @@ KeyboardCaptureMode Widget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-Maybe<pair<RectI, int>> Widget::keyboardCaptureArea() const {
+Maybe<std::pair<RectI, int>> Widget::keyboardCaptureArea() const {
   return {};
 }
 
@@ -357,7 +357,7 @@ void Widget::addChild(String const& name, WidgetPtr member) {
   member->setParent(this);
 }
 
-void Widget::addChildAt(String const& name, WidgetPtr member, size_t at) {
+void Widget::addChildAt(String const& name, WidgetPtr member, std::size_t at) {
   if (at > m_members.size())
     throw GuiException("Attempted to insert item after the end of the list.");
 
@@ -397,7 +397,7 @@ bool Widget::removeChild(String const& name) {
   return false;
 }
 
-bool Widget::removeChildAt(size_t at) {
+bool Widget::removeChildAt(std::size_t at) {
   if (at >= m_members.size())
     return false;
 
@@ -469,11 +469,11 @@ WidgetPtr Widget::getChildAt(Vec2I const& pos) {
   return {};
 }
 
-size_t Widget::numChildren() const {
+std::size_t Widget::numChildren() const {
   return m_members.size();
 }
 
-WidgetPtr Widget::getChildNum(size_t num) const {
+WidgetPtr Widget::getChildNum(std::size_t num) const {
   return m_members.at(num);
 }
 

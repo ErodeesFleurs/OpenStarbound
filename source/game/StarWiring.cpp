@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.hash;
 import star.game_types;
 import star.world_geometry;
@@ -13,10 +13,10 @@ WireDirection otherWireDirection(WireDirection direction) {
 }
 
 bool WireConnection::operator==(WireConnection const& wireConnection) const {
-  return tie(entityLocation, nodeIndex) == tie(wireConnection.entityLocation, wireConnection.nodeIndex);
+  return std::tie(entityLocation, nodeIndex) == std::tie(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 
-size_t hash<WireConnection>::operator()(WireConnection const& wireConnection) const {
+std::size_t hash<WireConnection>::operator()(WireConnection const& wireConnection) const {
   return hashOf(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 

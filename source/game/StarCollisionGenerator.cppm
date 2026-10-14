@@ -1,6 +1,5 @@
 module;
 
-#include "StarConfig.hpp"
 import star.list;
 import star.bi_map;
 import star.collision_block;
@@ -12,7 +11,13 @@ import star.vector;
 import star.rect;
 namespace Star {
 
-STAR_CLASS(CollisionGenerator);
+class CollisionGenerator;
+using CollisionGeneratorPtr = std::shared_ptr<CollisionGenerator>;
+using CollisionGeneratorConstPtr = std::shared_ptr<const CollisionGenerator>;
+using CollisionGeneratorWeakPtr = std::weak_ptr<CollisionGenerator>;
+using CollisionGeneratorConstWeakPtr = std::weak_ptr<const CollisionGenerator>;
+using CollisionGeneratorUPtr = std::unique_ptr<CollisionGenerator>;
+using CollisionGeneratorConstUPtr = std::unique_ptr<const CollisionGenerator>;
 
 // Turns cell geometry into "smoothed" polygonal geometry.  Used by World to
 // generate ramps and slopes based on tiles.
@@ -24,7 +29,7 @@ public:
 
   // The Maximum number of blocks that will be generated for a single tile
   // space.
-  static size_t const MaximumCollisionsPerSpace = 4;
+  static std::size_t const MaximumCollisionsPerSpace = 4;
 
   // Callback function to tell what kind of collision geometry is in a cell.
   // Will be called up to BlockInfluenceRadius outside of the given query

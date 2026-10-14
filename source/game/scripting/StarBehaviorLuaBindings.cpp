@@ -15,7 +15,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.version;
@@ -58,9 +58,9 @@ LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
       tree = behaviorDatabase->buildTree(config.set("parameters", jsonMerge(config.getObject("parameters", {}), parameters)));
     }
 
-    BehaviorStatePtr state = make_shared<BehaviorState>(tree, context, board);
+    BehaviorStatePtr state = std::make_shared<BehaviorState>(tree, context, board);
     list->append(state);
-    return weak_ptr<BehaviorState>(state);
+    return std::weak_ptr<BehaviorState>(state);
   });
 
   return callbacks;

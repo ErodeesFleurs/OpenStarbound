@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -12,7 +12,7 @@ import star.status_types;
 namespace Star {
 
 bool StatBaseMultiplier::operator==(StatBaseMultiplier const& rhs) const {
-  return tie(statName, baseMultiplier) == tie(rhs.statName, rhs.baseMultiplier);
+  return std::tie(statName, baseMultiplier) == std::tie(rhs.statName, rhs.baseMultiplier);
 }
 
 DataStream& operator>>(DataStream& ds, StatBaseMultiplier& baseMultiplier) {
@@ -28,7 +28,7 @@ DataStream& operator<<(DataStream& ds, StatBaseMultiplier const& baseMultiplier)
 }
 
 bool StatValueModifier::operator==(StatValueModifier const& rhs) const {
-  return tie(statName, value) == tie(rhs.statName, rhs.value);
+  return std::tie(statName, value) == std::tie(rhs.statName, rhs.value);
 }
 
 DataStream& operator>>(DataStream& ds, StatValueModifier& valueModifier) {
@@ -44,7 +44,7 @@ DataStream& operator<<(DataStream& ds, StatValueModifier const& valueModifier) {
 }
 
 bool StatEffectiveMultiplier::operator==(StatEffectiveMultiplier const& rhs) const {
-  return tie(statName, effectiveMultiplier) == tie(rhs.statName, rhs.effectiveMultiplier);
+  return std::tie(statName, effectiveMultiplier) == std::tie(rhs.statName, rhs.effectiveMultiplier);
 }
 
 DataStream& operator>>(DataStream& ds, StatEffectiveMultiplier& effectiveMultiplier) {
@@ -104,7 +104,7 @@ Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect) {
 }
 
 bool EphemeralStatusEffect::operator==(EphemeralStatusEffect const& rhs) const {
-  return tie(uniqueEffect, duration) == tie(rhs.uniqueEffect, rhs.duration);
+  return std::tie(uniqueEffect, duration) == std::tie(rhs.uniqueEffect, rhs.duration);
 }
 
 DataStream& operator>>(DataStream& ds, EphemeralStatusEffect& ephemeralStatusEffect) {

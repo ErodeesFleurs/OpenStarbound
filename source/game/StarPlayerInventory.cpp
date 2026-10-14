@@ -31,7 +31,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.array;
@@ -164,8 +164,8 @@ PlayerInventory::PlayerInventory() {
     return bags.get(a).getInt("priority", 0) < bags.get(b).getInt("priority", 0);
   });
   for (auto name : bagOrder) {
-    size_t size = bags.get(name).getUInt("size");
-    m_bags[name] = make_shared<ItemBag>(size);
+    std::size_t size = bags.get(name).getUInt("size");
+    m_bags[name] = std::make_shared<ItemBag>(size);
     m_bagsNetState[name].resize(size);
   }
 
@@ -173,8 +173,8 @@ PlayerInventory::PlayerInventory() {
   for (auto p : currenciesConfig.iterateObject())
     m_currencies[p.first] = 0;
 
-  size_t customBarGroups = config.getUInt("customBarGroups");
-  size_t customBarIndexes = config.getUInt("customBarIndexes");
+  std::size_t customBarGroups = config.getUInt("customBarGroups");
+  std::size_t customBarIndexes = config.getUInt("customBarIndexes");
   m_customBarGroup = 0;
   m_customBar.resize(customBarGroups, customBarIndexes);
 
@@ -257,7 +257,7 @@ bool PlayerInventory::exchangeItems(InventorySlot const& first, InventorySlot co
   if (second.is<EquipmentSlot>() && (firstItems->count() > 1 || !itemAllowedAsEquipment(firstItems, second.get<EquipmentSlot>())))
     return false;
 
-  swap(firstItems, secondItems);
+  std::swap(firstItems, secondItems);
   swapCustomBarLinks(first, second);
 
   return true;
@@ -289,7 +289,7 @@ bool PlayerInventory::setItem(InventorySlot const& slot, ItemPtr const& item) {
   return false;
 }
 
-bool PlayerInventory::consumeSlot(InventorySlot const& slot, uint64_t count) {
+bool PlayerInventory::consumeSlot(InventorySlot const& slot, std::uint64_t count) {
   if (count == 0)
     return true;
 
@@ -307,7 +307,7 @@ bool PlayerInventory::consumeSlot(InventorySlot const& slot, uint64_t count) {
 bool PlayerInventory::slotValid(InventorySlot const& slot) const {
   if (auto bagSlot = slot.ptr<BagSlot>()) {
     if (auto bag = bagContents(bagSlot->first)) {
-      if ((size_t)bagSlot->second >= bag->size())
+      if ((std::size_t)bagSlot->second >= bag->size())
         return false;
     }
     else return false;
@@ -371,14 +371,14 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
   return items;
 }
 
-uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
+std::uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
   if (!items || items->empty())
     return 0;
 
   if (is<CurrencyItem>(items))
     return items->count();
 
-  uint64_t canFit = 0;
+  std::uint64_t canFit = 0;
 
   // First, check the equipment slots
   if (is<HeadArmor>(items) && !headArmor())
@@ -396,17 +396,17 @@ uint64_t PlayerInventory::itemsCanFit(ItemPtr const& items) const {
       canFit += pair.second->itemsCanFit(items);
   }
 
-  return min(canFit, items->count());
+  return std::min(canFit, items->count());
 }
 
 bool PlayerInventory::hasItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   return hasCountOfItem(descriptor, exactMatch) >= descriptor.count();
 }
 
-uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
+std::uint64_t PlayerInventory::hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch) const {
   auto one = descriptor.singular();
 
-  uint64_t count = 0;
+  std::uint64_t count = 0;
   auto countItem = [&](ItemPtr const& ptr) {
     if (ptr)
       count += ptr->matches(one, exactMatch) ? ptr->count() : 0;
@@ -429,21 +429,21 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
 
   auto one = descriptor.singular();
 
-  Map<String, uint64_t> consumeFromItemBags;
+  Map<String, std::uint64_t> consumeFromItemBags;
   for (auto pair : m_bags)
     consumeFromItemBags[pair.first] = pair.second->available(one);
 
-  uint64_t consumeFromEquipment = 0;
+  std::uint64_t consumeFromEquipment = 0;
   for (auto const& p : m_equipment) {
     if (p.second)
       consumeFromEquipment += p.second->matches(one, exactMatch) ? p.second->count() : 0;
   }
 
-  uint64_t consumeFromSwap = 0;
+  std::uint64_t consumeFromSwap = 0;
   if (m_swapSlot)
     consumeFromSwap += m_swapSlot->matches(one, exactMatch) ? m_swapSlot->count() : 0;
 
-  uint64_t consumeFromTrash = 0;
+  std::uint64_t consumeFromTrash = 0;
   if (m_trashSlot)
     consumeFromTrash += m_trashSlot->matches(one, exactMatch) ? m_trashSlot->count() : 0;
 
@@ -454,33 +454,39 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   if (totalAvailable < descriptor.count())
     return false;
 
-  uint64_t leftoverCount = descriptor.count();
-  uint64_t quantity;
+  std::uint64_t leftoverCount = descriptor.count();
+  std::uint64_t quantity;
   for (auto pair : m_bags) {
-    quantity = min(leftoverCount, consumeFromItemBags[pair.first]);
+    quantity = std::min(leftoverCount, consumeFromItemBags[pair.first]);
     if (quantity > 0) {
       auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
-      _unused(res);
-      starAssert(res);
+      ((void)(res));
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((res));
+      }
       leftoverCount -= quantity;
     }
   }
 
-  quantity = min(leftoverCount, consumeFromEquipment);
+  quantity = std::min(leftoverCount, consumeFromEquipment);
   if (quantity > 0) {
     auto leftoverQuantity = quantity;
-    _unused(leftoverQuantity);
+    ((void)(leftoverQuantity));
     for (auto const& p : m_equipment) {
       if (p.second && p.second->matches(one, exactMatch)) {
-        auto toConsume = min(p.second->count(), quantity);
+        auto toConsume = std::min(p.second->count(), quantity);
         auto res = p.second->consume(toConsume);
-        _unused(res);
-        starAssert(res);
+        ((void)(res));
+        if constexpr (Star::DebugEnabled) {
+          Star::starAssertFailed((res));
+        }
 
         leftoverQuantity -= toConsume;
       }
     }
-    starAssert(leftoverQuantity == 0);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((leftoverQuantity == 0));
+    }
     leftoverCount -= quantity;
   }
 
@@ -489,11 +495,15 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_swapSlot && m_swapSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_swapSlot->count(), quantity);
       auto res = m_swapSlot->consume(toConsume);
-      _unused(res);
-      starAssert(res);
+      ((void)(res));
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((res));
+      }
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((quantity == 0));
+      }
     }
     leftoverCount -= std::min(leftoverCount, consumeFromSwap);
   }
@@ -503,24 +513,30 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (m_trashSlot && m_trashSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_trashSlot->count(), quantity);
       auto res = m_trashSlot->consume(toConsume);
-      _unused(res);
-      starAssert(res);
+      ((void)(res));
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((res));
+      }
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
+      if constexpr (Star::DebugEnabled) {
+        Star::starAssertFailed((quantity == 0));
+      }
     }
     leftoverCount -= std::min(leftoverCount, consumeFromTrash);
   }
 
-  starAssert(leftoverCount == 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((leftoverCount == 0));
+  }
   return true;
 }
 
 ItemDescriptor PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool takePartial, bool exactMatch) {
-  uint64_t hasCount = hasCountOfItem(descriptor, exactMatch);
+  std::uint64_t hasCount = hasCountOfItem(descriptor, exactMatch);
 
   if (hasCount >= descriptor.count() || (takePartial && hasCount > 0)) {
-    ItemDescriptor consumeDescriptor = descriptor.withCount(min(descriptor.count(), hasCount));
+    ItemDescriptor consumeDescriptor = descriptor.withCount(std::min(descriptor.count(), hasCount));
     consumeItems(consumeDescriptor, exactMatch);
     return consumeDescriptor;
   }
@@ -528,7 +544,7 @@ ItemDescriptor PlayerInventory::takeItems(ItemDescriptor const& descriptor, bool
   return {};
 }
 
-HashMap<ItemDescriptor, uint64_t> PlayerInventory::availableItems() const {
+HashMap<ItemDescriptor, std::uint64_t> PlayerInventory::availableItems() const {
   return ItemDatabase::normalizeBag(allItems());
 }
 
@@ -606,7 +622,7 @@ void PlayerInventory::sortBag(String const& bagType) {
 
   // When sorting bags, we need to record where all the action bar links were
   // pointing if any of them were pointing to the bag we are about to sort.
-  MultiArray<pair<ItemPtr, ItemPtr>, 2> savedCustomBar(m_customBar.size());
+  MultiArray<std::pair<ItemPtr, ItemPtr>, 2> savedCustomBar(m_customBar.size());
   m_customBar.forEach([&](auto const& index, CustomBarLink const& link) {
       if (link.first) {
         if (auto bs = link.first->ptr<BagSlot>()) {
@@ -649,8 +665,8 @@ void PlayerInventory::sortBag(String const& bagType) {
   // Once we are done sorting, we need to restore the potentially action bar
   // links to point to where the item with the same identity is now residing.
 
-  Map<ItemPtr, size_t> itemIndexes;
-  for (size_t i = 0; i < bag->size(); ++i) {
+  Map<ItemPtr, std::size_t> itemIndexes;
+  for (std::size_t i = 0; i < bag->size(); ++i) {
     if (auto item = bag->at(i))
       itemIndexes[item] = i;
   }
@@ -668,14 +684,14 @@ void PlayerInventory::shiftSwap(InventorySlot const& slot) {
     if (itemAllowedAsEquipment(m_swapSlot, *es)) {
       auto& equipSlot = m_equipment[*es];
       if (itemSafeCount(m_swapSlot) <= 1) {
-        swap(m_swapSlot, equipSlot);
+        std::swap(m_swapSlot, equipSlot);
         swapCustomBarLinks(SwapSlot(), slot);
       } else if (itemSafeCount(equipSlot) == 0) {
         equipSlot = m_swapSlot->take(1);
       }
     }
   } else if (slot.is<TrashSlot>()) {
-    swap(m_swapSlot, m_trashSlot);
+    std::swap(m_swapSlot, m_trashSlot);
     swapCustomBarLinks(SwapSlot(), slot);
   } else if (auto bs = slot.ptr<BagSlot>()) {
     if (itemAllowedInBag(m_swapSlot, bs->first)) {
@@ -744,23 +760,23 @@ void PlayerInventory::setEssentialItem(EssentialItem essentialItem, ItemPtr item
   m_essential[essentialItem] = item;
 }
 
-StringMap<uint64_t> PlayerInventory::availableCurrencies() const {
+StringMap<std::uint64_t> PlayerInventory::availableCurrencies() const {
   return m_currencies;
 }
 
-uint64_t PlayerInventory::currency(String const& currencyType) const {
+std::uint64_t PlayerInventory::currency(String const& currencyType) const {
   return m_currencies.value(currencyType, 0);
 }
 
-void PlayerInventory::addCurrency(String const& currencyType, uint64_t amount) {
-  uint64_t previousTotal = m_currencies[currencyType];
-  uint64_t newTotal = previousTotal + amount;
+void PlayerInventory::addCurrency(String const& currencyType, std::uint64_t amount) {
+  std::uint64_t previousTotal = m_currencies[currencyType];
+  std::uint64_t newTotal = previousTotal + amount;
   if (newTotal < previousTotal)
-    newTotal = highest<uint64_t>();
-  m_currencies[currencyType] = min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", highest<uint64_t>()), newTotal);
+    newTotal = highest<std::uint64_t>();
+  m_currencies[currencyType] = std::min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", highest<std::uint64_t>()), newTotal);
 }
 
-bool PlayerInventory::consumeCurrency(String const& currencyType, uint64_t amount) {
+bool PlayerInventory::consumeCurrency(String const& currencyType, std::uint64_t amount) {
   if (m_currencies[currencyType] >= amount) {
     m_currencies[currencyType] -= amount;
     return true;
@@ -788,7 +804,7 @@ void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, May
   if (slot && cbl.second == slot) {
     // If we match the secondary slot, just swap the slots for primary and
     // secondary
-    swap(cbl.first, cbl.second);
+    std::swap(cbl.first, cbl.second);
   } else {
     cbl.first = slot;
   }
@@ -806,7 +822,7 @@ void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, M
   if (cbl.first && cbl.first == slot && !itemSafeTwoHanded(itemsAt(*cbl.first))) {
     // If we match the primary slot and the primary slot is not a two handed
     // item, then just swap the two slots.
-    swap(cbl.first, cbl.second);
+    std::swap(cbl.first, cbl.second);
   } else {
     cbl.second = slot;
     // If the primary slot was two handed, it is no longer valid so clear it.
@@ -816,7 +832,7 @@ void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, M
 }
 
 void PlayerInventory::addToCustomBar(InventorySlot slot) {
-  for (size_t j = 0; j < m_customBar.size(1); ++j) {
+  for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
     auto& cbl = m_customBar.at(m_customBarGroup, j);
     if (!cbl.first && !cbl.second) {
       cbl.first.set(slot);
@@ -825,19 +841,19 @@ void PlayerInventory::addToCustomBar(InventorySlot slot) {
   }
 }
 
-uint8_t PlayerInventory::customBarGroup() const {
+std::uint8_t PlayerInventory::customBarGroup() const {
   return m_customBarGroup;
 }
 
-void PlayerInventory::setCustomBarGroup(uint8_t group) {
+void PlayerInventory::setCustomBarGroup(std::uint8_t group) {
   m_customBarGroup = group;
 }
 
-uint8_t PlayerInventory::customBarGroups() const {
+std::uint8_t PlayerInventory::customBarGroups() const {
   return m_customBar.size(0);
 }
 
-uint8_t PlayerInventory::customBarIndexes() const {
+std::uint8_t PlayerInventory::customBarIndexes() const {
   return m_customBar.size(1);
 }
 
@@ -901,14 +917,14 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
 }
 
 bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {
-  return (m_equipmentVisibilityMask >> (uint8_t)slot) & 0x1;
+  return (m_equipmentVisibilityMask >> (std::uint8_t)slot) & 0x1;
 }
 
 void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
   if (visible)
-    m_equipmentVisibilityMask |= (1 << (uint8_t)slot);
+    m_equipmentVisibilityMask |= (1 << (std::uint8_t)slot);
   else
-    m_equipmentVisibilityMask &= ~(1 << (uint8_t)slot);
+    m_equipmentVisibilityMask &= ~(1 << (std::uint8_t)slot);
 }
 
 void PlayerInventory::load(Json const& store) {
@@ -937,17 +953,17 @@ void PlayerInventory::load(Json const& store) {
   m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
   m_trashSlot = itemDatabase->diskLoad(store.get("trashSlot"));
 
-  m_currencies = jsonToMapV<StringMap<uint64_t>>(store.get("currencies"), mem_fn(&Json::toUInt));
+  m_currencies = jsonToMapV<StringMap<std::uint64_t>>(store.get("currencies"), std::mem_fn(&Json::toUInt));
 
   m_customBarGroup = store.getUInt("customBarGroup");
 
-  for (size_t i = 0; i < m_customBar.size(0); ++i) {
-    for (size_t j = 0; j < m_customBar.size(1); ++j) {
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
       Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
       auto validateLink = [this](Maybe<InventorySlot> link) -> Maybe<InventorySlot> {
         if (link && link->is<BagSlot>()) {
           auto& slot = link->get<BagSlot>();
-          if (m_bags.contains(slot.first) && size_t(slot.second) < m_bags[slot.first]->size())
+          if (m_bags.contains(slot.first) && std::size_t(slot.second) < m_bags[slot.first]->size())
             return link;
           else
             return {};
@@ -976,9 +992,9 @@ Json PlayerInventory::store() const {
   auto itemDatabase = Root::singleton().itemDatabase();
 
   JsonArray customBar;
-  for (size_t i = 0; i < m_customBar.size(0); ++i) {
+  for (std::size_t i = 0; i < m_customBar.size(0); ++i) {
     JsonArray customBarGroup;
-    for (size_t j = 0; j < m_customBar.size(1); ++j) {
+    for (std::size_t j = 0; j < m_customBar.size(1); ++j) {
       auto const& cbl  = m_customBar.at(i, j);
       customBarGroup.append(JsonArray{jsonFromMaybe(cbl.first, jsonFromInventorySlot), jsonFromMaybe(cbl.second, jsonFromInventorySlot)});
     }
@@ -1013,7 +1029,7 @@ Json PlayerInventory::store() const {
   return data;
 }
 
-void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr&)> function) {
+void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, ItemPtr&)> function) {
   auto checkedFunction = [function = std::move(function)](InventorySlot const& slot, ItemPtr& item) {
     if (item)
       function(slot, item);
@@ -1022,14 +1038,14 @@ void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr&)
   for (auto& p : m_equipment)
     checkedFunction(p.first, p.second);
   for (auto const& p : m_bags) {
-    for (size_t i = 0; i < p.second->size(); ++i)
+    for (std::size_t i = 0; i < p.second->size(); ++i)
       checkedFunction(BagSlot(p.first, i), p.second->at(i));
   }
   checkedFunction(SwapSlot(), m_swapSlot);
   checkedFunction(TrashSlot(), m_trashSlot);
 }
 
-void PlayerInventory::forEveryItem(function<void(InventorySlot const&, ItemPtr const&)> function) const {
+void PlayerInventory::forEveryItem(std::function<void(InventorySlot const&, ItemPtr const&)> function) const {
   return const_cast<PlayerInventory*>(this)->forEveryItem([function = std::move(function)](InventorySlot const& slot, ItemPtr& item) {
       function(slot, item);
     });
@@ -1043,8 +1059,8 @@ List<ItemPtr> PlayerInventory::allItems() const {
   return items;
 }
 
-Map<String, uint64_t> PlayerInventory::itemSummary() const {
-  Map<String, uint64_t> result;
+Map<String, std::uint64_t> PlayerInventory::itemSummary() const {
+  Map<String, std::uint64_t> result;
   forEveryItem([&result](auto const&, auto const& item) {
       result[item->name()] += item->count();
     });
@@ -1102,7 +1118,7 @@ void PlayerInventory::netStore(DataStream& ds, NetCompatibilityRules rules) cons
 }
 
 
-bool PlayerInventory::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool PlayerInventory::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (m_player && !m_player->isMaster() && !rules.isAdmin())
     return blankInventory().writeNetDelta(ds, fromVersion, rules);
   else
@@ -1226,7 +1242,7 @@ void PlayerInventory::netElementsNeedLoad(bool) {
   };
 
   auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
-    for (size_t i = 0; i < netStatesList.size(); ++i)
+    for (std::size_t i = 0; i < netStatesList.size(); ++i)
       deserializeItem(netStatesList[i], itemList[i]);
   };
 
@@ -1265,7 +1281,7 @@ void PlayerInventory::netElementsNeedStore() {
   };
 
   auto serializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
-    for (size_t i = 0; i < netStatesList.size(); ++i)
+    for (std::size_t i = 0; i < netStatesList.size(); ++i)
       serializeItem(netStatesList[i], itemList[i]);
   };
 

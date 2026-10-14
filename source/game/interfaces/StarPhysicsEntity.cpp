@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -43,7 +43,7 @@ void PhysicsMovingCollision::translate(Vec2F const& pos) {
 }
 
 bool PhysicsMovingCollision::operator==(PhysicsMovingCollision const& rhs) const {
-  return tie(position, collision, collisionKind, categoryFilter) == tie(rhs.position, rhs.collision, rhs.collisionKind, rhs.categoryFilter);
+  return std::tie(position, collision, collisionKind, categoryFilter) == std::tie(rhs.position, rhs.collision, rhs.collisionKind, rhs.categoryFilter);
 }
 
 DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc) {
@@ -64,11 +64,11 @@ DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
 
 MovingCollisionId::MovingCollisionId() : physicsEntityId(NullEntityId), collisionIndex(0) {}
 
-MovingCollisionId::MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex)
+MovingCollisionId::MovingCollisionId(EntityId physicsEntityId, std::size_t collisionIndex)
   : physicsEntityId(physicsEntityId), collisionIndex(collisionIndex) {}
 
 bool MovingCollisionId::operator==(MovingCollisionId const& rhs) {
-  return tie(physicsEntityId, collisionIndex) == tie(rhs.physicsEntityId, rhs.collisionIndex);
+  return std::tie(physicsEntityId, collisionIndex) == std::tie(rhs.physicsEntityId, rhs.collisionIndex);
 }
 
 bool MovingCollisionId::valid() const {
@@ -95,11 +95,11 @@ List<PhysicsForceRegion> PhysicsEntity::forceRegions() const {
   return {};
 }
 
-size_t PhysicsEntity::movingCollisionCount() const {
+std::size_t PhysicsEntity::movingCollisionCount() const {
   return 0;
 }
 
-Maybe<PhysicsMovingCollision> PhysicsEntity::movingCollision(size_t) const {
+Maybe<PhysicsMovingCollision> PhysicsEntity::movingCollision(std::size_t) const {
   return {};
 }
 

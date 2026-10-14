@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 #include "StarCasting.hpp"
@@ -19,7 +19,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(AggressiveEntity);
+class AggressiveEntity;
+using AggressiveEntityPtr = std::shared_ptr<AggressiveEntity>;
+using AggressiveEntityConstPtr = std::shared_ptr<const AggressiveEntity>;
+using AggressiveEntityWeakPtr = std::weak_ptr<AggressiveEntity>;
+using AggressiveEntityConstWeakPtr = std::weak_ptr<const AggressiveEntity>;
+using AggressiveEntityUPtr = std::unique_ptr<AggressiveEntity>;
+using AggressiveEntityConstUPtr = std::unique_ptr<const AggressiveEntity>;
 
 class AggressiveEntity : public virtual Entity {
 public:

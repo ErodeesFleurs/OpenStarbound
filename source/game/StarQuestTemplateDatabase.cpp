@@ -14,7 +14,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -54,7 +54,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
     }
     rewards.append(rewardOption);
   }
-  rewardParameters = config.getArray("rewardParameters", {}).transformed(mem_fn(&Json::toString));
+  rewardParameters = config.getArray("rewardParameters", {}).transformed(std::mem_fn(&Json::toString));
   completionCinema = config.optString("completionCinema");
   canBeAbandoned = config.getBool("canBeAbandoned", true);
   ephemeral = config.getBool("ephemeral", false);
@@ -86,7 +86,7 @@ QuestTemplateDatabase::QuestTemplateDatabase() {
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {
-    auto questTemplate = make_shared<QuestTemplate>(assets->json(qt));
+    auto questTemplate = std::make_shared<QuestTemplate>(assets->json(qt));
     if (!m_templates.insert(questTemplate->templateId, questTemplate).second)
       throw StarException(strf("Duplicate quest template '{}'", questTemplate->templateId));
   }

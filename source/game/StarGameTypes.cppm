@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 import star.variant;
 import star.maybe;
 import star.json;
@@ -10,15 +9,13 @@ import star.vector;
 import star.rpc_promise;
 import star.math_common;
 import std;
-#include <stdint.h>
-#include <math.h>
 
 namespace Star {
 
 typedef Variant<String,RpcPromise<String>> ServerCommandResult;
 typedef Variant<Json,RpcPromise<Json>> ChainableJsonMessageResponse;
 
-enum class Direction : uint8_t {
+enum class Direction : std::uint8_t {
   Left,
   Right
 };
@@ -45,32 +42,32 @@ inline Maybe<Direction> directionOf(NumType const& n) {
     return n < 0 ? Direction::Left : Direction::Right;
 }
 
-enum class Gender : uint8_t {
+enum class Gender : std::uint8_t {
   Male,
   Female
 };
 extern EnumMap<Gender> const GenderNames;
 
-enum class FireMode : uint8_t {
+enum class FireMode : std::uint8_t {
   None,
   Primary,
   Alt
 };
 extern EnumMap<FireMode> const FireModeNames;
 
-enum class ToolHand : uint8_t {
+enum class ToolHand : std::uint8_t {
   Primary,
   Alt
 };
 extern EnumMap<ToolHand> const ToolHandNames;
 
-enum class TileLayer : uint8_t {
+enum class TileLayer : std::uint8_t {
   Foreground,
   Background
 };
 extern EnumMap<TileLayer> const TileLayerNames;
 
-enum class MoveControlType : uint8_t {
+enum class MoveControlType : std::uint8_t {
   Left,
   Right,
   Down,
@@ -107,9 +104,9 @@ extern float GlobalTimestep;
 extern float ServerGlobalTimestep;
 inline constexpr float SystemWorldTimestep = 1.0f / 20.0f;
 
-inline constexpr size_t WorldSectorSize = 32;
+inline constexpr std::size_t WorldSectorSize = 32;
 
-typedef int32_t EntityId;
+typedef std::int32_t EntityId;
 inline constexpr EntityId NullEntityId = 0;
 inline constexpr EntityId MinServerEntityId = 1;
 inline constexpr EntityId MaxServerEntityId = highest<EntityId>();
@@ -122,7 +119,7 @@ enum class EntityMode {
   Slave
 };
 
-typedef uint16_t ConnectionId;
+typedef std::uint16_t ConnectionId;
 inline constexpr ConnectionId ServerConnectionId = 0;
 // Minimum and maximum valid client ids
 inline constexpr ConnectionId MinClientConnectionId = 1;
@@ -142,7 +139,7 @@ inline ConnectionId subWorldToMainConnectionId(ConnectionId const& id) {
 
 // for client sub-world threads. indexes by *world* rather than by thread.
 // this should allow the client to possibly split the subworlds to multiple threads in the future.
-typedef uint16_t ClientSubWorldId;
+typedef std::uint16_t ClientSubWorldId;
 inline constexpr ConnectionId MainClientWorldId = 0;
 inline constexpr ConnectionId MinClientSubWorldId = 1;
 inline constexpr ConnectionId MaxClientSubWorldId = highest<ClientSubWorldId>();
@@ -152,7 +149,7 @@ inline Vec2F centerOfTile(Vec2T const& tile) {
   return Vec2F(tile.floor()) + Vec2F::filled(0.5);
 }
 
-typedef uint16_t DungeonId;
+typedef std::uint16_t DungeonId;
 
 inline constexpr DungeonId NoDungeonId = 65535;
 inline constexpr DungeonId SpawnDungeonId = 65534;
@@ -176,7 +173,7 @@ inline bool isRealDungeon(DungeonId dungeon) {
 // Returns the inclusive beginning and end of the entity id space for the
 // given connection.  All client connection id spaces will be within the range
 // [-2^31, -1].
-pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
+std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
 
 bool entityIdInSpace(EntityId entityId, ConnectionId connectionId);
 
@@ -186,7 +183,7 @@ ConnectionId connectionForEntity(EntityId entityId);
 // hemisphere of the angle.  The angle is specified as positive being upward
 // rotation and negative being downward rotation, unless ccRotation is true, in
 // which case the angle is always positive == counter-clocwise.
-pair<float, Direction> getAngleSide(float angle, bool ccRotation = false);
+std::pair<float, Direction> getAngleSide(float angle, bool ccRotation = false);
 
 enum class TileDamageResult {
   None = 0,

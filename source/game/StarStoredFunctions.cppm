@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -10,10 +10,34 @@ import star.multi_table;
 
 namespace Star {
 
-STAR_CLASS(StoredFunction);
-STAR_CLASS(StoredFunction2);
-STAR_CLASS(StoredConfigFunction);
-STAR_CLASS(FunctionDatabase);
+class StoredFunction;
+using StoredFunctionPtr = std::shared_ptr<StoredFunction>;
+using StoredFunctionConstPtr = std::shared_ptr<const StoredFunction>;
+using StoredFunctionWeakPtr = std::weak_ptr<StoredFunction>;
+using StoredFunctionConstWeakPtr = std::weak_ptr<const StoredFunction>;
+using StoredFunctionUPtr = std::unique_ptr<StoredFunction>;
+using StoredFunctionConstUPtr = std::unique_ptr<const StoredFunction>;
+class StoredFunction2;
+using StoredFunction2Ptr = std::shared_ptr<StoredFunction2>;
+using StoredFunction2ConstPtr = std::shared_ptr<const StoredFunction2>;
+using StoredFunction2WeakPtr = std::weak_ptr<StoredFunction2>;
+using StoredFunction2ConstWeakPtr = std::weak_ptr<const StoredFunction2>;
+using StoredFunction2UPtr = std::unique_ptr<StoredFunction2>;
+using StoredFunction2ConstUPtr = std::unique_ptr<const StoredFunction2>;
+class StoredConfigFunction;
+using StoredConfigFunctionPtr = std::shared_ptr<StoredConfigFunction>;
+using StoredConfigFunctionConstPtr = std::shared_ptr<const StoredConfigFunction>;
+using StoredConfigFunctionWeakPtr = std::weak_ptr<StoredConfigFunction>;
+using StoredConfigFunctionConstWeakPtr = std::weak_ptr<const StoredConfigFunction>;
+using StoredConfigFunctionUPtr = std::unique_ptr<StoredConfigFunction>;
+using StoredConfigFunctionConstUPtr = std::unique_ptr<const StoredConfigFunction>;
+class FunctionDatabase;
+using FunctionDatabasePtr = std::shared_ptr<FunctionDatabase>;
+using FunctionDatabaseConstPtr = std::shared_ptr<const FunctionDatabase>;
+using FunctionDatabaseWeakPtr = std::weak_ptr<FunctionDatabase>;
+using FunctionDatabaseConstWeakPtr = std::weak_ptr<const FunctionDatabase>;
+using FunctionDatabaseUPtr = std::unique_ptr<FunctionDatabase>;
+using FunctionDatabaseConstUPtr = std::unique_ptr<const FunctionDatabase>;
 
 struct StoredFunctionExceptionTag {
   static constexpr char const* name() { return "StoredFunctionException"; }

@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.stream_formatter;
 
 namespace Star {
@@ -43,7 +42,7 @@ OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
 }
 
 struct OutputProxy {
-  typedef function<void(std::ostream&)> PrintFunction;
+  typedef std::function<void(std::ostream&)> PrintFunction;
 
   OutputProxy(PrintFunction p)
     : print(std::move(p)) {}

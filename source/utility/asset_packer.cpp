@@ -11,7 +11,7 @@ import star.variant;
 import star.ordered_map;
 import star.ordered_set;
 import star.option_parser;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.version_option_parser;
@@ -73,8 +73,8 @@ int main(int argc, char** argv) {
 
     bool verbose = opts.switches.contains("v");
 
-    function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
-    auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {
+    std::function<void(std::size_t, std::size_t, String, String, bool)> BuildProgressCallback;
+    auto progressCallback = [verbose](std::size_t, std::size_t, String filePath, String assetPath) {
       if (verbose)
         coutf("Adding file '{}' to the target pak as '{}'\n", filePath, assetPath);
     };

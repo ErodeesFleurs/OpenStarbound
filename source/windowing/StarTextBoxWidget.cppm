@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -51,7 +51,13 @@ namespace Star {
 
 enum class SpecialRepeatKeyCodes : String::Char { None, Delete, Backspace, Left, Right };
 
-STAR_CLASS(TextBoxWidget);
+class TextBoxWidget;
+using TextBoxWidgetPtr = std::shared_ptr<TextBoxWidget>;
+using TextBoxWidgetConstPtr = std::shared_ptr<TextBoxWidget const>;
+using TextBoxWidgetWeakPtr = std::weak_ptr<TextBoxWidget>;
+using TextBoxWidgetConstWeakPtr = std::weak_ptr<TextBoxWidget const>;
+using TextBoxWidgetUPtr = std::unique_ptr<TextBoxWidget>;
+using TextBoxWidgetConstUPtr = std::unique_ptr<TextBoxWidget const>;
 class TextBoxWidget : public Widget {
 public:
   TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback);
@@ -103,7 +109,7 @@ public:
   virtual void blur() override;
 
   virtual KeyboardCaptureMode keyboardCaptureMode() const override;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
+  virtual Maybe<std::pair<RectI, int>> keyboardCaptureArea() const override;
 
 protected:
   virtual void renderImpl() override;
@@ -125,7 +131,7 @@ private:
   bool m_isHover;
   bool m_isPressed;
   SpecialRepeatKeyCodes m_repeatCode;
-  int64_t m_repeatKeyThreshold;
+  std::int64_t m_repeatKeyThreshold;
   WidgetCallbackFunc m_callback;
   WidgetCallbackFunc m_onBlur;
   WidgetCallbackFunc m_onEnterKey;

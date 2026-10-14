@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
@@ -22,15 +22,15 @@ CompressionStream::CompressionStream() : m_cStream(ZSTD_createCStream()) {
 
 CompressionStream::~CompressionStream() { ZSTD_freeCStream(m_cStream); }
 
-void CompressionStream::compress(const char* in, size_t inLen, ByteArray& out) {
-  size_t const cOutSize = ZSTD_CStreamOutSize();
+void CompressionStream::compress(const char* in, std::size_t inLen, ByteArray& out) {
+  std::size_t const cOutSize = ZSTD_CStreamOutSize();
   ZSTD_inBuffer inBuffer = {in, inLen, 0};
-  size_t written = out.size();
+  std::size_t written = out.size();
   out.resize(out.size() + cOutSize);
   bool finished = false;
   do {
-    ZSTD_outBuffer outBuffer = {out.ptr() + written, min(cOutSize, out.size() - written), 0};
-    size_t ret = ZSTD_compressStream2(m_cStream, &outBuffer, &inBuffer, ZSTD_e_flush);
+    ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(cOutSize, out.size() - written), 0};
+    std::size_t ret = ZSTD_compressStream2(m_cStream, &outBuffer, &inBuffer, ZSTD_e_flush);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD compression error {}", ZSTD_getErrorName(ret)));
       break;
@@ -53,7 +53,7 @@ void CompressionStream::compress(ByteArray const& in, ByteArray& out) {
 }
 
 
-ByteArray CompressionStream::compress(const char* in, size_t inLen) {
+ByteArray CompressionStream::compress(const char* in, std::size_t inLen) {
   ByteArray out;
   compress(in, inLen, out);
   return out;
@@ -72,15 +72,15 @@ DecompressionStream::DecompressionStream() : m_dStream(ZSTD_createDStream()) {
 
 DecompressionStream::~DecompressionStream() { ZSTD_freeDStream(m_dStream); }
 
-void DecompressionStream::decompress(const char* in, size_t inLen, ByteArray& out) {
-  size_t const dOutSize = ZSTD_DStreamOutSize();
+void DecompressionStream::decompress(const char* in, std::size_t inLen, ByteArray& out) {
+  std::size_t const dOutSize = ZSTD_DStreamOutSize();
   ZSTD_inBuffer inBuffer = {in, inLen, 0};
-  size_t written = out.size();
+  std::size_t written = out.size();
   out.resize(out.size() + dOutSize);
   bool finished = false;
   do {
-    ZSTD_outBuffer outBuffer = {out.ptr() + written, min(dOutSize, out.size() - written), 0};
-    size_t ret = ZSTD_decompressStream(m_dStream, &outBuffer, &inBuffer);
+    ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(dOutSize, out.size() - written), 0};
+    std::size_t ret = ZSTD_decompressStream(m_dStream, &outBuffer, &inBuffer);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD decompression error {}", ZSTD_getErrorName(ret)));
       break;
@@ -101,7 +101,7 @@ void DecompressionStream::decompress(ByteArray const& in, ByteArray& out) {
   return decompress(in.ptr(), in.size(), out);
 }
 
-ByteArray DecompressionStream::decompress(const char* in, size_t inLen) {
+ByteArray DecompressionStream::decompress(const char* in, std::size_t inLen) {
   ByteArray out;
   decompress(in, inLen, out);
   return out;
@@ -113,14 +113,14 @@ ByteArray DecompressionStream::decompress(ByteArray const& in) {
   return out;
 }
 
-ByteArray ZstdCompression::compress(const char* in, size_t inLen, int compressionLevel) {
+ByteArray ZstdCompression::compress(const char* in, std::size_t inLen, int compressionLevel) {
   if (inLen == 0)
     return ByteArray();
     
-  size_t const maxOutSize = ZSTD_compressBound(inLen);
+  std::size_t const maxOutSize = ZSTD_compressBound(inLen);
   ByteArray out(maxOutSize, 0);
   
-  size_t compressedSize = ZSTD_compress(
+  std::size_t compressedSize = ZSTD_compress(
     out.ptr(), maxOutSize,
     in, inLen,
     compressionLevel
@@ -133,7 +133,7 @@ ByteArray ZstdCompression::compress(const char* in, size_t inLen, int compressio
   return out;
 }
 
-void ZstdCompression::compress(const char* in, size_t inLen, ByteArray& out, int compressionLevel) {
+void ZstdCompression::compress(const char* in, std::size_t inLen, ByteArray& out, int compressionLevel) {
   out = compress(in, inLen, compressionLevel);
 }
 
@@ -145,7 +145,7 @@ void ZstdCompression::compress(ByteArray const& in, ByteArray& out, int compress
   out = compress(in, compressionLevel);
 }
 
-ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
+ByteArray ZstdCompression::decompress(const char* in, std::size_t inLen) {
   unsigned long long const frameContentSize = ZSTD_getFrameContentSize(in, inLen);
   if (frameContentSize == ZSTD_CONTENTSIZE_ERROR || frameContentSize == ZSTD_CONTENTSIZE_UNKNOWN)
     throw IOException("Cannot determine ZSTD decompressed size");
@@ -156,7 +156,7 @@ ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
     throw IOException(strf("ZSTD frame declares {} bytes, above the {} byte limit", frameContentSize, MaxUncompressedSize));
 
   ByteArray out(frameContentSize, 0);
-  size_t result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
+  std::size_t result = ZSTD_decompress(out.ptr(), frameContentSize, in, inLen);
   
   if (ZSTD_isError(result))
     throw IOException(strf("ZSTD decompression error {}", ZSTD_getErrorName(result)));
@@ -165,7 +165,7 @@ ByteArray ZstdCompression::decompress(const char* in, size_t inLen) {
   return out;
 }
 
-void ZstdCompression::decompress(const char* in, size_t inLen, ByteArray& out) {
+void ZstdCompression::decompress(const char* in, std::size_t inLen, ByteArray& out) {
   out = decompress(in, inLen);
 }
 

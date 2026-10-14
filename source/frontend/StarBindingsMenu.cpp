@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +16,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -70,7 +70,7 @@ import star.input_lua_bindings;
 namespace Star {
 
 BindingsMenu::BindingsMenu(Json const& config) : BaseScriptPane(config) {
-  m_script.setLuaRoot(make_shared<LuaRoot>());
+  m_script.setLuaRoot(std::make_shared<LuaRoot>());
   m_script.addCallbacks("input", LuaBindings::makeInputCallbacks());
 }
 

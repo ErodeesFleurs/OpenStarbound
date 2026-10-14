@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.io_device;
 import star.string;
 import star.format;
@@ -18,8 +18,8 @@ void IODevice::resize(StreamOffset) {
   throw IOException("resize not supported");
 }
 
-void IODevice::readFull(char* data, size_t len) {
-  size_t r = read(data, len);
+void IODevice::readFull(char* data, std::size_t len) {
+  std::size_t r = read(data, len);
   if (r < len) {
     if (atEnd())
       throw EofException("Failed to read full buffer in readFull, eof reached.");
@@ -30,8 +30,8 @@ void IODevice::readFull(char* data, size_t len) {
   len -= r;
 }
 
-void IODevice::writeFull(char const* data, size_t len) {
-  size_t r = write(data, len);
+void IODevice::writeFull(char const* data, std::size_t len) {
+  std::size_t r = write(data, len);
   if (r < len) {
     if (atEnd())
       throw EofException("Failed to write full buffer in writeFull, eof reached.");
@@ -73,25 +73,25 @@ StreamOffset IODevice::size() {
   }
 }
 
-size_t IODevice::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
+std::size_t IODevice::readAbsolute(StreamOffset readPosition, char* data, std::size_t len) {
   StreamOffset storedPos = pos();
   seek(readPosition);
-  size_t ret = read(data, len);
+  std::size_t ret = read(data, len);
   seek(storedPos);
   return ret;
 }
 
-size_t IODevice::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+std::size_t IODevice::writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) {
   StreamOffset storedPos = pos();
   seek(writePosition);
-  size_t ret = write(data, len);
+  std::size_t ret = write(data, len);
   seek(storedPos);
   return ret;
 }
 
-void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t len) {
+void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, std::size_t len) {
   while (len > 0) {
-    size_t r = readAbsolute(readPosition, data, len);
+    std::size_t r = readAbsolute(readPosition, data, len);
     // A read cannot report more than it was asked for; a larger value would make
     // the subtraction below wrap around and loop forever instead of failing.
     if (r == 0 || r > len)
@@ -102,9 +102,9 @@ void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t le
   }
 }
 
-void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, std::size_t len) {
   while (len > 0) {
-    size_t r = writeAbsolute(writePosition, data, len);
+    std::size_t r = writeAbsolute(writePosition, data, len);
     if (r == 0 || r > len)
       throw IOException("Failed to write full buffer in writeFullAbsolute");
     writePosition += r;
@@ -113,7 +113,7 @@ void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, s
   }
 }
 
-ByteArray IODevice::readBytes(size_t size) {
+ByteArray IODevice::readBytes(std::size_t size) {
   if (!size)
     return {};
 
@@ -127,7 +127,7 @@ void IODevice::writeBytes(ByteArray const& p) {
   writeFull(p.ptr(), p.size());
 }
 
-ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, size_t size) {
+ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, std::size_t size) {
   if (!size)
     return {};
 

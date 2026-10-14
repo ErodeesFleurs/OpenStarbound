@@ -1,10 +1,16 @@
 module;
-#include "StarConfig.hpp"
+import std;
 
 
 namespace Star {
 
-STAR_CLASS(DurabilityItem);
+class DurabilityItem;
+using DurabilityItemPtr = std::shared_ptr<DurabilityItem>;
+using DurabilityItemConstPtr = std::shared_ptr<const DurabilityItem>;
+using DurabilityItemWeakPtr = std::weak_ptr<DurabilityItem>;
+using DurabilityItemConstWeakPtr = std::weak_ptr<const DurabilityItem>;
+using DurabilityItemUPtr = std::unique_ptr<DurabilityItem>;
+using DurabilityItemConstUPtr = std::unique_ptr<const DurabilityItem>;
 
 class DurabilityItem {
 public:

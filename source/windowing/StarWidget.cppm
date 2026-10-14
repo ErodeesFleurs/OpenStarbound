@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.stream_formatter;
 import star.json;
@@ -23,8 +23,20 @@ struct GuiExceptionTag {
 };
 using GuiException = StarError<GuiExceptionTag, StarException>;
 
-STAR_CLASS(Widget);
-STAR_CLASS(Pane);
+class Widget;
+using WidgetPtr = std::shared_ptr<Widget>;
+using WidgetConstPtr = std::shared_ptr<Widget const>;
+using WidgetWeakPtr = std::weak_ptr<Widget>;
+using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
+using WidgetUPtr = std::unique_ptr<Widget>;
+using WidgetConstUPtr = std::unique_ptr<Widget const>;
+class Pane;
+using PanePtr = std::shared_ptr<Pane>;
+using PaneConstPtr = std::shared_ptr<Pane const>;
+using PaneWeakPtr = std::weak_ptr<Pane>;
+using PaneConstWeakPtr = std::weak_ptr<Pane const>;
+using PaneUPtr = std::unique_ptr<Pane>;
+using PaneConstUPtr = std::unique_ptr<Pane const>;
 
 enum class KeyboardCaptureMode {
   None,
@@ -32,7 +44,7 @@ enum class KeyboardCaptureMode {
   TextInput
 };
 
-typedef function<void(Widget*)> WidgetCallbackFunc;
+typedef std::function<void(Widget*)> WidgetCallbackFunc;
 
 class Widget {
 public:
@@ -95,26 +107,26 @@ public:
   virtual Pane* window();
 
   virtual void addChild(String const& name, WidgetPtr member);
-  virtual void addChildAt(String const& name, WidgetPtr member, size_t at);
+  virtual void addChildAt(String const& name, WidgetPtr member, std::size_t at);
   virtual bool removeChild(Widget* member);
   virtual bool removeChild(String const& name);
-  virtual bool removeChildAt(size_t at);
+  virtual bool removeChildAt(std::size_t at);
   virtual WidgetPtr getChildAt(Vec2I const& pos);
   virtual bool containsChild(String const& name);
   virtual WidgetPtr fetchChild(String const& name);
   template <typename WidgetType>
-  shared_ptr<WidgetType> fetchChild(String const& name);
+  std::shared_ptr<WidgetType> fetchChild(String const& name);
 
   virtual WidgetPtr findChild(String const& name);
   template <typename WidgetType>
-  shared_ptr<WidgetType> findChild(String const& name);
+  std::shared_ptr<WidgetType> findChild(String const& name);
 
   WidgetPtr childPtr(Widget const* widget) const;
 
-  virtual size_t numChildren() const;
-  virtual WidgetPtr getChildNum(size_t num) const;
+  virtual std::size_t numChildren() const;
+  virtual WidgetPtr getChildNum(std::size_t num) const;
   template <typename WidgetType>
-  shared_ptr<WidgetType> getChildNum(size_t num) const;
+  std::shared_ptr<WidgetType> getChildNum(std::size_t num) const;
   virtual void removeAllChildren();
 
   virtual String const& name() const;
@@ -132,7 +144,7 @@ public:
 
   virtual WidgetPtr keyboardCapturer() const;
   virtual KeyboardCaptureMode keyboardCaptureMode() const;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const;
+  virtual Maybe<std::pair<RectI, int>> keyboardCaptureArea() const;
 
   void setData(Json const& data);
   Json const& data();
@@ -175,17 +187,17 @@ protected:
 std::ostream& operator<<(std::ostream& os, Widget const& widget);
 
 template <typename WidgetType>
-shared_ptr<WidgetType> Widget::getChildNum(size_t num) const {
+std::shared_ptr<WidgetType> Widget::getChildNum(std::size_t num) const {
   return as<WidgetType>(getChildNum(num));
 }
 
 template <typename WidgetType>
-shared_ptr<WidgetType> Widget::fetchChild(String const& name) {
+std::shared_ptr<WidgetType> Widget::fetchChild(String const& name) {
   return as<WidgetType>(fetchChild(name));
 }
 
 template <typename WidgetType>
-shared_ptr<WidgetType> Widget::findChild(String const& name) {
+std::shared_ptr<WidgetType> Widget::findChild(String const& name) {
   return as<WidgetType>(findChild(name));
 }
 

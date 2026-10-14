@@ -14,7 +14,6 @@ import star.bi_map;
 import star.game_types;
 import star.material_types;
 import star.vector;
-#include "StarConfig.hpp"
 import star.map;
 import star.version;
 import star.color;
@@ -75,18 +74,36 @@ import star.material_render_profile;
 import star.array;
 namespace Star {
 
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TileDrawer);
+class Assets;
+using AssetsPtr = std::shared_ptr<Assets>;
+using AssetsConstPtr = std::shared_ptr<const Assets>;
+using AssetsWeakPtr = std::weak_ptr<Assets>;
+using AssetsConstWeakPtr = std::weak_ptr<const Assets>;
+using AssetsUPtr = std::unique_ptr<Assets>;
+using AssetsConstUPtr = std::unique_ptr<const Assets>;
+class MaterialDatabase;
+using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
+using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
+using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
+using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
+using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
+class TileDrawer;
+using TileDrawerPtr = std::shared_ptr<TileDrawer>;
+using TileDrawerConstPtr = std::shared_ptr<const TileDrawer>;
+using TileDrawerWeakPtr = std::weak_ptr<TileDrawer>;
+using TileDrawerConstWeakPtr = std::weak_ptr<const TileDrawer>;
+using TileDrawerUPtr = std::unique_ptr<TileDrawer>;
+using TileDrawerConstUPtr = std::unique_ptr<const TileDrawer>;
 class TilePainter;
 
 class TileDrawer {
 public:
-  typedef uint64_t QuadZLevel;
+  typedef std::uint64_t QuadZLevel;
   typedef HashMap<QuadZLevel, List<Drawable>> Drawables;
 
-  typedef size_t MaterialRenderPieceIndex;
-  typedef List<pair<MaterialRenderPieceConstPtr, Vec2F>> MaterialPieceResultList;
+  typedef std::size_t MaterialRenderPieceIndex;
+  typedef List<std::pair<MaterialRenderPieceConstPtr, Vec2F>> MaterialPieceResultList;
 
   enum class TerrainLayer { Background, Midground, Foreground };
 
@@ -113,8 +130,8 @@ private:
 
   static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
 
-  static QuadZLevel materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
-  static QuadZLevel modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
+  static QuadZLevel materialZLevel(std::uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
+  static QuadZLevel modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
   static QuadZLevel damageZLevel();
 
   static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,

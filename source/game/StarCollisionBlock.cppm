@@ -1,7 +1,7 @@
 module;
 
 import star.poly;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.bi_map;
 
@@ -10,7 +10,7 @@ import star.rect;
 import star.algorithm;
 namespace Star {
 
-enum class CollisionKind : uint8_t {
+enum class CollisionKind : std::uint8_t {
   // Special collision block that is used for unloaded / un-generated tiles.
   // Collides the same as "Block", but does not tile with it.
   Null,
@@ -21,7 +21,7 @@ enum class CollisionKind : uint8_t {
   Block
 };
 
-enum class TileCollisionOverride : uint8_t {
+enum class TileCollisionOverride : std::uint8_t {
   None,
   Empty,
   Platform,
@@ -44,16 +44,16 @@ inline CollisionKind collisionKindFromOverride(TileCollisionOverride const& over
 class CollisionSet {
 public:
   CollisionSet();
-  CollisionSet(initializer_list<CollisionKind> kinds);
+  CollisionSet(std::initializer_list<CollisionKind> kinds);
 
   void insert(CollisionKind kind);
   void remove(CollisionKind kind);
   bool contains(CollisionKind kind) const;
 
 private:
-  static uint8_t kindBit(CollisionKind kind);
+  static std::uint8_t kindBit(CollisionKind kind);
 
-  uint8_t m_kinds;
+  std::uint8_t m_kinds;
 };
 
 // The default CollisionSet consists of Null, Slippery, Dynamic and Block
@@ -86,7 +86,7 @@ struct CollisionBlock {
 inline CollisionSet::CollisionSet()
   : m_kinds(0) {}
 
-inline CollisionSet::CollisionSet(initializer_list<CollisionKind> kinds)
+inline CollisionSet::CollisionSet(std::initializer_list<CollisionKind> kinds)
   : CollisionSet() {
   for (auto kind : kinds) {
     insert(kind);
@@ -105,8 +105,8 @@ inline bool CollisionSet::contains(CollisionKind kind) const {
   return m_kinds & kindBit(kind);
 }
 
-inline uint8_t CollisionSet::kindBit(CollisionKind kind) {
-  return 1 << ((uint8_t)kind + 1);
+inline std::uint8_t CollisionSet::kindBit(CollisionKind kind) {
+  return 1 << ((std::uint8_t)kind + 1);
 }
 
 inline bool isColliding(CollisionKind kind, CollisionSet const& collisionSet) {
@@ -118,7 +118,7 @@ inline bool isSolidColliding(CollisionKind kind) {
 }
 
 inline CollisionKind maxCollision(CollisionKind first, CollisionKind second) {
-  return max(first, second);
+  return std::max(first, second);
 }
 
 inline CollisionBlock CollisionBlock::nullBlock(Vec2I const& space) {

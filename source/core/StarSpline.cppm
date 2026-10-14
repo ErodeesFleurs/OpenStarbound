@@ -1,8 +1,8 @@
 module;
 
+import std;
 import star.vector;
 import star.interpolation;
-#include "StarConfig.hpp"
 import star.logging;
 import star.lru_cache;
 
@@ -11,7 +11,7 @@ import star.math_common;
 namespace Star {
 
 // Implementation of DeCasteljau Algorithm for Bezier Curves
-template <typename DataT, size_t Dimension, size_t Order, class PointT = Vector<DataT, Dimension>>
+template <typename DataT, std::size_t Dimension, std::size_t Order, class PointT = Vector<DataT, Dimension>>
 class Spline : public Array<PointT, Order + 1> {
 public:
   typedef Array<PointT, Order + 1> PointData;
@@ -40,8 +40,8 @@ public:
 
     PointData intermediates(*this);
     PointData temp;
-    for (size_t order = Order + 1; order > 1; order--) {
-      for (size_t i = 1; i < order; i++) {
+    for (std::size_t order = Order + 1; order > 1; order--) {
+      for (std::size_t i = 1; i < order; i++) {
         temp[i - 1] = lerp(t, intermediates[i - 1], intermediates[i]);
       }
       intermediates = std::move(temp);
@@ -60,13 +60,13 @@ public:
 
     // constructs a hodograph and returns pointAt
     Spline<DataT, Dimension, Order - 1> hodograph;
-    for (size_t i = 0; i < Order; i++) {
+    for (std::size_t i = 0; i < Order; i++) {
       hodograph[i] = ((*this)[i + 1] - (*this)[i]) * Order;
     }
     return hodograph.pointAt(t);
   }
 
-  DataT length(float begin = 0, float end = 1, size_t subdivisions = 100) const {
+  DataT length(float begin = 0, float end = 1, std::size_t subdivisions = 100) const {
     if (!(begin <= 1 && begin >= 0 && end <= 1 && end >= 0 && begin <= end)) {
       Logger::warn("Passed invalid range to Spline::length");
       return 0;
@@ -79,7 +79,7 @@ public:
 
     DataT res = 0;
     PointT previousPoint = pointAt(begin);
-    for (size_t i = 1; i <= subdivisions; i++) {
+    for (std::size_t i = 1; i <= subdivisions; i++) {
       PointT currentPoint = pointAt(i / subdivisions * (end - begin));
       res += (currentPoint - previousPoint).magnitude();
       previousPoint = currentPoint;
@@ -138,13 +138,13 @@ public:
     return (*this)[Order];
   }
 
-  PointT& operator[](size_t index) {
+  PointT& operator[](std::size_t index) {
     m_pointCache.clear();
     m_lengthCache.clear();
     return PointData::operator[](index);
   }
 
-  PointT const& operator[](size_t index) const {
+  PointT const& operator[](std::size_t index) const {
     return PointData::operator[](index);
   }
 

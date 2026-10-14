@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -10,10 +10,28 @@ import star.lua;
 namespace Star {
 
 class LuaCallbacks;
-STAR_CLASS(LuaRoot);
-STAR_CLASS(StatisticsService);
+class LuaRoot;
+using LuaRootPtr = std::shared_ptr<LuaRoot>;
+using LuaRootConstPtr = std::shared_ptr<const LuaRoot>;
+using LuaRootWeakPtr = std::weak_ptr<LuaRoot>;
+using LuaRootConstWeakPtr = std::weak_ptr<const LuaRoot>;
+using LuaRootUPtr = std::unique_ptr<LuaRoot>;
+using LuaRootConstUPtr = std::unique_ptr<const LuaRoot>;
+class StatisticsService;
+using StatisticsServicePtr = std::shared_ptr<StatisticsService>;
+using StatisticsServiceConstPtr = std::shared_ptr<const StatisticsService>;
+using StatisticsServiceWeakPtr = std::weak_ptr<StatisticsService>;
+using StatisticsServiceConstWeakPtr = std::weak_ptr<const StatisticsService>;
+using StatisticsServiceUPtr = std::unique_ptr<StatisticsService>;
+using StatisticsServiceConstUPtr = std::unique_ptr<const StatisticsService>;
 
-STAR_CLASS(Statistics);
+class Statistics;
+using StatisticsPtr = std::shared_ptr<Statistics>;
+using StatisticsConstPtr = std::shared_ptr<const Statistics>;
+using StatisticsWeakPtr = std::weak_ptr<Statistics>;
+using StatisticsConstWeakPtr = std::weak_ptr<const Statistics>;
+using StatisticsUPtr = std::unique_ptr<Statistics>;
+using StatisticsConstUPtr = std::unique_ptr<const Statistics>;
 
 class Statistics {
 public:
@@ -59,7 +77,7 @@ private:
   String m_storageDirectory;
   bool m_initialized;
 
-  List<pair<String, Json>> m_pendingEvents;
+  List<std::pair<String, Json>> m_pendingEvents;
   StringSet m_pendingAchievementChecks;
 
   StringMap<Stat> m_stats;

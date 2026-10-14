@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.stream_formatter;
 
@@ -51,8 +51,8 @@ public:
   static Color rgbf(Vec3F const& c);
   static Color rgbaf(Vec4F const& c);
 
-  static Color rgb(uint8_t r, uint8_t g, uint8_t b);
-  static Color rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+  static Color rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b);
+  static Color rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a);
   static Color rgb(Vec3B const& c);
   static Color rgba(Vec4B const& c);
 
@@ -62,13 +62,13 @@ public:
   static Color hsva(Vec4F const& c);
 
   static Color grayf(float g);
-  static Color gray(uint8_t g);
+  static Color gray(std::uint8_t g);
 
   // Only supports 8 bit color
   static Color fromHex(StringView s);
 
   // #AARRGGBB
-  static Color fromUint32(uint32_t v);
+  static Color fromUint32(std::uint32_t v);
 
   // Color from temperature in Kelvin
   static Color temperature(float temp);
@@ -80,15 +80,15 @@ public:
 
   explicit Color(StringView name);
 
-  uint8_t red() const;
-  uint8_t green() const;
-  uint8_t blue() const;
-  uint8_t alpha() const;
+  std::uint8_t red() const;
+  std::uint8_t green() const;
+  std::uint8_t blue() const;
+  std::uint8_t alpha() const;
 
-  void setRed(uint8_t r);
-  void setGreen(uint8_t g);
-  void setBlue(uint8_t b);
-  void setAlpha(uint8_t a);
+  void setRed(std::uint8_t r);
+  void setGreen(std::uint8_t g);
+  void setBlue(std::uint8_t b);
+  void setAlpha(std::uint8_t a);
 
   float redF() const;
   float greenF() const;
@@ -103,7 +103,7 @@ public:
   bool isClear() const;
 
   // Returns a 4 byte value equal to #AARRGGBB
-  uint32_t toUint32() const;
+  std::uint32_t toUint32() const;
 
   Vec4B toRgba() const;
   Vec3B toRgb() const;

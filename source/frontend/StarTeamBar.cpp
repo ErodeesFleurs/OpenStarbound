@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -32,7 +33,6 @@ import star.math_common;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.either;
@@ -43,7 +43,6 @@ import star.ordered_set;
 import star.byte_array;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -215,9 +214,9 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client) {
   m_guiContext = GuiContext::singletonPtr();
   auto assets = Root::singleton().assets();
 
-  m_teamInvite = make_shared<TeamInvite>(this);
-  m_teamInvitation = make_shared<TeamInvitation>(this);
-  m_teamMemberMenu = make_shared<TeamMemberMenu>(this);
+  m_teamInvite = std::make_shared<TeamInvite>(this);
+  m_teamInvitation = std::make_shared<TeamInvitation>(this);
+  m_teamMemberMenu = std::make_shared<TeamMemberMenu>(this);
 
   m_nameStyle = assets->json("/interface.config:teamBarNameStyle");
   m_nameStyle.fontSize = assets->json("/interface.config:font.nameSize").toInt();
@@ -306,7 +305,7 @@ void TeamBar::updatePlayerResources() {
     auto assets = Root::singleton().assets();
     if (player->foodPercentage() <= assets->json("/player.config:foodLowThreshold").toFloat()) {
       float flashTime = assets->json("/interface/windowconfig/teambar.config:foodBarFlashTime").toFloat();
-      if (fmod(Time::monotonicTime(), flashTime * 2) < flashTime)
+      if (std::fmod(Time::monotonicTime(), flashTime * 2) < flashTime)
         m_foodBar->setOverlay(assets->json("/interface/windowconfig/teambar.config:foodBarFlashOverlay").toString());
       else
         m_foodBar->setOverlay("");
@@ -340,7 +339,7 @@ void TeamBar::buildTeamBar() {
   auto assets = Root::singleton().assets();
 
   Vec2I offset;
-  size_t controlIndex = 0;
+  std::size_t controlIndex = 0;
 
   float portraitScale = assets->json("/interface/windowconfig/teambar.config:memberPortraitScale").toFloat();
   int memberSize = assets->json("/interface/windowconfig/teambar.config:memberSize").toInt();
@@ -357,7 +356,7 @@ void TeamBar::buildTeamBar() {
 
     if (!cell) {
       GuiReader reader;
-      cell = make_shared<Widget>();
+      cell = std::make_shared<Widget>();
       cell->disableScissoring();
       cell->markAsContainer();
 

@@ -1,3 +1,4 @@
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -33,7 +34,7 @@ import star.asset_path;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.lru_cache;
@@ -178,10 +179,10 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   m_periodicActions.clear();
   if (m_parameters.contains("periodicActions")) {
     for (auto const& c : m_parameters.getArray("periodicActions", {}))
-      m_periodicActions.append(make_tuple(GameTimer(c.getFloat("time")), c.getBool("repeat", true), c));
+      m_periodicActions.append(std::make_tuple(GameTimer(c.getFloat("time")), c.getBool("repeat", true), c));
   } else {
     for (auto const& periodicAction : m_config->periodicActions)
-      m_periodicActions.append(make_tuple(GameTimer(get<0>(periodicAction)), get<1>(periodicAction), get<2>(periodicAction)));
+      m_periodicActions.append(std::make_tuple(GameTimer(std::get<0>(periodicAction)), std::get<1>(periodicAction), std::get<2>(periodicAction)));
   }
 
   if (isMaster()) {
@@ -192,7 +193,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.setUpdateDelta(m_parameters.getUInt("scriptDelta", m_config->config.getUInt("scriptDelta", 1)));
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Projectile::configValue, this, std::placeholders::_1, std::placeholders::_2)));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
       m_scriptComponent.init(world);
@@ -204,7 +205,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
     setReferenceVelocity(referenceVelocity.apply(jsonToVec2F));
 
   if (world->isClient() && !m_persistentAudioFile.empty()) {
-    m_persistentAudio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
+    m_persistentAudio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
     m_persistentAudio->setLoops(-1);
     m_persistentAudio->setPosition(position());
     m_pendingRenderables.append(m_persistentAudio);
@@ -252,7 +253,7 @@ Vec2F Projectile::velocity() const {
   return m_movementController->velocity();
 }
 
-pair<ByteArray, uint64_t> Projectile::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Projectile::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -365,7 +366,7 @@ void Projectile::hitOther(EntityId entity, DamageRequest const&) {
   m_scriptComponent.invoke("hit", entity);
 }
 
-void Projectile::update(float dt, uint64_t) {
+void Projectile::update(float dt, std::uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
@@ -589,11 +590,11 @@ List<PhysicsForceRegion> Projectile::forceRegions() const {
   return forces;
 }
 
-size_t Projectile::movingCollisionCount() const {
+std::size_t Projectile::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
+Maybe<PhysicsMovingCollision> Projectile::movingCollision(std::size_t positionIndex) const {
   auto const& mc = m_physicsCollisions.valueAt(positionIndex);
   if (!mc.enabled.get())
     return {};
@@ -642,13 +643,13 @@ int Projectile::getFrame() const {
 
   if (m_config->animationLoops) {
     if (m_animationTimer < time_per_frame * m_config->windupFrames) {
-      return floor(m_animationTimer / time_per_frame);
+      return std::floor(m_animationTimer / time_per_frame);
     } else if (m_timeToLive < time_per_frame * m_config->winddownFrames) {
       return m_config->windupFrames + m_config->frameNumber
           + clamp<int>((time_per_frame * m_config->winddownFrames - m_timeToLive) / time_per_frame, 0, m_config->winddownFrames - 1);
     } else {
       float time_within_cycle = std::fmod(m_animationTimer, m_animationCycle);
-      return m_config->windupFrames + floor(time_within_cycle / time_per_frame);
+      return m_config->windupFrames + std::floor(time_within_cycle / time_per_frame);
     }
   } else {
     return clamp<int>(m_animationTimer / time_per_frame, 0, m_config->frameNumber - 1);
@@ -729,7 +730,7 @@ void Projectile::processAction(Json const& action) {
 
     auto materialDatabase = Root::singleton().materialDatabase();
     Maybe<ModId> previousMod =
-        parameters.optString("previousMod").apply(bind(&MaterialDatabase::modId, materialDatabase, _1));
+        parameters.optString("previousMod").apply(std::bind(&MaterialDatabase::modId, materialDatabase, std::placeholders::_1));
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);
@@ -923,7 +924,7 @@ void Projectile::processAction(Json const& action) {
       return;
 
     String const name = parameters.getString("name");
-    size_t count = parameters.getInt("count", 1);
+    std::size_t count = parameters.getInt("count", 1);
     JsonObject data = parameters.getObject("data", JsonObject{});
 
     auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position());
@@ -933,7 +934,7 @@ void Projectile::processAction(Json const& action) {
     if (!world()->isClient())
       return;
 
-    AudioInstancePtr sound = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
+    AudioInstancePtr sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
     sound->setVolume(parameters.getFloat("volume", 1.0f));
     sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
@@ -1001,12 +1002,12 @@ void Projectile::tickShared(float dt) {
   auto periodicActionIt = makeSMutableIterator(m_periodicActions);
   while (periodicActionIt.hasNext()) {
     auto& periodicAction = periodicActionIt.next();
-    if (get<1>(periodicAction)) {
-      if (get<0>(periodicAction).wrapTick())
-        processAction(get<2>(periodicAction));
+    if (std::get<1>(periodicAction)) {
+      if (std::get<0>(periodicAction).wrapTick())
+        processAction(std::get<2>(periodicAction));
     } else {
-      if (get<0>(periodicAction).tick(dt)) {
-        processAction(get<2>(periodicAction));
+      if (std::get<0>(periodicAction).tick(dt)) {
+        processAction(std::get<2>(periodicAction));
         periodicActionIt.remove();
       }
     }
@@ -1057,9 +1058,9 @@ void Projectile::setup() {
   auto movementSettings = jsonMerge(m_config->movementSettings, m_parameters.get("movementSettings", Json()));
   if (!movementSettings.contains("physicsEffectCategories"))
     movementSettings = movementSettings.set("physicsEffectCategories", JsonArray{"projectile"});
-  m_movementController = make_shared<MovementController>(movementSettings);
+  m_movementController = std::make_shared<MovementController>(movementSettings);
 
-  m_effectEmitter = make_shared<EffectEmitter>();
+  m_effectEmitter = std::make_shared<EffectEmitter>();
 
   m_initialSpeed = m_parameters.getFloat("speed", m_config->initialSpeed);
   m_sourceEntity = NullEntityId;

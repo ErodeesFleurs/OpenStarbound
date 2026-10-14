@@ -1,7 +1,7 @@
 module;
 
+import std;
 import star.audio;
-#include "StarConfig.hpp"
 import star.string;
 import star.thread;
 import star.list;
@@ -13,8 +13,20 @@ import star.bi_map;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(Mixer);
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
+class Mixer;
+using MixerPtr = std::shared_ptr<Mixer>;
+using MixerConstPtr = std::shared_ptr<Mixer const>;
+using MixerWeakPtr = std::weak_ptr<Mixer>;
+using MixerConstWeakPtr = std::weak_ptr<Mixer const>;
+using MixerUPtr = std::unique_ptr<Mixer>;
+using MixerConstUPtr = std::unique_ptr<Mixer const>;
 
 struct RampedValue {
   float value;
@@ -22,7 +34,7 @@ struct RampedValue {
   float velocity;
 };
 
-enum class MixerGroup : uint8_t {
+enum class MixerGroup : std::uint8_t {
   Effects,
   Music,
   Cinematic,
@@ -63,8 +75,8 @@ public:
 
   // If set, uses wall clock time in milliseconds to set precise start and stop
   // times for the AudioInstance
-  void setClockStart(Maybe<int64_t> clockStartTime);
-  void setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime = 0);
+  void setClockStart(Maybe<std::int64_t> clockStartTime);
+  void setClockStop(Maybe<std::int64_t> clockStopTime, std::int64_t fadeOutTime = 0);
 
   void stop(float rampTime = 0.0f);
   bool finished() const;
@@ -91,17 +103,17 @@ private:
   Maybe<Vec2F> m_position;
   float m_rangeMultiplier;
 
-  Maybe<int64_t> m_clockStart;
-  Maybe<int64_t> m_clockStop;
-  int64_t m_clockStopFadeOut;
+  Maybe<std::int64_t> m_clockStart;
+  Maybe<std::int64_t> m_clockStop;
+  std::int64_t m_clockStopFadeOut;
 };
 
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> ExtraMixFunction;
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> EffectFunction;
-  typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  typedef std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)> ExtraMixFunction;
+  typedef std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)> EffectFunction;
+  typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
 
   Mixer(unsigned sampleRate, unsigned channels);
 
@@ -109,7 +121,7 @@ public:
   unsigned channels() const;
 
   // Construct a really crappy low-pass filter based on averaging
-  EffectFunction lowpass(size_t avgSize) const;
+  EffectFunction lowpass(std::size_t avgSize) const;
   // Construct a very simple echo filter.
   EffectFunction echo(float time, float dry, float wet) const;
 
@@ -134,7 +146,7 @@ public:
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  void read(int16_t* samples, size_t frameCount, ExtraMixFunction extraMixFunction = {});
+  void read(std::int16_t* samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.
@@ -163,12 +175,12 @@ private:
   HashMap<AudioInstancePtr, AudioState> m_audios;
 
   Mutex m_effectsMutex;
-  StringMap<shared_ptr<EffectInfo>> m_effects;
+  StringMap<std::shared_ptr<EffectInfo>> m_effects;
 
-  List<int16_t> m_mixBuffer;
+  List<std::int16_t> m_mixBuffer;
 
   Map<MixerGroup, RampedValue> m_groupVolumes;
-  atomic<float> m_speed;
+  std::atomic<float> m_speed;
 };
 
 }

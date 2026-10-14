@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.id_map;
@@ -37,7 +37,9 @@ void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
     m_openContainer->containerClose();
   m_openContainer = std::move(containerEntity);
   if (m_openContainer) {
-    starAssert(m_openContainer->inWorld());
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((m_openContainer->inWorld()));
+    }
     m_openContainer->containerOpen();
   }
 }
@@ -78,7 +80,7 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
   return results;
 }
 
-void ContainerInteractor::swapInContainer(size_t slot, ItemPtr const& items) {
+void ContainerInteractor::swapInContainer(std::size_t slot, ItemPtr const& items) {
   if (auto container = openContainer())
     m_pendingResults.append(container->swapItems(slot, items).wrap(resultFromItem));
 }
@@ -88,12 +90,12 @@ void ContainerInteractor::addToContainer(ItemPtr const& items) {
     m_pendingResults.append(container->addItems(items).wrap(resultFromItem));
 }
 
-void ContainerInteractor::takeFromContainerSlot(size_t slot, size_t count) {
+void ContainerInteractor::takeFromContainerSlot(std::size_t slot, std::size_t count) {
   if (auto container = openContainer())
     m_pendingResults.append(container->takeItems(slot, count).wrap(resultFromItem));
 }
 
-void ContainerInteractor::applyAugmentInContainer(size_t slot, ItemPtr const& augment) {
+void ContainerInteractor::applyAugmentInContainer(std::size_t slot, ItemPtr const& augment) {
   if (auto container = openContainer())
     m_pendingResults.append(container->applyAugment(slot, augment).wrap(resultFromItem));
 }

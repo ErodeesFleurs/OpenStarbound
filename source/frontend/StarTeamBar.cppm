@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -51,15 +51,63 @@ import star.label_widget;
 
 namespace Star {
 
-STAR_CLASS(TeamBar);
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Player);
+class TeamBar;
+using TeamBarPtr = std::shared_ptr<TeamBar>;
+using TeamBarConstPtr = std::shared_ptr<TeamBar const>;
+using TeamBarWeakPtr = std::weak_ptr<TeamBar>;
+using TeamBarConstWeakPtr = std::weak_ptr<TeamBar const>;
+using TeamBarUPtr = std::unique_ptr<TeamBar>;
+using TeamBarConstUPtr = std::unique_ptr<TeamBar const>;
+class MainInterface;
+using MainInterfacePtr = std::shared_ptr<MainInterface>;
+using MainInterfaceConstPtr = std::shared_ptr<MainInterface const>;
+using MainInterfaceWeakPtr = std::weak_ptr<MainInterface>;
+using MainInterfaceConstWeakPtr = std::weak_ptr<MainInterface const>;
+using MainInterfaceUPtr = std::unique_ptr<MainInterface>;
+using MainInterfaceConstUPtr = std::unique_ptr<MainInterface const>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 
-STAR_CLASS(TeamInvite);
-STAR_CLASS(TeamInvitation);
-STAR_CLASS(TeamMemberMenu);
-STAR_CLASS(TeamBar);
+class TeamInvite;
+using TeamInvitePtr = std::shared_ptr<TeamInvite>;
+using TeamInviteConstPtr = std::shared_ptr<TeamInvite const>;
+using TeamInviteWeakPtr = std::weak_ptr<TeamInvite>;
+using TeamInviteConstWeakPtr = std::weak_ptr<TeamInvite const>;
+using TeamInviteUPtr = std::unique_ptr<TeamInvite>;
+using TeamInviteConstUPtr = std::unique_ptr<TeamInvite const>;
+class TeamInvitation;
+using TeamInvitationPtr = std::shared_ptr<TeamInvitation>;
+using TeamInvitationConstPtr = std::shared_ptr<TeamInvitation const>;
+using TeamInvitationWeakPtr = std::weak_ptr<TeamInvitation>;
+using TeamInvitationConstWeakPtr = std::weak_ptr<TeamInvitation const>;
+using TeamInvitationUPtr = std::unique_ptr<TeamInvitation>;
+using TeamInvitationConstUPtr = std::unique_ptr<TeamInvitation const>;
+class TeamMemberMenu;
+using TeamMemberMenuPtr = std::shared_ptr<TeamMemberMenu>;
+using TeamMemberMenuConstPtr = std::shared_ptr<TeamMemberMenu const>;
+using TeamMemberMenuWeakPtr = std::weak_ptr<TeamMemberMenu>;
+using TeamMemberMenuConstWeakPtr = std::weak_ptr<TeamMemberMenu const>;
+using TeamMemberMenuUPtr = std::unique_ptr<TeamMemberMenu>;
+using TeamMemberMenuConstUPtr = std::unique_ptr<TeamMemberMenu const>;
+class TeamBar;
+using TeamBarPtr = std::shared_ptr<TeamBar>;
+using TeamBarConstPtr = std::shared_ptr<TeamBar const>;
+using TeamBarWeakPtr = std::weak_ptr<TeamBar>;
+using TeamBarConstWeakPtr = std::weak_ptr<TeamBar const>;
+using TeamBarUPtr = std::unique_ptr<TeamBar>;
+using TeamBarConstUPtr = std::unique_ptr<TeamBar const>;
 
 class TeamInvite : public Pane {
 public:

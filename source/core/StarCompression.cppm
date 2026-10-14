@@ -1,21 +1,27 @@
 module;
+#include <stdio.h>
+#include <zlib-ng.h>
+#include <errno.h>
+#include <string.h>
+import std;
 import star.byte_array;
-
-#include "StarConfig.hpp"
 import star.io_device;
 import star.string;
 import star.format;
 import star.lexical_cast;
 
-#include <zlib-ng.h>
-#include <errno.h>
-#include <string.h>
 
 export module star.compression;
 
 export namespace Star {
 
-STAR_CLASS(CompressedFile);
+class CompressedFile;
+using CompressedFilePtr = std::shared_ptr<CompressedFile>;
+using CompressedFileConstPtr = std::shared_ptr<const CompressedFile>;
+using CompressedFileWeakPtr = std::weak_ptr<CompressedFile>;
+using CompressedFileConstWeakPtr = std::weak_ptr<const CompressedFile>;
+using CompressedFileUPtr = std::unique_ptr<CompressedFile>;
+using CompressedFileConstUPtr = std::unique_ptr<const CompressedFile>;
 
 // Zlib compression level, ranges from 0 to 9
 typedef int CompressionLevel;
@@ -27,20 +33,20 @@ CompressionLevel const HighCompression = 9;
 // Decompression input can come from mods, asset packs or the network, and both
 // zlib and zstd let the compressed data declare the output size, so nothing is
 // allowed to expand past this.
-constexpr size_t MaxUncompressedSize = 256 * 1024 * 1024;
+constexpr std::size_t MaxUncompressedSize = 256 * 1024 * 1024;
 
 void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
 ByteArray compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
 
-void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit = 0);
-ByteArray uncompressData(const char* in, size_t inLen, size_t limit = 0);
-void uncompressData(ByteArray const& in, ByteArray& out, size_t limit = 0);
-ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
+void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
+ByteArray uncompressData(const char* in, std::size_t inLen, std::size_t limit = 0);
+void uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
+ByteArray uncompressData(ByteArray const& in, std::size_t limit = 0);
 
-void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t limit = 0);
-ByteArray uncompressDataGzip(const char* in, size_t inLen, size_t limit = 0);
-void uncompressDataGzip(ByteArray const& in, ByteArray& out, size_t limit = 0);
-ByteArray uncompressDataGzip(ByteArray const& in, size_t limit = 0);
+void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit = 0);
+ByteArray uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit = 0);
+void uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit = 0);
+ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit = 0);
 
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
@@ -59,8 +65,8 @@ public:
   // reads.
   void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
   bool atEnd() override;
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  std::size_t read(char* data, std::size_t len) override;
+  std::size_t write(char const* data, std::size_t len) override;
 
   void open(IOMode mode) override;
   // Compression is ignored on read.  Always truncates on write
@@ -87,8 +93,8 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   if (in.empty())
     return;
 
-  const size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<uint8_t[]>(BUFSIZE);
+  const std::size_t BUFSIZE = 32 * 1024;
+  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
 
   zng_stream strm{};
   strm.zalloc = Z_NULL;
@@ -98,7 +104,7 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   if (deflate_res != Z_OK)
     throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
 
-  strm.next_in = (const uint8_t*)in.ptr();
+  strm.next_in = (const std::uint8_t*)in.ptr();
   strm.avail_in = in.size();
   strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
@@ -124,14 +130,14 @@ ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
   return out;
 }
 
-void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) {
+void uncompressData(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
   out.clear();
 
   if (!inLen)
     return;
 
-  const size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<uint8_t[]>(BUFSIZE);
+  const std::size_t BUFSIZE = 32 * 1024;
+  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
 
   zng_stream strm{};
   strm.zalloc = Z_NULL;
@@ -141,7 +147,7 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
 
-  strm.next_in = (const uint8_t*)in;
+  strm.next_in = (const std::uint8_t*)in;
   strm.avail_in = inLen;
   strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
@@ -168,28 +174,28 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
 }
 
-ByteArray uncompressData(const char* in, size_t inLen, size_t limit) {
+ByteArray uncompressData(const char* in, std::size_t inLen, std::size_t limit) {
   ByteArray out = ByteArray::withReserve(inLen);
   uncompressData(in, inLen, out, limit);
   return out;
 }
 
-void uncompressData(ByteArray const& in, ByteArray& out, size_t limit) {
+void uncompressData(ByteArray const& in, ByteArray& out, std::size_t limit) {
   uncompressData(in.ptr(), in.size(), out, limit);
 }
 
-ByteArray uncompressData(ByteArray const& in, size_t limit) {
+ByteArray uncompressData(ByteArray const& in, std::size_t limit) {
   return uncompressData(in.ptr(), in.size(), limit);
 }
 
-void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t limit) {
+void uncompressDataGzip(const char* in, std::size_t inLen, ByteArray& out, std::size_t limit) {
   out.clear();
 
   if (!inLen)
     return;
 
-  const size_t BUFSIZE = 32 * 1024;
-  auto tempBuffer = std::make_unique<uint8_t[]>(BUFSIZE);
+  const std::size_t BUFSIZE = 32 * 1024;
+  auto tempBuffer = std::make_unique<std::uint8_t[]>(BUFSIZE);
 
   zng_stream strm{};
   strm.zalloc = Z_NULL;
@@ -199,7 +205,7 @@ void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t lim
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
 
-  strm.next_in = (const uint8_t*)in;
+  strm.next_in = (const std::uint8_t*)in;
   strm.avail_in = inLen;
   strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
@@ -227,22 +233,22 @@ void uncompressDataGzip(const char* in, size_t inLen, ByteArray& out, size_t lim
   out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
 }
 
-ByteArray uncompressDataGzip(const char* in, size_t inLen, size_t limit) {
+ByteArray uncompressDataGzip(const char* in, std::size_t inLen, std::size_t limit) {
   ByteArray out = ByteArray::withReserve(inLen);
   uncompressDataGzip(in, inLen, out, limit);
   return out;
 }
 
-void uncompressDataGzip(ByteArray const& in, ByteArray& out, size_t limit) {
+void uncompressDataGzip(ByteArray const& in, ByteArray& out, std::size_t limit) {
   uncompressDataGzip(in.ptr(), in.size(), out, limit);
 }
 
-ByteArray uncompressDataGzip(ByteArray const& in, size_t limit) {
+ByteArray uncompressDataGzip(ByteArray const& in, std::size_t limit) {
   return uncompressDataGzip(in.ptr(), in.size(), limit);
 }
 
 CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, CompressionLevel comp) {
-  CompressedFilePtr f = make_shared<CompressedFile>(filename);
+  CompressedFilePtr f = std::make_shared<CompressedFile>(filename);
   f->open(mode, comp);
   return f;
 }
@@ -289,7 +295,7 @@ bool CompressedFile::atEnd() {
   return zng_gzeof((gzFile)m_file);
 }
 
-size_t CompressedFile::read(char* data, size_t len) {
+std::size_t CompressedFile::read(char* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -299,10 +305,10 @@ size_t CompressedFile::read(char* data, size_t len) {
   else if (ret == -1)
     throw IOException::format("Read error: {}", zng_gzerror((gzFile)m_file, 0));
   else
-    return (size_t)ret;
+    return (std::size_t)ret;
 }
 
-size_t CompressedFile::write(const char* data, size_t len) {
+std::size_t CompressedFile::write(const char* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -310,7 +316,7 @@ size_t CompressedFile::write(const char* data, size_t len) {
   if (ret == 0)
     throw IOException::format("Write error: {}", zng_gzerror((gzFile)m_file, 0));
   else
-    return (size_t)ret;
+    return (std::size_t)ret;
 }
 
 void CompressedFile::setFilename(String filename) {
@@ -365,7 +371,7 @@ void CompressedFile::close() {
 }
 
 IODevicePtr CompressedFile::clone() {
-  auto cloned = make_shared<CompressedFile>(m_filename);
+  auto cloned = std::make_shared<CompressedFile>(m_filename);
   cloned->setCompression(m_compression);
   if (isOpen()) {
     // Open with same mode

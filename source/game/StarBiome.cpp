@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.bi_map;
@@ -69,7 +69,7 @@ Json BiomePlaceables::toJson() const {
     {"grassModDensity", grassModDensity},
     {"ceilingGrassMod", ceilingGrassMod},
     {"ceilingGrassModDensity", ceilingGrassModDensity},
-    {"itemDistributions", itemDistributions.transformed(mem_fn(&BiomeItemDistribution::toJson))}
+    {"itemDistributions", itemDistributions.transformed(std::mem_fn(&BiomeItemDistribution::toJson))}
   };
 }
 
@@ -96,7 +96,7 @@ Biome::Biome(Json const& store) : Biome() {
   mainBlock = store.getUInt("mainBlock");
   subBlocks = store.getArray("subBlocks").transformed([](Json const& v) -> MaterialId { return v.toUInt(); });
   ores =
-      store.getArray("ores").transformed([](Json const& v) { return pair<ModId, float>(v.getUInt(0), v.getFloat(1)); });
+      store.getArray("ores").transformed([](Json const& v) { return std::pair<ModId, float>(v.getUInt(0), v.getFloat(1)); });
   hueShift = store.getFloat("hueShift");
   materialHueShift = store.getUInt("materialHueShift");
 
@@ -107,12 +107,12 @@ Biome::Biome(Json const& store) : Biome() {
     spawnProfile = SpawnProfile(*config);
 
   if (auto config = store.opt("parallax"))
-    parallax = make_shared<Parallax>(*config);
+    parallax = std::make_shared<Parallax>(*config);
 
   if (auto config = store.opt("ambientNoises"))
-    ambientNoises = make_shared<AmbientNoisesDescription>(*config);
+    ambientNoises = std::make_shared<AmbientNoisesDescription>(*config);
   if (auto config = store.opt("musicTrack"))
-    musicTrack = make_shared<AmbientNoisesDescription>(*config);
+    musicTrack = std::make_shared<AmbientNoisesDescription>(*config);
 }
 
 Json Biome::toJson() const {
@@ -121,7 +121,7 @@ Json Biome::toJson() const {
       {"mainBlock", mainBlock},
       {"subBlocks", subBlocks.transformed(construct<Json>())},
       {"ores",
-          ores.transformed([](pair<ModId, float> const& p) -> Json {
+          ores.transformed([](std::pair<ModId, float> const& p) -> Json {
             return JsonArray{p.first, p.second};
           })},
       {"hueShift", hueShift},

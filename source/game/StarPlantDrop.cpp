@@ -34,7 +34,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.lua;
 
@@ -143,7 +143,7 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
   m_description = description;
   m_movementController.setPosition(position);
   if (!upsideDown) {
-    m_rotationRate = copysign(0.00001f, -strikeVector[0] + random);
+    m_rotationRate = std::copysign(0.00001f, -strikeVector[0] + random);
     m_rotationFallThreshold = Constants::pi / (3 + random);
     m_rotationCap = Constants::pi - m_rotationFallThreshold;
   } else {
@@ -279,7 +279,7 @@ RectF PlantDrop::collisionRect() const {
   return shape.boundBox();
 }
 
-void PlantDrop::update(float dt, uint64_t) {
+void PlantDrop::update(float dt, std::uint64_t) {
   m_time -= dt;
 
   m_movementController.setTimestep(dt);
@@ -291,8 +291,8 @@ void PlantDrop::update(float dt, uint64_t) {
       m_firstTick = false;
 
     // think up a better curve then sin
-    auto rotationAcceleration = 0.01f * world()->gravity(position()) * copysign(1.0f, m_rotationRate) * dt;
-    if (abs(m_movementController.rotation()) > m_rotationCap)
+    auto rotationAcceleration = 0.01f * world()->gravity(position()) * std::copysign(1.0f, m_rotationRate) * dt;
+    if (std::abs(m_movementController.rotation()) > m_rotationCap)
       m_rotationRate -= rotationAcceleration;
     else if (std::fabs(m_movementController.rotation()) < m_rotationFallThreshold)
       m_rotationRate += rotationAcceleration;
@@ -330,10 +330,10 @@ void PlantDrop::update(float dt, uint64_t) {
                 + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
+                  ItemDescriptor("sapling", (std::size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
             else
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos));
+                  {drop.getString("item"), (std::size_t)drop.getInt("count", 1)}, position() + pos));
           }
         }
       }
@@ -406,7 +406,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
         JsonArray breakTreeOptions = config.get("sounds", JsonObject()).getArray("breakTree", JsonArray());
         if (breakTreeOptions.size()) {
           auto sound = Random::randFrom(breakTreeOptions);
-          auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+          auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
           audioInstance->setPosition(collisionRect().center() + position());
           audioInstance->setVolume(sound.getFloat("volume", 1.0f));
           renderCallback->addAudio(std::move(audioInstance));
@@ -432,7 +432,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
       JsonArray hitGroundOptions = config.get("sounds", JsonObject()).getArray("hitGround", JsonArray());
       if (hitGroundOptions.size()) {
         auto sound = Random::randFrom(hitGroundOptions);
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(collisionRect().center() + position());
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));
@@ -465,7 +465,7 @@ MovementController* PlantDrop::movementController() {
   return &m_movementController;
 }
 
-pair<ByteArray, uint64_t> PlantDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> PlantDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 

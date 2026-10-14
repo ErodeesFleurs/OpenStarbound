@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 import star.id_map;
@@ -10,7 +10,13 @@ import star.status_types;
 
 namespace Star {
 
-STAR_CLASS(StatusEffectItem);
+class StatusEffectItem;
+using StatusEffectItemPtr = std::shared_ptr<StatusEffectItem>;
+using StatusEffectItemConstPtr = std::shared_ptr<const StatusEffectItem>;
+using StatusEffectItemWeakPtr = std::weak_ptr<StatusEffectItem>;
+using StatusEffectItemConstWeakPtr = std::weak_ptr<const StatusEffectItem>;
+using StatusEffectItemUPtr = std::unique_ptr<StatusEffectItem>;
+using StatusEffectItemConstUPtr = std::unique_ptr<const StatusEffectItem>;
 
 class StatusEffectItem {
 public:

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -17,7 +17,13 @@ struct WorldStructureExceptionTag {
 };
 using WorldStructureException = StarError<WorldStructureExceptionTag, StarException>;
 
-STAR_CLASS(WorldStructure);
+class WorldStructure;
+using WorldStructurePtr = std::shared_ptr<WorldStructure>;
+using WorldStructureConstPtr = std::shared_ptr<const WorldStructure>;
+using WorldStructureWeakPtr = std::weak_ptr<WorldStructure>;
+using WorldStructureConstWeakPtr = std::weak_ptr<const WorldStructure>;
+using WorldStructureUPtr = std::unique_ptr<WorldStructure>;
+using WorldStructureConstUPtr = std::unique_ptr<const WorldStructure>;
 
 class WorldStructure {
 public:

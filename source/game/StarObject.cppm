@@ -1,6 +1,6 @@
 module;
 #include "StarJsonExtra.hpp"
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.random;
@@ -38,11 +38,41 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
-STAR_CLASS(AudioInstance);
-STAR_CLASS(ObjectDatabase);
-STAR_STRUCT(ObjectConfig);
-STAR_STRUCT(ObjectOrientation);
-STAR_CLASS(Object);
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
+class ObjectDatabase;
+using ObjectDatabasePtr = std::shared_ptr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = std::shared_ptr<const ObjectDatabase>;
+using ObjectDatabaseWeakPtr = std::weak_ptr<ObjectDatabase>;
+using ObjectDatabaseConstWeakPtr = std::weak_ptr<const ObjectDatabase>;
+using ObjectDatabaseUPtr = std::unique_ptr<ObjectDatabase>;
+using ObjectDatabaseConstUPtr = std::unique_ptr<const ObjectDatabase>;
+struct ObjectConfig;
+using ObjectConfigPtr = std::shared_ptr<ObjectConfig>;
+using ObjectConfigConstPtr = std::shared_ptr<const ObjectConfig>;
+using ObjectConfigWeakPtr = std::weak_ptr<ObjectConfig>;
+using ObjectConfigConstWeakPtr = std::weak_ptr<const ObjectConfig>;
+using ObjectConfigUPtr = std::unique_ptr<ObjectConfig>;
+using ObjectConfigConstUPtr = std::unique_ptr<const ObjectConfig>;
+struct ObjectOrientation;
+using ObjectOrientationPtr = std::shared_ptr<ObjectOrientation>;
+using ObjectOrientationConstPtr = std::shared_ptr<const ObjectOrientation>;
+using ObjectOrientationWeakPtr = std::weak_ptr<ObjectOrientation>;
+using ObjectOrientationConstWeakPtr = std::weak_ptr<const ObjectOrientation>;
+using ObjectOrientationUPtr = std::unique_ptr<ObjectOrientation>;
+using ObjectOrientationConstUPtr = std::unique_ptr<const ObjectOrientation>;
+class Object;
+using ObjectPtr = std::shared_ptr<Object>;
+using ObjectConstPtr = std::shared_ptr<const Object>;
+using ObjectWeakPtr = std::weak_ptr<Object>;
+using ObjectConstWeakPtr = std::weak_ptr<const Object>;
+using ObjectUPtr = std::unique_ptr<Object>;
+using ObjectConstUPtr = std::unique_ptr<const Object>;
 }
 
 #include "StarLuaRoot.hpp"
@@ -104,7 +134,7 @@ public:
   virtual Vec2F position() const override;
   virtual RectF metaBoundBox() const override;
 
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  virtual std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   virtual String name() const override;
@@ -119,7 +149,7 @@ public:
   virtual bool shouldDestroy() const override;
   virtual void destroy(RenderCallback* renderCallback) override;
 
-  virtual void update(float dt, uint64_t currentStep) override;
+  virtual void update(float dt, std::uint64_t currentStep) override;
 
   virtual void render(RenderCallback* renderCallback) override;
 
@@ -178,7 +208,7 @@ public:
 
   void breakObject(bool smash = true);
 
-  virtual size_t nodeCount(WireDirection direction) const override;
+  virtual std::size_t nodeCount(WireDirection direction) const override;
   virtual Vec2I nodePosition(WireNode wireNode) const override;
   virtual List<WireConnection> connectionsForNode(WireNode wireNode) const override;
   virtual bool nodeState(WireNode wireNode) const override;
@@ -223,8 +253,8 @@ protected:
 
   void setImageKey(String const& name, String const& value);
 
-  size_t orientationIndex() const;
-  virtual void setOrientationIndex(size_t orientationIndex);
+  std::size_t orientationIndex() const;
+  virtual void setOrientationIndex(std::size_t orientationIndex);
 
   PolyF volume() const;
 
@@ -258,7 +288,7 @@ private:
   LuaCallbacks makeAnimatorObjectCallbacks();
 
   void ensureNetSetup();
-  List<Drawable> orientationDrawables(size_t orientationIndex) const;
+  List<Drawable> orientationDrawables(std::size_t orientationIndex) const;
 
   void addChatMessage(String const& message, Json const& config, String const& portrait = "");
 
@@ -302,7 +332,7 @@ private:
   bool m_unbreakable;
   NetElementFloat m_health;
 
-  size_t m_orientationIndex;
+  std::size_t m_orientationIndex;
   NetElementSize m_orientationIndexNetState;
   NetElementHashMap<String, String> m_netImageKeys;
   mutable StringMap<String> m_imageKeys;
@@ -326,7 +356,7 @@ private:
   NetElementString m_chatPortrait;
   NetElementData<Json> m_chatConfig;
 
-  mutable Maybe<pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
+  mutable Maybe<std::pair<std::size_t, List<Drawable>>> m_orientationDrawablesCache;
 
   List<InputNode> m_inputNodes;
   List<OutputNode> m_outputNodes;

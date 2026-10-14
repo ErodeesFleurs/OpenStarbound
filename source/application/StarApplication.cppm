@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string;
 import star.vector;
@@ -14,9 +14,27 @@ extern bool g_steamIsFlatpak;
 #endif
 #endif
 
-STAR_CLASS(ApplicationController);
-STAR_CLASS(Renderer);
-STAR_CLASS(Application);
+class ApplicationController;
+using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
+using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
+using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
+using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
+using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
+using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
+class Renderer;
+using RendererPtr = std::shared_ptr<Renderer>;
+using RendererConstPtr = std::shared_ptr<Renderer const>;
+using RendererWeakPtr = std::weak_ptr<Renderer>;
+using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
+using RendererUPtr = std::unique_ptr<Renderer>;
+using RendererConstUPtr = std::unique_ptr<Renderer const>;
+class Application;
+using ApplicationPtr = std::shared_ptr<Application>;
+using ApplicationConstPtr = std::shared_ptr<Application const>;
+using ApplicationWeakPtr = std::weak_ptr<Application>;
+using ApplicationConstWeakPtr = std::weak_ptr<Application const>;
+using ApplicationUPtr = std::unique_ptr<Application>;
+using ApplicationConstUPtr = std::unique_ptr<Application const>;
 
 struct ApplicationExceptionTag {
   static constexpr char const* name() { return "ApplicationException"; }
@@ -64,7 +82,7 @@ public:
 
   // Will be called *from a different thread* to retrieve audio data (if audio
   // is playing). Default implementation simply fills the buffer with silence.
-  virtual void getAudioData(int16_t* sampleData, size_t frameCount);
+  virtual void getAudioData(std::int16_t* sampleData, std::size_t frameCount);
 
   // Will be called once on application shutdown, including when shutting down
   // due to an Application exception.

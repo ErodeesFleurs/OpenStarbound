@@ -30,7 +30,7 @@ import star.maybe;
 import star.string;
 import star.variant;
 import star.ordered_set;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.logging;
@@ -115,7 +115,7 @@ void scanMaterials(TilesetUpdater& updater) {
     properties.set("//shortdescription", materials->materialShortDescription(id));
     properties.set("//description", materials->materialDescription(id));
 
-    auto tile = make_shared<Tile>(Tile{source, "materials", tileset.toLower(), materialName, image, properties});
+    auto tile = std::make_shared<Tile>(Tile{source, "materials", tileset.toLower(), materialName, image, properties});
     updater.defineTile(tile);
   }
 }
@@ -193,8 +193,8 @@ void defineObjectOrientation(TilesetUpdater& updater,
 
     ImageConstPtr image = assets->image(imageName);
     layers.append(image);
-    width = max(width, image->width());
-    height = max(height, image->height());
+    width = std::max(width, image->width());
+    height = std::max(height, image->height());
   }
 
   Vec2U imagePadding = objectPositionPadding(imagePosition);
@@ -204,7 +204,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   // when objects are flipped in the editor, they're still aligned correctly.
   Vec2U imageSize(width + 2 * imagePadding.x(), height + imagePadding.y());
 
-  ImagePtr combinedImage = make_shared<Image>(imageSize, PixelFormat::RGBA32);
+  ImagePtr combinedImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
   combinedImage->fill(Vec4B(0, 0, 0, 0));
   for (ImageConstPtr const& layer : layers) {
     combinedImage->drawInto(imagePadding, *layer);
@@ -245,7 +245,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   String source = assets->assetSource(objectConfig->path);
 
   for (String const& tileset : tilesets) {
-    TilePtr tile = make_shared<Tile>(Tile{source, "objects", tileset, tileName, combinedImage, properties});
+    TilePtr tile = std::make_shared<Tile>(Tile{source, "objects", tileset, tileName, combinedImage, properties});
     updater.defineTile(tile);
   }
 }
@@ -284,7 +284,7 @@ void scanLiquids(TilesetUpdater& updater) {
   Vec2U imageSize(TilePixels, TilePixels);
 
   for (auto liquid : liquids->allLiquidSettings()) {
-    ImagePtr image = make_shared<Image>(imageSize, PixelFormat::RGBA32);
+    ImagePtr image = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
     image->fill(liquid->liquidColor);
 
     String assetSource = assets->assetSource(liquid->path);
@@ -292,10 +292,10 @@ void scanLiquids(TilesetUpdater& updater) {
     Tiled::Properties properties;
     properties.set("liquid", liquid->name);
     properties.set("//name", liquid->name);
-    auto tile = make_shared<Tile>(Tile{assetSource, "liquids", "liquids", liquid->name, image, properties});
+    auto tile = std::make_shared<Tile>(Tile{assetSource, "liquids", "liquids", liquid->name, image, properties});
     updater.defineTile(tile);
 
-    ImagePtr sourceImage = make_shared<Image>(imageSize, PixelFormat::RGBA32);
+    ImagePtr sourceImage = std::make_shared<Image>(imageSize, PixelFormat::RGBA32);
     sourceImage->copyInto(Vec2U(), *image.get());
     sourceImage->fillRect(Vec2U(), Vec2U(image->width(), 1), SourceLiquidBorderColor);
     sourceImage->fillRect(Vec2U(), Vec2U(1, image->height()), SourceLiquidBorderColor);
@@ -304,7 +304,7 @@ void scanLiquids(TilesetUpdater& updater) {
     properties.set("source", true);
     properties.set("//name", sourceName);
     properties.set("//shortdescription", "Endless " + liquid->name);
-    auto sourceTile = make_shared<Tile>(Tile{assetSource, "liquids", "liquids", sourceName, sourceImage, properties});
+    auto sourceTile = std::make_shared<Tile>(Tile{assetSource, "liquids", "liquids", sourceName, sourceImage, properties});
     updater.defineTile(sourceTile);
   }
 }
@@ -317,7 +317,7 @@ int main(int argc, char** argv) {
 
     RootUPtr root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     TilesetUpdater updater;
 

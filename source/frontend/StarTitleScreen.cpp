@@ -1,3 +1,5 @@
+import std;
+import star.memory;
 import star.json;
 import star.xx_hash;
 #include "StarJsonExtra.hpp"
@@ -33,7 +35,6 @@ import star.set;
 import star.audio;
 import star.map;
 import star.lua;
-#include "StarConfig.hpp"
 import star.version;
 import star.image;
 #include "StarStrongTypedef.hpp"
@@ -46,7 +47,6 @@ import star.logging;
 import star.ordered_set;
 #include "StarDataStreamDevices.hpp"
 
-import std;
 typedef struct ZSTD_CCtx_s ZSTD_CCtx;
 typedef struct ZSTD_DCtx_s ZSTD_DCtx;
 typedef ZSTD_DCtx ZSTD_DStream;
@@ -231,7 +231,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
 
   m_guiContext = GuiContext::singletonPtr();
 
-  m_celestialDatabase = make_shared<CelestialMasterDatabase>();
+  m_celestialDatabase = std::make_shared<CelestialMasterDatabase>();
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
     }).take();
@@ -240,9 +240,9 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
     Logger::info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
 
   SkyParameters skyParameters(randomWorld, m_celestialDatabase);
-  m_skyBackdrop = make_shared<Sky>(skyParameters, true);
+  m_skyBackdrop = std::make_shared<Sky>(skyParameters, true);
 
-  m_musicTrack = make_shared<AmbientNoisesDescription>(assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
+  m_musicTrack = std::make_shared<AmbientNoisesDescription>(assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
 
   initMainMenu();
   initCharSelectionMenu();
@@ -256,7 +256,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
 
 void TitleScreen::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
-  m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);
+  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_renderer);
 }
 
 void TitleScreen::render() {
@@ -427,8 +427,8 @@ void TitleScreen::setMultiPlayerForceLegacy(bool const& forceLegacy) {
 }
 
 void TitleScreen::initMainMenu() {
-  m_mainMenu = make_shared<Pane>();
-  auto backMenu = make_shared<Pane>();
+  m_mainMenu = std::make_shared<Pane>();
+  auto backMenu = std::make_shared<Pane>();
 
   auto assets = Root::singleton().assets();
   auto config = assets->json("/interface/windowconfig/title.config");
@@ -449,7 +449,7 @@ void TitleScreen::initMainMenu() {
     WidgetCallbackFunc callback = buttonCallbacks.get(key);
     bool rightAnchored = buttonConfig.getBool("rightAnchored", false);
 
-    auto button = make_shared<ButtonWidget>(callback, image, imageHover, "", "");
+    auto button = std::make_shared<ButtonWidget>(callback, image, imageHover, "", "");
     button->setPosition(offset);
 
     if (rightAnchored)
@@ -468,17 +468,17 @@ void TitleScreen::initMainMenu() {
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
   
-  m_backgroundMenu = make_shared<Pane>();
+  m_backgroundMenu = std::make_shared<Pane>();
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
-  m_backgroundMenu->addChild("canvas", make_shared<CanvasWidget>());
+  m_backgroundMenu->addChild("canvas", std::make_shared<CanvasWidget>());
   m_backgroundMenu->show();
 
   m_paneManager.registerPane("mainMenu", PaneLayer::Hud, m_mainMenu);
   m_paneManager.registerPane("backMenu", PaneLayer::Hud, backMenu);
 
-  m_scriptComponent = make_shared<ScriptComponent>();
-  m_scriptComponent->setLuaRoot(make_shared<LuaRoot>());
+  m_scriptComponent = std::make_shared<ScriptComponent>();
+  m_scriptComponent->setLuaRoot(std::make_shared<LuaRoot>());
   m_scriptComponent->addCallbacks("background", LuaBindings::makeWidgetCallbacks(m_backgroundMenu.get()));
   m_scriptComponent->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(m_mainMenu.get()));
   m_scriptComponent->setScripts(jsonToStringList(config.getArray("scripts", JsonArray())));
@@ -486,7 +486,7 @@ void TitleScreen::initMainMenu() {
 }
 
 void TitleScreen::initCharSelectionMenu() {
-  auto deleteDialog = make_shared<Pane>();
+  auto deleteDialog = std::make_shared<Pane>();
 
   GuiReader reader;
 
@@ -495,7 +495,7 @@ void TitleScreen::initCharSelectionMenu() {
 
   reader.construct(Root::singleton().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
 
-  auto charSelectionMenu = make_shared<CharSelectionPane>(m_playerStorage, [this]() {
+  auto charSelectionMenu = std::make_shared<CharSelectionPane>(m_playerStorage, [this]() {
       if (m_titleState == TitleState::SinglePlayerSelectCharacter)
         switchState(TitleState::SinglePlayerCreateCharacter);
       else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
@@ -529,7 +529,7 @@ void TitleScreen::initCharSelectionMenu() {
 }
 
 void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = make_shared<CharCreationPane>([this](PlayerPtr newPlayer) {
+  auto charCreationMenu = std::make_shared<CharCreationPane>([this](PlayerPtr newPlayer) {
     if (newPlayer) {
       m_mainAppPlayer = newPlayer;
       m_playerStorage->savePlayer(m_mainAppPlayer);
@@ -557,8 +557,8 @@ void TitleScreen::populateServerList(ListWidget* list){
 };
 
 void TitleScreen::initMultiPlayerMenu() {
-  m_multiPlayerMenu = make_shared<Pane>();
-  m_serverSelectPane = make_shared<Pane>();
+  m_multiPlayerMenu = std::make_shared<Pane>();
+  m_serverSelectPane = std::make_shared<Pane>();
 
   GuiReader readerConnect;
   GuiReader readerServer;
@@ -656,7 +656,7 @@ void TitleScreen::initMultiPlayerMenu() {
 }
 
 void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
-  auto optionsMenu = make_shared<OptionsMenu>(&m_paneManager,client);
+  auto optionsMenu = std::make_shared<OptionsMenu>(&m_paneManager,client);
   optionsMenu->setAnchor(PaneAnchor::Center);
   optionsMenu->lockPosition();
 
@@ -666,7 +666,7 @@ void TitleScreen::initOptionsMenu(UniverseClientPtr client) {
 }
 
 void TitleScreen::initModsMenu() {
-  auto modsMenu = make_shared<ModsMenu>();
+  auto modsMenu = std::make_shared<ModsMenu>();
   modsMenu->setAnchor(PaneAnchor::Center);
   modsMenu->lockPosition();
 

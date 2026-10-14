@@ -1,13 +1,19 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.maybe;
 import star.string;
 
 namespace Star {
 
-STAR_CLASS(StatisticsService);
+class StatisticsService;
+using StatisticsServicePtr = std::shared_ptr<StatisticsService>;
+using StatisticsServiceConstPtr = std::shared_ptr<StatisticsService const>;
+using StatisticsServiceWeakPtr = std::weak_ptr<StatisticsService>;
+using StatisticsServiceConstWeakPtr = std::weak_ptr<StatisticsService const>;
+using StatisticsServiceUPtr = std::unique_ptr<StatisticsService>;
+using StatisticsServiceConstUPtr = std::unique_ptr<StatisticsService const>;
 
 class StatisticsService {
 public:

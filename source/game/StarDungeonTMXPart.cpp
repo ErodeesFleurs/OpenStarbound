@@ -1,4 +1,5 @@
 module;
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.byte_array;
@@ -26,7 +27,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.version;
@@ -103,7 +104,7 @@ namespace Dungeon {
 
   bool TMXObject::forEachTile(TMXMap const* map, TileCallback const& callback) const {
     if (m_kind == ObjectKind::Stagehand) {
-      auto cPos = Vec2I(rect().center()[0], ceilf(RectF(rect()).center()[1]));
+      auto cPos = Vec2I(rect().center()[0], std::ceilf(RectF(rect()).center()[1]));
       return callback(Vec2I(cPos[0], map->height() - cPos[1]), tile());
     }
 
@@ -125,7 +126,9 @@ namespace Dungeon {
       return false;
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((m_kind == ObjectKind::Polyline));
+    }
     // Used for wiring. Treat each vertex in the polyline as a tile with the
     // wire brush.
     for (Vec2I point : m_polyline) {
@@ -173,7 +176,7 @@ namespace Dungeon {
 
   bool TMXObject::forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const {
     if (m_kind == ObjectKind::Stagehand) {
-      Vec2I cPos = Vec2I(rect().center()[0], ceilf(RectF(rect()).center()[1]));
+      Vec2I cPos = Vec2I(rect().center()[0], std::ceilf(RectF(rect()).center()[1]));
       if (pos == cPos)
         return callback(Vec2I(pos[0], map->height() - 1 - pos[1]), tile());
       return false;
@@ -192,7 +195,9 @@ namespace Dungeon {
       return callback(pos, tile());
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((m_kind == ObjectKind::Polyline));
+    }
     for (Vec2I point : m_polyline) {
       Vec2I pointPos(m_rect.min().x() + point.x(), map->height() - 1 - m_rect.min().y() - point.y());
       if (pos == pointPos && callback(pos, tile()))
@@ -229,8 +234,8 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       throw StarException::format("TMXTileLayer does not support compression mode {}", compression);
     }
         
-    for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-      uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
+    for (std::size_t i = 0; i + 3 < bytes.size(); i += 4) {
+      std::uint32_t gid = (std::uint8_t)bytes[i] | ((std::uint8_t)bytes[i + 1] << 8) | ((std::uint8_t)bytes[i + 2] << 16) | ((std::uint8_t)bytes[i + 3] << 24);
       m_tileData.append(gid & ~TileFlip::AllBits);
     }
   }
@@ -246,17 +251,17 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     m_width = tmx.getUInt("width");
     m_height = tmx.getUInt("height");
 
-    m_tilesets = make_shared<TMXTilesets>(tmx.getArray("tilesets"));
+    m_tilesets = std::make_shared<TMXTilesets>(tmx.getArray("tilesets"));
 
     for (Json const& tmxLayer : tmx.get("layers").iterateArray()) {
       String layerType = tmxLayer.getString("type");
 
       if (layerType == "tilelayer") {
-        TMXTileLayerPtr layer = make_shared<TMXTileLayer>(tmxLayer);
+        TMXTileLayerPtr layer = std::make_shared<TMXTileLayer>(tmxLayer);
         m_tileLayers.append(layer);
 
       } else if (layerType == "objectgroup") {
-        TMXObjectGroupPtr group = make_shared<TMXObjectGroup>(tmxLayer, m_tilesets);
+        TMXObjectGroupPtr group = std::make_shared<TMXObjectGroup>(tmxLayer, m_tilesets);
         m_objectGroups.append(group);
 
       } else {
@@ -286,7 +291,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     // we actually load is located at:
     //  /tilesets/packed/materials.json
 
-    size_t i = relativePath.findLast("/tilesets/", String::CaseInsensitive);
+    std::size_t i = relativePath.findLast("/tilesets/", String::CaseInsensitive);
     if (i == NPos)
       // Couldn't extract the right path, try the one we were given in the Json.
       return relativePath;
@@ -302,18 +307,18 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       Tiled::TilesetConstPtr tileset = Root::singleton().tilesetDatabase()->get(sourcePath);
       m_tilesets.append(tileset);
 
-      size_t firstGid = tilesetJson.getUInt("firstgid");
-      for (size_t i = 0; i < tileset->size(); ++i) {
+      std::size_t firstGid = tilesetJson.getUInt("firstgid");
+      for (std::size_t i = 0; i < tileset->size(); ++i) {
         m_foregroundTilesByGid.set(firstGid + i, tileset->getTile(i, TileLayer::Foreground).get());
         m_backgroundTilesByGid.set(firstGid + i, tileset->getTile(i, TileLayer::Background).get());
       }
     }
 
-    m_nullTile = make_shared<Tiled::Tile>(Tiled::Properties(), TileLayer::Foreground);
+    m_nullTile = std::make_shared<Tiled::Tile>(Tiled::Properties(), TileLayer::Foreground);
 
     JsonObject emptyBackProperties;
     emptyBackProperties["clear"] = "true";
-    m_emptyBackTile = make_shared<Tiled::Tile>(Tiled::Properties(emptyBackProperties), TileLayer::Background);
+    m_emptyBackTile = std::make_shared<Tiled::Tile>(Tiled::Properties(emptyBackProperties), TileLayer::Background);
   }
 
   Tiled::Tile const& TMXTilesets::getTile(unsigned gid, TileLayer layer) const {
@@ -395,7 +400,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
     }
 
     properties = properties.inherit(computedProperties);
-    m_tile = make_shared<Tiled::Tile>(properties, m_layer, flipX);
+    m_tile = std::make_shared<Tiled::Tile>(properties, m_layer, flipX);
   }
 
   Vec2I TMXObject::getSize(Json const& tmx) {
@@ -477,14 +482,14 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
         }
       });
     for (Json const& tmxObject : tmx.getArray("objects")) {
-      TMXObjectPtr object = make_shared<TMXObject>(groupProperties, tmxObject, tilesets);
+      TMXObjectPtr object = std::make_shared<TMXObject>(groupProperties, tmxObject, tilesets);
       m_objects.append(object);
     }
   }
 
   void TMXPartReader::readAsset(String const& asset) {
     auto assets = Root::singleton().assets();
-    m_maps.append(make_pair(asset, make_shared<const TMXMap>(assets->json(asset))));
+    m_maps.append(std::make_pair(asset, std::make_shared<const TMXMap>(assets->json(asset))));
   }
 
   Vec2U TMXPartReader::size() const {
@@ -508,7 +513,7 @@ TMXTileLayer::TMXTileLayer(Json const& layer) {
       });
   }
 
-  void TMXPartReader::forEachMap(function<bool(TMXMapConstPtr const&)> func) const {
+  void TMXPartReader::forEachMap(std::function<bool(TMXMapConstPtr const&)> func) const {
     for (auto const& map : m_maps) {
       func(map.second);
     }

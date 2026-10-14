@@ -1,3 +1,5 @@
+#include <assert.h>
+import star.memory;
 #include "StarJsonExtra.hpp"
 import star.json;
 import star.id_map;
@@ -39,7 +41,7 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -119,7 +121,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   if (jOrientations && jOrientations->isType(Json::Type::Array)) {
     JsonArray base = m_config->config.get("orientations").toArray();
     auto orientations = jOrientations->toArray();
-    for (size_t i = 0; i != orientations.size(); ++i)
+    for (std::size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
     m_orientations = ObjectDatabase::parseOrientations(m_config->path, base, m_config->config);
   }
@@ -129,7 +131,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   m_lightFlickering = m_config->lightFlickering;
 
-  m_tileDamageStatus = make_shared<EntityTileDamageStatus>();
+  m_tileDamageStatus = std::make_shared<EntityTileDamageStatus>();
 
   m_orientationIndex = NPos;
 
@@ -144,9 +146,9 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   m_currentFrame = -1;
 
   if (m_config->animationConfig)
-    m_networkedAnimator = make_shared<NetworkedAnimator>(m_config->animationConfig, m_config->path);
+    m_networkedAnimator = std::make_shared<NetworkedAnimator>(m_config->animationConfig, m_config->path);
   else
-    m_networkedAnimator = make_shared<NetworkedAnimator>();
+    m_networkedAnimator = std::make_shared<NetworkedAnimator>();
 
   if (m_config->damageTeam.type != TeamType::Null) {
     setTeam(m_config->damageTeam);
@@ -156,12 +158,12 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   auto inputNodes = configValue("inputNodes", JsonArray());
   auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
-  for (size_t i = 0; i != inputNodes.size(); ++i)
+  for (std::size_t i = 0; i != inputNodes.size(); ++i)
     m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
   auto outputNodes = configValue("outputNodes", JsonArray());
   auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
-  for (size_t i = 0; i != outputNodes.size(); ++i)
+  for (std::size_t i = 0; i != outputNodes.size(); ++i)
     m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));
@@ -213,8 +215,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   m_netGroup.addNetElement(m_tileDamageStatus.get());
   m_netGroup.addNetElement(m_networkedAnimator.get());
 
-  m_netGroup.setNeedsLoadCallback(bind(&Object::getNetStates, this, _1));
-  m_netGroup.setNeedsStoreCallback(bind(&Object::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback(std::bind(&Object::getNetStates, this, std::placeholders::_1));
+  m_netGroup.setNeedsStoreCallback(std::bind(&Object::setNetStates, this));
 
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
@@ -259,7 +261,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   auto colorName = configValue("color", "default").toString().takeUtf8();
   auto colorEnd = colorName.find('?');
   if (colorEnd != NPos) {
-    size_t suffixBegin = colorName.rfind('?');
+    std::size_t suffixBegin = colorName.rfind('?');
     String colorDirectives;
     std::string colorSuffix = suffixBegin == NPos ? "" : colorName.substr(suffixBegin);
     if (colorSuffix.empty() && colorSuffix.rfind("?replace", 0) != 0)
@@ -298,13 +300,13 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     auto jScripts = configValue("scripts", JsonArray());
     if (jScripts.isType(Json::Type::Array))
-      m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
+      m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed(std::bind(AssetPath::relativeTo, m_config->path, std::placeholders::_1)));
     else
       m_scriptComponent.setScripts(m_config->scripts);
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
-    m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
+    m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, this, std::placeholders::_1, std::placeholders::_2)));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get()));
     m_scriptComponent.init(world);
@@ -318,7 +320,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
         return m_scriptedAnimationParameters.value(name, defaultValue);
       }));
     m_scriptedAnimator.addCallbacks("objectAnimator", makeAnimatorObjectCallbacks());
-    m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
+    m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(std::bind(&Object::configValue, this, std::placeholders::_1, std::placeholders::_2)));
     m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptedAnimator.init(world);
   }
@@ -405,7 +407,7 @@ RectF Object::metaBoundBox() const {
   }
 }
 
-pair<ByteArray, uint64_t> Object::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> Object::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -478,7 +480,7 @@ List<Vec2I> Object::roots() const {
   return {};
 }
 
-void Object::update(float dt, uint64_t) {
+void Object::update(float dt, std::uint64_t) {
   if (!inWorld())
     return;
 
@@ -621,7 +623,7 @@ void Object::destroy(RenderCallback* renderCallback) {
   }
 
   if (renderCallback && doSmash && !m_config->smashSoundOptions.empty()) {
-    auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randFrom(m_config->smashSoundOptions)));
+    auto audio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randFrom(m_config->smashSoundOptions)));
     renderCallback->addAudios({std::move(audio)}, position());
   }
 
@@ -709,7 +711,7 @@ List<Drawable> Object::cursorHintDrawables() const {
       // orientation.
       List<Drawable> result;
       auto& orientations = getOrientations();
-      for (size_t i = 0; i < orientations.size(); ++i) {
+      for (std::size_t i = 0; i < orientations.size(); ++i) {
         if (orientations[i]->directionAffinity && *orientations[i]->directionAffinity == m_direction.get()) {
           result = orientationDrawables(i);
           break;
@@ -796,24 +798,24 @@ void Object::readStoredData(Json const& diskStore) {
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject()));
 
   JsonArray inputNodes = diskStore.getArray("inputWireNodes");
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
+  for (std::size_t i = 0; i < m_inputNodes.size(); ++i) {
     if (i < inputNodes.size()) {
       auto& in = m_inputNodes[i];
       List<WireConnection> connections;
       for (auto const& conn : inputNodes[i].getArray("connections"))
-        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
+        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (std::size_t)conn.get(1).toUInt()});
       in.connections.set(std::move(connections));
       in.state.set(inputNodes[i].getBool("state"));
     }
   }
 
   JsonArray outputNodes = diskStore.getArray("outputWireNodes");
-  for (size_t i = 0; i < m_outputNodes.size(); ++i) {
+  for (std::size_t i = 0; i < m_outputNodes.size(); ++i) {
     if (i < outputNodes.size()) {
       auto& in = m_outputNodes[i];
       List<WireConnection> connections;
       for (auto const& conn : outputNodes[i].getArray("connections"))
-        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
+        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (std::size_t)conn.get(1).toUInt()});
       in.connections.set(std::move(connections));
       in.state.set(outputNodes[i].getBool("state"));
     }
@@ -822,7 +824,7 @@ void Object::readStoredData(Json const& diskStore) {
 
 Json Object::writeStoredData() const {
   JsonArray inputNodes;
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
+  for (std::size_t i = 0; i < m_inputNodes.size(); ++i) {
     auto const& in = m_inputNodes[i];
     JsonArray connections;
     for (auto const& node : in.connections.get())
@@ -835,7 +837,7 @@ Json Object::writeStoredData() const {
   }
 
   JsonArray outputNodes;
-  for (size_t i = 0; i < m_outputNodes.size(); ++i) {
+  for (std::size_t i = 0; i < m_outputNodes.size(); ++i) {
     auto const& in = m_outputNodes[i];
     JsonArray connections;
     for (auto const& node : in.connections.get())
@@ -865,7 +867,7 @@ void Object::breakObject(bool smash) {
     m_health.set(0.0f);
 }
 
-size_t Object::nodeCount(WireDirection direction) const {
+std::size_t Object::nodeCount(WireDirection direction) const {
   if (direction == WireDirection::Input)
     return m_inputNodes.size();
   else
@@ -947,7 +949,7 @@ void Object::removeNodeConnection(WireNode wireNode, WireConnection nodeConnecti
 }
 
 void Object::evaluate(WireCoordinator* coordinator) {
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
+  for (std::size_t i = 0; i < m_inputNodes.size(); ++i) {
     auto& in = m_inputNodes[i];
     bool nextState = false;
     for (auto const& connection : in.connections.get())
@@ -981,15 +983,15 @@ void Object::setImageKey(String const& name, String const& value) {
 void Object::resetEmissionTimers() {
   m_emissionTimers.clear();
   if (auto orientation = currentOrientation())
-    for (size_t i = 0; i < orientation->particleEmitters.size(); i++)
+    for (std::size_t i = 0; i < orientation->particleEmitters.size(); i++)
       m_emissionTimers.append(GameTimer());
 }
 
-size_t Object::orientationIndex() const {
+std::size_t Object::orientationIndex() const {
   return m_orientationIndex;
 }
 
-void Object::setOrientationIndex(size_t orientationIndex) {
+void Object::setOrientationIndex(std::size_t orientationIndex) {
   m_orientationIndex = orientationIndex;
 }
 
@@ -1034,8 +1036,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_interactive.set(interactive);
     });
 
-  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", bind(&Object::uniqueId, this));
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", bind(&Object::setUniqueId, this, _1));
+  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", std::bind(&Object::uniqueId, this));
+  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", std::bind(&Object::setUniqueId, this, std::placeholders::_1));
 
   callbacks.registerCallback("boundBox", [this]() {
       return metaBoundBox().translated(position());
@@ -1111,31 +1113,31 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return m_outputNodes.size();
     });
 
-  callbacks.registerCallback("getInputNodePosition", [this](size_t i) {
+  callbacks.registerCallback("getInputNodePosition", [this](std::size_t i) {
       return m_inputNodes.at(i).position;
     });
 
-  callbacks.registerCallback("getOutputNodePosition", [this](size_t i) {
+  callbacks.registerCallback("getOutputNodePosition", [this](std::size_t i) {
       return m_outputNodes.at(i).position;
     });
 
-  callbacks.registerCallback("getInputNodeLevel", [this](size_t i) {
+  callbacks.registerCallback("getInputNodeLevel", [this](std::size_t i) {
       return m_inputNodes.at(i).state.get();
     });
 
-  callbacks.registerCallback("getOutputNodeLevel", [this](size_t i) {
+  callbacks.registerCallback("getOutputNodeLevel", [this](std::size_t i) {
       return m_outputNodes.at(i).state.get();
     });
 
-  callbacks.registerCallback("isInputNodeConnected", [this](size_t i) {
+  callbacks.registerCallback("isInputNodeConnected", [this](std::size_t i) {
       return !m_inputNodes.at(i).connections.get().empty();
     });
 
-  callbacks.registerCallback("isOutputNodeConnected", [this](size_t i) {
+  callbacks.registerCallback("isOutputNodeConnected", [this](std::size_t i) {
       return !m_outputNodes.at(i).connections.get().empty();
     });
 
-  callbacks.registerCallback("getInputNodeIds", [this](LuaEngine& engine, size_t i) {
+  callbacks.registerCallback("getInputNodeIds", [this](LuaEngine& engine, std::size_t i) {
       auto result = engine.createTable();
       for (auto const& conn : m_inputNodes.at(i).connections.get()) {
         for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
@@ -1144,7 +1146,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return result;
     });
 
-  callbacks.registerCallback("getOutputNodeIds", [this](LuaEngine& engine, size_t i) {
+  callbacks.registerCallback("getOutputNodeIds", [this](LuaEngine& engine, std::size_t i) {
       auto result = engine.createTable();
       for (auto const& conn : m_outputNodes.at(i).connections.get()) {
         for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
@@ -1153,7 +1155,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return result;
     });
 
-  callbacks.registerCallback("setOutputNodeLevel", [this](size_t i, bool l) {
+  callbacks.registerCallback("setOutputNodeLevel", [this](std::size_t i, bool l) {
       m_outputNodes.at(i).state.set(l);
     });
 
@@ -1378,14 +1380,14 @@ void Object::addChatMessage(String const& message, Json const& config, String co
     m_pendingChatActions.append(PortraitChatAction{entityId(), portrait, message, mouthPosition()});
 }
 
-List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
+List<Drawable> Object::orientationDrawables(std::size_t orientationIndex) const {
   if (orientationIndex == NPos)
     return {};
 
   auto& orientation = getOrientations().at(orientationIndex);
 
   if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->first) {
-    m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
+    m_orientationDrawablesCache = std::make_pair(orientationIndex, List<Drawable>());
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;
 
@@ -1399,7 +1401,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
 
         // backwards compatibility for this is really annoying, need to append text after the <color> tag to the last directive for a rare use-case
         auto& image = imagePath.utf8();
-        size_t suffix = NPos;
+        std::size_t suffix = NPos;
         if (!m_colorSuffix.empty() && (suffix = image.rfind("<color>")) != NPos)
           imagePart.image = String(image.substr(0, (suffix += 7))).replaceTags(m_imageKeys, true, "default");
         else
@@ -1451,7 +1453,7 @@ void Object::renderParticles(RenderCallback* renderCallback) {
     if (m_emissionTimers.size() != orientation->particleEmitters.size())
       resetEmissionTimers();
 
-    for (size_t i = 0; i < orientation->particleEmitters.size(); i++) {
+    for (std::size_t i = 0; i < orientation->particleEmitters.size(); i++) {
       auto& particleEmitter = orientation->particleEmitters.at(i);
 
       if (particleEmitter.particleEmissionRate <= 0.0f)
@@ -1476,7 +1478,7 @@ void Object::renderSounds(RenderCallback* renderCallback) {
     if (!m_config->soundEffect.empty() && (!m_soundEffect || m_soundEffect->finished())) {
       auto& root = Root::singleton();
 
-      m_soundEffect = make_shared<AudioInstance>(*root.assets()->audio(m_config->soundEffect));
+      m_soundEffect = std::make_shared<AudioInstance>(*root.assets()->audio(m_config->soundEffect));
       m_soundEffect->setLoops(-1);
       // Randomize the start position of the looping persistent audio
       m_soundEffect->seekTime(Random::randf() * m_soundEffect->totalTime());

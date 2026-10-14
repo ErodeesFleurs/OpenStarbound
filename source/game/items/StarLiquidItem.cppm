@@ -31,7 +31,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 
@@ -76,8 +76,20 @@ import star.particle;
 
 import star.light_source;
 import star.entity_rendering;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.asset_source;
 import star.assets;
@@ -90,7 +102,13 @@ import star.liquids_database;
 
 export namespace Star {
 
-STAR_CLASS(LiquidItem);
+class LiquidItem;
+using LiquidItemPtr = std::shared_ptr<LiquidItem>;
+using LiquidItemConstPtr = std::shared_ptr<const LiquidItem>;
+using LiquidItemWeakPtr = std::weak_ptr<LiquidItem>;
+using LiquidItemConstWeakPtr = std::weak_ptr<const LiquidItem>;
+using LiquidItemUPtr = std::unique_ptr<LiquidItem>;
+using LiquidItemConstUPtr = std::unique_ptr<const LiquidItem>;
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
@@ -143,7 +161,7 @@ LiquidItem::LiquidItem(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr LiquidItem::clone() const {
-  return make_shared<LiquidItem>(*this);
+  return std::make_shared<LiquidItem>(*this);
 }
 
 void LiquidItem::init(ToolUserEntity* owner, ToolHand hand) {
@@ -191,7 +209,7 @@ void LiquidItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   // Make sure not to make any more modifications than we have consumables.
   if (modifications.size() > count())
     modifications.resize(count());
-  size_t failed = world()->applyTileModifications(modifications, false).size();
+  std::size_t failed = world()->applyTileModifications(modifications, false).size();
   if (failed < modifications.size()) {
     FireableItem::fire(mode, shifting, edgeTriggered);
     consume(modifications.size() - failed);
@@ -220,7 +238,7 @@ List<PreviewTile> LiquidItem::previewTiles(bool shifting) const {
     if (!multiplaceEnabled())
       radius = 1;
 
-    size_t c = 0;
+    std::size_t c = 0;
 
     for (auto pos : tileAreaBrush(radius, owner()->aimPosition(), true)) {
       if (c >= count())

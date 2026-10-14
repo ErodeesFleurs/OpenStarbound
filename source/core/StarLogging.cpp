@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.logging;
 import star.thread;
 import star.string;
@@ -98,12 +98,12 @@ bool Logger::loggable(LogLevel level) {
 void Logger::refreshLoggable() {
   s_loggable = Array<bool, 4>::filled(false);
   for (auto const& l : s_sinks) {
-    for (auto i = (size_t)l->level(); i != s_loggable.size(); ++i)
+    for (auto i = (std::size_t)l->level(); i != s_loggable.size(); ++i)
       s_loggable[i] = true;
   }
 }
 
-shared_ptr<StdoutLogSink> Logger::s_stdoutSink = make_shared<StdoutLogSink>();
+std::shared_ptr<StdoutLogSink> Logger::s_stdoutSink = std::make_shared<StdoutLogSink>();
 HashSet<LogSinkPtr> Logger::s_sinks{s_stdoutSink};
 Array<bool, 4> Logger::s_loggable = Array<bool, 4>{false, true, true, true};
 Mutex Logger::s_mutex;
@@ -131,9 +131,9 @@ void LogMap::clear() {
 HashMap<String, String> LogMap::s_logMap;
 Mutex LogMap::s_logMapMutex;
 
-size_t const SpatialLogger::MaximumLines;
-size_t const SpatialLogger::MaximumPoints;
-size_t const SpatialLogger::MaximumText;
+std::size_t const SpatialLogger::MaximumLines;
+std::size_t const SpatialLogger::MaximumPoints;
+std::size_t const SpatialLogger::MaximumText;
 
 void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& color) {
   if (!observed()) return;
@@ -141,7 +141,7 @@ void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& c
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  for (size_t i = 0; i < poly.sides(); ++i) {
+  for (std::size_t i = 0; i < poly.sides(); ++i) {
     auto side = poly.side(i);
     lines.append(Line{side.min(), side.max(), color});
   }

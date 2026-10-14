@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.variant;
 import star.json;
 import star.data_stream;
@@ -39,15 +39,57 @@ import star.array;
 namespace Star {
 
 // Required for renderDummy
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class ArmorItem;
+using ArmorItemPtr = std::shared_ptr<ArmorItem>;
+using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
+using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
+using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
+using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
+using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
+class HeadArmor;
+using HeadArmorPtr = std::shared_ptr<HeadArmor>;
+using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
+using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
+using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
+using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
+using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
+class ChestArmor;
+using ChestArmorPtr = std::shared_ptr<ChestArmor>;
+using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
+using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
+using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
+using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
+using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
+class LegsArmor;
+using LegsArmorPtr = std::shared_ptr<LegsArmor>;
+using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
+using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
+using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
+using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
+using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
+class BackArmor;
+using BackArmorPtr = std::shared_ptr<BackArmor>;
+using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
+using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
+using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
+using BackArmorUPtr = std::unique_ptr<BackArmor>;
+using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
 
-STAR_CLASS(Humanoid);
+class Humanoid;
+using HumanoidPtr = std::shared_ptr<Humanoid>;
+using HumanoidConstPtr = std::shared_ptr<const Humanoid>;
+using HumanoidWeakPtr = std::weak_ptr<Humanoid>;
+using HumanoidConstWeakPtr = std::weak_ptr<const Humanoid>;
+using HumanoidUPtr = std::unique_ptr<Humanoid>;
+using HumanoidConstUPtr = std::unique_ptr<const Humanoid>;
 
-STAR_STRUCT(Dance);
+struct Dance;
+using DancePtr = std::shared_ptr<Dance>;
+using DanceConstPtr = std::shared_ptr<const Dance>;
+using DanceWeakPtr = std::weak_ptr<Dance>;
+using DanceConstWeakPtr = std::weak_ptr<const Dance>;
+using DanceUPtr = std::unique_ptr<Dance>;
+using DanceConstUPtr = std::unique_ptr<const Dance>;
 
 enum class HumanoidEmote {
   Idle,
@@ -66,7 +108,7 @@ enum class HumanoidEmote {
   Sleep
 };
 extern EnumMap<HumanoidEmote> const HumanoidEmoteNames;
-inline constexpr size_t EmoteSize = 14;
+inline constexpr std::size_t EmoteSize = 14;
 
 enum class HumanoidHand {
   Idle,
@@ -219,10 +261,10 @@ public:
     // 8 vanilla + 12 extra slots
     Array<Wearable, 20> wearables;
     // below 3 are recalculated when rendering updated wearables, null-terminated
-    Array<uint8_t, 20> wornHeads;
+    Array<std::uint8_t, 20> wornHeads;
     // chests and leg layering is interchangeable
-    Array<uint8_t, 20> wornChestsLegs;
-    Array<uint8_t, 20> wornBacks;
+    Array<std::uint8_t, 20> wornChestsLegs;
+    Array<std::uint8_t, 20> wornBacks;
     bool wornHeadsChanged = true;
     bool wornChestsLegsChanged = true;
     bool wornBacksChanged = true;
@@ -233,11 +275,11 @@ public:
   template <typename T>
   inline T const* getLastWearableOfType() const;
 
-  void removeWearable(uint8_t slot);
-  void setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender gender);
-  void setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gender gender);
-  void setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender gender);
-  void setWearableFromBack(uint8_t slot, BackArmor const& back, Gender gender);
+  void removeWearable(std::uint8_t slot);
+  void setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gender gender);
+  void setWearableFromChest(std::uint8_t slot, ChestArmor const& chest, Gender gender);
+  void setWearableFromLegs(std::uint8_t slot, LegsArmor const& legs, Gender gender);
+  void setWearableFromBack(std::uint8_t slot, BackArmor const& back, Gender gender);
   void refreshWearables(Fashion& fashion);
 
   // Legacy getters for all of the above, returns last found
@@ -355,7 +397,7 @@ public:
 
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
-  static pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
+  static std::pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
 
 private:
   struct HandDrawingInfo {
@@ -500,21 +542,21 @@ private:
 
   HashMap<String, String> m_identityFramesetTags;
 
-  pair<String, String> m_headRotationPoint;
-  pair<String, String> m_frontArmRotationPoint;
-  pair<String, String> m_backArmRotationPoint;
+  std::pair<String, String> m_headRotationPoint;
+  std::pair<String, String> m_frontArmRotationPoint;
+  std::pair<String, String> m_backArmRotationPoint;
 
   String m_frontItemPart;
   String m_backItemPart;
 
-  pair<String, String> m_mouthOffsetPoint;
-  pair<String, String> m_headArmorOffsetPoint;
-  pair<String, String> m_chestArmorOffsetPoint;
-  pair<String, String> m_legsArmorOffsetPoint;
-  pair<String, String> m_backArmorOffsetPoint;
-  pair<String, String> m_feetOffsetPoint;
-  pair<String, String> m_throwPoint;
-  pair<String, String> m_interactPoint;
+  std::pair<String, String> m_mouthOffsetPoint;
+  std::pair<String, String> m_headArmorOffsetPoint;
+  std::pair<String, String> m_chestArmorOffsetPoint;
+  std::pair<String, String> m_legsArmorOffsetPoint;
+  std::pair<String, String> m_backArmorOffsetPoint;
+  std::pair<String, String> m_feetOffsetPoint;
+  std::pair<String, String> m_throwPoint;
+  std::pair<String, String> m_interactPoint;
 
 };
 
@@ -546,7 +588,7 @@ private:
 
 template <typename T>
 inline T const* Humanoid::getLastWearableOfType() const {
-  for (size_t i = m_fashion->wearables.size(); i != 0; --i) {
+  for (std::size_t i = m_fashion->wearables.size(); i != 0; --i) {
     if (auto ptr = m_fashion->wearables[i - 1].ptr<T>())
       return ptr;
   }

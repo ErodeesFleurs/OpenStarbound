@@ -1,10 +1,8 @@
 #include <errno.h>
 #include <io.h>
 #include <stdio.h>
-#define NOMINMAX
 #include <windows.h>
-
-#include "StarConfig.hpp"
+import std;
 import star.file;
 import star.io_device;
 import star.list;
@@ -35,7 +33,7 @@ String File::convertDirSeparators(String const& path) {
 
 String File::currentDirectory() {
   WCHAR buffer[MAX_PATH];
-  size_t len = GetCurrentDirectoryW(MAX_PATH, buffer);
+  std::size_t len = GetCurrentDirectoryW(MAX_PATH, buffer);
   if (len == 0)
     throw IOException("GetCurrentDirectory failed");
 
@@ -82,7 +80,7 @@ bool File::isDirectory(String const& path) {
 String File::fullPath(const String& path) {
   WCHAR buffer[MAX_PATH];
 
-  size_t fullpath_size;
+  std::size_t fullpath_size;
   WCHAR* lpszLastNamePart;
 
   fullpath_size = GetFullPathNameW(stringToUtf16(path).get(), (DWORD)MAX_PATH, buffer, (WCHAR**)&lpszLastNamePart);
@@ -197,7 +195,7 @@ void File::remove(String const& filename) {
     }
   } else if (::_wremove(stringToUtf16(filename).get()) < 0) {
     auto error = errno;
-    throw IOException::format("remove error: {}", strerror(error));
+    throw IOException::format("remove error: {}", std::strerror(error));
   }
 }
 
@@ -228,7 +226,7 @@ void File::rename(String const& source, String const& target) {
   }
 }
 
-void File::overwriteFileWithRename(char const* data, size_t len, String const& filename, String const& newSuffix) {
+void File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
   String newFile = filename + newSuffix;
 
   try {
@@ -322,7 +320,7 @@ StreamOffset File::ftell(void* f) {
   return pos.QuadPart;
 }
 
-size_t File::fread(void* f, char* data, size_t len) {
+std::size_t File::fread(void* f, char* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -339,7 +337,7 @@ size_t File::fread(void* f, char* data, size_t len) {
   return numRead;
 }
 
-size_t File::fwrite(void* f, char const* data, size_t len) {
+std::size_t File::fwrite(void* f, char const* data, std::size_t len) {
   if (len == 0)
     return 0;
 
@@ -375,7 +373,7 @@ StreamOffset File::fsize(void* f) {
   return size.QuadPart;
 }
 
-size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
+std::size_t File::pread(void* f, char* data, std::size_t len, StreamOffset position) {
   HANDLE file = (HANDLE)f;
   DWORD numRead = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
@@ -390,7 +388,7 @@ size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   return numRead;
 }
 
-size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position) {
+std::size_t File::pwrite(void* f, char const* data, std::size_t len, StreamOffset position) {
   HANDLE file = (HANDLE)f;
   DWORD numWritten = 0;
   OVERLAPPED overlapped = makeOverlapped(position);

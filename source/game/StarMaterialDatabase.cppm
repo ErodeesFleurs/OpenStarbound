@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -24,11 +24,23 @@ import star.material_render_profile;
 
 namespace Star {
 
-enum class CollisionKind : uint8_t;
+enum class CollisionKind : std::uint8_t;
 class ItemDescriptor;
 
-STAR_CLASS(ParticleConfig);
-STAR_CLASS(MaterialDatabase);
+class ParticleConfig;
+using ParticleConfigPtr = std::shared_ptr<ParticleConfig>;
+using ParticleConfigConstPtr = std::shared_ptr<const ParticleConfig>;
+using ParticleConfigWeakPtr = std::weak_ptr<ParticleConfig>;
+using ParticleConfigConstWeakPtr = std::weak_ptr<const ParticleConfig>;
+using ParticleConfigUPtr = std::unique_ptr<ParticleConfig>;
+using ParticleConfigConstUPtr = std::unique_ptr<const ParticleConfig>;
+class MaterialDatabase;
+using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
+using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
+using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
+using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
+using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
 
 struct MaterialExceptionTag {
   static constexpr char const* name() { return "MaterialException"; }
@@ -154,7 +166,7 @@ private:
     bool cascading;
     bool blocksLiquidFlow;
 
-    shared_ptr<MaterialRenderProfile const> materialRenderProfile;
+    std::shared_ptr<MaterialRenderProfile const> materialRenderProfile;
 
     TileDamageParameters damageParameters;
   };
@@ -176,12 +188,12 @@ private:
     bool tilled;
     bool breaksWithTile;
 
-    shared_ptr<MaterialRenderProfile const> modRenderProfile;
+    std::shared_ptr<MaterialRenderProfile const> modRenderProfile;
 
     TileDamageParameters damageParameters;
   };
 
-  size_t metaMaterialIndex(MaterialId materialId) const;
+  std::size_t metaMaterialIndex(MaterialId materialId) const;
   bool containsMetaMaterial(MaterialId materialId) const;
   void setMetaMaterial(MaterialId materialId, MetaMaterialInfo info);
 
@@ -191,24 +203,24 @@ private:
   bool containsMod(ModId modId) const;
   void setMod(ModId modId, ModInfo info);
 
-  shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
-  shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
-  shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
+  std::shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
+  std::shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
+  std::shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
 
-  List<shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
+  List<std::shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
   StringMap<MaterialId> m_metaMaterialIndex;
 
-  List<shared_ptr<MaterialInfo const>> m_materials;
+  List<std::shared_ptr<MaterialInfo const>> m_materials;
   StringMap<MaterialId> m_materialIndex;
 
-  List<shared_ptr<ModInfo const>> m_mods;
+  List<std::shared_ptr<ModInfo const>> m_mods;
   StringMap<ModId> m_modIndex;
   BiMap<String, ModId> m_metaModIndex;
 
   String m_defaultFootstepSound;
 
-  HashMap<pair<LiquidId, MaterialId>, LiquidMaterialInteraction> m_liquidMaterialInteractions;
-  HashMap<pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
+  HashMap<std::pair<LiquidId, MaterialId>, LiquidMaterialInteraction> m_liquidMaterialInteractions;
+  HashMap<std::pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
 };
 
 inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {

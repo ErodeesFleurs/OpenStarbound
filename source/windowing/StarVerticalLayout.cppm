@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -50,7 +50,13 @@ import star.layout;
 
 namespace Star {
 
-STAR_CLASS(VerticalLayout);
+class VerticalLayout;
+using VerticalLayoutPtr = std::shared_ptr<VerticalLayout>;
+using VerticalLayoutConstPtr = std::shared_ptr<VerticalLayout const>;
+using VerticalLayoutWeakPtr = std::weak_ptr<VerticalLayout>;
+using VerticalLayoutConstWeakPtr = std::weak_ptr<VerticalLayout const>;
+using VerticalLayoutUPtr = std::unique_ptr<VerticalLayout>;
+using VerticalLayoutConstUPtr = std::unique_ptr<VerticalLayout const>;
 
 class VerticalLayout : public Layout {
 public:

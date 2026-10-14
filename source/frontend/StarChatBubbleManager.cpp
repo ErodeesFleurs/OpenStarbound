@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -18,7 +19,6 @@ import star.bi_map;
 import star.string;
 import star.vector;
 import star.text;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 #include "StarCasting.hpp"
@@ -41,7 +41,6 @@ import star.weighted_pool;
 import star.variant;
 import star.rpc_promise;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -272,11 +271,11 @@ void ChatBubbleManager::update(float dt, WorldClientPtr world) {
   m_bubbles.update(dt);
 }
 
-uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const {
+std::uint8_t ChatBubbleManager::calcDistanceFadeAlpha(Vec2F bubbleScreenPosition, StoredFunctionPtr fadeFunction) const {
   // first calculate bubble position as a factor, distance from center to edge
   // of screen (0.0-1.0)
   float halfScreenwidth = m_camera.screenSize()[0] * 0.5f;
-  float distanceFactor = (fabsf(bubbleScreenPosition[0] - halfScreenwidth)) / halfScreenwidth;
+  float distanceFactor = (std::fabsf(bubbleScreenPosition[0] - halfScreenwidth)) / halfScreenwidth;
 
   // that distance factor is divided by the max allowable distance
   // to re-space the distance as a 0 - 1 over the max allowable distance
@@ -314,7 +313,7 @@ void ChatBubbleManager::render() {
         frame = int((portraitBubble.age / m_portraitChatterFramerate) * 2) % 2;
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleImage : portraitBubble.backgroundImages)
-        drawBubbleImage(screenPos, make_tuple(get<0>(bubbleImage).replace("<frame>", toString(frame)), get<1>(bubbleImage)), pixelRatio, 255);
+        drawBubbleImage(screenPos, std::make_tuple(std::get<0>(bubbleImage).replace("<frame>", toString(frame)), std::get<1>(bubbleImage)), pixelRatio, 255);
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleText : portraitBubble.bubbleText)
         drawBubbleText(screenPos, bubbleText, pixelRatio, 255, true);
@@ -366,29 +365,29 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
             };
             if (y == 0) {
               if (x == 0) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)));
               } else if (x == innerTiles[0] - 1) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)));
               } else {
                 if (middleIdx == x)
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/point.png", partPosition(x, y - 1)));
+                  backgroundImages.append(std::make_tuple("/interface/chatbubbles/point.png", partPosition(x, y - 1)));
                 else
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/sideDown.png", partPosition(x, y)));
+                  backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideDown.png", partPosition(x, y)));
               }
             } else if (y == innerTiles[1] - 1) {
               if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)));
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)));
               else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideUp.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideUp.png", partPosition(x, y)));
             } else {
               if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideLeft.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideLeft.png", partPosition(x, y)));
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideRight.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/sideRight.png", partPosition(x, y)));
               else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/center.png", partPosition(x, y)));
+                backgroundImages.append(std::make_tuple("/interface/chatbubbles/center.png", partPosition(x, y)));
             }
           }
         }
@@ -404,12 +403,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       if (auto jColor = config.opt("color"))
         textStyle.color = jsonToColor(*jColor).toRgba();
       textStyle.loadJson(config.get("style", Json()));
-      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, position));
+      bubbleTexts.append(std::make_tuple(sayAction.text, textStyle, true, position));
 
       for (auto& backgroundImage : backgroundImages)
-        get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
+        std::get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
       for (auto& bubbleText : bubbleTexts)
-        get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
+        std::get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
       RectF boundBox = fold(backgroundImages, RectF::null(), [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
@@ -431,17 +430,17 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       position = portraitAction.position;
 
       List<BubbleImage> backgroundImages;
-      backgroundImages.append(make_tuple(m_portraitBackgroundImage, Vec2F()));
+      backgroundImages.append(std::make_tuple(m_portraitBackgroundImage, Vec2F()));
       if (config.getBool("drawMoreIndicator", false))
-        backgroundImages.append(make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
-      backgroundImages.append(make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
+        backgroundImages.append(std::make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
+      backgroundImages.append(std::make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
       List<BubbleText> bubbleTexts;
-      bubbleTexts.append(make_tuple(portraitAction.text, m_textStyle, false, Vec2F(m_portraitTextPosition)));
+      bubbleTexts.append(std::make_tuple(portraitAction.text, m_textStyle, false, Vec2F(m_portraitTextPosition)));
 
       for (auto& backgroundImage : backgroundImages)
-        get<1>(backgroundImage) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+        std::get<1>(backgroundImage) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
       for (auto& bubbleText : bubbleTexts)
-        get<3>(bubbleText) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+        std::get<3>(bubbleText) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
 
       m_portraitBubbles.prepend({
           portraitAction.entity,
@@ -459,7 +458,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
     if (!silent) {
       if (auto sound = config.optString("sound")) {
         auto assets = Root::singleton().assets();
-        AudioInstancePtr audioInstance = make_shared<AudioInstance>(*assets->audio(*sound));
+        AudioInstancePtr audioInstance = std::make_shared<AudioInstance>(*assets->audio(*sound));
         audioInstance->setPosition(position);
         audioInstance->setVolume(config.getFloat("volume", 1.0f));
         audioInstance->setPitchMultiplier(config.getFloat("pitch", 1.0f));
@@ -471,25 +470,25 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 
 RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio) {
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  auto& image = get<0>(bubbleImage);
-  return RectF::withSize(screenPos + get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
+  auto& image = std::get<0>(bubbleImage);
+  return RectF::withSize(screenPos + std::get<1>(bubbleImage) * pixelRatio, Vec2F(imgMetadata->imageSize(image)) * pixelRatio);
 }
 
 void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha) {
-  auto& image = get<0>(bubbleImage);
-  auto offset = get<1>(bubbleImage) * pixelRatio;
+  auto& image = std::get<0>(bubbleImage);
+  auto offset = std::get<1>(bubbleImage) * pixelRatio;
   m_guiContext->drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
 }
 
 void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait) {
-  TextStyle style = get<1>(bubbleText);
+  TextStyle style = std::get<1>(bubbleText);
   style.color[3] *= ((float)alpha / 255.f);
   m_guiContext->setTextStyle(style, pixelRatio);
-  auto offset = get<3>(bubbleText) * pixelRatio;
+  auto offset = std::get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
   tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-  m_guiContext->renderText(get<0>(bubbleText), tp);
+  m_guiContext->renderText(std::get<0>(bubbleText), tp);
 }
 
 }

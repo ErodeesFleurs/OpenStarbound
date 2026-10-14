@@ -1,4 +1,5 @@
 module;
+import std;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -15,7 +16,6 @@ import star.bi_map;
 import star.game_types;
 import star.material_types;
 import star.vector;
-#include "StarConfig.hpp"
 import star.version;
 import star.color;
 import star.string;
@@ -30,7 +30,6 @@ import star.maybe;
 import star.weighted_pool;
 #include "StarCasting.hpp"
 #include "StarStrongTypedef.hpp"
-import std;
 import star.set;
 import star.worker_pool;
 
@@ -82,9 +81,27 @@ namespace Star {
 
 class WorldCamera;
 
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TilePainter);
+class Assets;
+using AssetsPtr = std::shared_ptr<Assets>;
+using AssetsConstPtr = std::shared_ptr<Assets const>;
+using AssetsWeakPtr = std::weak_ptr<Assets>;
+using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
+using AssetsUPtr = std::unique_ptr<Assets>;
+using AssetsConstUPtr = std::unique_ptr<Assets const>;
+class MaterialDatabase;
+using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = std::shared_ptr<MaterialDatabase const>;
+using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
+using MaterialDatabaseConstWeakPtr = std::weak_ptr<MaterialDatabase const>;
+using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
+using MaterialDatabaseConstUPtr = std::unique_ptr<MaterialDatabase const>;
+class TilePainter;
+using TilePainterPtr = std::shared_ptr<TilePainter>;
+using TilePainterConstPtr = std::shared_ptr<TilePainter const>;
+using TilePainterWeakPtr = std::weak_ptr<TilePainter>;
+using TilePainterConstWeakPtr = std::weak_ptr<TilePainter const>;
+using TilePainterUPtr = std::unique_ptr<TilePainter>;
+using TilePainterConstUPtr = std::unique_ptr<TilePainter const>;
 
 class TilePainter : public TileDrawer {
 public:
@@ -120,8 +137,8 @@ public:
   void cleanup();
 
 private:
-  typedef uint64_t QuadZLevel;
-  typedef uint64_t ChunkHash;
+  typedef std::uint64_t QuadZLevel;
+  typedef std::uint64_t ChunkHash;
 
   enum class TerrainLayer { Background, Midground, Foreground };
 
@@ -135,12 +152,12 @@ private:
   typedef HashMap<TerrainLayer, HashMap<QuadZLevel, RenderBufferPtr>> TerrainChunk;
   typedef HashMap<LiquidId, RenderBufferPtr> LiquidChunk;
 
-  typedef tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
+  typedef std::tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
   typedef String AssetTextureKey;
   typedef Variant<MaterialPieceTextureKey, AssetTextureKey> TextureKey;
 
   struct TextureKeyHash {
-    size_t operator()(TextureKey const& key) const;
+    std::size_t operator()(TextureKey const& key) const;
   };
 
   // chunkIndex here is the index of the render chunk such that chunkIndex *
@@ -152,8 +169,8 @@ private:
 
   void renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
-  shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
-  shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  std::shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  std::shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
 
   bool produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
       TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
@@ -167,11 +184,11 @@ private:
   TextureGroupPtr m_textureGroup;
 
   HashTtlCache<TextureKey, TexturePtr, TextureKeyHash> m_textureCache;
-  HashTtlCache<pair<Vec2I, ChunkHash>, shared_ptr<TerrainChunk const>> m_terrainChunkCache;
-  HashTtlCache<pair<Vec2I, ChunkHash>, shared_ptr<LiquidChunk const>> m_liquidChunkCache;
+  HashTtlCache<std::pair<Vec2I, ChunkHash>, std::shared_ptr<TerrainChunk const>> m_terrainChunkCache;
+  HashTtlCache<std::pair<Vec2I, ChunkHash>, std::shared_ptr<LiquidChunk const>> m_liquidChunkCache;
 
-  List<shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
-  List<shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
+  List<std::shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
+  List<std::shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
 
   Maybe<Vec2F> m_lastCameraCenter;
   Vec2F m_cameraPan;

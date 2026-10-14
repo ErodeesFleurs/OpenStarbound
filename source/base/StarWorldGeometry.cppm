@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.maybe;
 
@@ -11,7 +11,13 @@ import star.rect;
 import star.math_common;
 namespace Star {
 
-STAR_CLASS(WorldGeometry);
+class WorldGeometry;
+using WorldGeometryPtr = std::shared_ptr<WorldGeometry>;
+using WorldGeometryConstPtr = std::shared_ptr<WorldGeometry const>;
+using WorldGeometryWeakPtr = std::weak_ptr<WorldGeometry>;
+using WorldGeometryConstWeakPtr = std::weak_ptr<WorldGeometry const>;
+using WorldGeometryUPtr = std::unique_ptr<WorldGeometry>;
+using WorldGeometryConstUPtr = std::unique_ptr<WorldGeometry const>;
 
 // Utility class for dealing with the non-euclidean nature of the World.
 // Handles the surprisingly complex job of deciding intersections and splitting
@@ -70,10 +76,10 @@ public:
   // Midpoint of the shortest line connecting two points.
   Vec2F midpoint(Vec2F const& p1, Vec2F const& p2) const;
 
-  function<float(float, float)> xDiffFunction() const;
-  function<Vec2F(Vec2F, Vec2F)> diffFunction() const;
-  function<float(float, float, float)> xLerpFunction(Maybe<float> discontinuityThreshold = {}) const;
-  function<Vec2F(float, Vec2F, Vec2F)> lerpFunction(Maybe<float> discontinuityThreshold = {}) const;
+  std::function<float(float, float)> xDiffFunction() const;
+  std::function<Vec2F(Vec2F, Vec2F)> diffFunction() const;
+  std::function<float(float, float, float)> xLerpFunction(Maybe<float> discontinuityThreshold = {}) const;
+  std::function<Vec2F(float, Vec2F, Vec2F)> lerpFunction(Maybe<float> discontinuityThreshold = {}) const;
 
   // Wrapping functions are not guaranteed to work for objects larger than
   // worldWidth / 2.  Bad things can happen.
@@ -243,14 +249,14 @@ inline Vec2F WorldGeometry::midpoint(Vec2F const& p1, Vec2F const& p2) const {
 }
 
 inline int WorldGeometry::nearestTo(int source, int target) const {
-  if (abs(target - source) < (int)(m_size[0] / 2))
+  if (std::abs(target - source) < (int)(m_size[0] / 2))
     return target;
   else
     return diff(target, source) + source;
 }
 
 inline float WorldGeometry::nearestTo(float source, float target) const {
-  if (abs(target - source) < (float)(m_size[0] / 2))
+  if (std::abs(target - source) < (float)(m_size[0] / 2))
     return target;
   else
     return diff(target, source) + source;

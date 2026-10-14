@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.format;
 import star.random;
 import star.static_random;
@@ -105,8 +104,8 @@ TEST(RandTest, All) {
   EXPECT_EQ(rand.randUInt(9802, 87297), 47048u);
   EXPECT_EQ(rand.randUInt(9809802, 372987297), 150191254u);
   EXPECT_EQ(rand.randUInt(9809809, 272987297), 263742306u);
-  EXPECT_EQ(rand.randUInt(4, (uint64_t)(-1)), 7288528389985641665u);
-  EXPECT_EQ(rand.randUInt(rand.randu32(), (uint64_t)(-1)), 1748024317879856867u);
+  EXPECT_EQ(rand.randUInt(4, (std::uint64_t)(-1)), 7288528389985641665u);
+  EXPECT_EQ(rand.randUInt(rand.randu32(), (std::uint64_t)(-1)), 1748024317879856867u);
   EXPECT_EQ(rand.randUInt(2, rand.randu32()), 558624029u);
   EXPECT_EQ(rand.randUInt(9382, 888888), 212491u);
 

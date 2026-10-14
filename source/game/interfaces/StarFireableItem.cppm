@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.set;
 import star.json;
@@ -75,7 +75,13 @@ import star.status_effect_item;
 
 namespace Star {
 
-STAR_CLASS(FireableItem);
+class FireableItem;
+using FireableItemPtr = std::shared_ptr<FireableItem>;
+using FireableItemConstPtr = std::shared_ptr<const FireableItem>;
+using FireableItemWeakPtr = std::weak_ptr<FireableItem>;
+using FireableItemConstWeakPtr = std::weak_ptr<const FireableItem>;
+using FireableItemUPtr = std::unique_ptr<FireableItem>;
+using FireableItemConstUPtr = std::unique_ptr<const FireableItem>;
 
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:

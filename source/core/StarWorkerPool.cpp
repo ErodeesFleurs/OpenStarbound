@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.thread;
@@ -41,7 +41,7 @@ void WorkerPoolHandle::finish() const {
 
 WorkerPoolHandle::Impl::Impl() : done(false) {}
 
-WorkerPoolHandle::WorkerPoolHandle(shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+WorkerPoolHandle::WorkerPoolHandle(std::shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 WorkerPool::WorkerPool(String name) : m_name(std::move(name)) {}
 
@@ -65,8 +65,8 @@ void WorkerPool::start(unsigned threadCount) {
   m_workCondition.broadcast();
   m_workerThreads.clear();
 
-  for (size_t i = m_workerThreads.size(); i < threadCount; ++i)
-    m_workerThreads.append(make_unique<WorkerThread>(this));
+  for (std::size_t i = m_workerThreads.size(); i < threadCount; ++i)
+    m_workerThreads.append(std::make_unique<WorkerThread>(this));
 }
 
 void WorkerPool::stop() {
@@ -104,11 +104,11 @@ void WorkerPool::finish() {
   stop();
 }
 
-WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
+WorkerPoolHandle WorkerPool::addWork(std::function<void()> work) {
   // Construct a worker pool handle and wrap the work to signal the handle when
   // finished.  Set the result to empty string if successful and to the content
   // of the exception if an exception is thrown.
-  auto workerPoolHandleImpl = make_shared<WorkerPoolHandle::Impl>();
+  auto workerPoolHandleImpl = std::make_shared<WorkerPoolHandle::Impl>();
   queueWork([workerPoolHandleImpl, work]() {
     try {
       work();
@@ -126,7 +126,7 @@ WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
   return workerPoolHandleImpl;
 }
 
-size_t WorkerPool::getWorkerCount() const {
+std::size_t WorkerPool::getWorkerCount() const {
   return m_workerThreads.size();
 }
 
@@ -163,7 +163,7 @@ void WorkerPool::WorkerThread::run() {
   }
 }
 
-void WorkerPool::queueWork(function<void()> work) {
+void WorkerPool::queueWork(std::function<void()> work) {
   MutexLocker workLock(m_workMutex);
   m_pendingWork.append(std::move(work));
   m_workCondition.signal();

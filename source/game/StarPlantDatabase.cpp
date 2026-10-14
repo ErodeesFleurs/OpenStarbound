@@ -19,7 +19,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -383,25 +383,25 @@ BushVariant PlantDatabase::buildBushVariant(String const& bushName, float baseHu
   return bushVariant;
 }
 
-PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, uint64_t seed) const {
+PlantPtr PlantDatabase::createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const {
   try {
-    return make_shared<Plant>(treeVariant, seed);
+    return std::make_shared<Plant>(treeVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(strf("Error constructing plant from tree variant stem: {} foliage: {}", treeVariant.stemName, treeVariant.foliageName), e);
   }
 }
 
-PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, uint64_t seed) const {
+PlantPtr PlantDatabase::createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const {
   try {
-    return make_shared<Plant>(grassVariant, seed);
+    return std::make_shared<Plant>(grassVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(strf("Error constructing plant from grass variant name: {}", grassVariant.name), e);
   }
 }
 
-PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, uint64_t seed) const {
+PlantPtr PlantDatabase::createPlant(BushVariant const& bushVariant, std::uint64_t seed) const {
   try {
-    return make_shared<Plant>(bushVariant, seed);
+    return std::make_shared<Plant>(bushVariant, seed);
   } catch (std::exception const& e) {
     throw PlantDatabaseException(
         strf("Error constructing plant from bush variant name: {} mod: {}", bushVariant.bushName, bushVariant.modName),

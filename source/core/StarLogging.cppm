@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.thread;
 import star.set;
 import star.string;
@@ -24,7 +24,13 @@ enum class LogLevel {
 };
 extern EnumMap<LogLevel> const LogLevelNames;
 
-STAR_CLASS(LogSink);
+class LogSink;
+using LogSinkPtr = std::shared_ptr<LogSink>;
+using LogSinkConstPtr = std::shared_ptr<const LogSink>;
+using LogSinkWeakPtr = std::weak_ptr<LogSink>;
+using LogSinkConstWeakPtr = std::weak_ptr<const LogSink>;
+using LogSinkUPtr = std::unique_ptr<LogSink>;
+using LogSinkConstUPtr = std::unique_ptr<const LogSink>;
 
 // A sink for Logger messages.
 class LogSink {
@@ -38,7 +44,7 @@ public:
   LogLevel level();
 
 private:
-  atomic<LogLevel> m_level;
+  std::atomic<LogLevel> m_level;
 };
 
 class StdoutLogSink : public LogSink {
@@ -105,7 +111,7 @@ public:
   static void refreshLoggable();
 private:
 
-  static shared_ptr<StdoutLogSink> s_stdoutSink;
+  static std::shared_ptr<StdoutLogSink> s_stdoutSink;
   static HashSet<LogSinkPtr> s_sinks;
   static Array<bool, 4> s_loggable;
   static Mutex s_mutex;
@@ -134,9 +140,9 @@ private:
 class SpatialLogger {
 public:
   // Maximum count of objects stored per space
-  static size_t const MaximumLines = 200000;
-  static size_t const MaximumPoints = 200000;
-  static size_t const MaximumText = 10000;
+  static std::size_t const MaximumLines = 200000;
+  static std::size_t const MaximumPoints = 200000;
+  static std::size_t const MaximumText = 10000;
 
   struct Line {
     Vec2F begin;

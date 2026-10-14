@@ -1,5 +1,4 @@
 module;
-#include "StarConfig.hpp"
 
 import std;
 
@@ -194,21 +193,21 @@ template <typename BaseSet>
 auto SetMixin<BaseSet>::last() -> value_type {
   if (Base::empty())
     throw SetException("last called on empty set");
-  return *prev(Base::end());
+  return *std::prev(Base::end());
 }
 
 template <typename BaseSet>
 auto SetMixin<BaseSet>::maybeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
-  return *prev(Base::end());
+  return *std::prev(Base::end());
 }
 
 template <typename BaseSet>
 auto SetMixin<BaseSet>::takeLast() -> value_type {
   if (Base::empty())
     throw SetException("takeLast called on empty set");
-  auto i = prev(Base::end());
+  auto i = std::prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);
   return v;
@@ -218,7 +217,7 @@ template <typename BaseSet>
 auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
-  auto i = prev(Base::end());
+  auto i = std::prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);
   return std::move(v);

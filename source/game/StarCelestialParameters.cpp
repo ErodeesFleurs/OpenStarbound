@@ -23,7 +23,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -51,7 +51,7 @@ namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
-CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters)
+CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters)
   : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {
@@ -110,7 +110,7 @@ String CelestialParameters::name() const {
   return m_name;
 }
 
-uint64_t CelestialParameters::seed() const {
+std::uint64_t CelestialParameters::seed() const {
   return m_seed;
 }
 
@@ -122,14 +122,14 @@ Json CelestialParameters::getParameter(String const& name, Json def) const {
   return m_parameters.get(name, std::move(def));
 }
 
-Json CelestialParameters::randomizeParameterList(String const& name, int32_t mix) const {
+Json CelestialParameters::randomizeParameterList(String const& name, std::int32_t mix) const {
   auto parameter = getParameter(name, Json());
   if (parameter.isNull())
     return Json();
   return staticRandomFrom(parameter.toArray(), mix, m_seed, name);
 }
 
-Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mix) const {
+Json CelestialParameters::randomizeParameterRange(String const& name, std::int32_t mix) const {
   auto parameter = getParameter(name, Json());
   if (parameter.isNull()) {
     return Json();
@@ -144,10 +144,10 @@ Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mi
 }
 
 Json CelestialParameters::randomizeParameterRange(
-    JsonArray const& range, int32_t mix, Maybe<String> const& name) const {
+    JsonArray const& range, std::int32_t mix, Maybe<String> const& name) const {
   if (range[0].type() == Json::Type::Int) {
-    int64_t min = range[0].toInt();
-    int64_t max = range[1].toInt();
+    std::int64_t min = range[0].toInt();
+    std::int64_t max = range[1].toInt();
     return staticRandomU64(mix, m_seed, name.value("")) % (max - min + 1) + min;
   } else {
     double min = range[0].toDouble();

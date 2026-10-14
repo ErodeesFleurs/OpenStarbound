@@ -3,7 +3,7 @@ module;
 import star.vector;
 import star.game_types;
 import star.world_geometry;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.map;
 import star.data_stream;
@@ -11,10 +11,28 @@ import star.wiring;
 
 namespace Star {
 
-STAR_CLASS(WireEntity);
-STAR_CLASS(WorldStorage);
+class WireEntity;
+using WireEntityPtr = std::shared_ptr<WireEntity>;
+using WireEntityConstPtr = std::shared_ptr<const WireEntity>;
+using WireEntityWeakPtr = std::weak_ptr<WireEntity>;
+using WireEntityConstWeakPtr = std::weak_ptr<const WireEntity>;
+using WireEntityUPtr = std::unique_ptr<WireEntity>;
+using WireEntityConstUPtr = std::unique_ptr<const WireEntity>;
+class WorldStorage;
+using WorldStoragePtr = std::shared_ptr<WorldStorage>;
+using WorldStorageConstPtr = std::shared_ptr<const WorldStorage>;
+using WorldStorageWeakPtr = std::weak_ptr<WorldStorage>;
+using WorldStorageConstWeakPtr = std::weak_ptr<const WorldStorage>;
+using WorldStorageUPtr = std::unique_ptr<WorldStorage>;
+using WorldStorageConstUPtr = std::unique_ptr<const WorldStorage>;
 
-STAR_CLASS(WireProcessor);
+class WireProcessor;
+using WireProcessorPtr = std::shared_ptr<WireProcessor>;
+using WireProcessorConstPtr = std::shared_ptr<const WireProcessor>;
+using WireProcessorWeakPtr = std::weak_ptr<WireProcessor>;
+using WireProcessorConstWeakPtr = std::weak_ptr<const WireProcessor>;
+using WireProcessorUPtr = std::unique_ptr<WireProcessor>;
+using WireProcessorConstUPtr = std::unique_ptr<const WireProcessor>;
 
 // Propogates WireEntity signals, and keeps networks of WireEntities alive
 // together.

@@ -1,3 +1,4 @@
+import star.memory;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.data_stream;
@@ -23,7 +24,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 import star.drawable;

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.logging;
 import star.format;
@@ -74,7 +74,7 @@ EntityMap::EntityMap(Vec2U const& worldSize, EntityId beginIdSpace, EntityId end
     m_endIdSpace(endIdSpace) {}
 
 EntityId EntityMap::reserveEntityId() {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+  if (m_spatialMap.size() >= (std::size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   EntityId id = m_nextId;
@@ -86,7 +86,7 @@ EntityId EntityMap::reserveEntityId() {
 }
 
 Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+  if (m_spatialMap.size() >= (std::size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   if (entityId == NullEntityId || m_spatialMap.contains(entityId))
@@ -139,7 +139,7 @@ EntityPtr EntityMap::removeEntity(EntityId entityId) {
   return {};
 }
 
-size_t EntityMap::size() const {
+std::size_t EntityMap::size() const {
   return m_spatialMap.size();
 }
 
@@ -147,7 +147,7 @@ List<EntityId> EntityMap::entityIds() const {
   return m_spatialMap.keys();
 }
 
-void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) {
+void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) {
   auto updateEntityInfo = [&](SpatialMap::Entry const& entry) {
     auto const& entity = entry.value;
 
@@ -206,7 +206,9 @@ EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
 
 EntityPtr EntityMap::entity(EntityId entityId) const {
   auto entity = m_spatialMap.value(entityId);
-  starAssert(!entity || entity->entityId() == entityId);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((!entity || entity->entityId() == entityId));
+  }
   return entity;
 }
 
@@ -264,7 +266,7 @@ void EntityMap::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntit
     });
 }
 
-void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) const {
+void EntityMap::forAllEntities(EntityCallback const& callback, std::function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) const {
   // Even if there is no sort order, we still copy pointers to a temporary
   // list, so that it is safe to call addEntity from the callback.
   List<EntityPtr const*> allEntities;

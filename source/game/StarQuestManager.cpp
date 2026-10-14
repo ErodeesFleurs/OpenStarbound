@@ -27,7 +27,6 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.id_map;
@@ -203,12 +202,12 @@ StringMap<QuestPtr> readQuests(Json const& json) {
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
     auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
     if (validateArc(questArc))
-      result[questPair.first] = make_shared<Quest>(questPair.second);
+      result[questPair.first] = std::make_shared<Quest>(questPair.second);
   }
   return result;
 }
 
-function<bool (QuestPtr const&)> questFilter(QuestState state) {
+std::function<bool (QuestPtr const&)> questFilter(QuestState state) {
   return [state](QuestPtr const& quest) {
       return quest->state() == state;
     };
@@ -401,8 +400,8 @@ void sortQuests(List<QuestPtr>& quests) {
   std::sort(quests.begin(),
       quests.end(),
       [](QuestPtr const& left, QuestPtr const& right) -> bool {
-        int64_t leftUpdated = left->lastUpdatedOn();
-        int64_t rightUpdated = right->lastUpdatedOn();
+        std::int64_t leftUpdated = left->lastUpdatedOn();
+        std::int64_t rightUpdated = right->lastUpdatedOn();
         String leftQuestId = left->templateId();
         String rightQuestId = right->templateId();
         return std::tie(leftUpdated, leftQuestId) < std::tie(rightUpdated, rightQuestId);
@@ -526,7 +525,9 @@ StringSet QuestManager::interestingObjects() {
 }
 
 Maybe<ChainableJsonMessageResponse> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  starAssert(m_world);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_world));
+  }
   Maybe<ChainableJsonMessageResponse> result;
   m_quests.values().exec([&result, message, localMessage, args](
       QuestPtr const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
@@ -588,7 +589,7 @@ void QuestManager::startInitialQuests() {
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))
-      offer(make_shared<Quest>(quest, 0, m_player));
+      offer(std::make_shared<Quest>(quest, 0, m_player));
   }
 }
 

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.json;
@@ -43,9 +43,27 @@ import star.perlin;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(CelestialSlaveDatabase);
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
+class CelestialMasterDatabase;
+using CelestialMasterDatabasePtr = std::shared_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstPtr = std::shared_ptr<const CelestialMasterDatabase>;
+using CelestialMasterDatabaseWeakPtr = std::weak_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstWeakPtr = std::weak_ptr<const CelestialMasterDatabase>;
+using CelestialMasterDatabaseUPtr = std::unique_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstUPtr = std::unique_ptr<const CelestialMasterDatabase>;
+class CelestialSlaveDatabase;
+using CelestialSlaveDatabasePtr = std::shared_ptr<CelestialSlaveDatabase>;
+using CelestialSlaveDatabaseConstPtr = std::shared_ptr<const CelestialSlaveDatabase>;
+using CelestialSlaveDatabaseWeakPtr = std::weak_ptr<CelestialSlaveDatabase>;
+using CelestialSlaveDatabaseConstWeakPtr = std::weak_ptr<const CelestialSlaveDatabase>;
+using CelestialSlaveDatabaseUPtr = std::unique_ptr<CelestialSlaveDatabase>;
+using CelestialSlaveDatabaseConstUPtr = std::unique_ptr<const CelestialSlaveDatabase>;
 
 class CelestialDatabase {
 public:
@@ -78,7 +96,7 @@ public:
   // from the top in 2d.  The z-coordinate is there simpy as a validation
   // parameter.
   virtual List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) = 0;
-  virtual List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
+  virtual List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
 
   // Returns false if part or all of the specified region is not loaded.  This
   // is only relevant for calls to scanSystems and scanConstellationLines, and
@@ -121,7 +139,7 @@ public:
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
   Maybe<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-      function<bool(CelestialCoordinate)> filter = {}, Maybe<uint64_t> seed = {});
+      std::function<bool(CelestialCoordinate)> filter = {}, Maybe<std::uint64_t> seed = {});
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
@@ -134,7 +152,7 @@ public:
   List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
   List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
   bool scanRegionFullyLoaded(RectI const& region) override;
 
@@ -154,7 +172,7 @@ protected:
   struct PlanetaryType {
     String typeName;
     float satelliteProbability;
-    size_t maxSatelliteCount;
+    std::size_t maxSatelliteCount;
     Json baseParameters;
     JsonArray variationParameters;
     JsonObject orbitParameters;
@@ -201,7 +219,7 @@ protected:
   CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
   CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
-  Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
+  Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
       RandomSource& random, Vec3I const& location) const;
   List<CelestialConstellation> produceConstellations(
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
@@ -246,7 +264,7 @@ public:
   List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
   List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  List<std::pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
   bool scanRegionFullyLoaded(RectI const& region) override;
 

@@ -1,7 +1,7 @@
 module;
 
 // Match client include order for SIMD intrinsics used by xxhash and fast_float.
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.lua;
@@ -12,7 +12,7 @@ module star.config_lua_bindings;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeConfigCallbacks(function<Json(String const&, Json const&)> getParameter) {
+LuaCallbacks LuaBindings::makeConfigCallbacks(std::function<Json(String const&, Json const&)> getParameter) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("getParameter", getParameter);

@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.file;
 import star.io_device;
 import star.string;
@@ -74,13 +73,13 @@ void File::copy(String const& source, String const& target) {
 
   char buf[1024];
   while (!sourceFile->atEnd()) {
-    size_t r = sourceFile->read(buf, 1024);
+    std::size_t r = sourceFile->read(buf, 1024);
     targetFile->writeFull(buf, r);
   }
 }
 
 FilePtr File::open(const String& filename, IOMode mode) {
-  auto file = make_shared<File>(filename);
+  auto file = std::make_shared<File>(filename);
   file->open(mode);
   return file;
 }
@@ -90,7 +89,7 @@ ByteArray File::readFile(String const& filename) {
   ByteArray bytes;
   while (!file->atEnd()) {
     char buffer[1024];
-    size_t r = file->read(buffer, 1024);
+    std::size_t r = file->read(buffer, 1024);
     bytes.append(buffer, r);
   }
 
@@ -102,8 +101,8 @@ String File::readFileString(String const& filename) {
   std::string str;
   while (!file->atEnd()) {
     char buffer[1024];
-    size_t r = file->read(buffer, 1024);
-    for (size_t i = 0; i < r; ++i)
+    std::size_t r = file->read(buffer, 1024);
+    for (std::size_t i = 0; i < r; ++i)
       str.push_back(buffer[i]);
   }
 
@@ -114,7 +113,7 @@ StreamOffset File::fileSize(String const& filename) {
   return File::open(filename, IOMode::Read)->size();
 }
 
-void File::writeFile(char const* data, size_t len, String const& filename) {
+void File::writeFile(char const* data, std::size_t len, String const& filename) {
   FilePtr file = File::open(filename, IOMode::Write | IOMode::Truncate);
   file->writeFull(data, len);
 }
@@ -188,7 +187,7 @@ bool File::atEnd() {
   return ftell(m_file) >= fsize(m_file);
 }
 
-size_t File::read(char* data, size_t len) {
+std::size_t File::read(char* data, std::size_t len) {
   if (!m_file)
     throw IOException("read called on closed File");
 
@@ -198,7 +197,7 @@ size_t File::read(char* data, size_t len) {
   return fread(m_file, data, len);
 }
 
-size_t File::write(const char* data, size_t len) {
+std::size_t File::write(const char* data, std::size_t len) {
   if (!m_file)
     throw IOException("write called on closed File");
 
@@ -208,11 +207,11 @@ size_t File::write(const char* data, size_t len) {
   return fwrite(m_file, data, len);
 }
 
-size_t File::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
+std::size_t File::readAbsolute(StreamOffset readPosition, char* data, std::size_t len) {
   return pread(m_file, data, len, readPosition);
 }
 
-size_t File::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+std::size_t File::writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len) {
   return pwrite(m_file, data, len, writePosition);
 }
 
@@ -277,7 +276,7 @@ String File::deviceName() const {
 }
 
 IODevicePtr File::clone() {
-  auto cloned = make_shared<File>(m_filename);
+  auto cloned = std::make_shared<File>(m_filename);
   if (isOpen()) {
     // Open with same mode
     cloned->open(mode());

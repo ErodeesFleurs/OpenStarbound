@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.json;
@@ -33,11 +33,29 @@ import star.celestial_parameters;
 
 namespace Star {
 
-STAR_STRUCT(CelestialSystemObjects);
-STAR_STRUCT(CelestialChunk);
-STAR_STRUCT(CelestialBaseInformation);
+struct CelestialSystemObjects;
+using CelestialSystemObjectsPtr = std::shared_ptr<CelestialSystemObjects>;
+using CelestialSystemObjectsConstPtr = std::shared_ptr<const CelestialSystemObjects>;
+using CelestialSystemObjectsWeakPtr = std::weak_ptr<CelestialSystemObjects>;
+using CelestialSystemObjectsConstWeakPtr = std::weak_ptr<const CelestialSystemObjects>;
+using CelestialSystemObjectsUPtr = std::unique_ptr<CelestialSystemObjects>;
+using CelestialSystemObjectsConstUPtr = std::unique_ptr<const CelestialSystemObjects>;
+struct CelestialChunk;
+using CelestialChunkPtr = std::shared_ptr<CelestialChunk>;
+using CelestialChunkConstPtr = std::shared_ptr<const CelestialChunk>;
+using CelestialChunkWeakPtr = std::weak_ptr<CelestialChunk>;
+using CelestialChunkConstWeakPtr = std::weak_ptr<const CelestialChunk>;
+using CelestialChunkUPtr = std::unique_ptr<CelestialChunk>;
+using CelestialChunkConstUPtr = std::unique_ptr<const CelestialChunk>;
+struct CelestialBaseInformation;
+using CelestialBaseInformationPtr = std::shared_ptr<CelestialBaseInformation>;
+using CelestialBaseInformationConstPtr = std::shared_ptr<const CelestialBaseInformation>;
+using CelestialBaseInformationWeakPtr = std::weak_ptr<CelestialBaseInformation>;
+using CelestialBaseInformationConstWeakPtr = std::weak_ptr<const CelestialBaseInformation>;
+using CelestialBaseInformationUPtr = std::unique_ptr<CelestialBaseInformation>;
+using CelestialBaseInformationConstUPtr = std::unique_ptr<const CelestialBaseInformation>;
 
-typedef List<pair<Vec2I, Vec2I>> CelestialConstellation;
+typedef List<std::pair<Vec2I, Vec2I>> CelestialConstellation;
 
 struct CelestialOrbitRegion {
   String regionName;

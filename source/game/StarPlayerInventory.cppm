@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -21,16 +21,70 @@ import star.either;
 import star.net_compatibility;
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
-STAR_CLASS(Player);
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class ItemBag;
+using ItemBagPtr = std::shared_ptr<ItemBag>;
+using ItemBagConstPtr = std::shared_ptr<const ItemBag>;
+using ItemBagWeakPtr = std::weak_ptr<ItemBag>;
+using ItemBagConstWeakPtr = std::weak_ptr<const ItemBag>;
+using ItemBagUPtr = std::unique_ptr<ItemBag>;
+using ItemBagConstUPtr = std::unique_ptr<const ItemBag>;
+class ArmorItem;
+using ArmorItemPtr = std::shared_ptr<ArmorItem>;
+using ArmorItemConstPtr = std::shared_ptr<const ArmorItem>;
+using ArmorItemWeakPtr = std::weak_ptr<ArmorItem>;
+using ArmorItemConstWeakPtr = std::weak_ptr<const ArmorItem>;
+using ArmorItemUPtr = std::unique_ptr<ArmorItem>;
+using ArmorItemConstUPtr = std::unique_ptr<const ArmorItem>;
+class HeadArmor;
+using HeadArmorPtr = std::shared_ptr<HeadArmor>;
+using HeadArmorConstPtr = std::shared_ptr<const HeadArmor>;
+using HeadArmorWeakPtr = std::weak_ptr<HeadArmor>;
+using HeadArmorConstWeakPtr = std::weak_ptr<const HeadArmor>;
+using HeadArmorUPtr = std::unique_ptr<HeadArmor>;
+using HeadArmorConstUPtr = std::unique_ptr<const HeadArmor>;
+class ChestArmor;
+using ChestArmorPtr = std::shared_ptr<ChestArmor>;
+using ChestArmorConstPtr = std::shared_ptr<const ChestArmor>;
+using ChestArmorWeakPtr = std::weak_ptr<ChestArmor>;
+using ChestArmorConstWeakPtr = std::weak_ptr<const ChestArmor>;
+using ChestArmorUPtr = std::unique_ptr<ChestArmor>;
+using ChestArmorConstUPtr = std::unique_ptr<const ChestArmor>;
+class LegsArmor;
+using LegsArmorPtr = std::shared_ptr<LegsArmor>;
+using LegsArmorConstPtr = std::shared_ptr<const LegsArmor>;
+using LegsArmorWeakPtr = std::weak_ptr<LegsArmor>;
+using LegsArmorConstWeakPtr = std::weak_ptr<const LegsArmor>;
+using LegsArmorUPtr = std::unique_ptr<LegsArmor>;
+using LegsArmorConstUPtr = std::unique_ptr<const LegsArmor>;
+class BackArmor;
+using BackArmorPtr = std::shared_ptr<BackArmor>;
+using BackArmorConstPtr = std::shared_ptr<const BackArmor>;
+using BackArmorWeakPtr = std::weak_ptr<BackArmor>;
+using BackArmorConstWeakPtr = std::weak_ptr<const BackArmor>;
+using BackArmorUPtr = std::unique_ptr<BackArmor>;
+using BackArmorConstUPtr = std::unique_ptr<const BackArmor>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
 
-STAR_CLASS(PlayerInventory);
+class PlayerInventory;
+using PlayerInventoryPtr = std::shared_ptr<PlayerInventory>;
+using PlayerInventoryConstPtr = std::shared_ptr<const PlayerInventory>;
+using PlayerInventoryWeakPtr = std::weak_ptr<PlayerInventory>;
+using PlayerInventoryConstWeakPtr = std::weak_ptr<const PlayerInventory>;
+using PlayerInventoryUPtr = std::unique_ptr<PlayerInventory>;
+using PlayerInventoryConstUPtr = std::unique_ptr<const PlayerInventory>;
 
 struct InventoryExceptionTag {
   static constexpr char const* name() { return "InventoryException"; }
@@ -80,7 +134,7 @@ public:
   // returns false.
   bool setItem(InventorySlot const& slot, ItemPtr const& item);
 
-  bool consumeSlot(InventorySlot const& slot, uint64_t count = 1);
+  bool consumeSlot(InventorySlot const& slot, std::uint64_t count = 1);
 
   bool slotValid(InventorySlot const& slot) const;
 
@@ -95,16 +149,16 @@ public:
   // Returns number of items in the given set that can fit anywhere in any item
   // slot except the trash slot (the number of items that would be added by a
   // call to addItems).
-  uint64_t itemsCanFit(ItemPtr const& items) const;
+  std::uint64_t itemsCanFit(ItemPtr const& items) const;
 
   bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  std::uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
 
   // Consume items based on ItemDescriptor. Can take from any manageable item slot.
   bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
   ItemDescriptor takeItems(ItemDescriptor const& descriptor, bool takePartial = false, bool exactMatch = false);
   // Return a summary of every item that can be consumed by ItemDescriptor.
-  HashMap<ItemDescriptor, uint64_t> availableItems() const;
+  HashMap<ItemDescriptor, std::uint64_t> availableItems() const;
 
   HeadArmorPtr headArmor() const;
   ChestArmorPtr chestArmor() const;
@@ -146,10 +200,10 @@ public:
   void setEssentialItem(EssentialItem essentialItem, ItemPtr item);
 
   // Non-manageable currencies
-  StringMap<uint64_t> availableCurrencies() const;
-  uint64_t currency(String const& currencyType) const;
-  void addCurrency(String const& currencyType, uint64_t amount);
-  bool consumeCurrency(String const& currencyType, uint64_t amount);
+  StringMap<std::uint64_t> availableCurrencies() const;
+  std::uint64_t currency(String const& currencyType) const;
+  void addCurrency(String const& currencyType, std::uint64_t amount);
+  bool consumeCurrency(String const& currencyType, std::uint64_t amount);
 
   // A custom bar location primary and secondary cannot point to a slot that
   // has no item, and rather than set an empty slot to that location, the slot
@@ -168,10 +222,10 @@ public:
   // This will not change the selected action bar location, but may change the
   // item if the selected location points to the custom bar and the contents
   // change.
-  uint8_t customBarGroup() const;
-  void setCustomBarGroup(uint8_t group);
-  uint8_t customBarGroups() const;
-  uint8_t customBarIndexes() const;
+  std::uint8_t customBarGroup() const;
+  void setCustomBarGroup(std::uint8_t group);
+  std::uint8_t customBarGroups() const;
+  std::uint8_t customBarIndexes() const;
 
   // The action bar is the combination of the custom bar and the essential
   // items, and any of these locations can be selected.
@@ -197,13 +251,13 @@ public:
   Json store() const;
 
   // Loop over every manageable item and potentially mutate it.
-  void forEveryItem(function<void(InventorySlot const&, ItemPtr&)> function);
+  void forEveryItem(std::function<void(InventorySlot const&, ItemPtr&)> function);
   // Loop over every manageable item.
-  void forEveryItem(function<void(InventorySlot const&, ItemPtr const&)> function) const;
+  void forEveryItem(std::function<void(InventorySlot const&, ItemPtr const&)> function) const;
   // Return every manageable item
   List<ItemPtr> allItems() const;
   // Return summary of every manageable item name and the count of that item
-  Map<String, uint64_t> itemSummary() const;
+  Map<String, std::uint64_t> itemSummary() const;
 
   // Clears away any empty items and sets them as null, and updates action bar
   // slots to maintain the rules for the action bar.  Should be called every
@@ -216,10 +270,10 @@ public:
   static PlayerInventory const& blankInventory();
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
 
 private:
-  typedef pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
+  typedef std::pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
 
   static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
 
@@ -238,8 +292,8 @@ private:
   Maybe<InventorySlot> m_swapReturnSlot;
   ItemPtr m_trashSlot;
   Map<EssentialItem, ItemPtr> m_essential;
-  StringMap<uint64_t> m_currencies;
-  uint8_t m_customBarGroup;
+  StringMap<std::uint64_t> m_currencies;
+  std::uint8_t m_customBarGroup;
   MultiArray<CustomBarLink, 2> m_customBar;
   SelectedActionBarLocation m_selectedActionBar;
 
@@ -248,7 +302,7 @@ private:
   NetElementData<ItemDescriptor> m_swapSlotNetState;
   NetElementData<ItemDescriptor> m_trashSlotNetState;
   Map<EssentialItem, NetElementData<ItemDescriptor>> m_essentialNetState;
-  NetElementData<StringMap<uint64_t>> m_currenciesNetState;
+  NetElementData<StringMap<std::uint64_t>> m_currenciesNetState;
   NetElementUInt m_customBarGroupNetState;
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;

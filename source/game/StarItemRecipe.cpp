@@ -20,7 +20,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 import star.drawable;
@@ -74,7 +74,7 @@ std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe) {
   return os;
 }
 
-size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {
+std::size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {
   return hashOf(v.currencyInputs.keys(), v.currencyInputs.values(), v.inputs, v.output);
 }
 

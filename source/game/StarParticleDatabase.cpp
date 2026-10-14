@@ -15,7 +15,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -53,7 +53,7 @@ ParticleDatabase::ParticleDatabase() {
   auto& files = assets->scanExtension("particle");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto particleConfig = make_shared<ParticleConfig>(assets->json(file));
+    auto particleConfig = std::make_shared<ParticleConfig>(assets->json(file));
     if (m_configs.contains(particleConfig->kind()))
       throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
     m_configs[particleConfig->kind()] = particleConfig;

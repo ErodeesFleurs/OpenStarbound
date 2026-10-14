@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -25,10 +25,10 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
   auto input = Input::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindDown", bind(mem_fn(&Input::bindDown), input, _1, _2));
-  callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", bind(mem_fn(&Input::bindHeld), input, _1, _2));
-  callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     bind(mem_fn(&Input::bindHeld), input, _1, _2));
-  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindUp",   bind(mem_fn(&Input::bindUp),   input, _1, _2));
+  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindDown", std::bind(std::mem_fn(&Input::bindDown), input, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", std::bind(std::mem_fn(&Input::bindHeld), input, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     std::bind(std::mem_fn(&Input::bindHeld), input, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindUp",   std::bind(std::mem_fn(&Input::bindUp),   input, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallback("keyDown", [input](String const& keyName, Maybe<StringList> const& modNames) -> Maybe<unsigned> {
     Key key = KeyNames.getLeft(keyName);
@@ -54,10 +54,10 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2F>>
     { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
 
-  callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      bind(mem_fn(&Input::resetBinds),      input, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, String, Json>("setBinds",  bind(mem_fn(&Input::setBinds),        input, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<Json, String, String>("getDefaultBinds", bind(mem_fn(&Input::getDefaultBinds), input, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, String, String>("getBinds",        bind(mem_fn(&Input::getBinds),        input, _1, _2));
+  callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      std::bind(std::mem_fn(&Input::resetBinds),      input, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<void, String, String, Json>("setBinds",  std::bind(std::mem_fn(&Input::setBinds),        input, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  callbacks.registerCallbackWithSignature<Json, String, String>("getDefaultBinds", std::bind(std::mem_fn(&Input::getDefaultBinds), input, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Json, String, String>("getBinds",        std::bind(std::mem_fn(&Input::getBinds),        input, std::placeholders::_1, std::placeholders::_2));
 
   callbacks.registerCallback("events", [input]() -> Json {
     JsonArray result;
@@ -70,8 +70,8 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
     return result;
   });
 
-  callbacks.registerCallbackWithSignature<Vec2F>("mousePosition", bind(mem_fn(&Input::mousePosition), input));
-  callbacks.registerCallbackWithSignature<unsigned, String>("getTag", bind(mem_fn(&Input::getTag), input, _1));
+  callbacks.registerCallbackWithSignature<Vec2F>("mousePosition", std::bind(std::mem_fn(&Input::mousePosition), input));
+  callbacks.registerCallbackWithSignature<unsigned, String>("getTag", std::bind(std::mem_fn(&Input::getTag), input, std::placeholders::_1));
 
   return callbacks;
 }

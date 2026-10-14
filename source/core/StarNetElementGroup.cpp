@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 import star.format;
 #include "StarDataStreamDevices.hpp"
@@ -11,12 +11,14 @@ import star.version;
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
-  starAssert(!m_elements.any([element](auto p) { return p.first == element; }));
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((!m_elements.any([element](auto p) { return p.first == element; })));
+  }
 
   element->initNetVersion(m_version);
   if (m_interpolationEnabled && propagateInterpolation)
     element->enableNetInterpolation(m_extrapolationHint);
-  m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
+  m_elements.append(std::pair<NetElement*, bool>(element, propagateInterpolation));
 
 
   for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
@@ -75,7 +77,7 @@ void NetElementGroup::tickNetInterpolation(float dt) {
   }
 }
 
-bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementGroup::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
 
   auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
@@ -90,7 +92,7 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
     }
   } else {
     bool deltaWritten = false;
-    uint64_t i = 0;
+    std::uint64_t i = 0;
     m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& element : m_elements) {
       if (i > expectedSize)
@@ -128,9 +130,9 @@ void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetC
         break;
       }
   } else {
-    uint64_t readIndex = ds.readVlqU();
-    uint64_t i = 0;
-    uint64_t offset = 0;
+    std::uint64_t readIndex = ds.readVlqU();
+    std::uint64_t i = 0;
+    std::uint64_t offset = 0;
     for (auto& element : m_elements) {
       if (i > expectedSize)
         break;

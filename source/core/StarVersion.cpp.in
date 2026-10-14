@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.version;
 
 namespace Star {

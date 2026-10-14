@@ -1,7 +1,6 @@
 import star.rect;
 import star.list;
 import star.multi_array;
-#include "StarConfig.hpp"
 import star.set;
 import star.vector;
 import star.thread;
@@ -35,14 +34,14 @@ TEST(TileSectorArrayTest, All) {
   EXPECT_TRUE(RectI(32, 32, 64, 64) == tileSectorArray.sectorRegion({1, 1}));
   EXPECT_TRUE(TileArray::Sector(0, 3) == tileSectorArray.adjacentSector({3, 3}, {1, 0}));
 
-  tileSectorArray.loadSector({0, 0}, make_unique<TileArray::Array>(1));
-  tileSectorArray.loadSector({1, 0}, make_unique<TileArray::Array>(1));
-  tileSectorArray.loadSector({2, 0}, make_unique<TileArray::Array>(1));
-  tileSectorArray.loadSector({3, 0}, make_unique<TileArray::Array>(1));
-  tileSectorArray.loadSector({0, 1}, make_unique<TileArray::Array>(2));
-  tileSectorArray.loadSector({1, 1}, make_unique<TileArray::Array>(2));
-  tileSectorArray.loadSector({2, 1}, make_unique<TileArray::Array>(2));
-  tileSectorArray.loadSector({3, 1}, make_unique<TileArray::Array>(2));
+  tileSectorArray.loadSector({0, 0}, std::make_unique<TileArray::Array>(1));
+  tileSectorArray.loadSector({1, 0}, std::make_unique<TileArray::Array>(1));
+  tileSectorArray.loadSector({2, 0}, std::make_unique<TileArray::Array>(1));
+  tileSectorArray.loadSector({3, 0}, std::make_unique<TileArray::Array>(1));
+  tileSectorArray.loadSector({0, 1}, std::make_unique<TileArray::Array>(2));
+  tileSectorArray.loadSector({1, 1}, std::make_unique<TileArray::Array>(2));
+  tileSectorArray.loadSector({2, 1}, std::make_unique<TileArray::Array>(2));
+  tileSectorArray.loadSector({3, 1}, std::make_unique<TileArray::Array>(2));
 
   Set<Vec2I> found;
   tileSectorArray.tileEach(RectI(-2, 0, 3, 1),

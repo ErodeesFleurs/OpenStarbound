@@ -1,4 +1,5 @@
-#include "StarConfig.hpp"
+import star.memory;
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.color;

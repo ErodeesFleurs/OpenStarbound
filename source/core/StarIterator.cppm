@@ -1,7 +1,6 @@
 module;
 
 import std;
-#include "StarConfig.hpp"
 import star.format;
 
 namespace Star {
@@ -86,11 +85,11 @@ public:
     return t.previous();
   }
 
-  size_t distFront() const {
+  std::size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  std::size_t distBack() const {
     return std::distance(curr, cont.end());
   }
 
@@ -207,11 +206,11 @@ public:
     return n.previous();
   }
 
-  size_t distFront() const {
+  std::size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  std::size_t distBack() const {
     return std::distance(curr, cont.end());
   }
 
@@ -296,11 +295,11 @@ public:
     return t.next();
   }
 
-  size_t distFront() const {
+  std::size_t distFront() const {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  std::size_t distBack() const {
     return std::distance(curr, cont.end()) - 1;
   }
 
@@ -405,14 +404,14 @@ public:
     }
   }
 
-  size_t distFront() const {
+  std::size_t distFront() const {
     if (curr == cont.end())
       return 0;
     else
       return std::distance(cont.begin(), curr) - (remCalled ? 1 : 0);
   }
 
-  size_t distBack() const {
+  std::size_t distBack() const {
     if (curr == cont.end())
       return cont.size();
     else

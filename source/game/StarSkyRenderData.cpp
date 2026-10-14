@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.color;
@@ -41,16 +41,16 @@ List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
   float planetScale = settings.queryFloat("satellite.planetScale");
   float moonScale = settings.queryFloat("satellite.moonScale");
 
-  List<tuple<List<pair<String, float>>, Vec2F, float>> orbitingCelestialObjects;
+  List<std::tuple<List<std::pair<String, float>>, Vec2F, float>> orbitingCelestialObjects;
 
   // Gather up all the CelestialParameters and scales for all the celestial
   // objects to draw in the sky, we should draw the parent planet if we are a
   // satellite, as well as all the other satellites.
   if (skyParameters.nearbyPlanet)
-    orbitingCelestialObjects.append(tuple_cat(*skyParameters.nearbyPlanet, tie(planetScale)));
+    orbitingCelestialObjects.append(tuple_cat(*skyParameters.nearbyPlanet, std::tie(planetScale)));
 
   for (auto moon : skyParameters.nearbyMoons)
-    orbitingCelestialObjects.append(tuple_cat(moon, tie(moonScale)));
+    orbitingCelestialObjects.append(tuple_cat(moon, std::tie(moonScale)));
 
   Vec2F satelliteArea = jsonToVec2F(settings.query("satellite.area"));
   auto planetCenter = Vec2F(viewSize[0] / 2, 0) - worldOffset;
@@ -59,13 +59,13 @@ List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
   List<SkyOrbiter> orbiters;
 
   for (auto const& object : orbitingCelestialObjects) {
-    auto const& layers = get<0>(object);
-    Vec2F pos = get<1>(object);
+    auto const& layers = std::get<0>(object);
+    Vec2F pos = std::get<1>(object);
     pos = pos.piecewiseMultiply(satelliteArea);
     pos -= worldOffset;
     pos = rotMatrix.transformVec2(pos);
     for (auto const& l : layers)
-      orbiters.append(SkyOrbiter{SkyOrbiterType::Moon, get<2>(object) * l.second, 0.0f, l.first, pos});
+      orbiters.append(SkyOrbiter{SkyOrbiterType::Moon, std::get<2>(object) * l.second, 0.0f, l.first, pos});
   }
 
   return orbiters;

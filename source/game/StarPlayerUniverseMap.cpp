@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.format;
@@ -97,14 +97,14 @@ Json PlayerUniverseMap::toJson() const {
   return json;
 }
 
-List<pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
+List<std::pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
   if (m_serverUuid.isNothing())
     return {};
 
-  List<pair<Vec3I, OrbitBookmark>> bookmarks;
+  List<std::pair<Vec3I, OrbitBookmark>> bookmarks;
   for (auto p : universeMap().systems) {
     bookmarks.appendAll(p.second.bookmarks.values().transformed([&p](OrbitBookmark const& b) {
-      return pair<Vec3I, OrbitBookmark>(p.first, b);
+      return std::pair<Vec3I, OrbitBookmark>(p.first, b);
     }));
   }
   return bookmarks;

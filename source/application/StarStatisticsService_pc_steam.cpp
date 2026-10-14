@@ -1,4 +1,11 @@
-#include "StarConfig.hpp"
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.maybe;
 import star.format;
 import star.thread;
@@ -15,9 +22,6 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 import star.statistics_service_pc_steam;
 import star.logging;
@@ -43,7 +47,7 @@ Maybe<String> SteamStatisticsService::error() const {
 
 bool SteamStatisticsService::setStat(String const& name, String const& type, Json const& value) {
   if (type == "int")
-    return SteamAPI_ISteamUserStats_SetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), (int32_t)value.toInt());
+    return SteamAPI_ISteamUserStats_SetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), (std::int32_t)value.toInt());
 
   if (type == "float")
     return SteamAPI_ISteamUserStats_SetStatFloat(SteamAPI_SteamUserStats(), name.utf8Ptr(), value.toFloat());
@@ -53,7 +57,7 @@ bool SteamStatisticsService::setStat(String const& name, String const& type, Jso
 
 Json SteamStatisticsService::getStat(String const& name, String const& type, Json def) const {
   if (type == "int") {
-    int32_t intValue = 0;
+    std::int32_t intValue = 0;
     if (SteamAPI_ISteamUserStats_GetStatInt32(SteamAPI_SteamUserStats(), name.utf8Ptr(), &intValue))
       return Json(intValue);
   }
@@ -82,7 +86,7 @@ bool SteamStatisticsService::unlockAchievement(String const& name) {
 
 StringSet SteamStatisticsService::achievementsUnlocked() const {
   StringSet achievements;
-  for (uint32_t i = 0; i < SteamAPI_ISteamUserStats_GetNumAchievements(SteamAPI_SteamUserStats()); ++i) {
+  for (std::uint32_t i = 0; i < SteamAPI_ISteamUserStats_GetNumAchievements(SteamAPI_SteamUserStats()); ++i) {
     String achievement = SteamAPI_ISteamUserStats_GetAchievementName(SteamAPI_SteamUserStats(), i);
 
     bool unlocked = false;

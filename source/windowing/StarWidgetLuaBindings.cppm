@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.lua;
@@ -50,8 +50,20 @@ import star.gui_reader;
 
 namespace Star {
 
-STAR_CLASS(Widget);
-STAR_CLASS(CanvasWidget);
+class Widget;
+using WidgetPtr = std::shared_ptr<Widget>;
+using WidgetConstPtr = std::shared_ptr<Widget const>;
+using WidgetWeakPtr = std::weak_ptr<Widget>;
+using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
+using WidgetUPtr = std::unique_ptr<Widget>;
+using WidgetConstUPtr = std::unique_ptr<Widget const>;
+class CanvasWidget;
+using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
+using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
+using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
+using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
+using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
+using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
 
 template <>
 struct LuaConverter<CanvasWidgetPtr> : LuaUserDataConverter<CanvasWidgetPtr> {};

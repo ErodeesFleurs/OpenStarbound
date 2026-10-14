@@ -29,7 +29,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -83,7 +83,7 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle")) {
+VehicleDatabase::VehicleDatabase() : m_rebuilder(std::make_shared<Rebuilder>("vehicle")) {
   auto assets = Root::singleton().assets();
   auto& files = assets->scanExtension("vehicle");
   assets->queueJsons(files);
@@ -95,7 +95,7 @@ VehicleDatabase::VehicleDatabase() : m_rebuilder(make_shared<Rebuilder>("vehicle
       if (m_vehicles.contains(name))
         throw VehicleDatabaseException::format("Repeat vehicle name '{}'", name);
 
-      m_vehicles.add(std::move(name), make_pair(std::move(file), std::move(config)));
+      m_vehicles.add(std::move(name), std::make_pair(std::move(file), std::move(config)));
     } catch (StarException const& e) {
       throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
     }
@@ -106,7 +106,7 @@ VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraC
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
     throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
-  return make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
+  return std::make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
 }
 
 ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const {

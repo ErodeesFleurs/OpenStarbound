@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.set;
@@ -39,7 +39,13 @@ import star.system_world;
 
 namespace Star {
 
-STAR_CLASS(PlayerUniverseMap);
+class PlayerUniverseMap;
+using PlayerUniverseMapPtr = std::shared_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstPtr = std::shared_ptr<const PlayerUniverseMap>;
+using PlayerUniverseMapWeakPtr = std::weak_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstWeakPtr = std::weak_ptr<const PlayerUniverseMap>;
+using PlayerUniverseMapUPtr = std::unique_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstUPtr = std::unique_ptr<const PlayerUniverseMap>;
 
 template <typename T>
 Json jsonFromBookmarkTarget(T const& target);
@@ -65,7 +71,7 @@ struct Bookmark {
 };
 
 typedef Variant<CelestialCoordinate, Uuid> OrbitTarget;
-typedef pair<WorldId, SpawnTarget> TeleportTarget;
+typedef std::pair<WorldId, SpawnTarget> TeleportTarget;
 
 typedef Bookmark<OrbitTarget> OrbitBookmark;
 typedef Bookmark<TeleportTarget> TeleportBookmark;
@@ -85,7 +91,7 @@ public:
   Json toJson() const;
 
   // pair of system location and bookmark, not all orbit bookmarks include the system
-  List<pair<Vec3I, OrbitBookmark>> orbitBookmarks() const;
+  List<std::pair<Vec3I, OrbitBookmark>> orbitBookmarks() const;
   bool addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
   bool removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
 

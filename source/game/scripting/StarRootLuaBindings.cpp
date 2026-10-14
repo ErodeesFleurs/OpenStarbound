@@ -41,7 +41,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.periodic_function;
@@ -164,29 +164,29 @@ namespace Star::LuaBindings {
     String itemType(Root* root, String const& itemName);
     Json itemTags(Root* root, String const& itemName);
     bool itemHasTag(Root* root, String const& itemName, String const& itemTag);
-    Json itemConfig(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<uint64_t> const& seed);
-    Json createItem(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<uint64_t> const& seed);
+    Json itemConfig(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<std::uint64_t> const& seed);
+    Json createItem(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<std::uint64_t> const& seed);
     Json tenantConfig(Root* root, String const& tenantName);
     JsonArray getMatchingTenants(Root* root, StringMap<unsigned> const& colonyTags);
     Json liquidStatusEffects(Root* root, LiquidId arg1);
-    String generateName(Root* root, String const& rulesAsset, Maybe<uint64_t> seed);
+    String generateName(Root* root, String const& rulesAsset, Maybe<std::uint64_t> seed);
     Json questConfig(Root* root, String const& templateId);
     JsonArray npcPortrait(Root* root,
         String const& portraitMode,
         String const& species,
         String const& typeName,
         float level,
-        Maybe<uint64_t> seed,
+        Maybe<std::uint64_t> seed,
         Maybe<JsonObject> const& parameters);
     Json npcVariant(Root* root,
         String const& species,
         String const& typeName,
         float level,
-        Maybe<uint64_t> seed,
+        Maybe<std::uint64_t> seed,
         Maybe<JsonObject> const& parameters);
     JsonArray monsterPortrait(Root* root, String const& typeName, Maybe<JsonObject> const& parameters);
     bool isTreasurePool(Root* root, String const& pool);
-    JsonArray createTreasure(Root* root, String const& pool, float level, Maybe<uint64_t> seed);
+    JsonArray createTreasure(Root* root, String const& pool, float level, Maybe<std::uint64_t> seed);
     Maybe<String> materialMiningSound(Root* root, String const& materialName, Maybe<String> const& modName);
     Maybe<String> materialFootstepSound(Root* root, String const& materialName, Maybe<String> const& modName);
   }
@@ -206,40 +206,40 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   auto root = Root::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<String, String>("assetData", bind(RootCallbacks::assetData, root, _1));
-  callbacks.registerCallbackWithSignature<Image, String>("assetImage", bind(RootCallbacks::assetImage, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String>("assetFrames", bind(RootCallbacks::assetFrames, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String>("assetJson", bind(RootCallbacks::assetJson, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String, Json>("makeCurrentVersionedJson", bind(RootCallbacks::makeCurrentVersionedJson, root, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, Json, String>("loadVersionedJson", bind(RootCallbacks::loadVersionedJson, root, _1, _2));
-  callbacks.registerCallbackWithSignature<double, String, double>("evalFunction", bind(RootCallbacks::evalFunction, root, _1, _2));
-  callbacks.registerCallbackWithSignature<double, String, double, double>("evalFunction2", bind(RootCallbacks::evalFunction2, root, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<Vec2U, String>("imageSize", bind(RootCallbacks::imageSize, root, _1));
-  callbacks.registerCallbackWithSignature<List<Vec2I>, String, Vec2F, float, bool>("imageSpaces", bind(RootCallbacks::imageSpaces, root, _1, _2, _3, _4));
-  callbacks.registerCallbackWithSignature<RectU, String>("nonEmptyRegion", bind(RootCallbacks::nonEmptyRegion, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String>("npcConfig", bind(RootCallbacks::npcConfig, root, _1));
-  callbacks.registerCallbackWithSignature<float, String>("projectileGravityMultiplier", bind(RootCallbacks::projectileGravityMultiplier, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String>("projectileConfig", bind(RootCallbacks::projectileConfig, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray, String>("recipesForItem", bind(RootCallbacks::recipesForItem, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray, Maybe<StringSet>>("allRecipes", bind(RootCallbacks::allRecipes, root, _1));
-  callbacks.registerCallbackWithSignature<String, String>("itemType", bind(RootCallbacks::itemType, root, _1));
-  callbacks.registerCallbackWithSignature<Json, String>("itemTags", bind(RootCallbacks::itemTags, root, _1));
-  callbacks.registerCallbackWithSignature<bool, String, String>("itemHasTag", bind(RootCallbacks::itemHasTag, root, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, Json, Maybe<float>, Maybe<uint64_t>>("itemConfig", bind(RootCallbacks::itemConfig, root, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<Json, Json, Maybe<float>, Maybe<uint64_t>>("createItem", bind(RootCallbacks::createItem, root, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<Json, String>("tenantConfig", bind(RootCallbacks::tenantConfig, root, _1));
-  callbacks.registerCallbackWithSignature<Json, StringMap<unsigned>>("getMatchingTenants", bind(RootCallbacks::getMatchingTenants, root, _1));
-  callbacks.registerCallbackWithSignature<Json, LiquidId>("liquidStatusEffects", bind(RootCallbacks::liquidStatusEffects, root, _1));
-  callbacks.registerCallbackWithSignature<String, String, Maybe<uint64_t>>("generateName", bind(RootCallbacks::generateName, root, _1, _2));
-  callbacks.registerCallbackWithSignature<Json, String>("questConfig", bind(RootCallbacks::questConfig, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray, String, String, String, float, Maybe<uint64_t>, Maybe<JsonObject>>("npcPortrait", bind(RootCallbacks::npcPortrait, root, _1, _2, _3, _4, _5, _6));
-  callbacks.registerCallbackWithSignature<Json, String, String, float, Maybe<uint64_t>, Maybe<JsonObject>>("npcVariant", bind(RootCallbacks::npcVariant, root, _1, _2, _3, _4, _5));
-  callbacks.registerCallbackWithSignature<JsonArray, String, Maybe<JsonObject>>("monsterPortrait", bind(RootCallbacks::monsterPortrait, root, _1, _2));
-  callbacks.registerCallbackWithSignature<bool, String>("isTreasurePool", bind(RootCallbacks::isTreasurePool, root, _1));
-  callbacks.registerCallbackWithSignature<JsonArray, String, float, Maybe<uint64_t>>("createTreasure", bind(RootCallbacks::createTreasure, root, _1, _2, _3));
+  callbacks.registerCallbackWithSignature<String, String>("assetData", std::bind(RootCallbacks::assetData, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Image, String>("assetImage", std::bind(RootCallbacks::assetImage, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String>("assetFrames", std::bind(RootCallbacks::assetFrames, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String>("assetJson", std::bind(RootCallbacks::assetJson, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String, Json>("makeCurrentVersionedJson", std::bind(RootCallbacks::makeCurrentVersionedJson, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Json, Json, String>("loadVersionedJson", std::bind(RootCallbacks::loadVersionedJson, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<double, String, double>("evalFunction", std::bind(RootCallbacks::evalFunction, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<double, String, double, double>("evalFunction2", std::bind(RootCallbacks::evalFunction2, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  callbacks.registerCallbackWithSignature<Vec2U, String>("imageSize", std::bind(RootCallbacks::imageSize, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<List<Vec2I>, String, Vec2F, float, bool>("imageSpaces", std::bind(RootCallbacks::imageSpaces, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4));
+  callbacks.registerCallbackWithSignature<RectU, String>("nonEmptyRegion", std::bind(RootCallbacks::nonEmptyRegion, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String>("npcConfig", std::bind(RootCallbacks::npcConfig, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<float, String>("projectileGravityMultiplier", std::bind(RootCallbacks::projectileGravityMultiplier, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String>("projectileConfig", std::bind(RootCallbacks::projectileConfig, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<JsonArray, String>("recipesForItem", std::bind(RootCallbacks::recipesForItem, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<JsonArray, Maybe<StringSet>>("allRecipes", std::bind(RootCallbacks::allRecipes, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<String, String>("itemType", std::bind(RootCallbacks::itemType, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, String>("itemTags", std::bind(RootCallbacks::itemTags, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<bool, String, String>("itemHasTag", std::bind(RootCallbacks::itemHasTag, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Json, Json, Maybe<float>, Maybe<std::uint64_t>>("itemConfig", std::bind(RootCallbacks::itemConfig, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  callbacks.registerCallbackWithSignature<Json, Json, Maybe<float>, Maybe<std::uint64_t>>("createItem", std::bind(RootCallbacks::createItem, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  callbacks.registerCallbackWithSignature<Json, String>("tenantConfig", std::bind(RootCallbacks::tenantConfig, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, StringMap<unsigned>>("getMatchingTenants", std::bind(RootCallbacks::getMatchingTenants, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json, LiquidId>("liquidStatusEffects", std::bind(RootCallbacks::liquidStatusEffects, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<String, String, Maybe<std::uint64_t>>("generateName", std::bind(RootCallbacks::generateName, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Json, String>("questConfig", std::bind(RootCallbacks::questConfig, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<JsonArray, String, String, String, float, Maybe<std::uint64_t>, Maybe<JsonObject>>("npcPortrait", std::bind(RootCallbacks::npcPortrait, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6));
+  callbacks.registerCallbackWithSignature<Json, String, String, float, Maybe<std::uint64_t>, Maybe<JsonObject>>("npcVariant", std::bind(RootCallbacks::npcVariant, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+  callbacks.registerCallbackWithSignature<JsonArray, String, Maybe<JsonObject>>("monsterPortrait", std::bind(RootCallbacks::monsterPortrait, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<bool, String>("isTreasurePool", std::bind(RootCallbacks::isTreasurePool, root, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<JsonArray, String, float, Maybe<std::uint64_t>>("createTreasure", std::bind(RootCallbacks::createTreasure, root, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", bind(RootCallbacks::materialMiningSound, root, _1, _2));
-  callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", bind(RootCallbacks::materialFootstepSound, root, _1, _2));
+  callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialMiningSound", std::bind(RootCallbacks::materialMiningSound, root, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<Maybe<String>, String, Maybe<String>>("materialFootstepSound", std::bind(RootCallbacks::materialFootstepSound, root, std::placeholders::_1, std::placeholders::_2));
 
   auto getVariant = [](unsigned x, unsigned y, bool isMatMod, VariantTerrainLayer layer, unsigned variants) -> unsigned {
     XXHash32 state(2938728349);
@@ -281,7 +281,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       if (auto descriptor = assets->assetDescriptor(path)) {
         auto& patches = descriptor->patchSources;
         auto table = engine.createTable(patches.size(), 0);
-        for (size_t i = 0; i != patches.size(); ++i) {
+        for (std::size_t i = 0; i != patches.size(); ++i) {
           auto& patch = patches.at(i);
           auto patchTable = engine.createTable(2, 0);
           if (auto sourcePath = assets->assetSourcePath(patch.second))
@@ -303,7 +303,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
           table.set(assetSource, assets->assetSourceMetadata(assetSource));
       }
       else {
-        size_t i = 0;
+        std::size_t i = 0;
         for (auto& assetSource : assetSources)
           table.set(++i, assetSource);
       }
@@ -345,7 +345,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
 
   callbacks.registerCallback("liquidConfig", [root](LuaEngine& engine, LuaValue nameOrId) -> Json {
       LiquidId liquidId;
-      if (auto id = engine.luaMaybeTo<uint8_t>(nameOrId))
+      if (auto id = engine.luaMaybeTo<std::uint8_t>(nameOrId))
         liquidId = *id;
       else if (auto name = engine.luaMaybeTo<String>(nameOrId))
         liquidId = root->liquidsDatabase()->liquidId(*name);
@@ -369,15 +369,15 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
       return root->monsterDatabase()->skillConfigParameter(skillName, configParameterName);
     });
 
-  callbacks.registerCallback("monsterParameters", [root](String const& monsterType, Maybe<uint64_t> seed) {
+  callbacks.registerCallback("monsterParameters", [root](String const& monsterType, Maybe<std::uint64_t> seed) {
       return root->monsterDatabase()->monsterVariant(monsterType, seed.value(0)).parameters;
     });
 
-  callbacks.registerCallback("monsterMovementSettings", [root](String const& monsterType, Maybe<uint64_t> seed) {
+  callbacks.registerCallback("monsterMovementSettings", [root](String const& monsterType, Maybe<std::uint64_t> seed) {
       return root->monsterDatabase()->monsterVariant(monsterType, seed.value(0)).movementSettings;
     });
 
-  callbacks.registerCallback("createBiome", [root](String const& biomeName, uint64_t seed, float verticalMidPoint, float threatLevel) {
+  callbacks.registerCallback("createBiome", [root](String const& biomeName, std::uint64_t seed, float verticalMidPoint, float threatLevel) {
       try {
         return root->biomeDatabase()->createBiome(biomeName, seed, verticalMidPoint, threatLevel)->toJson();
       } catch (BiomeException const&) {
@@ -471,7 +471,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     return root->speciesDatabase()->species(species)->config();
   });
 
-  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<uint64_t> seed, Maybe<String> gender) -> LuaTupleReturn<Json, JsonObject, JsonObject> {
+  callbacks.registerCallback("generateHumanoidIdentity", [root](String const& species, Maybe<std::uint64_t> seed, Maybe<String> gender) -> LuaTupleReturn<Json, JsonObject, JsonObject> {
     auto result = root->speciesDatabase()->generateHumanoid(species, seed.value(Random::randu64()), gender.isValid() ? GenderNames.getLeft(*gender) : Maybe<Gender>());
     return LuaTupleReturn<Json, JsonObject, JsonObject>{result.identity.toJson(), result.humanoidParameters, result.armor};
   });
@@ -479,16 +479,16 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
   callbacks.registerCallback("createHumanoid", [root](
     String name,
     String speciesChoice,
-    size_t genderChoice,
-    size_t bodyColorChoice,
-    size_t alty,
-    size_t hairChoice,
-    size_t heady,
-    size_t shirtChoice,
-    size_t shirtColor,
-    size_t pantsChoice,
-    size_t pantsColor,
-    size_t personality,
+    std::size_t genderChoice,
+    std::size_t bodyColorChoice,
+    std::size_t alty,
+    std::size_t hairChoice,
+    std::size_t heady,
+    std::size_t shirtChoice,
+    std::size_t shirtColor,
+    std::size_t pantsChoice,
+    std::size_t pantsColor,
+    std::size_t personality,
     LuaVariadic<LuaValue> ext
   ) -> LuaTupleReturn<Json, JsonObject, JsonObject> {
     auto result = root->speciesDatabase()->createHumanoid(
@@ -628,7 +628,7 @@ bool LuaBindings::RootCallbacks::itemHasTag(Root* root, String const& itemName, 
   return root->itemDatabase()->itemTags(itemName).contains(itemTag);
 }
 
-Json LuaBindings::RootCallbacks::itemConfig(Root* root, Json const& descJson, Maybe<float> const& level, Maybe<uint64_t> const& seed) {
+Json LuaBindings::RootCallbacks::itemConfig(Root* root, Json const& descJson, Maybe<float> const& level, Maybe<std::uint64_t> const& seed) {
   ItemDescriptor descriptor(descJson);
   if (!root->itemDatabase()->hasItem(descriptor.name()))
     return {};
@@ -636,7 +636,7 @@ Json LuaBindings::RootCallbacks::itemConfig(Root* root, Json const& descJson, Ma
   return JsonObject{{"directory", config.directory}, {"config", config.config}, {"parameters", config.parameters}};
 }
 
-Json LuaBindings::RootCallbacks::createItem(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<uint64_t> const& seed) {
+Json LuaBindings::RootCallbacks::createItem(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<std::uint64_t> const& seed) {
   auto item = root->itemDatabase()->item(ItemDescriptor(descriptor), level, seed);
   return item->descriptor().toJson();
 }
@@ -657,7 +657,7 @@ Json LuaBindings::RootCallbacks::liquidStatusEffects(Root* root, LiquidId arg1) 
   return Json();
 }
 
-String LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesAsset, Maybe<uint64_t> seed) {
+String LuaBindings::RootCallbacks::generateName(Root* root, String const& rulesAsset, Maybe<std::uint64_t> seed) {
   return root->nameGenerator()->generateName(rulesAsset, seed.value(Random::randu64()));
 }
 
@@ -672,16 +672,16 @@ JsonArray LuaBindings::RootCallbacks::npcPortrait(Root* root,
     String const& species,
     String const& typeName,
     float level,
-    Maybe<uint64_t> seed,
+    Maybe<std::uint64_t> seed,
     Maybe<JsonObject> const& parameters) {
   auto npcDatabase = root->npcDatabase();
   auto npcVariant = npcDatabase->generateNpcVariant(species, typeName, level, seed.value(Random::randu64()), parameters.value(JsonObject{}));
 
   auto drawables = npcDatabase->npcPortrait(npcVariant, PortraitModeNames.getLeft(portraitMode));
-  return drawables.transformed(mem_fn(&Drawable::toJson));
+  return drawables.transformed(std::mem_fn(&Drawable::toJson));
 }
 
-Json LuaBindings::RootCallbacks::npcVariant(Root* root, String const& species, String const& typeName, float level, Maybe<uint64_t> seed, Maybe<JsonObject> const& parameters) {
+Json LuaBindings::RootCallbacks::npcVariant(Root* root, String const& species, String const& typeName, float level, Maybe<std::uint64_t> seed, Maybe<JsonObject> const& parameters) {
   auto npcDatabase = root->npcDatabase();
   auto npcVariant = npcDatabase->generateNpcVariant(
       species, typeName, level, seed.value(Random::randu64()), parameters.value(JsonObject{}));
@@ -693,7 +693,7 @@ JsonArray LuaBindings::RootCallbacks::monsterPortrait(Root* root, String const& 
   auto seed = 0; // use a static seed to utilize caching
   auto monsterVariant = monsterDatabase->monsterVariant(typeName, seed, parameters.value(JsonObject{}));
   auto drawables = monsterDatabase->monsterPortrait(monsterVariant);
-  return drawables.transformed(mem_fn(&Drawable::toJson));
+  return drawables.transformed(std::mem_fn(&Drawable::toJson));
 }
 
 bool LuaBindings::RootCallbacks::isTreasurePool(Root* root, String const& pool) {
@@ -701,7 +701,7 @@ bool LuaBindings::RootCallbacks::isTreasurePool(Root* root, String const& pool) 
 }
 
 JsonArray LuaBindings::RootCallbacks::createTreasure(
-    Root* root, String const& pool, float level, Maybe<uint64_t> seed) {
+    Root* root, String const& pool, float level, Maybe<std::uint64_t> seed) {
   auto treasure = root->treasureDatabase()->createTreasure(pool, level, seed.value(Random::randu64()));
   return treasure.transformed([](ItemPtr const& item) { return item->descriptor().toJson(); });
 }
@@ -710,7 +710,7 @@ Maybe<String> LuaBindings::RootCallbacks::materialMiningSound(
     Root* root, String const& materialName, Maybe<String> const& modName) {
   auto materialDatabase = root->materialDatabase();
   auto materialId = materialDatabase->materialId(materialName);
-  auto modId = modName.apply(bind(&MaterialDatabase::modId, materialDatabase, _1)).value(NoModId);
+  auto modId = modName.apply(std::bind(&MaterialDatabase::modId, materialDatabase, std::placeholders::_1)).value(NoModId);
   auto sound = materialDatabase->miningSound(materialId, modId);
   if (sound.empty())
     return {};
@@ -721,7 +721,7 @@ Maybe<String> LuaBindings::RootCallbacks::materialFootstepSound(
     Root* root, String const& materialName, Maybe<String> const& modName) {
   auto materialDatabase = root->materialDatabase();
   auto materialId = materialDatabase->materialId(materialName);
-  auto modId = modName.apply(bind(&MaterialDatabase::modId, materialDatabase, _1)).value(NoModId);
+  auto modId = modName.apply(std::bind(&MaterialDatabase::modId, materialDatabase, std::placeholders::_1)).value(NoModId);
   auto sound = materialDatabase->footstepSound(materialId, modId);
   if (sound.empty())
     return {};

@@ -1,7 +1,6 @@
 module;
 
 import std;
-#include "StarConfig.hpp"
 import star.format;
 import star.maybe;
 
@@ -20,31 +19,12 @@ namespace Constants {
   inline double constexpr log2e = 1.44269504088896340736;
 }
 
-// Really common std namespace includes, and replacements for std libraries
-// that don't provide them
-
-using std::abs;
-using std::fabs;
-using std::sqrt;
-using std::floor;
-using std::ceil;
-using std::round;
-using std::fmod;
-using std::sin;
-using std::cos;
-using std::tan;
-using std::pow;
-using std::atan2;
-using std::log;
-using std::log10;
-using std::copysign;
-
 inline float log2(float f) {
-  return log(f) * (float)Constants::log2e;
+  return std::log(f) * (float)Constants::log2e;
 }
 
 inline double log2(double d) {
-  return log(d) * Constants::log2e;
+  return std::log(d) * Constants::log2e;
 }
 
 // Count the number of '1' bits in the given unsigned integer
@@ -58,7 +38,7 @@ template <typename T, typename T2>
 typename std::enable_if<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2), bool>::type
 nearEqual(T x, T2 y, unsigned ulp) {
   auto epsilon = std::numeric_limits<T>::epsilon();
-  return abs(x - y) <= epsilon * max(abs(x), (T)abs(y)) * ulp;
+  return std::abs(x - y) <= epsilon * std::max(std::abs(x), (T)std::abs(y)) * ulp;
 }
 
 template <typename T, typename T2>
@@ -92,7 +72,7 @@ bool nearEqual(T x, T2 y) {
 
 template <typename T>
 typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type nearZero(T x, unsigned ulp = 2) {
-  return abs(x) <= std::numeric_limits<T>::min() * ulp;
+  return std::abs(x) <= std::numeric_limits<T>::min() * ulp;
 }
 
 template <typename T>
@@ -122,7 +102,7 @@ constexpr T cube(T const& x) {
 
 template <typename Float>
 int ipart(Float f) {
-  return (int)floor(f);
+  return (int)std::floor(f);
 }
 
 template <typename Float>
@@ -157,7 +137,9 @@ T clampDynamic(T const val, T const a, T const b) {
 
 template <typename IntType, typename PowType>
 IntType intPow(IntType i, PowType p) {
-  starAssert(p >= 0);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((p >= 0));
+  }
 
   if (p == 0)
     return 1;
@@ -190,7 +172,7 @@ Float pfmod(Float a, Float m) {
   if (m == 0)
     return a;
 
-  return a - m * floor(a / m);
+  return a - m * std::floor(a / m);
 }
 
 // Finds the *smallest* distance (in absolute value terms) from b to a (a - b)
@@ -231,13 +213,13 @@ Type wrapDiffF(Type a, Type b, Type size) {
 // of the value passed in.  ppow(-2, 2) == -4
 template <typename Float>
 Float ppow(Float val, Float pow) {
-  return copysign(std::pow(std::fabs(val), pow), val);
+  return std::copysign(std::pow(std::fabs(val), pow), val);
 }
 
 // Returns angle wrapped around to the range [-pi, pi).
 template <typename Float>
 Float constrainAngle(Float angle) {
-  angle = fmod((Float)(angle + Constants::pi), (Float)(Constants::pi * 2));
+  angle = std::fmod((Float)(angle + Constants::pi), (Float)(Constants::pi * 2));
   if (angle < 0)
     angle += Constants::pi * 2;
   return angle - Constants::pi;
@@ -247,7 +229,7 @@ Float constrainAngle(Float angle) {
 // angle, in radians.
 template <typename Float>
 Float angleDiff(Float angle, Float targetAngle) {
-  double diff = fmod((Float)(targetAngle - angle + Constants::pi), (Float)(Constants::pi * 2));
+  double diff = std::fmod((Float)(targetAngle - angle + Constants::pi), (Float)(Constants::pi * 2));
   if (diff < 0)
     diff += Constants::pi * 2;
   return diff - Constants::pi;
@@ -258,9 +240,9 @@ Float angleDiff(Float angle, Float targetAngle) {
 template <typename T>
 T approach(T goal, T current, T rate) {
   if (goal < current) {
-    return max(current - rate, goal);
+    return std::max(current - rate, goal);
   } else if (goal > current) {
-    return min(current + rate, goal);
+    return std::min(current + rate, goal);
   } else {
     return current;
   }
@@ -274,14 +256,14 @@ T approachAngle(T goal, T current, T rate) {
 }
 
 // Used in color conversion from floating point to uint8_t
-inline uint8_t floatToByte(float val, bool doClamp = false) {
+inline std::uint8_t floatToByte(float val, bool doClamp = false) {
   if (doClamp)
     val = clamp(val, 0.0f, 1.0f);
-  return (uint8_t)(val * 255.0f);
+  return (std::uint8_t)(val * 255.0f);
 }
 
 // Used in color conversion from uint8_t to normalized float.
-inline float byteToFloat(uint8_t val) {
+inline float byteToFloat(std::uint8_t val) {
   return val / 255.0f;
 }
 
@@ -309,21 +291,6 @@ export module star.math_common;
 export namespace Star {
   using ::Star::MathExceptionTag;
   using ::Star::MathException;
-  using ::Star::abs;
-  using ::Star::fabs;
-  using ::Star::sqrt;
-  using ::Star::floor;
-  using ::Star::ceil;
-  using ::Star::round;
-  using ::Star::fmod;
-  using ::Star::sin;
-  using ::Star::cos;
-  using ::Star::tan;
-  using ::Star::pow;
-  using ::Star::atan2;
-  using ::Star::log;
-  using ::Star::log10;
-  using ::Star::copysign;
   using ::Star::log2;
   using ::Star::countSetBits;
   using ::Star::nearEqual;

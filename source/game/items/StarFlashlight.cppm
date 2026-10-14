@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -74,7 +74,13 @@ export module star.flashlight;
 
 export namespace Star {
 
-STAR_CLASS(Flashlight);
+class Flashlight;
+using FlashlightPtr = std::shared_ptr<Flashlight>;
+using FlashlightConstPtr = std::shared_ptr<const Flashlight>;
+using FlashlightWeakPtr = std::weak_ptr<Flashlight>;
+using FlashlightConstWeakPtr = std::weak_ptr<const Flashlight>;
+using FlashlightUPtr = std::unique_ptr<Flashlight>;
+using FlashlightConstUPtr = std::unique_ptr<const Flashlight>;
 
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
@@ -110,7 +116,7 @@ Flashlight::Flashlight(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr Flashlight::clone() const {
-  return make_shared<Flashlight>(*this);
+  return std::make_shared<Flashlight>(*this);
 }
 
 List<Drawable> Flashlight::drawables() const {

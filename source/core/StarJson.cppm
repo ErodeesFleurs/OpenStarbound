@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.stream_formatter;
 import star.hash;
 import star.xx_hash;
@@ -23,13 +23,19 @@ struct JsonParsingExceptionTag {
 };
 using JsonParsingException = StarError<JsonParsingExceptionTag, StarException>;
 
-STAR_CLASS(Json);
+class Json;
+using JsonPtr = std::shared_ptr<Json>;
+using JsonConstPtr = std::shared_ptr<const Json>;
+using JsonWeakPtr = std::weak_ptr<Json>;
+using JsonConstWeakPtr = std::weak_ptr<const Json>;
+using JsonUPtr = std::unique_ptr<Json>;
+using JsonConstUPtr = std::unique_ptr<const Json>;
 
 typedef List<Json> JsonArray;
-typedef shared_ptr<JsonArray const> JsonArrayConstPtr;
+typedef std::shared_ptr<JsonArray const> JsonArrayConstPtr;
 
 typedef StringMap<Json> JsonObject;
-typedef shared_ptr<JsonObject const> JsonObjectConstPtr;
+typedef std::shared_ptr<JsonObject const> JsonObjectConstPtr;
 
 // Class for holding representation of JSON data.  Immutable and implicitly
 // shared.
@@ -43,10 +49,10 @@ public:
     const_iterator begin() const;
     const_iterator end() const;
 
-    shared_ptr<Container const> ptr;
+    std::shared_ptr<Container const> ptr;
   };
 
-  enum class Type : uint8_t {
+  enum class Type : std::uint8_t {
     Null = 0,
     Float = 1,
     Bool = 2,
@@ -84,7 +90,7 @@ public:
   Json(unsigned long long);
   Json(char const*);
   Json(String::Char const*);
-  Json(String::Char const*, size_t);
+  Json(String::Char const*, std::size_t);
   Json(String);
   Json(std::string);
   Json(JsonArray);
@@ -101,8 +107,8 @@ public:
   double toDouble() const;
   float toFloat() const;
   bool toBool() const;
-  int64_t toInt() const;
-  uint64_t toUInt() const;
+  std::int64_t toInt() const;
+  std::uint64_t toUInt() const;
   String toString() const;
   JsonArray toArray() const;
   JsonObject toObject() const;
@@ -126,37 +132,37 @@ public:
   Maybe<double> optDouble() const;
   Maybe<float> optFloat() const;
   Maybe<bool> optBool() const;
-  Maybe<int64_t> optInt() const;
-  Maybe<uint64_t> optUInt() const;
+  Maybe<std::int64_t> optInt() const;
+  Maybe<std::uint64_t> optUInt() const;
   Maybe<String> optString() const;
   Maybe<JsonArray> optArray() const;
   Maybe<JsonObject> optObject() const;
 
   // Size of array / object type json
-  size_t size() const;
+  std::size_t size() const;
 
   // If this json is array type, get the value at the given index
-  Json get(size_t index) const;
-  double getDouble(size_t index) const;
-  float getFloat(size_t index) const;
-  bool getBool(size_t index) const;
-  int64_t getInt(size_t index) const;
-  uint64_t getUInt(size_t index) const;
-  String getString(size_t index) const;
-  JsonArray getArray(size_t index) const;
-  JsonObject getObject(size_t index) const;
+  Json get(std::size_t index) const;
+  double getDouble(std::size_t index) const;
+  float getFloat(std::size_t index) const;
+  bool getBool(std::size_t index) const;
+  std::int64_t getInt(std::size_t index) const;
+  std::uint64_t getUInt(std::size_t index) const;
+  String getString(std::size_t index) const;
+  JsonArray getArray(std::size_t index) const;
+  JsonObject getObject(std::size_t index) const;
 
   // These versions of get* return default value if the index is out of range,
   // or if the value pointed to is null.
-  Json get(size_t index, Json def) const;
-  double getDouble(size_t index, double def) const;
-  float getFloat(size_t index, float def) const;
-  bool getBool(size_t index, bool def) const;
-  int64_t getInt(size_t index, int64_t def) const;
-  uint64_t getUInt(size_t index, int64_t def) const;
-  String getString(size_t index, String def) const;
-  JsonArray getArray(size_t index, JsonArray def) const;
-  JsonObject getObject(size_t index, JsonObject def) const;
+  Json get(std::size_t index, Json def) const;
+  double getDouble(std::size_t index, double def) const;
+  float getFloat(std::size_t index, float def) const;
+  bool getBool(std::size_t index, bool def) const;
+  std::int64_t getInt(std::size_t index, std::int64_t def) const;
+  std::uint64_t getUInt(std::size_t index, std::int64_t def) const;
+  String getString(std::size_t index, String def) const;
+  JsonArray getArray(std::size_t index, JsonArray def) const;
+  JsonObject getObject(std::size_t index, JsonObject def) const;
 
   // If object type, whether object contains key
   bool contains(String const& key) const;
@@ -166,8 +172,8 @@ public:
   double getDouble(String const& key) const;
   float getFloat(String const& key) const;
   bool getBool(String const& key) const;
-  int64_t getInt(String const& key) const;
-  uint64_t getUInt(String const& key) const;
+  std::int64_t getInt(String const& key) const;
+  std::uint64_t getUInt(String const& key) const;
   String getString(String const& key) const;
   JsonArray getArray(String const& key) const;
   JsonObject getObject(String const& key) const;
@@ -178,8 +184,8 @@ public:
   double getDouble(String const& key, double def) const;
   float getFloat(String const& key, float def) const;
   bool getBool(String const& key, bool def) const;
-  int64_t getInt(String const& key, int64_t def) const;
-  uint64_t getUInt(String const& key, int64_t def) const;
+  std::int64_t getInt(String const& key, std::int64_t def) const;
+  std::uint64_t getUInt(String const& key, std::int64_t def) const;
   String getString(String const& key, String def) const;
   JsonArray getArray(String const& key, JsonArray def) const;
   JsonObject getObject(String const& key, JsonObject def) const;
@@ -190,8 +196,8 @@ public:
   Maybe<double> optDouble(String const& key) const;
   Maybe<float> optFloat(String const& key) const;
   Maybe<bool> optBool(String const& key) const;
-  Maybe<int64_t> optInt(String const& key) const;
-  Maybe<uint64_t> optUInt(String const& key) const;
+  Maybe<std::int64_t> optInt(String const& key) const;
+  Maybe<std::uint64_t> optUInt(String const& key) const;
   Maybe<String> optString(String const& key) const;
   Maybe<JsonArray> optArray(String const& key) const;
   Maybe<JsonObject> optObject(String const& key) const;
@@ -202,8 +208,8 @@ public:
   double queryDouble(String const& path) const;
   float queryFloat(String const& path) const;
   bool queryBool(String const& path) const;
-  int64_t queryInt(String const& path) const;
-  uint64_t queryUInt(String const& path) const;
+  std::int64_t queryInt(String const& path) const;
+  std::uint64_t queryUInt(String const& path) const;
   String queryString(String const& path) const;
   JsonArray queryArray(String const& path) const;
   JsonObject queryObject(String const& path) const;
@@ -214,8 +220,8 @@ public:
   double queryDouble(String const& path, double def) const;
   float queryFloat(String const& path, float def) const;
   bool queryBool(String const& path, bool def) const;
-  int64_t queryInt(String const& path, int64_t def) const;
-  uint64_t queryUInt(String const& path, uint64_t def) const;
+  std::int64_t queryInt(String const& path, std::int64_t def) const;
+  std::uint64_t queryUInt(String const& path, std::uint64_t def) const;
   String queryString(String const& path, String const& def) const;
   JsonArray queryArray(String const& path, JsonArray def) const;
   JsonObject queryObject(String const& path, JsonObject def) const;
@@ -226,8 +232,8 @@ public:
   Maybe<double> optQueryDouble(String const& path) const;
   Maybe<float> optQueryFloat(String const& path) const;
   Maybe<bool> optQueryBool(String const& path) const;
-  Maybe<int64_t> optQueryInt(String const& path) const;
-  Maybe<uint64_t> optQueryUInt(String const& path) const;
+  Maybe<std::int64_t> optQueryInt(String const& path) const;
+  Maybe<std::uint64_t> optQueryUInt(String const& path) const;
   Maybe<String> optQueryString(String const& path) const;
   Maybe<JsonArray> optQueryArray(String const& path) const;
   Maybe<JsonObject> optQueryObject(String const& path) const;
@@ -242,10 +248,10 @@ public:
 
   // Returns a *new* array with the given values set/inserted/appended/erased.
   // Throws if not an array.
-  Json set(size_t index, Json value) const;
-  Json insert(size_t index, Json value) const;
+  Json set(std::size_t index, Json value) const;
+  Json insert(std::size_t index, Json value) const;
   Json append(Json value) const;
-  Json eraseIndex(size_t index) const;
+  Json eraseIndex(std::size_t index) const;
 
   Type type() const;
   String typeName() const;
@@ -280,10 +286,10 @@ public:
   void getHash(XXHash3& hasher) const;
 
 private:
-  Json const* ptr(size_t index) const;
+  Json const* ptr(std::size_t index) const;
   Json const* ptr(String const& key) const;
 
-  Variant<Empty, double, bool, int64_t, StringConstPtr, JsonArrayConstPtr, JsonObjectConstPtr> m_data;
+  Variant<Empty, double, bool, std::int64_t, StringConstPtr, JsonArrayConstPtr, JsonObjectConstPtr> m_data;
 };
 
 std::ostream& operator<<(std::ostream& os, Json const& v);
@@ -327,7 +333,7 @@ Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 
 template <>
 struct hash<Json> {
-  size_t operator()(Json const& v) const;
+  std::size_t operator()(Json const& v) const;
 };
 
 template <typename Container>

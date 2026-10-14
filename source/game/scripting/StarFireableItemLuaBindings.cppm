@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -89,21 +89,21 @@ namespace Star {
 LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("fire", bind(FireableItemCallbacks::fire, fireableItem, _1));
-  callbacks.registerCallbackWithSignature<void>("triggerCooldown", bind(FireableItemCallbacks::triggerCooldown, fireableItem));
-  callbacks.registerCallbackWithSignature<void, float>("setCooldown", bind(FireableItemCallbacks::setCooldown, fireableItem, _1));
-  callbacks.registerCallbackWithSignature<void>("endCooldown", bind(FireableItemCallbacks::endCooldown, fireableItem));
-  callbacks.registerCallbackWithSignature<float>("cooldownTime", bind(FireableItemCallbacks::cooldownTime, fireableItem));
-  callbacks.registerCallbackWithSignature<Json, String, Json>("fireableParam", bind(FireableItemCallbacks::fireableParam, fireableItem, _1, _2));
-  callbacks.registerCallbackWithSignature<String>("fireMode", bind(FireableItemCallbacks::fireMode, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ready", bind(FireableItemCallbacks::ready, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("firing", bind(FireableItemCallbacks::firing, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("windingUp", bind(FireableItemCallbacks::windingUp, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("coolingDown", bind(FireableItemCallbacks::coolingDown, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerFullEnergy", bind(FireableItemCallbacks::ownerFullEnergy, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerEnergy", bind(FireableItemCallbacks::ownerEnergy, fireableItem));
-  callbacks.registerCallbackWithSignature<bool>("ownerEnergyLocked", bind(FireableItemCallbacks::ownerEnergyLocked, fireableItem));
-  callbacks.registerCallbackWithSignature<bool, float>("ownerConsumeEnergy", bind(FireableItemCallbacks::ownerConsumeEnergy, fireableItem, _1));
+  callbacks.registerCallbackWithSignature<void, Maybe<String>>("fire", std::bind(FireableItemCallbacks::fire, fireableItem, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<void>("triggerCooldown", std::bind(FireableItemCallbacks::triggerCooldown, fireableItem));
+  callbacks.registerCallbackWithSignature<void, float>("setCooldown", std::bind(FireableItemCallbacks::setCooldown, fireableItem, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<void>("endCooldown", std::bind(FireableItemCallbacks::endCooldown, fireableItem));
+  callbacks.registerCallbackWithSignature<float>("cooldownTime", std::bind(FireableItemCallbacks::cooldownTime, fireableItem));
+  callbacks.registerCallbackWithSignature<Json, String, Json>("fireableParam", std::bind(FireableItemCallbacks::fireableParam, fireableItem, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<String>("fireMode", std::bind(FireableItemCallbacks::fireMode, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("ready", std::bind(FireableItemCallbacks::ready, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("firing", std::bind(FireableItemCallbacks::firing, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("windingUp", std::bind(FireableItemCallbacks::windingUp, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("coolingDown", std::bind(FireableItemCallbacks::coolingDown, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("ownerFullEnergy", std::bind(FireableItemCallbacks::ownerFullEnergy, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("ownerEnergy", std::bind(FireableItemCallbacks::ownerEnergy, fireableItem));
+  callbacks.registerCallbackWithSignature<bool>("ownerEnergyLocked", std::bind(FireableItemCallbacks::ownerEnergyLocked, fireableItem));
+  callbacks.registerCallbackWithSignature<bool, float>("ownerConsumeEnergy", std::bind(FireableItemCallbacks::ownerConsumeEnergy, fireableItem, std::placeholders::_1));
   callbacks.registerCallbackWithSignature<Vec2F>("ownerAimPosition", [fireableItem]() {
       return fireableItem->owner()->aimPosition();
     });

@@ -20,7 +20,6 @@ import star.lru_cache;
 import star.thread;
 import star.btree_database;
 import star.ordered_set;
-#include "StarConfig.hpp"
 import star.version;
 import star.rpc_promise;
 import star.random;
@@ -99,7 +98,7 @@ void WireProcessor::process() {
   // the working entities size changes during scanning, simply scan the whole
   // thing again until the size stops changing.
   while (true) {
-    size_t oldWorkingSize = m_workingWireEntities.size();
+    std::size_t oldWorkingSize = m_workingWireEntities.size();
     for (auto const& p : m_workingWireEntities.keys()) {
       if (!m_workingWireEntities.get(p).networkLoaded)
         loadNetwork(p);
@@ -129,9 +128,9 @@ void WireProcessor::populateWorking(WireEntity* wireEntity) {
   }
   auto& wes = p.first->second;
   wes.wireEntity = wireEntity;
-  size_t outputNodeCount = wes.wireEntity->nodeCount(WireDirection::Output);
+  std::size_t outputNodeCount = wes.wireEntity->nodeCount(WireDirection::Output);
   wes.outputStates.resize(outputNodeCount);
-  for (size_t i = 0; i < outputNodeCount; ++i)
+  for (std::size_t i = 0; i < outputNodeCount; ++i)
     wes.outputStates[i] = wes.wireEntity->nodeState({WireDirection::Output, i});
 }
 
@@ -143,7 +142,7 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
   // if that wire entity was found.
   // TODO: This is depth first recursive, because that is the simplest thing,
   // but if this causes issues with recursion depth it can be changed.
-  function<bool(Vec2I)> doLoad;
+  std::function<bool(Vec2I)> doLoad;
   doLoad = [&](Vec2I const& pos) {
     auto sector = m_worldStorage->sectorForPosition(pos);
     if (!sector)
@@ -152,7 +151,7 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
     if (m_worldStorage->sectorLoadLevel(*sector) == SectorLoadLevel::Loaded) {
       auto ttl = *m_worldStorage->sectorTimeToLive(*sector);
       if (highestTtl)
-        highestTtl = max(*highestTtl, ttl);
+        highestTtl = std::max(*highestTtl, ttl);
       else
         highestTtl = ttl;
     } else {
@@ -175,15 +174,15 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
     // Recursively descend into all the inbound and outbound nodes, and if we
     // ever cannot load the wire entity for a connection, go ahead and remove
     // the connection.
-    size_t inboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Input);
-    for (size_t i = 0; i < inboundNodeCount; ++i) {
+    std::size_t inboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Input);
+    for (std::size_t i = 0; i < inboundNodeCount; ++i) {
       for (auto const& connection : wes->wireEntity->connectionsForNode({WireDirection::Input, i})) {
         if (!doLoad(connection.entityLocation))
           wes->wireEntity->removeNodeConnection({WireDirection::Input, i}, connection);
       }
     }
-    size_t outboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Output);
-    for (size_t i = 0; i < outboundNodeCount; ++i) {
+    std::size_t outboundNodeCount = wes->wireEntity->nodeCount(WireDirection::Output);
+    for (std::size_t i = 0; i < outboundNodeCount; ++i) {
       for (auto const& connection : wes->wireEntity->connectionsForNode({WireDirection::Output, i})) {
         if (!doLoad(connection.entityLocation))
           wes->wireEntity->removeNodeConnection({WireDirection::Output, i}, connection);

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -53,7 +53,13 @@ struct GUIBuilderExceptionTag {
   static constexpr char const* name() { return "GUIBuilderException"; }
 };
 using GUIBuilderException = StarError<GUIBuilderExceptionTag, StarException>;
-STAR_CLASS(GuiReader);
+class GuiReader;
+using GuiReaderPtr = std::shared_ptr<GuiReader>;
+using GuiReaderConstPtr = std::shared_ptr<GuiReader const>;
+using GuiReaderWeakPtr = std::weak_ptr<GuiReader>;
+using GuiReaderConstWeakPtr = std::weak_ptr<GuiReader const>;
+using GuiReaderUPtr = std::unique_ptr<GuiReader>;
+using GuiReaderConstUPtr = std::unique_ptr<GuiReader const>;
 
 class GuiReader : public WidgetParser {
 public:

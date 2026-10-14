@@ -35,7 +35,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.format;
@@ -265,7 +265,7 @@ bool CelestialMasterDatabase::coordinateValid(CelestialCoordinate const& coordin
 }
 
 Maybe<CelestialCoordinate> CelestialMasterDatabase::findRandomWorld(unsigned tries, unsigned trySpatialRange,
-    function<bool(CelestialCoordinate)> filter, Maybe<uint64_t> seed) {
+    std::function<bool(CelestialCoordinate)> filter, Maybe<std::uint64_t> seed) {
   RandomSource randSource;
   if (seed)
     randSource.init(*seed);
@@ -331,7 +331,7 @@ Maybe<bool> CelestialMasterDatabase::hasChildren(CelestialCoordinate const& coor
 }
 
 List<CelestialCoordinate> CelestialMasterDatabase::children(CelestialCoordinate const& coordinate) {
-  return childOrbits(coordinate).transformed(bind(&CelestialCoordinate::child, coordinate, _1));
+  return childOrbits(coordinate).transformed(std::bind(&CelestialCoordinate::child, coordinate, std::placeholders::_1));
 }
 
 List<int> CelestialMasterDatabase::childOrbits(CelestialCoordinate const& coordinate) {
@@ -378,10 +378,10 @@ List<CelestialCoordinate> CelestialMasterDatabase::scanSystems(RectI const& regi
   return systems;
 }
 
-List<pair<Vec2I, Vec2I>> CelestialMasterDatabase::scanConstellationLines(RectI const& region) {
+List<std::pair<Vec2I, Vec2I>> CelestialMasterDatabase::scanConstellationLines(RectI const& region) {
   RecursiveMutexLocker locker(m_mutex);
 
-  List<pair<Vec2I, Vec2I>> lines;
+  List<std::pair<Vec2I, Vec2I>> lines;
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
     auto const& chunkData = getChunk(chunkLocation);
     for (auto const& constellation : chunkData.constellations) {
@@ -542,7 +542,7 @@ CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) co
   return chunkData;
 }
 
-Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterDatabase::produceSystem(
+Maybe<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterDatabase::produceSystem(
     RandomSource& random, Vec3I const& location) const {
   float typeSelector = m_generationInformation.systemTypePerlin.get(location[0], location[1]);
   String systemTypeName = binnedChoiceFromJson(m_generationInformation.systemTypeBins, typeSelector, "").toString();
@@ -551,7 +551,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
   auto systemType = m_generationInformation.systemTypes.get(systemTypeName);
 
   CelestialCoordinate systemCoordinate(location);
-  uint64_t systemSeed = random.randu64();
+  std::uint64_t systemSeed = random.randu64();
 
   String prefix = m_generationInformation.systemPrefixNames.select(random);
   String mid = m_generationInformation.systemNames.select(random);
@@ -588,7 +588,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
           jsonMerge(planetaryType.baseParameters, random.randValueFrom(planetaryType.variationParameters));
 
       CelestialCoordinate planetCoordinate(location, planetPair.first);
-      uint64_t planetarySeed = random.randu64();
+      std::uint64_t planetarySeed = random.randu64();
       String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(planetPair.second));
 
       CelestialPlanet planet;
@@ -612,7 +612,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
                   satelliteType.orbitParameters.value(systemOrbitRegion->regionName, JsonArray()).toArray()));
 
           CelestialCoordinate satelliteCoordinate(location, planetPair.first, satellitePair.first);
-          uint64_t satelliteSeed = random.randu64();
+          std::uint64_t satelliteSeed = random.randu64();
           String satelliteName =
               strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
 
@@ -625,7 +625,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
     }
   }
 
-  return pair<CelestialParameters, HashMap<int, CelestialPlanet>>{std::move(systemParameters), std::move(systemObjects)};
+  return std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>{std::move(systemParameters), std::move(systemObjects)};
 }
 
 List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
@@ -842,7 +842,7 @@ Maybe<bool> CelestialSlaveDatabase::hasChildren(CelestialCoordinate const& coord
 }
 
 List<CelestialCoordinate> CelestialSlaveDatabase::children(CelestialCoordinate const& coordinate) {
-  return childOrbits(coordinate).transformed(bind(&CelestialCoordinate::child, coordinate, _1));
+  return childOrbits(coordinate).transformed(std::bind(&CelestialCoordinate::child, coordinate, std::placeholders::_1));
 }
 
 List<int> CelestialSlaveDatabase::childOrbits(CelestialCoordinate const& coordinate) {
@@ -892,12 +892,12 @@ List<CelestialCoordinate> CelestialSlaveDatabase::scanSystems(RectI const& regio
   return systems;
 }
 
-List<pair<Vec2I, Vec2I>> CelestialSlaveDatabase::scanConstellationLines(RectI const& region) {
+List<std::pair<Vec2I, Vec2I>> CelestialSlaveDatabase::scanConstellationLines(RectI const& region) {
   RecursiveMutexLocker locker(m_mutex);
 
   signalRegion(region);
 
-  List<pair<Vec2I, Vec2I>> lines;
+  List<std::pair<Vec2I, Vec2I>> lines;
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
     if (auto chunkData = m_chunkCache.ptr(chunkLocation)) {
       for (auto const& constellation : chunkData->constellations) {

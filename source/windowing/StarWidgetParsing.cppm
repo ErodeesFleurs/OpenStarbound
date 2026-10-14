@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 
@@ -48,8 +48,20 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(Widget);
-STAR_CLASS(Pane);
+class Widget;
+using WidgetPtr = std::shared_ptr<Widget>;
+using WidgetConstPtr = std::shared_ptr<Widget const>;
+using WidgetWeakPtr = std::weak_ptr<Widget>;
+using WidgetConstWeakPtr = std::weak_ptr<Widget const>;
+using WidgetUPtr = std::unique_ptr<Widget>;
+using WidgetConstUPtr = std::unique_ptr<Widget const>;
+class Pane;
+using PanePtr = std::shared_ptr<Pane>;
+using PaneConstPtr = std::shared_ptr<Pane const>;
+using PaneWeakPtr = std::weak_ptr<Pane>;
+using PaneConstWeakPtr = std::weak_ptr<Pane const>;
+using PaneUPtr = std::unique_ptr<Pane>;
+using PaneConstUPtr = std::unique_ptr<Pane const>;
 
 struct WidgetParserExceptionTag {
   static constexpr char const* name() { return "WidgetParserException"; }

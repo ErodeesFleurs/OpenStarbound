@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.lua;
 import star.string;
 import star.json;

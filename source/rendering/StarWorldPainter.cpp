@@ -1,3 +1,4 @@
+import std;
 import star.xx_hash;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -36,9 +37,7 @@ import star.string;
 import star.text;
 import star.color;
 import star.asset_path;
-#include "StarConfig.hpp"
 import star.version;
-import std;
 import star.set;
 import star.worker_pool;
 
@@ -121,10 +120,10 @@ void WorldPainter::renderInit(RendererPtr renderer) {
 
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
-  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
-  m_tilePainter = make_shared<TilePainter>(m_renderer);
-  m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup));
-  m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer);
+  m_textPainter = std::make_shared<TextPainter>(m_renderer, textureGroup);
+  m_tilePainter = std::make_shared<TilePainter>(m_renderer);
+  m_drawablePainter = std::make_shared<DrawablePainter>(m_renderer, std::make_shared<AssetTextureGroup>(textureGroup));
+  m_environmentPainter = std::make_shared<EnvironmentPainter>(m_renderer);
 }
 
 void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const& position) {
@@ -140,7 +139,7 @@ void WorldPainter::update(float dt) {
   m_environmentPainter->update(dt);
 }
 
-void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWaiter) {
+void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
   m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
@@ -198,7 +197,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   // Main world layers
 
-  Map<EntityRenderLayer, List<pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
+  Map<EntityRenderLayer, List<std::pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
   for (auto& ed : renderData.entityDrawables) {
     for (auto& p : ed.layers)
       entityDrawables[p.first].append({ed.highlightEffect, std::move(p.second)});
@@ -242,11 +241,11 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
   renderBars(renderData);
   renderEntitiesUntil({});
 
-  auto dimLevel = round(renderData.dimLevel * 255);
+  auto dimLevel = std::round(renderData.dimLevel * 255);
   if (dimLevel != 0)
     m_renderer->render(renderFlatRect(RectF::withSize({}, Vec2F(m_camera.screenSize())), Vec4B(renderData.dimColor, dimLevel), 0.0f));
 
-  int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
+  std::int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
   m_textPainter->cleanup(textureTimeout);
   m_drawablePainter->cleanup(textureTimeout);
   m_environmentPainter->cleanup(textureTimeout);
@@ -316,7 +315,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
-      int size = min(128.0f, round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
+      int size = std::min(128.0f, std::round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());

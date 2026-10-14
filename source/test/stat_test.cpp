@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 #include "StarStrongTypedef.hpp"
@@ -15,7 +15,7 @@ import star.math_common;
 using namespace Star;
 
 bool withinAmount(float value, float target, float amount) {
-  return fabs(value - target) <= amount;
+  return std::fabs(value - target) <= amount;
 }
 
 TEST(StatTest, Set) {

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -58,7 +58,7 @@ String Codex::icon() const {
   return m_icon;
 }
 
-String Codex::page(size_t pageNum) const {
+String Codex::page(std::size_t pageNum) const {
   if (pageNum < m_pages.size())
     return m_pages[pageNum];
   return "";
@@ -68,7 +68,7 @@ List<String> Codex::pages() const {
   return m_pages;
 }
 
-size_t Codex::pageCount() const {
+std::size_t Codex::pageCount() const {
   return m_pages.size();
 }
 

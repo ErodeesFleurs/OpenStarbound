@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -48,7 +48,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(ProgressWidget);
+class ProgressWidget;
+using ProgressWidgetPtr = std::shared_ptr<ProgressWidget>;
+using ProgressWidgetConstPtr = std::shared_ptr<ProgressWidget const>;
+using ProgressWidgetWeakPtr = std::weak_ptr<ProgressWidget>;
+using ProgressWidgetConstWeakPtr = std::weak_ptr<ProgressWidget const>;
+using ProgressWidgetUPtr = std::unique_ptr<ProgressWidget>;
+using ProgressWidgetConstUPtr = std::unique_ptr<ProgressWidget const>;
 class ProgressWidget : public Widget {
 public:
   ProgressWidget(String const& background,

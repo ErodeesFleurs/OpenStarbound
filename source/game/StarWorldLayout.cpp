@@ -1,3 +1,4 @@
+import star.memory;
 #include "StarJsonExtra.hpp"
 import star.json;
 import star.list;
@@ -28,7 +29,7 @@ import star.color;
 import star.vector;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -102,9 +103,9 @@ WorldRegion::WorldRegion(Json const& store) {
   regionLiquids.encloseLiquids = store.getBool("encloseLiquids");
   regionLiquids.fillMicrodungeons = store.getBool("fillMicrodungeons");
 
-  subBlockSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("subBlockSelectorIndexes"), mem_fn(&Json::toUInt));
-  foregroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("foregroundOreSelectorIndexes"), mem_fn(&Json::toUInt));
-  backgroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("backgroundOreSelectorIndexes"), mem_fn(&Json::toUInt));
+  subBlockSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("subBlockSelectorIndexes"), std::mem_fn(&Json::toUInt));
+  foregroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("foregroundOreSelectorIndexes"), std::mem_fn(&Json::toUInt));
+  backgroundOreSelectorIndexes = transform<List<TerrainSelectorIndex>>(store.getArray("backgroundOreSelectorIndexes"), std::mem_fn(&Json::toUInt));
 }
 
 Json WorldRegion::toJson() const {
@@ -131,7 +132,7 @@ Json WorldRegion::toJson() const {
   };
 }
 
-WorldLayout::BlockNoise WorldLayout::BlockNoise::build(Json const& config, uint64_t seed) {
+WorldLayout::BlockNoise WorldLayout::BlockNoise::build(Json const& config, std::uint64_t seed) {
   BlockNoise blockNoise;
   blockNoise.horizontalNoise = PerlinF(config.get("horizontalNoise"), staticRandomU64(seed, "HorizontalNoise"));
   blockNoise.verticalNoise = PerlinF(config.get("verticalNoise"), staticRandomU64(seed, "VerticalNoise"));
@@ -164,15 +165,15 @@ Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize)
   float zc = std::cos(angle) / (2 * Constants::pi) * worldSize[0];
 
   Vec2I noisePos = Vec2I(
-      floor(input[0] + horizontalNoise.get(input[1]) + xNoise.get(xc, input[1], zc)),
-      floor(input[1] + verticalNoise.get(xc, zc) + yNoise.get(xc, input[1], zc))
+      std::floor(input[0] + horizontalNoise.get(input[1]) + xNoise.get(xc, input[1], zc)),
+      std::floor(input[1] + verticalNoise.get(xc, zc) + yNoise.get(xc, input[1], zc))
     );
   noisePos[1] = clamp<int>(noisePos[1], 0, worldSize[1]);
 
   return noisePos;
 }
 
-WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
+WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto terrainDatabase = root.terrainDatabase();
@@ -306,7 +307,7 @@ WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const
   return layout;
 }
 
-WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
+WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed) {
   auto assets = Root::singleton().assets();
 
   RandomSource randSource(seed);
@@ -349,7 +350,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   layout.addLayer(seed, asteroidParameters.asteroidTopLevel, emptyRegion);
 
   layout.m_regionBlending = asteroidParameters.blendSize;
-  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").apply(bind(&BlockNoise::build, _1, seed));
+  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").apply(std::bind(&BlockNoise::build, std::placeholders::_1, seed));
 
   layout.m_playerStartSearchRegions.append(RectI(0, asteroidParameters.asteroidBottomLevel, asteroidParameters.worldSize[0], asteroidParameters.asteroidTopLevel));
 
@@ -358,7 +359,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   return layout;
 }
 
-WorldLayout WorldLayout::buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
+WorldLayout WorldLayout::buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed) {
   auto assets = Root::singleton().assets();
   auto biomeDatabase = Root::singleton().biomeDatabase();
 
@@ -392,7 +393,7 @@ WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 
   m_biomes = store.getArray("biomes").transformed([](Json const& json) {
-      return BiomeConstPtr(make_shared<Biome>(json));
+      return BiomeConstPtr(std::make_shared<Biome>(json));
     });
 
   m_terrainSelectors = store.getArray("terrainSelectors").transformed([terrainDatabase](Json const& v) {
@@ -407,7 +408,7 @@ WorldLayout::WorldLayout(Json const& store) : WorldLayout() {
       layer.boundaries.append(b.toInt());
 
     for (auto const& r : l.getArray("cells"))
-      layer.cells.append(make_shared<WorldRegion>(r));
+      layer.cells.append(std::make_shared<WorldRegion>(r));
 
     return layer;
   });
@@ -434,12 +435,12 @@ Json WorldLayout::toJson() const {
         return JsonObject{
           {"yStart", layer.yStart},
           {"boundaries", JsonArray::from(layer.boundaries.transformed(construct<Json>()))},
-          {"cells", JsonArray::from(layer.cells.transformed(mem_fn(&WorldRegion::toJson)))}
+          {"cells", JsonArray::from(layer.cells.transformed(std::mem_fn(&WorldRegion::toJson)))}
         };
       })},
     {"regionBlending", m_regionBlending},
-    {"blockNoise", m_blockNoise.apply(mem_fn(&BlockNoise::toJson)).value()},
-    {"blendNoise", m_blendNoise.apply(mem_fn(&PerlinF::toJson)).value()},
+    {"blockNoise", m_blockNoise.apply(std::mem_fn(&BlockNoise::toJson)).value()},
+    {"blendNoise", m_blendNoise.apply(std::mem_fn(&PerlinF::toJson)).value()},
     {"playerStartSearchRegions", JsonArray::from(m_playerStartSearchRegions.transformed(jsonFromRectI))}
   };
 }
@@ -460,7 +461,7 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
   List<RegionWeighting> weighting;
   WorldGeometry geometry(m_worldSize);
 
-  auto cellWeighting = [&](WorldLayer const& layer, size_t cellIndex, int x) -> float {
+  auto cellWeighting = [&](WorldLayer const& layer, std::size_t cellIndex, int x) -> float {
     int xMin = 0;
     if (cellIndex > 0)
       xMin = layer.boundaries[cellIndex - 1];
@@ -479,19 +480,19 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
     if (layer.cells.empty())
       return;
 
-    size_t innerCellIndex;
+    std::size_t innerCellIndex;
     int innerCellXValue;
-    tie(innerCellIndex, innerCellXValue) = findContainingCell(layer, x);
+    std::tie(innerCellIndex, innerCellXValue) = findContainingCell(layer, x);
     float innerCellWeight = cellWeighting(layer, innerCellIndex, innerCellXValue);
 
-    size_t leftCellIndex;
+    std::size_t leftCellIndex;
     int leftCellXValue;
-    tie(leftCellIndex, leftCellXValue) = leftCell(layer, innerCellIndex, innerCellXValue);
+    std::tie(leftCellIndex, leftCellXValue) = leftCell(layer, innerCellIndex, innerCellXValue);
     float leftCellWeight = cellWeighting(layer, leftCellIndex, leftCellXValue);
 
-    size_t rightCellIndex;
+    std::size_t rightCellIndex;
     int rightCellXValue;
-    tie(rightCellIndex, rightCellXValue) = rightCell(layer, innerCellIndex, innerCellXValue);
+    std::tie(rightCellIndex, rightCellXValue) = rightCell(layer, innerCellIndex, innerCellXValue);
     float rightCellWeight = cellWeighting(layer, rightCellIndex, rightCellXValue);
 
     float totalWeight = innerCellWeight + leftCellWeight + rightCellWeight;
@@ -591,7 +592,7 @@ String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
   auto targetLayer = m_layers[layerAndCell.first];
   auto targetBiomeIndex = targetLayer.cells[layerAndCell.second]->blockBiomeIndex;
 
-  for (size_t i = 0; i < targetLayer.cells.size(); ++i)
+  for (std::size_t i = 0; i < targetLayer.cells.size(); ++i)
     targetLayer.cells[i]->environmentBiomeIndex = targetBiomeIndex;
 
   m_layers[layerAndCell.first] = targetLayer;
@@ -601,7 +602,7 @@ String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
 
 void WorldLayout::addBiomeRegion(
     TerrestrialWorldParameters const& terrestrialParameters,
-    uint64_t seed,
+    std::uint64_t seed,
     Vec2I const& position,
     String biomeName,
     String const& subBlockSelector,
@@ -654,7 +655,7 @@ void WorldLayout::addBiomeRegion(
   baseSelectorParameters.baseHeight = terrestrialLayer.layerBaseHeight;
 
   auto terrainDatabase = Root::singleton().terrainDatabase();
-  for (size_t i = 0; i < newBiome->subBlocks.size(); ++i) {
+  for (std::size_t i = 0; i < newBiome->subBlocks.size(); ++i) {
     auto selector = terrainDatabase->createNamedSelector(subBlockSelector, baseSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
     newRegion.subBlockSelectorIndexes.append(registerTerrainSelector(selector));
   }
@@ -662,7 +663,7 @@ void WorldLayout::addBiomeRegion(
   newRegion.environmentBiomeIndex = targetRegion->environmentBiomeIndex;
   newRegion.blockBiomeIndex = registerBiome(newBiome);
 
-  WorldRegionPtr newRegionPtr = make_shared<WorldRegion>(newRegion);
+  WorldRegionPtr newRegionPtr = std::make_shared<WorldRegion>(newRegion);
 
   // Logger::info("boundaries before region insertion are {}", targetLayer.boundaries);
 
@@ -696,10 +697,10 @@ void WorldLayout::expandBiomeRegion(Vec2I const& position, int newWidth) {
   m_layers[layerAndCell.first] = expandResult.first;
 }
 
-pair<size_t, size_t> WorldLayout::findLayerAndCell(int x, int y) const {
+std::pair<std::size_t, std::size_t> WorldLayout::findLayerAndCell(int x, int y) const {
   // find the target layer
-  size_t targetLayerIndex{};
-  for (size_t i = 0; i < m_layers.size(); ++i) {
+  std::size_t targetLayerIndex{};
+  for (std::size_t i = 0; i < m_layers.size(); ++i) {
     if (m_layers[i].yStart < y)
       targetLayerIndex = i;
     else
@@ -715,7 +716,7 @@ pair<size_t, size_t> WorldLayout::findLayerAndCell(int x, int y) const {
 
 WorldLayout::WorldLayer::WorldLayer() : yStart(0) {}
 
-pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(WorldLayout::WorldLayer targetLayer, size_t cellIndex, int newWidth) const {
+std::pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(WorldLayout::WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const {
   struct RegionCell {
     int lBound;
     int rBound;
@@ -742,7 +743,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
   // TODO: this is a messy way to get the top of the layer, but maybe it's ok
   int layerTop = (int)m_worldSize[1];
-  for (size_t i = 0; i < m_layers.size(); ++i) {
+  for (std::size_t i = 0; i < m_layers.size(); ++i) {
     if (m_layers[i].yStart == targetLayer.yStart && m_layers.size() > i + 1) {
       layerTop = m_layers[i + 1].yStart;
       break;
@@ -763,8 +764,8 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     List<RegionCell> otherCells;
 
     int lastBoundary = 0;
-    size_t lastCellIndex = targetLayer.cells.size() - 1;
-    for (size_t i = 0; i <= lastCellIndex; ++i) {
+    std::size_t lastCellIndex = targetLayer.cells.size() - 1;
+    for (std::size_t i = 0; i <= lastCellIndex; ++i) {
       int nextBoundary = i == lastCellIndex ? (int)m_worldSize[0] : targetLayer.boundaries[i];
       if (i == cellIndex ||
           (i == 0 && cellIndex == lastCellIndex && targetLayer.cells[i] == targetRegion) ||
@@ -778,8 +779,12 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // Logger::info("before expansion:\ntarget cells are: {}\nother cells are: {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
-    starAssert(targetCells.size() > 0);
-    starAssert(targetCells.size() < 3);
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((targetCells.size() > 0));
+    }
+    if constexpr (Star::DebugEnabled) {
+      Star::starAssertFailed((targetCells.size() < 3));
+    }
 
     // check the current width to see how much (if any) to expand
     int currentWidth = 0;
@@ -792,8 +797,8 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     }
 
     // expand the leftmost cell to the right and the rightmost cell to the left (they may be the same cell)
-    int expandRight = ceil(0.5 * (newWidth - currentWidth));
-    int expandLeft = floor(0.5 * (newWidth - currentWidth));
+    int expandRight = std::ceil(0.5 * (newWidth - currentWidth));
+    int expandLeft = std::floor(0.5 * (newWidth - currentWidth));
 
     // build the rects for the areas NEWLY covered by the region; these don't need to be wrapped because
     // they'll be split when they're consumed
@@ -848,7 +853,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     // convert back into cells and boundaries
     targetLayer.cells.clear();
     targetLayer.boundaries.clear();
-    for (size_t i = 0; i < otherCells.size(); ++i) {
+    for (std::size_t i = 0; i < otherCells.size(); ++i) {
       targetLayer.cells.append(otherCells[i].region);
       if (i < otherCells.size() - 1)
         targetLayer.boundaries.append(otherCells[i].rBound);
@@ -861,7 +866,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 }
 
 BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
-  size_t foundIndex = m_biomes.indexOf(biome);
+  std::size_t foundIndex = m_biomes.indexOf(biome);
   if (foundIndex != NPos)
     return foundIndex + 1;
 
@@ -870,7 +875,7 @@ BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
 }
 
 TerrainSelectorIndex WorldLayout::registerTerrainSelector(TerrainSelectorConstPtr terrainSelector) {
-  size_t foundIndex = m_terrainSelectors.indexOf(terrainSelector);
+  std::size_t foundIndex = m_terrainSelectors.indexOf(terrainSelector);
   if (foundIndex != NPos)
     return foundIndex + 1;
 
@@ -878,7 +883,7 @@ TerrainSelectorIndex WorldLayout::registerTerrainSelector(TerrainSelectorConstPt
   return m_terrainSelectors.size();
 }
 
-WorldRegion WorldLayout::buildRegion(uint64_t seed, RegionParams const& regionParams) {
+WorldRegion WorldLayout::buildRegion(std::uint64_t seed, RegionParams const& regionParams) {
   auto terrainDatabase = Root::singleton().terrainDatabase();
   auto biomeDatabase = Root::singleton().biomeDatabase();
 
@@ -903,7 +908,7 @@ WorldRegion WorldLayout::buildRegion(uint64_t seed, RegionParams const& regionPa
     auto biome = biomeDatabase->createBiome(*regionParams.biomeName, staticRandomU64(seed, "BiomeSeed"), regionParams.baseHeight, regionParams.threatLevel);
 
     if (regionParams.subBlockSelector) {
-      for (size_t i = 0; i < biome->subBlocks.size(); ++i) {
+      for (std::size_t i = 0; i < biome->subBlocks.size(); ++i) {
         auto selector = terrainDatabase->createNamedSelector(*regionParams.subBlockSelector, terrainSelectorParameters.withSeed(staticRandomU64(seed, i, "subBlocks")));
         region.subBlockSelectorIndexes.append(registerTerrainSelector(selector));
       }
@@ -932,17 +937,17 @@ WorldRegion WorldLayout::buildRegion(uint64_t seed, RegionParams const& regionPa
   return region;
 }
 
-void WorldLayout::addLayer(uint64_t seed, int yStart, RegionParams regionParams) {
+void WorldLayout::addLayer(std::uint64_t seed, int yStart, RegionParams regionParams) {
   WorldLayer layer;
   layer.yStart = yStart;
 
-  WorldRegionPtr region = make_shared<WorldRegion>(buildRegion(seed, regionParams));
+  WorldRegionPtr region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
   layer.cells.append(region);
 
   m_layers.append(layer);
 }
 
-void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
+void WorldLayout::addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
     RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
     List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
     Vec2F secondaryRegionSize, Vec2F subRegionSize) {
@@ -958,8 +963,8 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   Set<BiomeIndex> spawnBiomeIndexes;
 
   auto addRegion = [&](RegionParams const& regionParams, RegionParams const& subRegionParams, Vec2F const& regionSizeRange) {
-    WorldRegionPtr region = make_shared<WorldRegion>(buildRegion(seed, regionParams));
-    WorldRegionPtr subRegion = make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
+    WorldRegionPtr region = std::make_shared<WorldRegion>(buildRegion(seed, regionParams));
+    WorldRegionPtr subRegion = std::make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
     if (!Root::singleton().assets()->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool())
       region->environmentBiomeIndex = primaryEnvironmentBiomeIndex;
     subRegion->environmentBiomeIndex = region->environmentBiomeIndex;
@@ -990,13 +995,13 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
 
   // construct list of region cells and relative sizes
   addRegion(primaryRegionParams, primarySubRegionParams, Vec2F(1, 1));
-  for (size_t i = 0; i < secondaryRegions.size(); ++i)
+  for (std::size_t i = 0; i < secondaryRegions.size(); ++i)
     addRegion(secondaryRegions[i], secondarySubRegions[i], secondaryRegionSize);
 
   // construct boundaries based on normalized sizes
   int nextBoundary = staticRandomI32Range(0, m_worldSize[0] - 1, seed, yStart, "LayerOffset");
   layer.boundaries.append(nextBoundary);
-  for (size_t i = 0; i + 1 < relativeRegionSizes.size(); ++i) {
+  for (std::size_t i = 0; i + 1 < relativeRegionSizes.size(); ++i) {
     int regionSize = (int)m_worldSize[0] * (relativeRegionSizes[i] / totalRelativeSize);
     nextBoundary += regionSize;
     layer.boundaries.append(nextBoundary);
@@ -1033,20 +1038,20 @@ void WorldLayout::finalize(Color mainSkyColor) {
   }
 }
 
-pair<size_t, int> WorldLayout::findContainingCell(WorldLayer const& layer, int x) const {
+std::pair<std::size_t, int> WorldLayout::findContainingCell(WorldLayer const& layer, int x) const {
   x = WorldGeometry(m_worldSize).xwrap(x);
   auto xi = std::lower_bound(layer.boundaries.begin(), layer.boundaries.end(), x);
   return {xi - layer.boundaries.begin(), x};
 }
 
-pair<size_t, int> WorldLayout::leftCell(WorldLayer const& layer, size_t cellIndex, int x) const {
+std::pair<std::size_t, int> WorldLayout::leftCell(WorldLayer const& layer, std::size_t cellIndex, int x) const {
   if (cellIndex == 0)
     return {layer.cells.size() - 1, x + (int)m_worldSize[0]};
   else
     return {cellIndex - 1, x};
 }
 
-pair<size_t, int> WorldLayout::rightCell(WorldLayer const& layer, size_t cellIndex, int x) const {
+std::pair<std::size_t, int> WorldLayout::rightCell(WorldLayer const& layer, std::size_t cellIndex, int x) const {
   if (cellIndex >= layer.cells.size() - 1)
     return {0, x - (int)m_worldSize[0]};
   else

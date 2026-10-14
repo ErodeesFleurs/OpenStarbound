@@ -1,20 +1,28 @@
 module;
-#include "StarConfig.hpp"
+import std;
 
 import star.byte_array;
 import star.string;
 import star.format;
 
 namespace Star {
+using StreamOffset = std::int64_t;
 
-STAR_CLASS(IODevice);
+
+class IODevice;
+using IODevicePtr = std::shared_ptr<IODevice>;
+using IODeviceConstPtr = std::shared_ptr<const IODevice>;
+using IODeviceWeakPtr = std::weak_ptr<IODevice>;
+using IODeviceConstWeakPtr = std::weak_ptr<const IODevice>;
+using IODeviceUPtr = std::unique_ptr<IODevice>;
+using IODeviceConstUPtr = std::unique_ptr<const IODevice>;
 
 struct EofExceptionTag {
   static constexpr char const* name() { return "EofException"; }
 };
 using EofException = StarError<EofExceptionTag, IOException>;
 
-enum class IOMode : uint8_t {
+enum class IOMode : std::uint8_t {
   Closed = 0x0,
   Read = 0x1,
   Write = 0x2,
@@ -27,7 +35,7 @@ IOMode operator|(IOMode a, IOMode b);
 bool operator&(IOMode a, IOMode b);
 
 // Should match SEEK_SET, SEEK_CUR, AND SEEK_END
-enum IOSeek : uint8_t {
+enum IOSeek : std::uint8_t {
   Absolute = 0,
   Relative = 1,
   End = 2
@@ -41,8 +49,8 @@ public:
 
   // Do a read or write that may result in less data read or written than
   // requested.
-  virtual size_t read(char* data, size_t len) = 0;
-  virtual size_t write(char const* data, size_t len) = 0;
+  virtual std::size_t read(char* data, std::size_t len) = 0;
+  virtual std::size_t write(char const* data, std::size_t len) = 0;
 
   virtual StreamOffset pos() = 0;
   virtual void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
@@ -54,16 +62,16 @@ public:
   // current file position.  Default implementation stores the file position,
   // then seeks and calls read/write partial, then restores the file position,
   // and is not thread safe.
-  virtual size_t readAbsolute(StreamOffset readPosition, char* data, size_t len);
-  virtual size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len);
+  virtual std::size_t readAbsolute(StreamOffset readPosition, char* data, std::size_t len);
+  virtual std::size_t writeAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
 
   // Read and write fully, and throw an exception in every other case.  The
   // default implementations here will call the normal read or write, and if
   // the full amount is not read will throw an exception.
-  virtual void readFull(char* data, size_t len);
-  virtual void writeFull(char const* data, size_t len);
-  virtual void readFullAbsolute(StreamOffset readPosition, char* data, size_t len);
-  virtual void writeFullAbsolute(StreamOffset writePosition, char const* data, size_t len);
+  virtual void readFull(char* data, std::size_t len);
+  virtual void writeFull(char const* data, std::size_t len);
+  virtual void readFullAbsolute(StreamOffset readPosition, char* data, std::size_t len);
+  virtual void writeFullAbsolute(StreamOffset writePosition, char const* data, std::size_t len);
 
   // Default implementation throws exception if opening in a different mode
   // than the current mode.
@@ -95,10 +103,10 @@ public:
   bool isReadable() const;
   bool isWritable() const;
 
-  ByteArray readBytes(size_t size);
+  ByteArray readBytes(std::size_t size);
   void writeBytes(ByteArray const& p);
 
-  ByteArray readBytesAbsolute(StreamOffset readPosition, size_t size);
+  ByteArray readBytesAbsolute(StreamOffset readPosition, std::size_t size);
   void writeBytesAbsolute(StreamOffset writePosition, ByteArray const& p);
 
 protected:
@@ -108,15 +116,15 @@ protected:
   IODevice& operator=(IODevice const&);
 
 private:
-  atomic<IOMode> m_mode;
+  std::atomic<IOMode> m_mode;
 };
 
 inline IOMode operator|(IOMode a, IOMode b) {
-  return (IOMode)((uint8_t)a | (uint8_t)b);
+  return (IOMode)((std::uint8_t)a | (std::uint8_t)b);
 }
 
 inline bool operator&(IOMode a, IOMode b) {
-  return (uint8_t)a & (uint8_t)b;
+  return (std::uint8_t)a & (std::uint8_t)b;
 }
 
 inline IOMode IODevice::mode() const {
@@ -140,6 +148,7 @@ inline bool IODevice::isWritable() const {
 export module star.io_device;
 
 export namespace Star {
+  using ::Star::StreamOffset;
   using ::Star::EofExceptionTag;
   using ::Star::EofException;
   using ::Star::IOMode;

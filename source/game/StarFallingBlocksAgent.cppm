@@ -25,7 +25,6 @@ import star.string_view;
 import star.directives;
 import star.asset_path;
 import star.variant;
-#include "StarConfig.hpp"
 import star.version;
 
 
@@ -47,9 +46,27 @@ import star.world_tiles;
 
 namespace Star {
 
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(FallingBlocksFacade);
-STAR_CLASS(FallingBlocksAgent);
+class MaterialDatabase;
+using MaterialDatabasePtr = std::shared_ptr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = std::shared_ptr<const MaterialDatabase>;
+using MaterialDatabaseWeakPtr = std::weak_ptr<MaterialDatabase>;
+using MaterialDatabaseConstWeakPtr = std::weak_ptr<const MaterialDatabase>;
+using MaterialDatabaseUPtr = std::unique_ptr<MaterialDatabase>;
+using MaterialDatabaseConstUPtr = std::unique_ptr<const MaterialDatabase>;
+class FallingBlocksFacade;
+using FallingBlocksFacadePtr = std::shared_ptr<FallingBlocksFacade>;
+using FallingBlocksFacadeConstPtr = std::shared_ptr<const FallingBlocksFacade>;
+using FallingBlocksFacadeWeakPtr = std::weak_ptr<FallingBlocksFacade>;
+using FallingBlocksFacadeConstWeakPtr = std::weak_ptr<const FallingBlocksFacade>;
+using FallingBlocksFacadeUPtr = std::unique_ptr<FallingBlocksFacade>;
+using FallingBlocksFacadeConstUPtr = std::unique_ptr<const FallingBlocksFacade>;
+class FallingBlocksAgent;
+using FallingBlocksAgentPtr = std::shared_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstPtr = std::shared_ptr<const FallingBlocksAgent>;
+using FallingBlocksAgentWeakPtr = std::weak_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstWeakPtr = std::weak_ptr<const FallingBlocksAgent>;
+using FallingBlocksAgentUPtr = std::unique_ptr<FallingBlocksAgent>;
+using FallingBlocksAgentConstUPtr = std::unique_ptr<const FallingBlocksAgent>;
 
 enum class FallingBlockType {
   Immovable,

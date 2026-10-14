@@ -28,7 +28,6 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.id_map;
@@ -205,7 +204,7 @@ extern EnumMap<QuestState> const QuestStateNames {
   {QuestState::Failed, "Failed"}
 };
 
-Quest::Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player) {
+Quest::Quest(QuestArcDescriptor const& questArc, std::size_t arcPos, Player* player) {
   m_trackedIndicator = Root::singleton().assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = Root::singleton().assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
@@ -278,7 +277,7 @@ Quest::Quest(Json const& spec) {
   m_parameters = questParamsDiskLoad(diskStore.get("parameters"));
   m_worldId = diskStore.optString("worldId").apply(parseWorldId);
   m_location = diskStore.opt("location").apply([](Json const& json) {
-    return make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
+    return std::make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
   });
   m_serverUuid = diskStore.optString("serverUuid").apply(construct<Uuid>());
   m_money = diskStore.getUInt("money");
@@ -313,7 +312,7 @@ Quest::Quest(Json const& spec) {
   m_portraits = jsonToMapV<StringMap<List<Drawable>>>(diskStore.get("portraits", JsonObject{}), [](Json const& portrait) {
       return portrait.toArray().transformed(construct<Drawable>());
     });
-  m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), mem_fn(&Json::toString));
+  m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), std::mem_fn(&Json::toString));
   m_showDialog = diskStore.getBool("showDialog", false);
 
   m_player = nullptr;
@@ -332,10 +331,10 @@ Json Quest::diskStore() const {
   result["money"] = m_money;
 
   result["worldId"] = jsonFromMaybe(m_worldId.apply(printWorldId));
-  result["location"] = jsonFromMaybe(m_location.apply([](pair<Vec3I, SystemLocation> const& location) {
+  result["location"] = jsonFromMaybe(m_location.apply([](std::pair<Vec3I, SystemLocation> const& location) {
       return JsonObject{{"system", jsonFromVec3I(location.first)}, {"location", jsonFromSystemLocation(location.second)}};
     }));
-  result["serverUuid"] = jsonFromMaybe(m_serverUuid.apply(mem_fn(&Uuid::hex)));
+  result["serverUuid"] = jsonFromMaybe(m_serverUuid.apply(std::mem_fn(&Uuid::hex)));
 
   auto itemDatabase = Root::singleton().itemDatabase();
   result["rewards"] =
@@ -353,7 +352,7 @@ Json Quest::diskStore() const {
   result["failureText"] = m_failureText;
 
   result["portraits"] = jsonFromMapV(m_portraits, [](List<Drawable> const& portrait) {
-      return portrait.transformed(mem_fn(&Drawable::toJson));
+      return portrait.transformed(std::mem_fn(&Drawable::toJson));
     });
   result["portraitTitles"] = jsonFromMap(m_portraitTitles);
   result["showDialog"] = m_showDialog;
@@ -402,7 +401,9 @@ void Quest::update(float dt) {
 }
 
 void Quest::offer() {
-  starAssert(m_player && m_world);
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((m_player && m_world));
+  }
 
   if (!showAcceptDialog()) {
     start();
@@ -436,7 +437,7 @@ void Quest::start() {
   m_scriptComponent.invoke("questStart");
 }
 
-void Quest::complete(Maybe<size_t> followupIndex) {
+void Quest::complete(Maybe<std::size_t> followupIndex) {
   setState(QuestState::Complete);
   m_showDialog = showCompleteDialog();
   m_scriptComponent.invoke("questComplete");
@@ -449,9 +450,9 @@ void Quest::complete(Maybe<size_t> followupIndex) {
 
   // Offer follow-up quests
   bool trackNewQuest = m_player->questManager()->isTracked(questId());
-  size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
+  std::size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
   if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = make_shared<Quest>(m_arc, nextArcPos, m_player);
+    auto followUp = std::make_shared<Quest>(m_arc, nextArcPos, m_player);
     followUp->setWorldId(worldId());
     followUp->setLocation(location());
     followUp->setServerUuid(serverUuid());
@@ -534,7 +535,7 @@ QuestArcDescriptor Quest::questArcDescriptor() const {
   return m_arc;
 }
 
-size_t Quest::questArcPosition() const {
+std::size_t Quest::questArcPosition() const {
   return m_arcPos;
 }
 
@@ -542,7 +543,7 @@ Maybe<WorldId> Quest::worldId() const {
   return m_worldId;
 }
 
-Maybe<pair<Vec3I, SystemLocation>> Quest::location() const {
+Maybe<std::pair<Vec3I, SystemLocation>> Quest::location() const {
   return m_location;
 }
 
@@ -554,7 +555,7 @@ void Quest::setWorldId(Maybe<WorldId> worldId) {
   m_worldId = worldId;
 }
 
-void Quest::setLocation(Maybe<pair<Vec3I, SystemLocation>> location) {
+void Quest::setLocation(Maybe<std::pair<Vec3I, SystemLocation>> location) {
   m_location = std::move(location);
 }
 
@@ -578,7 +579,7 @@ String Quest::failureText() const {
   return m_failureText;
 }
 
-size_t Quest::money() const {
+std::size_t Quest::money() const {
   return m_money;
 }
 
@@ -586,7 +587,7 @@ List<ItemConstPtr> Quest::rewards() const {
   return m_rewards;
 }
 
-int64_t Quest::lastUpdatedOn() const {
+std::int64_t Quest::lastUpdatedOn() const {
   return m_lastUpdatedOn;
 }
 
@@ -782,7 +783,7 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
 
   callbacks.registerCallback("state", [this]() { return QuestStateNames.getRight(state()); });
 
-  callbacks.registerCallback("complete", [this](Maybe<size_t> followup) { complete(followup); });
+  callbacks.registerCallback("complete", [this](Maybe<std::size_t> followup) { complete(followup); });
 
   callbacks.registerCallback("fail", [this]() { fail(); });
 
@@ -810,7 +811,7 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
 
   callbacks.registerCallback("setWorldId", [this](Maybe<String> const& worldId) { setWorldId(worldId.apply(parseWorldId)); });
 
-  callbacks.registerCallback("serverUuid", [this]() { return serverUuid().apply(mem_fn(&Uuid::hex)); });
+  callbacks.registerCallback("serverUuid", [this]() { return serverUuid().apply(std::mem_fn(&Uuid::hex)); });
 
   callbacks.registerCallback("setServerUuid", [this](String const& serverUuid) { setServerUuid(Uuid(serverUuid)); });
 
@@ -832,7 +833,7 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
       } else {
         Vec3I system = jsonToVec3I(json.get("system"));
         SystemLocation location = jsonToSystemLocation(json.opt("location").value({}));
-        setLocation(make_pair(system, location));
+        setLocation(std::make_pair(system, location));
       }
     });
 
@@ -844,9 +845,9 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
   callbacks.registerCallback(
       "setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); });
 
-  callbacks.registerCallbackWithSignature<void, Maybe<JsonArray>>("setObjectiveList", bind(&Quest::setObjectiveList, this, _1));
-  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setProgress", bind(&Quest::setProgress, this, _1));
-  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setCompassDirection", bind(&Quest::setCompassDirection, this, _1));
+  callbacks.registerCallbackWithSignature<void, Maybe<JsonArray>>("setObjectiveList", std::bind(&Quest::setObjectiveList, this, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setProgress", std::bind(&Quest::setProgress, this, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<void, Maybe<float>>("setCompassDirection", std::bind(&Quest::setCompassDirection, this, std::placeholders::_1));
 
   callbacks.registerCallbackWithSignature<void, String>("setTitle", [this](String const& title) {
       m_title = title;
@@ -889,7 +890,7 @@ void Quest::setEntityParameter(String const& paramName, Entity const* entity) {
   Maybe<Gender> gender = {};
 
   if (auto portraitEntity = as<PortraitEntity>(entity)) {
-    portrait = Json{portraitEntity->portrait(PortraitMode::Full).transformed(mem_fn(&Drawable::toJson))};
+    portrait = Json{portraitEntity->portrait(PortraitMode::Full).transformed(std::mem_fn(&Drawable::toJson))};
     name = portraitEntity->name();
   }
 
@@ -924,7 +925,7 @@ QuestPtr createPreviewQuest(
   if (!questTemplate)
     return {};
 
-  Json portrait = player->portrait(PortraitMode::Full).transformed(mem_fn(&Drawable::toJson));
+  Json portrait = player->portrait(PortraitMode::Full).transformed(std::mem_fn(&Drawable::toJson));
 
   JsonObject paramJson = questTemplate->parameterExamples;
   for (auto const& paramName : paramJson.keys()) {
@@ -942,14 +943,14 @@ QuestPtr createPreviewQuest(
   }
   QuestArcDescriptor arc = QuestArcDescriptor{quests, {}};
 
-  size_t arcPos = 0;
+  std::size_t arcPos = 0;
   if (position.equalsIgnoreCase("next")) {
     arcPos = 1;
   } else if (position.equalsIgnoreCase("last")) {
     arcPos = 2;
   }
 
-  auto quest = make_shared<Quest>(arc, arcPos, player);
+  auto quest = std::make_shared<Quest>(arc, arcPos, player);
   quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
   return quest;
 }

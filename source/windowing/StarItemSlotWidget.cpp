@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.list;
@@ -23,7 +24,6 @@ import star.game_types;
 import star.set;
 import star.audio;
 import star.map;
-#include "StarConfig.hpp"
 import star.format;
 import star.game_types;
 import star.ordered_map;
@@ -73,11 +73,11 @@ import star.image_metadata_database;
 
 namespace Star {
 
-static String formatShortSize(uint64_t n) {
+static String formatShortSize(std::uint64_t n) {
     if (n < 10000)
       return toString(n);
 
-    uint64_t divisor = 1000ull;
+    std::uint64_t divisor = 1000ull;
     char suffix = 'k';
 
     if (n >= 1000000000000000000ull) {
@@ -97,12 +97,12 @@ static String formatShortSize(uint64_t n) {
       suffix = 'm';
     }
 
-    uint64_t whole = n / divisor;
+    std::uint64_t whole = n / divisor;
     if (whole >= 100ull)
         return strf("{}{:c}", whole, suffix);
 
-    uint64_t remainder = n - (whole * divisor);
-    uint64_t frac = (remainder / (divisor / 1000));
+    std::uint64_t remainder = n - (whole * divisor);
+    std::uint64_t frac = (remainder / (divisor / 1000));
 
     if (frac == 0)
       return strf("{}{:c}", whole, suffix);
@@ -256,7 +256,7 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
 
 void ItemSlotWidget::renderImpl() {
   auto drawCooldown = [this]() {
-    int frame = (int)roundf(m_progress * 18);// TODO: Hardcoded lol
+    int frame = (int)std::roundf(m_progress * 18);// TODO: Hardcoded lol
     context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
   };
   if (m_item) {

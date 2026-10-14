@@ -1,6 +1,4 @@
 module;
-
-#include "StarConfig.hpp"
 import star.list;
 import star.maybe;
 import star.string;

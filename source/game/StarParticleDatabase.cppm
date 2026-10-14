@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 
@@ -18,8 +18,20 @@ import star.particle;
 
 namespace Star {
 
-STAR_CLASS(ParticleConfig);
-STAR_CLASS(ParticleDatabase);
+class ParticleConfig;
+using ParticleConfigPtr = std::shared_ptr<ParticleConfig>;
+using ParticleConfigConstPtr = std::shared_ptr<const ParticleConfig>;
+using ParticleConfigWeakPtr = std::weak_ptr<ParticleConfig>;
+using ParticleConfigConstWeakPtr = std::weak_ptr<const ParticleConfig>;
+using ParticleConfigUPtr = std::unique_ptr<ParticleConfig>;
+using ParticleConfigConstUPtr = std::unique_ptr<const ParticleConfig>;
+class ParticleDatabase;
+using ParticleDatabasePtr = std::shared_ptr<ParticleDatabase>;
+using ParticleDatabaseConstPtr = std::shared_ptr<const ParticleDatabase>;
+using ParticleDatabaseWeakPtr = std::weak_ptr<ParticleDatabase>;
+using ParticleDatabaseConstWeakPtr = std::weak_ptr<const ParticleDatabase>;
+using ParticleDatabaseUPtr = std::unique_ptr<ParticleDatabase>;
+using ParticleDatabaseConstUPtr = std::unique_ptr<const ParticleDatabase>;
 
 class ParticleConfig {
 public:

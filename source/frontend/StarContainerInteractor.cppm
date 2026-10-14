@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.game_types;
@@ -28,7 +28,13 @@ import star.container_entity;
 
 namespace Star {
 
-STAR_CLASS(ContainerInteractor);
+class ContainerInteractor;
+using ContainerInteractorPtr = std::shared_ptr<ContainerInteractor>;
+using ContainerInteractorConstPtr = std::shared_ptr<ContainerInteractor const>;
+using ContainerInteractorWeakPtr = std::weak_ptr<ContainerInteractor>;
+using ContainerInteractorConstWeakPtr = std::weak_ptr<ContainerInteractor const>;
+using ContainerInteractorUPtr = std::unique_ptr<ContainerInteractor>;
+using ContainerInteractorConstUPtr = std::unique_ptr<ContainerInteractor const>;
 
 typedef List<ItemPtr> ContainerResult;
 
@@ -47,10 +53,10 @@ public:
 
   List<ContainerResult> pullContainerResults();
 
-  void swapInContainer(size_t slot, ItemPtr const& items);
+  void swapInContainer(std::size_t slot, ItemPtr const& items);
   void addToContainer(ItemPtr const& items);
-  void takeFromContainerSlot(size_t slot, size_t count);
-  void applyAugmentInContainer(size_t slot, ItemPtr const& augment);
+  void takeFromContainerSlot(std::size_t slot, std::size_t count);
+  void applyAugmentInContainer(std::size_t slot, ItemPtr const& augment);
 
   void startCraftingInContainer();
   void stopCraftingInContainer();

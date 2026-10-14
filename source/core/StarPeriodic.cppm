@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.math_common;
 import star.random;
 
@@ -78,7 +78,7 @@ public:
 
   template <typename Function>
   void update(double amount, Function&& function) {
-    double subAmount = min(amount, m_counter);
+    double subAmount = std::min(amount, m_counter);
     m_counter -= subAmount;
     amount -= subAmount;
     m_elapsed += subAmount;
@@ -88,7 +88,7 @@ public:
       function(m_elapsed);
       m_elapsed = 0.0;
       if (amount > 0.0)
-        update(amount, forward<Function>(function));
+        update(amount, std::forward<Function>(function));
     }
   }
 

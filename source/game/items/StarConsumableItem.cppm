@@ -28,7 +28,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 import star.observer_stream;
 import star.either;
@@ -141,7 +141,7 @@ ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json
 }
 
 ItemPtr ConsumableItem::clone() const {
-  return make_shared<ConsumableItem>(*this);
+  return std::make_shared<ConsumableItem>(*this);
 }
 
 List<Drawable> ConsumableItem::drawables() const {

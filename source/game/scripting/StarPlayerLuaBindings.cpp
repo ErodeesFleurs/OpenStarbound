@@ -26,7 +26,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.id_map;
@@ -428,7 +428,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
 
-  callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<uint16_t> teamNumber) {
+  callbacks.registerCallback("setDamageTeam", [player](String const& typeName, Maybe<std::uint16_t> teamNumber) {
     player->setTeam(EntityDamageTeam(TeamTypeNames.getLeft(typeName), teamNumber.value(0)));
   });
 
@@ -509,10 +509,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("currency", [player](String const& currencyType) { return player->currency(currencyType); });
-  callbacks.registerCallback("addCurrency", [player](String const& currencyType, uint64_t amount) {
+  callbacks.registerCallback("addCurrency", [player](String const& currencyType, std::uint64_t amount) {
       player->inventory()->addCurrency(currencyType, amount);
     });
-  callbacks.registerCallback("consumeCurrency", [player](String const& currencyType, uint64_t amount) {
+  callbacks.registerCallback("consumeCurrency", [player](String const& currencyType, std::uint64_t amount) {
       return player->inventory()->consumeCurrency(currencyType, amount);
     });
 
@@ -577,7 +577,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("inventoryTags", [player]() {
-      StringMap<size_t> inventoryTags;
+      StringMap<std::size_t> inventoryTags;
       for (auto const& item : player->inventory()->allItems()) {
         for (auto tag : item->itemTags())
           ++inventoryTags[tag];
@@ -596,10 +596,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return items;
     });
 
-  callbacks.registerCallback("consumeTaggedItem", [player](String const& itemTag, uint64_t count) {
+  callbacks.registerCallback("consumeTaggedItem", [player](String const& itemTag, std::uint64_t count) {
       for (auto const& item : player->inventory()->allItems()) {
         if (item->hasItemTag(itemTag)) {
-          uint64_t takeCount = min(item->count(), count);
+          std::uint64_t takeCount = std::min(item->count(), count);
           player->takeItem(item->descriptor().singular().multiply(takeCount));
           count -= takeCount;
           if (count == 0)
@@ -616,10 +616,10 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return false;
     });
 
-  callbacks.registerCallback("consumeItemWithParameter", [player](String const& parameterName, Json const& parameterValue, uint64_t count) {
+  callbacks.registerCallback("consumeItemWithParameter", [player](String const& parameterName, Json const& parameterValue, std::uint64_t count) {
       for (auto const& item : player->inventory()->allItems()) {
         if (item->instanceValue(parameterName, Json()) == parameterValue) {
-          uint64_t takeCount = min(item->count(), count);
+          std::uint64_t takeCount = std::min(item->count(), count);
           player->takeItem(item->descriptor().singular().multiply(takeCount));
           count -= takeCount;
           if (count == 0)
@@ -676,7 +676,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("startQuest", [player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
       auto questArc = QuestArcDescriptor::fromJson(quest);
-      auto followUp = make_shared<Quest>(questArc, 0, player);
+      auto followUp = std::make_shared<Quest>(questArc, 0, player);
       if (serverUuid)
         followUp->setServerUuid(Uuid(*serverUuid));
       if (worldId)
@@ -774,13 +774,13 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return {};
     });
 
-  callbacks.registerCallback("questWorlds", [player]() -> List<pair<String, bool>> {
-      List<pair<String, bool>> res;
+  callbacks.registerCallback("questWorlds", [player]() -> List<std::pair<String, bool>> {
+      List<std::pair<String, bool>> res;
       auto maybeCurrentQuest = player->questManager()->currentQuest();
       for (auto q : player->questManager()->listActiveQuests()) {
         if (auto worldId = q->worldId()) {
           bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.get()->questId() == q->questId();
-          res.append(pair<String, bool>(printWorldId(*worldId), isCurrentQuest));
+          res.append(std::pair<String, bool>(printWorldId(*worldId), isCurrentQuest));
         }
       }
       return res;
@@ -795,14 +795,14 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return {};
     });
 
-  callbacks.registerCallback("questLocations", [player]() -> List<pair<Json, bool>> {
-      List<pair<Json, bool>> res;
+  callbacks.registerCallback("questLocations", [player]() -> List<std::pair<Json, bool>> {
+      List<std::pair<Json, bool>> res;
       auto maybeCurrentQuest = player->questManager()->currentQuest();
       for (auto q : player->questManager()->listActiveQuests()) {
         if (auto questLocation = q->location()) {
           bool isCurrentQuest = maybeCurrentQuest && maybeCurrentQuest.get()->questId() == q->questId();
           auto locationJson = JsonObject{{"system", jsonFromVec3I(questLocation->first)}, {"location", jsonFromSystemLocation(questLocation->second)}};
-          res.append(pair<Json, bool>(locationJson, isCurrentQuest));
+          res.append(std::pair<Json, bool>(locationJson, isCurrentQuest));
         }
       }
       return res;
@@ -834,7 +834,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("ownShipWorldId", [player]() { return printWorldId(ClientShipWorldId(player->uuid())); });
 
-  callbacks.registerCallback("lounge", [player](EntityId entityId, Maybe<size_t> anchorIndex) {
+  callbacks.registerCallback("lounge", [player](EntityId entityId, Maybe<std::size_t> anchorIndex) {
       return player->lounge(entityId, anchorIndex.value(0));
     });
   callbacks.registerCallback("isLounging", [player]() { return (bool)player->loungingIn(); });
@@ -883,8 +883,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
       return player->universeMap()->worldBookmark(coordinate).isValid();
     });
 
-  callbacks.registerCallback("orbitBookmarks", [player]() -> List<pair<Vec3I, Json>> {
-      return player->universeMap()->orbitBookmarks().transformed([](pair<Vec3I, OrbitBookmark> const& p) -> pair<Vec3I, Json> {
+  callbacks.registerCallback("orbitBookmarks", [player]() -> List<std::pair<Vec3I, Json>> {
+      return player->universeMap()->orbitBookmarks().transformed([](std::pair<Vec3I, OrbitBookmark> const& p) -> std::pair<Vec3I, Json> {
         return {p.first, p.second.toJson()};
       });
     });

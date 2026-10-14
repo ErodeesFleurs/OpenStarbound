@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.bi_map;
@@ -61,9 +61,9 @@ Json ShipUpgrades::toJson() const {
 }
 
 ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
-  shipLevel = max(shipLevel, (unsigned)upgrades.optUInt("shipLevel").value(shipLevel));
+  shipLevel = std::max(shipLevel, (unsigned)upgrades.optUInt("shipLevel").value(shipLevel));
   maxFuel = upgrades.optUInt("maxFuel").value(maxFuel);
-  crewSize = max(crewSize, (unsigned)upgrades.optUInt("crewSize").value(crewSize));
+  crewSize = std::max(crewSize, (unsigned)upgrades.optUInt("crewSize").value(crewSize));
   fuelEfficiency = upgrades.optFloat("fuelEfficiency").value(fuelEfficiency);
   shipSpeed = upgrades.optFloat("shipSpeed").value(shipSpeed);
   if (upgrades.contains("capabilities"))
@@ -72,8 +72,8 @@ ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
 }
 
 bool ShipUpgrades::operator==(ShipUpgrades const& rhs) const {
-  return tie(shipLevel, maxFuel, crewSize, fuelEfficiency, shipSpeed, capabilities)
-      == tie(rhs.shipLevel, rhs.maxFuel, rhs.crewSize, rhs.fuelEfficiency, rhs.shipSpeed, rhs.capabilities);
+  return std::tie(shipLevel, maxFuel, crewSize, fuelEfficiency, shipSpeed, capabilities)
+      == std::tie(rhs.shipLevel, rhs.maxFuel, rhs.crewSize, rhs.fuelEfficiency, rhs.shipSpeed, rhs.capabilities);
 }
 
 }

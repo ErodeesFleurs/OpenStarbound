@@ -147,6 +147,7 @@ if(NOT STAR_DEBUG_SYMBOL_LEVEL MATCHES "^(default|minimal|full)$")
 endif()
 
 add_library(star_build_config INTERFACE)
+target_compile_definitions(star_build_config INTERFACE "$<$<PLATFORM_ID:Windows>:NOMINMAX>")
 add_library(star_core_dependencies INTERFACE)
 add_library(star_module_dependencies INTERFACE)
 add_library(star_extern_dependencies INTERFACE)

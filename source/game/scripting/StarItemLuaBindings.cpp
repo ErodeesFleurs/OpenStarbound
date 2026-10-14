@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.id_map;
@@ -63,19 +63,19 @@ module star.item_lua_bindings;
 
 namespace Star::LuaBindings::ItemCallbacks {
   String name(Item* item);
-  size_t count(Item* item);
-  size_t setCount(Item* item, size_t count);
-  size_t maxStack(Item* item);
+  std::size_t count(Item* item);
+  std::size_t setCount(Item* item, std::size_t count);
+  std::size_t maxStack(Item* item);
   bool matches(Item* item, Json const& descriptor, Maybe<bool> exactMatch);
   Json matchingDescriptors(Item* item);
-  bool consume(Item* item, size_t count);
+  bool consume(Item* item, std::size_t count);
   bool empty(Item* item);
   Json descriptor(Item* item);
   String description(Item* item);
   String friendlyName(Item* item);
   int rarity(Item* item);
   String rarityString(Item* item);
-  size_t price(Item* item);
+  std::size_t price(Item* item);
   unsigned fuelAmount(Item* item);
   Json iconDrawables(Item* item);
   Json dropDrawables(Item* item);
@@ -94,31 +94,31 @@ namespace Star {
 LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<String>("name", bind(ItemCallbacks::name, item));
-  callbacks.registerCallbackWithSignature<size_t>("count", bind(ItemCallbacks::count, item));
-  callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", bind(ItemCallbacks::setCount, item, _1));
-  callbacks.registerCallbackWithSignature<size_t>("maxStack", bind(ItemCallbacks::maxStack, item));
-  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", bind(ItemCallbacks::matches, item, _1, _2));
-  callbacks.registerCallbackWithSignature<bool, size_t>("consume", bind(ItemCallbacks::consume, item, _1));
-  callbacks.registerCallbackWithSignature<bool>("empty", bind(ItemCallbacks::empty, item));
-  callbacks.registerCallbackWithSignature<Json>("descriptor", bind(ItemCallbacks::descriptor, item));
-  callbacks.registerCallbackWithSignature<String>("description", bind(ItemCallbacks::description, item));
-  callbacks.registerCallbackWithSignature<String>("friendlyName", bind(ItemCallbacks::friendlyName, item));
-  callbacks.registerCallbackWithSignature<int>("rarity", bind(ItemCallbacks::rarity, item));
-  callbacks.registerCallbackWithSignature<String>("rarityString", bind(ItemCallbacks::rarityString, item));
-  callbacks.registerCallbackWithSignature<size_t>("price", bind(ItemCallbacks::price, item));
-  callbacks.registerCallbackWithSignature<Json>("fuelAmount", bind(ItemCallbacks::fuelAmount, item));
-  callbacks.registerCallbackWithSignature<Json>("iconDrawables", bind(ItemCallbacks::iconDrawables, item));
-  callbacks.registerCallbackWithSignature<Json>("dropDrawables", bind(ItemCallbacks::dropDrawables, item));
-  callbacks.registerCallbackWithSignature<String>("largeImage", bind(ItemCallbacks::largeImage, item));
-  callbacks.registerCallbackWithSignature<String>("tooltipKind", bind(ItemCallbacks::tooltipKind, item));
-  callbacks.registerCallbackWithSignature<String>("category", bind(ItemCallbacks::category, item));
-  callbacks.registerCallbackWithSignature<String>("pickupSound", bind(ItemCallbacks::pickupSound, item));
-  callbacks.registerCallbackWithSignature<bool>("twoHanded", bind(ItemCallbacks::twoHanded, item));
-  callbacks.registerCallbackWithSignature<float>("timeToLive", bind(ItemCallbacks::timeToLive, item));
-  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", bind(ItemCallbacks::learnBlueprintsOnPickup, item));
-  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", bind(ItemCallbacks::hasItemTag, item, _1));
-  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", bind(ItemCallbacks::pickupQuestTemplates, item));
+  callbacks.registerCallbackWithSignature<String>("name", std::bind(ItemCallbacks::name, item));
+  callbacks.registerCallbackWithSignature<std::size_t>("count", std::bind(ItemCallbacks::count, item));
+  callbacks.registerCallbackWithSignature<std::size_t, std::size_t>("setCount", std::bind(ItemCallbacks::setCount, item, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<std::size_t>("maxStack", std::bind(ItemCallbacks::maxStack, item));
+  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", std::bind(ItemCallbacks::matches, item, std::placeholders::_1, std::placeholders::_2));
+  callbacks.registerCallbackWithSignature<bool, std::size_t>("consume", std::bind(ItemCallbacks::consume, item, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<bool>("empty", std::bind(ItemCallbacks::empty, item));
+  callbacks.registerCallbackWithSignature<Json>("descriptor", std::bind(ItemCallbacks::descriptor, item));
+  callbacks.registerCallbackWithSignature<String>("description", std::bind(ItemCallbacks::description, item));
+  callbacks.registerCallbackWithSignature<String>("friendlyName", std::bind(ItemCallbacks::friendlyName, item));
+  callbacks.registerCallbackWithSignature<int>("rarity", std::bind(ItemCallbacks::rarity, item));
+  callbacks.registerCallbackWithSignature<String>("rarityString", std::bind(ItemCallbacks::rarityString, item));
+  callbacks.registerCallbackWithSignature<std::size_t>("price", std::bind(ItemCallbacks::price, item));
+  callbacks.registerCallbackWithSignature<Json>("fuelAmount", std::bind(ItemCallbacks::fuelAmount, item));
+  callbacks.registerCallbackWithSignature<Json>("iconDrawables", std::bind(ItemCallbacks::iconDrawables, item));
+  callbacks.registerCallbackWithSignature<Json>("dropDrawables", std::bind(ItemCallbacks::dropDrawables, item));
+  callbacks.registerCallbackWithSignature<String>("largeImage", std::bind(ItemCallbacks::largeImage, item));
+  callbacks.registerCallbackWithSignature<String>("tooltipKind", std::bind(ItemCallbacks::tooltipKind, item));
+  callbacks.registerCallbackWithSignature<String>("category", std::bind(ItemCallbacks::category, item));
+  callbacks.registerCallbackWithSignature<String>("pickupSound", std::bind(ItemCallbacks::pickupSound, item));
+  callbacks.registerCallbackWithSignature<bool>("twoHanded", std::bind(ItemCallbacks::twoHanded, item));
+  callbacks.registerCallbackWithSignature<float>("timeToLive", std::bind(ItemCallbacks::timeToLive, item));
+  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", std::bind(ItemCallbacks::learnBlueprintsOnPickup, item));
+  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", std::bind(ItemCallbacks::hasItemTag, item, std::placeholders::_1));
+  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", std::bind(ItemCallbacks::pickupQuestTemplates, item));
 
   return callbacks;
 }
@@ -134,7 +134,7 @@ String LuaBindings::ItemCallbacks::name(Item* item) {
 // Returns the number of items in this stack
 //
 // @return An integer containing the number of items in this stack
-size_t LuaBindings::ItemCallbacks::count(Item* item) {
+std::size_t LuaBindings::ItemCallbacks::count(Item* item) {
   return item->count();
 }
 
@@ -142,7 +142,7 @@ size_t LuaBindings::ItemCallbacks::count(Item* item) {
 //
 // @param count The desired amount
 // @return An integer containing the number of items that overflowed
-size_t LuaBindings::ItemCallbacks::setCount(Item* item, size_t count) {
+std::size_t LuaBindings::ItemCallbacks::setCount(Item* item, std::size_t count) {
   return item->setCount(count);
 }
 
@@ -150,7 +150,7 @@ size_t LuaBindings::ItemCallbacks::setCount(Item* item, size_t count) {
 //
 // @return An integer containing the number of items in this item's maximum
 // stack
-size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
+std::size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
   return item->maxStack();
 }
 
@@ -174,7 +174,7 @@ bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, Maybe<boo
 //
 // @param toConsume The number of items you'd like to consume from this stack
 // @return true if items were successfully consumed, false otherwise
-bool LuaBindings::ItemCallbacks::consume(Item* item, size_t count) {
+bool LuaBindings::ItemCallbacks::consume(Item* item, std::size_t count) {
   return item->consume(count);
 }
 
@@ -229,7 +229,7 @@ String LuaBindings::ItemCallbacks::rarityString(Item* item) {
 //
 // @return an integer representing the shop price of the item in pixels (before
 // modifiers)
-size_t LuaBindings::ItemCallbacks::price(Item* item) {
+std::size_t LuaBindings::ItemCallbacks::price(Item* item) {
   return item->price();
 }
 
@@ -324,7 +324,7 @@ bool LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
 // by this item on
 // pickup
 Json LuaBindings::ItemCallbacks::pickupQuestTemplates(Item* item) {
-  return item->pickupQuestTemplates().transformed(mem_fn(&QuestArcDescriptor::toJson));
+  return item->pickupQuestTemplates().transformed(std::mem_fn(&QuestArcDescriptor::toJson));
 }
 
 }

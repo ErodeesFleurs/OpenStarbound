@@ -1,12 +1,18 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.string;
 
 namespace Star {
 
-STAR_CLASS(UserGeneratedContentService);
+class UserGeneratedContentService;
+using UserGeneratedContentServicePtr = std::shared_ptr<UserGeneratedContentService>;
+using UserGeneratedContentServiceConstPtr = std::shared_ptr<UserGeneratedContentService const>;
+using UserGeneratedContentServiceWeakPtr = std::weak_ptr<UserGeneratedContentService>;
+using UserGeneratedContentServiceConstWeakPtr = std::weak_ptr<UserGeneratedContentService const>;
+using UserGeneratedContentServiceUPtr = std::unique_ptr<UserGeneratedContentService>;
+using UserGeneratedContentServiceConstUPtr = std::unique_ptr<UserGeneratedContentService const>;
 
 class UserGeneratedContentService {
 public:

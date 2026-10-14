@@ -1,3 +1,4 @@
+import star.memory;
 import std;
 import star.xx_hash;
 import star.json;
@@ -36,7 +37,6 @@ import star.file;
 import star.logging;
 import star.iterator;
 import star.time;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.a_star;
@@ -216,12 +216,12 @@ PlayerStorage::~PlayerStorage() {
   writeMetadata();
 }
 
-size_t PlayerStorage::playerCount() const {
+std::size_t PlayerStorage::playerCount() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_savedPlayersCache.size();
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidAt(size_t index) {
+Maybe<Uuid> PlayerStorage::playerUuidAt(std::size_t index) {
   RecursiveMutexLocker locker(m_mutex);
   if (index < m_savedPlayersCache.size())
     return m_savedPlayersCache.keyAt(index);
@@ -235,7 +235,7 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
 
   RecursiveMutexLocker locker(m_mutex);
 
-  size_t longest = std::numeric_limits<size_t>::max();
+  std::size_t longest = std::numeric_limits<std::size_t>::max();
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;

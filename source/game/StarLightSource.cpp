@@ -1,5 +1,5 @@
 import star.vector;
-#include "StarConfig.hpp"
+import std;
 import star.data_stream;
 import star.bi_map;
 

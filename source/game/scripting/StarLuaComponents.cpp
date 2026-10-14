@@ -13,7 +13,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.lua;
 import star.maybe;
@@ -101,7 +101,7 @@ bool LuaBaseComponent::autoReInit() const {
 
 void LuaBaseComponent::setAutoReInit(bool autoReInit) {
   if (autoReInit) {
-    m_reloadTracker = make_shared<TrackerListener>();
+    m_reloadTracker = std::make_shared<TrackerListener>();
     Root::singleton().registerReloadListener(m_reloadTracker);
   } else {
     m_reloadTracker.reset();
@@ -228,7 +228,7 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
       m_threads.get(name)->stop();
       m_threads.remove(name);
     }
-    auto thread = make_shared<ScriptableThread>(parameters.set("name",name), this);
+    auto thread = std::make_shared<ScriptableThread>(parameters.set("name",name), this);
     
     for (auto const& callbackPair : m_threadCallbacks)
       thread->addCallbacks(callbackPair.first, callbackPair.second);
@@ -266,9 +266,9 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
 }
 
 RpcPromise<Json> LuaBaseComponent::threadPassMessage(String const& thread, String const& message, JsonArray const& args) {
-  _unused(thread);
-  _unused(message);
-  _unused(args);
+  ((void)(thread));
+  ((void)(message));
+  ((void)(args));
   return RpcPromise<Json>::createFailed("Lua component cannot handle messages");
 }
 

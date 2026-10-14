@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.game_types;
 import star.vector;
@@ -51,28 +51,130 @@ import star.ambient;
 
 
 namespace Star {
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Renderer);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class Renderer;
+using RendererPtr = std::shared_ptr<Renderer>;
+using RendererConstPtr = std::shared_ptr<Renderer const>;
+using RendererWeakPtr = std::weak_ptr<Renderer>;
+using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
+using RendererUPtr = std::unique_ptr<Renderer>;
+using RendererConstUPtr = std::unique_ptr<Renderer const>;
 }
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PlayerStorage);
-STAR_CLASS(CharCreationPane);
-STAR_CLASS(CharSelectionPane);
-STAR_CLASS(OptionsMenu);
-STAR_CLASS(ModsMenu);
-STAR_CLASS(GuiContext);
-STAR_CLASS(Pane);
-STAR_CLASS(PaneManager);
-STAR_CLASS(Mixer);
-STAR_CLASS(EnvironmentPainter);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(Sky);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
+class PlayerStorage;
+using PlayerStoragePtr = std::shared_ptr<PlayerStorage>;
+using PlayerStorageConstPtr = std::shared_ptr<PlayerStorage const>;
+using PlayerStorageWeakPtr = std::weak_ptr<PlayerStorage>;
+using PlayerStorageConstWeakPtr = std::weak_ptr<PlayerStorage const>;
+using PlayerStorageUPtr = std::unique_ptr<PlayerStorage>;
+using PlayerStorageConstUPtr = std::unique_ptr<PlayerStorage const>;
+class CharCreationPane;
+using CharCreationPanePtr = std::shared_ptr<CharCreationPane>;
+using CharCreationPaneConstPtr = std::shared_ptr<CharCreationPane const>;
+using CharCreationPaneWeakPtr = std::weak_ptr<CharCreationPane>;
+using CharCreationPaneConstWeakPtr = std::weak_ptr<CharCreationPane const>;
+using CharCreationPaneUPtr = std::unique_ptr<CharCreationPane>;
+using CharCreationPaneConstUPtr = std::unique_ptr<CharCreationPane const>;
+class CharSelectionPane;
+using CharSelectionPanePtr = std::shared_ptr<CharSelectionPane>;
+using CharSelectionPaneConstPtr = std::shared_ptr<CharSelectionPane const>;
+using CharSelectionPaneWeakPtr = std::weak_ptr<CharSelectionPane>;
+using CharSelectionPaneConstWeakPtr = std::weak_ptr<CharSelectionPane const>;
+using CharSelectionPaneUPtr = std::unique_ptr<CharSelectionPane>;
+using CharSelectionPaneConstUPtr = std::unique_ptr<CharSelectionPane const>;
+class OptionsMenu;
+using OptionsMenuPtr = std::shared_ptr<OptionsMenu>;
+using OptionsMenuConstPtr = std::shared_ptr<OptionsMenu const>;
+using OptionsMenuWeakPtr = std::weak_ptr<OptionsMenu>;
+using OptionsMenuConstWeakPtr = std::weak_ptr<OptionsMenu const>;
+using OptionsMenuUPtr = std::unique_ptr<OptionsMenu>;
+using OptionsMenuConstUPtr = std::unique_ptr<OptionsMenu const>;
+class ModsMenu;
+using ModsMenuPtr = std::shared_ptr<ModsMenu>;
+using ModsMenuConstPtr = std::shared_ptr<ModsMenu const>;
+using ModsMenuWeakPtr = std::weak_ptr<ModsMenu>;
+using ModsMenuConstWeakPtr = std::weak_ptr<ModsMenu const>;
+using ModsMenuUPtr = std::unique_ptr<ModsMenu>;
+using ModsMenuConstUPtr = std::unique_ptr<ModsMenu const>;
+class GuiContext;
+using GuiContextPtr = std::shared_ptr<GuiContext>;
+using GuiContextConstPtr = std::shared_ptr<GuiContext const>;
+using GuiContextWeakPtr = std::weak_ptr<GuiContext>;
+using GuiContextConstWeakPtr = std::weak_ptr<GuiContext const>;
+using GuiContextUPtr = std::unique_ptr<GuiContext>;
+using GuiContextConstUPtr = std::unique_ptr<GuiContext const>;
+class Pane;
+using PanePtr = std::shared_ptr<Pane>;
+using PaneConstPtr = std::shared_ptr<Pane const>;
+using PaneWeakPtr = std::weak_ptr<Pane>;
+using PaneConstWeakPtr = std::weak_ptr<Pane const>;
+using PaneUPtr = std::unique_ptr<Pane>;
+using PaneConstUPtr = std::unique_ptr<Pane const>;
+class PaneManager;
+using PaneManagerPtr = std::shared_ptr<PaneManager>;
+using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
+using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
+using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
+using PaneManagerUPtr = std::unique_ptr<PaneManager>;
+using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
+class Mixer;
+using MixerPtr = std::shared_ptr<Mixer>;
+using MixerConstPtr = std::shared_ptr<Mixer const>;
+using MixerWeakPtr = std::weak_ptr<Mixer>;
+using MixerConstWeakPtr = std::weak_ptr<Mixer const>;
+using MixerUPtr = std::unique_ptr<Mixer>;
+using MixerConstUPtr = std::unique_ptr<Mixer const>;
+class EnvironmentPainter;
+using EnvironmentPainterPtr = std::shared_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstPtr = std::shared_ptr<EnvironmentPainter const>;
+using EnvironmentPainterWeakPtr = std::weak_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstWeakPtr = std::weak_ptr<EnvironmentPainter const>;
+using EnvironmentPainterUPtr = std::unique_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstUPtr = std::unique_ptr<EnvironmentPainter const>;
+class CelestialMasterDatabase;
+using CelestialMasterDatabasePtr = std::shared_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstPtr = std::shared_ptr<CelestialMasterDatabase const>;
+using CelestialMasterDatabaseWeakPtr = std::weak_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstWeakPtr = std::weak_ptr<CelestialMasterDatabase const>;
+using CelestialMasterDatabaseUPtr = std::unique_ptr<CelestialMasterDatabase>;
+using CelestialMasterDatabaseConstUPtr = std::unique_ptr<CelestialMasterDatabase const>;
+class ButtonWidget;
+using ButtonWidgetPtr = std::shared_ptr<ButtonWidget>;
+using ButtonWidgetConstPtr = std::shared_ptr<ButtonWidget const>;
+using ButtonWidgetWeakPtr = std::weak_ptr<ButtonWidget>;
+using ButtonWidgetConstWeakPtr = std::weak_ptr<ButtonWidget const>;
+using ButtonWidgetUPtr = std::unique_ptr<ButtonWidget>;
+using ButtonWidgetConstUPtr = std::unique_ptr<ButtonWidget const>;
+class Sky;
+using SkyPtr = std::shared_ptr<Sky>;
+using SkyConstPtr = std::shared_ptr<Sky const>;
+using SkyWeakPtr = std::weak_ptr<Sky>;
+using SkyConstWeakPtr = std::weak_ptr<Sky const>;
+using SkyUPtr = std::unique_ptr<Sky>;
+using SkyConstUPtr = std::unique_ptr<Sky const>;
 
-STAR_CLASS(TitleScreen);
+class TitleScreen;
+using TitleScreenPtr = std::shared_ptr<TitleScreen>;
+using TitleScreenConstPtr = std::shared_ptr<TitleScreen const>;
+using TitleScreenWeakPtr = std::weak_ptr<TitleScreen>;
+using TitleScreenConstWeakPtr = std::weak_ptr<TitleScreen const>;
+using TitleScreenUPtr = std::unique_ptr<TitleScreen>;
+using TitleScreenConstUPtr = std::unique_ptr<TitleScreen const>;
 
 enum class TitleState {
   Main,
@@ -152,7 +254,7 @@ private:
   unsigned windowWidth() const;
 
   typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  shared_ptr<ScriptComponent> m_scriptComponent;
+  std::shared_ptr<ScriptComponent> m_scriptComponent;
 
   GuiContext* m_guiContext;
 
@@ -171,7 +273,7 @@ private:
 
   PanePtr m_mainMenu;
   PanePtr m_backgroundMenu;
-  List<pair<ButtonWidgetPtr, Vec2I>> m_rightAnchoredButtons;
+  List<std::pair<ButtonWidgetPtr, Vec2I>> m_rightAnchoredButtons;
 
   PlayerPtr m_mainAppPlayer;
   PlayerStoragePtr m_playerStorage;

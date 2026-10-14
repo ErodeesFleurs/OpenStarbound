@@ -1,5 +1,5 @@
 #include "StarJsonExtra.hpp"
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.data_stream;
 import star.json;
@@ -45,7 +45,7 @@ SkyColoring::SkyColoring() {
 }
 
 SkyColoring::SkyColoring(Json const& variant) {
-  auto getColorPair = [](Json const& pair) { return make_pair(jsonToColor(pair.get(0)), jsonToColor(pair.get(1))); };
+  auto getColorPair = [](Json const& pair) { return std::make_pair(jsonToColor(pair.get(0)), jsonToColor(pair.get(1))); };
 
   mainColor = jsonToColor(variant.get("mainColor"));
 
@@ -61,7 +61,7 @@ SkyColoring::SkyColoring(Json const& variant) {
 }
 
 Json SkyColoring::toJson() const {
-  auto makeColorPair = [](pair<Color, Color> const& p) {
+  auto makeColorPair = [](std::pair<Color, Color> const& p) {
     return JsonArray{jsonFromColor(p.first), jsonFromColor(p.second)};
   };
 

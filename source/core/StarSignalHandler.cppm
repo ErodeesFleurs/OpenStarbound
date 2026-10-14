@@ -1,23 +1,29 @@
 module;
-
-#include "StarConfig.hpp"
+#ifdef STAR_SYSTEM_FAMILY_WINDOWS
+#include <windows.h>
+#include <dbghelp.h>
+#else
+#include <signal.h>
+#endif
+import std;
 import star.format;
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 import star.string;
 import star.logging;
-#define NOMINMAX
-#include <windows.h>
-#include <dbghelp.h>
-#else
-#include <signal.h>
 #endif
 
 export module star.signal_handler;
 
 export namespace Star {
 
-STAR_STRUCT(SignalHandlerImpl);
+struct SignalHandlerImpl;
+using SignalHandlerImplPtr = std::shared_ptr<SignalHandlerImpl>;
+using SignalHandlerImplConstPtr = std::shared_ptr<const SignalHandlerImpl>;
+using SignalHandlerImplWeakPtr = std::weak_ptr<SignalHandlerImpl>;
+using SignalHandlerImplConstWeakPtr = std::weak_ptr<const SignalHandlerImpl>;
+using SignalHandlerImplUPtr = std::unique_ptr<SignalHandlerImpl>;
+using SignalHandlerImplConstUPtr = std::unique_ptr<const SignalHandlerImpl>;
 
 // Singleton signal handler that registers handlers for segfault, fpe,
 // illegal instructions etc as well as non-fatal interrupts.
@@ -244,24 +250,24 @@ struct SignalHandlerImpl {
   void setHandleFatal(bool b) {
     handlingFatal = b;
     if (handlingFatal) {
-      signal(SIGSEGV, handleFatal);
-      signal(SIGILL, handleFatal);
-      signal(SIGFPE, handleFatal);
-      signal(SIGBUS, handleFatal);
+      std::signal(SIGSEGV, handleFatal);
+      std::signal(SIGILL, handleFatal);
+      std::signal(SIGFPE, handleFatal);
+      std::signal(SIGBUS, handleFatal);
     } else {
-      signal(SIGSEGV, SIG_DFL);
-      signal(SIGILL, SIG_DFL);
-      signal(SIGFPE, SIG_DFL);
-      signal(SIGBUS, SIG_DFL);
+      std::signal(SIGSEGV, SIG_DFL);
+      std::signal(SIGILL, SIG_DFL);
+      std::signal(SIGFPE, SIG_DFL);
+      std::signal(SIGBUS, SIG_DFL);
     }
   }
 
   void setHandleInterrupt(bool b) {
     handlingInterrupt = b;
     if (handlingInterrupt)
-      signal(SIGINT, handleInterrupt);
+      std::signal(SIGINT, handleInterrupt);
     else
-      signal(SIGINT, SIG_DFL);
+      std::signal(SIGINT, SIG_DFL);
   }
 
   static void handleFatal(int signum) {
@@ -289,7 +295,7 @@ SignalHandler::SignalHandler() {
   if (s_singleton)
     throw StarException("Singleton SignalHandler has been constructed twice!");
 
-  s_singleton = make_unique<SignalHandlerImpl>();
+  s_singleton = std::make_unique<SignalHandlerImpl>();
 }
 
 SignalHandler::~SignalHandler() {

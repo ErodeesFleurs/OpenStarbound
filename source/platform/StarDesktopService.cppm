@@ -1,11 +1,17 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 
 namespace Star {
 
-STAR_CLASS(DesktopService);
+class DesktopService;
+using DesktopServicePtr = std::shared_ptr<DesktopService>;
+using DesktopServiceConstPtr = std::shared_ptr<DesktopService const>;
+using DesktopServiceWeakPtr = std::weak_ptr<DesktopService>;
+using DesktopServiceConstWeakPtr = std::weak_ptr<DesktopService const>;
+using DesktopServiceUPtr = std::unique_ptr<DesktopService>;
+using DesktopServiceConstUPtr = std::unique_ptr<DesktopService const>;
 
 class DesktopService {
 public:

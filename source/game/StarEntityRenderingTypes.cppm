@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 
@@ -22,7 +22,7 @@ import star.material_types;
 
 namespace Star {
 
-typedef uint32_t EntityRenderLayer;
+typedef std::uint32_t EntityRenderLayer;
 
 inline constexpr unsigned RenderLayerUpperBits = 5;
 inline constexpr unsigned RenderLayerLowerBits = 32 - RenderLayerUpperBits;

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -48,19 +48,25 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(StackWidget);
+class StackWidget;
+using StackWidgetPtr = std::shared_ptr<StackWidget>;
+using StackWidgetConstPtr = std::shared_ptr<StackWidget const>;
+using StackWidgetWeakPtr = std::weak_ptr<StackWidget>;
+using StackWidgetConstWeakPtr = std::weak_ptr<StackWidget const>;
+using StackWidgetUPtr = std::unique_ptr<StackWidget>;
+using StackWidgetConstUPtr = std::unique_ptr<StackWidget const>;
 class StackWidget : public Widget {
 public:
-  void showPage(size_t page);
+  void showPage(std::size_t page);
   void showPage(String const& name);
 
-  Either<size_t, String> currentPage() const;
+  Either<std::size_t, String> currentPage() const;
 
   virtual void addChild(String const& name, WidgetPtr member) override;
 
 private:
   WidgetPtr m_shownPage;
-  Either<size_t, String> m_page;
+  Either<std::size_t, String> m_page;
 };
 
 }

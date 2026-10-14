@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -49,11 +49,35 @@ import star.button_group;
 
 namespace Star {
 
-STAR_CLASS(FlowLayout);
-STAR_CLASS(StackWidget);
+class FlowLayout;
+using FlowLayoutPtr = std::shared_ptr<FlowLayout>;
+using FlowLayoutConstPtr = std::shared_ptr<FlowLayout const>;
+using FlowLayoutWeakPtr = std::weak_ptr<FlowLayout>;
+using FlowLayoutConstWeakPtr = std::weak_ptr<FlowLayout const>;
+using FlowLayoutUPtr = std::unique_ptr<FlowLayout>;
+using FlowLayoutConstUPtr = std::unique_ptr<FlowLayout const>;
+class StackWidget;
+using StackWidgetPtr = std::shared_ptr<StackWidget>;
+using StackWidgetConstPtr = std::shared_ptr<StackWidget const>;
+using StackWidgetWeakPtr = std::weak_ptr<StackWidget>;
+using StackWidgetConstWeakPtr = std::weak_ptr<StackWidget const>;
+using StackWidgetUPtr = std::unique_ptr<StackWidget>;
+using StackWidgetConstUPtr = std::unique_ptr<StackWidget const>;
 
-STAR_CLASS(TabBarWidget);
-STAR_CLASS(TabSetWidget);
+class TabBarWidget;
+using TabBarWidgetPtr = std::shared_ptr<TabBarWidget>;
+using TabBarWidgetConstPtr = std::shared_ptr<TabBarWidget const>;
+using TabBarWidgetWeakPtr = std::weak_ptr<TabBarWidget>;
+using TabBarWidgetConstWeakPtr = std::weak_ptr<TabBarWidget const>;
+using TabBarWidgetUPtr = std::unique_ptr<TabBarWidget>;
+using TabBarWidgetConstUPtr = std::unique_ptr<TabBarWidget const>;
+class TabSetWidget;
+using TabSetWidgetPtr = std::shared_ptr<TabSetWidget>;
+using TabSetWidgetConstPtr = std::shared_ptr<TabSetWidget const>;
+using TabSetWidgetWeakPtr = std::weak_ptr<TabSetWidget>;
+using TabSetWidgetConstWeakPtr = std::weak_ptr<TabSetWidget const>;
+using TabSetWidgetUPtr = std::unique_ptr<TabSetWidget>;
+using TabSetWidgetConstUPtr = std::unique_ptr<TabSetWidget const>;
 
 struct TabSetConfig {
   String tabButtonBaseImage;
@@ -75,9 +99,9 @@ public:
 
   void addTab(String const& widgetName, WidgetPtr widget, String const& title);
 
-  size_t tabCount() const;
-  void tabSelect(size_t page);
-  size_t selectedTab() const;
+  std::size_t tabCount() const;
+  void tabSelect(std::size_t page);
+  std::size_t selectedTab() const;
 
   // Callback is called when the tab changes
   void setCallback(WidgetCallbackFunc callback);
@@ -87,7 +111,7 @@ private:
   FlowLayoutPtr m_tabBar;
   StackWidgetPtr m_stack;
   WidgetCallbackFunc m_callback;
-  Maybe<size_t> m_lastSelected;
+  Maybe<std::size_t> m_lastSelected;
 };
 
 }

@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.format;
@@ -40,7 +40,7 @@ void JsonRpc::clearHandlers() {
 }
 
 RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
-  uint64_t id = m_requestId++;
+  std::uint64_t id = m_requestId++;
   JsonObject request;
   m_pending.append(JsonObject{
       {"command", "request"},

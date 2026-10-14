@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -22,7 +22,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(NametagEntity);
+class NametagEntity;
+using NametagEntityPtr = std::shared_ptr<NametagEntity>;
+using NametagEntityConstPtr = std::shared_ptr<const NametagEntity>;
+using NametagEntityWeakPtr = std::weak_ptr<NametagEntity>;
+using NametagEntityConstWeakPtr = std::weak_ptr<const NametagEntity>;
+using NametagEntityUPtr = std::unique_ptr<NametagEntity>;
+using NametagEntityConstUPtr = std::unique_ptr<const NametagEntity>;
 
 class NametagEntity : public virtual Entity {
 public:

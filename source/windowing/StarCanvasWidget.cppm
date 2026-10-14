@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -26,7 +26,13 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(CanvasWidget);
+class CanvasWidget;
+using CanvasWidgetPtr = std::shared_ptr<CanvasWidget>;
+using CanvasWidgetConstPtr = std::shared_ptr<CanvasWidget const>;
+using CanvasWidgetWeakPtr = std::weak_ptr<CanvasWidget>;
+using CanvasWidgetConstWeakPtr = std::weak_ptr<CanvasWidget const>;
+using CanvasWidgetUPtr = std::unique_ptr<CanvasWidget>;
+using CanvasWidgetConstUPtr = std::unique_ptr<CanvasWidget const>;
 
 // Very simple Widget that allows easy drawing to its surface, to easily tie a
 // simplified rendering / input context into the regular widget / GuiReader
@@ -86,7 +92,7 @@ public:
   void drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color = Vec4B(255, 255, 255, 255), float lineWidth = 1.0f);
   void drawRect(RectF const& coords, Vec4B const& color = Vec4B(255, 255, 255, 255));
   void drawPoly(PolyF const& poly, Vec4B const& color = Vec4B(255, 255, 255, 255), float lineWidth = 1.0f);
-  void drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& poly, Vec4B const& color = Vec4B(255, 255, 255, 255));
+  void drawTriangles(List<std::tuple<Vec2F, Vec2F, Vec2F>> const& poly, Vec4B const& color = Vec4B(255, 255, 255, 255));
 
   void drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color = Vec4B(255, 255, 255, 255), FontMode mode = FontMode::Normal, float lineSpacing = Star::DefaultLineSpacing, String font = "", String processingDirectives = "");
   void drawText(String s, TextPositioning position, TextStyle style);
@@ -101,7 +107,7 @@ protected:
   void renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth);
   void renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color);
   void renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth);
-  void renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
+  void renderTriangles(Vec2F const& renderingOffset, List<std::tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color);
   void renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style);
 
 private:
@@ -112,15 +118,15 @@ private:
   List<ClickEvent> m_clickEvents;
   List<KeyEvent> m_keyEvents;
 
-  typedef tuple<RectF, Vec4B> RectOp;
-  typedef tuple<String, Vec2F, float, Vec4B, bool> ImageOp;
-  typedef tuple<String, RectF, RectF, Vec4B> ImageRectOp;
-  typedef tuple<Drawable, Vec2F> DrawableOp;
-  typedef tuple<String, float, Vec2D, RectF, Vec4B> TiledImageOp;
-  typedef tuple<Vec2F, Vec2F, Vec4B, float> LineOp;
-  typedef tuple<PolyF, Vec4B, float> PolyOp;
-  typedef tuple<List<tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
-  typedef tuple<String, TextPositioning, TextStyle> TextOp;
+  typedef std::tuple<RectF, Vec4B> RectOp;
+  typedef std::tuple<String, Vec2F, float, Vec4B, bool> ImageOp;
+  typedef std::tuple<String, RectF, RectF, Vec4B> ImageRectOp;
+  typedef std::tuple<Drawable, Vec2F> DrawableOp;
+  typedef std::tuple<String, float, Vec2D, RectF, Vec4B> TiledImageOp;
+  typedef std::tuple<Vec2F, Vec2F, Vec4B, float> LineOp;
+  typedef std::tuple<PolyF, Vec4B, float> PolyOp;
+  typedef std::tuple<List<std::tuple<Vec2F, Vec2F, Vec2F>>, Vec4B> TrianglesOp;
+  typedef std::tuple<String, TextPositioning, TextStyle> TextOp;
 
   typedef MVariant<RectOp, ImageOp, ImageRectOp, DrawableOp, TiledImageOp, LineOp, PolyOp, TrianglesOp, TextOp> RenderOp;
   List<RenderOp> m_renderOps;

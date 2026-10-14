@@ -7,7 +7,7 @@ import star.ref_ptr;
 import star.logging;
 import star.thread;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.audio;
@@ -85,9 +85,9 @@ void EffectEmitter::tick(float dt, EntityMode mode) {
     for (auto& ps : m_sources)
       ps->tick(dt);
 
-    Set<pair<String, String>> current;
+    Set<std::pair<String, String>> current;
     for (auto& ps : m_sources) {
-      pair<String, String> entry = {ps->suggestedSpawnLocation(), ps->kind()};
+      std::pair<String, String> entry = {ps->suggestedSpawnLocation(), ps->kind()};
       current.add(entry);
       if (!m_activeSources.get().contains(entry)) {
         ps->stop();
@@ -135,16 +135,16 @@ void EffectEmitter::render(RenderCallback* renderCallback) {
 
 Json EffectEmitter::toJson() const {
   return JsonObject{{"activeSources",
-      jsonFromSet<Set<pair<String, String>>>(m_activeSources.get(),
-                         [](pair<String, String> const& entry) {
+      jsonFromSet<Set<std::pair<String, String>>>(m_activeSources.get(),
+                         [](std::pair<String, String> const& entry) {
                            return JsonObject{{"position", entry.first}, {"source", entry.second}};
                          })}};
 }
 
 void EffectEmitter::fromJson(Json const& diskStore) {
-  m_activeSources.set(jsonToSet<Set<pair<String, String>>>(diskStore.get("activeSources"),
+  m_activeSources.set(jsonToSet<Set<std::pair<String, String>>>(diskStore.get("activeSources"),
       [](Json const& v) {
-        return pair<String, String>{v.getString("position"), v.getString("source")};
+        return std::pair<String, String>{v.getString("position"), v.getString("source")};
       }));
 }
 

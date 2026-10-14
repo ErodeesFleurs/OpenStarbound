@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -15,7 +16,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.string;
 import star.text;
@@ -69,7 +69,7 @@ List<ButtonWidget*> ButtonGroup::buttons() const {
   return m_buttons.values();
 }
 
-size_t ButtonGroup::buttonCount() const {
+std::size_t ButtonGroup::buttonCount() const {
   return m_buttons.size();
 }
 
@@ -81,7 +81,7 @@ int ButtonGroup::addButton(ButtonWidget* button, int id) {
 
   // If we are auto-generating an id, start at the last id and work forward.
   if (id == NoButton && !m_buttons.empty())
-    id = (prev(m_buttons.end()))->first;
+    id = (std::prev(m_buttons.end()))->first;
 
   while (m_buttons.contains(id))
     ++id;

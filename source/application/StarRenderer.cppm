@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -25,9 +25,27 @@ using RendererException = StarError<RendererExceptionTag, StarException>;
 class Texture;
 typedef RefPtr<Texture> TexturePtr;
 
-STAR_CLASS(TextureGroup);
-STAR_CLASS(RenderBuffer);
-STAR_CLASS(Renderer);
+class TextureGroup;
+using TextureGroupPtr = std::shared_ptr<TextureGroup>;
+using TextureGroupConstPtr = std::shared_ptr<TextureGroup const>;
+using TextureGroupWeakPtr = std::weak_ptr<TextureGroup>;
+using TextureGroupConstWeakPtr = std::weak_ptr<TextureGroup const>;
+using TextureGroupUPtr = std::unique_ptr<TextureGroup>;
+using TextureGroupConstUPtr = std::unique_ptr<TextureGroup const>;
+class RenderBuffer;
+using RenderBufferPtr = std::shared_ptr<RenderBuffer>;
+using RenderBufferConstPtr = std::shared_ptr<RenderBuffer const>;
+using RenderBufferWeakPtr = std::weak_ptr<RenderBuffer>;
+using RenderBufferConstWeakPtr = std::weak_ptr<RenderBuffer const>;
+using RenderBufferUPtr = std::unique_ptr<RenderBuffer>;
+using RenderBufferConstUPtr = std::unique_ptr<RenderBuffer const>;
+class Renderer;
+using RendererPtr = std::shared_ptr<Renderer>;
+using RendererConstPtr = std::shared_ptr<Renderer const>;
+using RendererWeakPtr = std::weak_ptr<Renderer>;
+using RendererConstWeakPtr = std::weak_ptr<Renderer const>;
+using RendererUPtr = std::unique_ptr<Renderer>;
+using RendererConstUPtr = std::unique_ptr<Renderer const>;
 
 enum class TextureAddressing {
   Clamp,

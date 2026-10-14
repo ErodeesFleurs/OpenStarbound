@@ -13,7 +13,7 @@ import star.asset_path;
 import star.json_rpc;
 #include "StarStrongTypedef.hpp"
 import star.game_types;
-#include "StarConfig.hpp"
+import std;
 import star.time;
 import star.map;
 import star.maybe;
@@ -55,30 +55,30 @@ TeamManager::TeamManager() {
 
 JsonRpcHandlers TeamManager::rpcHandlers() {
   return JsonRpcHandlers{
-    {"team.fetchTeamStatus", bind(&TeamManager::fetchTeamStatus, this, _1)},
-    {"team.updateStatus", bind(&TeamManager::updateStatus, this, _1)},
-    {"team.invite", bind(&TeamManager::invite, this, _1)},
-    {"team.pollInvitation", bind(&TeamManager::pollInvitation, this, _1)},
-    {"team.acceptInvitation", bind(&TeamManager::acceptInvitation, this, _1)},
-    {"team.makeLeader", bind(&TeamManager::makeLeader, this, _1)},
+    {"team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, this, std::placeholders::_1)},
+    {"team.updateStatus", std::bind(&TeamManager::updateStatus, this, std::placeholders::_1)},
+    {"team.invite", std::bind(&TeamManager::invite, this, std::placeholders::_1)},
+    {"team.pollInvitation", std::bind(&TeamManager::pollInvitation, this, std::placeholders::_1)},
+    {"team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, this, std::placeholders::_1)},
+    {"team.makeLeader", std::bind(&TeamManager::makeLeader, this, std::placeholders::_1)},
     {"team.removeFromTeam", [&](Json request) -> Json { return removeFromTeam(request); }}
   };
 }
 
 JsonRpcHandlers TeamManager::authenticatedRpcHandlers(Uuid const& callerUuid) {
-  auto wrap = [&](String const& name, JsonRpcRemoteFunction fn) -> pair<String, JsonRpcRemoteFunction> {
+  auto wrap = [&](String const& name, JsonRpcRemoteFunction fn) -> std::pair<String, JsonRpcRemoteFunction> {
     return {name, [callerUuid, fn = std::move(fn)](Json const& args) -> Json {
         return fn(args.set("_callerUuid", callerUuid.hex()));
         }};
   };
 
   return JsonRpcHandlers{
-    wrap("team.fetchTeamStatus", bind(&TeamManager::fetchTeamStatus, this, _1)),
-    wrap("team.updateStatus", bind(&TeamManager::updateStatus, this, _1)),
-    wrap("team.invite", bind(&TeamManager::invite, this, _1)),
-    wrap("team.pollInvitation", bind(&TeamManager::pollInvitation, this, _1)),
-    wrap("team.acceptInvitation", bind(&TeamManager::acceptInvitation, this, _1)),
-    wrap("team.makeLeader", bind(&TeamManager::makeLeader, this, _1)),
+    wrap("team.fetchTeamStatus", std::bind(&TeamManager::fetchTeamStatus, this, std::placeholders::_1)),
+    wrap("team.updateStatus", std::bind(&TeamManager::updateStatus, this, std::placeholders::_1)),
+    wrap("team.invite", std::bind(&TeamManager::invite, this, std::placeholders::_1)),
+    wrap("team.pollInvitation", std::bind(&TeamManager::pollInvitation, this, std::placeholders::_1)),
+    wrap("team.acceptInvitation", std::bind(&TeamManager::acceptInvitation, this, std::placeholders::_1)),
+    wrap("team.makeLeader", std::bind(&TeamManager::makeLeader, this, std::placeholders::_1)),
     wrap("team.removeFromTeam", [this](Json const& request) -> Json { return removeFromTeam(request); })
   };
 }
@@ -277,7 +277,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
         member["world"] = printWorldId(mem.world);
       }
       member["warpMode"] = WarpModeNames.getRight(mem.warpMode);
-      member["portrait"] = jsonFromList(mem.portrait, mem_fn(&Drawable::toJson));
+      member["portrait"] = jsonFromList(mem.portrait, std::mem_fn(&Drawable::toJson));
       members.push_back(member);
     }
     result["members"] = members;

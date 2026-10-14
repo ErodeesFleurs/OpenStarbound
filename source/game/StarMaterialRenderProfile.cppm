@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.variant;
@@ -28,10 +28,16 @@ struct MaterialRenderProfileExceptionTag {
 };
 using MaterialRenderProfileException = StarError<MaterialRenderProfileExceptionTag, StarException>;
 
-enum class MaterialJoinType : uint8_t { All, Any };
+enum class MaterialJoinType : std::uint8_t { All, Any };
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;
 
-STAR_STRUCT(MaterialRule);
+struct MaterialRule;
+using MaterialRulePtr = std::shared_ptr<MaterialRule>;
+using MaterialRuleConstPtr = std::shared_ptr<const MaterialRule>;
+using MaterialRuleWeakPtr = std::weak_ptr<MaterialRule>;
+using MaterialRuleConstWeakPtr = std::weak_ptr<const MaterialRule>;
+using MaterialRuleUPtr = std::unique_ptr<MaterialRule>;
+using MaterialRuleConstUPtr = std::unique_ptr<const MaterialRule>;
 
 struct MaterialRule {
   struct RuleEmpty {};
@@ -42,7 +48,7 @@ struct MaterialRule {
   };
 
   struct RuleEqualsId {
-    uint16_t id;
+    std::uint16_t id;
   };
 
   struct RulePropertyEquals {
@@ -65,17 +71,29 @@ struct MaterialMatchPoint {
   MaterialRuleConstPtr rule;
 };
 
-STAR_STRUCT(MaterialRenderPiece);
+struct MaterialRenderPiece;
+using MaterialRenderPiecePtr = std::shared_ptr<MaterialRenderPiece>;
+using MaterialRenderPieceConstPtr = std::shared_ptr<const MaterialRenderPiece>;
+using MaterialRenderPieceWeakPtr = std::weak_ptr<MaterialRenderPiece>;
+using MaterialRenderPieceConstWeakPtr = std::weak_ptr<const MaterialRenderPiece>;
+using MaterialRenderPieceUPtr = std::unique_ptr<MaterialRenderPiece>;
+using MaterialRenderPieceConstUPtr = std::unique_ptr<const MaterialRenderPiece>;
 
 struct MaterialRenderPiece {
-  size_t pieceId;
+  std::size_t pieceId;
   String texture;
   // Maps each MaterialColorVariant to a list of texture coordinates for each
   // random variant
   HashMap<MaterialColorVariant, List<RectF>> variants;
 };
 
-STAR_STRUCT(MaterialRenderMatch);
+struct MaterialRenderMatch;
+using MaterialRenderMatchPtr = std::shared_ptr<MaterialRenderMatch>;
+using MaterialRenderMatchConstPtr = std::shared_ptr<const MaterialRenderMatch>;
+using MaterialRenderMatchWeakPtr = std::weak_ptr<MaterialRenderMatch>;
+using MaterialRenderMatchConstWeakPtr = std::weak_ptr<const MaterialRenderMatch>;
+using MaterialRenderMatchUPtr = std::unique_ptr<MaterialRenderMatch>;
+using MaterialRenderMatchConstUPtr = std::unique_ptr<const MaterialRenderMatch>;
 typedef List<MaterialRenderMatchConstPtr> MaterialRenderMatchList;
 
 struct MaterialRenderMatch {
@@ -83,7 +101,7 @@ struct MaterialRenderMatch {
   MaterialJoinType matchJoin;
 
   // Positions here are in TilePixels
-  List<pair<MaterialRenderPieceConstPtr, Vec2F>> resultingPieces;
+  List<std::pair<MaterialRenderPieceConstPtr, Vec2F>> resultingPieces;
   MaterialRenderMatchList subMatches;
   Maybe<TileLayer> requiredLayer;
   Maybe<bool> occlude;
@@ -101,7 +119,13 @@ typedef StringMap<MaterialRenderMatchList> MatchMap;
 // rendered tile in the center.
 inline constexpr int MaterialRenderProfileMaxNeighborDistance = 2;
 
-STAR_STRUCT(MaterialRenderProfile);
+struct MaterialRenderProfile;
+using MaterialRenderProfilePtr = std::shared_ptr<MaterialRenderProfile>;
+using MaterialRenderProfileConstPtr = std::shared_ptr<const MaterialRenderProfile>;
+using MaterialRenderProfileWeakPtr = std::weak_ptr<MaterialRenderProfile>;
+using MaterialRenderProfileConstWeakPtr = std::weak_ptr<const MaterialRenderProfile>;
+using MaterialRenderProfileUPtr = std::unique_ptr<MaterialRenderProfile>;
+using MaterialRenderProfileConstUPtr = std::unique_ptr<const MaterialRenderProfile>;
 
 struct MaterialRenderProfile {
   RuleMap rules;
@@ -111,16 +135,16 @@ struct MaterialRenderProfile {
   String representativePiece;
 
   MaterialRenderMatchList mainMatchList;
-  List<pair<String, Vec2F>> crackingFrames;
-  List<pair<String, Vec2F>> protectedFrames;
+  List<std::pair<String, Vec2F>> crackingFrames;
+  List<std::pair<String, Vec2F>> protectedFrames;
   List<Directives> colorDirectives;
   Json ruleProperties;
 
   bool foregroundLightTransparent;
   bool backgroundLightTransparent;
-  uint8_t colorVariants;
+  std::uint8_t colorVariants;
   bool occludesBehind;
-  uint32_t zLevel;
+  std::uint32_t zLevel;
   Vec3F radiantLight;
 
   // Get a single asset path for just a single piece of a material, with the
@@ -132,7 +156,7 @@ struct MaterialRenderProfile {
 
   // Get an overlay image for rendering damaged tiles, as well as the offset
   // for it in world coordinates.
-  pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
+  std::pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
 MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath = "");

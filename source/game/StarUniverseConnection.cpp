@@ -10,7 +10,6 @@ import star.data_stream;
 import star.list;
 import star.bi_map;
 import star.game_types;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.ordered_map;
@@ -221,10 +220,10 @@ Maybe<PacketStats> UniverseConnection::outgoingStats() const {
   return m_packetSocket->outgoingStats();
 }
 
-UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads)
+UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, std::size_t numWorkerThreads)
     : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
   if (numWorkerThreads == 0)
-    m_numWorkerThreads = max<size_t>(2, std::thread::hardware_concurrency() / 4);
+    m_numWorkerThreads = std::max<std::size_t>(2, std::thread::hardware_concurrency() / 4);
   else
     m_numWorkerThreads = numWorkerThreads;
 
@@ -232,7 +231,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
 
   m_workerStats.resize(m_numWorkerThreads);
 
-  for (size_t i = 0; i < m_numWorkerThreads; ++i) {
+  for (std::size_t i = 0; i < m_numWorkerThreads; ++i) {
     m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
       try {
@@ -242,7 +241,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           connectionsLocker.unlock();
 
           bool dataTransmitted = false;
-          size_t handledCount = 0;
+          std::size_t handledCount = 0;
           for (auto& p : connections) {
             if (p.second->workerIndex != i)
               continue;
@@ -328,7 +327,7 @@ bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
   throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::connectionIsOpen", clientId);
 }
 
-int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
+std::int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -343,7 +342,7 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
   if (m_connections.contains(clientId))
     throw UniverseConnectionException::format("Client '{}' already exists in UniverseConnectionServer::addConnection", clientId);
 
-  auto connection = make_shared<Connection>();
+  auto connection = std::make_shared<Connection>();
   connection->packetSocket = std::move(uc.m_packetSocket);
   connection->sendQueue = std::move(uc.m_sendQueue);
   connection->receiveQueue = std::move(uc.m_receiveQueue);
@@ -392,14 +391,14 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   }
 }
 
-uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
-  uint64_t total = 0;
+std::uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
+  std::uint64_t total = 0;
   for (auto const& stats : m_workerStats)
     total += stats.packetsProcessed.load();
   return total;
 }
 
-size_t UniverseConnectionServer::numWorkerThreads() const {
+std::size_t UniverseConnectionServer::numWorkerThreads() const {
   return m_numWorkerThreads;
 }
 

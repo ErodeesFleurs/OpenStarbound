@@ -1,6 +1,6 @@
 
+import std;
 import star.rect;
-#include "StarConfig.hpp"
 import star.list;
 
 

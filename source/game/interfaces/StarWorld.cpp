@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.json;
 import star.id_map;
@@ -73,7 +73,7 @@ List<TileEntityPtr> World::entitiesAtTile(Vec2I const& pos, EntityFilter selecto
   return list;
 }
 
-List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, size_t maxAmount, bool excludeEphemeral) const {
+List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, std::size_t maxAmount, bool excludeEphemeral) const {
   List<Vec2I> res;
   if (!tileIsOccupied(pos, TileLayer::Foreground, excludeEphemeral))
     res.append(pos);
@@ -97,9 +97,9 @@ List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, size_t maxAmount,
       }
       xDiff += dx;
       yDiff += dy;
-      if (abs(xDiff) == distance)
+      if (std::abs(xDiff) == distance)
         dx *= -1;
-      if (abs(yDiff) == distance)
+      if (std::abs(yDiff) == distance)
         dy *= -1;
     }
   }
@@ -139,7 +139,7 @@ bool World::pointCollision(Vec2F const& point, CollisionSet const& collisionSet)
   return collided;
 }
 
-Maybe<pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
+Maybe<std::pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, CollisionSet const& collisionSet) const {
   auto geometry = this->geometry();
   Maybe<PolyF> intersectPoly;
   Maybe<PolyF::LineIntersectResult> closestIntersection;
@@ -158,8 +158,8 @@ Maybe<pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, Collis
 
   if (closestIntersection) {
     auto point = line.eval(closestIntersection->along);
-    auto normal = closestIntersection->intersectedSide.apply([&](uint64_t side) { return intersectPoly->normal(side); });
-    return make_pair(point, normal);
+    auto normal = closestIntersection->intersectedSide.apply([&](std::uint64_t side) { return intersectPoly->normal(side); });
+    return std::make_pair(point, normal);
   }
   return {};
 }

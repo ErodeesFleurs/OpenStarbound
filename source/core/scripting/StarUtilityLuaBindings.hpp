@@ -1,6 +1,4 @@
 #pragma once
-
-#include "StarConfig.hpp"
 import star.string;
 import star.list;
 import star.json;

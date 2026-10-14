@@ -1,14 +1,13 @@
-#define NOMINMAX
 #include <windows.h>
 #include <dbghelp.h>
 
+import std;
 import star.format;
 import star.maybe;
 import star.output_proxy;
 import star.logging;
 #include "StarCasting.hpp"
 import star.string_windows;
-#include "StarConfig.hpp"
 import star.version;
 
 
@@ -43,9 +42,9 @@ struct DbgHelpLock {
 };
 static DbgHelpLock g_dbgHelpLock;
 
-static size_t const StackLimit = 256;
+static std::size_t const StackLimit = 256;
 
-typedef pair<Array<DWORD64, StackLimit>, size_t> StackCapture;
+typedef std::pair<Array<DWORD64, StackLimit>, std::size_t> StackCapture;
 
 inline StackCapture captureStack() {
   HANDLE process = GetCurrentProcess();
@@ -55,7 +54,7 @@ inline StackCapture captureStack() {
   DWORD image;
   STACKFRAME64 stackFrame;
 
-  memset(&context, 0, sizeof(CONTEXT));
+  std::memset(&context, 0, sizeof(CONTEXT));
   context.ContextFlags = CONTEXT_FULL;
 
   ZeroMemory(&stackFrame, sizeof(STACKFRAME64));
@@ -101,8 +100,8 @@ inline StackCapture captureStack() {
   g_dbgHelpLock.lock();
 
   Array<DWORD64, StackLimit> addresses;
-  size_t count = 0;
-  for (size_t i = 0; i < StackLimit; i++) {
+  std::size_t count = 0;
+  for (std::size_t i = 0; i < StackLimit; i++) {
     if (!StackWalk64(image, process, thread, &stackFrame, &context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
       break;
     if (stackFrame.AddrPC.Offset == 0)
@@ -120,13 +119,13 @@ OutputProxy outputStack(StackCapture stack) {
   return OutputProxy([stack = std::move(stack)](std::ostream & os) {
     HANDLE process = GetCurrentProcess();
     g_dbgHelpLock.lock();
-    for (size_t i = 0; i < stack.second; ++i) {
+    for (std::size_t i = 0; i < stack.second; ++i) {
       char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
       PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
       symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
       symbol->MaxNameLen = MAX_SYM_NAME;
 
-      format(os, "[{:0{}}] {}", i, (int)log10(stack.second) + 1, (void*)stack.first[i]);
+      format(os, "[{:0{}}] {}", i, (int)std::log10(stack.second) + 1, (void*)stack.first[i]);
       IMAGEHLP_LINE64 line{};
       DWORD displacement = 0;
       line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
@@ -186,15 +185,15 @@ StarException::StarException(char const* type, std::string message, bool genStac
     }
   };
 
-  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+  m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
     : StarException(type, std::move(message), true) {
   auto printException = [](std::ostream& os,
       bool fullStacktrace,
-      function<void(std::ostream&, bool)> self,
-      function<void(std::ostream&, bool)> cause) {
+      std::function<void(std::ostream&, bool)> self,
+      std::function<void(std::ostream&, bool)> cause) {
     self(os, fullStacktrace);
     os << std::endl << "Caused by: ";
     cause(os, fullStacktrace);
@@ -202,14 +201,14 @@ StarException::StarException(char const* type, std::string message, std::excepti
 
   std::function<void(std::ostream&, bool)> printCause;
   if (auto starException = as<StarException>(&cause)) {
-    printCause = bind(starException->m_printException, _1, _2);
+    printCause = std::bind(starException->m_printException, std::placeholders::_1, std::placeholders::_2);
   } else {
-    printCause = bind([](std::ostream& os, bool, std::string causeWhat) {
+    printCause = std::bind([](std::ostream& os, bool, std::string causeWhat) {
       os << "std::exception: " << causeWhat;
-    }, _1, _2, std::string(cause.what()));
+    }, std::placeholders::_1, std::placeholders::_2, std::string(cause.what()));
   }
 
-  m_printException = bind(printException, _1, _2, m_printException, std::move(printCause));
+  m_printException = std::bind(printException, std::placeholders::_1, std::placeholders::_2, m_printException, std::move(printCause));
 }
 
 std::string printException(std::exception const& e, bool fullStacktrace) {
@@ -227,10 +226,10 @@ void printException(std::ostream& os, std::exception const& e, bool fullStacktra
 
 OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
   if (auto starException = as<StarException>(&e))
-    return OutputProxy(bind(starException->m_printException, _1, fullStacktrace));
+    return OutputProxy(std::bind(starException->m_printException, std::placeholders::_1, fullStacktrace));
   else
     return OutputProxy(
-        bind([](std::ostream& os, std::string what) { os << "std::exception: " << what; }, _1, std::string(e.what())));
+        std::bind([](std::ostream& os, std::string what) { os << "std::exception: " << what; }, std::placeholders::_1, std::string(e.what())));
 }
 
 void printStack(char const* message) {

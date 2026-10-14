@@ -1,6 +1,6 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -18,7 +18,13 @@ struct StatusEffectDatabaseExceptionTag {
 };
 using StatusEffectDatabaseException = StarError<StatusEffectDatabaseExceptionTag, StarException>;
 
-STAR_CLASS(StatusEffectDatabase);
+class StatusEffectDatabase;
+using StatusEffectDatabasePtr = std::shared_ptr<StatusEffectDatabase>;
+using StatusEffectDatabaseConstPtr = std::shared_ptr<const StatusEffectDatabase>;
+using StatusEffectDatabaseWeakPtr = std::weak_ptr<StatusEffectDatabase>;
+using StatusEffectDatabaseConstWeakPtr = std::weak_ptr<const StatusEffectDatabase>;
+using StatusEffectDatabaseUPtr = std::unique_ptr<StatusEffectDatabase>;
+using StatusEffectDatabaseConstUPtr = std::unique_ptr<const StatusEffectDatabase>;
 
 // Named, unique, unstackable scripted effects.
 struct UniqueStatusEffectConfig {

@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 #include "StarCasting.hpp"
@@ -40,7 +40,13 @@ import star.net_element_system;
 import star.net_compatibility;
 import star.byte_array;
 namespace Star {
-STAR_CLASS(Npc);
+class Npc;
+using NpcPtr = std::shared_ptr<Npc>;
+using NpcConstPtr = std::shared_ptr<const Npc>;
+using NpcWeakPtr = std::weak_ptr<Npc>;
+using NpcConstWeakPtr = std::weak_ptr<const Npc>;
+using NpcUPtr = std::unique_ptr<Npc>;
+using NpcConstUPtr = std::unique_ptr<const Npc>;
 }
 
 import star.damage_types;
@@ -94,13 +100,49 @@ import star.effect_emitter;
 
 namespace Star {
 
-STAR_CLASS(ArmorWearer);
-STAR_CLASS(ToolUser);
+class ArmorWearer;
+using ArmorWearerPtr = std::shared_ptr<ArmorWearer>;
+using ArmorWearerConstPtr = std::shared_ptr<const ArmorWearer>;
+using ArmorWearerWeakPtr = std::weak_ptr<ArmorWearer>;
+using ArmorWearerConstWeakPtr = std::weak_ptr<const ArmorWearer>;
+using ArmorWearerUPtr = std::unique_ptr<ArmorWearer>;
+using ArmorWearerConstUPtr = std::unique_ptr<const ArmorWearer>;
+class ToolUser;
+using ToolUserPtr = std::shared_ptr<ToolUser>;
+using ToolUserConstPtr = std::shared_ptr<const ToolUser>;
+using ToolUserWeakPtr = std::weak_ptr<ToolUser>;
+using ToolUserConstWeakPtr = std::weak_ptr<const ToolUser>;
+using ToolUserUPtr = std::unique_ptr<ToolUser>;
+using ToolUserConstUPtr = std::unique_ptr<const ToolUser>;
 
-STAR_CLASS(Songbook);
-STAR_CLASS(Item);
-STAR_CLASS(RenderCallback);
-STAR_CLASS(StatusController);
+class Songbook;
+using SongbookPtr = std::shared_ptr<Songbook>;
+using SongbookConstPtr = std::shared_ptr<const Songbook>;
+using SongbookWeakPtr = std::weak_ptr<Songbook>;
+using SongbookConstWeakPtr = std::weak_ptr<const Songbook>;
+using SongbookUPtr = std::unique_ptr<Songbook>;
+using SongbookConstUPtr = std::unique_ptr<const Songbook>;
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
 
 class Npc
   : public virtual DamageBarEntity,
@@ -139,7 +181,7 @@ public:
 
   RectF collisionArea() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -163,7 +205,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  void update(float dt, uint64_t currentVersion) override;
+  void update(float dt, std::uint64_t currentVersion) override;
 
   void render(RenderCallback* renderCallback) override;
 

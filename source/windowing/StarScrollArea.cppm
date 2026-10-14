@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -89,7 +89,7 @@ private:
   bool m_hovered;
   bool m_pressed;
 };
-typedef shared_ptr<ScrollThumb> ScrollThumbPtr;
+typedef std::shared_ptr<ScrollThumb> ScrollThumbPtr;
 
 class ScrollBar : public Widget {
 public:
@@ -119,7 +119,7 @@ private:
 
   ImageStretchSet m_track;
 };
-typedef shared_ptr<ScrollBar> ScrollBarPtr;
+typedef std::shared_ptr<ScrollBar> ScrollBarPtr;
 
 class ScrollArea : public Widget {
 public:
@@ -156,7 +156,7 @@ private:
   int advanceFactorHelper();
 
   int m_buttonAdvance;
-  int64_t m_advanceLimiter;
+  std::int64_t m_advanceLimiter;
 
   Vec2I m_scrollOffset;
   Vec2I m_lastMaxScroll;
@@ -175,7 +175,7 @@ private:
 
   bool m_updatesChildren;
 };
-typedef shared_ptr<ScrollArea> ScrollAreaPtr;
+typedef std::shared_ptr<ScrollArea> ScrollAreaPtr;
 }
 
 export module star.scroll_area;

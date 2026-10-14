@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -49,11 +49,41 @@ import star.widget;
 
 namespace Star {
 
-STAR_CLASS(Pane);
-STAR_CLASS(LuaCallbacks);
-STAR_CLASS(AudioInstance);
-STAR_CLASS(GuiReader);
-STAR_CLASS(Item);
+class Pane;
+using PanePtr = std::shared_ptr<Pane>;
+using PaneConstPtr = std::shared_ptr<Pane const>;
+using PaneWeakPtr = std::weak_ptr<Pane>;
+using PaneConstWeakPtr = std::weak_ptr<Pane const>;
+using PaneUPtr = std::unique_ptr<Pane>;
+using PaneConstUPtr = std::unique_ptr<Pane const>;
+class LuaCallbacks;
+using LuaCallbacksPtr = std::shared_ptr<LuaCallbacks>;
+using LuaCallbacksConstPtr = std::shared_ptr<LuaCallbacks const>;
+using LuaCallbacksWeakPtr = std::weak_ptr<LuaCallbacks>;
+using LuaCallbacksConstWeakPtr = std::weak_ptr<LuaCallbacks const>;
+using LuaCallbacksUPtr = std::unique_ptr<LuaCallbacks>;
+using LuaCallbacksConstUPtr = std::unique_ptr<LuaCallbacks const>;
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<AudioInstance const>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<AudioInstance const>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<AudioInstance const>;
+class GuiReader;
+using GuiReaderPtr = std::shared_ptr<GuiReader>;
+using GuiReaderConstPtr = std::shared_ptr<GuiReader const>;
+using GuiReaderWeakPtr = std::weak_ptr<GuiReader>;
+using GuiReaderConstWeakPtr = std::weak_ptr<GuiReader const>;
+using GuiReaderUPtr = std::unique_ptr<GuiReader>;
+using GuiReaderConstUPtr = std::unique_ptr<GuiReader const>;
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<Item const>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<Item const>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<Item const>;
 
 enum class PaneAnchor {
   None,
@@ -174,7 +204,7 @@ protected:
   Vec2I m_anchorOffset;
   bool m_hasDisplayed;
 
-  List<pair<String, AudioInstancePtr>> m_playingSounds;
+  List<std::pair<String, AudioInstancePtr>> m_playingSounds;
 };
 
 // GCC 16 needs the existing key function in this complete-definition TU for RTTI.

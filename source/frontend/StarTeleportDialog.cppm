@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 #include "StarCasting.hpp"
 import star.input_event;
@@ -63,8 +63,20 @@ import star.bookmark_interface;
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(PaneManager);
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<UniverseClient const>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<UniverseClient const>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<UniverseClient const>;
+class PaneManager;
+using PaneManagerPtr = std::shared_ptr<PaneManager>;
+using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
+using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
+using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
+using PaneManagerUPtr = std::unique_ptr<PaneManager>;
+using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
 
 class TeleportDialog : public Pane {
 public:
@@ -84,7 +96,7 @@ private:
   EntityId m_sourceEntityId;
   UniverseClientPtr m_client;
   PaneManager* m_paneManager;
-  List<pair<WarpAction, bool>> m_destinations;
+  List<std::pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;
 };
 

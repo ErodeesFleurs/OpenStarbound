@@ -26,7 +26,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -191,7 +191,7 @@ List<CelestialCoordinate> SystemWorld::planets() const {
   return m_celestialDatabase->children(CelestialCoordinate(m_location));
 }
 
-uint64_t SystemWorld::coordinateSeed(CelestialCoordinate const& coordinate, String const& seedMix) const {
+std::uint64_t SystemWorld::coordinateSeed(CelestialCoordinate const& coordinate, String const& seedMix) const {
   auto satellite = coordinate.isSatelliteBody() ? coordinate.orbitNumber() : 0;
   auto planet = coordinate.isSatelliteBody() ? coordinate.parent().orbitNumber() : (coordinate.isPlanetaryBody() && coordinate.orbitNumber()) || 0;
   return staticRandomU64(coordinate.location()[0], coordinate.location()[1], coordinate.location()[2], planet, satellite, seedMix);
@@ -221,7 +221,7 @@ float SystemWorld::planetOrbitDistance(CelestialCoordinate const& coordinate) co
 
 float SystemWorld::orbitInterval(float distance, bool isMoon) const {
   float gravityConstant = isMoon ? m_config.planetGravitationalConstant : m_config.starGravitationalConstant;
-  float speed =  sqrt(gravityConstant / distance);
+  float speed =  std::sqrt(gravityConstant / distance);
   return (distance * 2 * Constants::pi) / speed;
 }
 
@@ -230,7 +230,7 @@ Vec2F SystemWorld::orbitPosition(CelestialOrbit const& orbit) const {
   float distance = orbit.enterPosition.magnitude();
   float interval = orbitInterval(distance, false);
 
-  float timeOffset = fmod(time() - orbit.enterTime, interval) / interval;
+  float timeOffset = std::fmod(time() - orbit.enterTime, interval) / interval;
   float angle = (orbit.enterPosition * -1).angle() + (orbit.direction * timeOffset * (Constants::pi * 2));
   return targetPosition + Vec2F::withAngle(angle, distance);
 }
@@ -289,11 +289,11 @@ Vec2F SystemWorld::planetPosition(CelestialCoordinate const& coordinate) const {
   float interval = orbitInterval(distance, coordinate.isSatelliteBody());
 
   double start = random.randf();
-  double offset = (fmod(m_universeClock->time(), interval) / interval);
+  double offset = (std::fmod(m_universeClock->time(), interval) / interval);
   int direction = random.randf() > 0.5 ? 1 : -1;
   float angle = (start + direction * offset) * (Constants::pi * 2);
 
-  return parentPosition + Vec2F(cos(angle), sin(angle)) * distance;
+  return parentPosition + Vec2F(std::cos(angle), std::sin(angle)) * distance;
 }
 
 SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid const& uuid) const {
@@ -508,7 +508,7 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
   }
 }
 
-pair<ByteArray, uint64_t> SystemObject::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> SystemObject::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -631,7 +631,7 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
     if (!m_orbit || m_orbit->target != *coordinate)
       m_orbit = nearPlanetOrbit(*coordinate);
   } else if (m_systemLocation.get().empty()) {
-    m_departTimer = max(0.0f, m_departTimer - dt);
+    m_departTimer = std::max(0.0f, m_departTimer - dt);
     if (m_departTimer > 0.0f)
       return;
 
@@ -670,7 +670,7 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   }
 }
 
-pair<ByteArray, uint64_t> SystemClientShip::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+std::pair<ByteArray, std::uint64_t> SystemClientShip::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 

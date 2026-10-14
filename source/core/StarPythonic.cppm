@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.algorithm;
 
@@ -153,7 +152,7 @@ private:
 public:
   typedef IteratorT Iterator;
   typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef tuple<IteratorValue> value_type;
+  typedef std::tuple<IteratorValue> value_type;
 
   ZipWrapperIterator() : atEnd(true) {}
 
@@ -545,12 +544,12 @@ struct EnumerateIterator {
 private:
   Iterator current;
   Iterator last;
-  size_t index;
+  std::size_t index;
   bool atEnd;
 
 public:
   typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef pair<IteratorValue&, size_t> value_type;
+  typedef std::pair<IteratorValue&, std::size_t> value_type;
 
   EnumerateIterator() : index(0), atEnd(true) {}
 

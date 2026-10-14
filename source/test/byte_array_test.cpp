@@ -1,5 +1,5 @@
 import star.byte_array;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.encode;
 

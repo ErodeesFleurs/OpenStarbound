@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.rect;
@@ -20,7 +20,13 @@ import star.ttl_cache;
 import star.vector;
 namespace Star {
 
-STAR_CLASS(ImageMetadataDatabase);
+class ImageMetadataDatabase;
+using ImageMetadataDatabasePtr = std::shared_ptr<ImageMetadataDatabase>;
+using ImageMetadataDatabaseConstPtr = std::shared_ptr<const ImageMetadataDatabase>;
+using ImageMetadataDatabaseWeakPtr = std::weak_ptr<ImageMetadataDatabase>;
+using ImageMetadataDatabaseConstWeakPtr = std::weak_ptr<const ImageMetadataDatabase>;
+using ImageMetadataDatabaseUPtr = std::unique_ptr<ImageMetadataDatabase>;
+using ImageMetadataDatabaseConstUPtr = std::unique_ptr<const ImageMetadataDatabase>;
 
 // Caches image size, image spaces, and nonEmptyRegion completely until a
 // reload, does not expire cached values in a TTL based way like Assets,
@@ -41,7 +47,7 @@ private:
   Vec2U calculateImageSize(AssetPath const& path) const;
 
   // Path, position, fillLimit, and flip
-  typedef tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
+  typedef std::tuple<AssetPath, Vec2I, float, bool> SpacesEntry;
 
   mutable Mutex m_mutex;
   mutable HashTtlCache<AssetPath, Vec2U> m_sizeCache;

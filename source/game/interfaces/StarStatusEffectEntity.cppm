@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 import star.id_map;
@@ -21,7 +21,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(StatusEffectEntity);
+class StatusEffectEntity;
+using StatusEffectEntityPtr = std::shared_ptr<StatusEffectEntity>;
+using StatusEffectEntityConstPtr = std::shared_ptr<const StatusEffectEntity>;
+using StatusEffectEntityWeakPtr = std::weak_ptr<StatusEffectEntity>;
+using StatusEffectEntityConstWeakPtr = std::weak_ptr<const StatusEffectEntity>;
+using StatusEffectEntityUPtr = std::unique_ptr<StatusEffectEntity>;
+using StatusEffectEntityConstUPtr = std::unique_ptr<const StatusEffectEntity>;
 
 class StatusEffectEntity : public virtual Entity {
 public:

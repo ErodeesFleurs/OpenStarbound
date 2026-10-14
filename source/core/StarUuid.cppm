@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.hash;
@@ -15,7 +15,7 @@ struct UuidExceptionTag {
 };
 using UuidException = StarError<UuidExceptionTag, StarException>;
 
-inline constexpr size_t UuidSize = 16;
+inline constexpr std::size_t UuidSize = 16;
 
 class Uuid {
 public:
@@ -44,7 +44,7 @@ private:
 
 template <>
 struct hash<Uuid> {
-  size_t operator()(Uuid const& u) const;
+  std::size_t operator()(Uuid const& u) const;
 };
 
 DataStream& operator>>(DataStream& ds, Uuid& uuid);

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 
 import star.vector;
 
@@ -10,7 +10,7 @@ namespace Star {
 // Returns false immediately when the callback returns false for any cell,
 // returns true after iterating through every cell otherwise.
 template <typename Scalar>
-bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, function<bool(int, int)> callback) {
+bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, std::function<bool(int, int)> callback) {
   Vector<Scalar, 2> remote = origin + dxdy;
 
   double dx = dxdy[0];
@@ -21,10 +21,10 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
   if (dy < 0)
     dy *= -1;
 
-  double oxfloor = floor(origin[0]);
-  double oyfloor = floor(origin[1]);
-  double rxfloor = floor(remote[0]);
-  double ryfloor = floor(remote[1]);
+  double oxfloor = std::floor(origin[0]);
+  double oyfloor = std::floor(origin[1]);
+  double rxfloor = std::floor(remote[0]);
+  double ryfloor = std::floor(remote[1]);
 
   if (dx == 0) {
     if (oyfloor < ryfloor) {

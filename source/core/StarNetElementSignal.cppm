@@ -1,7 +1,6 @@
 module;
+import std;
 import star.net_compatibility;
-
-#include "StarConfig.hpp"
 import star.list;
 import star.data_stream;
 
@@ -18,7 +17,7 @@ namespace Star {
 template <typename Signal>
 class NetElementSignal : public NetElement {
 public:
-  NetElementSignal(size_t maxSignalQueue = 32);
+  NetElementSignal(std::size_t maxSignalQueue = 32);
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -29,7 +28,7 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void send(Signal signal);
@@ -37,20 +36,20 @@ public:
 
 private:
   struct SignalEntry {
-    uint64_t version;
+    std::uint64_t version;
     Signal signal;
     bool received;
   };
 
-  size_t m_maxSignalQueue;
+  std::size_t m_maxSignalQueue;
   NetElementVersion const* m_netVersion = nullptr;
   bool m_netInterpolationEnabled = false;
   Deque<SignalEntry> m_signals;
-  Deque<pair<float, Signal>> m_pendingSignals;
+  Deque<std::pair<float, Signal>> m_pendingSignals;
 };
 
 template <typename Signal>
-NetElementSignal<Signal>::NetElementSignal(size_t maxSignalQueue) {
+NetElementSignal<Signal>::NetElementSignal(std::size_t maxSignalQueue) {
   m_maxSignalQueue = maxSignalQueue;
 }
 
@@ -89,9 +88,9 @@ void NetElementSignal<Signal>::tickNetInterpolation(float dt) {
 }
 
 template <typename Signal>
-bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
-  size_t numToWrite = 0;
+  std::size_t numToWrite = 0;
   for (auto const& p : m_signals) {
     if (p.version >= fromVersion)
       ++numToWrite;
@@ -112,8 +111,8 @@ bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersio
 template <typename Signal>
 void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
-  size_t numToRead = ds.readVlqU();
-  for (size_t i = 0; i < numToRead; ++i) {
+  std::size_t numToRead = ds.readVlqU();
+  for (std::size_t i = 0; i < numToRead; ++i) {
     Signal s;
     ds.read(s);
     if (m_netInterpolationEnabled && interpolationTime > 0.0f) {

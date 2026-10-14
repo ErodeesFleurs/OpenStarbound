@@ -27,7 +27,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 
@@ -99,7 +99,7 @@ protected:
 private:
   String m_projectileType;
   Json m_projectileConfig;
-  size_t m_ammoUsage;
+  std::size_t m_ammoUsage;
   List<Drawable> m_drawables;
 };
 
@@ -118,7 +118,7 @@ ThrownItem::ThrownItem(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr ThrownItem::clone() const {
-  return make_shared<ThrownItem>(*this);
+  return std::make_shared<ThrownItem>(*this);
 }
 
 List<Drawable> ThrownItem::drawables() const {

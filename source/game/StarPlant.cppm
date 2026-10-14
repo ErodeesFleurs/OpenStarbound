@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.json;
@@ -44,8 +44,20 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(Plant);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+class Plant;
+using PlantPtr = std::shared_ptr<Plant>;
+using PlantConstPtr = std::shared_ptr<const Plant>;
+using PlantWeakPtr = std::weak_ptr<Plant>;
+using PlantConstWeakPtr = std::weak_ptr<const Plant>;
+using PlantUPtr = std::unique_ptr<Plant>;
+using PlantConstUPtr = std::unique_ptr<const Plant>;
 struct TreeVariant;
 struct GrassVariant;
 struct BushVariant;
@@ -94,9 +106,9 @@ public:
     float zLevel;
   };
 
-  Plant(TreeVariant const& config, uint64_t seed);
-  Plant(GrassVariant const& config, uint64_t seed);
-  Plant(BushVariant const& config, uint64_t seed);
+  Plant(TreeVariant const& config, std::uint64_t seed);
+  Plant(GrassVariant const& config, std::uint64_t seed);
+  Plant(BushVariant const& config, std::uint64_t seed);
   Plant(Json const& diskStore);
   Plant(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
@@ -109,7 +121,7 @@ public:
 
   virtual String description() const override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  std::pair<ByteArray, std::uint64_t> writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
@@ -136,7 +148,7 @@ public:
   // Root blocks for this plant.
   List<Vec2I> roots() const override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -30,8 +30,8 @@ struct WeightedPool;
 // Extra methods to parse a variety of types out of pure JSON.  Throws
 // JsonException if json is not of correct type or size.
 
-size_t jsonToSize(Json const& v);
-Json jsonFromSize(size_t s);
+std::size_t jsonToSize(Json const& v);
+Json jsonFromSize(std::size_t s);
 
 // Must be array of appropriate size.
 
@@ -120,78 +120,78 @@ Json jsonFromWeightedPool(WeightedPool<T> const& pool);
 template <typename T, typename Converter>
 Json jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter);
 
-template <size_t Size>
+template <std::size_t Size>
 Array<unsigned, Size> jsonToArrayU(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToArrayU", Size).c_str());
 
   Array<unsigned, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getUInt(i);
   }
 
   return res;
 }
 
-template <size_t Size>
-Array<size_t, Size> jsonToArrayS(Json const& v) {
+template <std::size_t Size>
+Array<std::size_t, Size> jsonToArrayS(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToArrayS", Size).c_str());
 
-  Array<size_t, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  Array<std::size_t, Size> res;
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getUInt(i);
   }
 
   return res;
 }
 
-template <size_t Size>
+template <std::size_t Size>
 Array<int, Size> jsonToArrayI(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToArrayI", Size).c_str());
 
   Array<int, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getInt(i);
   }
 
   return res;
 }
 
-template <size_t Size>
+template <std::size_t Size>
 Array<float, Size> jsonToArrayF(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToArrayF", Size).c_str());
 
   Array<float, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getFloat(i);
   }
 
   return res;
 }
 
-template <size_t Size>
+template <std::size_t Size>
 Array<double, Size> jsonToArrayD(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToArrayD", Size).c_str());
 
   Array<double, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getDouble(i);
   }
 
   return res;
 }
 
-template <size_t Size>
+template <std::size_t Size>
 Array<String, Size> jsonToStringArray(Json const& v) {
   if (v.size() != Size)
     throw JsonException(strf("Json array not of size {} in jsonToStringArray", Size).c_str());
 
   Array<String, Size> res;
-  for (size_t i = 0; i < Size; i++) {
+  for (std::size_t i = 0; i < Size; i++) {
     res[i] = v.getString(i);
   }
 
@@ -274,7 +274,7 @@ MapType jsonToMapKV(Json const& v, KeyConverter&& keyConvert, ValueConverter&& v
 
 template <typename MapType, typename KeyConverter>
 MapType jsonToMapK(Json const& v, KeyConverter&& keyConvert) {
-  return jsonToMapKV<MapType>(v, forward<KeyConverter>(keyConvert), construct<typename MapType::mapped_type>());
+  return jsonToMapKV<MapType>(v, std::forward<KeyConverter>(keyConvert), construct<typename MapType::mapped_type>());
 }
 
 template <typename MapType, typename ValueConverter>

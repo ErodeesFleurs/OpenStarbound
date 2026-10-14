@@ -29,7 +29,7 @@ import star.set;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.logging;
@@ -104,7 +104,7 @@ ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
     m_errorOccurred(false),
     m_shouldExpire(false),
     m_parent(parent) {
-      m_luaRoot = make_shared<LuaRoot>();
+      m_luaRoot = std::make_shared<LuaRoot>();
       m_luaRoot->luaEngine().setNullTerminated(false);
       m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
       m_name = m_parameters.getString("name");
@@ -118,7 +118,7 @@ ScriptableThread::ScriptableThread(Json parameters, LuaBaseComponent* parent)
         
       m_luaRoot->addCallbacks("thread", makeThreadCallbacks());
       m_luaRoot->addCallbacks(
-          "config", LuaBindings::makeConfigCallbacks(bind(&ScriptableThread::configValue, this, _1, _2)));
+          "config", LuaBindings::makeConfigCallbacks(std::bind(&ScriptableThread::configValue, this, std::placeholders::_1, std::placeholders::_2)));
 }
 
 ScriptableThread::~ScriptableThread() {
@@ -177,7 +177,7 @@ void ScriptableThread::passMessage(Message&& message) {
 void ScriptableThread::run() {
   try {
     for (auto& p : m_parameters.getObject("scripts")) {
-      auto scriptComponent = make_shared<ScriptComponent>();
+      auto scriptComponent = std::make_shared<ScriptComponent>();
       scriptComponent->setLuaRoot(m_luaRoot);
       scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
       
@@ -203,7 +203,7 @@ void ScriptableThread::run() {
 
       double spareTime = tickApproacher.spareTime();
 
-      int64_t spareMilliseconds = floor(spareTime * 1000);
+      std::int64_t spareMilliseconds = std::floor(spareTime * 1000);
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }

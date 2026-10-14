@@ -36,7 +36,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.version;
 
 #include "StarLuaRoot.hpp"
@@ -190,17 +190,17 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(netStore, rules);
+    return std::make_shared<Plant>(netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return make_shared<PlantDrop>(netStore, rules);
+    return std::make_shared<PlantDrop>(netStore, rules);
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(netStore, rules);
+    return std::make_shared<ItemDrop>(netStore, rules);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
-    return make_shared<Stagehand>(netStore, rules);
+    return std::make_shared<Stagehand>(netStore, rules);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->netLoad(netStore, rules);
   } else {
@@ -242,13 +242,13 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(diskStore);
+    return std::make_shared<Plant>(diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(diskStore);
+    return std::make_shared<ItemDrop>(diskStore);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {
-    return make_shared<Stagehand>(diskStore);
+    return std::make_shared<Stagehand>(diskStore);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->diskLoad(diskStore);
   } else {

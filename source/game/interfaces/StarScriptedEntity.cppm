@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -22,7 +22,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(ScriptedEntity);
+class ScriptedEntity;
+using ScriptedEntityPtr = std::shared_ptr<ScriptedEntity>;
+using ScriptedEntityConstPtr = std::shared_ptr<const ScriptedEntity>;
+using ScriptedEntityWeakPtr = std::weak_ptr<ScriptedEntity>;
+using ScriptedEntityConstWeakPtr = std::weak_ptr<const ScriptedEntity>;
+using ScriptedEntityUPtr = std::unique_ptr<ScriptedEntity>;
+using ScriptedEntityConstUPtr = std::unique_ptr<const ScriptedEntity>;
 
 // All ScriptedEntity methods should only be called on master entities
 class ScriptedEntity : public virtual Entity {

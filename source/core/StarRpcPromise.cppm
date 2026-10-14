@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.variant;
@@ -34,8 +33,8 @@ private:
   template <typename ResultT, typename ErrorT>
   friend class RpcPromise;
 
-  function<void(Variant<Result,RpcPromise<Result,Error>>)> m_fulfill;
-  function<void(Error)> m_fail;
+  std::function<void(Variant<Result,RpcPromise<Result,Error>>)> m_fulfill;
+  std::function<void(Error)> m_fail;
 };
 
 // Wraps an RpcPromiseKeeper, best used as a shared_ptr. Fails the promise on destruction.
@@ -54,14 +53,14 @@ private:
 };
 
 template <typename Result, typename Error = String>
-using AutoFailRpcPromiseKeeperPtr = shared_ptr<AutoFailRpcPromiseKeeper<Result,Error>>;
+using AutoFailRpcPromiseKeeperPtr = std::shared_ptr<AutoFailRpcPromiseKeeper<Result,Error>>;
 
 // A generic promise for the result of a remote procedure call.  It has
 // reference semantics and is implicitly shared. Thread safe via mutexes. Can be chained.
 template <typename Result, typename Error = String>
 class RpcPromise {
 public:
-  static pair<RpcPromise, RpcPromiseKeeper<Result, Error>> createPair();
+  static std::pair<RpcPromise, RpcPromiseKeeper<Result, Error>> createPair();
   static RpcPromise createFulfilled(Result result);
   static RpcPromise createFailed(Error error);
 
@@ -96,7 +95,7 @@ private:
     Maybe<Error> error;
   };
 
-  function<Value*()> m_getValue;
+  std::function<Value*()> m_getValue;
 };
 
 template <typename Result, typename Error>
@@ -143,8 +142,8 @@ AutoFailRpcPromiseKeeper<Result, Error>::~AutoFailRpcPromiseKeeper() {
 }
 
 template <typename Result, typename Error>
-pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
-  auto valuePtr = make_shared<Value>();
+std::pair<RpcPromise<Result, Error>, RpcPromiseKeeper<Result, Error>> RpcPromise<Result, Error>::createPair() {
+  auto valuePtr = std::make_shared<Value>();
 
   RpcPromise promise;
   promise.m_getValue = [valuePtr]() {

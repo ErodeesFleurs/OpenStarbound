@@ -32,7 +32,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 
@@ -107,7 +107,13 @@ export module star.unlock_item;
 
 export namespace Star {
 
-STAR_CLASS(UnlockItem);
+class UnlockItem;
+using UnlockItemPtr = std::shared_ptr<UnlockItem>;
+using UnlockItemConstPtr = std::shared_ptr<const UnlockItem>;
+using UnlockItemWeakPtr = std::weak_ptr<UnlockItem>;
+using UnlockItemConstWeakPtr = std::weak_ptr<const UnlockItem>;
+using UnlockItemUPtr = std::unique_ptr<UnlockItem>;
+using UnlockItemConstUPtr = std::unique_ptr<const UnlockItem>;
 
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:
@@ -143,7 +149,7 @@ UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& 
 }
 
 ItemPtr UnlockItem::clone() const {
-  return make_shared<UnlockItem>(*this);
+  return std::make_shared<UnlockItem>(*this);
 }
 
 List<Drawable> UnlockItem::drawables() const {

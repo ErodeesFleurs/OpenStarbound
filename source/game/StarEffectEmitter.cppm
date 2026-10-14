@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.set;
@@ -13,9 +13,27 @@ import star.net_element_group;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(EffectEmitter);
-STAR_CLASS(EffectSource);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
+class EffectEmitter;
+using EffectEmitterPtr = std::shared_ptr<EffectEmitter>;
+using EffectEmitterConstPtr = std::shared_ptr<const EffectEmitter>;
+using EffectEmitterWeakPtr = std::weak_ptr<EffectEmitter>;
+using EffectEmitterConstWeakPtr = std::weak_ptr<const EffectEmitter>;
+using EffectEmitterUPtr = std::unique_ptr<EffectEmitter>;
+using EffectEmitterConstUPtr = std::unique_ptr<const EffectEmitter>;
+class EffectSource;
+using EffectSourcePtr = std::shared_ptr<EffectSource>;
+using EffectSourceConstPtr = std::shared_ptr<const EffectSource>;
+using EffectSourceWeakPtr = std::weak_ptr<EffectSource>;
+using EffectSourceConstWeakPtr = std::weak_ptr<const EffectSource>;
+using EffectSourceUPtr = std::unique_ptr<EffectSource>;
+using EffectSourceConstUPtr = std::unique_ptr<const EffectSource>;
 
 class EffectEmitter : public NetElementGroup {
 public:
@@ -35,9 +53,9 @@ public:
   void fromJson(Json const& diskStore);
 
 private:
-  Set<pair<String, String>> m_newSources;
+  Set<std::pair<String, String>> m_newSources;
   List<EffectSourcePtr> m_sources;
-  NetElementData<Set<pair<String, String>>> m_activeSources;
+  NetElementData<Set<std::pair<String, String>>> m_activeSources;
 
   StringMap<Vec2F> m_positions;
   Direction m_direction;

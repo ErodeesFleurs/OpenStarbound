@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -38,9 +38,21 @@ import star.world;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
+class RenderCallback;
+using RenderCallbackPtr = std::shared_ptr<RenderCallback>;
+using RenderCallbackConstPtr = std::shared_ptr<const RenderCallback>;
+using RenderCallbackWeakPtr = std::weak_ptr<RenderCallback>;
+using RenderCallbackConstWeakPtr = std::weak_ptr<const RenderCallback>;
+using RenderCallbackUPtr = std::unique_ptr<RenderCallback>;
+using RenderCallbackConstUPtr = std::unique_ptr<const RenderCallback>;
 
-STAR_CLASS(PlayerDeployment);
+class PlayerDeployment;
+using PlayerDeploymentPtr = std::shared_ptr<PlayerDeployment>;
+using PlayerDeploymentConstPtr = std::shared_ptr<const PlayerDeployment>;
+using PlayerDeploymentWeakPtr = std::weak_ptr<PlayerDeployment>;
+using PlayerDeploymentConstWeakPtr = std::weak_ptr<const PlayerDeployment>;
+using PlayerDeploymentUPtr = std::unique_ptr<PlayerDeployment>;
+using PlayerDeploymentConstUPtr = std::unique_ptr<const PlayerDeployment>;
 
 class PlayerDeployment {
 public:

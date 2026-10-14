@@ -1,4 +1,5 @@
 module;
+import std;
 import star.xx_hash;
 import star.json;
 import star.id_map;
@@ -8,7 +9,6 @@ import star.list;
 import star.map;
 import star.bi_map;
 import star.vector;
-#include "StarConfig.hpp"
 import star.version;
 import star.color;
 import star.string;
@@ -29,7 +29,6 @@ import star.weighted_pool;
 import star.font;
 import star.text;
 import star.listener;
-import std;
 import star.set;
 import star.worker_pool;
 
@@ -39,9 +38,27 @@ import star.variant;
 
 
 namespace Star {
-STAR_CLASS(Assets);
-STAR_CLASS(EnvironmentPainter);
-STAR_CLASS(TilePainter);
+class Assets;
+using AssetsPtr = std::shared_ptr<Assets>;
+using AssetsConstPtr = std::shared_ptr<Assets const>;
+using AssetsWeakPtr = std::weak_ptr<Assets>;
+using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
+using AssetsUPtr = std::unique_ptr<Assets>;
+using AssetsConstUPtr = std::unique_ptr<Assets const>;
+class EnvironmentPainter;
+using EnvironmentPainterPtr = std::shared_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstPtr = std::shared_ptr<EnvironmentPainter const>;
+using EnvironmentPainterWeakPtr = std::weak_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstWeakPtr = std::weak_ptr<EnvironmentPainter const>;
+using EnvironmentPainterUPtr = std::unique_ptr<EnvironmentPainter>;
+using EnvironmentPainterConstUPtr = std::unique_ptr<EnvironmentPainter const>;
+class TilePainter;
+using TilePainterPtr = std::shared_ptr<TilePainter>;
+using TilePainterConstPtr = std::shared_ptr<TilePainter const>;
+using TilePainterWeakPtr = std::weak_ptr<TilePainter>;
+using TilePainterConstWeakPtr = std::weak_ptr<TilePainter const>;
+using TilePainterUPtr = std::unique_ptr<TilePainter>;
+using TilePainterConstUPtr = std::unique_ptr<TilePainter const>;
 }
 import star.world_geometry;
 import star.collision_block;
@@ -90,7 +107,13 @@ import star.world_camera;
 
 namespace Star {
 
-STAR_CLASS(WorldPainter);
+class WorldPainter;
+using WorldPainterPtr = std::shared_ptr<WorldPainter>;
+using WorldPainterConstPtr = std::shared_ptr<WorldPainter const>;
+using WorldPainterWeakPtr = std::weak_ptr<WorldPainter>;
+using WorldPainterConstWeakPtr = std::weak_ptr<WorldPainter const>;
+using WorldPainterUPtr = std::unique_ptr<WorldPainter>;
+using WorldPainterConstUPtr = std::unique_ptr<WorldPainter const>;
 
 // Will update client rendering window internally
 class WorldPainter {
@@ -104,7 +127,7 @@ public:
   WorldCamera& camera();
 
   void update(float dt);
-  void render(WorldRenderData& renderData, function<bool()> lightWaiter);
+  void render(WorldRenderData& renderData, std::function<bool()> lightWaiter);
   void adjustLighting(WorldRenderData& renderData);
 
 private:
@@ -126,7 +149,7 @@ private:
   TilePainterPtr m_tilePainter;
 
   Json m_highlightConfig;
-  Map<EntityHighlightEffectType, pair<Directives, Directives>> m_highlightDirectives;
+  Map<EntityHighlightEffectType, std::pair<Directives, Directives>> m_highlightDirectives;
 
   Vec2F m_entityBarOffset;
   Vec2F m_entityBarSpacing;

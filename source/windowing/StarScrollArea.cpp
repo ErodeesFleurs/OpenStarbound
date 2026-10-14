@@ -1,3 +1,4 @@
+import std;
 import star.json;
 import star.vector;
 #include "StarCasting.hpp"
@@ -17,7 +18,6 @@ import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.time;
 import star.version;
 import star.string;
@@ -69,7 +69,7 @@ static int const ScrollButtonStackSize = 6;
 static int const ScrollThumbSize = 3;
 static int const ScrollThumbOverhead = ScrollThumbSize + ScrollThumbSize;
 static int const ScrollBarTrackOverhead = ScrollButtonStackSize + ScrollButtonStackSize + ScrollThumbOverhead;
-static int64_t const ScrollAdvanceTimer = 100;
+static std::int64_t const ScrollAdvanceTimer = 100;
 
 ScrollThumb::ScrollThumb(GuiDirection direction) {
   m_hovered = false;
@@ -150,17 +150,17 @@ Vec2U ScrollThumb::baseSize() const {
 
 ScrollBar::ScrollBar(GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
   : m_direction(direction) {
-  m_forward = make_shared<ButtonWidget>();
+  m_forward = std::make_shared<ButtonWidget>();
   m_forward->setCallback(forwardFunc);
   m_forward->setSustainCallbackOnDownHold(true);
   m_forward->setPressedOffset({0, 0});
 
-  m_backward = make_shared<ButtonWidget>();
+  m_backward = std::make_shared<ButtonWidget>();
   m_backward->setCallback(backwardFunc);
   m_backward->setSustainCallbackOnDownHold(true);
   m_backward->setPressedOffset({0, 0});
 
-  m_thumb = make_shared<ScrollThumb>(m_direction);
+  m_thumb = std::make_shared<ScrollThumb>(m_direction);
 
   auto assets = Root::singleton().assets();
   setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
@@ -260,8 +260,8 @@ void ScrollBar::drawChildren() {
     if (ratio < 1)
       ratio = 1;
 
-    int innerSize = (int)max(0.0f, ceil(trackSize() / ratio));
-    int offsetBegin = (int)ceil((trackSize() - innerSize) * scrollRatio());
+    int innerSize = (int)std::max(0.0f, std::ceil(trackSize() / ratio));
+    int offsetBegin = (int)std::ceil((trackSize() - innerSize) * scrollRatio());
     innerSize += ScrollThumbOverhead;
 
     if (m_direction == GuiDirection::Vertical) {
@@ -294,12 +294,12 @@ Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
     int scrollSpan = trackSize() - m_thumb->size()[1];
     int scrollOffset = clamp((thumbPosition[1] - ScrollButtonStackSize), 0, scrollSpan);
     float scrollRatio = (float)scrollOffset / (float)scrollSpan;
-    return {scrollArea->scrollOffset()[0], ceil(scrollArea->maxScrollPosition()[1] * scrollRatio)};
+    return {scrollArea->scrollOffset()[0], std::ceil(scrollArea->maxScrollPosition()[1] * scrollRatio)};
   } else {
     int scrollSpan = trackSize() - m_thumb->size()[0];
     int scrollOffset = clamp((thumbPosition[0] - ScrollButtonStackSize), 0, scrollSpan);
     float scrollRatio = (float)scrollOffset / (float)scrollSpan;
-    return {(int)ceil(scrollArea->maxScrollPosition()[0] * scrollRatio), scrollArea->scrollOffset()[1]};
+    return {(int)std::ceil(scrollArea->maxScrollPosition()[0] * scrollRatio), scrollArea->scrollOffset()[1]};
   }
 }
 
@@ -313,8 +313,8 @@ ScrollArea::ScrollArea() {
   WidgetCallbackFunc hAdvance = [this](Widget*) { scrollAreaBy({advanceFactorHelper(), 0}); };
   WidgetCallbackFunc hRetreat = [this](Widget*) { scrollAreaBy({-advanceFactorHelper(), 0}); };
 
-  m_vBar = make_shared<ScrollBar>(GuiDirection::Vertical, vAdvance, vRetreat);
-  m_hBar = make_shared<ScrollBar>(GuiDirection::Horizontal, hAdvance, hRetreat);
+  m_vBar = std::make_shared<ScrollBar>(GuiDirection::Vertical, vAdvance, vRetreat);
+  m_hBar = std::make_shared<ScrollBar>(GuiDirection::Horizontal, hAdvance, hRetreat);
 
   m_dragActive = false;
 

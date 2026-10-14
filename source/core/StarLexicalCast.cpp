@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.string_view;
 #include "fast_float.h"
@@ -17,14 +17,14 @@ void throwLexicalCastError(std::errc ec, const char* first, const char* last) {
 
 template <>
 bool tryLexicalCast(bool& result, const char* first, const char* last) {
-  size_t len = last - first;
+  std::size_t len = last - first;
   // Compare the whole literal, not just its first len characters: strncmp with
   // the input length accepted short prefixes such as "t" or "tru".
-  if (len == 4 && memcmp(first, "true", 4) == 0) {
+  if (len == 4 && std::memcmp(first, "true", 4) == 0) {
     result = true;
     return true;
   }
-  if (len == 5 && memcmp(first, "false", 5) == 0) {
+  if (len == 5 && std::memcmp(first, "false", 5) == 0) {
     result = false;
     return true;
   }
@@ -36,10 +36,10 @@ bool tryLexicalCast(bool& result, const char* first, const char* last) {
 
 template <>
 bool lexicalCast(const char* first, const char* last) {
-  size_t len = last - first;
-  if (len == 4 && memcmp(first, "true", 4) == 0)
+  std::size_t len = last - first;
+  if (len == 4 && std::memcmp(first, "true", 4) == 0)
     return true;
-  else if (len != 5 || memcmp(first, "false", 5) != 0)
+  else if (len != 5 || std::memcmp(first, "false", 5) != 0)
     throwLexicalCastError(std::errc(), first, last);
 
   return false;

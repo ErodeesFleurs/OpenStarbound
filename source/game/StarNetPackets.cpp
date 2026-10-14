@@ -8,7 +8,6 @@ import star.bi_map;
 import star.game_types;
 import star.math_common;
 import star.vector;
-#include "StarConfig.hpp"
 import star.string;
 import star.map;
 import star.format;
@@ -185,11 +184,11 @@ extern EnumMap<NetCompressionMode> const NetCompressionModeNames {
 
 Packet::~Packet() {}
 
-void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); _unused(netRules); }
-void Packet::read(DataStream& ds) { _unused(ds); }
-void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); _unused(netRules); }
-void Packet::write(DataStream& ds) const { _unused(ds); }
-void Packet::readJson(Json const& json) { _unused(json); }
+void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); ((void)(netRules)); }
+void Packet::read(DataStream& ds) { ((void)(ds)); }
+void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); ((void)(netRules)); }
+void Packet::write(DataStream& ds) const { ((void)(ds)); }
+void Packet::readJson(Json const& json) { ((void)(json)); }
 Json Packet::writeJson() const  { return JsonObject{}; }
 
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
@@ -197,88 +196,88 @@ void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compr
 
 PacketPtr createPacket(PacketType type) {
   switch (type) {
-    case PacketType::ProtocolRequest: return make_shared<ProtocolRequestPacket>();
-    case PacketType::ProtocolResponse: return make_shared<ProtocolResponsePacket>();
-    case PacketType::ServerDisconnect: return make_shared<ServerDisconnectPacket>();
-    case PacketType::ConnectSuccess: return make_shared<ConnectSuccessPacket>();
-    case PacketType::ConnectFailure: return make_shared<ConnectFailurePacket>();
-    case PacketType::HandshakeChallenge: return make_shared<HandshakeChallengePacket>();
-    case PacketType::ChatReceive: return make_shared<ChatReceivePacket>();
-    case PacketType::UniverseTimeUpdate: return make_shared<UniverseTimeUpdatePacket>();
-    case PacketType::CelestialResponse: return make_shared<CelestialResponsePacket>();
-    case PacketType::PlayerWarpResult: return make_shared<PlayerWarpResultPacket>();
-    case PacketType::PlanetTypeUpdate: return make_shared<PlanetTypeUpdatePacket>();
-    case PacketType::Pause: return make_shared<PausePacket>();
-    case PacketType::ServerInfo: return make_shared<ServerInfoPacket>();
-    case PacketType::ClientConnect: return make_shared<ClientConnectPacket>();
-    case PacketType::ClientDisconnectRequest: return make_shared<ClientDisconnectRequestPacket>();
-    case PacketType::HandshakeResponse: return make_shared<HandshakeResponsePacket>();
-    case PacketType::PlayerWarp: return make_shared<PlayerWarpPacket>();
-    case PacketType::FlyShip: return make_shared<FlyShipPacket>();
-    case PacketType::ChatSend: return make_shared<ChatSendPacket>();
-    case PacketType::CelestialRequest: return make_shared<CelestialRequestPacket>();
-    case PacketType::ClientContextUpdate: return make_shared<ClientContextUpdatePacket>();
-    case PacketType::WorldStart: return make_shared<WorldStartPacket>();
-    case PacketType::WorldStop: return make_shared<WorldStopPacket>();
-    case PacketType::WorldLayoutUpdate: return make_shared<WorldLayoutUpdatePacket>();
-    case PacketType::WorldParametersUpdate: return make_shared<WorldParametersUpdatePacket>();
-    case PacketType::CentralStructureUpdate: return make_shared<CentralStructureUpdatePacket>();
-    case PacketType::TileArrayUpdate: return make_shared<TileArrayUpdatePacket>();
-    case PacketType::TileUpdate: return make_shared<TileUpdatePacket>();
-    case PacketType::TileLiquidUpdate: return make_shared<TileLiquidUpdatePacket>();
-    case PacketType::TileDamageUpdate: return make_shared<TileDamageUpdatePacket>();
-    case PacketType::TileModificationFailure: return make_shared<TileModificationFailurePacket>();
-    case PacketType::GiveItem: return make_shared<GiveItemPacket>();
-    case PacketType::EnvironmentUpdate: return make_shared<EnvironmentUpdatePacket>();
-    case PacketType::UpdateTileProtection: return make_shared<UpdateTileProtectionPacket>();
-    case PacketType::SetDungeonGravity: return make_shared<SetDungeonGravityPacket>();
-    case PacketType::SetDungeonBreathable: return make_shared<SetDungeonBreathablePacket>();
-    case PacketType::SetPlayerStart: return make_shared<SetPlayerStartPacket>();
-    case PacketType::FindUniqueEntityResponse: return make_shared<FindUniqueEntityResponsePacket>();
-    case PacketType::Pong: return make_shared<PongPacket>();
-    case PacketType::ModifyTileList: return make_shared<ModifyTileListPacket>();
-    case PacketType::DamageTileGroup: return make_shared<DamageTileGroupPacket>();
-    case PacketType::CollectLiquid: return make_shared<CollectLiquidPacket>();
-    case PacketType::RequestDrop: return make_shared<RequestDropPacket>();
-    case PacketType::SpawnEntity: return make_shared<SpawnEntityPacket>();
-    case PacketType::ConnectWire: return make_shared<ConnectWirePacket>();
-    case PacketType::DisconnectAllWires: return make_shared<DisconnectAllWiresPacket>();
-    case PacketType::WorldClientStateUpdate: return make_shared<WorldClientStateUpdatePacket>();
-    case PacketType::FindUniqueEntity: return make_shared<FindUniqueEntityPacket>();
-    case PacketType::WorldStartAcknowledge: return make_shared<WorldStartAcknowledgePacket>();
-    case PacketType::Ping: return make_shared<PingPacket>();
-    case PacketType::EntityCreate: return make_shared<EntityCreatePacket>();
-    case PacketType::EntityUpdateSet: return make_shared<EntityUpdateSetPacket>();
-    case PacketType::EntityDestroy: return make_shared<EntityDestroyPacket>();
-    case PacketType::EntityInteract: return make_shared<EntityInteractPacket>();
-    case PacketType::EntityInteractResult: return make_shared<EntityInteractResultPacket>();
-    case PacketType::HitRequest: return make_shared<HitRequestPacket>();
-    case PacketType::DamageRequest: return make_shared<DamageRequestPacket>();
-    case PacketType::DamageNotification: return make_shared<DamageNotificationPacket>();
-    case PacketType::EntityMessage: return make_shared<EntityMessagePacket>();
-    case PacketType::EntityMessageResponse: return make_shared<EntityMessageResponsePacket>();
-    case PacketType::UpdateWorldProperties: return make_shared<UpdateWorldPropertiesPacket>();
-    case PacketType::StepUpdate: return make_shared<StepUpdatePacket>();
-    case PacketType::SystemWorldStart: return make_shared<SystemWorldStartPacket>();
-    case PacketType::SystemWorldUpdate: return make_shared<SystemWorldUpdatePacket>();
-    case PacketType::SystemObjectCreate: return make_shared<SystemObjectCreatePacket>();
-    case PacketType::SystemObjectDestroy: return make_shared<SystemObjectDestroyPacket>();
-    case PacketType::SystemShipCreate: return make_shared<SystemShipCreatePacket>();
-    case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
-    case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
+    case PacketType::ProtocolRequest: return std::make_shared<ProtocolRequestPacket>();
+    case PacketType::ProtocolResponse: return std::make_shared<ProtocolResponsePacket>();
+    case PacketType::ServerDisconnect: return std::make_shared<ServerDisconnectPacket>();
+    case PacketType::ConnectSuccess: return std::make_shared<ConnectSuccessPacket>();
+    case PacketType::ConnectFailure: return std::make_shared<ConnectFailurePacket>();
+    case PacketType::HandshakeChallenge: return std::make_shared<HandshakeChallengePacket>();
+    case PacketType::ChatReceive: return std::make_shared<ChatReceivePacket>();
+    case PacketType::UniverseTimeUpdate: return std::make_shared<UniverseTimeUpdatePacket>();
+    case PacketType::CelestialResponse: return std::make_shared<CelestialResponsePacket>();
+    case PacketType::PlayerWarpResult: return std::make_shared<PlayerWarpResultPacket>();
+    case PacketType::PlanetTypeUpdate: return std::make_shared<PlanetTypeUpdatePacket>();
+    case PacketType::Pause: return std::make_shared<PausePacket>();
+    case PacketType::ServerInfo: return std::make_shared<ServerInfoPacket>();
+    case PacketType::ClientConnect: return std::make_shared<ClientConnectPacket>();
+    case PacketType::ClientDisconnectRequest: return std::make_shared<ClientDisconnectRequestPacket>();
+    case PacketType::HandshakeResponse: return std::make_shared<HandshakeResponsePacket>();
+    case PacketType::PlayerWarp: return std::make_shared<PlayerWarpPacket>();
+    case PacketType::FlyShip: return std::make_shared<FlyShipPacket>();
+    case PacketType::ChatSend: return std::make_shared<ChatSendPacket>();
+    case PacketType::CelestialRequest: return std::make_shared<CelestialRequestPacket>();
+    case PacketType::ClientContextUpdate: return std::make_shared<ClientContextUpdatePacket>();
+    case PacketType::WorldStart: return std::make_shared<WorldStartPacket>();
+    case PacketType::WorldStop: return std::make_shared<WorldStopPacket>();
+    case PacketType::WorldLayoutUpdate: return std::make_shared<WorldLayoutUpdatePacket>();
+    case PacketType::WorldParametersUpdate: return std::make_shared<WorldParametersUpdatePacket>();
+    case PacketType::CentralStructureUpdate: return std::make_shared<CentralStructureUpdatePacket>();
+    case PacketType::TileArrayUpdate: return std::make_shared<TileArrayUpdatePacket>();
+    case PacketType::TileUpdate: return std::make_shared<TileUpdatePacket>();
+    case PacketType::TileLiquidUpdate: return std::make_shared<TileLiquidUpdatePacket>();
+    case PacketType::TileDamageUpdate: return std::make_shared<TileDamageUpdatePacket>();
+    case PacketType::TileModificationFailure: return std::make_shared<TileModificationFailurePacket>();
+    case PacketType::GiveItem: return std::make_shared<GiveItemPacket>();
+    case PacketType::EnvironmentUpdate: return std::make_shared<EnvironmentUpdatePacket>();
+    case PacketType::UpdateTileProtection: return std::make_shared<UpdateTileProtectionPacket>();
+    case PacketType::SetDungeonGravity: return std::make_shared<SetDungeonGravityPacket>();
+    case PacketType::SetDungeonBreathable: return std::make_shared<SetDungeonBreathablePacket>();
+    case PacketType::SetPlayerStart: return std::make_shared<SetPlayerStartPacket>();
+    case PacketType::FindUniqueEntityResponse: return std::make_shared<FindUniqueEntityResponsePacket>();
+    case PacketType::Pong: return std::make_shared<PongPacket>();
+    case PacketType::ModifyTileList: return std::make_shared<ModifyTileListPacket>();
+    case PacketType::DamageTileGroup: return std::make_shared<DamageTileGroupPacket>();
+    case PacketType::CollectLiquid: return std::make_shared<CollectLiquidPacket>();
+    case PacketType::RequestDrop: return std::make_shared<RequestDropPacket>();
+    case PacketType::SpawnEntity: return std::make_shared<SpawnEntityPacket>();
+    case PacketType::ConnectWire: return std::make_shared<ConnectWirePacket>();
+    case PacketType::DisconnectAllWires: return std::make_shared<DisconnectAllWiresPacket>();
+    case PacketType::WorldClientStateUpdate: return std::make_shared<WorldClientStateUpdatePacket>();
+    case PacketType::FindUniqueEntity: return std::make_shared<FindUniqueEntityPacket>();
+    case PacketType::WorldStartAcknowledge: return std::make_shared<WorldStartAcknowledgePacket>();
+    case PacketType::Ping: return std::make_shared<PingPacket>();
+    case PacketType::EntityCreate: return std::make_shared<EntityCreatePacket>();
+    case PacketType::EntityUpdateSet: return std::make_shared<EntityUpdateSetPacket>();
+    case PacketType::EntityDestroy: return std::make_shared<EntityDestroyPacket>();
+    case PacketType::EntityInteract: return std::make_shared<EntityInteractPacket>();
+    case PacketType::EntityInteractResult: return std::make_shared<EntityInteractResultPacket>();
+    case PacketType::HitRequest: return std::make_shared<HitRequestPacket>();
+    case PacketType::DamageRequest: return std::make_shared<DamageRequestPacket>();
+    case PacketType::DamageNotification: return std::make_shared<DamageNotificationPacket>();
+    case PacketType::EntityMessage: return std::make_shared<EntityMessagePacket>();
+    case PacketType::EntityMessageResponse: return std::make_shared<EntityMessageResponsePacket>();
+    case PacketType::UpdateWorldProperties: return std::make_shared<UpdateWorldPropertiesPacket>();
+    case PacketType::StepUpdate: return std::make_shared<StepUpdatePacket>();
+    case PacketType::SystemWorldStart: return std::make_shared<SystemWorldStartPacket>();
+    case PacketType::SystemWorldUpdate: return std::make_shared<SystemWorldUpdatePacket>();
+    case PacketType::SystemObjectCreate: return std::make_shared<SystemObjectCreatePacket>();
+    case PacketType::SystemObjectDestroy: return std::make_shared<SystemObjectDestroyPacket>();
+    case PacketType::SystemShipCreate: return std::make_shared<SystemShipCreatePacket>();
+    case PacketType::SystemShipDestroy: return std::make_shared<SystemShipDestroyPacket>();
+    case PacketType::SystemObjectSpawn: return std::make_shared<SystemObjectSpawnPacket>();
     // OpenStarbound
-    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
-    case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
-    case PacketType::ClientCustomWorldRequest: return make_shared<ClientCustomWorldRequest>();
-    case PacketType::ClientCustomWorldResponse: return make_shared<ClientCustomWorldResponse>();
-    case PacketType::ClientCustomWorldCreate: return make_shared<ClientCustomWorldCreate>();
-    case PacketType::ClientSubWorldPackets: return make_shared<ClientSubWorldPackets>();
-    case PacketType::ClientSubWorldRequest: return make_shared<ClientSubWorldRequest>();
-    case PacketType::ClientSubWorldReject: return make_shared<ClientSubWorldReject>();
-    case PacketType::NotifyWorldLoad: return make_shared<NotifyWorldLoad>();
-    case PacketType::LogMapUpdate: return make_shared<LogMapUpdate>();
-    case PacketType::UniverseMessage: return make_shared<UniverseMessage>();
-    case PacketType::UniverseMessageResponse: return make_shared<UniverseMessageResponse>();
+    case PacketType::ReplaceTileList: return std::make_shared<ReplaceTileListPacket>();
+    case PacketType::UpdateWorldTemplate: return std::make_shared<UpdateWorldTemplatePacket>();
+    case PacketType::ClientCustomWorldRequest: return std::make_shared<ClientCustomWorldRequest>();
+    case PacketType::ClientCustomWorldResponse: return std::make_shared<ClientCustomWorldResponse>();
+    case PacketType::ClientCustomWorldCreate: return std::make_shared<ClientCustomWorldCreate>();
+    case PacketType::ClientSubWorldPackets: return std::make_shared<ClientSubWorldPackets>();
+    case PacketType::ClientSubWorldRequest: return std::make_shared<ClientSubWorldRequest>();
+    case PacketType::ClientSubWorldReject: return std::make_shared<ClientSubWorldReject>();
+    case PacketType::NotifyWorldLoad: return std::make_shared<NotifyWorldLoad>();
+    case PacketType::LogMapUpdate: return std::make_shared<LogMapUpdate>();
+    case PacketType::UniverseMessage: return std::make_shared<UniverseMessage>();
+    case PacketType::UniverseMessageResponse: return std::make_shared<UniverseMessageResponse>();
     default:
       throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
@@ -481,7 +480,7 @@ Json PausePacket::writeJson() const {
 
 ServerInfoPacket::ServerInfoPacket() {}
 
-ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) :
+ServerInfoPacket::ServerInfoPacket(std::uint16_t players, std::uint16_t maxPlayers) :
   players(players),
   maxPlayers(maxPlayers) {}
 
@@ -551,12 +550,12 @@ ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}
 
 void ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.read<uint8_t>();
+  ds.read<std::uint8_t>();
 }
 
 void ClientDisconnectRequestPacket::write(DataStream& ds) const {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.write<uint8_t>(0);
+  ds.write<std::uint8_t>(0);
 }
 
 HandshakeResponsePacket::HandshakeResponsePacket() {}
@@ -733,12 +732,12 @@ void TileArrayUpdatePacket::read(DataStream& ds) {
   ds.viread(min[0]);
   ds.viread(min[1]);
 
-  size_t width, height;
+  std::size_t width, height;
   ds.vuread(width);
   ds.vuread(height);
   array.resize(width, height);
-  for (size_t y = 0; y < height; ++y) {
-    for (size_t x = 0; x < width; ++x)
+  for (std::size_t y = 0; y < height; ++y) {
+    for (std::size_t x = 0; x < width; ++x)
       ds.read(array(x, y));
   }
 }
@@ -748,8 +747,8 @@ void TileArrayUpdatePacket::write(DataStream& ds) const {
   ds.viwrite(min[1]);
   ds.vuwrite(array.size(0));
   ds.vuwrite(array.size(1));
-  for (size_t y = 0; y < array.size(1); ++y) {
-    for (size_t x = 0; x < array.size(0); ++x)
+  for (std::size_t y = 0; y < array.size(1); ++y) {
+    for (std::size_t x = 0; x < array.size(0); ++x)
       ds.write(array(x, y));
   }
 }
@@ -1076,7 +1075,7 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
 }
 
 PingPacket::PingPacket() {}
-PingPacket::PingPacket(int64_t time) : time(time) {}
+PingPacket::PingPacket(std::int64_t time) : time(time) {}
 
 void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
@@ -1398,7 +1397,7 @@ void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
 }
 
 PongPacket::PongPacket() {}
-PongPacket::PongPacket(int64_t time) : time(time) {}
+PongPacket::PongPacket(std::int64_t time) : time(time) {}
 
 
 void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
@@ -1437,7 +1436,7 @@ void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
 
 void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
+    ds.writeVlqU((std::uint64_t)std::round(remoteTime * 60.0));
   } else {
     ds.write(remoteTime);
   }
@@ -1445,7 +1444,7 @@ void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) con
 
 SystemWorldStartPacket::SystemWorldStartPacket() {}
 
-SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip)
+SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip)
   : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
 
 void SystemWorldStartPacket::read(DataStream& ds) {
@@ -1605,8 +1604,8 @@ ClientSubWorldPackets::ClientSubWorldPackets(ClientSubWorldId const& subWorldId,
 void ClientSubWorldPackets::read(DataStream& ds) {
   ds.read(subWorldId);
   // note: this approach may have an issue with packet size
-  uint32_t count = ds.read<uint32_t>();
-  for (uint32_t i = 0; i < count; i++) {
+  std::uint32_t count = ds.read<std::uint32_t>();
+  for (std::uint32_t i = 0; i < count; i++) {
     auto packetType = ds.read<PacketType>();
     PacketPtr packet = createPacket(packetType);
     packet->read(ds);
@@ -1616,7 +1615,7 @@ void ClientSubWorldPackets::read(DataStream& ds) {
 
 void ClientSubWorldPackets::write(DataStream& ds) const {
   ds.write(subWorldId);
-  ds.write<uint32_t>(packets.count());
+  ds.write<std::uint32_t>(packets.count());
   for (PacketPtr const& packet : packets) {
     auto packetType = packet->type();
     ds.write(packetType);

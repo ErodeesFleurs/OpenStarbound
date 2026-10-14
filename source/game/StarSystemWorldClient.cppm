@@ -21,7 +21,6 @@ import star.asset_path;
 #include "StarStrongTypedef.hpp"
 import star.either;
 import star.id_map;
-#include "StarConfig.hpp"
 import star.string;
 import star.map;
 import star.version;
@@ -88,11 +87,41 @@ import star.net_packets;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(PlayerUniverseMap);
-STAR_CLASS(Celestial);
-STAR_CLASS(Clock);
-STAR_CLASS(ClientContext);
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
+class PlayerUniverseMap;
+using PlayerUniverseMapPtr = std::shared_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstPtr = std::shared_ptr<const PlayerUniverseMap>;
+using PlayerUniverseMapWeakPtr = std::weak_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstWeakPtr = std::weak_ptr<const PlayerUniverseMap>;
+using PlayerUniverseMapUPtr = std::unique_ptr<PlayerUniverseMap>;
+using PlayerUniverseMapConstUPtr = std::unique_ptr<const PlayerUniverseMap>;
+class Celestial;
+using CelestialPtr = std::shared_ptr<Celestial>;
+using CelestialConstPtr = std::shared_ptr<const Celestial>;
+using CelestialWeakPtr = std::weak_ptr<Celestial>;
+using CelestialConstWeakPtr = std::weak_ptr<const Celestial>;
+using CelestialUPtr = std::unique_ptr<Celestial>;
+using CelestialConstUPtr = std::unique_ptr<const Celestial>;
+class Clock;
+using ClockPtr = std::shared_ptr<Clock>;
+using ClockConstPtr = std::shared_ptr<const Clock>;
+using ClockWeakPtr = std::weak_ptr<Clock>;
+using ClockConstWeakPtr = std::weak_ptr<const Clock>;
+using ClockUPtr = std::unique_ptr<Clock>;
+using ClockConstUPtr = std::unique_ptr<const Clock>;
+class ClientContext;
+using ClientContextPtr = std::shared_ptr<ClientContext>;
+using ClientContextConstPtr = std::shared_ptr<const ClientContext>;
+using ClientContextWeakPtr = std::weak_ptr<ClientContext>;
+using ClientContextConstWeakPtr = std::weak_ptr<const ClientContext>;
+using ClientContextUPtr = std::unique_ptr<ClientContext>;
+using ClientContextConstUPtr = std::unique_ptr<const ClientContext>;
 
 class SystemWorldClient : public SystemWorld {
 public:

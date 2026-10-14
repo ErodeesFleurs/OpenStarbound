@@ -1,6 +1,6 @@
 module;
-#include "StarConfig.hpp"
 
+import std;
 import star.string;
 import star.map;
 import star.list;
@@ -26,7 +26,7 @@ public:
   typedef LeftMapT LeftMap;
   typedef RightMapT RightMap;
 
-  typedef pair<Left, Right> value_type;
+  typedef std::pair<Left, Right> value_type;
 
   struct BiMapIterator {
     BiMapIterator& operator++();
@@ -35,7 +35,7 @@ public:
     bool operator==(BiMapIterator const& rhs) const;
     bool operator!=(BiMapIterator const& rhs) const;
 
-    pair<Left const&, Right const&> operator*() const;
+    std::pair<Left const&, Right const&> operator*() const;
 
     typename LeftMap::const_iterator iterator;
   };
@@ -82,7 +82,7 @@ public:
 
   BiMap& operator=(BiMap const& map);
 
-  pair<iterator, bool> insert(value_type const& val);
+  std::pair<iterator, bool> insert(value_type const& val);
 
   // Returns true if value was inserted, false if either the left or right side
   // already existed.
@@ -108,7 +108,7 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
-  size_t size() const;
+  std::size_t size() const;
 
   void clear();
 
@@ -155,7 +155,7 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator!=(BiMapI
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-pair<LeftT const&, RightT const&> BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator*() const {
+std::pair<LeftT const&, RightT const&> BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator*() const {
   return {iterator->first, *iterator->second};
 }
 
@@ -310,13 +310,15 @@ BiMap<LeftT, RightT, LeftMapT, RightMapT>& BiMap<LeftT, RightT, LeftMapT, RightM
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> pair<iterator, bool> {
-  auto leftRes = m_leftMap.insert(make_pair(val.first, nullptr));
+auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> std::pair<iterator, bool> {
+  auto leftRes = m_leftMap.insert(std::make_pair(val.first, nullptr));
   if (!leftRes.second)
     return {BiMapIterator{leftRes.first}, false};
 
-  auto rightRes = m_rightMap.insert(make_pair(val.second, nullptr));
-  starAssert(rightRes.second == true);
+  auto rightRes = m_rightMap.insert(std::make_pair(val.second, nullptr));
+  if constexpr (Star::DebugEnabled) {
+    Star::starAssertFailed((rightRes.second == true));
+  }
   leftRes.first->second = &rightRes.first->first;
   rightRes.first->second = &leftRes.first->first;
   return {BiMapIterator{leftRes.first}, true};
@@ -324,7 +326,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) ->
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(Left const& left, Right const& right) {
-  return insert(make_pair(left, right)).second;
+  return insert(std::make_pair(left, right)).second;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
@@ -388,7 +390,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::end() const -> const_iterator {
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-size_t BiMap<LeftT, RightT, LeftMapT, RightMapT>::size() const {
+std::size_t BiMap<LeftT, RightT, LeftMapT, RightMapT>::size() const {
   return m_leftMap.size();
 }
 

@@ -1,8 +1,9 @@
 module;
 
+import std;
+import star.memory;
 import star.set;
 import star.list;
-#include "StarConfig.hpp"
 import star.random;
 
 import star.static_random;
@@ -11,7 +12,7 @@ namespace Star {
 template <typename Item>
 struct WeightedPool {
 public:
-  typedef pair<double, Item> ItemsType;
+  typedef std::pair<double, Item> ItemsType;
   typedef List<ItemsType> ItemsList;
 
   WeightedPool();
@@ -24,10 +25,10 @@ public:
 
   ItemsList const& items() const;
 
-  size_t size() const;
-  pair<double, Item> const& at(size_t index) const;
-  double weight(size_t index) const;
-  Item const& item(size_t index) const;
+  std::size_t size() const;
+  std::pair<double, Item> const& at(std::size_t index) const;
+  double weight(std::size_t index) const;
+  Item const& item(std::size_t index) const;
   bool empty() const;
 
   // Return item using the given randomness source
@@ -35,21 +36,21 @@ public:
   // Return item using the global randomness source
   Item select() const;
   // Return item using fast static randomness from the given seed
-  Item select(uint64_t seed) const;
+  Item select(std::uint64_t seed) const;
 
   // Return a list of n items which are selected uniquely (by index), where
   // n is the lesser of the desiredCount and the size of the pool.
   // This INFLUENCES PROBABILITIES so it should not be used where a
   // correct statistical distribution is required.
-  List<Item> selectUniques(size_t desiredCount) const;
-  List<Item> selectUniques(size_t desiredCount, uint64_t seed) const;
+  List<Item> selectUniques(std::size_t desiredCount) const;
+  List<Item> selectUniques(std::size_t desiredCount, std::uint64_t seed) const;
 
-  size_t selectIndex(RandomSource& rand) const;
-  size_t selectIndex() const;
-  size_t selectIndex(uint64_t seed) const;
+  std::size_t selectIndex(RandomSource& rand) const;
+  std::size_t selectIndex() const;
+  std::size_t selectIndex(std::uint64_t seed) const;
 
 private:
-  size_t selectIndex(double target) const;
+  std::size_t selectIndex(double target) const;
 
   ItemsList m_items;
   double m_totalWeight;
@@ -64,7 +65,7 @@ template <typename Container>
 WeightedPool<Item>::WeightedPool(Container container)
   : WeightedPool() {
   for (auto const& pair : container)
-    add(get<0>(pair), get<1>(pair));
+    add(std::get<0>(pair), std::get<1>(pair));
 }
 
 template <typename Item>
@@ -88,22 +89,22 @@ auto WeightedPool<Item>::items() const -> ItemsList const & {
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::size() const {
+std::size_t WeightedPool<Item>::size() const {
   return m_items.count();
 }
 
 template <typename Item>
-pair<double, Item> const& WeightedPool<Item>::at(size_t index) const {
+std::pair<double, Item> const& WeightedPool<Item>::at(std::size_t index) const {
   return m_items.at(index);
 }
 
 template <typename Item>
-double WeightedPool<Item>::weight(size_t index) const {
+double WeightedPool<Item>::weight(std::size_t index) const {
   return at(index).first;
 }
 
 template <typename Item>
-Item const& WeightedPool<Item>::item(size_t index) const {
+Item const& WeightedPool<Item>::item(std::size_t index) const {
   return at(index).second;
 }
 
@@ -129,7 +130,7 @@ Item WeightedPool<Item>::select() const {
 }
 
 template <typename Item>
-Item WeightedPool<Item>::select(uint64_t seed) const {
+Item WeightedPool<Item>::select(std::uint64_t seed) const {
   if (m_items.empty())
     return Item();
 
@@ -137,39 +138,39 @@ Item WeightedPool<Item>::select(uint64_t seed) const {
 }
 
 template <typename Item>
-List<Item> WeightedPool<Item>::selectUniques(size_t desiredCount) const {
+List<Item> WeightedPool<Item>::selectUniques(std::size_t desiredCount) const {
   return selectUniques(desiredCount, Random::randu64());
 }
 
 template <typename Item>
-List<Item> WeightedPool<Item>::selectUniques(size_t desiredCount, uint64_t seed) const {
-  size_t targetCount = std::min(desiredCount, size());
-  Set<size_t> indices;
+List<Item> WeightedPool<Item>::selectUniques(std::size_t desiredCount, std::uint64_t seed) const {
+  std::size_t targetCount = std::min(desiredCount, size());
+  Set<std::size_t> indices;
   while (indices.size() < targetCount)
     indices.add(selectIndex(++seed));
   List<Item> result;
-  for (size_t i : indices)
+  for (std::size_t i : indices)
     result.append(m_items[i].second);
   return result;
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(RandomSource& rand) const {
+std::size_t WeightedPool<Item>::selectIndex(RandomSource& rand) const {
   return selectIndex(rand.randd());
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex() const {
+std::size_t WeightedPool<Item>::selectIndex() const {
   return selectIndex(Random::randd());
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(uint64_t seed) const {
+std::size_t WeightedPool<Item>::selectIndex(std::uint64_t seed) const {
   return selectIndex(staticRandomDouble(seed));
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(double target) const {
+std::size_t WeightedPool<Item>::selectIndex(double target) const {
   if (m_items.empty())
     return NPos;
 
@@ -183,7 +184,7 @@ size_t WeightedPool<Item>::selectIndex(double target) const {
   // improvement.
 
   double accumulatedWeight = 0.0f;
-  for (size_t i = 0; i < m_items.size(); ++i) {
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
     accumulatedWeight += m_items[i].first / m_totalWeight;
     if (target <= accumulatedWeight)
       return i;

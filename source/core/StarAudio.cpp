@@ -5,8 +5,9 @@
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
+import std;
+import star.memory;
 import star.audio;
-#include "StarConfig.hpp"
 import star.io_device;
 import star.string;
 import star.buffer;
@@ -32,12 +33,12 @@ float perceptualToAmplitude(float perceptual, float normalizedMax, float range, 
   float dB = perceptual > normalizedMax
     ? ((perceptual - normalizedMax) / normalizedMax) * boostRange
     : (perceptual / normalizedMax) * range - range;
-  return normalizedMax * pow(10.f, dB / 20.f);
+  return normalizedMax * std::pow(10.f, dB / 20.f);
 }
 
 float amplitudeToPerceptual(float amp, float normalizedMax, float range, float boostRange) {
   if (amp == 0.f) return 0.f;
-  float const dB = 20.f * log10(amp / normalizedMax);
+  float const dB = 20.f * std::log10(amp / normalizedMax);
   float perceptual = dB > 0.f
     ? dB / boostRange + 1
     : (range + dB) / range;
@@ -50,7 +51,7 @@ namespace {
     IODevicePtr device;
     unsigned channels;
     unsigned sampleRate;
-    size_t dataSize; // get the data size from the header to avoid id3 tag
+    std::size_t dataSize; // get the data size from the header to avoid id3 tag
 #else
     ByteArrayPtr byteArray;
     unsigned channels;
@@ -67,9 +68,9 @@ namespace {
   }
 
   bool isUncompressed(IODevicePtr device) {
-    const size_t sigLength = 4;
-    unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
+    const std::size_t sigLength = 4;
+    std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
+    std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
 
     StreamOffset previousOffset = device->pos();
     device->seek(0);
@@ -77,32 +78,32 @@ namespace {
     device->seek(4, IOSeek::Relative);
     device->readFull(waveSig.get(), sigLength);
     device->seek(previousOffset);
-    if (strcmp(riffSig.get(), "RIFF") == 0 && strcmp(waveSig.get(), "WAVE") == 0) { // bytes are magic
+    if (std::strcmp(riffSig.get(), "RIFF") == 0 && std::strcmp(waveSig.get(), "WAVE") == 0) { // bytes are magic
       return true;
     }
     return false;
   }
 
   WaveData parseWav(IODevicePtr device) {
-    const size_t sigLength = 4;
-    unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
-    unique_ptr<char[]> fmtSig(new char[sigLength + 1]()); // fmt \0
-    unique_ptr<char[]> dataSig(new char[sigLength + 1]()); // data\0
+    const std::size_t sigLength = 4;
+    std::unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
+    std::unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
+    std::unique_ptr<char[]> fmtSig(new char[sigLength + 1]()); // fmt \0
+    std::unique_ptr<char[]> dataSig(new char[sigLength + 1]()); // data\0
 
     // RIFF Chunk Descriptor
     device->seek(0);
     device->readFull(riffSig.get(), sigLength);
 
-    uint32_t fileSize = readLEType<uint32_t>(device);
+    std::uint32_t fileSize = readLEType<std::uint32_t>(device);
     fileSize += sigLength + sizeof(fileSize);
     if (fileSize != device->size())
       throw AudioException(strf("Wav file is wrong size, reports {} is actually {}", fileSize, device->size()));
 
     device->readFull(waveSig.get(), sigLength);
 
-    if ((strcmp(riffSig.get(), "RIFF") != 0) || (strcmp(waveSig.get(), "WAVE") != 0)) { // bytes are not magic
-      auto p = [](char a) { return isprint(a) ? a : '?'; };
+    if ((std::strcmp(riffSig.get(), "RIFF") != 0) || (std::strcmp(waveSig.get(), "WAVE") != 0)) { // bytes are not magic
+      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
       throw AudioException(strf("Wav file has wrong magic bytes, got `{:c}{:c}{:c}{:c}' and `{:c}{:c}{:c}{:c}' but expected `RIFF' and `WAVE'",
               p(riffSig[0]), p(riffSig[1]), p(riffSig[2]), p(riffSig[3]), p(waveSig[0]), p(waveSig[1]), p(waveSig[2]), p(waveSig[3])));
     }
@@ -110,8 +111,8 @@ namespace {
     // fmt subchunk
 
     device->readFull(fmtSig.get(), sigLength);
-    if (strcmp(fmtSig.get(), "fmt ") != 0) { // friendship is magic
-      auto p = [](char a) { return isprint(a) ? a : '?'; };
+    if (std::strcmp(fmtSig.get(), "fmt ") != 0) { // friendship is magic
+      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
       throw AudioException(strf("Wav file fmt subchunk has wrong magic bytes, got `{:c}{:c}{:c}{:c}' but expected `fmt '",
           p(fmtSig[0]),
           p(fmtSig[1]),
@@ -119,20 +120,20 @@ namespace {
           p(fmtSig[3])));
     }
 
-    uint32_t fmtSubchunkSize = readLEType<uint32_t>(device);
+    std::uint32_t fmtSubchunkSize = readLEType<std::uint32_t>(device);
     fmtSubchunkSize += sigLength;
     if (fmtSubchunkSize < 20)
       throw AudioException(strf("fmt subchunk is sized wrong, expected 20 got {}.  Is this wav file not PCM?", fmtSubchunkSize));
 
-    uint16_t audioFormat = readLEType<uint16_t>(device);
+    std::uint16_t audioFormat = readLEType<std::uint16_t>(device);
     if (audioFormat != 1)
       throw AudioException("audioFormat data indicates that wav file is something other than PCM format.  Unsupported.");
 
-    uint16_t wavChannels = readLEType<uint16_t>(device);
-    uint32_t wavSampleRate = readLEType<uint32_t>(device);
-    uint32_t wavByteRate = readLEType<uint32_t>(device);
-    uint16_t wavBlockAlign = readLEType<uint16_t>(device);
-    uint16_t wavBitsPerSample = readLEType<uint16_t>(device);
+    std::uint16_t wavChannels = readLEType<std::uint16_t>(device);
+    std::uint32_t wavSampleRate = readLEType<std::uint32_t>(device);
+    std::uint32_t wavByteRate = readLEType<std::uint32_t>(device);
+    std::uint16_t wavBlockAlign = readLEType<std::uint16_t>(device);
+    std::uint16_t wavBitsPerSample = readLEType<std::uint16_t>(device);
 
     if (wavBitsPerSample != 16)
       throw AudioException("Only 16-bit PCM wavs are supported.");
@@ -146,15 +147,15 @@ namespace {
     // data subchunk
 
     device->readFull(dataSig.get(), sigLength);
-    if (strcmp(dataSig.get(), "data") != 0) { // magic or more magic?
-      auto p = [](char a) { return isprint(a) ? a : '?'; };
+    if (std::strcmp(dataSig.get(), "data") != 0) { // magic or more magic?
+      auto p = [](char a) { return std::isprint(a) ? a : '?'; };
       throw AudioException(strf("Wav file data subchunk has wrong magic bytes, got `{:c}{:c}{:c}{:c}' but expected `data'",
           p(dataSig[0]), p(dataSig[1]), p(dataSig[2]), p(dataSig[3])));
     }
 
-    uint32_t wavDataSize = readLEType<uint32_t>(device);
-    size_t wavDataOffset = (size_t)device->pos();
-    if (wavDataSize + wavDataOffset > (size_t)device->size()) {
+    std::uint32_t wavDataSize = readLEType<std::uint32_t>(device);
+    std::size_t wavDataOffset = (std::size_t)device->pos();
+    if (wavDataSize + wavDataOffset > (std::size_t)device->size()) {
       throw AudioException(strf("Wav file data size reported is inconsistent with file size, got {} but expected {}",
           device->size(), wavDataSize + wavDataOffset));
     }
@@ -166,13 +167,13 @@ namespace {
     
     return WaveData{device, wavChannels, wavSampleRate, wavDataSize};
     #else
-    ByteArrayPtr pcmData = make_shared<ByteArray>();
+    ByteArrayPtr pcmData = std::make_shared<ByteArray>();
     pcmData->resize(wavDataSize);
 
     // Copy across data and perform and endianess conversion if needed
 
     device->readFull(pcmData->ptr(), pcmData->size());
-    for (size_t i = 0; i < pcmData->size() / 2; ++i)
+    for (std::size_t i = 0; i < pcmData->size() / 2; ++i)
       fromByteOrder(ByteOrder::LittleEndian, pcmData->ptr() + i * 2, 2);
 
     return WaveData{std::move(pcmData), wavChannels, wavSampleRate};
@@ -215,7 +216,7 @@ public:
     m_audioData->seek(0);
   }
   #else
-  static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
+  static std::size_t readFunc(void* ptr, std::size_t size, std::size_t nmemb, void* datasource) {
     return static_cast<ExternalBuffer*>(datasource)->read((char*)ptr, size * nmemb) / size;
   }
 
@@ -237,7 +238,7 @@ public:
   CompressedAudioImpl(IODevicePtr audioData) {
     audioData->open(IOMode::Read);
     audioData->seek(0);
-    m_audioData = make_shared<ByteArray>(audioData->readBytes((size_t)audioData->size()));
+    m_audioData = std::make_shared<ByteArray>(audioData->readBytes((std::size_t)audioData->size()));
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
     m_vorbisInfo = nullptr;
   }
@@ -286,7 +287,7 @@ public:
     return ov_time_total(&m_vorbisFile, -1);
   }
 
-  uint64_t totalSamples() {
+  std::uint64_t totalSamples() {
     return ov_pcm_total(&m_vorbisFile, -1);
   }
 
@@ -297,7 +298,7 @@ public:
       throw StarException("Cannot seek ogg stream Audio::seekTime");
   }
 
-  void seekSample(uint64_t pos) {
+  void seekSample(std::uint64_t pos) {
     int ret = ov_pcm_seek(&m_vorbisFile, pos);
 
     if (ret != 0)
@@ -308,11 +309,11 @@ public:
     return ov_time_tell(&m_vorbisFile);
   }
 
-  uint64_t currentSample() {
+  std::uint64_t currentSample() {
     return ov_pcm_tell(&m_vorbisFile);
   }
 
-  size_t readPartial(int16_t* buffer, size_t bufferSize) {
+  std::size_t readPartial(std::int16_t* buffer, std::size_t bufferSize) {
     int bitstream;
     int read = OV_HOLE;
     // ov_read takes int parameter, so do some magic here to make sure we don't
@@ -365,11 +366,11 @@ public:
     m_sampleRate = impl.sampleRate();
 
     // Create a memory buffer to store decompressed data
-    auto memDevice = make_shared<Buffer>();
+    auto memDevice = std::make_shared<Buffer>();
 
-    int16_t buffer[1024];
+    std::int16_t buffer[1024];
     while (true) {
-      size_t ramt = impl.readPartial(buffer, 1024);
+      std::size_t ramt = impl.readPartial(buffer, 1024);
       if (ramt == 0)
         break;
       memDevice->writeFull((char*)buffer, ramt * 2);
@@ -378,12 +379,12 @@ public:
     m_device = memDevice;
   }
 
-  UncompressedAudioImpl(IODevicePtr device, unsigned channels, unsigned sampleRate, size_t dataSize)
+  UncompressedAudioImpl(IODevicePtr device, unsigned channels, unsigned sampleRate, std::size_t dataSize)
     : m_device(std::move(device))
     , m_channels(channels)
     , m_sampleRate(sampleRate)
     , m_dataSize(dataSize)
-    , m_dataStart((size_t)m_device->pos())  // Store current position as data start
+    , m_dataStart((std::size_t)m_device->pos())  // Store current position as data start
   {
     if (!m_device->isOpen())
       m_device->open(IOMode::Read);
@@ -400,10 +401,10 @@ public:
     m_channels = impl.channels();
     m_sampleRate = impl.sampleRate();
 
-    int16_t buffer[1024];
+    std::int16_t buffer[1024];
     Buffer uncompressBuffer;
     while (true) {
-      size_t ramt = impl.readPartial(buffer, 1024);
+      std::size_t ramt = impl.readPartial(buffer, 1024);
 
       if (ramt == 0) {
         // End of stream reached
@@ -413,7 +414,7 @@ public:
       }
     }
 
-    m_audioData = make_shared<ByteArray>(uncompressBuffer.takeData());
+    m_audioData = std::make_shared<ByteArray>(uncompressBuffer.takeData());
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
   }
 
@@ -441,7 +442,7 @@ public:
     return (double)totalSamples() / m_sampleRate;
   }
 
-  uint64_t totalSamples() {
+  std::uint64_t totalSamples() {
     #ifdef STAR_STREAM_AUDIO
     return m_device->size() / 2 / m_channels;
     #else
@@ -450,10 +451,10 @@ public:
   }
 
   void seekTime(double time) {
-    seekSample((uint64_t)(time * m_sampleRate));
+    seekSample((std::uint64_t)(time * m_sampleRate));
   }
 
-  void seekSample(uint64_t pos) {
+  void seekSample(std::uint64_t pos) {
     #ifdef STAR_STREAM_AUDIO
     m_device->seek(pos * 2 * m_channels);
     #else
@@ -465,7 +466,7 @@ public:
     return (double)currentSample() / m_sampleRate;
   }
 
-  uint64_t currentSample() {
+  std::uint64_t currentSample() {
     #ifdef STAR_STREAM_AUDIO
     return m_device->pos() / 2 / m_channels;
     #else
@@ -474,15 +475,15 @@ public:
   }
 
 
-  size_t readPartial(int16_t* buffer, size_t bufferSize) {
+  std::size_t readPartial(std::int16_t* buffer, std::size_t bufferSize) {
     if (bufferSize != NPos)
       bufferSize = bufferSize * 2;
     #ifndef STAR_STREAM_AUDIO
     return m_memoryFile.read((char*)buffer, bufferSize) / 2;
     #else
     // Calculate remaining valid data
-    size_t currentPos = m_device->pos() - m_dataStart;
-    size_t remainingBytes = m_dataSize - currentPos;
+    std::size_t currentPos = m_device->pos() - m_dataStart;
+    std::size_t remainingBytes = m_dataSize - currentPos;
     
     // Limit read to remaining valid data
     if (bufferSize > remainingBytes)
@@ -491,10 +492,10 @@ public:
     if (bufferSize == 0)
       return 0;
     
-    size_t bytesRead = m_device->read((char*)buffer, bufferSize);
+    std::size_t bytesRead = m_device->read((char*)buffer, bufferSize);
     
     // Handle endianness conversion
-    for (size_t i = 0; i < bytesRead / 2; ++i)
+    for (std::size_t i = 0; i < bytesRead / 2; ++i)
       fromByteOrder(ByteOrder::LittleEndian, ((char*)buffer) + i * 2, 2);
       
     return bytesRead / 2;
@@ -508,8 +509,8 @@ private:
   unsigned m_channels;
   unsigned m_sampleRate;
   #ifdef STAR_STREAM_AUDIO
-  size_t m_dataSize;
-  size_t m_dataStart;
+  std::size_t m_dataSize;
+  std::size_t m_dataStart;
   #else
   ByteArrayConstPtr m_audioData;
   ExternalBuffer m_memoryFile;
@@ -524,12 +525,12 @@ Audio::Audio(IODevicePtr device, String name) {
   if (isUncompressed(device)) {
     WaveData data = parseWav(device);
     #ifdef STAR_STREAM_AUDIO
-    m_uncompressed = make_shared<UncompressedAudioImpl>(std::move(data.device), data.channels, data.sampleRate, data.dataSize);
+    m_uncompressed = std::make_shared<UncompressedAudioImpl>(std::move(data.device), data.channels, data.sampleRate, data.dataSize);
     #else
-    m_uncompressed = make_shared<UncompressedAudioImpl>(std::move(data.byteArray), data.channels, data.sampleRate);
+    m_uncompressed = std::make_shared<UncompressedAudioImpl>(std::move(data.byteArray), data.channels, data.sampleRate);
     #endif
   } else {
-    m_compressed = make_shared<CompressedAudioImpl>(device);
+    m_compressed = std::make_shared<CompressedAudioImpl>(device);
     if (!m_compressed->open())
       throw AudioException("File does not appear to be a valid ogg bitstream");
   }
@@ -545,11 +546,11 @@ Audio::Audio(Audio&& audio) {
 
 Audio& Audio::operator=(Audio const& audio) {
     if (audio.m_uncompressed) {
-        m_uncompressed = make_shared<UncompressedAudioImpl>(*audio.m_uncompressed);
+        m_uncompressed = std::make_shared<UncompressedAudioImpl>(*audio.m_uncompressed);
         if (!m_uncompressed->open())
           throw AudioException("Failed to open uncompressed audio stream during copy");
     } else {
-        m_compressed = make_shared<CompressedAudioImpl>(*audio.m_compressed);
+        m_compressed = std::make_shared<CompressedAudioImpl>(*audio.m_compressed);
         if (!m_compressed->open()) 
             throw AudioException("Failed to open compressed audio stream during copy");
     }
@@ -585,7 +586,7 @@ double Audio::totalTime() const {
     return m_compressed->totalTime();
 }
 
-uint64_t Audio::totalSamples() const {
+std::uint64_t Audio::totalSamples() const {
   if (m_uncompressed)
     return m_uncompressed->totalSamples();
   else
@@ -598,7 +599,7 @@ bool Audio::compressed() const {
 
 void Audio::uncompress() {
   if (m_compressed) {
-    m_uncompressed = make_shared<UncompressedAudioImpl>(*m_compressed);
+    m_uncompressed = std::make_shared<UncompressedAudioImpl>(*m_compressed);
     m_compressed.reset();
   }
 }
@@ -610,7 +611,7 @@ void Audio::seekTime(double time) {
     m_compressed->seekTime(time);
 }
 
-void Audio::seekSample(uint64_t pos) {
+void Audio::seekSample(std::uint64_t pos) {
   if (m_uncompressed)
     m_uncompressed->seekSample(pos);
   else
@@ -624,14 +625,14 @@ double Audio::currentTime() const {
     return m_compressed->currentTime();
 }
 
-uint64_t Audio::currentSample() const {
+std::uint64_t Audio::currentSample() const {
   if (m_uncompressed)
     return m_uncompressed->currentSample();
   else
     return m_compressed->currentSample();
 }
 
-size_t Audio::readPartial(int16_t* buffer, size_t bufferSize) {
+std::size_t Audio::readPartial(std::int16_t* buffer, std::size_t bufferSize) {
   if (bufferSize == 0)
     return 0;
 
@@ -641,14 +642,14 @@ size_t Audio::readPartial(int16_t* buffer, size_t bufferSize) {
     return m_compressed->readPartial(buffer, bufferSize);
 }
 
-size_t Audio::read(int16_t* buffer, size_t bufferSize) {
+std::size_t Audio::read(std::int16_t* buffer, std::size_t bufferSize) {
   if (bufferSize == 0)
     return 0;
 
-  size_t readTotal = 0;
+  std::size_t readTotal = 0;
   while (readTotal < bufferSize) {
-    size_t toGo = bufferSize - readTotal;
-    size_t ramt = readPartial(buffer + readTotal, toGo);
+    std::size_t toGo = bufferSize - readTotal;
+    std::size_t ramt = readPartial(buffer + readTotal, toGo);
     readTotal += ramt;
     // End of stream reached
     if (ramt == 0)
@@ -657,7 +658,7 @@ size_t Audio::read(int16_t* buffer, size_t bufferSize) {
   return readTotal;
 }
 
-size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleRate, int16_t* destinationBuffer, size_t destinationBufferSize, double velocity) {
+std::size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleRate, std::int16_t* destinationBuffer, std::size_t destinationBufferSize, double velocity) {
   unsigned destinationSamples = destinationBufferSize / destinationChannels;
   if (destinationSamples == 0)
     return 0;
@@ -680,8 +681,8 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
 
     unsigned sourceBufferSize = destinationSamples * sourceChannels;
 
-    m_workingBuffer.resize(sourceBufferSize * sizeof(int16_t));
-    int16_t* sourceBuffer = (int16_t*)m_workingBuffer.ptr();
+    m_workingBuffer.resize(sourceBufferSize * sizeof(std::int16_t));
+    std::int16_t* sourceBuffer = (std::int16_t*)m_workingBuffer.ptr();
 
     unsigned readSamples = read(sourceBuffer, sourceBufferSize) / sourceChannels;
 
@@ -692,7 +693,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
       for (unsigned destinationChannel = 0; destinationChannel < destinationChannels; ++destinationChannel) {
         // If the destination channel count is greater than the source
         // channels, simply copy the last channel
-        unsigned sourceChannel = min(destinationChannel, sourceChannels - 1);
+        unsigned sourceChannel = std::min(destinationChannel, sourceChannels - 1);
         destinationBuffer[destinationBufferIndex + destinationChannel] =
             sourceBuffer[sourceBufferIndex + sourceChannel];
       }
@@ -703,11 +704,11 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
   } else {
     // Otherwise, we have to do a full resample.
 
-    unsigned sourceSamples = ((uint64_t)sourceSampleRate * destinationSamples + destinationSampleRate - 1) / destinationSampleRate;
+    unsigned sourceSamples = ((std::uint64_t)sourceSampleRate * destinationSamples + destinationSampleRate - 1) / destinationSampleRate;
     unsigned sourceBufferSize = sourceSamples * sourceChannels;
 
-    m_workingBuffer.resize(sourceBufferSize * sizeof(int16_t));
-    int16_t* sourceBuffer = (int16_t*)m_workingBuffer.ptr();
+    m_workingBuffer.resize(sourceBufferSize * sizeof(std::int16_t));
+    std::int16_t* sourceBuffer = (std::int16_t*)m_workingBuffer.ptr();
 
     unsigned readSamples = read(sourceBuffer, sourceBufferSize) / sourceChannels;
 
@@ -724,7 +725,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
 
         // If the destination channel count is greater than the source
         // channels, simply copy the last channel
-        unsigned sourceChannel = min(destinationChannel, sourceChannels - 1);
+        unsigned sourceChannel = std::min(destinationChannel, sourceChannels - 1);
 
         int sample = 0;
         int sampleCount = 0;
@@ -732,7 +733,9 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
           unsigned sourceSample = (unsigned)((destinationSample * SuperSampleFactor + superSample) * sourceSamples / destinationSamples) / SuperSampleFactor;
           if (sourceSample < readSamples) {
             unsigned sourceBufferIndex = sourceSample * sourceChannels;
-            starAssert(sourceBufferIndex + sourceChannel < sourceBufferSize);
+            if constexpr (Star::DebugEnabled) {
+              Star::starAssertFailed((sourceBufferIndex + sourceChannel < sourceBufferSize));
+            }
             sample += sourceBuffer[sourceBufferIndex + sourceChannel];
             ++sampleCount;
           }
@@ -744,7 +747,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
           return writtenSamples * destinationChannels;
 
         sample /= sampleCount;
-        destinationBuffer[destinationBufferIndex + destinationChannel] = (int16_t)sample;
+        destinationBuffer[destinationBufferIndex + destinationChannel] = (std::int16_t)sample;
         writtenSamples = destinationSample + 1;
       }
     }

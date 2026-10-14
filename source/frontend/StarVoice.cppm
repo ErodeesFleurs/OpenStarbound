@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.list;
@@ -17,7 +17,6 @@ import star.thread;
 
 
 
-import std;
 
 struct OpusDecoder;
 typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
@@ -26,37 +25,55 @@ typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
 
 namespace Star {
 
-inline String const VoiceBroadcastPrefix = "Voice\0"s;
+inline String const VoiceBroadcastPrefix = std::string("Voice\0", sizeof("Voice\0") - 1);
 
 struct VoiceExceptionTag {
   static constexpr char const* name() { return "VoiceException"; }
 };
 using VoiceException = StarError<VoiceExceptionTag, StarException>;
 
-enum class VoiceInputMode : uint8_t { VoiceActivity, PushToTalk };
+enum class VoiceInputMode : std::uint8_t { VoiceActivity, PushToTalk };
 extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
 
-enum class VoiceChannelMode: uint8_t { Mono = 1, Stereo = 2 };
+enum class VoiceChannelMode: std::uint8_t { Mono = 1, Stereo = 2 };
 extern EnumMap<VoiceChannelMode> const VoiceChannelModeNames;
 
-STAR_CLASS(Voice);
-STAR_CLASS(VoiceAudioStream);
-STAR_CLASS(ApplicationController);
+class Voice;
+using VoicePtr = std::shared_ptr<Voice>;
+using VoiceConstPtr = std::shared_ptr<Voice const>;
+using VoiceWeakPtr = std::weak_ptr<Voice>;
+using VoiceConstWeakPtr = std::weak_ptr<Voice const>;
+using VoiceUPtr = std::unique_ptr<Voice>;
+using VoiceConstUPtr = std::unique_ptr<Voice const>;
+class VoiceAudioStream;
+using VoiceAudioStreamPtr = std::shared_ptr<VoiceAudioStream>;
+using VoiceAudioStreamConstPtr = std::shared_ptr<VoiceAudioStream const>;
+using VoiceAudioStreamWeakPtr = std::weak_ptr<VoiceAudioStream>;
+using VoiceAudioStreamConstWeakPtr = std::weak_ptr<VoiceAudioStream const>;
+using VoiceAudioStreamUPtr = std::unique_ptr<VoiceAudioStream>;
+using VoiceAudioStreamConstUPtr = std::unique_ptr<VoiceAudioStream const>;
+class ApplicationController;
+using ApplicationControllerPtr = std::shared_ptr<ApplicationController>;
+using ApplicationControllerConstPtr = std::shared_ptr<ApplicationController const>;
+using ApplicationControllerWeakPtr = std::weak_ptr<ApplicationController>;
+using ApplicationControllerConstWeakPtr = std::weak_ptr<ApplicationController const>;
+using ApplicationControllerUPtr = std::unique_ptr<ApplicationController>;
+using ApplicationControllerConstUPtr = std::unique_ptr<ApplicationController const>;
 
 struct VoiceAudioChunk {
-  std::unique_ptr<int16_t[]> data;
-  size_t remaining;
-  size_t offset = 0;
+  std::unique_ptr<std::int16_t[]> data;
+  std::size_t remaining;
+  std::size_t offset = 0;
 
-  VoiceAudioChunk(int16_t* ptr, size_t size) {
+  VoiceAudioChunk(std::int16_t* ptr, std::size_t size) {
     data.reset(ptr);
     remaining = size;
     offset = 0;
   }
 
-  inline size_t takeSamples(std::vector<int16_t>& out, size_t count) {
-    size_t toRead = min<size_t>(count, remaining);
-    int16_t* start = data.get() + offset;
+  inline std::size_t takeSamples(std::vector<std::int16_t>& out, std::size_t count) {
+    std::size_t toRead = std::min<std::size_t>(count, remaining);
+    std::int16_t* start = data.get() + offset;
     out.insert(out.end(), start, start + toRead);
     offset += toRead;
     remaining -= toRead;
@@ -64,7 +81,7 @@ struct VoiceAudioChunk {
   }
 
   //this one's unsafe
-  inline int16_t takeSample() {
+  inline std::int16_t takeSample() {
     --remaining;
     return *(data.get() + offset++);
   }
@@ -91,15 +108,15 @@ public:
     VoiceAudioStreamPtr audioStream;
     Mutex mutex;
 
-    int64_t lastReceiveTime = 0;
-    int64_t lastPlayTime = 0;
+    std::int64_t lastReceiveTime = 0;
+    std::int64_t lastPlayTime = 0;
     float smoothDb = -96.0f;
     Array<float, 10> dbHistory = Array<float, 10>::filled(0);
 
-    atomic<bool> muted = false;
-    atomic<bool> playing = 0;
-    atomic<float> decibelLevel = -96.0f;
-    atomic<float> volume = 1.0f;
+    std::atomic<bool> muted = false;
+    std::atomic<bool> playing = 0;
+    std::atomic<float> decibelLevel = -96.0f;
+    std::atomic<float> volume = 1.0f;
     Vec2F channelVolumes = Vec2F::filled(1.f);
 
     unsigned int minimumPlaySamples = 4096;
@@ -141,18 +158,18 @@ public:
   void clearSpeakers();
 
   // Called when receiving input audio data from SDL, on its own thread.
-  void readAudioData(uint8_t* stream, int len);
+  void readAudioData(std::uint8_t* stream, int len);
 
   // Called to mix voice audio with the game.
-  void mix(int16_t* buffer, size_t frames, unsigned channels);
+  void mix(std::int16_t* buffer, std::size_t frames, unsigned channels);
 
-  typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  typedef std::function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
   void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
   void setDeviceName(Maybe<String> device);
   StringList availableDevices();
 
-  int send(DataStreamBuffer& out, size_t budget = 0);
+  int send(DataStreamBuffer& out, std::size_t budget = 0);
   bool receive(SpeakerPtr speaker, std::string_view view);
 
   // Must be called every frame with input state, expires after 1s.
@@ -193,10 +210,10 @@ private:
 
   float m_threshold = -50.0f;
   
-  int64_t m_lastSentTime = 0;
-  int64_t m_lastInputTime = 0;
-  int64_t m_lastThresholdTime = 0;
-  int64_t m_nextSaveTime = 0;
+  std::int64_t m_lastSentTime = 0;
+  std::int64_t m_lastInputTime = 0;
+  std::int64_t m_lastThresholdTime = 0;
+  std::int64_t m_nextSaveTime = 0;
   bool m_enabled = true;
   bool m_inputEnabled = false;
   bool m_loopback = false;
@@ -211,18 +228,18 @@ private:
   ThreadFunction<void> m_thread;
   Mutex m_threadMutex;
   ConditionVariable m_threadCond;
-  atomic<bool> m_stopThread;
+  std::atomic<bool> m_stopThread;
 
-  std::vector<int16_t> m_decodeBuffer;
-  std::vector<int16_t> m_resampleBuffer;
+  std::vector<std::int16_t> m_decodeBuffer;
+  std::vector<std::int16_t> m_resampleBuffer;
 
   ApplicationControllerPtr m_applicationController;
 
   struct EncodedChunk {
     std::unique_ptr<unsigned char[]> data;
-    size_t size;
+    std::size_t size;
 
-    EncodedChunk(unsigned char* _data, size_t len) {
+    EncodedChunk(unsigned char* _data, std::size_t len) {
       data.reset(_data);
       size = len;
     }
@@ -230,11 +247,11 @@ private:
 
   Mutex m_encodeMutex;
   std::vector<ByteArray> m_encodedChunks;
-  size_t m_encodedChunksLength = 0;
+  std::size_t m_encodedChunksLength = 0;
 
   Mutex m_captureMutex;
   std::queue<VoiceAudioChunk> m_capturedChunks;
-  size_t m_capturedChunksFrames = 0;
+  std::size_t m_capturedChunksFrames = 0;
 };
   
 }

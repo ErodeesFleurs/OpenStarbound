@@ -1,7 +1,14 @@
 module;
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"
+#endif
+#ifdef STAR_ENABLE_DISCORD_INTEGRATION
+#include "discord/discord.h"
+#endif
+import std;
 import star.byte_array;
 
-#include "StarConfig.hpp"
 import star.maybe;
 import star.string;
 import star.list;
@@ -19,9 +26,6 @@ import star.desktop_service;
 #include "StarSteamDispatch.hpp"
 #endif
 
-#ifdef STAR_ENABLE_DISCORD_INTEGRATION
-#include "discord/discord.h"
-#endif
 import star.platform_services_pc;
 import star.algorithm;
 #include "StarStrongTypedef.hpp"
@@ -31,7 +35,13 @@ import star.rpc_promise;
 
 namespace Star {
 
-STAR_CLASS(PcP2PNetworkingService);
+class PcP2PNetworkingService;
+using PcP2PNetworkingServicePtr = std::shared_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstPtr = std::shared_ptr<PcP2PNetworkingService const>;
+using PcP2PNetworkingServiceWeakPtr = std::weak_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstWeakPtr = std::weak_ptr<PcP2PNetworkingService const>;
+using PcP2PNetworkingServiceUPtr = std::unique_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstUPtr = std::unique_ptr<PcP2PNetworkingService const>;
 
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
@@ -39,12 +49,12 @@ public:
   ~PcP2PNetworkingService();
 
   void setJoinUnavailable() override;
-  void setJoinLocal(uint32_t capacity) override;
+  void setJoinLocal(std::uint32_t capacity) override;
   void setJoinRemote(HostAddressWithPort location) override;
-  void setActivityData(const char* title, const char* details, int64_t startTime, Maybe<pair<uint16_t, uint16_t>>) override;
+  void setActivityData(const char* title, const char* details, std::int64_t startTime, Maybe<std::pair<std::uint16_t, std::uint16_t>>) override;
 
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
-  Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
+  Maybe<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
   List<P2PSocketUPtr> acceptP2PConnections() override;
@@ -57,7 +67,7 @@ private:
   strong_typedef(Empty, JoinUnavailable);
   struct JoinLocal {
     bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
-    uint32_t capacity;
+    std::uint32_t capacity;
   };
   strong_typedef(HostAddressWithPort, JoinRemote);
   typedef Variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
@@ -79,7 +89,7 @@ private:
     bool connected = false;
   };
 
-  unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
+  std::unique_ptr<SteamP2PSocket> createSteamP2PSocket(CSteamID steamId);
 
   void steamOnConnectionFailure(P2PSessionConnectFail_t* callback);
   void steamOnJoinRequested(GameRichPresenceJoinRequested_t* callback);
@@ -117,7 +127,7 @@ private:
   P2PSocketUPtr discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
 
-  void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, uint8_t* data, uint32_t size);
+  void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, std::uint8_t* data, std::uint32_t size);
   void discordOnLobbyMemberConnect(discord::LobbyId lobbyId, discord::UserId userId);
   void discordOnLobbyMemberUpdate(discord::LobbyId lobbyId, discord::UserId userId);
   void discordOnLobbyMemberDisconnect(discord::LobbyId lobbyId, discord::UserId userId);
@@ -148,17 +158,17 @@ private:
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
   
-  List<pair<discord::UserId, String>> m_discordJoinRequests;
-  List<pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
+  List<std::pair<discord::UserId, String>> m_discordJoinRequests;
+  List<std::pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
 
   HashMap<discord::UserId, DiscordP2PSocket*> m_discordOpenSockets;
   String m_discordActivityTitle;
   String m_discordActivityDetails;
-  int64_t m_discordActivityStartTime = 0;
-  Maybe<pair<uint16_t, uint16_t>> m_discordPartySize;
+  std::int64_t m_discordActivityStartTime = 0;
+  Maybe<std::pair<std::uint16_t, std::uint16_t>> m_discordPartySize;
   bool m_discordForceUpdateActivity = false;
   bool m_discordUpdatingActivity = false;
-  Maybe<pair<discord::LobbyId, String>> m_discordServerLobby = {};
+  Maybe<std::pair<discord::LobbyId, String>> m_discordServerLobby = {};
 
   int m_discordOnActivityJoinToken = 0;
   int m_discordOnActivityRequestToken = 0;

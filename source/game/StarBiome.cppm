@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.json;
@@ -46,10 +46,34 @@ import star.spawn_type_database;
 
 namespace Star {
 
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(Parallax);
-STAR_STRUCT(BiomePlaceables);
-STAR_STRUCT(Biome);
+struct AmbientNoisesDescription;
+using AmbientNoisesDescriptionPtr = std::shared_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstPtr = std::shared_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionWeakPtr = std::weak_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstWeakPtr = std::weak_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionUPtr = std::unique_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstUPtr = std::unique_ptr<const AmbientNoisesDescription>;
+class Parallax;
+using ParallaxPtr = std::shared_ptr<Parallax>;
+using ParallaxConstPtr = std::shared_ptr<const Parallax>;
+using ParallaxWeakPtr = std::weak_ptr<Parallax>;
+using ParallaxConstWeakPtr = std::weak_ptr<const Parallax>;
+using ParallaxUPtr = std::unique_ptr<Parallax>;
+using ParallaxConstUPtr = std::unique_ptr<const Parallax>;
+struct BiomePlaceables;
+using BiomePlaceablesPtr = std::shared_ptr<BiomePlaceables>;
+using BiomePlaceablesConstPtr = std::shared_ptr<const BiomePlaceables>;
+using BiomePlaceablesWeakPtr = std::weak_ptr<BiomePlaceables>;
+using BiomePlaceablesConstWeakPtr = std::weak_ptr<const BiomePlaceables>;
+using BiomePlaceablesUPtr = std::unique_ptr<BiomePlaceables>;
+using BiomePlaceablesConstUPtr = std::unique_ptr<const BiomePlaceables>;
+struct Biome;
+using BiomePtr = std::shared_ptr<Biome>;
+using BiomeConstPtr = std::shared_ptr<const Biome>;
+using BiomeWeakPtr = std::weak_ptr<Biome>;
+using BiomeConstWeakPtr = std::weak_ptr<const Biome>;
+using BiomeUPtr = std::unique_ptr<Biome>;
+using BiomeConstUPtr = std::unique_ptr<const Biome>;
 
 struct BiomePlaceables {
   BiomePlaceables();
@@ -81,7 +105,7 @@ struct Biome {
   MaterialId mainBlock;
   List<MaterialId> subBlocks;
   // Pairs the ore type with the commonality multiplier.
-  List<pair<ModId, float>> ores;
+  List<std::pair<ModId, float>> ores;
 
   float hueShift;
   MaterialHue materialHueShift;

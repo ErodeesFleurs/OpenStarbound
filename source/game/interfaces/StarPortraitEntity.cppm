@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.string;
@@ -30,7 +30,13 @@ import star.entity;
 
 namespace Star {
 
-STAR_CLASS(PortraitEntity);
+class PortraitEntity;
+using PortraitEntityPtr = std::shared_ptr<PortraitEntity>;
+using PortraitEntityConstPtr = std::shared_ptr<const PortraitEntity>;
+using PortraitEntityWeakPtr = std::weak_ptr<PortraitEntity>;
+using PortraitEntityConstWeakPtr = std::weak_ptr<const PortraitEntity>;
+using PortraitEntityUPtr = std::unique_ptr<PortraitEntity>;
+using PortraitEntityConstUPtr = std::unique_ptr<const PortraitEntity>;
 
 class PortraitEntity : public virtual Entity {
 public:

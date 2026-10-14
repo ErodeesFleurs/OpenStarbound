@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.id_map;
@@ -75,7 +75,13 @@ import star.fireable_item;
 
 namespace Star {
 
-STAR_CLASS(SwingableItem);
+class SwingableItem;
+using SwingableItemPtr = std::shared_ptr<SwingableItem>;
+using SwingableItemConstPtr = std::shared_ptr<const SwingableItem>;
+using SwingableItemWeakPtr = std::weak_ptr<SwingableItem>;
+using SwingableItemConstWeakPtr = std::weak_ptr<const SwingableItem>;
+using SwingableItemUPtr = std::unique_ptr<SwingableItem>;
+using SwingableItemConstUPtr = std::unique_ptr<const SwingableItem>;
 
 class SwingableItem : public FireableItem {
 public:

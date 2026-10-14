@@ -17,7 +17,7 @@ import star.io_device;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.version;
 import star.game_types;
@@ -109,7 +109,7 @@ void Animation::update(float dt) {
   if (m_completed)
     return;
 
-  float time_within_cycle = fmod(m_animationTimer, m_animationCycle);
+  float time_within_cycle = std::fmod(m_animationTimer, m_animationCycle);
   float time_per_frame = m_animationCycle / m_frameNumber;
   float frame_number = time_within_cycle / time_per_frame;
   m_frame = m_variantOffset + clamp<int>(frame_number, 0, m_frameNumber - 1);
@@ -117,7 +117,7 @@ void Animation::update(float dt) {
 
   if (m_mode == Animation::LoopForever) {
     // to prevent floating point jitter and seizing after a very long time
-    m_animationTimer = fmod(m_animationTimer, m_animationCycle);
+    m_animationTimer = std::fmod(m_animationTimer, m_animationCycle);
   } else if (m_animationTimer >= m_timeToLive) {
     if (m_mode == Animation::EndAndDisappear)
       m_frame = -1;

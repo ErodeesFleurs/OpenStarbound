@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.map;
 import star.maybe;
@@ -25,13 +25,49 @@ import star.asset_source;
 
 namespace Star {
 
-STAR_CLASS(Font);
-STAR_CLASS(Audio);
-STAR_CLASS(Image);
-STAR_STRUCT(FramesSpecification);
-STAR_CLASS(Assets);
+class Font;
+using FontPtr = std::shared_ptr<Font>;
+using FontConstPtr = std::shared_ptr<Font const>;
+using FontWeakPtr = std::weak_ptr<Font>;
+using FontConstWeakPtr = std::weak_ptr<Font const>;
+using FontUPtr = std::unique_ptr<Font>;
+using FontConstUPtr = std::unique_ptr<Font const>;
+class Audio;
+using AudioPtr = std::shared_ptr<Audio>;
+using AudioConstPtr = std::shared_ptr<Audio const>;
+using AudioWeakPtr = std::weak_ptr<Audio>;
+using AudioConstWeakPtr = std::weak_ptr<Audio const>;
+using AudioUPtr = std::unique_ptr<Audio>;
+using AudioConstUPtr = std::unique_ptr<Audio const>;
+class Image;
+using ImagePtr = std::shared_ptr<Image>;
+using ImageConstPtr = std::shared_ptr<Image const>;
+using ImageWeakPtr = std::weak_ptr<Image>;
+using ImageConstWeakPtr = std::weak_ptr<Image const>;
+using ImageUPtr = std::unique_ptr<Image>;
+using ImageConstUPtr = std::unique_ptr<Image const>;
+struct FramesSpecification;
+using FramesSpecificationPtr = std::shared_ptr<FramesSpecification>;
+using FramesSpecificationConstPtr = std::shared_ptr<FramesSpecification const>;
+using FramesSpecificationWeakPtr = std::weak_ptr<FramesSpecification>;
+using FramesSpecificationConstWeakPtr = std::weak_ptr<FramesSpecification const>;
+using FramesSpecificationUPtr = std::unique_ptr<FramesSpecification>;
+using FramesSpecificationConstUPtr = std::unique_ptr<FramesSpecification const>;
+class Assets;
+using AssetsPtr = std::shared_ptr<Assets>;
+using AssetsConstPtr = std::shared_ptr<Assets const>;
+using AssetsWeakPtr = std::weak_ptr<Assets>;
+using AssetsConstWeakPtr = std::weak_ptr<Assets const>;
+using AssetsUPtr = std::unique_ptr<Assets>;
+using AssetsConstUPtr = std::unique_ptr<Assets const>;
 
-STAR_CLASS(LuaContext);
+class LuaContext;
+using LuaContextPtr = std::shared_ptr<LuaContext>;
+using LuaContextConstPtr = std::shared_ptr<LuaContext const>;
+using LuaContextWeakPtr = std::weak_ptr<LuaContext>;
+using LuaContextConstWeakPtr = std::weak_ptr<LuaContext const>;
+using LuaContextUPtr = std::unique_ptr<LuaContext>;
+using LuaContextConstUPtr = std::unique_ptr<LuaContext const>;
 
 struct AssetExceptionTag {
   static constexpr char const* name() { return "AssetException"; }
@@ -111,7 +147,7 @@ public:
   };
 
   struct AssetIdHash {
-    size_t operator()(AssetId const& id) const;
+    std::size_t operator()(AssetId const& id) const;
   };
 
   struct AssetData {
@@ -173,7 +209,7 @@ public:
     // The source that has the primary asset copy
     AssetSourcePtr source;
     // List of source names and sources for patches to this file.
-    List<pair<String, AssetSourcePtr>> patchSources;
+    List<std::pair<String, AssetSourcePtr>> patchSources;
   };
 
   Assets(Settings settings, StringList assetSources);
@@ -286,8 +322,8 @@ private:
   void queueAssets(List<AssetId> const& assetIds) const;
   //Lock before calling!
   void queueAsset(AssetId const& assetId) const;
-  shared_ptr<AssetData> tryAsset(AssetId const& id) const;
-  shared_ptr<AssetData> getAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> tryAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> getAsset(AssetId const& id) const;
 
   void workerMain();
 
@@ -305,10 +341,10 @@ private:
   IODevicePtr open(String const& basePath) const;
   ByteArray read(String const& basePath) const;
   ImageConstPtr readImage(String const& path) const;
-  ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
+  ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const;
 
   Json readJson(String const& basePath) const;
-  Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
+  Json applyJsonPatches(Json const& input, String const& path, List<std::pair<String, AssetSourcePtr>> patches) const;
   Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
@@ -322,18 +358,18 @@ private:
   // methods to call recursively.  If there is an error loading the asset, this
   // method will throw.  If, and only if, the asset is blocking on another busy
   // asset, this method will return null.
-  shared_ptr<AssetData> loadAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> loadAsset(AssetId const& id) const;
 
-  shared_ptr<AssetData> loadJson(AssetPath const& path) const;
-  shared_ptr<AssetData> loadImage(AssetPath const& path) const;
-  shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
-  shared_ptr<AssetData> loadFont(AssetPath const& path) const;
-  shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadJson(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadImage(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadFont(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
 
-  shared_ptr<AssetData> postProcessAudio(shared_ptr<AssetData> const& original) const;
+  std::shared_ptr<AssetData> postProcessAudio(std::shared_ptr<AssetData> const& original) const;
 
   // Updates time on the given asset (with smearing).
-  void freshen(shared_ptr<AssetData> const& asset) const;
+  void freshen(std::shared_ptr<AssetData> const& asset) const;
 
   Settings m_settings;
 
@@ -343,14 +379,14 @@ private:
   mutable OrderedHashMap<AssetId, QueuePriority, AssetIdHash> m_queue;
 
   mutable ConditionVariable m_assetsDone;
-  mutable HashMap<AssetId, shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
+  mutable HashMap<AssetId, std::shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
 
   mutable StringMap<String> m_bestFramesFiles;
   mutable StringMap<FramesSpecificationConstPtr> m_framesSpecifications;
 
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
-  mutable HashMap<pair<AssetSource*, String>, LuaContextPtr> m_patchContexts;
+  mutable HashMap<std::pair<AssetSource*, String>, LuaContextPtr> m_patchContexts;
   mutable RecursiveMutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
@@ -367,7 +403,7 @@ private:
   ByteArray m_digest;
 
   List<ThreadFunction<void>> m_workerThreads;
-  atomic<bool> m_stopThreads;
+  std::atomic<bool> m_stopThreads;
 };
 
 }

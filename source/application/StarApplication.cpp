@@ -1,7 +1,7 @@
+import std;
 import star.vector;
 import star.input_event;
 import star.application;
-#include "StarConfig.hpp"
 import star.thread;
 import star.time;
 import star.logging;
@@ -37,8 +37,8 @@ unsigned Application::framesSkipped() const { return 0; }
 
 void Application::render() {}
 
-void Application::getAudioData(int16_t* samples, size_t sampleCount) {
-  for (size_t i = 0; i < sampleCount; ++i)
+void Application::getAudioData(std::int16_t* samples, std::size_t sampleCount) {
+  for (std::size_t i = 0; i < sampleCount; ++i)
     samples[i] = 0;
 }
 

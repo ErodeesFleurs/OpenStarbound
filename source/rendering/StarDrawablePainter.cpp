@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.string;
 import star.data_stream;
@@ -79,7 +79,7 @@ void DrawablePainter::drawDrawable(Drawable const& drawable) {
   }
 }
 
-void DrawablePainter::cleanup(int64_t textureTimeout) {
+void DrawablePainter::cleanup(std::int64_t textureTimeout) {
   m_textureGroup->cleanup(textureTimeout);
 }
 

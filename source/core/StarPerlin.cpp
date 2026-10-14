@@ -1,4 +1,3 @@
-#include "StarConfig.hpp"
 import star.json;
 import star.bi_map;
 import star.random;

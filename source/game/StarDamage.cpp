@@ -20,7 +20,7 @@ import star.asset_path;
 import star.ref_ptr;
 import star.logging;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.maybe;
 import star.format;
@@ -160,8 +160,8 @@ Vec2F DamageSource::knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F 
 }
 
 bool DamageSource::operator==(DamageSource const& rhs) const {
-  return tie(damageType, damageArea, damage, trackSourceEntity, sourceEntityId, team, damageSourceKind, statusEffects, knockback, rayCheck)
-      == tie(rhs.damageType,
+  return std::tie(damageType, damageArea, damage, trackSourceEntity, sourceEntityId, team, damageSourceKind, statusEffects, knockback, rayCheck)
+      == std::tie(rhs.damageType,
              rhs.damageArea,
              rhs.damage,
              rhs.trackSourceEntity,

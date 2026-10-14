@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 #include "StarCasting.hpp"
@@ -39,9 +39,21 @@ import star.pane;
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<Player const>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<Player const>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<Player const>;
 
-STAR_CLASS(SongbookInterface);
+class SongbookInterface;
+using SongbookInterfacePtr = std::shared_ptr<SongbookInterface>;
+using SongbookInterfaceConstPtr = std::shared_ptr<SongbookInterface const>;
+using SongbookInterfaceWeakPtr = std::weak_ptr<SongbookInterface>;
+using SongbookInterfaceConstWeakPtr = std::weak_ptr<SongbookInterface const>;
+using SongbookInterfaceUPtr = std::unique_ptr<SongbookInterface>;
+using SongbookInterfaceConstUPtr = std::unique_ptr<SongbookInterface const>;
 
 class SongbookInterface : public Pane {
 public:

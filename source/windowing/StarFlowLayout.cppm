@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.vector;
@@ -51,7 +51,13 @@ namespace Star {
 
 // Super simple, only supports left to right, top to bottom flow layouts
 // currently
-STAR_CLASS(FlowLayout);
+class FlowLayout;
+using FlowLayoutPtr = std::shared_ptr<FlowLayout>;
+using FlowLayoutConstPtr = std::shared_ptr<FlowLayout const>;
+using FlowLayoutWeakPtr = std::weak_ptr<FlowLayout>;
+using FlowLayoutConstWeakPtr = std::weak_ptr<FlowLayout const>;
+using FlowLayoutUPtr = std::unique_ptr<FlowLayout>;
+using FlowLayoutConstUPtr = std::unique_ptr<FlowLayout const>;
 class FlowLayout : public Layout {
 public:
   FlowLayout();

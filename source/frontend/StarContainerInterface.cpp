@@ -1,4 +1,5 @@
 #include "StarJsonExtra.hpp"
+import std;
 import star.json;
 import star.xx_hash;
 import star.id_map;
@@ -37,14 +38,12 @@ import star.lua;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.image;
 import star.either;
 import star.weighted_pool;
 import star.net_compatibility;
-import std;
 import star.worker_pool;
 
 import star.sector_array_2d;
@@ -241,7 +240,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     m_script->setUpdateDelta(guiConfig.getUInt("scriptDelta", 1));
   }
 
-  auto rightClickCallback = [this](size_t index) {
+  auto rightClickCallback = [this](std::size_t index) {
     if (m_expectingSwap != ExpectingSwap::None)
       return;
 
@@ -255,9 +254,9 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     if (ItemPtr slotItem = callbackContainer->itemBag()->at(index)) {
       auto swapItem = m_player->inventory()->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
-        size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
+        std::size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
         if (context()->shiftHeld())
-          count = max<uint64_t>(1, min<uint64_t>(count, slotItem->count() / 2));
+          count = std::max<std::uint64_t>(1, std::min<std::uint64_t>(count, slotItem->count() / 2));
         else
           count = 1;
 
@@ -327,7 +326,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   if (auto countWidget = fetchChild<LabelWidget>("count"))
     countWidget->setText(countWidget->text().replace("<slots>", toString(container->containerSize())));
 
-  m_itemBag = make_shared<ItemBag>(container->containerSize());
+  m_itemBag = std::make_shared<ItemBag>(container->containerSize());
   auto items = container->containerItems();
 
   fetchChild<ItemGridWidget>("itemGrid")->setItemBag(m_itemBag);
@@ -339,7 +338,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   if (container->iconItem()) {
     auto itemDatabase = Root::singleton().itemDatabase();
     auto iconItem = itemDatabase->itemShared(container->iconItem());
-    auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+    auto icon = std::make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);
     icon->setBackingImageAffinity(true, true);
@@ -471,7 +470,7 @@ void ContainerPane::update(float dt) {
   
   auto container = m_containerInteractor->openContainer();
 
-  for (size_t i = 0; i < m_itemBag->size(); ++i)
+  for (std::size_t i = 0; i < m_itemBag->size(); ++i)
     m_itemBag->putItems(i, container->containerItems()[i]);
 
   if (container->isInteractive()) {

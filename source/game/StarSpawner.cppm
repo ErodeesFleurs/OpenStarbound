@@ -3,7 +3,7 @@ module;
 import star.random;
 import star.periodic;
 import star.id_map;
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.set;
 import star.maybe;
@@ -26,9 +26,27 @@ import star.spawn_type_database;
 import star.rect;
 namespace Star {
 
-STAR_CLASS(SpawnerFacade);
-STAR_CLASS(Spawner);
-STAR_CLASS(Entity);
+class SpawnerFacade;
+using SpawnerFacadePtr = std::shared_ptr<SpawnerFacade>;
+using SpawnerFacadeConstPtr = std::shared_ptr<const SpawnerFacade>;
+using SpawnerFacadeWeakPtr = std::weak_ptr<SpawnerFacade>;
+using SpawnerFacadeConstWeakPtr = std::weak_ptr<const SpawnerFacade>;
+using SpawnerFacadeUPtr = std::unique_ptr<SpawnerFacade>;
+using SpawnerFacadeConstUPtr = std::unique_ptr<const SpawnerFacade>;
+class Spawner;
+using SpawnerPtr = std::shared_ptr<Spawner>;
+using SpawnerConstPtr = std::shared_ptr<const Spawner>;
+using SpawnerWeakPtr = std::weak_ptr<Spawner>;
+using SpawnerConstWeakPtr = std::weak_ptr<const Spawner>;
+using SpawnerUPtr = std::unique_ptr<Spawner>;
+using SpawnerConstUPtr = std::unique_ptr<const Spawner>;
+class Entity;
+using EntityPtr = std::shared_ptr<Entity>;
+using EntityConstPtr = std::shared_ptr<const Entity>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
+using EntityConstWeakPtr = std::weak_ptr<const Entity>;
+using EntityUPtr = std::unique_ptr<Entity>;
+using EntityConstUPtr = std::unique_ptr<const Entity>;
 
 class SpawnerFacade {
 public:
@@ -45,7 +63,7 @@ public:
   virtual LiquidLevel liquidLevel(Vec2I const& pos) const = 0;
   virtual bool spawningProhibited(RectF const& area) const = 0;
 
-  virtual uint64_t spawnSeed() const = 0;
+  virtual std::uint64_t spawnSeed() const = 0;
   virtual SpawnProfile spawnProfile(Vec2F const& position) const = 0;
   virtual float dayLevel() const = 0;
   virtual float threatLevel() const = 0;

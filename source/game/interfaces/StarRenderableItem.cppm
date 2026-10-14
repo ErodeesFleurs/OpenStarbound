@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.audio;
 import star.thread;
@@ -29,7 +29,13 @@ import star.entity_rendering;
 
 namespace Star {
 
-  STAR_CLASS(RenderableItem);
+  class RenderableItem;
+  using RenderableItemPtr = std::shared_ptr<RenderableItem>;
+  using RenderableItemConstPtr = std::shared_ptr<const RenderableItem>;
+  using RenderableItemWeakPtr = std::weak_ptr<RenderableItem>;
+  using RenderableItemConstWeakPtr = std::weak_ptr<const RenderableItem>;
+  using RenderableItemUPtr = std::unique_ptr<RenderableItem>;
+  using RenderableItemConstUPtr = std::unique_ptr<const RenderableItem>;
 
   class RenderableItem {
   public:

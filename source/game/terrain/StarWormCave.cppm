@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 import star.json;
 #include "StarJsonExtra.hpp"
@@ -18,7 +18,7 @@ export namespace Star {
 
 class WormCaveSector {
 public:
-  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, size_t seed, float commonality);
+  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality);
 
   float get(int x, int y);
 
@@ -52,7 +52,7 @@ namespace Star {
 
 char const* const WormCaveSelector::Name = "wormcave";
 
-WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config, size_t seed, float commonality)
+WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality)
   : m_sectorSize(sectorSize), m_sector(sector), m_values(sectorSize * sectorSize) {
   struct Worm {
     Vec2F pos;
@@ -118,23 +118,23 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
       wormRadius *= taperFactor;
 
       // carve out worm area
-      int size = ceil(wormRadius);
+      int size = std::ceil(wormRadius);
       for (float dx = -size; dx <= size; dx += 1)
         for (float dy = -size; dy <= size; dy += 1) {
-          float m = sqrt((dx * dx) + (dy * dy));
+          float m = std::sqrt((dx * dx) + (dy * dy));
           if (m <= wormRadius) {
-            int x = floor(dx + worm.pos[0]);
-            int y = floor(dy + worm.pos[1]);
+            int x = std::floor(dx + worm.pos[0]);
+            int y = std::floor(dy + worm.pos[1]);
             if (inside(x, y)) {
               float v = get(x, y);
-              set(x, y, max(v, wormRadius - m));
+              set(x, y, std::max(v, wormRadius - m));
             }
           }
         }
 
       // move the worm, slowing down a bit as we reach the ends to reduce
       // stutter
-      float thisSpeed = max(0.75f, wormSpeed * taperFactor);
+      float thisSpeed = std::max(0.75f, wormSpeed * taperFactor);
       worm.pos += Vec2F::withAngle(worm.angle) * thisSpeed;
       worm.length += thisSpeed;
 
@@ -149,13 +149,13 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
         float angleDiff = worm.goalAngle - worm.angle;
 
         // stop if we're close enough
-        if (abs(angleDiff) < wormTurnRate * thisSpeed)
+        if (std::abs(angleDiff) < wormTurnRate * thisSpeed)
           worm.angle = worm.goalAngle;
         else {
           // turn the shortest angular distance
-          if (abs(angleDiff) > twoPi)
+          if (std::abs(angleDiff) > twoPi)
             angleDiff = -angleDiff;
-          worm.angle = pfmod(worm.angle + copysign(wormTurnRate * thisSpeed, angleDiff), twoPi);
+          worm.angle = pfmod(worm.angle + std::copysign(wormTurnRate * thisSpeed, angleDiff), twoPi);
         }
       }
     }

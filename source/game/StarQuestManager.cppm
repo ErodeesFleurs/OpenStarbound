@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.maybe;
@@ -17,13 +17,49 @@ import star.quest_descriptor;
 
 namespace Star {
 
-STAR_CLASS(Quest);
-STAR_CLASS(Player);
-STAR_CLASS(World);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Entity);
+class Quest;
+using QuestPtr = std::shared_ptr<Quest>;
+using QuestConstPtr = std::shared_ptr<const Quest>;
+using QuestWeakPtr = std::weak_ptr<Quest>;
+using QuestConstWeakPtr = std::weak_ptr<const Quest>;
+using QuestUPtr = std::unique_ptr<Quest>;
+using QuestConstUPtr = std::unique_ptr<const Quest>;
+class Player;
+using PlayerPtr = std::shared_ptr<Player>;
+using PlayerConstPtr = std::shared_ptr<const Player>;
+using PlayerWeakPtr = std::weak_ptr<Player>;
+using PlayerConstWeakPtr = std::weak_ptr<const Player>;
+using PlayerUPtr = std::unique_ptr<Player>;
+using PlayerConstUPtr = std::unique_ptr<const Player>;
+class World;
+using WorldPtr = std::shared_ptr<World>;
+using WorldConstPtr = std::shared_ptr<const World>;
+using WorldWeakPtr = std::weak_ptr<World>;
+using WorldConstWeakPtr = std::weak_ptr<const World>;
+using WorldUPtr = std::unique_ptr<World>;
+using WorldConstUPtr = std::unique_ptr<const World>;
+class UniverseClient;
+using UniverseClientPtr = std::shared_ptr<UniverseClient>;
+using UniverseClientConstPtr = std::shared_ptr<const UniverseClient>;
+using UniverseClientWeakPtr = std::weak_ptr<UniverseClient>;
+using UniverseClientConstWeakPtr = std::weak_ptr<const UniverseClient>;
+using UniverseClientUPtr = std::unique_ptr<UniverseClient>;
+using UniverseClientConstUPtr = std::unique_ptr<const UniverseClient>;
+class Entity;
+using EntityPtr = std::shared_ptr<Entity>;
+using EntityConstPtr = std::shared_ptr<const Entity>;
+using EntityWeakPtr = std::weak_ptr<Entity>;
+using EntityConstWeakPtr = std::weak_ptr<const Entity>;
+using EntityUPtr = std::unique_ptr<Entity>;
+using EntityConstUPtr = std::unique_ptr<const Entity>;
 
-STAR_CLASS(QuestManager);
+class QuestManager;
+using QuestManagerPtr = std::shared_ptr<QuestManager>;
+using QuestManagerConstPtr = std::shared_ptr<const QuestManager>;
+using QuestManagerWeakPtr = std::weak_ptr<QuestManager>;
+using QuestManagerConstWeakPtr = std::weak_ptr<const QuestManager>;
+using QuestManagerUPtr = std::unique_ptr<QuestManager>;
+using QuestManagerConstUPtr = std::unique_ptr<const QuestManager>;
 
 struct QuestIndicator {
   String indicatorImage;

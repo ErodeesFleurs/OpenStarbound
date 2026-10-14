@@ -1,12 +1,12 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 
 import star.math_common;
 
 namespace Star {
 
-typedef uint8_t LiquidId;
+typedef std::uint8_t LiquidId;
 inline constexpr LiquidId EmptyLiquidId = 0;
 
 struct LiquidLevel {
@@ -21,7 +21,7 @@ struct LiquidLevel {
 
 struct LiquidNetUpdate {
   LiquidId liquid;
-  uint8_t level;
+  std::uint8_t level;
 
   LiquidLevel liquidLevel() const;
 };

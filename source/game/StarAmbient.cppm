@@ -1,16 +1,40 @@
 module;
 
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.json;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_STRUCT(AmbientTrackGroup);
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(AmbientManager);
+class AudioInstance;
+using AudioInstancePtr = std::shared_ptr<AudioInstance>;
+using AudioInstanceConstPtr = std::shared_ptr<const AudioInstance>;
+using AudioInstanceWeakPtr = std::weak_ptr<AudioInstance>;
+using AudioInstanceConstWeakPtr = std::weak_ptr<const AudioInstance>;
+using AudioInstanceUPtr = std::unique_ptr<AudioInstance>;
+using AudioInstanceConstUPtr = std::unique_ptr<const AudioInstance>;
+struct AmbientTrackGroup;
+using AmbientTrackGroupPtr = std::shared_ptr<AmbientTrackGroup>;
+using AmbientTrackGroupConstPtr = std::shared_ptr<const AmbientTrackGroup>;
+using AmbientTrackGroupWeakPtr = std::weak_ptr<AmbientTrackGroup>;
+using AmbientTrackGroupConstWeakPtr = std::weak_ptr<const AmbientTrackGroup>;
+using AmbientTrackGroupUPtr = std::unique_ptr<AmbientTrackGroup>;
+using AmbientTrackGroupConstUPtr = std::unique_ptr<const AmbientTrackGroup>;
+struct AmbientNoisesDescription;
+using AmbientNoisesDescriptionPtr = std::shared_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstPtr = std::shared_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionWeakPtr = std::weak_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstWeakPtr = std::weak_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionUPtr = std::unique_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstUPtr = std::unique_ptr<const AmbientNoisesDescription>;
+class AmbientManager;
+using AmbientManagerPtr = std::shared_ptr<AmbientManager>;
+using AmbientManagerConstPtr = std::shared_ptr<const AmbientManager>;
+using AmbientManagerWeakPtr = std::weak_ptr<AmbientManager>;
+using AmbientManagerConstWeakPtr = std::weak_ptr<const AmbientManager>;
+using AmbientManagerUPtr = std::unique_ptr<AmbientManager>;
+using AmbientManagerConstUPtr = std::unique_ptr<const AmbientManager>;
 
 struct AmbientTrackGroup {
   AmbientTrackGroup();
@@ -36,7 +60,7 @@ struct AmbientNoisesDescription {
 };
 
 typedef AmbientTrackGroup WeatherNoisesDescription;
-typedef shared_ptr<WeatherNoisesDescription> WeatherNoisesDescriptionPtr;
+typedef std::shared_ptr<WeatherNoisesDescription> WeatherNoisesDescriptionPtr;
 
 // manages the running ambient sounds
 class AmbientManager {

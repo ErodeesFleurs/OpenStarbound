@@ -13,7 +13,7 @@
 #endif
 #include <sys/time.h>
 #include <errno.h>
-#include "StarConfig.hpp"
+import std;
 import star.thread;
 import star.string;
 import star.maybe;
@@ -41,7 +41,7 @@ struct ThreadImpl {
 #ifdef STAR_SYSTEM_MACOS
       // ensure the name is under the max allowed
       char tname[MAX_THREAD_NAMELEN];
-      snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
+      std::snprintf(tname, sizeof(tname), "%s", ptr->name.utf8Ptr());
 
       pthread_setname_np(tname);
 #endif
@@ -80,7 +80,7 @@ struct ThreadImpl {
 
     // ensure the name is under the max allowed
     char tname[MAX_THREAD_NAMELEN];
-    snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
+    std::snprintf(tname, sizeof(tname), "%s", name.utf8Ptr());
 
 #ifdef STAR_SYSTEM_FREEBSD
     pthread_set_name_np(pthread, tname);
@@ -106,7 +106,7 @@ struct ThreadImpl {
   std::function<void()> function;
   String name;
   pthread_t pthread;
-  atomic<bool> stopped;
+  std::atomic<bool> stopped;
   bool joined;
   Mutex mutex;
 };
@@ -184,7 +184,7 @@ struct ConditionVariableImpl {
   }
 
   void wait(Mutex& mutex, unsigned millis) {
-    int64_t time = Time::millisecondsSinceEpoch() + millis;
+    std::int64_t time = Time::millisecondsSinceEpoch() + millis;
 
     timespec ts;
     ts.tv_sec = time / 1000;
@@ -249,8 +249,8 @@ struct RecursiveMutexImpl {
 };
 
 void Thread::sleepPrecise(unsigned msecs) {
-  int64_t now = Time::monotonicMilliseconds();
-  int64_t deadline = now + msecs;
+  std::int64_t now = Time::monotonicMilliseconds();
+  std::int64_t deadline = now + msecs;
 
   while (deadline - now > 10) {
     usleep((deadline - now - 10) * 1000);
@@ -274,7 +274,7 @@ void Thread::yield() {
 unsigned Thread::numberOfProcessors() {
   long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
   if (nprocs < 1)
-    throw StarException(strf("Could not determine number of CPUs online: {}\n", strerror(errno)));
+    throw StarException(strf("Could not determine number of CPUs online: {}\n", std::strerror(errno)));
   return nprocs;
 }
 
@@ -314,7 +314,7 @@ ThreadFunction<void>::ThreadFunction() {}
 
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
-ThreadFunction<void>::ThreadFunction(function<void()> function, String const& name) {
+ThreadFunction<void>::ThreadFunction(std::function<void()> function, String const& name) {
   m_impl.reset(new ThreadFunctionImpl(std::move(function), name));
   m_impl->start();
 }

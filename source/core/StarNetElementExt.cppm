@@ -1,7 +1,6 @@
 module;
+import std;
 import star.net_compatibility;
-
-#include "StarConfig.hpp"
 import star.data_stream;
 
 import star.net_element;
@@ -14,12 +13,12 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  bool writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   typedef std::function<void(DataStream&, NetCompatibilityRules)> NetStorer;
   typedef std::function<void(DataStream&, NetCompatibilityRules)> NetLoader;
-  typedef std::function<bool(DataStream&, uint64_t, NetCompatibilityRules)> NetDeltaWriter;
+  typedef std::function<bool(DataStream&, std::uint64_t, NetCompatibilityRules)> NetDeltaWriter;
   typedef std::function<void(DataStream&, float, NetCompatibilityRules)> NetDeltaReader;
 
   void setNetStorer(NetStorer);
@@ -54,7 +53,7 @@ void NetElementOverride<BaseNetElement>::netLoad(DataStream& ds, NetCompatibilit
 }
 
 template <typename BaseNetElement>
-bool NetElementOverride<BaseNetElement>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+bool NetElementOverride<BaseNetElement>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (m_netDeltaWriter)
     return m_netDeltaWriter(ds, fromVersion, rules);
   else

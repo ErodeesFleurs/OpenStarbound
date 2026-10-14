@@ -1,6 +1,5 @@
 module;
-
-#include "StarConfig.hpp"
+import std;
 import star.interpolation;
 
 import star.math_common;
@@ -29,14 +28,14 @@ public:
 
   // addPoint does not need to be called in order, it will insert the point in
   // the correct ordered position for the given index, and return the position.
-  size_t addPoint(IndexType index, ValueType value);
+  std::size_t addPoint(IndexType index, ValueType value);
   void clearPoints();
 
-  size_t size() const;
+  std::size_t size() const;
   bool empty() const;
 
-  IndexType const& index(size_t i) const;
-  ValueType const& value(size_t i) const;
+  IndexType const& index(std::size_t i) const;
+  ValueType const& value(std::size_t i) const;
 
   // Returns true if the values of the table are also valid indexes (true when
   // the data points are monotonic increasing)
@@ -110,7 +109,7 @@ template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>
 ParametricTable<IndexType, ValueType>::ParametricTable(
     ParametricTable<OtherIndexType, OtherValueType> const& parametricTable) {
-  for (size_t i = 0; i < parametricTable.size(); ++i) {
+  for (std::size_t i = 0; i < parametricTable.size(); ++i) {
     m_indexes.push_back(parametricTable.index(i));
     m_values.push_back(parametricTable.value(i));
   }
@@ -132,15 +131,15 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
     m_values.push_back(std::move(std::get<1>(pair)));
   }
 
-  for (size_t i = 0; i < size() - 1; ++i) {
+  for (std::size_t i = 0; i < size() - 1; ++i) {
     if (m_indexes[i] == m_indexes[i + 1])
       throw MathException("Degenerate index values given in ParametricTable constructor");
   }
 }
 
 template <typename IndexType, typename ValueType>
-size_t ParametricTable<IndexType, ValueType>::addPoint(IndexType index, ValueType value) {
-  size_t insertLocation = std::distance(m_indexes.begin(), std::upper_bound(m_indexes.begin(), m_indexes.end(), index));
+std::size_t ParametricTable<IndexType, ValueType>::addPoint(IndexType index, ValueType value) {
+  std::size_t insertLocation = std::distance(m_indexes.begin(), std::upper_bound(m_indexes.begin(), m_indexes.end(), index));
   m_indexes.insert(m_indexes.begin() + insertLocation, std::move(index));
   m_values.insert(m_values.begin() + insertLocation, std::move(value));
   return insertLocation;
@@ -153,7 +152,7 @@ void ParametricTable<IndexType, ValueType>::clearPoints() {
 }
 
 template <typename IndexType, typename ValueType>
-size_t ParametricTable<IndexType, ValueType>::size() const {
+std::size_t ParametricTable<IndexType, ValueType>::size() const {
   return m_indexes.size();
 }
 
@@ -163,12 +162,12 @@ bool ParametricTable<IndexType, ValueType>::empty() const {
 }
 
 template <typename IndexType, typename ValueType>
-IndexType const& ParametricTable<IndexType, ValueType>::index(size_t i) const {
+IndexType const& ParametricTable<IndexType, ValueType>::index(std::size_t i) const {
   return m_indexes.at(i);
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::value(size_t i) const {
+ValueType const& ParametricTable<IndexType, ValueType>::value(std::size_t i) const {
   return m_values.at(i);
 }
 
@@ -177,7 +176,7 @@ bool ParametricTable<IndexType, ValueType>::isInvertible() const {
   if (empty())
     return true;
 
-  for (size_t i = 0; i < size() - 1; ++i) {
+  for (std::size_t i = 0; i < size() - 1; ++i) {
     if (m_values[i] > m_values[i + 1])
       return false;
   }
@@ -190,7 +189,7 @@ void ParametricTable<IndexType, ValueType>::invert() const {
   if (isInvertible())
     throw MathException("invert() called on non-invertible ParametricTable");
 
-  for (size_t i = 0; i < size(); ++i)
+  for (std::size_t i = 0; i < size(); ++i)
     std::swap(m_indexes[i], m_values[i]);
 }
 

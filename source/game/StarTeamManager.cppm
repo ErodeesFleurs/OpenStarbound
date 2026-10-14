@@ -20,7 +20,7 @@ import star.celestial_coordinate;
 import star.game_types;
 import star.warping;
 import star.damage_types;
-#include "StarConfig.hpp"
+import std;
 import star.map;
 import star.maybe;
 import star.version;
@@ -29,7 +29,13 @@ namespace Star {
   
 extern VersionNumber const TeamManagerVersion;
 
-STAR_CLASS(TeamManager);
+class TeamManager;
+using TeamManagerPtr = std::shared_ptr<TeamManager>;
+using TeamManagerConstPtr = std::shared_ptr<const TeamManager>;
+using TeamManagerWeakPtr = std::weak_ptr<TeamManager>;
+using TeamManagerConstWeakPtr = std::weak_ptr<const TeamManager>;
+using TeamManagerUPtr = std::unique_ptr<TeamManager>;
+using TeamManagerConstUPtr = std::unique_ptr<const TeamManager>;
 
 class TeamManager {
 public:

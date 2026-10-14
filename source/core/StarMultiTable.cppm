@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.list;
 
 import star.multi_array;
@@ -14,12 +14,12 @@ namespace Star {
 // n-variate data.  Access times involve a binary search over the domain of
 // each dimension, so is O(log(n)*m) where n is the size of the largest
 // dimension, and m is the table_rank.
-template <typename ElementT, typename PositionT, size_t RankN>
+template <typename ElementT, typename PositionT, std::size_t RankN>
 class MultiTable {
 public:
   typedef ElementT Element;
   typedef PositionT Position;
-  static size_t const Rank = RankN;
+  static std::size_t const Rank = RankN;
 
   typedef Star::MultiArray<ElementT, RankN> MultiArray;
 
@@ -54,7 +54,7 @@ public:
   void setRanges(RangeArray const& ranges) {
     SizeArray arraySize;
 
-    for (size_t dim = 0; dim < Rank; ++dim) {
+    for (std::size_t dim = 0; dim < Rank; ++dim) {
       arraySize[dim] = ranges[dim].size();
       m_ranges[dim] = ranges[dim];
     }
@@ -131,7 +131,7 @@ private:
   template <typename Coordinate>
   inline PositionArray toIndexSpace(Coordinate const& coord) const {
     PositionArray indexCoord;
-    for (size_t i = 0; i < Rank; ++i)
+    for (std::size_t i = 0; i < Rank; ++i)
       indexCoord[i] = inverseLinearInterpolateLower(m_ranges[i].begin(), m_ranges[i].end(), coord[i]);
     return indexCoord;
   }
@@ -144,7 +144,7 @@ private:
     template <typename IndexArray>
     void operator()(IndexArray const& indexArray, Element& element) {
       PositionArray rangeArray;
-      for (size_t i = 0; i < Rank; ++i)
+      for (std::size_t i = 0; i < Rank; ++i)
         rangeArray[i] = table.m_ranges[i][indexArray[i]];
 
       element = op(rangeArray);

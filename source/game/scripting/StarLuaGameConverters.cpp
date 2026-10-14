@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.list;
 import star.map;
@@ -50,7 +50,7 @@ Maybe<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const&
       return {};
   }
   else if (auto table = v.ptr<LuaTable>())
-    return {BagSlot(table->get<LuaString>(1).toString(), (uint8_t)table->get<unsigned>(2))};
+    return {BagSlot(table->get<LuaString>(1).toString(), (std::uint8_t)table->get<unsigned>(2))};
   else
     return {};
 }
@@ -123,9 +123,9 @@ LuaValue LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, Platformer
 LuaMethods<PlatformerAStar::PathFinder> LuaUserDataMethods<PlatformerAStar::PathFinder>::make() {
   LuaMethods<PlatformerAStar::PathFinder> methods;
   methods.registerMethodWithSignature<Maybe<bool>, PlatformerAStar::PathFinder&, Maybe<unsigned>>(
-      "explore", mem_fn(&PlatformerAStar::PathFinder::explore));
+      "explore", std::mem_fn(&PlatformerAStar::PathFinder::explore));
   methods.registerMethodWithSignature<Maybe<PlatformerAStar::Path>, PlatformerAStar::PathFinder&>(
-      "result", mem_fn(&PlatformerAStar::PathFinder::result));
+      "result", std::mem_fn(&PlatformerAStar::PathFinder::result));
   return methods;
 }
 
@@ -465,7 +465,7 @@ LuaValue LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v
 Maybe<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto table = v.ptr<LuaTable>()) {
     auto liquid = engine.luaMaybeTo<LiquidId>(table->get(1));
-    auto level = engine.luaMaybeTo<uint8_t>(table->get(2));
+    auto level = engine.luaMaybeTo<std::uint8_t>(table->get(2));
     if (liquid && level)
       return LiquidLevel(liquid.take(), level.take());
   }
@@ -796,12 +796,12 @@ LuaMethods<AudioInstancePtr> LuaUserDataMethods<AudioInstancePtr>::make() {
     });
     
     methods.registerMethod("setClockStart",
-    [&](AudioInstancePtr const& audio, Maybe<int64_t> const& time) {
+    [&](AudioInstancePtr const& audio, Maybe<std::int64_t> const& time) {
         audio->setClockStart(time);
     });
     
     methods.registerMethod("setClockStop",
-    [&](AudioInstancePtr const& audio, Maybe<int64_t> const& time, Maybe<int64_t> const& fadeOutTime) {
+    [&](AudioInstancePtr const& audio, Maybe<std::int64_t> const& time, Maybe<std::int64_t> const& fadeOutTime) {
         audio->setClockStop(time,fadeOutTime.value(0));
     });
     

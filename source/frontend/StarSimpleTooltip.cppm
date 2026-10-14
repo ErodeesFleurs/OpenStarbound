@@ -1,11 +1,11 @@
 module;
+import std;
 import star.json;
 import star.string;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
 import star.logging;
-#include "StarConfig.hpp"
 import star.version;
 import star.vector;
 #include "StarCasting.hpp"
@@ -68,7 +68,7 @@ export namespace Star::SimpleTooltipBuilder {
 namespace Star {
 
 PanePtr SimpleTooltipBuilder::buildTooltip(String const& text) {
-  PanePtr tooltip = make_shared<Pane>();
+  PanePtr tooltip = std::make_shared<Pane>();
   tooltip->removeAllChildren();
   GuiReader reader;
   reader.construct(Root::singleton().assets()->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());

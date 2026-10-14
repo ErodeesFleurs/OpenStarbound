@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.json;
 import star.string;
@@ -44,10 +44,34 @@ import star.net_compatibility;
 import star.byte_array;
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Item);
-STAR_CLASS(Npc);
-STAR_CLASS(NpcDatabase);
+class Rebuilder;
+using RebuilderPtr = std::shared_ptr<Rebuilder>;
+using RebuilderConstPtr = std::shared_ptr<const Rebuilder>;
+using RebuilderWeakPtr = std::weak_ptr<Rebuilder>;
+using RebuilderConstWeakPtr = std::weak_ptr<const Rebuilder>;
+using RebuilderUPtr = std::unique_ptr<Rebuilder>;
+using RebuilderConstUPtr = std::unique_ptr<const Rebuilder>;
+class Item;
+using ItemPtr = std::shared_ptr<Item>;
+using ItemConstPtr = std::shared_ptr<const Item>;
+using ItemWeakPtr = std::weak_ptr<Item>;
+using ItemConstWeakPtr = std::weak_ptr<const Item>;
+using ItemUPtr = std::unique_ptr<Item>;
+using ItemConstUPtr = std::unique_ptr<const Item>;
+class Npc;
+using NpcPtr = std::shared_ptr<Npc>;
+using NpcConstPtr = std::shared_ptr<const Npc>;
+using NpcWeakPtr = std::weak_ptr<Npc>;
+using NpcConstWeakPtr = std::weak_ptr<const Npc>;
+using NpcUPtr = std::unique_ptr<Npc>;
+using NpcConstUPtr = std::unique_ptr<const Npc>;
+class NpcDatabase;
+using NpcDatabasePtr = std::shared_ptr<NpcDatabase>;
+using NpcDatabaseConstPtr = std::shared_ptr<const NpcDatabase>;
+using NpcDatabaseWeakPtr = std::weak_ptr<NpcDatabase>;
+using NpcDatabaseConstWeakPtr = std::weak_ptr<const NpcDatabase>;
+using NpcDatabaseUPtr = std::unique_ptr<NpcDatabase>;
+using NpcDatabaseConstUPtr = std::unique_ptr<const NpcDatabase>;
 
 struct NpcExceptionTag {
   static constexpr char const* name() { return "NpcException"; }
@@ -58,7 +82,7 @@ struct NpcVariant {
   String species;
   String typeName;
   float level;
-  uint64_t seed;
+  std::uint64_t seed;
 
   Json overrides;
 
@@ -87,7 +111,7 @@ struct NpcVariant {
   bool keepAlive;
 
   TeamType damageTeamType;
-  uint8_t damageTeam;
+  std::uint8_t damageTeam;
 
   Vec3B nametagColor;
 
@@ -99,7 +123,7 @@ public:
   NpcDatabase();
 
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
+  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const;
 
   ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
   NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;

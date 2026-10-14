@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 #include "StarCasting.hpp"
@@ -17,7 +17,7 @@ import star.anchorable_entity;
 namespace Star {
 
 bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
-  return tie(entityId, positionIndex) == tie(eas.entityId, eas.positionIndex);
+  return std::tie(entityId, positionIndex) == std::tie(eas.entityId, eas.positionIndex);
 }
 
 DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState) {

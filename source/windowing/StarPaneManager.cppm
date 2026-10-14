@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 
 import star.game_types;
@@ -51,7 +51,13 @@ import star.game_timers;
 
 namespace Star {
 
-STAR_CLASS(PaneManager);
+class PaneManager;
+using PaneManagerPtr = std::shared_ptr<PaneManager>;
+using PaneManagerConstPtr = std::shared_ptr<PaneManager const>;
+using PaneManagerWeakPtr = std::weak_ptr<PaneManager>;
+using PaneManagerConstWeakPtr = std::weak_ptr<PaneManager const>;
+using PaneManagerUPtr = std::unique_ptr<PaneManager>;
+using PaneManagerConstUPtr = std::unique_ptr<PaneManager const>;
 
 enum class PaneLayer {
   // A special class of window only meant to be used by PaneManager to display
@@ -78,7 +84,7 @@ extern EnumMap<PaneLayer> const PaneLayerNames;
 // layer contains a z-ordered list of panes to display.
 class PaneManager {
 public:
-  typedef function<void(PanePtr const&)> DismissCallback;
+  typedef std::function<void(PanePtr const&)> DismissCallback;
 
   PaneManager();
 
@@ -111,7 +117,7 @@ public:
 
   void setBackgroundWidget(WidgetPtr bg);
 
-  void dismissWhere(function<bool(PanePtr const&)> func);
+  void dismissWhere(std::function<bool(PanePtr const&)> func);
 
   // Returns the pane/widget that has captured the keyboard, if any.
   PanePtr keyboardCapturedPane() const;

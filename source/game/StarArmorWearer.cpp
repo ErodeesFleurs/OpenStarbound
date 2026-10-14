@@ -14,7 +14,7 @@ import star.game_types;
 #include "StarCasting.hpp"
 import star.list;
 import star.image_processing;
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.variant;
 import star.rpc_promise;
@@ -93,8 +93,20 @@ import star.non_rotated_drawables_item;
 import star.beam_item;
 import star.durability_item;
 import star.pointable_item;
-STAR_STRUCT(PreviewTile);
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
+using PreviewTilePtr = std::shared_ptr<PreviewTile>;
+using PreviewTileConstPtr = std::shared_ptr<const PreviewTile>;
+using PreviewTileWeakPtr = std::weak_ptr<PreviewTile>;
+using PreviewTileConstWeakPtr = std::weak_ptr<const PreviewTile>;
+using PreviewTileUPtr = std::unique_ptr<PreviewTile>;
+using PreviewTileConstUPtr = std::unique_ptr<const PreviewTile>;
+class PreviewTileTool;
+using PreviewTileToolPtr = std::shared_ptr<PreviewTileTool>;
+using PreviewTileToolConstPtr = std::shared_ptr<const PreviewTileTool>;
+using PreviewTileToolWeakPtr = std::weak_ptr<PreviewTileTool>;
+using PreviewTileToolConstWeakPtr = std::weak_ptr<const PreviewTileTool>;
+using PreviewTileToolUPtr = std::unique_ptr<PreviewTileTool>;
+using PreviewTileToolConstUPtr = std::unique_ptr<const PreviewTileTool>;
 import star.preview_tile_tool;
 import star.tools;
 import star.activatable_item;
@@ -120,7 +132,7 @@ import star.array;
 namespace Star {
 
 ArmorWearer::ArmorWearer() : m_lastNude(true) {
-  for (size_t i = 0; i != m_armors.size(); ++i) {
+  for (std::size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     armor.isCosmetic = i >= 4;
     if (i >= 8)
@@ -143,8 +155,8 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
   bool allNeedsSync = genderChanged;
   bool anyNeedsSync = allNeedsSync;
-  Array<uint8_t, 4> wornCosmeticTypes;
-  for (size_t i = 0; i != m_armors.size(); ++i) {
+  Array<std::uint8_t, 4> wornCosmeticTypes;
+  for (std::size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     auto& item = armor.item;
     if (armor.needsSync)
@@ -154,7 +166,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
     if (armor.visible && armor.isCosmetic && item && item->visible(i >= 8)) {
       for (auto armorType : item->armorTypesToHide())
-        ++wornCosmeticTypes[(uint8_t)armorType];
+        ++wornCosmeticTypes[(std::uint8_t)armorType];
     }
   }
 
@@ -173,16 +185,16 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   std::exception_ptr configException;
   bool movementParametersChanged;
   if (anyNeedsSync) {
-    for (size_t i = 0; i != m_armors.size(); ++i) {
+    for (std::size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];
       auto& item = armor.item;
       bool allowed = true;
       if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
-        uint8_t typeIndex = (uint8_t)armor.item->armorType();
-        uint8_t prevWorn = m_wornCosmeticTypes[typeIndex];
-        uint8_t curWorn = wornCosmeticTypes[typeIndex];
+        std::uint8_t typeIndex = (std::uint8_t)armor.item->armorType();
+        std::uint8_t prevWorn = m_wornCosmeticTypes[typeIndex];
+        std::uint8_t curWorn = wornCosmeticTypes[typeIndex];
         if (curWorn == 0) {
           if (prevWorn != 0)
             armor.needsSync = true;
@@ -223,11 +235,11 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 void ArmorWearer::effects(EffectEmitter& effectEmitter) {
   StringSet headEffects, chestEffects, legsEffects, backEffects;
 
-  for (uint8_t i = 0; i != m_armors.size(); ++i) {
+  for (std::uint8_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     if (auto item = as<EffectSourceItem>(armor.item)) {
       auto armorType = armor.item->armorType();
-      if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(uint8_t)armorType] > 0))
+      if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(std::uint8_t)armorType] > 0))
         continue;
       auto newEffects = item->effectSources();
       if (armorType == ArmorType::Head)
@@ -258,7 +270,7 @@ void ArmorWearer::reset() {
 
 Json ArmorWearer::diskStore() const {
   JsonObject res;
-  auto save = [&](uint8_t slot, String const& id) {
+  auto save = [&](std::uint8_t slot, String const& id) {
     auto& armor = m_armors[slot];
     if (armor.item)
       res[id] = armor.item->descriptor().diskStore();
@@ -273,7 +285,7 @@ Json ArmorWearer::diskStore() const {
   save(6, "legsCosmeticItem");
   save(7, "backCosmeticItem");
 
-  for (size_t i = 8; i != m_armors.size(); ++i)
+  for (std::size_t i = 8; i != m_armors.size(); ++i)
     save(i, strf("cosmetic{}Item", i - 7));
 
   return res;
@@ -281,7 +293,7 @@ Json ArmorWearer::diskStore() const {
 
 void ArmorWearer::diskLoad(Json const& diskStore) {
   auto itemDb = Root::singleton().itemDatabase();
-  auto load = [&](uint8_t slot, String const& id) {
+  auto load = [&](std::uint8_t slot, String const& id) {
     if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
       setItem(slot, item);
   };
@@ -295,14 +307,14 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
   load(6, "legsCosmeticItem");
   load(7, "backCosmeticItem");
 
-  for (size_t i = 8; i != m_armors.size(); ++i)
+  for (std::size_t i = 8; i != m_armors.size(); ++i)
     load(i, strf("cosmetic{}Item", i - 7));
 }
 
 List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const {
   List<PersistentStatusEffect> statusEffects;
 
-  for (size_t i = 0; i != m_armors.size(); ++i) {
+  for (std::size_t i = 0; i != m_armors.size(); ++i) {
     if (!m_armors[i].item)
       continue;
     if (!cosmeticOnly && ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot()))
@@ -314,7 +326,7 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const
   return statusEffects;
 }
 
-bool ArmorWearer::setItem(uint8_t slot, ArmorItemPtr item, bool visible) {
+bool ArmorWearer::setItem(std::uint8_t slot, ArmorItemPtr item, bool visible) {
   if (slot >= m_armors.size())
     return false;
   auto& armor = m_armors[slot];
@@ -342,7 +354,7 @@ void ArmorWearer::setChestCosmeticItem(ChestArmorPtr chestCosmeticItem) { setIte
 void ArmorWearer::setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem) { setItem(6, legsCosmeticItem, true); }
 void ArmorWearer::setBackCosmeticItem(BackArmorPtr backCosmeticItem) { setItem(7, backCosmeticItem, true); }
 
-ArmorItemPtr ArmorWearer::item(uint8_t slot) const {
+ArmorItemPtr ArmorWearer::item(std::uint8_t slot) const {
   if (slot < m_armors.size())
     return m_armors[slot].item;
   return {};
@@ -357,7 +369,7 @@ ChestArmorPtr ArmorWearer::chestCosmeticItem() const { return as<ChestArmor>(ite
  LegsArmorPtr ArmorWearer:: legsCosmeticItem() const { return as< LegsArmor>(item(6)); }
  BackArmorPtr ArmorWearer:: backCosmeticItem() const { return as< BackArmor>(item(7)); }
 
-ItemDescriptor ArmorWearer::itemDescriptor(uint8_t slot) const {
+ItemDescriptor ArmorWearer::itemDescriptor(std::uint8_t slot) const {
    if (auto foundItem = item(slot))
      return foundItem->descriptor();
    return {};
@@ -411,15 +423,15 @@ ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
   return {};
 }
 
-bool ArmorWearer::setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem) {
+bool ArmorWearer::setCosmeticItem(std::uint8_t slot, ArmorItemPtr cosmeticItem) {
   return setItem(slot + 8, cosmeticItem, true);
 }
 
-ArmorItemPtr ArmorWearer::cosmeticItem(uint8_t slot) const {
+ArmorItemPtr ArmorWearer::cosmeticItem(std::uint8_t slot) const {
   return item(slot + 8);
 }
 
-ItemDescriptor ArmorWearer::cosmeticItemDescriptor(uint8_t slot) const {
+ItemDescriptor ArmorWearer::cosmeticItemDescriptor(std::uint8_t slot) const {
   if (auto item = cosmeticItem(slot + 8))
     return item->descriptor();
   return {};

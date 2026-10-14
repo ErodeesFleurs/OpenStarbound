@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.json;
 import star.ordered_map;
@@ -62,9 +62,27 @@ import star.sky_parameters;
 
 namespace Star {
 
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(CelestialDatabase);
-STAR_STRUCT(AmbientNoisesDescription);
+class WorldTemplate;
+using WorldTemplatePtr = std::shared_ptr<WorldTemplate>;
+using WorldTemplateConstPtr = std::shared_ptr<const WorldTemplate>;
+using WorldTemplateWeakPtr = std::weak_ptr<WorldTemplate>;
+using WorldTemplateConstWeakPtr = std::weak_ptr<const WorldTemplate>;
+using WorldTemplateUPtr = std::unique_ptr<WorldTemplate>;
+using WorldTemplateConstUPtr = std::unique_ptr<const WorldTemplate>;
+class CelestialDatabase;
+using CelestialDatabasePtr = std::shared_ptr<CelestialDatabase>;
+using CelestialDatabaseConstPtr = std::shared_ptr<const CelestialDatabase>;
+using CelestialDatabaseWeakPtr = std::weak_ptr<CelestialDatabase>;
+using CelestialDatabaseConstWeakPtr = std::weak_ptr<const CelestialDatabase>;
+using CelestialDatabaseUPtr = std::unique_ptr<CelestialDatabase>;
+using CelestialDatabaseConstUPtr = std::unique_ptr<const CelestialDatabase>;
+struct AmbientNoisesDescription;
+using AmbientNoisesDescriptionPtr = std::shared_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstPtr = std::shared_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionWeakPtr = std::weak_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstWeakPtr = std::weak_ptr<const AmbientNoisesDescription>;
+using AmbientNoisesDescriptionUPtr = std::unique_ptr<AmbientNoisesDescription>;
+using AmbientNoisesDescriptionConstUPtr = std::unique_ptr<const AmbientNoisesDescription>;
 
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)
@@ -140,7 +158,7 @@ public:
   // Creates a world from the given visitable celestial object.
   WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
+  WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
   // Load a world template from the given stored data.
   WorldTemplate(Json const& store);
 
@@ -155,7 +173,7 @@ public:
   void setWorldLayout(WorldLayoutPtr newLayout);
   void setSkyParameters(SkyParameters newParameters);
 
-  uint64_t worldSeed() const;
+  std::uint64_t worldSeed() const;
   String worldName() const;
 
   Vec2U size() const;
@@ -239,7 +257,7 @@ public:
   float threatLevel() const;
 
   // For consistently seeding object generation at this position
-  uint64_t seedFor(int x, int y) const;
+  std::uint64_t seedFor(int x, int y) const;
 
 private:
   struct CustomTerrainRegion {
@@ -253,10 +271,10 @@ private:
   void determineWorldName();
   void setupWeatherDomains();
 
-  pair<float, float> customTerrainWeighting(int x, int y) const;
+  std::pair<float, float> customTerrainWeighting(int x, int y) const;
 
   // Calculates block info and adds to cache
-  BlockInfo getBlockInfo(uint32_t x, uint32_t y) const;
+  BlockInfo getBlockInfo(std::uint32_t x, std::uint32_t y) const;
 
   Json m_templateConfig;
   float m_customTerrainBlendSize;
@@ -265,7 +283,7 @@ private:
   Maybe<CelestialParameters> m_celestialParameters;
   VisitableWorldParametersConstPtr m_worldParameters;
   SkyParameters m_skyParameters;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   WorldGeometry m_geometry;
   WorldLayoutPtr m_layout;
   String m_worldName;
@@ -275,7 +293,7 @@ private:
 
   List<CustomTerrainRegion> m_customTerrainRegions;
 
-  mutable HashLruCache<Vector<uint32_t, 2>, BlockInfo> m_blockCache;
+  mutable HashLruCache<Vector<std::uint32_t, 2>, BlockInfo> m_blockCache;
 };
 
 }

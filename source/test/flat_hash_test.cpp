@@ -1,4 +1,4 @@
-#include "StarConfig.hpp"
+import std;
 import star.format;
 import star.flat_hash_set;
 import star.flat_hash_map;
@@ -66,19 +66,19 @@ TEST(FlatHashSet, Random) {
   Random::shuffle(keys);
 
   FlatHashSet<Vec2I> testSet;
-  for (size_t i = 0; i < keys.size(); ++i)
+  for (std::size_t i = 0; i < keys.size(); ++i)
     testSet.insert(keys[i]);
 
   Random::shuffle(keys);
-  for (size_t i = 0; i < keys.size() / 2; ++i)
+  for (std::size_t i = 0; i < keys.size() / 2; ++i)
     testSet.erase(keys[i]);
 
   Random::shuffle(keys);
-  for (size_t i = 0; i < keys.size() / 3; ++i)
+  for (std::size_t i = 0; i < keys.size() / 3; ++i)
     testSet.insert(keys[i]);
 
   Random::shuffle(keys);
-  for (size_t i = 0; i < keys.size() / 2; ++i)
+  for (std::size_t i = 0; i < keys.size() / 2; ++i)
     testSet.erase(keys[i]);
 
   Random::shuffle(keys);
@@ -160,7 +160,7 @@ TEST(FlatHashMap, Preset) {
 }
 
 TEST(FlatHashMap, Random) {
-  List<pair<Vec2I, int>> values;
+  List<std::pair<Vec2I, int>> values;
   for (unsigned i = 0; i < 100000; ++i)
     values.append({Vec2I(i * 743202097, i * 205495087), i});
   Random::shuffle(values);
@@ -170,15 +170,15 @@ TEST(FlatHashMap, Random) {
     testMap.insert(v);
 
   Random::shuffle(values);
-  for (size_t i = 0; i < values.size() / 2; ++i)
+  for (std::size_t i = 0; i < values.size() / 2; ++i)
     testMap.erase(values[i].first);
 
   Random::shuffle(values);
-  for (size_t i = 0; i < values.size() / 3; ++i)
+  for (std::size_t i = 0; i < values.size() / 3; ++i)
     testMap.insert(values[i]);
 
   Random::shuffle(values);
-  for (size_t i = 0; i < values.size() / 2; ++i)
+  for (std::size_t i = 0; i < values.size() / 2; ++i)
     testMap.erase(values[i].first);
 
   Random::shuffle(values);
@@ -205,7 +205,7 @@ TEST(FlatHashMap, Random) {
 }
 
 TEST(FlatHashMap, Iterator) {
-  List<pair<Vec2I, int>> values;
+  List<std::pair<Vec2I, int>> values;
   for (unsigned i = 0; i < 100000; ++i)
     values.append({Vec2I(i * 743202097, i * 205495087), i});
 
@@ -231,7 +231,7 @@ TEST(FlatHashMap, NonDefaultAlignedValueLifetime) {
     std::shared_ptr<int> value;
   };
   struct CollisionHash {
-    size_t operator()(int) const { return 0; }
+    std::size_t operator()(int) const { return 0; }
   };
   using Map = FlatHashMap<int, Payload, CollisionHash>;
 

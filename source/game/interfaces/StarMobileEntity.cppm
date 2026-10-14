@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.json;
 import star.id_map;
 import star.maybe;
@@ -22,8 +22,20 @@ import star.movement_controller;
 
 namespace Star {
 
-STAR_CLASS(StatusController);
-STAR_CLASS(ActorMovementController);
+class StatusController;
+using StatusControllerPtr = std::shared_ptr<StatusController>;
+using StatusControllerConstPtr = std::shared_ptr<const StatusController>;
+using StatusControllerWeakPtr = std::weak_ptr<StatusController>;
+using StatusControllerConstWeakPtr = std::weak_ptr<const StatusController>;
+using StatusControllerUPtr = std::unique_ptr<StatusController>;
+using StatusControllerConstUPtr = std::unique_ptr<const StatusController>;
+class ActorMovementController;
+using ActorMovementControllerPtr = std::shared_ptr<ActorMovementController>;
+using ActorMovementControllerConstPtr = std::shared_ptr<const ActorMovementController>;
+using ActorMovementControllerWeakPtr = std::weak_ptr<ActorMovementController>;
+using ActorMovementControllerConstWeakPtr = std::weak_ptr<const ActorMovementController>;
+using ActorMovementControllerUPtr = std::unique_ptr<ActorMovementController>;
+using ActorMovementControllerConstUPtr = std::unique_ptr<const ActorMovementController>;
 
 // A base for 'mobile' entities, which all have a MovementController.
 class MobileEntity : public virtual Entity {

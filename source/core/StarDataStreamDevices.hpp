@@ -1,6 +1,5 @@
 #pragma once
-
-#include "StarConfig.hpp"
+import std;
 import star.io_device;
 import star.string;
 import star.buffer;
@@ -15,14 +14,14 @@ class DataStreamFunctions : public DataStream {
 public:
   // Either reader or writer can be unset, if unset then the readData/writeData
   // implementations will throw DataStreamException as unimplemented.
-  DataStreamFunctions(function<size_t(char*, size_t)> reader, function<size_t(char const*, size_t)> writer);
+  DataStreamFunctions(std::function<std::size_t(char*, std::size_t)> reader, std::function<std::size_t(char const*, std::size_t)> writer);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
-  function<size_t(char*, size_t)> m_reader;
-  function<size_t(char const*, size_t)> m_writer;
+  std::function<std::size_t(char*, std::size_t)> m_reader;
+  std::function<std::size_t(char const*, std::size_t)> m_writer;
 };
 
 class DataStreamIODevice : public DataStream {
@@ -31,12 +30,12 @@ public:
 
   IODevicePtr const& device() const;
 
-  void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   bool atEnd() override;
   StreamOffset pos();
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   IODevicePtr m_device;
@@ -93,12 +92,12 @@ public:
   static T deserializeMapContainer(ByteArray data, ReadFunction readFunction);
 
   DataStreamBuffer();
-  DataStreamBuffer(size_t initialSize);
+  DataStreamBuffer(std::size_t initialSize);
   DataStreamBuffer(ByteArray b);
 
   // Resize existing buffer to new size.
-  void resize(size_t size);
-  void reserve(size_t size);
+  void resize(std::size_t size);
+  void reserve(std::size_t size);
   void clear();
 
   ByteArray& data();
@@ -110,19 +109,19 @@ public:
 
   BufferPtr const& device() const;
 
-  size_t size() const;
+  std::size_t size() const;
   bool empty() const;
 
-  void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   bool atEnd() override;
-  size_t pos();
+  std::size_t pos();
 
   // Set new buffer.
-  void reset(size_t newSize);
+  void reset(std::size_t newSize);
   void reset(ByteArray b);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   BufferPtr m_buffer;
@@ -135,22 +134,22 @@ public:
   DataStreamExternalBuffer(DataStreamBuffer const& buffer);
 
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
-  DataStreamExternalBuffer(char const* externalData, size_t len);
+  DataStreamExternalBuffer(char const* externalData, std::size_t len);
 
   char const* ptr() const;
 
-  size_t size() const;
+  std::size_t size() const;
   bool empty() const;
 
-  void seek(size_t pos, IOSeek mode = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek mode = IOSeek::Absolute);
   bool atEnd() override;
-  size_t pos();
-  size_t remaining();
+  std::size_t pos();
+  std::size_t remaining();
 
-  void reset(char const* externalData, size_t len);
+  void reset(char const* externalData, std::size_t len);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   ExternalBuffer m_buffer;

@@ -1,5 +1,5 @@
 module;
-#include "StarConfig.hpp"
+import std;
 import star.maybe;
 import star.format;
 import star.json;
@@ -36,9 +36,27 @@ import star.status_types;
 
 namespace Star {
 
-STAR_STRUCT(ProjectileConfig);
-STAR_CLASS(Projectile);
-STAR_CLASS(ProjectileDatabase);
+struct ProjectileConfig;
+using ProjectileConfigPtr = std::shared_ptr<ProjectileConfig>;
+using ProjectileConfigConstPtr = std::shared_ptr<const ProjectileConfig>;
+using ProjectileConfigWeakPtr = std::weak_ptr<ProjectileConfig>;
+using ProjectileConfigConstWeakPtr = std::weak_ptr<const ProjectileConfig>;
+using ProjectileConfigUPtr = std::unique_ptr<ProjectileConfig>;
+using ProjectileConfigConstUPtr = std::unique_ptr<const ProjectileConfig>;
+class Projectile;
+using ProjectilePtr = std::shared_ptr<Projectile>;
+using ProjectileConstPtr = std::shared_ptr<const Projectile>;
+using ProjectileWeakPtr = std::weak_ptr<Projectile>;
+using ProjectileConstWeakPtr = std::weak_ptr<const Projectile>;
+using ProjectileUPtr = std::unique_ptr<Projectile>;
+using ProjectileConstUPtr = std::unique_ptr<const Projectile>;
+class ProjectileDatabase;
+using ProjectileDatabasePtr = std::shared_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstPtr = std::shared_ptr<const ProjectileDatabase>;
+using ProjectileDatabaseWeakPtr = std::weak_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstWeakPtr = std::weak_ptr<const ProjectileDatabase>;
+using ProjectileDatabaseUPtr = std::unique_ptr<ProjectileDatabase>;
+using ProjectileDatabaseConstUPtr = std::unique_ptr<const ProjectileDatabase>;
 
 struct ProjectileDatabaseExceptionTag {
   static constexpr char const* name() { return "ProjectileDatabaseException"; }
@@ -83,7 +101,7 @@ struct ProjectileConfig {
   JsonArray actionOnTimeout;
 
   // Time, repeat flag, and action config
-  List<tuple<float, bool, Json>> periodicActions;
+  List<std::tuple<float, bool, Json>> periodicActions;
 
   String image;
   unsigned frameNumber = 0;

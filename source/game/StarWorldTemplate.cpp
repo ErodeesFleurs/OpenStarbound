@@ -31,7 +31,7 @@ import star.weighted_pool;
 import star.io_device;
 import star.ref_ptr;
 import star.listener;
-#include "StarConfig.hpp"
+import std;
 import star.string;
 import star.format;
 import star.version;
@@ -109,17 +109,17 @@ WorldTemplate::WorldTemplate(CelestialCoordinate const& celestialCoordinate, Cel
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, m_seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, m_seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
 
   determineWorldName();
   setupWeatherDomains();
 }
 
-WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed)
+WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed)
   : WorldTemplate() {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
@@ -130,11 +130,11 @@ WorldTemplate::WorldTemplate(VisitableWorldParametersConstPtr const& worldParame
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = std::make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
 
   determineWorldName();
   setupWeatherDomains();
@@ -148,7 +148,7 @@ WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
   m_seed = store.getUInt("seed");
   m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
   if (auto regionData = store.opt("regionData"))
-    m_layout = make_shared<WorldLayout>(regionData.take());
+    m_layout = std::make_shared<WorldLayout>(regionData.take());
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
       CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
@@ -162,7 +162,7 @@ WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
 
 Json WorldTemplate::store() const {
   return JsonObject{
-    {"celestialParameters", jsonFromMaybe(m_celestialParameters, mem_fn(&CelestialParameters::diskStore))},
+    {"celestialParameters", jsonFromMaybe(m_celestialParameters, std::mem_fn(&CelestialParameters::diskStore))},
     {"worldParameters", diskStoreVisitableWorldParameters(m_worldParameters)},
     {"skyParameters", m_skyParameters.toJson()},
     {"seed", m_seed},
@@ -204,7 +204,7 @@ void WorldTemplate::setSkyParameters(SkyParameters newParameters) {
   m_skyParameters = take(newParameters);
 }
 
-uint64_t WorldTemplate::worldSeed() const {
+std::uint64_t WorldTemplate::worldSeed() const {
   return m_seed;
 }
 
@@ -285,7 +285,7 @@ List<RectI> WorldTemplate::previewAddBiomeRegion(Vec2I const& position, int widt
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewAddBiomeRegion(position, width);
     regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(ceil(terrestrialParameters->blendSize));
+        return rect.padded(std::ceil(terrestrialParameters->blendSize));
       });
     return regionRects;
   } else {
@@ -299,7 +299,7 @@ List<RectI> WorldTemplate::previewExpandBiomeRegion(Vec2I const& position, int n
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewExpandBiomeRegion(position, newWidth);
     regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(ceil(terrestrialParameters->blendSize));
+        return rect.padded(std::ceil(terrestrialParameters->blendSize));
       });
     return regionRects;
   } else {
@@ -337,8 +337,8 @@ List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
   } else if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto addLayerDungeons = [this, &dungeonList](TerrestrialWorldParameters::TerrestrialLayer const& layer) {
       if (layer.dungeons.size() > 0) {
-        int dungeonSpacing = floor(m_geometry.width() / layer.dungeons.size());
-        uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
+        int dungeonSpacing = std::floor(m_geometry.width() / layer.dungeons.size());
+        std::uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
         for (auto const& dp : enumerateIterator(layer.dungeons)) {
           dungeonList.append({dp.first, layer.layerBaseHeight, (int)dungeonOffset, layer.dungeonXVariance, false, true});
           dungeonOffset = (dungeonOffset + dungeonSpacing) % m_geometry.width();
@@ -408,7 +408,7 @@ WorldTemplate::BlockInfo WorldTemplate::blockBiomeInfo(int x, int y) const {
     }
 
     if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
-      for (size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
+      for (std::size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
         auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
         if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
           if (!blockInfo.foregroundCave) {
@@ -521,7 +521,7 @@ AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
       auto nightTracks = floatingDungeonParameters->nightAmbientNoises
           ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightAmbientNoises})
           : AmbientTrackGroup();
-      return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
+      return std::make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
   if (auto biome = environmentBiome(x, y))
@@ -538,7 +538,7 @@ AmbientNoisesDescriptionPtr WorldTemplate::musicTrack(int x, int y) const {
       auto nightTracks = floatingDungeonParameters->nightMusicTrack
           ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightMusicTrack})
           : AmbientTrackGroup();
-      return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
+      return std::make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
   if (auto biome = environmentBiome(x, y))
@@ -668,7 +668,7 @@ float WorldTemplate::threatLevel() const {
   return 0.0f;
 }
 
-uint64_t WorldTemplate::seedFor(int x, int y) const {
+std::uint64_t WorldTemplate::seedFor(int x, int y) const {
   return staticRandomU64(m_seed, m_geometry.xwrap(x), y, "Block");
 }
 
@@ -708,7 +708,7 @@ void WorldTemplate::setupWeatherDomains() {
 
     List<LayerDefinition> definitions;
     definitions.append({"core", &terrestrial->coreLayer, false});
-    for (size_t i = terrestrial->undergroundLayers.size(); i != 0; --i)
+    for (std::size_t i = terrestrial->undergroundLayers.size(); i != 0; --i)
       definitions.append({strf("underground{}", i), &terrestrial->undergroundLayers[i - 1], false});
     definitions.append({"subsurface", &terrestrial->subsurfaceLayer, true});
     definitions.append({"surface", &terrestrial->surfaceLayer, false});
@@ -718,7 +718,7 @@ void WorldTemplate::setupWeatherDomains() {
     m_weatherDomains.append({"surface", terrestrial->weatherPool, terrestrial->surfaceLayer.layerMinHeight});
 
     auto biomeDatabase = Root::singleton().biomeDatabase();
-    for (size_t i = 0; i < definitions.size(); ++i) {
+    for (std::size_t i = 0; i < definitions.size(); ++i) {
       auto const& definition = definitions[i];
       int minHeight = definition.layer->layerMinHeight;
       int maxHeight = i + 1 < definitions.size()
@@ -745,7 +745,7 @@ void WorldTemplate::setupWeatherDomains() {
   }
 }
 
-pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
+std::pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
   auto assets = Root::singleton().assets();
 
   float minimumDistance = highest<float>();
@@ -766,7 +766,7 @@ pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
       weight *= -1.0f;
 
     finalSolidWeight += weight;
-    minimumDistance = min(minimumDistance, distance);
+    minimumDistance = std::min(minimumDistance, distance);
   }
 
   if (minimumDistance > m_customTerrainBlendSize)
@@ -777,8 +777,8 @@ pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
   return {finalSolidWeight * m_customTerrainBlendWeight, 1.0f - minimumDistance / m_customTerrainBlendSize};
 }
 
-WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) const {
-  return m_blockCache.get(Vector<uint32_t, 2>(x, y), [this, x, y](Vector<uint32_t, 2>) {
+WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(std::uint32_t x, std::uint32_t y) const {
+  return m_blockCache.get(Vector<std::uint32_t, 2>(x, y), [this, x, y](Vector<std::uint32_t, 2>) {
       BlockInfo blockInfo;
 
       if (!m_layout)
@@ -894,7 +894,7 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
           // correct count
 
           if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
+            for (std::size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
               auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
               if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
                 if (!blockInfo.foregroundCave) {
@@ -910,7 +910,7 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
           }
 
           if (!blockInfo.foregroundCave && !primaryBlockWeighting.region->foregroundOreSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
+            for (std::size_t i = 0; i < blockBiome->ores.size(); ++i) {
               auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->foregroundOreSelectorIndexes.at(i));
               if (selector->get(x, y) > 0.0f) {
                 blockInfo.foregroundMod = blockBiome->ores.at(i).first;
@@ -920,7 +920,7 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
           }
 
           if (!blockInfo.backgroundCave && !primaryBlockWeighting.region->backgroundOreSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
+            for (std::size_t i = 0; i < blockBiome->ores.size(); ++i) {
               auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->backgroundOreSelectorIndexes.at(i));
               if (selector->get(x, y) > 0.0f) {
                 blockInfo.backgroundMod = blockBiome->ores.at(i).first;

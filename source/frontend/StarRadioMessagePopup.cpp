@@ -1,3 +1,4 @@
+import std;
 import star.json;
 #include "StarJsonExtra.hpp"
 import star.game_types;
@@ -17,7 +18,6 @@ import star.bi_map;
 import star.ordered_map;
 import star.io_device;
 import star.ref_ptr;
-#include "StarConfig.hpp"
 import star.format;
 import star.version;
 import star.string;
@@ -116,22 +116,22 @@ void RadioMessagePopup::update(float dt) {
       nextPopupStage();
 
     if (m_popupStage == PopupStage::AnimateIn) {
-      int frame = floor((1.0f - m_stageTimer.percent()) * m_animateInFrames);
+      int frame = std::floor((1.0f - m_stageTimer.percent()) * m_animateInFrames);
       setBG("", strf("{}:{}", m_animateInImage, frame), "");
     } else if (m_popupStage == PopupStage::ScrollText) {
       int frame =
           int((m_stageTimer.timer / m_message.portraitSpeed) * m_message.portraitFrames) % m_message.portraitFrames;
       m_portraitImage->setImage(m_message.portraitImage.replace("<frame>", toString(frame)));
-      int textLength = floor(Text::stripEscapeCodes(m_message.text).length() * (1.0f - m_stageTimer.percent()));
+      int textLength = std::floor(Text::stripEscapeCodes(m_message.text).length() * (1.0f - m_stageTimer.percent()));
       m_messageLabel->setTextCharLimit(textLength);
     } else if (m_popupStage == PopupStage::Persist) {
       // you're cool, just stay cool, cool person
     } else if (m_popupStage == PopupStage::AnimateOut) {
-      int frame = floor((1.0f - m_stageTimer.percent()) * m_animateOutFrames);
+      int frame = std::floor((1.0f - m_stageTimer.percent()) * m_animateOutFrames);
       setBG("", strf("{}:{}", m_animateOutImage, frame), "");
     }
 
-    m_slideTimer = min(m_slideTimer + dt, m_slideTime);
+    m_slideTimer = std::min(m_slideTimer + dt, m_slideTime);
     updateAnchorOffset();
   }
 
@@ -155,7 +155,7 @@ void RadioMessagePopup::setMessage(RadioMessage message) {
     if (m_chatterSound)
       m_chatterSound->stop();
     auto assets = Root::singleton().assets();
-    m_chatterSound = make_shared<AudioInstance>(*assets->audio(message.chatterSound));
+    m_chatterSound = std::make_shared<AudioInstance>(*assets->audio(message.chatterSound));
     m_chatterSound->setLoops(-1);
   }
 

@@ -1,13 +1,13 @@
 module;
-import star.random;
-#include "StarConfig.hpp"
-import star.logging;
+#include <stddef.h>
 #include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
+import std;
+import star.random;
+import star.logging;
 
 
-// GCC has no header units, so the headers this module needs arrive through the
-// global module fragment.
+// The native C declarations are parsed in the global module fragment.
 import star.string;
 import star.byte_array;
 import star.encode;
@@ -18,19 +18,19 @@ export module star.curve25519;
 export namespace Star {
 namespace Curve25519 {
 
-constexpr size_t PublicKeySize = 32;
-constexpr size_t SecretKeySize = 32;
-constexpr size_t PrivateKeySize = 64;
-constexpr size_t SignatureSize = 64;
+constexpr std::size_t PublicKeySize = 32;
+constexpr std::size_t SecretKeySize = 32;
+constexpr std::size_t PrivateKeySize = 64;
+constexpr std::size_t SignatureSize = 64;
 
-typedef Array<uint8_t, PublicKeySize> PublicKey;
-typedef Array<uint8_t, SecretKeySize> SecretKey;
-typedef Array<uint8_t, PrivateKeySize> PrivateKey;
-typedef Array<uint8_t, SignatureSize> Signature;
+typedef Array<std::uint8_t, PublicKeySize> PublicKey;
+typedef Array<std::uint8_t, SecretKeySize> SecretKey;
+typedef Array<std::uint8_t, PrivateKeySize> PrivateKey;
+typedef Array<std::uint8_t, SignatureSize> Signature;
 
 PublicKey const& publicKey();
-Signature sign(void* data, size_t len);
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
+Signature sign(void* data, std::size_t len);
+bool verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len);
 
 
 }
@@ -66,13 +66,13 @@ PrivateKey const& privateKey() { return staticKeys().privateKey; }
 
 
 
-Signature sign(void* data, size_t len) {
+Signature sign(void* data, std::size_t len) {
   Signature signature;
   ed25519_SignMessage(signature.data(), privateKey().data(), nullptr, (unsigned char*)data, len);
   return signature;
 }
 
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len) {
+bool verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len) {
   return ed25519_VerifySignature(signature, publicKey, (unsigned char*)data, len);
 }
 
